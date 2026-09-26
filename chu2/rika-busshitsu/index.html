@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>げんしの勇者 ～物質の成り立ち～</title>
+<link href="https://fonts.googleapis.com/css2?family=DotGothic16&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#000;color:#fff;font-family:'DotGothic16',monospace;display:flex;flex-direction:column;align-items:center;min-height:100vh;user-select:none}
+#hud{width:min(96vw,760px);display:flex;justify-content:space-between;gap:8px;padding:8px 4px;font-size:18px;flex-wrap:wrap}
+#wrap{position:relative;width:min(96vw,760px)}
+canvas{width:100%;border:4px solid #fff;display:block;background:#000}
+.win{position:absolute;left:2%;right:2%;bottom:2%;background:#000;border:4px double #fff;border-radius:6px;padding:10px 16px;font-size:19px;line-height:1.6;display:none;max-height:92%;overflow:auto}
+.who{color:#ff0}
+.txt{white-space:pre-wrap}
+#more{text-align:right;animation:blink 1s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+button{font-family:inherit}
+.ch{display:flex;flex-wrap:wrap;margin-top:6px}
+.ch button,.btn{background:#000;color:#fff;border:2px solid #fff;padding:6px 12px;margin:4px;cursor:pointer;font-size:18px}
+.ch button{flex:1 1 45%;text-align:left}
+.ch button:hover,.btn:hover{background:#fff;color:#000}
+.ch button.atom{flex:1 1 22%;text-align:center}
+.dot{display:inline-block;width:18px;height:18px;border-radius:50%;vertical-align:middle;margin-right:4px;border:1px solid #fff}
+.tray{flex:1 1 100%;min-height:44px;border:2px dashed #888;margin:4px;padding:6px;display:flex;flex-wrap:wrap;gap:4px;align-items:center;color:#888}
+.tray .a{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;color:#fff;border:1px solid #fff}
+#pad{display:grid;grid-template-columns:repeat(3,60px);gap:6px;margin:12px}
+#pad button{height:60px;font-size:24px;background:#222;color:#fff;border:2px solid #fff;border-radius:8px}
+.screen{position:fixed;inset:0;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:20px;z-index:10;overflow:auto}
+.screen h1{font-size:clamp(28px,6vw,52px);color:#ff0;margin:10px 0;letter-spacing:4px}
+.story{max-width:640px;font-size:19px;line-height:1.8;white-space:pre-wrap;border:4px double #fff;padding:16px;text-align:left}
+.hidden{display:none!important}
+#boss{font-size:110px;margin:0}
+.hit{animation:shake .4s}
+@keyframes shake{25%{transform:translateX(-14px)}50%{transform:translateX(14px)}75%{transform:translateX(-8px)}}
+.bar{width:min(80vw,420px);height:18px;border:2px solid #fff;margin:6px auto}
+.bar div{height:100%;background:#e33;transition:width .4s}
+.qbox{width:min(94vw,720px);border:4px double #fff;padding:12px 16px;text-align:left;font-size:19px;line-height:1.6}
+table{border-collapse:collapse;margin:10px auto;font-size:16px;text-align:left;max-width:720px}
+td{border:1px solid #666;padding:4px 8px}
+input{font:inherit;font-size:18px;padding:4px 8px;background:#000;color:#fff;border:2px solid #fff}
+@media print{.btn{display:none}}
+</style>
+</head>
+<body>
+
+<!-- タイトル -->
+<div id="title" class="screen">
+  <h1>げんしの勇者</h1>
+  <div style="font-size:20px;margin-bottom:16px">～ 物質の成り立ち ～</div>
+  <div class="story">魔王ブンカインが あらわれた！
+世界じゅうの物質を バラバラに 分解しようとしている……。
+
+勇者よ、村人に話しかけて 問題に答え、コインを集めるのだ。
+コイン3まいで 門番が つぎのステージへ 通してくれる。
+4つのステージをこえて 魔王をたおし、世界に平和を とりもどせ！
+
+【そうさ】 矢印キー（またはWASD・画面のボタン）で移動
+　　　　　 人にぶつかると 話しかける
+　　　　　 Enter / スペース で 話を進める　1〜4 で 答えをえらぶ</div>
+  <button class="btn" style="margin-top:20px;font-size:24px" onclick="startGame()">▶ ぼうけんを はじめる</button>
+</div>
+
+<!-- マップ -->
+<div id="hud"><span id="hStage"></span><span>🪙 <b id="hCoin">0</b></span><span id="hHp"></span><span>⏱ <span id="hTime">00:00</span></span></div>
+<div id="wrap">
+  <canvas id="cv" width="960" height="704"></canvas>
+  <div id="win" class="win"><div class="who" id="who"></div><div class="txt" id="txt"></div><div class="ch" id="ch"></div><div id="more">▼</div></div>
+</div>
+<div id="pad">
+  <span></span><button onclick="move(0,-1)">▲</button><span></span>
+  <button onclick="move(-1,0)">◀</button><button onclick="adv&&adv()">A</button><button onclick="move(1,0)">▶</button>
+  <span></span><button onclick="move(0,1)">▼</button><span></span>
+</div>
+
+<!-- ボス戦 -->
+<div id="battle" class="screen hidden">
+  <div style="font-size:22px;color:#f55">魔王ブンカイン</div>
+  <p id="boss">👿</p>
+  <div class="bar"><div id="bhp" style="width:100%"></div></div>
+  <div style="margin:6px 0 12px;font-size:20px">勇者 <span id="bHearts"></span></div>
+  <div class="qbox"><div class="txt" id="bq"></div><div class="ch" id="bch"></div></div>
+</div>
+
+<!-- エンディング -->
+<div id="ending" class="screen hidden">
+  <h1>🌏 世界平和 🌏</h1>
+  <div class="story" id="endText"></div>
+  <button class="btn" style="margin-top:20px;font-size:24px" onclick="startTest()">📝 確認テストへすすむ</button>
+</div>
+
+<!-- 確認テスト -->
+<div id="test" class="screen hidden">
+  <h1 style="font-size:32px">📝 確認テスト</h1>
+  <div id="tname" style="margin-bottom:12px">番号・名前：<input id="nameIn" size="16"></div>
+  <div id="tnum" style="margin-bottom:8px;color:#ff0"></div>
+  <div class="qbox"><div class="txt" id="tq"></div><div class="ch" id="tch"></div></div>
+</div>
+<div id="result" class="screen hidden"></div>
+
+<script>/*@SUBMIT_CARD_BEGIN*/
+/* ==========================================================
+   提出カード（全ゲーム共通） v1
+   ─ 確認テストの結果を「スクショ1枚」で提出できる形に表示する
+   ─ ゲーム側は SubmitCard.show({...}) を呼ぶだけ
+   ─ このファイルの中身は build_collections.py が各ゲームの
+     「@SUBMIT_CARD_BEGIN」〜「@SUBMIT_CARD_END」の印の間へ同期する
+     （ゲーム側で直接いじらず、ここを直して build を実行する）
+   ─ 保存はこの端末のブラウザ内（localStorage）だけ。外への送信はしない
+   ========================================================== */
+(function(){
+  if (window.SubmitCard) return;
+  var KEY = 'mini-collection-records-v1';
+  var CSS = [
+    '#sc-ov{position:fixed;inset:0;z-index:2147483000;background:rgba(12,14,28,.78);display:flex;align-items:center;justify-content:center;padding:2vmin;overflow:auto;font-family:"Hiragino Maru Gothic ProN","Hiragino Sans","Zen Maru Gothic",sans-serif;-webkit-text-size-adjust:100%}',
+    '#sc-ov *{box-sizing:border-box}',
+    '#sc-card{width:min(96vw,760px);max-height:94vh;background:#fffdf8;color:#1d2433;border-radius:18px;box-shadow:0 20px 60px rgba(0,0,0,.45);overflow:hidden;display:flex;flex-direction:column;background-image:repeating-linear-gradient(0deg,transparent 0 31px,rgba(40,90,180,.07) 31px 32px)}',
+    '#sc-card .sc-band{background:#1d2433;color:#fff;padding:1.4vmin 2.6vmin;display:flex;align-items:center;gap:12px;font-weight:700;font-size:clamp(13px,1.9vmin,17px);letter-spacing:.08em}',
+    '#sc-card .sc-band .sc-tag{background:#e8384f;color:#fff;border-radius:6px;padding:2px 10px;letter-spacing:.2em}',
+    '#sc-card .sc-band .sc-col{margin-left:auto;opacity:.8;font-weight:500;letter-spacing:.02em}',
+    '#sc-card .sc-body{padding:2.2vmin 3vmin 2vmin;display:grid;grid-template-columns:1fr auto;gap:1.2vmin 3vmin;align-items:start}',
+    '#sc-card .sc-unit{grid-column:1/-1;font-size:clamp(15px,2.3vmin,20px);font-weight:700;color:#3a4460}',
+    '#sc-card .sc-unit small{display:block;font-size:.72em;font-weight:500;color:#6b7390;margin-top:2px}',
+    '#sc-card .sc-name{font-size:clamp(22px,4vmin,34px);font-weight:900;border-bottom:3px solid #1d2433;padding-bottom:4px;min-width:0;overflow-wrap:anywhere}',
+    '#sc-card .sc-name span{font-size:.5em;font-weight:700;color:#6b7390;margin-right:.6em}',
+    '#sc-card .sc-score{grid-row:span 2;text-align:center;border:4px solid #e8384f;border-radius:50%;width:clamp(120px,19vmin,170px);height:clamp(120px,19vmin,170px);display:flex;flex-direction:column;align-items:center;justify-content:center;color:#e8384f;transform:rotate(-6deg)}',
+    '#sc-card .sc-score b{font-size:clamp(46px,8vmin,72px);line-height:1;font-weight:900}',
+    '#sc-card .sc-score i{font-style:normal;font-weight:700;font-size:clamp(14px,2.2vmin,19px)}',
+    '#sc-card .sc-when{font-size:clamp(16px,2.6vmin,22px);font-weight:700}',
+    '#sc-card .sc-when span{font-size:.7em;color:#6b7390;margin-right:.6em}',
+    '#sc-card .sc-grid{grid-column:1/-1;display:grid;grid-template-columns:repeat(10,1fr);gap:.8vmin;margin-top:.6vmin}',
+    '#sc-card .sc-cell{border:2px solid #c9cfdd;border-radius:8px;text-align:center;padding:.4vmin 0 .6vmin;background:#fff}',
+    '#sc-card .sc-cell small{display:block;font-size:clamp(10px,1.5vmin,13px);color:#6b7390;font-weight:700}',
+    '#sc-card .sc-cell b{display:block;font-size:clamp(18px,3.2vmin,28px);line-height:1.1;font-weight:900}',
+    '#sc-card .sc-cell.o b{color:#e8384f}',
+    '#sc-card .sc-cell.x{background:#f1f3f8}',
+    '#sc-card .sc-cell.x b{color:#2a55c9}',
+    '#sc-card .sc-rec{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:.8vmin 1.4vmin;font-size:clamp(13px,2vmin,17px);margin-top:.4vmin}',
+    '#sc-card .sc-rec div{background:#eef1f8;border-radius:8px;padding:.6vmin 1.4vmin}',
+    '#sc-card .sc-rec b{margin-left:.4em}',
+    '#sc-card .sc-foot{font-size:clamp(11px,1.6vmin,13px);color:#6b7390;text-align:center;padding:0 2vmin 1.4vmin}',
+    '#sc-btns{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:1.6vmin}',
+    '#sc-btns button{font:inherit;font-weight:700;font-size:16px;padding:10px 20px;border-radius:999px;border:2px solid #fff;background:rgba(255,255,255,.12);color:#fff;cursor:pointer}',
+    '#sc-rev{width:min(96vw,760px);max-height:86vh;overflow:auto;background:#fffdf8;color:#1d2433;border-radius:18px;padding:20px 24px;font-size:16px;line-height:1.6}',
+    '#sc-rev h3{margin:0 0 10px;font-size:20px}',
+    '#sc-rev li{margin-bottom:10px}',
+    '#sc-rev .o{color:#e8384f;font-weight:900}#sc-rev .x{color:#2a55c9;font-weight:900}',
+    '#sc-wrap{display:flex;flex-direction:column;align-items:center}'
+  ].join('\n');
+
+  function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+  function strip(s){return String(s==null?'':s).replace(/<(?!\/?(sub|sup|b)>)[^>]*>/g,'')}
+  function fmtDate(ms){var d=new Date(ms),w='日月火水木金土'[d.getDay()];return d.getFullYear()+'年'+(d.getMonth()+1)+'月'+d.getDate()+'日('+w+') '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')}
+  function ensureCSS(){if(document.getElementById('sc-style'))return;var st=document.createElement('style');st.id='sc-style';st.textContent=CSS;document.head.appendChild(st)}
+  function load(){try{return JSON.parse(localStorage.getItem(KEY))||[]}catch(e){return[]}}
+  function store(rec){try{var a=load();a.unshift(rec);localStorage.setItem(KEY,JSON.stringify(a.slice(0,60)))}catch(e){}}
+
+  function cardHTML(r){
+    var marks=r.marks||[];
+    var cells=marks.map(function(ok,i){return '<div class="sc-cell '+(ok?'o':'x')+'"><small>'+(i+1)+'</small><b>'+(ok?'○':'×')+'</b></div>'}).join('');
+    var rec=(r.records||[]).map(function(x){return '<div>'+esc(x[0])+'<b>'+esc(x[1])+'</b></div>'}).join('');
+    return '<div id="sc-card">'+
+      '<div class="sc-band"><span class="sc-tag">提出</span>確認テスト 提出カード<span class="sc-col">'+esc(r.collection||'')+'</span></div>'+
+      '<div class="sc-body">'+
+        '<div class="sc-unit">'+esc(r.unit||'')+'<small>'+esc(r.game||'')+'</small></div>'+
+        '<div class="sc-name"><span>なまえ</span>'+esc(r.name||'（未入力）')+'</div>'+
+        '<div class="sc-score"><b>'+r.score+'</b><i>/ '+r.total+' 点</i></div>'+
+        '<div class="sc-when"><span>受けた日時</span>'+fmtDate(r.at)+'</div>'+
+        '<div class="sc-grid">'+cells+'</div>'+
+        (rec?'<div class="sc-rec">'+rec+'</div>':'')+
+      '</div>'+
+      '<div class="sc-foot">この画面をスクリーンショットして提出しよう</div>'+
+    '</div>';
+  }
+  function reviewHTML(r){
+    return '<div id="sc-rev"><h3>解答と解説</h3><ol>'+(r.review||[]).map(function(v){
+      return '<li><span class="'+(v.ok?'o':'x')+'">'+(v.ok?'○':'×')+'</span> '+strip(v.q)+'<br>　正解：<b>'+strip(v.a)+'</b>'+(v.ok?'':'　<span style="color:#6b7390">（あなた：'+strip(v.y)+'）</span>')+'</li>'}).join('')+'</ol></div>';
+  }
+  function open(r,onClose){
+    ensureCSS();
+    var ov=document.getElementById('sc-ov');if(ov)ov.remove();
+    ov=document.createElement('div');ov.id='sc-ov';
+    var mode='card';
+    function draw(){
+      ov.innerHTML='<div id="sc-wrap">'+(mode==='card'?cardHTML(r):reviewHTML(r))+
+        '<div id="sc-btns">'+(r.review&&r.review.length?'<button data-a="rev">'+(mode==='card'?'📖 解答を見る':'📝 提出カードにもどる')+'</button>':'')+
+        '<button data-a="close">とじる</button></div></div>';
+    }
+    draw();
+    ov.addEventListener('click',function(e){var b=e.target.closest&&e.target.closest('[data-a]');if(!b)return;
+      if(b.dataset.a==='rev'){mode=mode==='card'?'rev':'card';draw();ov.scrollTop=0}
+      else{ov.remove();if(onClose)onClose()}});
+    document.body.appendChild(ov);
+  }
+  window.SubmitCard={
+    /* r = {collection, unit, game, gameId, name, score, total, marks:[bool], records:[[label,value]], review:[{q,a,y,ok}]}
+       at（日時）は自動で入る。保存して表示する */
+    show:function(r,onClose){
+      r=Object.assign({},r);if(!r.at)r.at=Date.now();
+      if(!r.collection)r.collection=window.COLLECTION_NAME||'';
+      store(r);
+      try{if(window.parent&&window.parent!==window)window.parent.postMessage({type:'submit-card',rec:r},'*')}catch(e){}
+      open(r,onClose);return r;
+    },
+    reopen:open,
+    all:load,
+    KEY:KEY
+  };
+})();
+
+/*@SUBMIT_CARD_END*/</script>
+<script>
+/* ===== 問題データ（物質の成り立ち） ===== */
+const STAGES=[
+{name:'ステージ1 電気分解の村',wall:'tree',g1:'#3f8f35',g2:'#3a8531',
+ intro:'【ステージ1 電気分解の村】\n村人に話しかけて 問題に答えよう。\n正解すると コインが1まい もらえる。\nコイン3まいで 右下の門番💂が 通してくれるぞ！',
+ map:["###############","#S....#.......#","#.....#...1...#","#.~~..#.......#","#.~~......##..#","#....2....##..#","#.............#","#..###....3...#","#..#..........#","#.4#.........G#","###############"],
+ npcs:[{e:'👴',n:'村長',h:'井戸の水に 電気を流したら あわが出てきたんじゃ……'},{e:'👩‍🔬',n:'村の研究者',h:'わたしの実験、手伝ってくれる？'},{e:'🧒',n:'村の子ども',h:'ねえねえ、この問題わかる？'},{e:'👵',n:'おばあさん',h:'10円玉みたいな色のものが 出てきたのよ'}],
+ pool:[
+ {q:'1種類の物質が、2種類以上の別の物質に分かれる化学変化を何という？',a:['分解','状態変化','蒸発','融解'],e:'1種類の物質が2種類以上の物質に分かれる化学変化を「分解」という。'},
+ {q:'電流を流すことによって 物質を分解することを何という？',a:['電気分解','熱分解','燃焼','ろ過'],e:'電流を流して分解することを「電気分解」という。'},
+ {q:'水を電気分解したとき、陰極側に発生する気体は？',a:['水素','酸素','塩素','二酸化炭素'],e:'陰極側の気体は マッチの火を近づけると 音を立てて燃えた → 水素。'},
+ {q:'水の電気分解で、陽極側の気体に火のついた線香を入れると 激しく燃えた。この気体は？',a:['酸素','水素','窒素','塩素'],e:'線香が激しく燃える → 酸素。陽極側に発生する。'},
+ {q:'水の電気分解で発生する気体の体積。水素は酸素の約何倍？',a:['約2倍','約半分','同じ','約3倍'],e:'水素の体積は、酸素の約2倍になる。'},
+ {q:'塩化銅水溶液に電流を流したとき、陰極に付着する物質は？',a:['銅','塩素','水素','酸素'],e:'塩化銅 → 銅 ＋ 塩素。陰極に 銅（10円玉のような色）が付着する。'},
+ {q:'塩化銅水溶液の電気分解で、陽極から発生する「プールの消毒のようなにおい」の気体は？',a:['塩素','酸素','水素','アンモニア'],e:'陽極からは塩素が発生する。においは 手であおいで確かめる。'},
+ {q:'酸化銀を加熱すると、何と何に分解される？',a:['銀と酸素','銀と水素','銀と二酸化炭素','銅と酸素'],e:'酸化銀の熱分解で、銀と酸素ができる。'}]},
+{name:'ステージ2 原子の森',wall:'tree',g1:'#2f6e3a',g2:'#2b6535',
+ intro:'【ステージ2 原子の森】\n物質を どこまでも細かく分けていくと……？\nこの森には 原子にくわしい者たちが 住んでいる。',
+ map:["###############","#S..#.....#...#","#...#..1..#.2.#","#...#.....#...#","#.............#","##.####.####.##","#.............#","#..3...~~~....#","#......~~~..4.#","#............G#","###############"],
+ npcs:[{e:'🧓',n:'森の賢者',h:'物質のもとになる 粒子の話を しようかの'},{e:'🧑‍🔬',n:'ドルトンの弟子',h:'先生の 原子説を 知っているかい？'},{e:'🧙',n:'元・錬金術師',h:'わしは むかし 銅から金を つくろうとしてのう……'},{e:'🧝',n:'森のエルフ',h:'小さな 小さな 粒の世界へ ようこそ'}],
+ pool:[
+ {q:'物質をつくっていて、化学変化で それ以上分けることができない 小さな粒子を何という？',a:['原子','分子','細胞','結晶'],e:'それ以上分割できない 小さな粒子が「原子」。'},
+ {q:'19世紀のはじめ、原子説を発表した イギリスの科学者は？',a:['ドルトン','アボガドロ','ニュートン','メンデル'],e:'ドルトン（1766〜1844年）が 1803年に原子説を発表した。'},
+ {q:'原子の性質として 正しいものはどれ？',a:['化学変化で それ以上分割できない','化学変化で 別の種類の原子に変わる','化学変化で 新しくできたり なくなったりする','種類がちがっても 質量や大きさは同じ'],e:'原子は ①分割できない ②新しくできたり 種類が変わったり なくなったりしない ③種類によって 質量や大きさが決まっている。'},
+ {q:'原子の 質量や大きさは どうなっている？',a:['種類によって 決まっている','すべての原子で 同じ','温度によって 変わる','化学変化のたびに 変わる'],e:'原子の質量や大きさは、種類によって決まっている。'},
+ {q:'現在知られている 原子の種類は およそ何種類？',a:['約120種類','約12種類','約1200種類','約12000種類'],e:'現在、およそ120種類の原子が知られている。'},
+ {q:'鉄や銅から金をつくろうとした 錬金術は、なぜ成功しなかった？',a:['化学変化で 原子の種類は変わらないから','火の温度が 低すぎたから','金は 原子でできていないから','材料の量が 足りなかったから'],e:'原子は 化学変化で種類が変わらない。だから 銅を金に変えることは できない。'},
+ {q:'銀は 何が集まってできている？',a:['銀原子','銀分子','銀原子と酸素原子','水素原子'],e:'銀は 銀原子が集まってできている（電子顕微鏡で見ると 粒が並んでいる）。'},
+ {q:'銀原子を テニスボールの大きさまで拡大すると、テニスボールは どれくらいの大きさになる？',a:['地球くらい','学校くらい','富士山くらい','ゾウくらい'],e:'銀原子とテニスボールの大きさの比は、テニスボールと地球の比と ほぼ同じ。原子は それほど小さい！'},
+ {q:'1円硬貨は 何の原子でできている？',a:['アルミニウム原子','鉄原子','銅原子','銀原子'],e:'1円硬貨は アルミニウム原子でできている。1枚に 数えきれないほどの原子がふくまれている。'}]},
+{name:'ステージ3 分子の城下町',wall:'brick',g1:'#8a7a5a',g2:'#827252',
+ intro:'【ステージ3 分子の城下町】\n原子が 結びつくと……？\nこの町では 原子を組み合わせて 分子をつくる 問題も出るぞ！',
+ map:["###############","#S......#.....#","#.......#..1..#","#..##...#.....#","#..##.........#","#.2......###..#","#........#3#..#","#####.........#","#.....4.......#","#............G#","###############"],
+ npcs:[{e:'🤴',n:'城の王子',h:'アボガドロ先生の話を 聞いたことはあるかい？'},{e:'🧑‍🔧',n:'分子職人',h:'原子を組み合わせて 分子をつくってみな！'},{e:'👩‍🌾',n:'町の人',h:'わたしの まわりの物質は 何からできているのかしら'},{e:'👸',n:'城の姫',h:'分子づくりの 試練を あたえます'}],
+ pool:[
+ {q:'いくつかの原子が 結びついてできた、物質の性質のもとになる 最小の粒子を何という？',a:['分子','原子','結晶','細胞'],e:'原子が結びついてできた粒子を「分子」という。'},
+ {q:'「原子がいくつか結びついた粒子が 単位になっている」という考えを発表した イタリアの科学者は？',a:['アボガドロ','ドルトン','ガリレオ','エジソン'],e:'アボガドロ（1776〜1856年）が 1811年に発表した。'},
+ {build:{O:2},q:'【分子をつくれ！】\n酸素分子を つくろう。原子をえらんで「かんせい」をおす。',e:'酸素分子は、酸素原子が2個結びついてできている。'},
+ {build:{H:2,O:1},q:'【分子をつくれ！】\n水分子を つくろう。原子をえらんで「かんせい」をおす。',e:'水分子は、水素原子2個と 酸素原子1個が結びついてできている。'},
+ {build:{N:1,H:3},q:'【分子をつくれ！】\nアンモニア分子を つくろう。原子をえらんで「かんせい」をおす。',e:'アンモニア分子は、窒素原子1個と 水素原子3個。'},
+ {build:{C:1,O:2},q:'【分子をつくれ！】\n二酸化炭素分子を つくろう。原子をえらんで「かんせい」をおす。',e:'二酸化炭素分子は、炭素原子1個と 酸素原子2個。'},
+ {build:{H:2},q:'【分子をつくれ！】\n水素分子を つくろう。原子をえらんで「かんせい」をおす。',e:'水素分子は、水素原子が2個結びついてできている。'},
+ {q:'分子を つくらない物質は どれ？',a:['銀','水','二酸化炭素','アンモニア'],e:'銀・銅・鉄・炭素などは、1種類の原子がたくさん集まってできていて 分子をつくらない。'},
+ {q:'塩化ナトリウムの つくりとして 正しいものは？',a:['ナトリウム原子と塩素原子が 規則的に交互に並んでいる','塩化ナトリウム分子が たくさん集まっている','ナトリウム原子だけが 集まっている','塩素分子の中に ナトリウムが入っている'],e:'塩化ナトリウムは 分子をつくらず、2種類の原子が 規則的に交互に並んでいる。'},
+ {q:'【発展】炭素原子の「結合の手」は 何本？',a:['4本','1本','2本','3本'],e:'結合の手は 水素1本・酸素2本・窒素3本・炭素4本。'}]},
+{name:'ステージ4 変化の塔',wall:'brick',g1:'#555a6e',g2:'#4e5366',
+ intro:'【ステージ4 変化の塔】\n「状態変化」と「化学変化」、そのちがいが わかるか？\n塔の上には 魔王の城への門がある……！',
+ map:["###############","#S............#","#.###.###.###.#","#.#1..#.....#.#","#.#...#.2...#.#","#.....#.....#.#","#.#####.#####.#","#.......3.....#","#.###.#####.###","#..4........G.#","###############"],
+ npcs:[{e:'🧑‍🍳',n:'パン職人',h:'パンの きつね色の焼き目、あれも 化学なんだ'},{e:'👩‍🍳',n:'プリン屋',h:'カラメルの 香りと苦み、ひみつを 知りたい？'},{e:'🧞',n:'塔の番人',h:'変化を 見きわめる 目はあるか'},{e:'🧑‍🏫',n:'塔の先生',h:'水が 湯気になるとき、分子は どうなる？'}],
+ pool:[
+ {q:'水を加熱して 水蒸気になる変化は？',a:['状態変化','化学変化','分解','電気分解'],e:'水分子が ばらばらになるだけで、水分子そのものは変わらない → 状態変化。'},
+ {q:'水が水蒸気になるとき、水分子そのものは どうなる？',a:['変化しない（分子どうしの間隔が広がる）','水素分子と酸素分子に 分かれる','水素原子が なくなる','分子が 大きくなる'],e:'状態変化では 分子そのものは変わらず、集まり方（間隔）が変わるだけ。'},
+ {q:'水の電気分解は、状態変化と化学変化の どちら？',a:['化学変化','状態変化','どちらでもない','両方'],e:'水分子そのものが変化し、水素分子と酸素分子ができる → 化学変化。'},
+ {q:'炭酸水素ナトリウムを 加熱すると 何ができる？',a:['炭酸ナトリウム・二酸化炭素・水','ナトリウム・酸素・水素','塩化ナトリウム・水','炭素・水素・酸素'],e:'炭酸水素ナトリウム → 炭酸ナトリウム ＋ 二酸化炭素 ＋ 水（化学変化）。'},
+ {q:'ドライアイス（固体の二酸化炭素）を あたためると、すべて気体になった。この変化は？',a:['状態変化','化学変化','分解','電気分解'],e:'二酸化炭素分子そのものは変わらず、分子どうしの間隔が 広がっただけ → 状態変化。'},
+ {q:'プリンの カラメルの香ばしい香りや苦みは、ショ糖（砂糖）に 何が起きてできる？',a:['加熱による 化学変化','ただの 状態変化','冷やしたことによる 変化','水に とけただけ'],e:'ショ糖を加熱すると 分解などの化学変化が起き、新しい物質ができる。'},
+ {q:'パンの きつね色の焼き目は、何によってできる？',a:['タンパク質と糖の 化学変化','小麦粉が とけただけ','水が 蒸発しただけ','こげた部分が 冷えただけ'],e:'パンの焼き色は、タンパク質の一部と 糖の一部の 化学変化によるもの。'},
+ {q:'状態変化と化学変化の ちがいとして 正しいのは？',a:['化学変化では、物質そのものが 別の物質に変わる','状態変化では、分子が 別の分子に変わる','化学変化では、原子が なくなる','どちらも 物質は変わらない'],e:'状態変化は 集まり方が変わるだけ。化学変化は 物質そのものが変わる（原子の組み合わせが変わる）。'}]},
+{name:'最終ステージ 魔王の城',wall:'brick',g1:'#3a1a2a',g2:'#341626',
+ intro:'【最終ステージ 魔王の城】\nついに ここまで来た！\n左下の魔法使い🧙は、コイン1まいで ハートを回復してくれる。\n準備ができたら 魔王👿に ぶつかれ！',
+ map:["###############","#.............#","#......X......#","#.............#","#.............#","#.............#","#.............#","#.............#","#..M..........#","#......S......#","###############"],
+ npcs:[],pool:[]}
+];
+
+const TEST=[
+ {q:'1種類の物質が 2種類以上の別の物質に分かれる化学変化を何というか。',a:['分解','状態変化','燃焼','融解']},
+ {q:'電流を流すことによって 物質を分解することを何というか。',a:['電気分解','熱分解','蒸留','ろ過']},
+ {q:'化学変化で それ以上分けることができない 小さな粒子を何というか。',a:['原子','分子','結晶','細胞']},
+ {q:'いくつかの原子が結びついてできた、物質の性質のもとになる最小の粒子を何というか。',a:['分子','原子','元素','結晶']},
+ {q:'水を電気分解したとき、陰極側に発生する気体は何か。',a:['水素','酸素','塩素','窒素']},
+ {q:'水の電気分解で発生する 水素と酸素の体積の比（水素：酸素）は、およそどれか。',a:['2：1','1：2','1：1','3：1']},
+ {q:'塩化銅水溶液に電流を流したとき、陰極に付着する物質は何か。',a:['銅','塩素','水素','酸素']},
+ {q:'次のうち、分子をつくらない物質はどれか。',a:['鉄','水','酸素','アンモニア']},
+ {q:'水分子のつくりとして 正しいものはどれか。',a:['水素原子2個と 酸素原子1個','水素原子1個と 酸素原子2個','水素原子2個と 酸素原子2個','酸素原子2個']},
+ {q:'次のうち、状態変化であるものはどれか。',a:['ドライアイスが 気体になる','水を 電気分解する','炭酸水素ナトリウムを 加熱する','酸化銀を 加熱する']}
+];
+
+const ATOMS={H:{n:'水素',c:'#4fc3e8'},O:{n:'酸素',c:'#f0692a'},N:{n:'窒素',c:'#2f5fd0'},C:{n:'炭素',c:'#555'}};
+
+/* ===== ゲーム本体 ===== */
+const $=id=>document.getElementById(id);
+const cv=$('cv'),ctx=cv.getContext('2d');ctx.scale(2,2);
+const T=32,W=15,H=11,NEED=3;
+const S={stage:0,x:1,y:1,coins:0,hp:3,solved:new Set(),used:{},ok:0,ng:0,miss:[],t0:0,busy:false,map:null,mode:'title'};
+let adv=null,keyChoices=[];
+const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+
+function startGame(){$('title').classList.add('hidden');S.t0=Date.now();S.mode='map';setInterval(tick,1000);loadStage(0)}
+function tick(){const s=Math.floor((Date.now()-S.t0)/1000);$('hTime').textContent=String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0')}
+function hud(){$('hStage').textContent=STAGES[S.stage].name;$('hCoin').textContent=S.coins;$('hHp').textContent='❤️'.repeat(S.hp)}
+function loadStage(i){
+  S.stage=i;const st=STAGES[i];S.map=st.map.map(r=>r.split(''));
+  for(let y=0;y<H;y++)for(let x=0;x<W;x++)if(S.map[y][x]==='S'){S.x=x;S.y=y;S.map[y][x]='.'}
+  S.used[i]=S.used[i]||new Set();hud();draw();say('',st.intro);
+}
+
+/* --- 描画 --- */
+function emo(ch,x,y,size){ctx.font=(size||24)+'px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(ch,x+T/2,y+T/2+1)}
+function draw(){
+  const st=STAGES[S.stage],m=S.map;
+  for(let y=0;y<H;y++)for(let x=0;x<W;x++){
+    const c=m[y][x],px=x*T,py=y*T;
+    ctx.fillStyle=(x+y)%2?st.g1:st.g2;ctx.fillRect(px,py,T,T);
+    if(c==='#'){
+      if(st.wall==='tree'){ctx.fillStyle='#173d17';ctx.fillRect(px,py,T,T);ctx.fillStyle='#6b4423';ctx.fillRect(px+13,py+20,6,10);ctx.fillStyle='#2e7d32';ctx.beginPath();ctx.arc(px+16,py+14,11,0,7);ctx.fill();ctx.fillStyle='#43a047';ctx.fillRect(px+10,py+8,4,4)}
+      else{ctx.fillStyle='#777';ctx.fillRect(px,py,T,T);ctx.fillStyle='#444';ctx.fillRect(px,py+15,T,2);ctx.fillRect(px,py+31,T,1);ctx.fillRect(px+(y%2?8:24),py,2,15);ctx.fillRect(px+(y%2?24:8),py+16,2,15)}
+    }else if(c==='~'){ctx.fillStyle='#2456c8';ctx.fillRect(px,py,T,T);ctx.fillStyle='#8fb4ff';ctx.fillRect(px+5,py+10,9,2);ctx.fillRect(px+18,py+21,9,2)}
+    else if(/[1-4]/.test(c)){emo(st.npcs[c-1].e,px,py);if(!S.solved.has(S.stage+'-'+c)){ctx.fillStyle='#ff0';ctx.font='bold 14px monospace';ctx.fillText('!',px+27,py+6)}}
+    else if(c==='G')emo('💂',px,py);
+    else if(c==='M')emo('🧙',px,py);
+    else if(c==='X')emo('👿',px,py,30);
+  }
+  emo('🦸',S.x*T,S.y*T);
+}
+
+/* --- 会話ウィンドウ --- */
+const win=$('win');
+win.onclick=()=>adv&&adv();
+function say(who,text,next){
+  S.busy=true;win.style.display='block';$('who').textContent=who;$('txt').innerText=text;$('ch').innerHTML='';$('more').style.display='block';keyChoices=[];
+  adv=()=>{adv=null;win.style.display='none';S.busy=false;draw();hud();next&&next()};
+}
+function ask(who,q,cb){
+  S.busy=true;adv=null;win.style.display='block';$('who').textContent=who;$('more').style.display='none';
+  renderQ($('txt'),$('ch'),q,ok=>{$('ch').innerHTML='';win.style.display='none';S.busy=false;cb(ok)});
+}
+function mkBtn(parent,html,fn,cls){const b=document.createElement('button');b.innerHTML=html;if(cls)b.className=cls;b.onclick=e=>{e.stopPropagation();fn()};parent.appendChild(b);return b}
+function renderQ(qEl,chEl,q,cb){
+  qEl.innerText=q.q;chEl.innerHTML='';keyChoices=[];
+  if(q.build)return buildUI(chEl,q,cb);
+  const opts=shuffle(q.a.map((t,i)=>({t,ok:i===0})));
+  opts.forEach((o,i)=>keyChoices.push(mkBtn(chEl,(i+1)+'. '+o.t,()=>{keyChoices=[];cb(o.ok,o.t)})));
+}
+function buildUI(chEl,q,cb){
+  const cnt={H:0,O:0,N:0,C:0};
+  const tray=document.createElement('div');tray.className='tray';
+  const upd=()=>{tray.innerHTML='';let n=0;for(const k in cnt)for(let i=0;i<cnt[k];i++){n++;const s=document.createElement('span');s.className='a';s.style.background=ATOMS[k].c;s.textContent=ATOMS[k].n;tray.appendChild(s)}if(!n)tray.textContent='（ここに 原子がならぶ）'};
+  for(const k in ATOMS)keyChoices.push(mkBtn(chEl,'<span class="dot" style="background:'+ATOMS[k].c+'"></span>'+ATOMS[k].n+'原子',()=>{if(cnt[k]<6){cnt[k]++;upd()}},'atom'));
+  chEl.appendChild(tray);upd();
+  mkBtn(chEl,'↺ やりなおす',()=>{for(const k in cnt)cnt[k]=0;upd()});
+  mkBtn(chEl,'✔ かんせい！',()=>{const ok=Object.keys(cnt).every(k=>cnt[k]===(q.build[k]||0));keyChoices=[];cb(ok)});
+}
+
+/* --- 移動とイベント --- */
+function move(dx,dy){
+  if(S.busy||S.mode!=='map')return;
+  const nx=S.x+dx,ny=S.y+dy,c=S.map[ny][nx];
+  if(c==='.'){S.x=nx;S.y=ny;draw()}
+  else if(/[1-4]/.test(c))talkNPC(c);
+  else if(c==='G')gate();
+  else if(c==='M')merchant();
+  else if(c==='X')say('魔王ブンカイン','フハハハ！ 世界の物質を すべて バラバラに してくれるわ！\nかかってこい、勇者よ！',startBattle);
+}
+function talkNPC(c){
+  const st=STAGES[S.stage],npc=st.npcs[c-1],key=S.stage+'-'+c,who=npc.e+' '+npc.n;
+  if(S.solved.has(key))return say(who,'ありがとう！ 勇者さま、がんばってね。');
+  let rest=st.pool.filter(q=>!S.used[S.stage].has(q));if(!rest.length)rest=st.pool;
+  const q=rest[Math.floor(Math.random()*rest.length)];
+  say(who,npc.h,()=>ask(who,q,ok=>{
+    if(ok){S.ok++;S.coins++;S.solved.add(key);S.used[S.stage].add(q);say(who,'せいかい！ 🪙コインを1まい 手に入れた！\n\n'+q.e)}
+    else{S.ng++;S.miss.push(q);say(who,'ざんねん……。\n\n'+q.e+'\n\nもういちど 話しかけてね。')}
+  }));
+}
+function gate(){
+  const who='💂 門番';
+  if(S.coins>=NEED){S.coins-=NEED;say(who,'コイン'+NEED+'まい、たしかに うけとった。\nとおるがよい！',()=>loadStage(S.stage+1))}
+  else say(who,'ここを とおりたければ コインを'+NEED+'まい もってこい！\n（いま '+S.coins+'まい）\n村人たちに 話しかけるのだ。');
+}
+function merchant(){
+  const who='🧙 魔法使い';
+  if(S.hp>=5)return say(who,'ハートは もう いっぱいじゃよ。');
+  if(S.coins<1)return say(who,'コインが あれば ハートを 回復してあげるんじゃがのう。');
+  S.coins--;S.hp++;say(who,'コイン1まいで ❤️を1つ 回復したぞ！');
+}
+
+/* --- ボス戦 --- */
+const BOSS_HP=6;let deck=[];
+function startBattle(){S.mode='battle';S.bhp=BOSS_HP;$('battle').classList.remove('hidden');turn()}
+function updB(){$('bhp').style.width=(S.bhp/BOSS_HP*100)+'%';$('bHearts').textContent='❤️'.repeat(Math.max(S.hp,0))+'🖤'.repeat(Math.max(0,3-S.hp))}
+function turn(){
+  updB();if(!deck.length)deck=shuffle(STAGES.flatMap(s=>s.pool));
+  const q=deck.pop();
+  renderQ($('bq'),$('bch'),q,ok=>{
+    let msg;
+    if(ok){S.ok++;S.bhp--;msg='⚔️ こうげき！ ブンカインに ダメージ！';$('boss').classList.remove('hit');void $('boss').offsetWidth;$('boss').classList.add('hit')}
+    else{S.ng++;S.miss.push(q);S.hp--;msg='💥 ブンカインの こうげき！ ❤️を1つ うしなった……'}
+    updB();$('bq').innerText=msg+'\n\n'+q.e;$('bch').innerHTML='';
+    let next=turn;
+    if(S.bhp<=0){$('bq').innerText+='\n\nブンカインは たおれた！';next=ending}
+    else if(S.hp<=0){$('bq').innerText+='\n\n勇者は たおれてしまった……。\nでも あきらめない！ ハートを回復して もういちど！';next=()=>{S.hp=3;S.bhp=BOSS_HP;turn()}}
+    keyChoices=[mkBtn($('bch'),'▶ つぎへ',next)];
+  });
+}
+
+/* --- エンディング --- */
+function ending(){
+  $('battle').classList.add('hidden');S.mode='end';
+  const t=$('hTime').textContent;
+  const miss=[...new Set(S.miss)];
+  $('endText').innerText='魔王ブンカインは 光につつまれた……。\n\nしかし 化学変化で 原子が なくなることはない。\nブンカインをつくっていた原子は 組みかわり、\nおだやかな 水分子に 生まれ変わったのだった。\n\n世界に 平和が もどった！\n\n⏱ クリアタイム '+t+'　⭕ 正解 '+S.ok+'　❌ まちがい '+S.ng+
+  (miss.length?'\n\n【ふくしゅうしよう】\n'+miss.map(q=>'・'+q.q.replace(/\n.*/s,'')+'\n　→ '+(q.build?q.e:q.a[0])).join('\n'):'');
+  $('ending').classList.remove('hidden');
+}
+
+/* --- 確認テスト --- */
+function startTest(){$('ending').classList.add('hidden');$('test').classList.remove('hidden');S.mode='test';S.ti=0;S.tans=[];S.tq=TEST;showTQ()}
+function showTQ(){
+  if(S.ti>=S.tq.length)return testResult();
+  const q=S.tq[S.ti];$('tnum').textContent='第'+(S.ti+1)+'問 ／ '+S.tq.length+'問';
+  renderQ($('tq'),$('tch'),q,(ok,t)=>{S.tans.push({q,ok,t});S.ti++;showTQ()});
+}
+function testResult(){
+  $('test').classList.add('hidden');const r=$('result');r.classList.remove('hidden');
+  const sc=S.tans.filter(a=>a.ok).length,name=$('nameIn').value;
+  r.innerHTML='<h1 style="font-size:34px">確認テスト けっか</h1><div style="font-size:20px">'+(name?name.replace(/[<>&]/g,'')+'　':'')+'<b style="font-size:40px;color:#ff0">'+sc+'</b> / '+S.tq.length+' 点</div>'+
+   '<table>'+S.tans.map((a,i)=>'<tr><td>'+(a.ok?'⭕':'❌')+'</td><td>'+(i+1)+'. '+a.q.q+'<br><span style="color:'+(a.ok?'#8f8':'#f88')+'">あなた：'+a.t+'</span>'+(a.ok?'':'　<span style="color:#ff0">正解：'+a.q.a[0]+'</span>')+'</td></tr>').join('')+'</table>'+
+   '<div>ゲームの記録：⭕'+S.ok+'　❌'+S.ng+'　⏱'+$('hTime').textContent+'</div>'+
+   '<div><button class="btn" onclick="SubmitCard.reopen(S.card)">📝 提出カードを表示</button><button class="btn" onclick="location.reload()">さいしょから</button></div>';
+  S.card=SubmitCard.show({gameId:'rika-busshitsu',unit:'中2理科　物質の成り立ち（分解・原子と分子）',game:'げんしの勇者 ～物質の成り立ち～'+(window.GAME_MODE==='test'?'（確認テストのみ）':''),
+   name:name,score:sc,total:S.tq.length,marks:S.tans.map(a=>a.ok),
+   records:window.GAME_MODE==='test'?[['モード','確認テストだけ']]:[['クリアタイム',$('hTime').textContent],['ゲームの正解',S.ok+'回'],['ミス',S.ng+'回']],
+   review:S.tans.map(a=>({q:a.q.q,a:a.q.a[0],y:a.t,ok:a.ok}))});
+}
+
+/* --- キー操作 --- */
+addEventListener('keydown',e=>{
+  if(e.target.tagName==='INPUT')return;
+  if(e.key==='Enter'||e.key===' '){e.preventDefault();if(adv)adv();return}
+  if(/^[1-9]$/.test(e.key)&&keyChoices[e.key-1]){keyChoices[e.key-1].click();return}
+  const d={ArrowUp:[0,-1],ArrowDown:[0,1],ArrowLeft:[-1,0],ArrowRight:[1,0],w:[0,-1],s:[0,1],a:[-1,0],d:[1,0]}[e.key];
+  if(d){e.preventDefault();move(d[0],d[1])}
+});
+
+/* --- ミニゲーム集から「確認テストだけ」で開かれたとき --- */
+if(window.PLAYER_NAME)$('nameIn').value=window.PLAYER_NAME;
+if(window.GAME_MODE==='test'){$('title').classList.add('hidden');startTest()}
+
+</script>
+</body>
+</html>
