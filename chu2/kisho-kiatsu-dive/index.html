@@ -1,178 +1,239 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-<meta charset="utf-8">
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#2C4A6E">
 <title>気圧計スカイダイブ ～高さと大気圧～</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Mochiy+Pop+One&family=M+PLUS+Rounded+1c:wght@500;700;800&display=swap" rel="stylesheet">
+<!--
+  気圧計スカイダイブ ～高さと大気圧～（中2理科 気象 コマ6 / kisho-kiatsu-dive / chu2-kisho-06・予想用）
+
+  ■ 世界とメタファー: 「ガッシュ（不透明水彩）の平塗りの観光ポスター」。昔の遊覧飛行・山の観光ポスターのように、
+    空は段になった平塗りの色帯、雲はクリーム色の平たい塊、山は2〜3色の面だけで塗り分ける。
+    画面ぜんぶが1枚のポスターで、クリーム色の余白の縁と、明朝系の看板文字（Kaisei Opti）で組む。
+    気球から飛び出したダイバー（後ろ姿・顔は描かない）が、高い空から地表まで落ちていく。
+    道のり＝8便（1600m→4150m、最後は3段続けて降りるタイムアタック）。
+  ■ 配色: 紙 #F3E7CF／主 #2C4A6E（藍）／差し #E07A5F（珊瑚）。補助: 空の段 #1F3550・#5F86A6・#9CC0D0・#CFE0DE、
+    草 #86A38A、黄土 #DDA94B。グラデーションは使わず、すべて段の平塗り。
+  ■ 書体: 見出し・数字・ボタン＝Kaisei Opti（看板の明朝）／本文＝Zen Kaku Gothic New。
+  ■ 画面の組み方: 全画面canvasのポスターが主役。PC・iPad横＝横長の空を左右に動きながら落ち、右の縦長の「計器の帯」に
+    気圧計・高度計・袋・カプセルのびん・ノートの表。スマホ縦＝縦に長い空を下へ落ち、計器は下の帯。
+  ■ HUD: 上の看板帯（便の名前・今日の地上の気圧・カプセル・かけら）。Zukan.hud は使わず Zukan.state() で数を読む。
+    もどるボタンは左上にいつも同じ「◀ もどる」の切符（藍地に珊瑚の切り欠き）。
+  ■ 音: 風のザー（落ちる速さで強弱）・木琴のような命中音・ガラスの鈴（カプセル）・ポン（けむり）。
+  ■ 理科＝操作:
+    ・気圧計の値は高さで決まる（国際標準大気の式で計算）。下りるほど値が大きい＝高いところほど気圧は小さい
+      （上にある空気が少ないから）。第1便は高度計と気圧計を両方見せ、輪をくぐるたびにノートに記録する。
+    ・予想の輪（赤）: 輪の手前350mで気圧計にふたがされる。ダイヤルでその高さの値を予想してからくぐる。
+      ±10hPa 以内で的中（ノートの値の減り方から考える。当てずっぽうでは当たらない）。
+    ・けむりの目印: 高度計なし。気圧計の値がノートの「目標の高さの値」になったところで「けむり」。±120mで命中。
+      1目標に1回だけ（連打できない）。
+    ・低気圧の日（地上988hPa）・高気圧の日（1030hPa）: ふつうの日のノートの値のままだと煙がずれる
+      （死に覚えの罠）→ 同じ地点・同じ高さでも、天気（日・時刻）で気圧は変わる。地上のずれの分だけ読みかえる。
+    ・予想カプセル（黄土の輪・割り当ての核）: 校外学習で測る高さ（200m〜1200m）での気圧計の値を予想して封印する。
+      本物の値は見せない。ご褒美は「計画の札」（同じ気圧計で／高さと時刻を記録／同じ日の短い時間に）を正しく
+      取ったときと、予想が「高いほど小さい」にそろっているときだけ。最後に封印（localStorage
+      rika-zukan:chu2:seal:chu2-kisho-06）し、校外学習のあとに開ける。
+    ・袋の図: まわりから8本の矢印（上・下・横のあらゆる向き）。外の気圧が小さい上空ほど矢印が短く、袋がふくらむ。
+  ■ 数値（_素材.md の出典で確認）: 海面約1013hPa、約1500mで約850hPa、約3000mで約700hPa、
+    富士山頂（3776m）は約640hPa（夏の平均約647hPa）、約5500mで約500hPa。地上付近で10mにつき約1hPa。
+    的中の幅・落ちる速さ・高さの縮尺はゲーム内の約束。
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Kaisei+Opti:wght@400;700&family=Zen+Kaku+Gothic+New:wght@500;700&display=swap" rel="stylesheet">
 <style>
-:root{--sky:#1e5aa0;--sky2:#7fbbe8;--navy:#0f2340;--org:#f28c28;--cloud:#f6f9fc;--ink:#0f1c2e;--red:#e2453c;--yel:#f5c518;--grn:#3aa35b}
+:root{--cream:#F3E7CF;--paper:#FBF6EA;--navy:#2C4A6E;--deep:#1F3550;--coral:#E07A5F;--ochre:#DDA94B;--sage:#86A38A;--sky:#9CC0D0;
+ --fh:'Kaisei Opti','Hiragino Mincho ProN','Yu Mincho',serif;--fb:'Zen Kaku Gothic New','Hiragino Sans','Yu Gothic',sans-serif}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{margin:0;min-height:100%;color:var(--ink);font-family:"M PLUS Rounded 1c","Hiragino Maru Gothic ProN","Hiragino Sans",sans-serif;-webkit-text-size-adjust:100%}
-body{background:linear-gradient(#cfe6f7,#f6f9fc 380px);overflow-x:hidden;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
-.disp{font-family:"Mochiy Pop One","Hiragino Sans",sans-serif;font-weight:400}
+html,body{margin:0;height:100%;overflow:hidden;background:var(--navy);font-family:var(--fb);color:var(--navy);-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+#app{position:relative;width:100%;height:100vh;height:100dvh;overflow:hidden;background:var(--cream)}
+#cv{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
+.scr{position:absolute;inset:0;pointer-events:none}
+.pe{pointer-events:auto}
 .hidden{display:none!important}
-#app{width:100%;max-width:560px;margin:0 auto;padding:8px 10px 26px}
-.btn{font:inherit;font-weight:800;font-size:17px;min-height:48px;padding:10px 18px;border-radius:14px;border:3px solid var(--navy);background:var(--org);color:#fff;box-shadow:0 4px 0 var(--navy);cursor:pointer;touch-action:manipulation}
-.btn:active{transform:translateY(3px);box-shadow:0 1px 0 var(--navy)}
-.btn.sub{background:#fff;color:var(--navy)}
-.btn.blue{background:var(--sky)}
-.btn[disabled]{opacity:.45;transform:none}
-.card{background:#fff;border:3px solid var(--navy);border-radius:16px;box-shadow:0 4px 0 var(--navy)}
-#title{text-align:center;padding-top:6px}
-#title h1{font-size:clamp(30px,9vw,44px);margin:4px 0 0;color:var(--navy);line-height:1.15}
-#title .sub{font-weight:800;color:var(--sky);font-size:17px;margin-bottom:10px}
-#title .lead{padding:12px 14px;margin:10px auto;max-width:430px;font-size:16px;line-height:1.7;text-align:left}
-#title .row{display:flex;flex-direction:column;gap:12px;align-items:center;margin-top:10px}
-#title .row .btn{width:min(80vw,320px)}
-#nameRow{display:flex;gap:8px;align-items:center;justify-content:center;font-weight:800}
-#nameRow input{font:inherit;font-size:17px;padding:8px 10px;border:3px solid var(--navy);border-radius:10px;width:12em}
-.tiny{font-size:13px;color:#445}
-#hud{display:flex;gap:6px;align-items:center;justify-content:space-between;padding:6px 8px;margin-bottom:8px;background:var(--navy);color:#fff;border-radius:12px;font-weight:800;font-size:14px;overflow:hidden}
-#hud .pill{background:rgba(255,255,255,.14);padding:3px 9px;border-radius:999px;white-space:nowrap}
-#hZk{min-width:0;overflow:hidden;flex-shrink:1}
-.iconbtn{font:inherit;min-width:44px;min-height:44px;border-radius:10px;border:2px solid var(--navy);background:#fff;font-size:18px;cursor:pointer}
-#mission{padding:8px 60px 8px 12px;margin-bottom:8px;position:relative}
-#mission .iconbtn{position:absolute;right:8px;top:8px}
-#mission .rn{font-family:"Mochiy Pop One",sans-serif;color:var(--org);font-size:13px}
-#mission .nm{font-weight:800;font-size:18px;color:var(--navy)}
-#mission .ds{font-size:14px;line-height:1.5}
-.mk{display:inline-flex;align-items:center;gap:4px;border:2px solid var(--navy);border-radius:999px;padding:1px 9px;font-weight:800;font-size:14px;margin:3px 4px 0 0;background:#fff}
-.mk i{width:12px;height:12px;border-radius:50%;display:inline-block;border:1.5px solid var(--navy)}
-.mk.done{opacity:.45;text-decoration:line-through}
-#view{position:relative;border-radius:22px;overflow:hidden;background:#111820;box-shadow:0 5px 0 var(--navy)}
-#cv{display:block;width:100%;touch-action:none}
-#altBox{position:absolute;left:14px;top:12px;background:rgba(15,35,64,.8);color:#fff;border-radius:10px;padding:3px 10px;font-weight:800;font-size:15px}
-#say{position:absolute;left:50%;top:40%;transform:translate(-50%,-50%);font-family:"Mochiy Pop One",sans-serif;font-size:26px;color:#fff;text-shadow:0 3px 0 var(--navy),0 0 12px rgba(0,0,0,.4);pointer-events:none;white-space:nowrap;opacity:0}
-#say.on{animation:say 1.3s ease forwards}
-@keyframes say{0%{opacity:0;transform:translate(-50%,-50%) scale(.6)}15%{opacity:1;transform:translate(-50%,-50%) scale(1.1)}25%{transform:translate(-50%,-50%) scale(1)}80%{opacity:1}100%{opacity:0}}
-#instr{display:grid;grid-template-columns:1.1fr 1fr;gap:8px;margin-top:10px;align-items:stretch}
-#baro{padding:6px;text-align:center;position:relative}
-#baro svg{width:100%;max-width:190px;height:auto;display:block;margin:0 auto}
-#baro .dig{font-family:"Mochiy Pop One",sans-serif;font-size:26px;color:var(--navy);line-height:1}
-#baro .dig small{font-size:13px}
-#ctrl{display:flex;flex-direction:column;gap:8px}
-#ctrl .btn{width:100%;padding:8px 6px;font-size:16px;line-height:1.25}
-#bSmoke{min-height:70px}
-#bBrake{min-height:56px;background:#fff;color:var(--navy)}
-#bBrake.on{background:var(--navy);color:#fff}
-#note{margin-top:10px;padding:8px 10px}
-#note h3{margin:0 0 4px;font-size:15px;color:var(--navy)}
-#noteGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:4px 8px;font-size:14px;font-weight:700}
-#noteGrid div{background:#eef5fb;border-radius:8px;padding:2px 6px;display:flex;justify-content:space-between}
-#noteGrid div b{color:var(--sky)}
-#noteGrid div.new{animation:stampIn .5s}
-@keyframes stampIn{0%{transform:scale(1.8);background:#ffe29a}100%{transform:scale(1)}}
-#panel{margin-top:10px;padding:12px 14px;font-size:15px;line-height:1.65}
-#panel .t{font-weight:800;font-size:18px;color:var(--navy);margin-bottom:4px}
-#panel .ok{color:var(--grn);font-weight:800}#panel .ng{color:var(--red);font-weight:800}
-#panel .btns{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end;margin-top:8px}
-.qch{display:flex;flex-direction:column;gap:8px;margin-top:6px}
-.qch button{font:inherit;text-align:left;font-size:15.5px;font-weight:700;min-height:48px;padding:8px 12px;border-radius:12px;border:3px solid var(--navy);background:#fff;cursor:pointer;line-height:1.4}
-.qch button.sel{background:#ffe29a}
-#chart{width:100%;display:block;margin:6px 0;border-radius:10px;background:#f2f8fd}
-.panel{padding:16px 16px 18px;margin-top:8px}
-.panel h2{margin:0 0 8px;color:var(--navy);font-size:26px}
-.panel p{line-height:1.7;margin:6px 0}
-.recs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0}
-.recs div{background:#eef5fb;border:2px solid var(--navy);border-radius:10px;padding:6px 8px;font-size:13px;font-weight:800}
-.recs b{display:block;font-size:20px;color:var(--sky)}
-.col{display:flex;flex-direction:column;gap:10px;margin-top:12px}
-#predFree{font:inherit;font-size:16px;width:100%;padding:8px;border:3px solid var(--navy);border-radius:10px;margin-top:6px}
-#tbox .tno{font-weight:800;color:var(--org)}
-#tbox .prog{display:flex;gap:4px;margin:6px 0 12px}
-#tbox .prog i{flex:1;height:8px;border-radius:4px;background:#dbe7f2;border:1px solid var(--navy)}
-#tbox .prog i.on{background:var(--org)}
-#tbox .tq{font-size:18px;font-weight:800;line-height:1.65;margin-bottom:10px}
-#tbox .fig{background:#fff;border:2px solid var(--navy);border-radius:10px;padding:6px;margin:6px 0 12px;text-align:center}
-#tbox .fig svg{max-width:100%;height:auto;max-height:230px}
-.ch{display:flex;flex-direction:column;gap:8px}
-.ch button{font:inherit;text-align:left;font-size:16px;font-weight:700;min-height:50px;padding:8px 12px;border-radius:12px;border:3px solid var(--navy);background:#fff;color:var(--ink);cursor:pointer;line-height:1.45}
-.ch button:active{background:#ffe29a}
-.numrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-.numrow input{font:inherit;font-size:22px;width:9em;padding:8px 10px;border:3px solid var(--navy);border-radius:10px}
-.ord{min-height:54px;border:3px dashed var(--navy);border-radius:12px;padding:6px;margin-bottom:8px;display:flex;flex-direction:column;gap:6px}
-.ord div{background:#ffe29a;border:2px solid var(--navy);border-radius:8px;padding:6px 8px;font-weight:700;font-size:15px}
-#fx{position:fixed;inset:0;pointer-events:none;z-index:50}
-.pop{position:fixed;z-index:60;pointer-events:none;font-family:"Mochiy Pop One",sans-serif;font-size:22px;color:var(--yel);-webkit-text-stroke:1.5px var(--navy);animation:pop 1.1s ease-out forwards;white-space:nowrap}
-@keyframes pop{0%{transform:translate(-50%,0) scale(.6);opacity:0}15%{transform:translate(-50%,-10px) scale(1.2);opacity:1}100%{transform:translate(-50%,-70px) scale(1);opacity:0}}
-#banner{position:fixed;left:50%;top:30%;transform:translate(-50%,-50%);z-index:70;pointer-events:none;font-family:"Mochiy Pop One",sans-serif;font-size:clamp(24px,7.5vw,38px);color:#fff;background:var(--org);border:4px solid var(--navy);border-radius:16px;padding:8px 22px;box-shadow:0 6px 0 var(--navy);opacity:0;white-space:nowrap}
-#banner.on{animation:ban 1.6s ease forwards}
-@keyframes ban{0%{opacity:0;transform:translate(-50%,-50%) scale(.4)}15%{opacity:1;transform:translate(-50%,-50%) scale(1.08)}25%{transform:translate(-50%,-50%) scale(1)}80%{opacity:1}100%{opacity:0}}
-@media (prefers-reduced-motion:reduce){*,*:before,*:after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition:none!important}}
-</style>
-</head>
-<body>
-<canvas id="fx"></canvas>
-<div id="banner"></div>
+button{font-family:inherit;border:0;background:none;padding:0;color:inherit;cursor:pointer;touch-action:manipulation}
+.hd{font-family:var(--fh);font-weight:700}
+/* 看板の札（ボタン）: 平塗り・少しゆがんだ角・二重の縁 */
+.tk{position:relative;display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:52px;padding:8px 26px;font-family:var(--fh);font-weight:700;font-size:21px;line-height:1.15;color:var(--cream);background:var(--coral);border-radius:9px 14px 8px 13px;box-shadow:inset 0 0 0 3px var(--coral),inset 0 0 0 5px var(--cream);letter-spacing:.06em}
+.tk:active{transform:translateY(2px);filter:brightness(.94)}
+.tk.n{background:var(--navy);box-shadow:inset 0 0 0 3px var(--navy),inset 0 0 0 5px var(--cream)}
+.tk.o{background:var(--ochre);color:var(--deep);box-shadow:inset 0 0 0 3px var(--ochre),inset 0 0 0 5px var(--paper)}
+.tk.c{background:var(--paper);color:var(--navy);box-shadow:inset 0 0 0 3px var(--navy)}
+.tk.s{min-height:46px;font-size:17px;padding:6px 16px}
+.tk:disabled{opacity:.4}
+/* もどる（切符）いつも左上 */
+#bBack{position:absolute;z-index:60;left:calc(8px + env(safe-area-inset-left));top:calc(8px + env(safe-area-inset-top));display:flex;align-items:center;gap:8px;height:50px;padding:0 20px 0 14px;background:var(--navy);color:var(--cream);font-family:var(--fh);font-weight:700;font-size:19px;border-radius:6px 16px 16px 6px;box-shadow:inset 0 0 0 3px var(--navy),inset 0 0 0 5px var(--cream)}
+#bBack i{display:block;width:0;height:0;border-top:10px solid transparent;border-bottom:10px solid transparent;border-right:16px solid var(--coral)}
+#bSnd{position:absolute;z-index:60;right:calc(8px + env(safe-area-inset-right));top:calc(8px + env(safe-area-inset-top));width:50px;height:50px;background:var(--navy);color:var(--cream);font-family:var(--fh);font-weight:700;font-size:18px;border-radius:6px;box-shadow:inset 0 0 0 3px var(--navy),inset 0 0 0 5px var(--cream)}
+#bSnd.off{background:#8b8f95;text-decoration:line-through}
+/* 上の看板帯 */
+#hud{position:absolute;top:calc(8px + env(safe-area-inset-top));left:150px;height:50px;display:flex;gap:6px;pointer-events:none}
+#hud>div{display:flex;flex-direction:column;justify-content:center;padding:0 12px;background:var(--cream);color:var(--navy);border-radius:5px;box-shadow:inset 0 0 0 2px var(--navy);min-width:0}
+#hud small{font-size:11px;font-weight:700;letter-spacing:.06em;white-space:nowrap;opacity:.85}
+#hud b{font-family:var(--fh);font-weight:700;font-size:20px;line-height:1.05;white-space:nowrap}
+#hud .dv{background:var(--navy);color:var(--cream)}
+#hud .wx{background:var(--paper)}
+#hud .wx.low{background:#cfd9e6}#hud .wx.high{background:#f4dcb0}
+#hud .kk{background:var(--ochre);color:var(--deep);box-shadow:none}
+#hud .tm{background:var(--coral);color:var(--cream);box-shadow:none}
+#bNote{position:absolute;z-index:55;top:calc(8px + env(safe-area-inset-top));height:50px;padding:0 14px;background:var(--paper);color:var(--navy);font-family:var(--fh);font-weight:700;font-size:17px;border-radius:5px;box-shadow:inset 0 0 0 2px var(--navy),inset 0 0 0 4px var(--paper),inset 0 0 0 5px var(--navy);pointer-events:auto}
+body.port #hud{top:calc(64px + env(safe-area-inset-top));left:8px;right:8px;height:46px;gap:4px}
+body.port #hud>div{padding:0 7px;flex:1 1 0;overflow:hidden}
+body.port #hud>div.dv{flex:1.5 1 0}
+body.port #hud b{overflow:hidden;text-overflow:ellipsis}
+body.port #hud .lg{display:none}
+body.port #hud b{font-size:16px}
+body.port #hud small{font-size:10px}
+/* 計器の帯の上に置くボタン（位置はJSで決める） */
+.ctl{position:absolute;z-index:20;pointer-events:auto}
+#bSmoke{width:104px;height:104px;border-radius:50%;background:var(--coral);color:var(--cream);font-family:var(--fh);font-weight:700;font-size:23px;line-height:1.05;box-shadow:inset 0 0 0 4px var(--coral),inset 0 0 0 7px var(--cream),0 5px 0 #b65c45}
+#bSmoke small{display:block;font-size:12px;font-family:var(--fb);font-weight:700;margin-top:3px}
+#bSmoke:active{transform:translateY(3px);box-shadow:inset 0 0 0 4px var(--coral),inset 0 0 0 7px var(--cream),0 2px 0 #b65c45}
+#bSmoke:disabled{background:#c9b8a4;box-shadow:inset 0 0 0 4px #c9b8a4,inset 0 0 0 7px var(--cream)}
+#bFast{width:104px;height:46px;border-radius:8px;background:var(--navy);color:var(--cream);font-family:var(--fh);font-weight:700;font-size:16px;box-shadow:inset 0 0 0 3px var(--navy),inset 0 0 0 5px var(--cream)}
+#bFast.on{background:var(--deep);color:var(--ochre)}
+#dialCtl{display:grid;grid-template-columns:1fr 1fr;gap:6px;width:130px;padding:6px;background:var(--paper);border-radius:10px;box-shadow:inset 0 0 0 3px var(--coral)}
+#dialCtl .rd{grid-column:1/3;text-align:center;font-family:var(--fh);font-weight:700;font-size:13px;line-height:1.2;color:var(--coral)}
+#dialCtl .rd b{display:block;font-size:27px;color:var(--navy)}
+#dialCtl button{height:44px;border-radius:7px;background:var(--navy);color:var(--cream);font-family:var(--fh);font-weight:700;font-size:18px}
+#dialCtl button.p{background:var(--coral)}
+/* 看板の小札（説明・ヒント） */
+#slip{position:absolute;z-index:25;width:max-content;max-width:min(88vw,620px);background:var(--paper);color:var(--navy);border-radius:8px;box-shadow:inset 0 0 0 3px var(--navy),inset 0 0 0 7px var(--paper),inset 0 0 0 8px var(--coral);padding:12px 18px;font-size:16px;line-height:1.6;pointer-events:none;font-weight:500}
+#slip .hd{display:block;font-size:19px;color:var(--coral);margin-bottom:2px}
+/* 札（パネル） */
+#ov{background:rgba(31,53,80,.55);display:flex;align-items:center;justify-content:center;padding:12px;z-index:40}
+body.port #ov{padding-top:calc(64px + env(safe-area-inset-top))}
+body.port .bill{max-height:calc(100% - 4px);padding:20px 16px 16px}
+.bill{position:relative;width:min(94vw,660px);max-height:90vh;overflow:auto;background:var(--cream);border-radius:10px;box-shadow:inset 0 0 0 4px var(--navy),inset 0 0 0 10px var(--cream),inset 0 0 0 12px var(--coral);padding:26px 26px 20px}
+.bill h2{font-family:var(--fh);font-weight:700;font-size:28px;margin:0 0 8px;line-height:1.25;color:var(--navy)}
+.bill .no{display:inline-block;font-family:var(--fh);font-weight:700;font-size:14px;letter-spacing:.12em;background:var(--navy);color:var(--cream);padding:3px 12px;border-radius:3px;margin-bottom:8px}
+.bill p{font-size:16px;line-height:1.7;margin:8px 0}
+.small{font-size:13.5px;line-height:1.55}
+.row{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-top:14px}
+.stars{display:flex;gap:8px;justify-content:center;margin:10px 0}
+.stars div{flex:1;max-width:190px;text-align:center;border-radius:7px;padding:7px 4px;font-size:12.5px;line-height:1.35;background:#e6d8bb;color:#6b6250}
+.stars div.on{background:var(--ochre);color:var(--deep)}
+.stars i{display:block;font-style:normal;font-family:var(--fh);font-size:30px;line-height:1}
+.lst{margin:8px 0;padding:0;list-style:none}
+.lst li{display:flex;gap:10px;align-items:baseline;padding:6px 10px;margin:4px 0;background:var(--paper);border-radius:6px;font-size:15px;line-height:1.45;border-left:8px solid #b9b2a2}
+.lst li.ok{border-left-color:var(--coral)}.lst li.cap{border-left-color:var(--ochre)}.lst li.ng{border-left-color:#8b8f95;color:#555}
+.lst li b{font-family:var(--fh);font-size:17px;white-space:nowrap}
+/* ノート */
+.note{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);gap:14px;align-items:start}
+@media (max-width:620px){.note{grid-template-columns:1fr}}
+.ntab{width:100%;border-collapse:collapse;font-size:15px;background:var(--paper)}
+.ntab th,.ntab td{padding:5px 8px;border-bottom:1px dashed #b9b2a2;text-align:right}
+.ntab th{font-family:var(--fh);text-align:center;background:var(--navy);color:var(--cream);font-weight:700}
+.ntab td.d{color:#6b7b8e}
+.ngraph{background:var(--paper);border-radius:6px}
+.ngraph svg{display:block;width:100%;height:auto}
+.lesson{margin:10px 0 0;padding:10px 14px;background:var(--navy);color:var(--cream);border-radius:6px;font-weight:700;line-height:1.6}
+.lesson b{color:var(--ochre)}
+/* タイトル */
+#title .logo{position:absolute;left:0;right:0;top:calc(66px + env(safe-area-inset-top));text-align:center;pointer-events:none}
+#title .l0{display:inline-block;font-family:var(--fh);font-weight:700;font-size:15px;letter-spacing:.3em;color:var(--cream);background:var(--navy);padding:4px 16px;border-radius:3px}
+#title .l1{font-family:var(--fh);font-weight:700;font-size:clamp(48px,9.6vh,104px);line-height:1.02;color:var(--navy);margin-top:12px;letter-spacing:.04em;text-shadow:0 3px 0 var(--cream),3px 0 0 var(--cream),-3px 0 0 var(--cream),0 -3px 0 var(--cream)}
+#title .l2{display:inline-block;font-family:var(--fh);font-weight:700;font-size:clamp(20px,3.6vh,36px);color:var(--cream);background:var(--coral);padding:4px 22px;margin-top:10px;border-radius:4px}
+#title .box{position:absolute;right:5vw;bottom:8vh;width:min(360px,40vw);display:flex;flex-direction:column;gap:12px}
+#title .box .tk{width:100%}
+#title .name{display:flex;align-items:center;gap:10px;background:var(--paper);border-radius:7px;box-shadow:inset 0 0 0 3px var(--navy);padding:7px 14px}
+#title .name b{font-family:var(--fh)}
+#title .name input{flex:1;min-width:0;font:inherit;font-size:18px;border:0;border-bottom:2px solid var(--navy);background:transparent;padding:5px 2px;outline:none;color:var(--navy)}
+#title .goal{position:absolute;left:5vw;bottom:8vh;max-width:min(420px,42vw);background:var(--paper);border-radius:8px;box-shadow:inset 0 0 0 3px var(--navy);padding:12px 16px;font-size:15px;line-height:1.6;font-weight:700;pointer-events:none}
+#title .goal .hd{display:block;color:var(--coral);font-size:18px}
+body.port #title .l1{font-size:min(9.3vw,8vh);white-space:nowrap;letter-spacing:0}
+body.port #title .box{left:6vw;right:6vw;width:auto;bottom:calc(16px + env(safe-area-inset-bottom))}
+body.port #title .goal{left:6vw;right:6vw;max-width:none;bottom:auto;top:calc(52vh);font-size:13.5px;padding:9px 12px}
+/* 地図（8枚のポスター） */
+#map .head{position:absolute;left:150px;right:70px;top:calc(8px + env(safe-area-inset-top));min-height:50px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:var(--navy);color:var(--cream);font-family:var(--fh);font-weight:700;font-size:19px;padding:4px 18px;border-radius:5px}
+#map .head .jar{font-size:15px;background:var(--ochre);color:var(--deep);padding:2px 10px;border-radius:4px}
+body.port #map .head{left:8px;right:8px;top:calc(64px + env(safe-area-inset-top));font-size:15px;padding:6px 10px}
+#posters{position:absolute;left:3vw;right:3vw;top:78px;bottom:96px;display:grid;grid-template-columns:repeat(4,1fr);grid-auto-rows:1fr;gap:14px;align-content:stretch}
+body.port #posters{grid-template-columns:repeat(2,1fr);top:calc(150px + env(safe-area-inset-top));bottom:calc(134px + env(safe-area-inset-bottom));gap:8px}
+.pst{position:relative;overflow:hidden;border-radius:6px;text-align:left;box-shadow:inset 0 0 0 5px var(--cream),inset 0 0 0 7px var(--navy);background:var(--sky);min-height:0}
+.pst::before{content:"";position:absolute;left:7px;right:7px;bottom:7px;height:34%;background:var(--sage);clip-path:polygon(0 60%,18% 22%,34% 50%,56% 0,78% 44%,100% 26%,100% 100%,0 100%)}
+.pst::after{content:"";position:absolute;right:16%;top:16%;width:22%;aspect-ratio:1;border-radius:50%;background:var(--cream)}
+.pst .n{position:absolute;left:14px;top:10px;font-family:var(--fh);font-weight:700;font-size:15px;color:var(--cream);background:var(--navy);padding:1px 8px;border-radius:3px;z-index:2}
+.pst .t{position:absolute;left:14px;right:12px;bottom:14px;font-family:var(--fh);font-weight:700;font-size:19px;line-height:1.2;color:var(--cream);z-index:2;text-shadow:0 2px 0 var(--navy),2px 0 0 var(--navy),-2px 0 0 var(--navy),0 -2px 0 var(--navy)}
+.pst .t small{display:block;font-family:var(--fb);font-size:12px}
+.pst .st{position:absolute;right:12px;top:10px;font-family:var(--fh);font-size:17px;color:var(--ochre);z-index:2;text-shadow:0 1px 0 var(--navy)}
+.pst:nth-child(2){background:#7fa6bf}.pst:nth-child(3){background:#5F86A6}.pst:nth-child(4){background:#4d6f92}
+.pst:nth-child(5){background:#6f7f95}.pst:nth-child(6){background:#2C4A6E}.pst:nth-child(7){background:#8fb0c4}.pst:nth-child(8){background:#1F3550}
+.pst:nth-child(5)::after{background:#b9c3cc}.pst:nth-child(7)::after{background:var(--ochre)}.pst:nth-child(8)::after{background:var(--coral)}
+.pst:nth-child(6)::before{background:var(--cream);clip-path:polygon(0 100%,50% 0,100% 100%)}
+.pst.done{box-shadow:inset 0 0 0 5px var(--ochre),inset 0 0 0 7px var(--navy)}
+.pst.lock{filter:grayscale(.8) brightness(.8);opacity:.55}
+.pst.next{animation:nextp 1.3s ease-in-out infinite}
+@keyframes nextp{50%{box-shadow:inset 0 0 0 5px var(--coral),inset 0 0 0 7px var(--navy)}}
+body.port .pst .t{font-size:15px}
+#map .bot{position:absolute;left:0;right:0;bottom:calc(14px + env(safe-area-inset-bottom));display:flex;gap:10px;justify-content:center;flex-wrap:wrap;padding:0 8px}
+body.port #map .bot .tk{padding:6px 12px;font-size:15px;min-height:44px}
+/* 確認テスト */
+#test{background:var(--cream);overflow:auto;pointer-events:auto}
+#tbox{position:relative;width:min(94vw,820px);margin:74px auto 30px;background:var(--paper);border-radius:10px;box-shadow:inset 0 0 0 4px var(--navy),inset 0 0 0 9px var(--paper),inset 0 0 0 11px var(--coral);padding:26px 26px}
+.tno{display:inline-block;font-family:var(--fh);font-weight:700;font-size:17px;background:var(--navy);color:var(--cream);padding:4px 14px;border-radius:3px}
+.prog{display:flex;gap:4px;margin:10px 0 12px}.prog i{flex:1;height:9px;background:#e1d4b8;border-radius:5px}.prog i.on{background:var(--coral)}
+.tq{font-size:19px;line-height:1.6;font-weight:700;margin:6px 0 10px}
+.fig2{background:#fff;border-radius:6px;box-shadow:inset 0 0 0 2px var(--navy);padding:8px;margin:6px 0 12px;text-align:center}.fig2 svg{max-width:100%;height:auto;max-height:36vh}
+.ch{display:grid;grid-template-columns:1fr;gap:10px}
+.ch button{min-height:52px;text-align:left;padding:10px 16px;font-size:17px;line-height:1.45;background:var(--cream);border-radius:8px;box-shadow:inset 0 0 0 2px var(--navy);font-weight:500}
+.ch button:active{background:#ecdcbc}
+.ch button::before{content:"";display:inline-block;width:12px;height:12px;border-radius:50%;background:var(--coral);margin-right:10px;vertical-align:1px}
+.numrow{display:flex;gap:10px;align-items:center;margin-top:10px}.numrow input{flex:1;min-width:0;font:inherit;font-size:24px;padding:10px;border:0;border-radius:6px;box-shadow:inset 0 0 0 2px var(--navy);background:#fff}
+.ord{min-height:30px;margin:8px 0}.ord div{padding:7px 12px;background:var(--navy);color:var(--cream);margin:5px 0;font-weight:700;border-radius:5px}
+/* 飛び出す文字（看板の短冊） */
+#pops{position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:30}
+.pop{position:absolute;transform:translate(-50%,-50%);white-space:nowrap;max-width:94vw;font-family:var(--fh);font-weight:700;font-size:30px;color:var(--cream);background:var(--coral);padding:3px 16px 6px;border-radius:5px;box-shadow:inset 0 0 0 2px var(--coral),inset 0 0 0 4px var(--cream);animation:popup 1.7s ease-out forwards;text-align:center;line-height:1.2}
+.pop small{display:block;font-family:var(--fb);font-weight:700;font-size:14px}
+.pop.n{background:var(--navy);box-shadow:inset 0 0 0 2px var(--navy),inset 0 0 0 4px var(--cream)}
+.pop.o{background:var(--ochre);color:var(--deep);box-shadow:inset 0 0 0 2px var(--ochre),inset 0 0 0 4px var(--paper)}
+.pop.g{background:#8b8f95}
+.pop.big{font-size:46px}
+body.port .pop{font-size:24px;white-space:normal;width:max-content}body.port .pop.big{font-size:32px}body.port .pop small{font-size:12.5px}
+body.land .pop{font-size:32px}body.land .pop.big{font-size:50px}
+@keyframes popup{0%{transform:translate(-50%,-30%) scale(.4);opacity:0}12%{transform:translate(-50%,-50%) scale(1.1);opacity:1}22%{transform:translate(-50%,-50%) scale(1)}80%{opacity:1}100%{transform:translate(-50%,-140%);opacity:0}}
+@media (prefers-reduced-motion:reduce){.pop{animation:popfade 2s forwards}@keyframes popfade{0%,78%{opacity:1}100%{opacity:0}}.pst.next{animation:none}}
+</style></head><body class="port">
 <div id="app">
+  <canvas id="cv"></canvas>
 
-<section id="title">
-  <svg viewBox="0 0 320 170" style="width:min(88vw,400px)" aria-hidden="true">
-    <defs><linearGradient id="sk" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1e5aa0"/><stop offset="1" stop-color="#9fd0f2"/></linearGradient></defs>
-    <path d="M20 20 Q20 6 40 6 H280 Q300 6 300 20 V120 Q300 150 262 150 Q222 150 200 122 Q180 100 160 100 Q140 100 120 122 Q98 150 58 150 Q20 150 20 120Z" fill="#111820"/>
-    <path d="M32 26 Q32 16 46 16 H274 Q288 16 288 26 V116 Q288 140 258 140 Q226 140 206 114 Q184 90 160 90 Q136 90 114 114 Q94 140 62 140 Q32 140 32 116Z" fill="url(#sk)"/>
-    <g fill="#fff"><ellipse cx="80" cy="112" rx="40" ry="12"/><ellipse cx="120" cy="118" rx="36" ry="10"/><ellipse cx="220" cy="114" rx="44" ry="12"/><ellipse cx="260" cy="120" rx="30" ry="9"/></g>
-    <g transform="translate(150 48)"><ellipse cx="10" cy="10" rx="7" ry="11" fill="#f28c28" stroke="#0f2340" stroke-width="2"/><path d="M3 4 L-12 -6 M17 4 L32 -6 M5 19 L-2 34 M15 19 L22 34" stroke="#0f2340" stroke-width="4" stroke-linecap="round"/></g>
-    <path d="M60 30 q16 -10 30 0 q14 10 30 0" stroke="#e2453c" stroke-width="5" fill="none" stroke-linecap="round" opacity=".85"/>
-    <rect x="0" y="54" width="22" height="30" rx="6" fill="#f28c28"/><rect x="298" y="54" width="22" height="30" rx="6" fill="#f28c28"/>
-  </svg>
-  <div class="tiny disp" style="color:var(--sky)">中2理科 気象とその変化 第6回</div>
-  <h1 class="disp">気圧計スカイダイブ</h1>
-  <div class="sub">～ 高さと大気圧 ～</div>
-  <div class="lead card">高さのメーターは こわれている。たよりは <b>腕の気圧計</b> だけ。<br>指定の高さに来たと思ったら <b>💨 煙</b> で目印を残そう。前回の自分（ゴースト）と いっしょに飛ぶよ。</div>
-  <div id="nameRow"><label for="nameIn">なまえ</label><input id="nameIn" maxlength="20" placeholder="（なくてもOK）" autocomplete="off"></div>
-  <div class="row">
-    <button class="btn" id="bStart">🪂 はじめる</button>
-    <button class="btn blue hidden" id="bCont">⏩ つづきから</button>
-    <button class="btn sub zk hidden" id="bBook1">📖 図鑑</button>
-    <button class="btn sub" id="bSnd1">🔊 音：オン</button>
-  </div>
-</section>
-
-<section id="game" class="hidden">
-  <div id="hud"><span class="pill" id="hNo">ジャンプ 1/8</span><span class="pill" id="hTime">⏱ 0:00</span><span class="pill" id="hHit">🎯 0</span><span id="hZk"></span></div>
-  <div id="mission" class="card"><button class="iconbtn" id="bSnd2" aria-label="音">🔊</button><div class="rn" id="mRn"></div><div class="nm" id="mNm"></div><div class="ds" id="mDs"></div><div id="mMk"></div></div>
-  <div id="view"><canvas id="cv"></canvas><div id="altBox">高さ ????m</div><div id="say"></div></div>
-  <div id="instr">
-    <div id="baro" class="card">
-      <svg viewBox="0 0 200 118"><path d="M20 108 A80 80 0 1 1 180 108" fill="#f2f8fd" stroke="#0f2340" stroke-width="5"/><g id="ticks"></g><g id="ndl" style="transform-origin:100px 100px"><path d="M100 100 L96 96 L100 30 L104 96Z" fill="#e2453c" stroke="#0f2340" stroke-width="2"/></g><circle cx="100" cy="100" r="8" fill="#f28c28" stroke="#0f2340" stroke-width="3"/></svg>
-      <div class="dig"><span id="bVal">1013</span> <small>hPa</small></div><div class="tiny">うでの気圧計</div>
-    </div>
-    <div id="ctrl">
-      <button class="btn" id="bSmoke">💨 煙を出す</button>
-      <button class="btn" id="bBrake">🪂 ブレーキ<br><small>おしている間 ゆっくり</small></button>
-      <button class="btn blue" id="bGo">▶ ジャンプ！</button>
+  <div id="title" class="scr">
+    <div class="logo"><div class="l0">中2理科　気象とその変化　第6回</div><div class="l1">気圧計スカイダイブ</div><div class="l2">～高さと大気圧～</div></div>
+    <div class="goal"><span class="hd">7つの予想カプセルを封印するまで、着地できない。</span>高さの見えない空で、たよりは腕の気圧計だけ。</div>
+    <div class="box pe">
+      <div class="name" id="nameRow"><b>なまえ</b><input id="nameIn" maxlength="16" placeholder="（空でも遊べる）" autocomplete="off"></div>
+      <button class="tk" id="bStart">はじめる</button>
+      <button class="tk n hidden" id="bCont">つづきから</button>
+      <div class="row" style="margin-top:0"><button class="tk c s zk" id="bBook1">📖 図鑑</button><button class="tk c s" id="bNote1">観測ノート</button></div>
     </div>
   </div>
-  <div id="panel" class="card hidden"></div>
-  <div id="note" class="card"><h3>📒 観測ノート（高さと気圧）</h3><div id="noteGrid"></div><div id="noteGraph"></div><div class="tiny" id="noteTip"></div></div>
-</section>
 
-<section id="pred" class="hidden">
-  <div class="panel card">
-    <h2 class="disp">確かめたい予想</h2>
-    <p>携帯気圧計を持って、校外学習や学校の階段で <b>本物の気圧</b> を測るとしたら？ 予想を1つ選び、理由も選ぼう。</p>
-    <div class="tiny" style="font-weight:800;margin-top:8px">予想</div><div class="qch" id="predA"></div>
-    <div class="tiny" style="font-weight:800;margin-top:10px">そう考える理由</div><div class="qch" id="predB"></div>
-    <input id="predFree" maxlength="60" placeholder="（自分のことばで書き足してもよい）">
-    <div class="col"><button class="btn" id="bPred" disabled>この予想で決める</button></div>
+  <div id="map" class="scr hidden">
+    <div class="head"><span>空の旅　8枚のポスター</span><span id="mapInfo"></span><span class="jar" id="mapJar"></span></div>
+    <div id="posters" class="pe"></div>
+    <div class="bot pe">
+      <button class="tk" id="bNext">つぎの便へ</button>
+      <button class="tk c s" id="bNote2">観測ノート</button>
+      <button class="tk o s zk" id="bGacha">ガチャ</button>
+      <button class="tk c s zk" id="bBook2">📖 図鑑</button>
+      <button class="tk n s hidden" id="bSeal">カプセルを封印</button>
+      <button class="tk n s hidden" id="bTest">確認テスト</button>
+    </div>
   </div>
-</section>
 
-<section id="clear" class="hidden">
-  <div class="panel card">
-    <h2 class="disp">着地成功！</h2>
-    <p>気圧計の値は、<b>高いところほど小さく</b>、下りるほど大きくなった。そして同じ高さでも、<b>日によって（天気で）値がずれる</b>。</p>
-    <div class="recs" id="recs"></div>
-    <div class="col"><button class="btn" id="bTest">📝 確認テストへ（10問）</button><button class="btn sub zk hidden" id="bBook2">📖 図鑑</button></div>
+  <div id="play" class="scr hidden">
+    <div id="hud"><div class="dv"><small id="hDvS">第1便</small><b id="hDv">はじめての空</b></div><div class="wx" id="hWxBox"><small><span class="lg">今日の</span>地上の気圧</small><b id="hWx">1013hPa</b></div><div><small>カプセル</small><b id="hCap">1/7</b></div><div class="kk"><small>かけら</small><b id="hK">0</b></div><div class="tm hidden" id="hTmBox"><small>のこり</small><b id="hTm">4:30</b></div></div>
+    <button class="ctl" id="bSmoke">けむり<small>目印を残す</small></button>
+    <button class="ctl" id="bFast">▼ 急降下</button>
+    <div class="ctl hidden" id="dialCtl"><div class="rd" id="dRd">予想<b>0</b></div><button class="p" data-d="10">＋10</button><button class="p" data-d="1">＋1</button><button data-d="-10">−10</button><button data-d="-1">−1</button></div>
+    <div id="slip" class="hidden"></div>
   </div>
-</section>
-<section id="test" class="hidden"><div class="panel card" id="tbox"></div></section>
-<section id="result" class="hidden"><div class="panel card" id="rbox"></div></section>
+
+  <div id="ov" class="scr hidden pe"><div class="bill" id="ovBox"></div></div>
+  <div id="test" class="scr hidden"><div id="tbox"></div></div>
+  <div id="pops"></div>
+  <button id="bBack" class="hidden" aria-label="もどる"><i></i>もどる</button>
+  <button id="bNote" class="hidden">ノート</button>
+  <button id="bSnd" aria-label="音">音</button>
 </div>
-
 <script>/*@SUBMIT_CARD_BEGIN*/
 /* ==========================================================
    提出カード（全ゲーム共通） v2
@@ -386,7 +447,7 @@ body{background:linear-gradient(#cfe6f7,#f6f9fc 380px);overflow-x:hidden;user-se
   window.Quiz=Quiz;
 })();
 
-window.QUIZ={"v": 1, "grade": "chu2", "unit": "kisho", "game": "kisho-kiatsu-dive", "koma": ["chu2-kisho-06"], "testCount": 10, "questions": [{"id": "chu2-kisho-kiatsu-dive-q001", "koma": "chu2-kisho-06", "t": "choice", "q": "同じ日・同じ時刻に、4つの地点で気圧を測った（表）。いちばん標高が高いと考えられる地点は？", "choices": ["C（795hPa）", "B（1004hPa）", "A（902hPa）", "D（951hPa）"], "fig": "\u003csvg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 300 120\" font-size=\"12\">\u003cg font-weight=\"700\">\u003crect x=\"5\" y=\"5\" width=\"290\" height=\"22\" fill=\"#dbe7f2\"/>\u003ctext x=\"15\" y=\"21\">地点\u003c/text>\u003ctext x=\"80\" y=\"21\">A\u003c/text>\u003ctext x=\"130\" y=\"21\">B\u003c/text>\u003ctext x=\"180\" y=\"21\">C\u003c/text>\u003ctext x=\"230\" y=\"21\">D\u003c/text>\u003c/g>\u003ctext x=\"15\" y=\"48\">気圧\u003c/text>\u003ctext x=\"68\" y=\"48\">902hPa\u003c/text>\u003ctext x=\"118\" y=\"48\">1004hPa\u003c/text>\u003ctext x=\"168\" y=\"48\">795hPa\u003c/text>\u003ctext x=\"218\" y=\"48\">951hPa\u003c/text>\u003ctext x=\"15\" y=\"75\" font-size=\"10\">同じ日・同じ時刻に測定\u003c/text>\u003c/svg>", "ex": "高いところほど上にある空気が少なく、気圧は小さい。いちばん値が小さいCがいちばん高い。", "kind": "graph", "level": 1}, {"id": "chu2-kisho-kiatsu-dive-q002", "koma": "chu2-kisho-06", "t": "choice", "q": "高いところほど気圧が小さくなるのは、なぜか。", "choices": ["高いところほど、その上にある空気の量が少ないから", "高いところほど、太陽に近くて暖かいから", "高いところほど、風が強いから", "高いところほど、空気が重くなるから"], "ex": "気圧は上にある空気の重さによる。上にある空気が少ないほど小さい。", "kind": "judge", "level": 1, "fig": null}, {"id": "chu2-kisho-kiatsu-dive-q003", "koma": "chu2-kisho-06", "t": "choice", "q": "高さと気圧の関係を表したグラフとして、もっとも適切なものは？（たて軸が高さ、横軸が気圧）", "choices": ["ウ（高くなるほど気圧が小さくなる）", "ア（高さに比例して気圧が大きくなる）", "イ（高くなるほど気圧が大きくなる）", "エ（高さによらず気圧は同じ）"], "fig": "\u003csvg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 340 130\" font-size=\"10\">\u003cg transform=\"translate(0 0)\">\u003cpath d=\"M10 10 V112 H100\" fill=\"none\" stroke=\"#0f2340\" stroke-width=\"1.5\"/>\u003cpath d=\"M12 105 L98 22\" fill=\"none\" stroke=\"#e2453c\" stroke-width=\"3\"/>\u003ctext x=\"50\" y=\"126\" text-anchor=\"middle\" font-size=\"12\">ア\u003c/text>\u003ctext x=\"12\" y=\"8\">高さ↑\u003c/text>\u003ctext x=\"66\" y=\"108\">気圧→\u003c/text>\u003c/g>\u003cg transform=\"translate(84 0)\">\u003cpath d=\"M10 10 V112 H100\" fill=\"none\" stroke=\"#0f2340\" stroke-width=\"1.5\"/>\u003cpath d=\"M12 105 Q70 100 98 20\" fill=\"none\" stroke=\"#e2453c\" stroke-width=\"3\"/>\u003ctext x=\"50\" y=\"126\" text-anchor=\"middle\" font-size=\"12\">イ\u003c/text>\u003ctext x=\"12\" y=\"8\">高さ↑\u003c/text>\u003ctext x=\"66\" y=\"108\">気圧→\u003c/text>\u003c/g>\u003cg transform=\"translate(168 0)\">\u003cpath d=\"M10 10 V112 H100\" fill=\"none\" stroke=\"#0f2340\" stroke-width=\"1.5\"/>\u003cpath d=\"M98 108 Q25 100 14 18\" fill=\"none\" stroke=\"#e2453c\" stroke-width=\"3\"/>\u003ctext x=\"50\" y=\"126\" text-anchor=\"middle\" font-size=\"12\">ウ\u003c/text>\u003ctext x=\"12\" y=\"8\">高さ↑\u003c/text>\u003ctext x=\"66\" y=\"108\">気圧→\u003c/text>\u003c/g>\u003cg transform=\"translate(252 0)\">\u003cpath d=\"M10 10 V112 H100\" fill=\"none\" stroke=\"#0f2340\" stroke-width=\"1.5\"/>\u003cpath d=\"M12 62 L98 62\" fill=\"none\" stroke=\"#e2453c\" stroke-width=\"3\"/>\u003ctext x=\"50\" y=\"126\" text-anchor=\"middle\" font-size=\"12\">エ\u003c/text>\u003ctext x=\"12\" y=\"8\">高さ↑\u003c/text>\u003ctext x=\"66\" y=\"108\">気圧→\u003c/text>\u003c/g>\u003c/svg>", "ex": "高いほど上にある空気が少なく、気圧は小さい（地上に近いほど減り方が大きい）。", "kind": "graph", "level": 2}, {"id": "chu2-kisho-kiatsu-dive-q004", "koma": "chu2-kisho-06", "t": "choice", "q": "同じ学校で3日間、気圧を測ると、グラフのように少しずつ下がった。学校の標高は変わっていない。考えられることは？", "choices": ["天気（大気のようす）が変わり、同じ地点でも気圧が変化した", "学校が少しずつ高くなった", "気圧計は時間がたつと必ず小さい値になる", "測る人がちがうと、必ず値が下がる"], "fig": "\u003csvg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 300 130\" font-size=\"10\">\u003cpath d=\"M30 10 V110 H290\" fill=\"none\" stroke=\"#0f2340\"/>\u003ctext x=\"2\" y=\"20\">1015\u003c/text>\u003ctext x=\"2\" y=\"60\">1005\u003c/text>\u003ctext x=\"2\" y=\"100\">995\u003c/text>\u003cpath d=\"M30 26 L70 30 L110 40 L150 56 L190 76 L230 92 L270 100\" fill=\"none\" stroke=\"#2f6fd6\" stroke-width=\"3\"/>\u003ctext x=\"40\" y=\"124\">1日目朝\u003c/text>\u003ctext x=\"140\" y=\"124\">2日目\u003c/text>\u003ctext x=\"240\" y=\"124\">3日目\u003c/text>\u003ctext x=\"150\" y=\"20\">同じ学校で測った気圧\u003c/text>\u003c/svg>", "ex": "同じ地点でも、天気の変化にともなって気圧は時間とともに変わる。", "kind": "graph", "level": 2}, {"id": "chu2-kisho-kiatsu-dive-q005", "koma": "chu2-kisho-06", "t": "choice", "q": "携帯気圧計を持ってエレベーターで1階から10階へ上がった。気圧計の値はどうなる？", "choices": ["小さくなる", "大きくなる", "変わらない", "上がると大きく、止まると元にもどる"], "ex": "高いところほど上の空気が少ないので、気圧は小さくなる。", "kind": "judge", "level": 1, "fig": null}, {"id": "chu2-kisho-kiatsu-dive-q006", "koma": "chu2-kisho-06", "t": "choice", "q": "ふもとで買ったお菓子の袋を持って山に登ると、山頂で袋がふくらんでいた。正しい説明は？", "choices": ["山頂ではまわりの気圧が小さく、袋の中の空気が押し広げる力のほうが大きくなったから", "山頂ではまわりの気圧が大きくなったから", "山頂の空気が袋の中に入りこんだから", "山頂では袋が温められたから"], "ex": "まわりの気圧が小さくなると、袋の中の空気の押しが勝ち、ふくらむ。", "kind": "judge", "level": 2, "fig": null}, {"id": "chu2-kisho-kiatsu-dive-q007", "koma": "chu2-kisho-06", "t": "choice", "q": "山頂で飲みきったペットボトルのふたを閉め、そのまま ふもとへ下りた。ボトルはどうなる？", "choices": ["へこむ", "ふくらむ", "変わらない", "ふたが外れる"], "ex": "ふもとはまわりの気圧が大きいので、中の空気（山頂の空気）より外からの押しが強くなり、へこむ。", "kind": "judge", "level": 2, "fig": null}, {"id": "chu2-kisho-kiatsu-dive-q008", "koma": "chu2-kisho-06", "t": "num", "q": "地上付近では、高さが10m上がるごとに気圧は約1hPa小さくなる。地上で1010hPaのとき、高さ100mのビルの屋上では約何hPaか。", "ans": 1000, "unit": "hPa", "tol": 1, "ex": "100mで約10hPa小さくなるので、1010−10＝1000hPa。", "kind": "calc", "level": 2, "fig": null}, {"id": "chu2-kisho-kiatsu-dive-q009", "koma": "chu2-kisho-06", "t": "num", "q": "高さ約1500mでの気圧は約850hPaである。海面の気圧を1013hPaとすると、その差は何hPaか。", "ans": 163, "unit": "hPa", "tol": 1, "ex": "1013−850＝163hPa。高くなるほど気圧は小さくなる。", "kind": "calc", "level": 1, "fig": null}, {"id": "chu2-kisho-kiatsu-dive-q010", "koma": "chu2-kisho-06", "t": "choice", "q": "上空約5500mの気圧は約500hPaである。海面（約1013hPa）と比べると、およそどれくらい？", "choices": ["約半分", "約2倍", "ほぼ同じ", "約10分の1"], "ex": "5500mでは上にある空気が海面の約半分になり、気圧も約半分になる。", "kind": "judge", "level": 2, "fig": null}, {"id": "chu2-kisho-kiatsu-dive-q011", "koma": "chu2-kisho-06", "t": "choice", "q": "携帯気圧計で「高さによる気圧のちがい」を調べたい。よい方法はどれ？", "choices": ["高さのちがう地点を、同じ日のできるだけ短い時間のうちに続けて測る", "1日に1地点ずつ、何日もかけて測る", "1つの地点だけで、何回も測る", "地点ごとに別の気圧計を使い、別の日に測る"], "ex": "気圧は天気で時間とともに変わる。高さのちがいだけを比べるには、時間をあけずに測る。", "kind": "method", "level": 3, "fig": null}, {"id": "chu2-kisho-kiatsu-dive-q012", "koma": "chu2-kisho-06", "t": "order", "q": "次の場所を、気圧が大きい順にならべよう（同じ日・同じ時刻とする）。", "items": ["海岸（標高0m）", "町（標高500m）", "山小屋（標高2000m）", "山頂（標高3000m）"], "ex": "標高が低いほど上にある空気が多く、気圧が大きい。", "kind": "judge", "level": 1, "fig": null}, {"id": "chu2-kisho-kiatsu-dive-q013", "koma": "chu2-kisho-06", "t": "choice", "q": "ふだん私たちの体は大気圧に押されているのに、つぶれない。その理由として正しいものは？", "choices": ["体の中からも同じくらいの大きさで押し返しているから", "大気圧は地上では0だから", "大気圧は上からしか働かないから", "体が空気より軽いから"], "ex": "大気圧はあらゆる向きから働き、体の中からも押し返すので、差し引きで つぶれない。", "kind": "judge", "level": 2, "fig": null}, {"id": "chu2-kisho-kiatsu-dive-q014", "koma": "chu2-kisho-06", "t": "choice", "q": "登山口で高さを合わせた高度計（気圧から高さを出すしくみ）が、山頂でいつもより高い値を示した。山頂の本当の高さは変わらない。何が起きたと考えられる？", "choices": ["天気が変わり、気圧が下がってきた", "気圧が上がってきた", "山が高くなった", "高度計の電池が増えた"], "ex": "高度計は気圧が小さいほど高いと表示する。気圧が下がると、同じ場所でも高く表示される。", "kind": "judge", "level": 3, "fig": null}]};
+window.QUIZ={"v": 1, "grade": "chu2", "unit": "kisho", "game": "kisho-kiatsu-dive", "koma": ["chu2-kisho-06"], "testCount": 10, "questions": [{"id": "chu2-kisho-kiatsu-dive-q001", "koma": "chu2-kisho-06", "t": "choice", "q": "同じ日・同じ時刻に、4つの地点で気圧を測った（表）。いちばん標高が高いと考えられる地点は？", "choices": ["C（795hPa）", "B（1004hPa）", "A（902hPa）", "D（951hPa）"], "fig": "\u003csvg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 300 120\" font-size=\"12\">\u003cg font-weight=\"700\">\u003crect x=\"5\" y=\"5\" width=\"290\" height=\"22\" fill=\"#dbe7f2\"/>\u003ctext x=\"15\" y=\"21\">地点\u003c/text>\u003ctext x=\"80\" y=\"21\">A\u003c/text>\u003ctext x=\"130\" y=\"21\">B\u003c/text>\u003ctext x=\"180\" y=\"21\">C\u003c/text>\u003ctext x=\"230\" y=\"21\">D\u003c/text>\u003c/g>\u003ctext x=\"15\" y=\"48\">気圧\u003c/text>\u003ctext x=\"68\" y=\"48\">902hPa\u003c/text>\u003ctext x=\"118\" y=\"48\">1004hPa\u003c/text>\u003ctext x=\"168\" y=\"48\">795hPa\u003c/text>\u003ctext x=\"218\" y=\"48\">951hPa\u003c/text>\u003ctext x=\"15\" y=\"75\" font-size=\"10\">同じ日・同じ時刻に測定\u003c/text>\u003c/svg>", "ex": "高いところほど上にある空気が少なく、気圧は小さい。いちばん値が小さいCがいちばん高い。", "kind": "graph", "level": 1}, {"id": "chu2-kisho-kiatsu-dive-q002", "koma": "chu2-kisho-06", "t": "choice", "q": "高いところほど気圧が小さくなるのは、なぜか。", "choices": ["高いところほど、その上にある空気の量が少ないから", "高いところほど、太陽に近くて暖かいから", "高いところほど、風が強いから", "高いところほど、空気が重くなるから"], "ex": "気圧は上にある空気の重さによる。上にある空気が少ないほど小さい。", "kind": "judge", "level": 1, "fig": null}, {"id": "chu2-kisho-kiatsu-dive-q003", "koma": "chu2-kisho-06", "t": "choice", "q": "高さと気圧の関係を表したグラフとして、もっとも適切なものは？（たて軸が高さ、横軸が気圧）", "choices": ["ウ（高くなるほど気圧が小さくなる）", "ア（高さに比例して気圧が大きくなる）", "イ（高くなるほど気圧が大きくなる）", "エ（高さによらず気圧は同じ）"], "fig": "\u003csvg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 340 130\" font-size=\"10\">\u003cg transform=\"translate(0 0)\">\u003cpath d=\"M10 10 V112 H100\" fill=\"none\" stroke=\"#0f2340\" stroke-width=\"1.5\"/>\u003cpath d=\"M12 105 L98 22\" fill=\"none\" stroke=\"#e2453c\" stroke-width=\"3\"/>\u003ctext x=\"50\" y=\"126\" text-anchor=\"middle\" font-size=\"12\">ア\u003c/text>\u003ctext x=\"12\" y=\"8\">高さ↑\u003c/text>\u003ctext x=\"66\" y=\"108\">気圧→\u003c/text>\u003c/g>\u003cg transform=\"translate(84 0)\">\u003cpath d=\"M10 10 V112 H100\" fill=\"none\" stroke=\"#0f2340\" stroke-width=\"1.5\"/>\u003cpath d=\"M12 105 Q70 100 98 20\" fill=\"none\" stroke=\"#e2453c\" stroke-width=\"3\"/>\u003ctext x=\"50\" y=\"126\" text-anchor=\"middle\" font-size=\"12\">イ\u003c/text>\u003ctext x=\"12\" y=\"8\">高さ↑\u003c/text>\u003ctext x=\"66\" y=\"108\">気圧→\u003c/text>\u003c/g>\u003cg transform=\"translate(168 0)\">\u003cpath d=\"M10 10 V112 H100\" fill=\"none\" stroke=\"#0f2340\" stroke-width=\"1.5\"/>\u003cpath d=\"M98 108 Q25 100 14 18\" fill=\"none\" stroke=\"#e2453c\" stroke-width=\"3\"/>\u003ctext x=\"50\" y=\"126\" text-anchor=\"middle\" font-size=\"12\">ウ\u003c/text>\u003ctext x=\"12\" y=\"8\">高さ↑\u003c/text>\u003ctext x=\"66\" y=\"108\">気圧→\u003c/text>\u003c/g>\u003cg transform=\"translate(252 0)\">\u003cpath d=\"M10 10 V112 H100\" fill=\"none\" stroke=\"#0f2340\" stroke-width=\"1.5\"/>\u003cpath d=\"M12 62 L98 62\" fill=\"none\" stroke=\"#e2453c\" stroke-width=\"3\"/>\u003ctext x=\"50\" y=\"126\" text-anchor=\"middle\" font-size=\"12\">エ\u003c/text>\u003ctext x=\"12\" y=\"8\">高さ↑\u003c/text>\u003ctext x=\"66\" y=\"108\">気圧→\u003c/text>\u003c/g>\u003c/svg>", "ex": "高いほど上にある空気が少なく、気圧は小さい（地上に近いほど減り方が大きい）。", "kind": "graph", "level": 2}, {"id": "chu2-kisho-kiatsu-dive-q004", "koma": "chu2-kisho-06", "t": "choice", "q": "同じ学校で3日間、気圧を測ると、グラフのように少しずつ下がった。学校の標高は変わっていない。考えられることは？", "choices": ["天気（大気のようす）が変わり、同じ地点でも気圧が変化した", "学校が少しずつ高くなった", "気圧計は時間がたつと必ず小さい値になる", "測る人がちがうと、必ず値が下がる"], "fig": "\u003csvg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 300 130\" font-size=\"10\">\u003cpath d=\"M30 10 V110 H290\" fill=\"none\" stroke=\"#0f2340\"/>\u003ctext x=\"2\" y=\"20\">1015\u003c/text>\u003ctext x=\"2\" y=\"60\">1005\u003c/text>\u003ctext x=\"2\" y=\"100\">995\u003c/text>\u003cpath d=\"M30 26 L70 30 L110 40 L150 56 L190 76 L230 92 L270 100\" fill=\"none\" stroke=\"#2f6fd6\" stroke-width=\"3\"/>\u003ctext x=\"40\" y=\"124\">1日目朝\u003c/text>\u003ctext x=\"140\" y=\"124\">2日目\u003c/text>\u003ctext x=\"240\" y=\"124\">3日目\u003c/text>\u003ctext x=\"150\" y=\"20\">同じ学校で測った気圧\u003c/text>\u003c/svg>", "ex": "同じ地点でも、天気の変化にともなって気圧は時間とともに変わる。", "kind": "graph", "level": 2}, {"id": "chu2-kisho-kiatsu-dive-q005", "koma": "chu2-kisho-06", "t": "choice", "q": "携帯気圧計を持ってエレベーターで1階から10階へ上がった。気圧計の値はどうなる？", "choices": ["小さくなる", "大きくなる", "変わらない", "上がると大きく、止まると元にもどる"], "ex": "高いところほど上の空気が少ないので、気圧は小さくなる。", "kind": "judge", "level": 1, "fig": null}, {"id": "chu2-kisho-kiatsu-dive-q006", "koma": "chu2-kisho-06", "t": "choice", "q": "ふもとで買ったお菓子の袋を持って山に登ると、山頂で袋がふくらんでいた。正しい説明は？", "choices": ["山頂ではまわりの気圧が小さく、袋の中の空気が押し広げる力のほうが大きくなったから", "山頂ではまわりの気圧が大きくなったから", "山頂の空気が袋の中に入りこんだから", "山頂では袋が温められたから"], "ex": "まわりの気圧が小さくなると、袋の中の空気の押しが勝ち、ふくらむ。", "kind": "judge", "level": 2, "fig": null}, {"id": "chu2-kisho-kiatsu-dive-q007", "koma": "chu2-kisho-06", "t": "choice", "q": "山頂で飲みきったペットボトルのふたを閉め、そのまま ふもとへ下りた。ボトルはどうなる？", "choices": ["へこむ", "ふくらむ", "変わらない", "ふたが外れる"], "ex": "ふもとはまわりの気圧が大きいので、中の空気（山頂の空気）より外からの押しが強くなり、へこむ。", "kind": "judge", "level": 2, "fig": null}, {"id": "chu2-kisho-kiatsu-dive-q008", "koma": "chu2-kisho-06", "t": "num", "q": "地上付近では、高さが10m上がるごとに気圧は約1hPa小さくなる。地上で1010hPaのとき、高さ100mのビルの屋上では約何hPaか。", "ans": 1000, "unit": "hPa", "tol": 1, "ex": "100mで約10hPa小さくなるので、1010−10＝1000hPa。", "kind": "calc", "level": 2, "fig": null}, {"id": "chu2-kisho-kiatsu-dive-q009", "koma": "chu2-kisho-06", "t": "num", "q": "高さ約1500mでの気圧は約850hPaである。海面の気圧を1013hPaとすると、その差は何hPaか。", "ans": 163, "unit": "hPa", "tol": 1, "ex": "1013−850＝163hPa。高くなるほど気圧は小さくなる。", "kind": "calc", "level": 1, "fig": null}, {"id": "chu2-kisho-kiatsu-dive-q010", "koma": "chu2-kisho-06", "t": "choice", "q": "上空約5500mの気圧は約500hPaである。海面（約1013hPa）と比べると、およそどれくらい？", "choices": ["約半分", "約2倍", "ほぼ同じ", "約10分の1"], "ex": "5500mでは上にある空気が海面の約半分になり、気圧も約半分になる。", "kind": "judge", "level": 2, "fig": null}, {"id": "chu2-kisho-kiatsu-dive-q011", "koma": "chu2-kisho-06", "t": "choice", "q": "携帯気圧計で「高さによる気圧のちがい」を調べたい。よい方法はどれ？", "choices": ["高さのちがう地点を、同じ日のできるだけ短い時間のうちに続けて測る", "1日に1地点ずつ、何日もかけて測る", "1つの地点だけで、何回も測る", "地点ごとに別の気圧計を使い、別の日に測る"], "ex": "気圧は天気で時間とともに変わる。高さのちがいだけを比べるには、時間をあけずに測る。", "kind": "method", "level": 3, "fig": null}, {"id": "chu2-kisho-kiatsu-dive-q012", "koma": "chu2-kisho-06", "t": "order", "q": "次の場所を、気圧が大きい順にならべよう（同じ日・同じ時刻とする）。", "items": ["海岸（標高0m）", "町（標高500m）", "山小屋（標高2000m）", "山頂（標高3000m）"], "ex": "標高が低いほど上にある空気が多く、気圧が大きい。", "kind": "judge", "level": 1, "fig": null}, {"id": "chu2-kisho-kiatsu-dive-q013", "koma": "chu2-kisho-06", "t": "choice", "q": "ふだん私たちの体は大気圧に押されているのに、つぶれない。その理由として正しいものは？", "choices": ["体の中からも同じくらいの大きさで押し返しているから", "大気圧は地上では0だから", "大気圧は上からしか働かないから", "体が空気より軽いから"], "ex": "大気圧はあらゆる向きから働き、体の中からも押し返すので、差し引きで つぶれない。", "kind": "judge", "level": 2, "fig": null}, {"id": "chu2-kisho-kiatsu-dive-q014", "koma": "chu2-kisho-06", "t": "choice", "q": "登山口で高さを合わせた高度計（気圧から高さを出すしくみ）が、山頂でいつもより高い値を示した。山頂の本当の高さは変わらない。何が起きたと考えられる？", "choices": ["天気が変わり、気圧が下がってきた", "気圧が上がってきた", "山が高くなった", "高度計の電池が増えた"], "ex": "高度計は気圧が小さいほど高いと表示する。気圧が下がると、同じ場所でも高く表示される。", "kind": "judge", "level": 3, "fig": null}, {"id": "chu2-kisho-kiatsu-dive-q015", "koma": "chu2-kisho-06", "t": "choice", "kind": "graph", "q": "表は、高さと気圧のおよその関係である。富士山頂（標高3776m）で気圧を測ると、およそいくらになると考えられるか。", "choices": ["約640hPa", "約1013hPa", "約1300hPa", "約100hPa"], "fig": "\u003csvg viewBox=\"0 0 300 150\" xmlns=\"http://www.w3.org/2000/svg\" font-family=\"sans-serif\" font-size=\"14\">\u003crect x=\"1\" y=\"1\" width=\"298\" height=\"148\" fill=\"#fff\" stroke=\"#2C4A6E\"/>\u003cg fill=\"#2C4A6E\">\u003ctext x=\"20\" y=\"28\" font-weight=\"bold\">高さ\u003c/text>\u003ctext x=\"170\" y=\"28\" font-weight=\"bold\">気圧（同じ日）\u003c/text>\u003ctext x=\"20\" y=\"58\">0m（海面）\u003c/text>\u003ctext x=\"170\" y=\"58\">約1013hPa\u003c/text>\u003ctext x=\"20\" y=\"86\">約1500m\u003c/text>\u003ctext x=\"170\" y=\"86\">約850hPa\u003c/text>\u003ctext x=\"20\" y=\"114\">約3000m\u003c/text>\u003ctext x=\"170\" y=\"114\">約700hPa\u003c/text>\u003ctext x=\"20\" y=\"140\">3776m（富士山頂）\u003c/text>\u003ctext x=\"170\" y=\"140\">？\u003c/text>\u003c/g>\u003cline x1=\"10\" y1=\"36\" x2=\"290\" y2=\"36\" stroke=\"#2C4A6E\"/>\u003c/svg>", "ex": "高いところほど上にある空気が少なく、気圧は小さい。3000mの約700hPaよりさらに小さく、富士山頂はおよそ640hPa（夏の平均で約650hPa）。"}]};
 /*@QUIZ_END*/</script>
 <script>/*@ZUKAN_BEGIN*/
 window.ZUKAN_UPDATES={"v": 1, "updates": []};
@@ -1408,315 +1469,645 @@ window.ZUKAN_CARDS={"v": 1, "grade": "chu2", "name": "中2理科図鑑", "econom
 
 /*@ZUKAN_END*/</script>
 <script>
+(()=>{
 'use strict';
-const GID='kisho-kiatsu-dive',KOMA='chu2-kisho-06',SKEY='rika-zukan:chu2:game:'+GID+':v1';
+const GID='kisho-kiatsu-dive',KOMA='chu2-kisho-06',SKEY='rika-zukan:chu2:game:'+GID+':v1',SEAL_KEY='rika-zukan:chu2:seal:'+KOMA;
 const UNIT='中2理科　気象とその変化　第6回',GTITLE='気圧計スカイダイブ ～高さと大気圧～';
 const TEST_ONLY=window.GAME_MODE==='test';
-const RM=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const RM=!!(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches);
+const INHUB=!!window.COLLECTION_NAME||(function(){try{return window.parent!==window}catch(e){return true}})();
 const $=s=>document.querySelector(s);
-const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-const PI=Math.PI,STD=1013.25,TOL=100;
-function P(h,p0){return (p0||STD)*Math.pow(1-2.25577e-5*h,5.25588)}
-/* ===== セーブ ===== */
-function fresh(){return{v:1,r:0,started:false,name:'',sound:true,t:0,hits:0,paid:{},rule:{},ghost:{},note:{},cleared:false,pred:'',mainClearShown:false,bossTries:0}}
+const cv=$('#cv'),ctx=cv.getContext('2d');
+const C={cream:'#F3E7CF',paper:'#FBF6EA',navy:'#2C4A6E',deep:'#1F3550',coral:'#E07A5F',ochre:'#DDA94B',sage:'#86A38A',dsage:'#5E7F68',sky1:'#5F86A6',sky2:'#9CC0D0',sky3:'#CFE0DE',rust:'#B9583F',grey:'#8b8f95',shade:'#d8cbb0'};
+const FH='"Kaisei Opti","Hiragino Mincho ProN","Yu Mincho",serif',FB='"Zen Kaku Gothic New","Hiragino Sans",sans-serif';
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const cl=s=>String(s).replace(/\|/g,'');
+const clamp=(v,a,b)=>v<a?a:v>b?b:v,rnd=(a,b)=>a+Math.random()*(b-a),lerp=(a,b,t)=>a+(b-a)*t;
+function srand(seed){let s=seed>>>0||1;return()=>{s=(s*1664525+1013904223)>>>0;return s/4294967296}}
+
+/* ===== 理科の数値 ===== */
+// 国際標準大気の式（_素材.md）。p0 はその日の地上（海面）の気圧
+const PR=(h,p0)=>p0*Math.pow(1-2.25577e-5*Math.max(0,h),5.25588);
+const NORMAL=1013;
+const TOL_SMOKE=120;   // けむりの命中の幅（m）
+const TOL_PRE=10;      // 予想の輪の的中の幅（hPa）
+const LEAD=350;        // 輪の手前、何mでふたが閉まるか
+const CAPH=[0,200,400,600,800,1000,1200]; // カプセルの高さ（0mは当日に測る基準）
+
+const TAGS=[
+ {ok:'同じ気圧計で|測る',ng:['場所ごとに|別の気圧計で|測る','気圧計は|毎回とりかえる'],why:'気圧計がちがうと値のくせ（ずれ）もちがい、高さのちがいか器具のちがいか分からなくなる。'},
+ {ok:'高さを|記録する',ng:['高さは|記録しない','気圧の値だけ|書けばよい'],why:'高さを書いておかないと、高さと気圧の関係が調べられない。'},
+ {ok:'時刻を|記録する',ng:['時刻は|記録しない','測った順番は|気にしない'],why:'気圧は天気で時間とともに変わる。時刻があれば、ちがいが高さのせいか時間のせいか確かめられる。'},
+ {ok:'同じ日の|短い時間のうちに|測る',ng:['1日に1か所ずつ、|何日もかけて|測る','場所ごとに|別の日に測る'],why:'日がちがうと天気で地上の気圧もちがう。高さのちがいだけを比べるには、時間をあけずに続けて測る。'},
+ {ok:'同じ気圧計で|高さと時刻を|記録',ng:['友だちと|別々の気圧計で|比べる','気圧の値だけ|記録する'],why:'同じ器具で、高さと時刻をそろえて記録すれば、あとで正しく比べられる。'},
+ {ok:'高さと時刻を|いっしょに記録',ng:['時刻だけ|記録する','気圧計の値は|書かない'],why:'高さ・時刻・気圧の3つがそろって、はじめて比べられる。'}
+];
+// rings: [高さ, 種類(rec=記録/pre=予想), 横の位置]
+const DIVES=[
+ {nm:'はじめての空',sub:'輪をくぐって記録',H:1650,P0:NORMAL,v:30,alt:1,rings:[[1500,'rec',.62],[1000,'rec',.36],[500,'rec',.66]],smoke:[],cap:null,
+  slip:'<span class="hd">指でドラッグして左右へ</span>白い輪をくぐると、その高さの<b>気圧計の値</b>がノートに記録される。'},
+ {nm:'予想してくぐれ',sub:'気圧計にふた',H:2400,P0:NORMAL,v:28,alt:1,rings:[[2000,'pre',.6],[1250,'pre',.38]],smoke:[],cap:[200,.52],tag:0,tagH:[1100,960,820],
+  slip:'<span class="hd">赤い輪の手前で、気圧計にふた</span>ダイヤル（＋−）で「輪の高さでの値」を予想してから、くぐろう。'},
+ {nm:'けむりの目印',sub:'高度計なし',H:2850,P0:NORMAL,v:30,alt:0,rings:[[2500,'pre',.5]],smoke:[2000,1500,1000],cap:[400,.62],tag:1,tagH:[1360,1250,1140],
+  slip:'<span class="hd">高度計がない！</span>気圧計がノートの「目標の高さの値」になったところで「けむり」。'},
+ {nm:'前の自分と',sub:'ゴーストと並んで',H:3350,P0:NORMAL,v:32,alt:0,rings:[[3000,'pre',.45],[1400,'pre',.72]],smoke:[2500,2000,1000],cap:[600,.4],tag:2,tagH:[2350,2240,2130],ghost:1,
+  slip:'<span class="hd">うすい影は、前の自分</span>前回のけむり（白い点線）より、ぴったりの高さに残そう。'},
+ {nm:'低気圧の日',sub:'同じ値なのに…？',H:3150,P0:988,v:32,alt:0,rings:[[2600,'rec',.55]],smoke:[2000,1000,500],cap:[1200,.66],tag:3,tagH:[1840,1720,1600],ghost:1,wx:'low',
+  slip:'<span class="hd">低気圧が近づいている日</span>今日の地上の気圧は <b>988hPa</b>。ふつうの日（1013hPa）のノートのままで、いい？'},
+ {nm:'富士山より高く',sub:'3776mを予想',H:4150,P0:NORMAL,v:36,alt:0,rings:[[3776,'pre',.55],[3500,'pre',.35]],smoke:[3000,2000,1500],cap:[800,.55],tag:4,tagH:[2720,2580,2440],ghost:1,
+  slip:'<span class="hd">富士山頂と同じ高さ（3776m）の輪</span>ノートの値の「減り方」を先へのばして予想しよう。'},
+ {nm:'高気圧の日',sub:'地上1030hPa',H:3650,P0:1030,v:36,alt:0,rings:[[2250,'pre',.6]],smoke:[3000,1500,750],cap:[1000,.42],tag:5,tagH:[2150,2020,1890],ghost:1,wx:'high',
+  slip:'<span class="hd">高気圧におおわれた日</span>今日の地上は <b>1030hPa</b>。ふつうの日より何hPaずれている？'},
+ {nm:'三段降下',sub:'タイムアタック',boss:1,v:40,limit:270,ghost:1,legs:[{H:1650,P0:NORMAL,smoke:[1250,500]},{H:3150,P0:995,smoke:[2500,1500]},{H:4100,P0:1028,smoke:[3500,2000]}],
+  slip:'<span class="hd">3つの高さから続けて降りる</span>便ごとに地上の気圧がちがう。4分30秒以内に、6つの目印を。'}
+];
+
+/* ===== 保存 ===== */
+function fresh(){return{v:1,name:'',started:false,clr:{},stars:{},paid:{},note:[],caps:{},ghost:{},tries:{},sealed:false,seal:null,mc:false,sound:true,hits:0,shots:0,preHit:0,preN:0,boss:null,les:{}}}
 let S;try{S=Object.assign(fresh(),JSON.parse(localStorage.getItem(SKEY))||{})}catch(e){S=fresh()}
 function save(){try{localStorage.setItem(SKEY,JSON.stringify(S))}catch(e){}}
-/* ===== 音 ===== */
-let AC=null,wind=null;
-function ac(){if(!S.sound)return null;try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();if(AC.state==='suspended')AC.resume();return AC}catch(e){return null}}
-function tone(f,d,type,vol,delay){const a=ac();if(!a)return;const t=a.currentTime+(delay||0),o=a.createOscillator(),g=a.createGain();o.type=type||'sine';o.frequency.setValueAtTime(f,t);g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol||.06,t+.012);g.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(g).connect(a.destination);o.start(t);o.stop(t+d+.05)}
-function windStart(){const a=ac();if(!a||wind)return;const n=a.sampleRate*2,b=a.createBuffer(1,n,a.sampleRate),c=b.getChannelData(0);for(let i=0;i<n;i++)c[i]=Math.random()*2-1;const s=a.createBufferSource();s.buffer=b;s.loop=true;const f=a.createBiquadFilter();f.type='bandpass';f.frequency.value=500;f.Q.value=.6;const g=a.createGain();g.gain.value=0;s.connect(f).connect(g).connect(a.destination);s.start();wind={s,g,f}}
-function windSet(v){if(!wind||!AC)return;wind.g.gain.setTargetAtTime(v*.09,AC.currentTime,.2);wind.f.frequency.setTargetAtTime(300+v*600,AC.currentTime,.2)}
-function windStop(){if(!wind)return;try{wind.g.gain.setTargetAtTime(0,AC.currentTime,.1);const s=wind.s;setTimeout(()=>s.stop(),400)}catch(e){}wind=null}
-const sfx={tap:()=>tone(1200,.05,'square',.03),tick:()=>tone(1800,.03,'square',.018),puff:()=>{tone(300,.25,'triangle',.05);tone(200,.3,'sine',.05,.05)},
- ok:()=>[659,784,988,1319].forEach((f,i)=>tone(f,.4,'triangle',.06,i*.06)),big:()=>[523,659,784,1047,1319,1568].forEach((f,i)=>tone(f,.55,'triangle',.06,i*.08)),
- ng:()=>{tone(260,.25,'sawtooth',.03);tone(220,.3,'sawtooth',.03,.1)},coin:()=>{tone(1568,.1,'square',.035);tone(2093,.18,'square',.035,.07)},
- chute:()=>{tone(180,.4,'sawtooth',.04);tone(120,.5,'sine',.06,.05)},land:()=>{tone(150,.2,'sine',.08);tone(600,.15,'triangle',.04,.12)},stamp:()=>{tone(900,.06,'square',.04);tone(600,.1,'square',.04,.05)}};
-function setSnd(){const t=S.sound?'🔊':'🔇';$('#bSnd1').textContent=t+' 音：'+(S.sound?'オン':'オフ');$('#bSnd2').textContent=t}
-/* ===== 演出 ===== */
-const fx=$('#fx'),fctx=fx.getContext('2d');let PP=[];const DPR=Math.min(2,window.devicePixelRatio||1);
-function fxResize(){fx.width=innerWidth*DPR;fx.height=innerHeight*DPR;fctx.setTransform(DPR,0,0,DPR,0,0)}addEventListener('resize',fxResize);fxResize();
-function burst(x,y,cols,n,sp){n=RM?Math.min(6,n):n;for(let i=0;i<n;i++){const a=Math.random()*PI*2,s=(sp||5)*(.3+Math.random());PP.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s-2,life:1,dec:.015+Math.random()*.02,sz:3+Math.random()*5,c:cols[i%cols.length],r:Math.random()*6})}}
-function pop(x,y,t,c){const d=document.createElement('div');d.className='pop';d.style.left=x+'px';d.style.top=y+'px';if(c)d.style.color=c;d.textContent=t;document.body.appendChild(d);setTimeout(()=>d.remove(),1200)}
-function banner(t){const b=$('#banner');b.textContent=t;b.classList.remove('on');void b.offsetWidth;b.classList.add('on')}
-function say(t){const b=$('#say');b.textContent=t;b.classList.remove('on');void b.offsetWidth;b.classList.add('on')}
-(function fxLoop(){fctx.clearRect(0,0,innerWidth,innerHeight);PP=PP.filter(p=>p.life>0);for(const p of PP){p.x+=p.vx;p.y+=p.vy;p.vy+=.18;p.life-=p.dec;p.r+=.1;fctx.globalAlpha=Math.max(0,p.life);fctx.fillStyle=p.c;fctx.save();fctx.translate(p.x,p.y);fctx.rotate(p.r);fctx.beginPath();for(let k=0;k<10;k++){const rr=k%2?p.sz*.45:p.sz,aa=k*PI/5;fctx.lineTo(Math.cos(aa)*rr,Math.sin(aa)*rr)}fctx.fill();fctx.restore()}fctx.globalAlpha=1;requestAnimationFrame(fxLoop)})();
-const COL=['#f5c518','#fff','#f28c28','#e2453c','#7fbbe8'];
-function earn(n,why,x,y){try{return window.Zukan&&Zukan.earn?Zukan.earn(n,why,{koma:KOMA,x,y})||0:0}catch(e){return 0}}
-/* ===== ジャンプの組み立て ===== */
-const SMK=['#e2453c','#f5c518','#3aa35b','#2f6fd6','#f28c28'],SMKN=['赤','黄','緑','青','だいだい'];
-const R=[
- {id:'r0',nm:'はじめてのジャンプ',jumps:[{start:4000,marks:[]}],p0:STD,intro:true,ds:'高さのメーターは こわれている。4000mから下りながら、うでの気圧計の値を見ていよう。'},
- {id:'r1',nm:'観測ジャンプ',jumps:[{start:4000,marks:[]}],p0:STD,showAlt:true,log:true,ds:'今回だけ高さが見える。500mごとに、高さと気圧が ノートに記録されるよ。'},
- {id:'r2',nm:'目印ひとつ',jumps:[{start:3000,marks:[2000]}],p0:STD,ds:'ノートを見て、2000mに来たと思ったら 煙！（高さは見えない）'},
- {id:'r3',nm:'目印ふたつ',jumps:[{start:4000,marks:[3000,1000]}],p0:STD,ds:'3000mと1000mに目印。高いほうから順に煙を出そう。'},
- {id:'r4',nm:'目印みっつ',jumps:[{start:4000,marks:[3500,2000,500]}],p0:STD,ds:'3つの高さ。ブレーキを使って、ゆっくり値を読んでもいい。'},
- {id:'r5',nm:'くもり空の日',jumps:[{start:4000,marks:[3000,1500]}],p0:993,climax:true,ds:'今日は くもり空。やることは同じ。3000mと1500mに目印を残そう。'},
- {id:'r6',nm:'よく晴れた日',jumps:[{start:3500,marks:[2500,1000]}],p0:1028,showP0:true,ds:'今日の地上の気圧は 1028hPa（ノートを取った日は1013hPa）。ずれを考えて煙を出そう。'},
- {id:'boss',nm:'BOSS：3連続ジャンプ',jumps:[{start:4000,marks:[3000,2000]},{start:3000,marks:[1500]},{start:2000,marks:[1000,500]}],p0:998,showP0:true,boss:true,time:210,ds:'今日の地上は 998hPa。3回続けて飛ぶ。合計210秒以内に、5つの目印を ぜんぶ正しい高さへ！'}
-];
-/* ===== 状態 ===== */
-const cv=$('#cv'),ctx=cv.getContext('2d');
-let W=360,H=260,rd=null,J=0,alt=4000,vel=0,brake=false,ff=false,phase='brief',smokes=[],trace=[],tJump=0,lastT=0,chute=false,clouds=[],streaks=[],fields=[],bossLeft=0,results=[],lastTick=0,logged={};
-function resize(){W=cv.parentElement.clientWidth;H=Math.round(Math.min(W*.74,innerHeight*.4,380));cv.width=W*DPR;cv.height=H*DPR;cv.style.height=H+'px';ctx.setTransform(DPR,0,0,DPR,0,0)}
-addEventListener('resize',()=>{if(!$('#game').classList.contains('hidden'))resize()});
-function rnd(a,b){return a+Math.random()*(b-a)}
-let cloudTop=2050;function makeScenery(){clouds=[];cloudTop=Math.round(rnd(1300,2700));for(let i=0;i<26;i++)clouds.push({x:rnd(-.1,1.1),a:rnd(cloudTop-450,cloudTop),w:rnd(.18,.4),s:rnd(.4,1)});for(let i=0;i<10;i++)clouds.push({x:rnd(-.1,1.1),a:rnd(2800,3600),w:rnd(.1,.22),s:rnd(.3,.7),thin:true});
- streaks=[];for(let i=0;i<24;i++)streaks.push({x:Math.random(),y:Math.random(),l:rnd(.04,.12)});
- fields=[];for(let i=0;i<60;i++)fields.push({x:rnd(-1.2,1.2),y:rnd(0,1),w:rnd(.08,.3),h:rnd(.02,.08),c:['#6bb35a','#9ccc5e','#d8c768','#4f9a4a','#b7d77a'][i%5]})}
-/* 高さ→画面のy（近いものほど速く動く） */
-function yOf(a){const d=alt-a,s=d>=0?1:-1;return H*.45+s*H*.62*(1-Math.exp(-Math.abs(d)/1400))}
-function curJump(){return rd.jumps[J]}
-function reading(){return Math.round(P(alt,rd.p0))}
-/* ===== 画面 ===== */
-function drawMission(){
- const n=S.r;$('#hNo').textContent=rd.boss?'BOSS':'ジャンプ '+(n+1)+'/8';$('#hHit').textContent='🎯 '+S.hits;
- $('#mRn').textContent=rd.boss?'BOSS':'ジャンプ '+(n+1)+(rd.boss?'':' / 8');$('#mNm').textContent=rd.nm+(rd.boss?'（'+(J+1)+'/3回目）':'');$('#mDs').textContent=rd.ds;
- const jm=curJump();let h='';jm.marks.forEach((m,i)=>{h+='<span class="mk'+(smokes[i]?' done':'')+'"><i style="background:'+SMK[i]+'"></i>'+m+'m</span>'});
- if(rd.boss)h+='<span class="mk">⏳ のこり '+Math.max(0,Math.ceil(bossLeft))+'秒</span>';
- $('#mMk').innerHTML=h;
-}
-function drawNote(flashH){
- const g=$('#noteGrid');const hs=[4000,3500,3000,2500,2000,1500,1000,500,0];
- if(!Object.keys(S.note).length){g.innerHTML='<div style="grid-column:1/-1;justify-content:center">（観測ジャンプで記録される）</div>';$('#noteTip').textContent='';return}
- g.innerHTML=hs.map(h=>S.note[h]!=null?'<div class="'+(flashH===h?'new':'')+'">'+h+'m<b>'+S.note[h]+'</b></div>':'<div style="opacity:.35">'+h+'m<b>…</b></div>').join('');
- $('#noteGraph').innerHTML=noteGraph();
- $('#noteTip').textContent=rd&&rd.showP0?'ノートは地上が1013hPaの日の記録。今日は地上が'+rd.p0+'hPa。':'';
-}
-function noteGraph(){const hs=[0,500,1000,1500,2000,2500,3000,3500,4000].filter(h=>S.note[h]!=null);if(hs.length<4)return'';
- const X=p=>40+(p-550)/(1050-550)*250,Y=h=>112-h/4000*100;let g='<svg viewBox="0 0 300 142" style="width:100%;max-width:420px;display:block;margin:6px auto 0" aria-label="高さと気圧のグラフ"><rect x="40" y="8" width="250" height="104" fill="#f2f8fd"/>';
- for(let h=0;h<=4000;h+=1000)g+='<line x1="40" x2="290" y1="'+Y(h)+'" y2="'+Y(h)+'" stroke="#c9d9e8"/><text x="36" y="'+(Y(h)+4)+'" font-size="9" text-anchor="end" fill="#0f2340">'+h+'m</text>';
- for(let p=600;p<=1000;p+=100)g+='<line y1="8" y2="112" x1="'+X(p)+'" x2="'+X(p)+'" stroke="#c9d9e8"/><text x="'+X(p)+'" y="124" font-size="9" text-anchor="middle" fill="#0f2340">'+p+'</text>';
- g+='<polyline fill="none" stroke="#1e5aa0" stroke-width="2.5" points="'+hs.map(h=>X(S.note[h])+','+Y(h)).join(' ')+'"/>'+hs.map(h=>'<circle cx="'+X(S.note[h])+'" cy="'+Y(h)+'" r="3.5" fill="#f28c28" stroke="#0f2340"/>').join('');
- if(rd&&rd.showP0){const d=rd.p0-STD;g+='<polyline fill="none" stroke="#e2453c" stroke-dasharray="4 3" stroke-width="2" points="'+hs.map(h=>X(P(h,rd.p0))+','+Y(h)).join(' ')+'"/><text x="286" y="20" font-size="9" text-anchor="end" fill="#e2453c">点線＝今日（地上'+rd.p0+'hPa）</text>'}
- return g+'<text x="165" y="139" font-size="9" text-anchor="middle" fill="#0f2340">気圧(hPa) → 高いところほど左（小さい）</text></svg>'}
-function dayFig(){return '<svg viewBox="0 0 300 96" style="width:100%;max-width:400px;display:block;margin:6px auto;background:#f2f8fd;border-radius:10px">'+
- [[80,1013,'ノートの日（晴れ）'],[220,993,'今日（くもり）']].map(([x,v,t])=>{const a=(-120+240*(v-500)/550)*PI/180;return '<circle cx="'+x+'" cy="52" r="30" fill="#fff" stroke="#0f2340" stroke-width="3"/><line x1="'+x+'" y1="52" x2="'+(x+Math.sin(a)*24).toFixed(1)+'" y2="'+(52-Math.cos(a)*24).toFixed(1)+'" stroke="#e2453c" stroke-width="3"/><text x="'+x+'" y="14" font-size="10" text-anchor="middle" font-weight="700">'+t+'</text><text x="'+x+'" y="72" font-size="11" text-anchor="middle" font-weight="700">'+v+'</text>'}).join('')+
- '<text x="150" y="92" font-size="9" text-anchor="middle">同じ地上（標高0m）なのに、日によって気圧がちがう</text></svg>'}
-function airFig(){ // 上にある空気の量（空気の柱）
- let d='';for(let i=0;i<150;i++){const y=12+Math.pow(Math.random(),.55)*150,x=8+Math.random()*284;d+='<circle cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="1.6" fill="#1e5aa0" opacity=".55"/>'}
- return '<svg viewBox="0 0 300 175" style="width:100%;max-width:400px;display:block;margin:6px auto;background:#eef6fd;border-radius:10px" aria-label="上にある空気の量">'+d+
- '<path d="M0 170 L70 150 L150 60 L200 90 L300 165 L300 175 L0 175Z" fill="#8a9a6a" stroke="#0f2340" stroke-width="2"/>'+
- '<rect x="138" y="4" width="24" height="56" fill="#f28c28" opacity=".28" stroke="#f28c28"/><rect x="58" y="4" width="24" height="146" fill="#f28c28" opacity=".28" stroke="#f28c28"/>'+
- '<circle cx="150" cy="60" r="5" fill="#e2453c" stroke="#0f2340"/><circle cx="70" cy="150" r="5" fill="#e2453c" stroke="#0f2340"/>'+
- '<text x="170" y="40" font-size="10.5" font-weight="700" fill="#0f2340">3000m 約700hPa</text><text x="170" y="53" font-size="10" fill="#0f2340">上の空気が少ない</text><text x="88" y="128" font-size="10.5" font-weight="700" fill="#0f2340">1000m 約900hPa</text><text x="88" y="141" font-size="10" fill="#0f2340">上の空気が多い</text>'+
- '<text x="150" y="172" font-size="8.5" text-anchor="middle" fill="#fff">点＝空気の粒（上ほどまばら）／柱＝その地点の上にある空気</text></svg>'}
-function aneroidFig(){return '<svg viewBox="0 0 300 122" style="width:100%;max-width:400px;display:block;margin:6px auto;background:#f2f8fd;border-radius:10px" aria-label="アネロイド気圧計のしくみ">'+
- '<g transform="translate(20 20)"><path d="M0 40 Q10 30 20 40 Q30 30 40 40 Q50 30 60 40 Q70 30 80 40 L80 50 Q70 60 60 50 Q50 60 40 50 Q30 60 20 50 Q10 60 0 50Z" fill="#c9cdd4" stroke="#0f2340" stroke-width="2"/><text x="40" y="80" font-size="10" text-anchor="middle">上空（気圧 小）</text><text x="40" y="92" font-size="10" text-anchor="middle">箱がふくらむ</text>'+
- '<path d="M40 10 V28" stroke="#e2453c" stroke-width="3" marker-end="url(#ah)"/></g>'+
- '<g transform="translate(170 20)"><path d="M0 42 Q10 36 20 42 Q30 36 40 42 Q50 36 60 42 Q70 36 80 42 L80 48 Q70 54 60 48 Q50 54 40 48 Q30 54 20 48 Q10 54 0 48Z" fill="#c9cdd4" stroke="#0f2340" stroke-width="2"/><text x="40" y="80" font-size="10" text-anchor="middle">地上（気圧 大）</text><text x="40" y="92" font-size="10" text-anchor="middle">箱がへこむ</text>'+
- '<path d="M40 2 V30" stroke="#e2453c" stroke-width="5" marker-end="url(#ah)"/><path d="M40 88 V62" stroke="#e2453c" stroke-width="0"/></g>'+
- '<defs><marker id="ah" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto"><path d="M0,0L6,3L0,6z" fill="#e2453c"/></marker></defs>'+
- '<text x="150" y="16" font-size="10" text-anchor="middle" font-weight="700" fill="#0f2340">中の空気をぬいた うすい金属の箱の厚みで、針が動く</text></svg>'}
-function setBaro(v){$('#bVal').textContent=Math.round(v);const a=-120+240*Math.max(0,Math.min(1,(v-500)/(1050-500)));$('#ndl').style.transform='rotate('+a+'deg)'}
-(function ticks(){let h='';for(let v=500;v<=1050;v+=50){const a=(-120+240*(v-500)/550-90)*PI/180,r1=74,r2=v%100===0?60:66;h+='<line x1="'+(100+Math.cos(a)*r1)+'" y1="'+(100+Math.sin(a)*r1)+'" x2="'+(100+Math.cos(a)*r2)+'" y2="'+(100+Math.sin(a)*r2)+'" stroke="#0f2340" stroke-width="'+(v%100?2:3)+'"/>';if(v%100===0)h+='<text x="'+(100+Math.cos(a)*48)+'" y="'+(100+Math.sin(a)*48+4)+'" font-size="11" font-weight="700" text-anchor="middle" fill="#0f2340">'+v+'</text>'}$('#ticks').innerHTML=h})();
-function setCtrl(){
- const jm=curJump(),left=jm.marks.length-smokes.length;
- $('#bGo').classList.toggle('hidden',phase!=='brief');
- $('#bSmoke').classList.toggle('hidden',phase==='brief'||!jm.marks.length&&!ff);
- $('#bBrake').classList.toggle('hidden',phase==='brief');
- const sm=$('#bSmoke');
- if(left>0){sm.disabled=phase!=='fall';sm.style.background=SMK[smokes.length];sm.innerHTML='💨 '+SMKN[smokes.length]+'の煙<br><small>'+jm.marks[smokes.length]+'mだと思ったら</small>'}
- else{sm.disabled=phase!=='fall'||alt<300;sm.style.background='';sm.innerHTML=ff?'⏩ 早送り中':'⏩ はやく下りる'}
- $('#altBox').textContent=rd.showAlt?'高さ '+Math.max(0,Math.round(alt/10)*10)+'m':'高さ ????m';
-}
-/* ===== ラウンド ===== */
-function loadRound(i){
- S.r=i;save();rd=R[i];J=0;results=[];if(rd.boss)bossLeft=rd.time;
- $('#panel').classList.add('hidden');$('#instr').classList.remove('hidden');
- loadJump();
- if(rd.intro)askIntro();
-}
-function loadJump(){
- const jm=curJump();alt=jm.start;vel=0;brake=false;ff=false;chute=false;smokes=[];trace=[];tJump=0;phase='brief';logged={};makeScenery();
- setBaro(P(alt,rd.p0));drawMission();drawNote();setCtrl();$('#bBrake').classList.remove('on');
-}
-function ghostOf(){const g=S.ghost[rd.id+'_'+J];if(g)return g;const i=R.indexOf(rd);for(let k=i-1;k>=0;k--){const h=S.ghost[R[k].id+'_0'];if(h)return{trace:h.trace,smokes:[],prevRound:true}}return null}
-function askIntro(){
- panel('<div class="t">ジャンプの前に予想しよう</div>下りていくと、うでの気圧計の値は どうなると思う？',[],[
-  ['大きくなっていく',()=>introPick('up')],['小さくなっていく',()=>introPick('down')],['ほとんど変わらない',()=>introPick('same')]]);
- $('#instr').classList.add('hidden');
-}
-function introPick(v){S.introPick=v;save();$('#panel').classList.add('hidden');$('#instr').classList.remove('hidden');sfx.tap()}
-$('#bGo').onclick=()=>{ac();phase='fall';lastT=performance.now();vel=0;windStart();sfx.chute();say(rd.boss?'3連続 '+(J+1)+'回目！':'ジャンプ！');setCtrl();
- const r=$('#view').getBoundingClientRect();if(r.top<0)$('#view').scrollIntoView({block:'start',behavior:RM?'auto':'smooth'})};
-$('#bSmoke').onclick=()=>{if(phase!=='fall')return;const jm=curJump();
- if(smokes.length<jm.marks.length){const k=smokes.length;smokes.push({a:alt,p:reading()});sfx.puff();drawMission();setCtrl();
-  const r=$('#view').getBoundingClientRect();pop(r.left+W/2,r.top+H*.45,SMKN[k]+'の煙 '+reading()+'hPa','#fff')}
- else{ff=true;setCtrl()}};
-const bb=$('#bBrake');
-bb.addEventListener('pointerdown',e=>{e.preventDefault();brake=true;bb.classList.add('on')});
-['pointerup','pointerleave','pointercancel'].forEach(ev=>bb.addEventListener(ev,()=>{brake=false;bb.classList.remove('on')}));
-function step(now){
- if(!rd||$('#game').classList.contains('hidden')){requestAnimationFrame(step);return}
- const dt=Math.min(.05,(now-lastT)/1000||0);lastT=now;
- if(phase==='fall'){
-  const target=chute?16:(brake?20:(ff?160:55));vel+=(target-vel)*Math.min(1,dt*2.2);alt-=vel*dt;tJump+=dt;
-  if(rd.boss){bossLeft-=dt;if(Math.floor(bossLeft)!==Math.floor(bossLeft+dt))drawMission();if(bossLeft<=0){bossLeft=0;return bossFail()}}
-  if(!chute&&alt<=260){chute=true;ff=false;sfx.chute();say('パラシュート！');setCtrl()}
-  if(trace.length===0||tJump-trace[trace.length-1][0]>=.25)trace.push([+tJump.toFixed(2),Math.round(alt)]);
-  const v=reading();if(Math.floor(v/10)!==Math.floor(lastTick/10)){if(lastTick)sfx.tick();lastTick=v}
-  setBaro(P(alt,rd.p0));windSet(Math.min(1,vel/60));
-  if(rd.log){for(const h of [4000,3500,3000,2500,2000,1500,1000,500]){if(alt<=h&&!logged[h]){logged[h]=1;S.note[h]=Math.round(P(h,STD));sfx.stamp();drawNote(h);say(h+'m → '+S.note[h]+'hPa')}}}
-  if(alt<=0){alt=0;land()}
-  setCtrl();
- }
- draw(now);requestAnimationFrame(step)}
-requestAnimationFrame(step);
-function draw(now){
- const t=now/1000;
- // 空
- const k=Math.min(1,alt/4000),g=ctx.createLinearGradient(0,0,0,H);
- g.addColorStop(0,mixc('#6fb2e6','#1a4f95',k));g.addColorStop(1,mixc('#cfe8f8','#8cc4ea',k));ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
- // 太陽の光
- const sg=ctx.createRadialGradient(W*.82,H*.12,4,W*.82,H*.12,W*.35);sg.addColorStop(0,'rgba(255,248,220,.9)');sg.addColorStop(1,'rgba(255,248,220,0)');ctx.fillStyle=sg;ctx.fillRect(0,0,W,H);
- // 地面
- const yg=yOf(0);if(yg<H+10){ctx.fillStyle='#78b660';ctx.fillRect(0,yg,W,H-yg);
-  const sc=Math.max(.2,1-alt/1500);for(const f of fields){const fy=yg+f.y*(H-yg);ctx.fillStyle=f.c;ctx.fillRect(W/2+f.x*W*sc*1.4,fy,f.w*W*sc*1.4,Math.max(2,f.h*(H-yg)));}
-  ctx.strokeStyle='#fff';ctx.lineWidth=3;ctx.beginPath();ctx.ellipse(W/2,yg+(H-yg)*.5,Math.max(1,W*.1*(1.2-Math.min(1,alt/800))),Math.max(1,(H-yg)*.12),0,0,2*PI);ctx.stroke()}
- // 雲（雲海とうすい雲）
- for(const c of clouds){const y=yOf(c.a);if(y<-80||y>H+80)continue;const d=Math.abs(alt-c.a),sz=(1+Math.max(0,1-d/900)*2.2)*c.w*W;const x=((c.x+t*.004*c.s)%1.2-.1)*W;
-  ctx.globalAlpha=c.thin?.55:.92;ctx.fillStyle='#fff';ctx.beginPath();ctx.ellipse(x,y,sz,sz*.28,0,0,2*PI);ctx.fill();ctx.beginPath();ctx.ellipse(x-sz*.35,y-sz*.1,sz*.5,sz*.24,0,0,2*PI);ctx.fill();ctx.beginPath();ctx.ellipse(x+sz*.3,y-sz*.12,sz*.45,sz*.22,0,0,2*PI);ctx.fill();ctx.globalAlpha=1}
- if(alt<cloudTop+30&&alt>cloudTop-490){const f=1-Math.abs(alt-(cloudTop-230))/260;ctx.fillStyle='rgba(248,251,255,'+Math.max(0,f*.8)+')';ctx.fillRect(0,0,W,H)}
- // ゴースト（前回の自分）
- const gh=ghostOf();if(gh&&phase==='fall'){const ga=ghostAlt(gh,tJump);const y=yOf(ga);if(y>-30&&y<H+30){diver(W*.72,y,.4,'#ffffff')}
-  for(let i=0;i<gh.smokes.length;i++){const s=gh.smokes[i];const yy=yOf(s.a);if(yy<-20||yy>H+20)continue;ctx.globalAlpha=.35;ctx.strokeStyle=SMK[i];ctx.setLineDash([4,5]);ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(W*.58,yy);ctx.lineTo(W*.88,yy);ctx.stroke();ctx.setLineDash([]);ctx.globalAlpha=1}}
- // 自分の煙
- for(let i=0;i<smokes.length;i++){const s=smokes[i],y=yOf(s.a);if(y<-60||y>H+60)continue;for(let j=0;j<7;j++){ctx.globalAlpha=.75-j*.08;ctx.fillStyle=SMK[i];ctx.beginPath();ctx.arc(W*.45+Math.sin(t*1.3+j)*6+j*9-20,y-j*4,10+j*4,0,2*PI);ctx.fill()}ctx.globalAlpha=1}
- // 風のすじ
- if(phase==='fall'&&!RM){ctx.strokeStyle='rgba(255,255,255,.55)';ctx.lineWidth=1.5;for(const s of streaks){s.y-=vel*.00035;if(s.y<-.2)s.y=1.1;ctx.beginPath();ctx.moveTo(s.x*W,s.y*H);ctx.lineTo(s.x*W,(s.y+s.l*vel/55)*H);ctx.stroke()}}
- // 自分の手（下の端）とパラシュート
- if(chute||phase==='landed'){ctx.fillStyle='#f28c28';ctx.beginPath();ctx.ellipse(W/2,-H*.02,W*.48,H*.16,0,0,PI);ctx.fill();ctx.strokeStyle='#0f2340';ctx.lineWidth=3;ctx.stroke();ctx.strokeStyle='rgba(15,35,64,.5)';ctx.lineWidth=1.5;for(let i=-3;i<=3;i++){ctx.beginPath();ctx.moveTo(W/2+i*W*.14,H*.12);ctx.lineTo(W/2+i*W*.05,H*.95);ctx.stroke()}}
- // ゴーグルのふち
- ctx.save();ctx.fillStyle='#111820';ctx.beginPath();ctx.rect(0,0,W,H);
- const m=10,r=Math.min(W,H)*.2;ctx.moveTo(m+r,m);ctx.arcTo(m,m,m,m+r,r);ctx.lineTo(m,H-m-r*1.4);ctx.quadraticCurveTo(m,H-m,m+r*1.6,H-m);ctx.quadraticCurveTo(W*.4,H-m,W*.45,H*.86);ctx.quadraticCurveTo(W/2,H*.8,W*.55,H*.86);ctx.quadraticCurveTo(W*.6,H-m,W-m-r*1.6,H-m);ctx.quadraticCurveTo(W-m,H-m,W-m,H-m-r*1.4);ctx.lineTo(W-m,m+r);ctx.arcTo(W-m,m,W-m-r,m,r);ctx.closePath();
- ctx.fill('evenodd');ctx.restore();
- const lg=ctx.createLinearGradient(0,0,W,H);lg.addColorStop(0,'rgba(255,255,255,.18)');lg.addColorStop(.35,'rgba(255,255,255,0)');ctx.fillStyle=lg;ctx.fillRect(0,0,W,H*.5);
-}
-function diver(x,y,al,col){ctx.save();ctx.globalAlpha=al;ctx.translate(x,y);ctx.strokeStyle=col;ctx.fillStyle=col;ctx.lineWidth=5;ctx.lineCap='round';ctx.beginPath();ctx.ellipse(0,0,6,11,0,0,2*PI);ctx.fill();ctx.beginPath();ctx.moveTo(-4,-6);ctx.lineTo(-16,-14);ctx.moveTo(4,-6);ctx.lineTo(16,-14);ctx.moveTo(-3,9);ctx.lineTo(-9,22);ctx.moveTo(3,9);ctx.lineTo(9,22);ctx.stroke();ctx.font='bold 11px sans-serif';ctx.textAlign='center';ctx.fillText('前回',0,-20);ctx.restore()}
-function ghostAlt(g,t){const tr=g.trace;if(!tr||!tr.length)return 99999;if(t<=tr[0][0])return tr[0][1];for(let i=1;i<tr.length;i++){if(tr[i][0]>=t){const a=tr[i-1],b=tr[i],f=(t-a[0])/(b[0]-a[0]||1);return a[1]+(b[1]-a[1])*f}}return tr[tr.length-1][1]}
-function mixc(a,b,t){const A=[1,3,5].map(i=>parseInt(a.substr(i,2),16)),B=[1,3,5].map(i=>parseInt(b.substr(i,2),16));return'rgb('+A.map((x,i)=>Math.round(x+(B[i]-x)*t)).join(',')+')'}
-/* ===== 着地・判定 ===== */
-function land(){if(rd.log){S.note[0]=Math.round(P(0,STD));drawNote(0)}phase='landed';windStop();sfx.land();setBaro(P(0,rd.p0));setCtrl();
- const jm=curJump(),prev=ghostOf();
- const res=jm.marks.map((m,i)=>{const s=smokes[i];return{m,a:s?Math.round(s.a):null,p:s?s.p:null,err:s?Math.round(s.a-m):null,ok:!!s&&Math.abs(s.a-m)<=TOL,prevErr:prev&&prev.smokes[i]?Math.round(prev.smokes[i].a-m):null}});
- S.ghost[rd.id+'_'+J]={trace,smokes:smokes.map(s=>({a:Math.round(s.a)}))};
- results.push(res);save();
- const r=$('#view').getBoundingClientRect(),cx=r.left+W/2,cy=r.top+H*.4;
- const key=rd.id+'_'+J;let gained=0;
- res.forEach((x,i)=>{if(x.ok){if(!S.paid[key+'_'+i]){S.paid[key+'_'+i]=1;S.hits++;gained+=earn(10,'hit',cx,cy)}}});
- const allOk=res.every(x=>x.ok);
- if(res.length&&allOk){sfx.ok();burst(cx,cy,COL,40,7);if(gained){setTimeout(sfx.coin,250);pop(cx,cy-60,'目印ぴったり！')}}
- else if(res.length)sfx.ng();
- save();
- if(rd.intro)return introResult();
- if(rd.log)return logResult();
- if(rd.boss)return bossJumpDone(res);
- roundResult(res);
-}
-function resHTML(res){return res.map((x,i)=>'<div><span style="color:'+SMK[i]+'">●</span> '+x.m+'m → '+(x.a==null?'<span class="ng">煙なし</span>':'煙 '+x.a+'m（'+x.p+'hPa）　<span class="'+(x.ok?'ok':'ng')+'">'+(x.ok?'◎':'×')+' '+(x.err>0?'+':'')+x.err+'m</span>'+(x.prevErr!=null?' <span class="tiny">前回 '+(x.prevErr>0?'+':'')+x.prevErr+'m</span>':''))+'</div>').join('')}
-function chartFor(allRes,starts){return '<canvas id="chart" height="170"></canvas>'}
-function drawChart(allRes,start){const c=$('#chart');if(!c)return;const w=c.clientWidth,h=170;c.width=w*DPR;c.height=h*DPR;c.style.height=h+'px';const g=c.getContext('2d');g.setTransform(DPR,0,0,DPR,0,0);
- const top=Math.max(4000,start),Y=a=>10+(1-a/top)*(h-24);g.fillStyle='#0f2340';g.font='bold 11px sans-serif';
- for(let a=0;a<=top;a+=1000){g.strokeStyle='rgba(15,35,64,.15)';g.beginPath();g.moveTo(40,Y(a));g.lineTo(w-6,Y(a));g.stroke();g.fillText(a+'m',2,Y(a)+4)}
- const res=allRes.flat();res.forEach((x,i)=>{const col=SMK[i%5];g.strokeStyle=col;g.setLineDash([5,4]);g.lineWidth=2;g.beginPath();g.moveTo(40,Y(x.m));g.lineTo(w-6,Y(x.m));g.stroke();g.setLineDash([]);
-  g.fillStyle='rgba(58,163,91,.14)';g.fillRect(40,Y(x.m+TOL),w-46,Y(x.m-TOL)-Y(x.m+TOL));
-  const xx=60+i*((w-90)/Math.max(1,res.length));if(x.a!=null){g.fillStyle=col;g.beginPath();g.arc(xx+18,Y(x.a),8,0,2*PI);g.fill();g.strokeStyle='#0f2340';g.lineWidth=2;g.stroke()}
-  if(x.prevErr!=null){g.strokeStyle='rgba(15,35,64,.5)';g.lineWidth=2;g.beginPath();g.arc(xx+40,Y(x.m+x.prevErr),6,0,2*PI);g.stroke()}});
- g.fillStyle='#0f2340';g.fillText('● 今回　○ 前回　緑の帯＝合格(±'+TOL+'m)',46,h-4)}
-function panel(html,res,btns){const p=$('#panel');p.innerHTML=html+'<div class="btns"></div>';const bx=p.querySelector('.btns');
- for(const[t,f,cls]of btns){const b=document.createElement('button');b.className='btn '+(cls||'');b.textContent=t;b.onclick=()=>{sfx.tap();f()};bx.appendChild(b)}
- p.classList.remove('hidden');setTimeout(()=>{const r=p.getBoundingClientRect();if(r.bottom>innerHeight)scrollBy({top:Math.min(r.top-10,r.bottom-innerHeight+12),behavior:RM?'auto':'smooth'})},80)}
-function introResult(){
- const ok=S.introPick==='up';
- panel('<div class="t">気圧計の値は 617 → '+Math.round(P(0,rd.p0))+'hPa へ <span class="ok">大きくなった！</span></div>'+(ok?'予想どおり！ ':'予想とちがった！ ')+'下りるほど値が大きい＝<b>高いところほど気圧は小さい</b>。<br>うでの気圧計は<b>アネロイド気圧計</b>。空気をぬいた金属の箱が、まわりの気圧でへこんだり ふくらんだりして針を動かす。'+aneroidFig()+'つぎは、高さと気圧を ノートに記録しよう。',[],[['▶ 観測ジャンプへ',()=>{banner('観測ジャンプ');loadRound(1)}]]);
- $('#instr').classList.add('hidden')}
-function logResult(){
- $('#instr').classList.add('hidden');let st=0;
- const q=()=>{panel('<div class="t">ノートを読んで答えよう</div>'+(st===0?'3000mの上空と1000mの上空。気圧が小さいのは どっち？':'では、そうなる わけは？'),[],
-  (st===0?[['3000mの上空',()=>{st=1;q()}],['1000mの上空',()=>wrong('ノートを見よう。3000m '+S.note[3000]+'hPa、1000m '+S.note[1000]+'hPa。')],['どちらも同じ',()=>wrong('ノートを見よう。3000m '+S.note[3000]+'hPa、1000m '+S.note[1000]+'hPa。')]]
-  :[['上にある空気が少ないから（のしかかる空気の重さが小さい）',()=>right()],['太陽に近くて暖かいから',()=>wrong('上空ほど気温は低い。気圧は「上にある空気の重さ」で決まる。')],['風が強いから',()=>wrong('風ではなく、上にある空気の量（重さ）で決まる。')]]).map(x=>[x[0],x[1],'sub'])); styleQ()};
- const wrong=m=>{sfx.ng();panel('<div class="t ng">ちがうよ</div>'+esc(m),[],[['もう一度考える',()=>q(),'sub']])};
- const right=()=>{const r=$('#panel').getBoundingClientRect();let got=0;if(!S.rule.r1){S.rule.r1=1;save();got=earn(30,'rule',r.left+r.width/2,r.top)}sfx.big();burst(r.left+r.width/2,r.top+20,COL,60,9);banner('規則発見！');
-  panel('<div class="t ok">そのとおり！'+(got?' +'+got:'')+'</div><b>高いところほど、上にある空気が少ないので気圧は小さい。</b>'+airFig()+'ここから先は高さが見えない。このノートだけが たよりだ。',[],[['▶ つぎのジャンプへ',()=>loadRound(2)]])};
- q();
-}
-function styleQ(){const b=$('#panel .btns');b.style.flexDirection='column';b.style.alignItems='stretch';b.querySelectorAll('.btn').forEach(x=>{x.style.textAlign='left';x.style.fontSize='15px'})}
-function roundResult(res){
- $('#instr').classList.add('hidden');
- const allOk=res.every(x=>x.ok);
- if(rd.climax&&!S.rule.r5){return climaxReveal(res)}
- panel('<div class="t">'+(allOk?'<span class="ok">目印 すべて合格！</span>':'<span class="ng">ずれた目印がある</span>')+'</div>'+resHTML(res)+chartFor()+(rd.id==='r6'?'<div class="tiny">地上が'+rd.p0+'hPaの日は、ノートの値より 全体に約'+(rd.p0-1013)+'hPa 大きい。</div>':''),res,
-  [['↺ ゴーストと もう一度',()=>loadRound(S.r),'sub'],['▶ つぎへ',()=>{const n=S.r+1;if(R[n].boss)banner('BOSS！');loadRound(n)}]]);drawChart([res],curJump().start)}
-function climaxReveal(res){
- panel('<div class="t ng">同じ値で煙を出したのに、目印が低い！</div>'+resHTML(res)+chartFor()+'地上の気圧計は いま <b>'+Math.round(P(0,rd.p0))+'hPa</b>（ノートの日は1013hPa）。なぜ ずれた？'+dayFig(),[],[
-  ['この日は天気のちがいで、地上から上空まで 気圧が全体に低かったから',()=>ok5()],['気圧計がこわれていたから',()=>ng5()],['下りる速さが速かったから',()=>ng5()],['雲の中は気圧が高いから',()=>ng5()]].map(x=>[x[0],x[1],'sub']));styleQ();drawChart([res],curJump().start);
- function ng5(){sfx.ng();pop(innerWidth/2,innerHeight*.5,'ちがうよ','#fff')}
- function ok5(){const r=$('#panel').getBoundingClientRect();let got=0;if(!S.rule.r5){S.rule.r5=1;save();got=earn(30,'rule',r.left+r.width/2,r.top)}sfx.big();burst(r.left+r.width/2,r.top+20,COL,60,9);banner('ずれの正体！');
-  panel('<div class="t ok">そのとおり！'+(got?' +'+got:'')+'</div>同じ地点でも、気圧は <b>日によって・時間とともに変わる</b>。今日は地上でも約20hPa低かった。気圧計で高さを読むときは、そのずれも考えよう。',[],[['↺ もう一度この日を飛ぶ',()=>loadRound(S.r),'sub'],['▶ つぎへ',()=>loadRound(S.r+1)]])}
-}
-function bossJumpDone(res){
- $('#instr').classList.add('hidden');
- if(J<2){panel('<div class="t">'+(J+1)+'回目 着地！</div>'+resHTML(res)+'<div class="tiny">のこり '+Math.ceil(bossLeft)+'秒</div>',[],[['▶ つぎのジャンプへ',()=>{J++;loadJump();$('#instr').classList.remove('hidden');$('#panel').classList.add('hidden')}]]);return}
- const all=results.flat(),ok=all.every(x=>x.ok);S.bossTries++;save();
- if(ok){S.cleared=true;save();sfx.big();banner('BOSS クリア！');const r=$('#view').getBoundingClientRect();burst(r.left+W/2,r.top+H/2,COL,90,10);
-  panel('<div class="t ok">5つの目印 すべて合格！</div>'+resHTML(all)+chartFor()+'<div class="tiny">のこり '+Math.ceil(bossLeft)+'秒</div>',[],[['🏁 予想を書いてクリアへ',()=>toPred()]]);drawChart([all],4000)}
- else{panel('<div class="t ng">ずれた目印がある…</div>'+resHTML(all)+chartFor()+'今日は地上が'+rd.p0+'hPa（ノートの日より'+(rd.p0-1013)+'hPa）。ノートの値も同じだけずらそう。',[],[['↺ 3連続を最初から',()=>loadRound(S.r)]]);drawChart([all],4000)}
-}
-function bossFail(){phase='landed';windStop();sfx.ng();$('#instr').classList.add('hidden');panel('<div class="t ng">時間切れ！</div>ブレーキは値を読む所だけにして、ほかは一気に下りよう。',[],[['↺ 3連続を最初から',()=>loadRound(S.r)]])}
-/* ===== 予想（予想用のコマ） ===== */
-const PA=['学校の1階と屋上では、屋上のほうが 気圧計の値が小さい','山のふもとと山頂では、山頂のほうが 気圧計の値が小さい','同じ場所で朝と夕方に測ると、値がちがうことがある'];
-const PB=['上にある空気の量（重さ）が少ないから','天気（大気のようす）が変わると、気圧も変わるから','空気には重さがあり、それが大気圧のもとだから'];
-let pa=-1,pb=-1;
-function toPred(){show('pred');const A=$('#predA'),B=$('#predB');A.innerHTML='';B.innerHTML='';
- PA.forEach((t,i)=>{const b=document.createElement('button');b.textContent=t;b.onclick=()=>{pa=i;A.querySelectorAll('button').forEach((x,j)=>x.classList.toggle('sel',j===i));sfx.tap();chk()};A.appendChild(b)});
- PB.forEach((t,i)=>{const b=document.createElement('button');b.textContent=t;b.onclick=()=>{pb=i;B.querySelectorAll('button').forEach((x,j)=>x.classList.toggle('sel',j===i));sfx.tap();chk()};B.appendChild(b)});
- const chk=()=>{$('#bPred').disabled=!(pa>=0&&pb>=0)};chk()}
-$('#bPred').onclick=()=>{const free=$('#predFree').value.trim();S.pred=PA[pa]+'（理由：'+PB[pb]+'）'+(free?' '+free:'');save();
- const got=S.rule.pred?0:earn(10,'predict',innerWidth/2,innerHeight/2);S.rule.pred=1;save();sfx.ok();toClear()};
-/* ===== 画面きりかえ ===== */
-function show(id){for(const s of['title','game','pred','clear','test','result'])$('#'+s).classList.toggle('hidden',s!==id);scrollTo(0,0)}
-let clock=null;function startClock(){clearInterval(clock);clock=setInterval(()=>{if(!$('#game').classList.contains('hidden')){S.t++;if(S.t%5===0)save()}$('#hTime').textContent='⏱ '+Math.floor(S.t/60)+':'+String(S.t%60).padStart(2,'0')},1000)}
-function fmtT(t){return Math.floor(t/60)+'分'+String(t%60).padStart(2,'0')+'秒'}
-function enterGame(){show('game');resize();try{if(window.Zukan&&Zukan.hud){$('#hZk').innerHTML='';Zukan.hud($('#hZk'))}}catch(e){}
- if(S.cleared){if(!S.pred)return toPred();return toClear()}startClock();loadRound(S.r)}
-function toClear(){show('clear');
- const errs=results.flat().filter(x=>x.err!=null).map(x=>Math.abs(x.err));const avg=errs.length?Math.round(errs.reduce((a,b)=>a+b,0)/errs.length):null;
- $('#recs').innerHTML='<div>クリアタイム<b>'+fmtT(S.t)+'</b></div><div>合格した目印<b>'+S.hits+'個</b></div><div>ボスの挑戦<b>'+S.bossTries+'回</b></div><div>ボスの平均誤差<b>'+(avg==null?'—':avg+'m')+'</b></div>';
- S.lastAvg=avg==null?S.lastAvg:avg;save();
- sfx.big();burst(innerWidth/2,200,COL,80,10);
- if(!S.mainClearShown&&window.Zukan&&Zukan.mainClear){S.mainClearShown=true;save();try{Zukan.mainClear({onClose:()=>{}})}catch(e){}}}
-$('#bStart').onclick=()=>{ac();const nm=$('#nameIn').value.trim()||S.name,snd=S.sound,note=S.note;S=fresh();S.name=nm;S.sound=snd;S.started=true;save();enterGame()};
-$('#bCont').onclick=()=>{ac();const v=$('#nameIn').value.trim();if(v)S.name=v;save();enterGame()};
-const sndT=()=>{S.sound=!S.sound;if(!S.sound)windStop();save();setSnd()};$('#bSnd1').onclick=sndT;$('#bSnd2').onclick=sndT;
-function openBook(){try{window.Zukan&&Zukan.openBook&&Zukan.openBook({unit:'kisho'})}catch(e){}}
-$('#bBook1').onclick=openBook;$('#bBook2').onclick=openBook;$('#bTest').onclick=()=>startTest();
-/* ===== 確認テスト ===== */
-let T=null;function playerName(){return window.PLAYER_NAME||S.name||''}
-function startTest(){if(!window.Quiz)return;T={qs:Quiz.test(),i:0,ans:[]};show('test');renderQ()}
-function renderQ(){const q=T.qs[T.i],box=$('#tbox');
- box.innerHTML='<div class="tno">📝 確認テスト　第'+(T.i+1)+'問 / '+T.qs.length+'</div><div class="prog">'+T.qs.map((_,i)=>'<i class="'+(i<T.i?'on':'')+'"></i>').join('')+'</div><div class="tq">'+q.q+'</div>'+(q.fig?'<div class="fig">'+q.fig+'</div>':'')+'<div id="ta"></div>';
- const ta=$('#ta');
- if(q.t==='choice'){const d=document.createElement('div');d.className='ch';q.shown.forEach((c,i)=>{const b=document.createElement('button');b.innerHTML=c;b.onclick=()=>ans(q.shown[i]);d.appendChild(b)});ta.appendChild(d)}
- else if(q.t==='num'){ta.innerHTML='<div class="numrow"><input id="numIn" inputmode="decimal" autocomplete="off" placeholder="数を入力"><b>'+esc(q.unit||'')+'</b><button class="btn" id="numOk">決定</button></div>';$('#numOk').onclick=()=>{const v=$('#numIn').value.trim();if(v)ans(v)}}
- else{const picked=[];ta.innerHTML='<div class="tiny">正しい順にタップしよう</div><div class="ord" id="ordBox"></div><div class="ch" id="ordPool"></div><div style="display:flex;gap:8px;margin-top:10px"><button class="btn sub" id="ordRe">やり直す</button><button class="btn" id="ordOk" disabled>決定</button></div>';
-  const draw=()=>{$('#ordBox').innerHTML=picked.map((t,i)=>'<div>'+(i+1)+'. '+t+'</div>').join('');const pool=$('#ordPool');pool.innerHTML='';q.shown.forEach(t=>{if(picked.includes(t))return;const b=document.createElement('button');b.innerHTML=t;b.onclick=()=>{picked.push(t);sfx.tap();draw()};pool.appendChild(b)});$('#ordOk').disabled=picked.length!==q.shown.length};
-  draw();$('#ordRe').onclick=()=>{picked.length=0;draw()};$('#ordOk').onclick=()=>ans(picked.slice())}}
-function ans(v){T.ans.push(v);sfx.tap();T.i++;if(T.i<T.qs.length)renderQ();else finishTest()}
-function finishTest(){const qs=T.qs,review=Quiz.review(qs,T.ans),marks=review.map(r=>r.ok),score=marks.filter(Boolean).length;
- if(score>=Math.ceil(qs.length*.7))earn(30,'pass',innerWidth/2,200);sfx.big();burst(innerWidth/2,220,COL,70,9);
- const recs=TEST_ONLY?[['モード','確認テストだけ']]:[['クリアタイム',fmtT(S.t)],['合格した目印',S.hits+'個'],['ボスの挑戦',S.bossTries+'回'],['確かめたい予想',S.pred||'（未記入）']];
- T.card=SubmitCard.show({gameId:GID,grade:'chu2',koma:[KOMA],unit:UNIT,game:GTITLE+(TEST_ONLY?'（確認テストのみ）':''),name:playerName(),score,total:qs.length,marks,records:recs,review},showResult);showResult()}
-function showResult(){show('result');const r=T.card||{};
- $('#rbox').innerHTML='<h2 class="disp">テストの結果</h2><p style="font-size:22px;font-weight:800">'+(r.score||0)+' / '+(r.total||0)+' 点</p><div class="col"><button class="btn" id="rCard">📝 提出カードをもう一度見る</button><button class="btn blue" id="rAgain">↺ テストをもう一度</button>'+(TEST_ONLY?'':'<button class="btn sub" id="rTitle">🏠 タイトルへ</button>')+'<button class="btn sub zk hidden" id="rBook">📖 図鑑</button></div>';
- $('#rCard').onclick=()=>SubmitCard.reopen(T.card,()=>{});$('#rAgain').onclick=()=>startTest();if($('#rTitle'))$('#rTitle').onclick=()=>toTitle();$('#rBook').onclick=openBook;zkButtons()}
+
+/* ===== 音（風・木琴・ガラスの鈴） ===== */
+let AC=null,WIND=null;
+function ac(){try{if(!AC)AC=new (window.AudioContext||window.webkitAudioContext)();if(AC.state==='suspended')AC.resume()}catch(e){}}
+function tone(f,d,type,v,delay,f2){if(!S.sound||!AC)return;try{const t=AC.currentTime+(delay||0),o=AC.createOscillator(),g=AC.createGain();o.type=type||'sine';o.frequency.setValueAtTime(f,t);if(f2)o.frequency.exponentialRampToValueAtTime(f2,t+d);g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(v||.05,t+.008);g.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(g);g.connect(AC.destination);o.start(t);o.stop(t+d+.05)}catch(e){}}
+let NB=null;function nbuf(){if(!NB){NB=AC.createBuffer(1,AC.sampleRate*2,AC.sampleRate);const a=NB.getChannelData(0);for(let i=0;i<a.length;i++)a[i]=Math.random()*2-1}return NB}
+function noise(d,v,fc,q,delay,fc2){if(!S.sound||!AC)return;try{const t=AC.currentTime+(delay||0),s=AC.createBufferSource(),f=AC.createBiquadFilter(),g=AC.createGain();s.buffer=nbuf();f.type='bandpass';f.frequency.setValueAtTime(fc||1000,t);if(fc2)f.frequency.exponentialRampToValueAtTime(fc2,t+d);f.Q.value=q||1;g.gain.setValueAtTime(v||.05,t);g.gain.exponentialRampToValueAtTime(.0001,t+d);s.connect(f);f.connect(g);g.connect(AC.destination);s.start(t);s.stop(t+d+.05)}catch(e){}}
+function marimba(f,v,delay){tone(f,.35,'sine',v||.07,delay);tone(f*4,.08,'sine',(v||.07)*.35,delay)}
+function windOn(){if(!AC||WIND)return;try{const s=AC.createBufferSource(),f=AC.createBiquadFilter(),g=AC.createGain();s.buffer=nbuf();s.loop=true;f.type='lowpass';f.frequency.value=700;g.gain.value=0;s.connect(f);f.connect(g);g.connect(AC.destination);s.start();WIND={s,f,g}}catch(e){}}
+function windSet(v){if(!WIND)return;try{WIND.g.gain.setTargetAtTime(S.sound?v:0,AC.currentTime,.15);WIND.f.frequency.setTargetAtTime(400+v*9000,AC.currentTime,.2)}catch(e){}}
+function windOff(){if(!WIND)return;try{WIND.g.gain.setTargetAtTime(0,AC.currentTime,.1);const w=WIND;setTimeout(()=>{try{w.s.stop()}catch(e){}},600)}catch(e){}WIND=null}
+const sfx={
+ tap:()=>tone(1100,.05,'triangle',.03),
+ tick:()=>tone(2200,.025,'square',.012),
+ jump:()=>{noise(.6,.06,600,.7,0,2400);tone(392,.2,'triangle',.04)},
+ rec:()=>{marimba(784);marimba(1175,.06,.09)},
+ hit:()=>{marimba(659);marimba(880,.07,.08);marimba(1319,.07,.16)},
+ off:()=>{tone(233,.3,'triangle',.05,0,175)},
+ puff:()=>{tone(170,.25,'sine',.09,0,80);noise(.3,.05,500,.8)},
+ lid:()=>{tone(520,.06,'square',.03);tone(390,.09,'square',.03,.05)},
+ reveal:()=>{noise(.12,.04,3000,1.5);tone(660,.08,'triangle',.04)},
+ cap:()=>{[1568,2093,2637,3136].forEach((f,i)=>tone(f,.7,'sine',.035,i*.07))},
+ crack:()=>{noise(.2,.08,2600,2);tone(300,.2,'square',.03,0,120)},
+ grab:()=>{noise(.08,.05,1800,2);tone(990,.07,'triangle',.04)},
+ chute:()=>{noise(.35,.09,300,.6,0,120)},
+ land:()=>{tone(110,.25,'sine',.1,0,70);noise(.2,.05,400,1)},
+ fan:()=>{[523,659,784,1047,1319].forEach((f,i)=>marimba(f,.06,i*.1));tone(1568,.8,'sine',.03,.55)},
+ star:()=>{marimba(1047,.06);marimba(1568,.06,.07)}};
+function setSnd(){$('#bSnd').classList.toggle('off',!S.sound)}
+$('#bSnd').onclick=()=>{ac();S.sound=!S.sound;save();setSnd();if(!S.sound)windSet(0);sfx.tap()};
+
+/* ===== 図鑑・かけら ===== */
+function earn(n,why,key,x,y){if(TEST_ONLY)return 0;if(key){if(S.paid[key])return 0;S.paid[key]=1;save()}let got=0;try{got=window.Zukan&&Zukan.earn?Zukan.earn(n,why,{x:x==null?W/2:x,y:y==null?H*.35:y}):0}catch(e){}kk();return got}
+let KK=0;function kk(){try{KK=window.Zukan&&Zukan.state?Zukan.state().kakera||0:0}catch(e){KK=0}const e=$('#hK');if(e)e.textContent=KK}
 function zkButtons(){const has=!!(window.Zukan&&Zukan.openBook);document.querySelectorAll('.zk').forEach(b=>b.classList.toggle('hidden',!has))}
-function toTitle(){show('title');$('#bCont').classList.toggle('hidden',!S.started);zkButtons()}
+function openBook(){try{window.Zukan&&Zukan.openBook&&Zukan.openBook({unit:'kisho'})}catch(e){}}
+function openGacha(){try{window.Zukan&&Zukan.openGacha&&Zukan.openGacha({box:'kisho'})}catch(e){}}
+
+/* ===== 画面の大きさ ===== */
+let VD=null,VF=null,W=0,H=0,DPR=1,PORT=true,SKY={x:0,y:0,w:0,h:0},PAN={x:0,y:0,w:0,h:0},DY=0,SC=1,INS={};
+function resize(){DPR=Math.min(2,window.devicePixelRatio||1);W=innerWidth;H=innerHeight;cv.width=Math.round(W*DPR);cv.height=Math.round(H*DPR);PORT=H>=W*1.05;document.body.classList.toggle('port',PORT);document.body.classList.toggle('land',!PORT);layout()}
+function layout(){
+ if(PORT){const ph=Math.round(clamp(H*.27,196,270));SKY={x:0,y:0,w:W,h:H-ph};PAN={x:0,y:H-ph,w:W,h:ph}}
+ else{const pw=Math.round(clamp(W*.25,262,340));SKY={x:0,y:0,w:W-pw,h:H};PAN={x:W-pw,y:0,w:pw,h:H}}
+ DY=SKY.y+SKY.h*(PORT?.36:.33);SC=SKY.h*.62/330;VD={sky:SKY,dy:DY,sc:SC};VF={sky:{x:0,y:0,w:W,h:H},dy:H*.5,sc:H*.86/1600};
+ // 計器の位置
+ if(PORT){const r=Math.min(PAN.h*.4,W*.2,92);INS={bx:PAN.x+14+r,by:PAN.y+PAN.h/2+4,br:r,ax:PAN.x+14+2*r+46,ay:PAN.y+PAN.h*.28,ar:24,gx:PAN.x+14+2*r+46,gy:PAN.y+PAN.h*.7,gs:.8,rx:W-138,rw:130}}
+ else{const r=Math.min(PAN.w*.36,H*.15,118);const top=Math.max(150,H*.2);INS={bx:PAN.x+PAN.w/2,by:top+r,br:r,ax:PAN.x+PAN.w*.28,ay:top+2*r+64,ar:34,gx:PAN.x+PAN.w*.72,gy:top+2*r+64,gs:1,jy:74,ty:top+2*r+158}}
+ const sm=$('#bSmoke'),fa=$('#bFast'),dc=$('#dialCtl');
+ if(PORT){const rx=INS.rx;sm.style.left=(rx+13)+'px';sm.style.top=(PAN.y+8)+'px';fa.style.left=(rx+13)+'px';fa.style.top=(PAN.y+PAN.h-54)+'px';dc.style.left=(rx)+'px';dc.style.top=(PAN.y+6)+'px';
+  sm.style.width=sm.style.height=Math.min(104,PAN.h-70)+'px'}
+ else{const cx=PAN.x+PAN.w/2;sm.style.width=sm.style.height='104px';const by=H-128;sm.style.left=(cx-112)+'px';sm.style.top=by+'px';fa.style.left=(cx+8)+'px';fa.style.top=(by+29)+'px';dc.style.left=(cx-65)+'px';dc.style.top=(H-178)+'px'}
+ const bn=$('#bNote');bn.style.right=PORT?'66px':(PAN.w+10)+'px';bn.style.left='auto';
+ const hud=$('#hud');hud.style.right=PORT?'8px':'auto';
+ if(G)placeSlip();
+}
+addEventListener('resize',resize);
+
+/* ===== 紙の地（ガッシュのざらつき） ===== */
+const GRAIN=(()=>{const c=document.createElement('canvas');c.width=c.height=160;const x=c.getContext('2d'),r=srand(7);for(let i=0;i<2600;i++){const v=r();x.fillStyle=v<.5?'rgba(40,40,60,'+(r()*.09)+')':'rgba(255,250,235,'+(r()*.14)+')';const s=r()*2.2+.4;x.fillRect(r()*160,r()*160,s,s)}
+ for(let i=0;i<40;i++){x.strokeStyle='rgba(255,250,235,'+(r()*.08)+')';x.lineWidth=r()*3+1;x.beginPath();const y=r()*160;x.moveTo(0,y);x.bezierCurveTo(50,y+r()*8-4,110,y+r()*8-4,160,y+r()*6-3);x.stroke()}return c})();
+let GP=null;
+function grain(x,y,w,h,a){if(!GP)GP=ctx.createPattern(GRAIN,'repeat');ctx.save();ctx.globalAlpha=a||1;ctx.fillStyle=GP;ctx.fillRect(x,y,w,h);ctx.restore()}
+
+/* ===== 景色（種で固定した平塗りの形） ===== */
+const SKYST=[[0,'#EBDDBE'],[250,'#DCE3D6'],[700,'#CFE0DE'],[1300,'#B3D0D6'],[1900,'#9CC0D0'],[2500,'#7FA6BF'],[3100,'#5F86A6'],[3700,'#436A8E'],[4300,'#2C4A6E'],[5000,'#1F3550']];
+function hex(c){return[parseInt(c.slice(1,3),16),parseInt(c.slice(3,5),16),parseInt(c.slice(5,7),16)]}
+const SKYC=SKYST.map(s=>[s[0],hex(s[1])]);
+function skyCol(h){let i=0;while(i<SKYC.length-2&&h>SKYC[i+1][0])i++;const a=SKYC[i],b=SKYC[i+1],t=clamp((h-a[0])/(b[0]-a[0]),0,1);return 'rgb('+a[1].map((v,k)=>Math.round(lerp(v,b[1][k],t))).join(',')+')'}
+function mkClouds(seed,list){const r=srand(seed),out=[];list.forEach(([h,n,sz,flat])=>{for(let i=0;i<n;i++){const cx=r()*1.3-.15,ch=h+(r()-.5)*120,parts=[];const k=4+Math.floor(r()*4);for(let j=0;j<k;j++)parts.push([(j/(k-1)-.5)*sz*(1.2+r()*.4),(r()-.3)*sz*.25*(flat?.5:1),sz*(.28+r()*.3)]);out.push({x:cx,h:ch,parts,flat})}});return out}
+const CLOUDS=mkClouds(11,[[3300,5,.16,1],[2750,3,.12,0],[1400,4,.13,0],[900,5,.11,0],[450,3,.09,0]]);
+const DECK={h0:2150,h1:2300}; // 雲の層（突き抜ける）
+const DECKP=(()=>{const r=srand(5),a=[];for(let i=0;i<=24;i++)a.push([i/24,r()*40,r()*40]);return a})();
+const STREAK=(()=>{const r=srand(9),a=[];for(let i=0;i<18;i++)a.push({x:r(),y:r(),l:.012+r()*.025,w:2+r()*3});return a})();
+
+/* 地面近くの山（校外学習の山: 高さ1250m）とふもとの町 */
+const MTN=(()=>{const r=srand(3),pts=[];const peak=1250;for(let i=0;i<=40;i++){const t=i/40;const x=-.12+t*.52;const base=Math.max(0,peak*(1-Math.pow(Math.abs(t-.42)/.58,1.25)));pts.push([x,base*(0.9+r()*.12)])}pts[0][1]=0;pts[pts.length-1][1]=0;return pts})();
+const MTNH=h=>{/* 山のどの高さに駅があるか（x位置） */for(let i=1;i<MTN.length;i++){if(MTN[i][1]>=h&&MTN[i-1][1]<h){return MTN[i][0]}}return .1};
+const HILLS=[{c:'#5E7F68',pts:[[-.05,0],[.25,90],[.5,40],[.78,120],[1.05,50],[1.05,0]]},{c:'#86A38A',pts:[[-.05,0],[.1,50],[.4,20],[.62,70],[.9,30],[1.05,60],[1.05,0]]}];
+
+/* ===== 座標 ===== */
+const wx=x=>SKY.x+x*SKY.w;
+let CAMH=1900;
+const wy=h=>DY+(CAMH-h)*SC;
+const hAt=y=>CAMH-(y-DY)/SC;
+
+function setView(v){SKY=v.sky;DY=v.dy;SC=v.sc}
+const RR=()=>PORT?.13:.085;
+
+/* ===== 描く: 空と景色 ===== */
+function poly(pts){ctx.beginPath();pts.forEach((p,i)=>i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]));ctx.closePath()}
+function drawSky(){
+ const top=SKY.y,bot=SKY.y+SKY.h,band=120;
+ const hTop=hAt(top),hBot=hAt(bot);
+ for(let b=Math.ceil(hTop/band)+1;b>=Math.floor(hBot/band)-1;b--){
+  const h0=b*band,h1=h0+band;const y0=wy(h1),y1=wy(h0);if(y1<top||y0>bot+10)continue;
+  ctx.fillStyle=h0<0?'#86A38A':skyCol(h0+band/2);ctx.beginPath();ctx.moveTo(SKY.x,y1+2);
+  for(let i=0;i<=10;i++){ctx.lineTo(SKY.x+SKY.w*i/10,y0+Math.sin(i*1.9+b*2.3)*4)}
+  ctx.lineTo(SKY.x+SKY.w,y1+2);ctx.closePath();ctx.fill()}
+ // 太陽（ゆっくり動く遠景）
+ const sy=DY-(4600-CAMH)*SC*.12,sr=Math.min(SKY.w,SKY.h)*.12;
+ if(sy>top-sr&&sy<bot+sr){const sx=SKY.x+SKY.w*.8;ctx.fillStyle=C.ochre;ctx.beginPath();ctx.arc(sx,sy,sr*1.18,0,7);ctx.fill();ctx.fillStyle=C.cream;ctx.beginPath();ctx.arc(sx,sy,sr,0,7);ctx.fill();
+  ctx.strokeStyle='rgba(221,169,75,.5)';ctx.lineWidth=3;for(let k=1;k<3;k++){ctx.beginPath();ctx.arc(sx,sy,sr*(1.18+k*.22),0,7);ctx.stroke()}}
+}
+function drawFar(){ // 遠くの山並み（地面が近いときだけ）
+ const base=DY+CAMH*SC*.28+SKY.h*.22;if(base-SKY.h*.5>SKY.y+SKY.h)return;
+ const w=SKY.w,x0=SKY.x,hh=Math.min(SKY.h*.34,300);
+ ctx.fillStyle='#7d93ad';poly([[x0,base],[x0+w*.12,base-hh*.55],[x0+w*.3,base-hh*.3],[x0+w*.5,base-hh*.9],[x0+w*.7,base-hh*.42],[x0+w*.88,base-hh*.7],[x0+w,base-hh*.5],[x0+w,base+SKY.h],[x0,base+SKY.h]]);ctx.fill();
+ ctx.fillStyle=C.cream;poly([[x0+w*.5,base-hh*.9],[x0+w*.455,base-hh*.72],[x0+w*.48,base-hh*.75],[x0+w*.5,base-hh*.7],[x0+w*.53,base-hh*.76],[x0+w*.55,base-hh*.73]]);ctx.fill();
+ poly([[x0+w*.88,base-hh*.7],[x0+w*.85,base-hh*.6],[x0+w*.875,base-hh*.62],[x0+w*.9,base-hh*.58],[x0+w*.915,base-hh*.63]]);ctx.fill();
+}
+function drawCloud(c,alpha){const x=wx(c.x),y=wy(c.h);const s=SKY.w;if(y<SKY.y-200||y>SKY.y+SKY.h+200)return;ctx.save();ctx.globalAlpha=alpha||1;
+ ctx.fillStyle='#d9cdb3';c.parts.forEach(p=>{ctx.beginPath();ctx.ellipse(x+p[0]*s,y+p[1]*s+7,p[2]*s,p[2]*s*(c.flat?.35:.62),0,0,7);ctx.fill()});
+ ctx.fillStyle=C.paper;c.parts.forEach(p=>{ctx.beginPath();ctx.ellipse(x+p[0]*s,y+p[1]*s,p[2]*s,p[2]*s*(c.flat?.35:.62),0,0,7);ctx.fill()});ctx.restore()}
+function drawDeck(){const y0=wy(DECK.h1),y1=wy(DECK.h0);if(y1<SKY.y-60||y0>SKY.y+SKY.h+60)return;
+ ctx.fillStyle='#e2d6bd';ctx.beginPath();ctx.moveTo(SKY.x,y1);DECKP.forEach(p=>ctx.lineTo(SKY.x+p[0]*SKY.w,y1+18+p[2]*.6));ctx.lineTo(SKY.x+SKY.w,y0);ctx.lineTo(SKY.x,y0);ctx.closePath();ctx.fill();
+ ctx.fillStyle=C.paper;ctx.beginPath();ctx.moveTo(SKY.x,y1);DECKP.forEach(p=>ctx.lineTo(SKY.x+p[0]*SKY.w,y1+p[2]*.5));DECKP.slice().reverse().forEach(p=>ctx.lineTo(SKY.x+p[0]*SKY.w,y0-p[1]));ctx.closePath();ctx.fill();
+ // 上の縁のもこもこ
+ for(let i=0;i<12;i++){const x=SKY.x+SKY.w*(i+.5)/12;ctx.beginPath();ctx.ellipse(x,y0+4,SKY.w/15,20+((i*37)%17),0,Math.PI,0);ctx.fill()}}
+function drawMountain(curCap){
+ const g0=wy(0);if(wy(1300)>SKY.y+SKY.h)return;
+ const pts=MTN.map(p=>[wx(p[0]),wy(p[1])]);
+ ctx.fillStyle=C.sage;poly(pts);ctx.fill();
+ // 影の面（右がわ）
+ let pk=0;MTN.forEach((p,i)=>{if(p[1]>MTN[pk][1])pk=i});
+ ctx.fillStyle=C.dsage;poly([pts[pk]].concat(pts.slice(pk+1)).concat([[wx(MTN[pk][0]+.05),g0]]));ctx.fill();
+ ctx.strokeStyle='rgba(243,231,207,.35)';ctx.lineWidth=3;for(let k=1;k<5;k++){ctx.beginPath();const t=k/5;ctx.moveTo(wx(MTN[pk][0]-.02*k),wy(1250*(1-t)));ctx.lineTo(wx(MTN[pk][0]-.02*k-.05),wy(1250*(1-t)-160));ctx.stroke()}
+ // ロープウェイと駅
+ const bx=wx(.02),by=g0,tx=wx(MTN[pk][0]),ty=wy(1180);
+ ctx.strokeStyle=C.navy;ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(bx,by-6);ctx.lineTo(tx,ty);ctx.stroke();
+ CAPH.forEach(h=>{if(h===0)return;const t=h/1180;const x=lerp(bx,tx,t),y=lerp(by-6,ty,t);const on=curCap===h,has=!!S.caps[h];
+  ctx.fillStyle=on?C.ochre:(has?C.coral:C.cream);ctx.fillRect(x-7,y-6,14,12);ctx.strokeStyle=C.navy;ctx.lineWidth=2;ctx.strokeRect(x-7,y-6,14,12);
+  if(on){ctx.font='700 13px '+FH;ctx.fillStyle=C.navy;ctx.textAlign='left';ctx.fillText(h+'m',x+11,y+5)}});
+}
+function drawGround(){const g0=wy(0);if(g0>SKY.y+SKY.h+10)return;
+ HILLS.forEach((hl,k)=>{ctx.fillStyle=hl.c;poly(hl.pts.map(p=>[wx(p[0]),g0-p[1]*(SKY.h/900)]).concat([[wx(1.05),SKY.y+SKY.h+50],[wx(-.05),SKY.y+SKY.h+50]]));ctx.fill()});
+ ctx.fillStyle='#86A38A';ctx.fillRect(SKY.x,g0,SKY.w,SKY.y+SKY.h-g0+20);
+ // ふもとの町
+ const hs=[[.42,1],[.47,.8],[.53,1.2],[.72,.9],[.78,1.1],[.9,.8]];hs.forEach(([x,s])=>{const X=wx(x),Y=g0+4,w=22*s,h=16*s;ctx.fillStyle=C.cream;ctx.fillRect(X-w/2,Y-h,w,h);ctx.fillStyle=C.rust;poly([[X-w/2-3,Y-h],[X,Y-h-11*s],[X+w/2+3,Y-h]]);ctx.fill()});
+ // 着地の的
+ const lx=wx(.62);ctx.strokeStyle=C.coral;ctx.lineWidth=5;ctx.beginPath();ctx.ellipse(lx,g0+18,60,14,0,0,7);ctx.stroke();ctx.beginPath();ctx.ellipse(lx,g0+18,26,6,0,0,7);ctx.stroke();
+}
+function drawGrainSky(){grain(SKY.x,SKY.y,SKY.w,SKY.h,.9)}
+
+/* ===== 描く: 気球・ダイバー ===== */
+function drawBalloon(x,y,s){ctx.save();ctx.translate(x,y);ctx.scale(s,s);
+ const cols=[C.coral,C.cream,C.navy,C.cream,C.coral];
+ for(let i=0;i<5;i++){ctx.fillStyle=cols[i];ctx.beginPath();const a0=-.5+i*.2,a1=a0+.2;ctx.moveTo(0,40);ctx.bezierCurveTo(a0*190,20,a0*170,-70,a0*60,-78);ctx.lineTo(a1*60,-78);ctx.bezierCurveTo(a1*170,-70,a1*190,20,0,40);ctx.fill()}
+ ctx.strokeStyle=C.navy;ctx.lineWidth=2;[-14,14].forEach(dx=>{ctx.beginPath();ctx.moveTo(dx*.5,36);ctx.lineTo(dx,62);ctx.stroke()});
+ ctx.fillStyle=C.ochre;ctx.fillRect(-15,60,30,20);ctx.fillStyle=C.rust;ctx.fillRect(-15,60,30,4);ctx.restore()}
+function drawDiver(x,y,s,t,chute,alpha,col){ctx.save();ctx.globalAlpha=alpha==null?1:alpha;ctx.translate(x,y);ctx.scale(s,s);
+ const suit=col||C.navy,fl=Math.sin(t*9)*.08;
+ if(chute){ctx.strokeStyle=suit;ctx.lineWidth=1.5;[-40,-14,14,40].forEach(dx=>{ctx.beginPath();ctx.moveTo(0,-8);ctx.lineTo(dx,-66);ctx.stroke()});
+  const st=[C.coral,C.cream,C.coral,C.cream,C.coral];for(let i=0;i<5;i++){ctx.fillStyle=st[i];ctx.beginPath();const a=-52+i*20.8;ctx.moveTo(a,-66);ctx.quadraticCurveTo(a+10.4,-104+Math.abs(i-2)*6,a+20.8,-66);ctx.closePath();ctx.fill()}
+  ctx.fillStyle=col?suit:C.coral;ctx.beginPath();ctx.moveTo(-52,-66);ctx.quadraticCurveTo(0,-112,52,-66);ctx.quadraticCurveTo(0,-80,-52,-66);ctx.fill()}
+ ctx.strokeStyle=suit;ctx.lineCap='round';
+ // 腕（ひろげる／パラシュートのときは上へ）
+ ctx.lineWidth=7;const ar=chute?[[-10,-22],[10,-22]]:[[-24,-18+fl*40],[24,-18-fl*40]];
+ ctx.beginPath();ctx.moveTo(-6,-4);ctx.lineTo(ar[0][0],ar[0][1]);ctx.moveTo(6,-4);ctx.lineTo(ar[1][0],ar[1][1]);ctx.stroke();
+ // 脚
+ ctx.lineWidth=8;ctx.beginPath();ctx.moveTo(-5,14);ctx.lineTo(chute?-7:-17,chute?38:32+fl*30);ctx.moveTo(5,14);ctx.lineTo(chute?7:17,chute?38:32-fl*30);ctx.stroke();
+ // 胴（背中から見る）
+ ctx.fillStyle=suit;ctx.beginPath();ctx.ellipse(0,4,10,15,0,0,7);ctx.fill();
+ if(!col){ctx.fillStyle=C.ochre;ctx.fillRect(-7,-6,14,15);ctx.fillStyle=C.cream;ctx.fillRect(-7,1,14,2);
+  // 腕の気圧計
+  ctx.fillStyle=C.cream;ctx.beginPath();ctx.arc(ar[0][0]*.7-3,ar[0][1]*.7,3.5,0,7);ctx.fill()}
+ // 頭（ヘルメットの後ろ・顔は描かない）
+ ctx.fillStyle=col?suit:C.coral;ctx.beginPath();ctx.arc(0,-17,7.5,0,7);ctx.fill();
+ if(!col){ctx.fillStyle=C.cream;ctx.fillRect(-7.5,-18,15,2.5)}
+ ctx.restore()}
+
+/* ===== 描く: 輪・札・けむり ===== */
+function flag(x,y,txt,bg,fg){ctx.font='700 '+(PORT?14:16)+'px '+FH;const w=ctx.measureText(txt).width+18;ctx.strokeStyle=C.navy;ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x,y-40);ctx.stroke();
+ ctx.fillStyle=bg;poly([[x,y-40],[x+w,y-40],[x+w-8,y-29],[x+w,y-18],[x,y-18]]);ctx.fill();ctx.fillStyle=fg;ctx.textAlign='left';ctx.fillText(txt,x+6,y-23)}
+function drawRing(r){const x=wx(r.x),y=wy(r.h);if(y<SKY.y-80||y>SKY.y+SKY.h+80)return;const rx=RR()*SKY.w,ry=Math.max(10,rx*.26);
+ const done=r.st!=='wait';ctx.save();if(done&&r.st!=='sealed'&&r.st!=='hit'&&r.st!=='ok')ctx.globalAlpha=.35;
+ const col=r.k==='rec'?C.paper:r.k==='pre'?C.coral:C.ochre;
+ ctx.lineWidth=11;ctx.strokeStyle=C.navy;ctx.beginPath();ctx.ellipse(x,y,rx,ry,0,0,7);ctx.stroke();
+ ctx.lineWidth=6;ctx.strokeStyle=col;ctx.beginPath();ctx.ellipse(x,y,rx,ry,0,0,7);ctx.stroke();
+ const lab=r.k==='cap'?r.h+'m カプセル':r.h+'m';const fx=x+rx+4>SKY.x+SKY.w-110?x-rx-4-ctx.measureText(lab).width-30:x+rx+4;
+ flag(fx,y,lab,r.k==='cap'?C.ochre:r.k==='pre'?C.coral:C.navy,r.k==='cap'?C.deep:C.cream);
+ if(r.k==='pre'&&!done){ctx.font='700 '+(PORT?22:28)+'px '+FH;ctx.fillStyle=C.coral;ctx.textAlign='center';ctx.fillText('？',x,y-ry-8)}
+ if(r.k==='cap'&&!done){ctx.fillStyle=C.ochre;capShape(x,y-ry-22,1)}
+ if(done&&r.real){ctx.globalAlpha=1;ctx.font='700 '+(PORT?14:16)+'px '+FH;ctx.fillStyle=C.navy;ctx.textAlign='center';ctx.fillText(Math.round(r.real)+'hPa',x,y+ry+18)}
+ ctx.restore()}
+function capShape(x,y,s,glow){ctx.save();ctx.translate(x,y);ctx.scale(s,s);if(glow){ctx.fillStyle='rgba(221,169,75,.35)';ctx.beginPath();ctx.arc(0,0,20,0,7);ctx.fill()}
+ ctx.fillStyle=C.ochre;ctx.beginPath();ctx.ellipse(0,0,9,13,0,0,7);ctx.fill();ctx.fillStyle=C.cream;ctx.fillRect(-9,-2,18,4);ctx.strokeStyle=C.navy;ctx.lineWidth=2;ctx.beginPath();ctx.ellipse(0,0,9,13,0,0,7);ctx.stroke();ctx.restore()}
+function tagPW(txt){const fs=PORT?14:16;ctx.save();ctx.font='700 '+fs+'px '+FB;const w=Math.max(...tagLines(txt).map(l=>ctx.measureText(l).width))+30;ctx.restore();return w}
+function tagLines(t){const ps=t.split('|');if(PORT)return ps;const a=[];let cur='';ps.forEach(p=>{if((cur+p).length>13&&cur){a.push(cur);cur=p}else cur+=p});if(cur)a.push(cur);return a}
+function drawTag(tg){const x=wx(tg.x),y=wy(tg.h);if(y<SKY.y-80||y>SKY.y+SKY.h+80||tg.gone)return;
+ const ls=tagLines(tg.txt),fs=PORT?14:16;ctx.font='700 '+fs+'px '+FB;const w=Math.max(...ls.map(l=>ctx.measureText(l).width))+30,h=ls.length*(fs+4)+14;tg.pw=w;
+ ctx.save();ctx.translate(x,y+Math.sin(G.t*2+tg.x*9)*3);ctx.rotate(Math.sin(tg.x*13)*.06);
+ ctx.strokeStyle=C.navy;ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(-w/2+10,-h/2+8);ctx.lineTo(-w/2-6,-h/2-16);ctx.stroke();
+ ctx.fillStyle=tg.got?(tg.ok?C.ochre:'#b9b2a2'):C.paper;poly([[-w/2+12,-h/2],[w/2,-h/2],[w/2,h/2],[-w/2+12,h/2],[-w/2,h/2-12],[-w/2,-h/2+12]]);ctx.fill();
+ ctx.strokeStyle=C.navy;ctx.lineWidth=2;ctx.stroke();ctx.fillStyle=C.cream;ctx.beginPath();ctx.arc(-w/2+10,-h/2+8,3.5,0,7);ctx.fill();ctx.stroke();
+ ctx.fillStyle=C.navy;ctx.textAlign='left';ls.forEach((l,i)=>ctx.fillText(l,-w/2+20,-h/2+fs+5+i*(fs+4)));
+ ctx.font='700 11px '+FH;ctx.fillStyle=C.coral;ctx.fillText('計画の札',-w/2+20,-h/2-3);ctx.restore()}
+function drawPuff(p){const x=wx(p.x),y=wy(p.h);if(y<SKY.y-120||y>SKY.y+SKY.h+60)return;const k=Math.min(1,p.t/1.2);
+ ctx.save();const col=p.ghost?'rgba(251,246,234,.0)':p.ok?C.coral:'#a9a9a6';
+ for(let i=0;i<6;i++){const rr=(10+i*5)*(.4+k*.6),yy=y-i*14*k,xx=x+Math.sin(i*1.7+p.t)*6*k;
+  if(p.ghost){ctx.setLineDash([4,4]);ctx.strokeStyle='rgba(251,246,234,.9)';ctx.lineWidth=2;ctx.beginPath();ctx.arc(xx,yy,rr,0,7);ctx.stroke();ctx.setLineDash([])}
+  else{ctx.fillStyle=col;ctx.globalAlpha=.9-i*.1;ctx.beginPath();ctx.arc(xx,yy,rr,0,7);ctx.fill()}}
+ ctx.globalAlpha=1;ctx.font='700 '+(PORT?13:15)+'px '+FH;ctx.textAlign='left';ctx.fillStyle=p.ghost?C.paper:C.navy;
+ ctx.fillText(p.ghost?'前回':(p.ok?'◎ ':'')+p.lab,x+26,y+5);ctx.restore()}
+
+/* ===== 描く: 計器の帯 ===== */
+const ANG=v=>(135+(clamp(v,600,1050)-600)/450*270)*Math.PI/180;
+function reading(){if(!G)return 1013;return PR(G.h,G.P0)+Math.sin(G.t*6.3)*.25}
+function drawBaro(cx,cy,r){const p=reading();const lid=G&&G.lidOn;
+ ctx.fillStyle=C.ochre;ctx.beginPath();ctx.arc(cx,cy,r+8,0,7);ctx.fill();ctx.fillStyle=C.navy;ctx.beginPath();ctx.arc(cx,cy,r+3,0,7);ctx.fill();
+ ctx.fillStyle=C.paper;ctx.beginPath();ctx.arc(cx,cy,r,0,7);ctx.fill();
+ ctx.strokeStyle=C.navy;ctx.textAlign='center';
+ for(let v=600;v<=1050;v+=10){const a=ANG(v),big=v%50===0;ctx.lineWidth=big?2.5:1.2;const r0=r*(big?.8:.87);ctx.beginPath();ctx.moveTo(cx+Math.cos(a)*r0,cy+Math.sin(a)*r0);ctx.lineTo(cx+Math.cos(a)*r*.94,cy+Math.sin(a)*r*.94);ctx.stroke();
+  if(v%100===0||(r>90&&v===1050)){ctx.font='700 '+Math.round(r*.14)+'px '+FH;ctx.fillStyle=C.navy;ctx.fillText(v,cx+Math.cos(a)*r*.64,cy+Math.sin(a)*r*.64+r*.05)}}
+ // 1013 の印
+ const a13=ANG(1013);ctx.fillStyle=C.coral;ctx.beginPath();ctx.arc(cx+Math.cos(a13)*r*.97,cy+Math.sin(a13)*r*.97,3,0,7);ctx.fill();
+ ctx.font='700 '+Math.round(r*.12)+'px '+FH;ctx.fillStyle=C.navy;ctx.fillText('気圧計',cx,cy-r*.26);
+ if(lid){ctx.fillStyle=G.lidK==='cap'?C.ochre:C.cream;ctx.beginPath();ctx.arc(cx,cy,r*.74,0,7);ctx.fill();ctx.strokeStyle=C.navy;ctx.lineWidth=2;ctx.stroke();
+  ctx.save();ctx.translate(cx,cy+r*.1);ctx.rotate(-.18);ctx.strokeStyle=C.coral;ctx.lineWidth=3;ctx.strokeRect(-r*.3,-r*.24,r*.6,r*.46);ctx.fillStyle=C.coral;ctx.font='700 '+Math.round(r*.34)+'px '+FH;ctx.fillText(G.lidK==='cap'?'封':'予想',0,r*.12);ctx.restore();
+  if(G.lidK==='cap'||G.lid){ctx.font='700 '+Math.round(r*.11)+'px '+FB;ctx.fillStyle=C.navy;ctx.fillText(G.lidK==='cap'?'本物は校外学習で':'ふたの間は見えない',cx,cy+r*.55)}}
+ const nv=lid?(G.lid?G.pred:null):p;
+ if(nv!=null){const a=ANG(nv);ctx.strokeStyle=C.coral;ctx.lineWidth=lid?4:5;if(lid)ctx.setLineDash([7,5]);ctx.beginPath();ctx.moveTo(cx-Math.cos(a)*r*.15,cy-Math.sin(a)*r*.15);ctx.lineTo(cx+Math.cos(a)*r*.86,cy+Math.sin(a)*r*.86);ctx.stroke();ctx.setLineDash([])}
+ ctx.fillStyle=C.navy;ctx.beginPath();ctx.arc(cx,cy,r*.07,0,7);ctx.fill();
+ // 数字の窓
+ const tw=r*1.02,th=r*.3,ty=cy+r*.62;ctx.fillStyle=C.navy;ctx.fillRect(cx-tw/2,ty-th/2,tw,th);ctx.fillStyle=lid?C.ochre:C.cream;ctx.font='700 '+Math.round(th*.72)+'px '+FH;
+ ctx.fillText(lid?(G.lid?'予想'+G.pred:'― ―'):Math.round(p)+'hPa',cx,ty+th*.27)}
+function drawAlt(cx,cy,r){const on=G&&G.alt;
+ ctx.fillStyle=C.navy;ctx.beginPath();ctx.arc(cx,cy,r+4,0,7);ctx.fill();ctx.fillStyle=C.paper;ctx.beginPath();ctx.arc(cx,cy,r,0,7);ctx.fill();
+ if(on){const h=Math.max(0,G.h),a=-Math.PI/2+(h%1000)/1000*Math.PI*2;ctx.strokeStyle=C.navy;ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx+Math.cos(a)*r*.8,cy+Math.sin(a)*r*.8);ctx.stroke();
+  ctx.font='700 '+Math.round(r*.46)+'px '+FH;ctx.fillStyle=C.coral;ctx.textAlign='center';ctx.fillText(Math.round(h/10)*10+'m',cx,cy+r+(PORT?20:24))}
+ else{ctx.fillStyle=C.coral;poly([[cx-r-6,cy-r*.5],[cx+r+6,cy-r*.8],[cx+r+2,cy+r*.7],[cx-r-4,cy+r*.9]]);ctx.fill();ctx.fillStyle=C.cream;ctx.font='700 '+Math.round(r*.36)+'px '+FH;ctx.textAlign='center';ctx.fillText('高度計',cx,cy-r*.05);ctx.fillText('なし',cx,cy+r*.4)}
+ ctx.font='700 '+(PORT?11:13)+'px '+FB;ctx.fillStyle=C.navy;ctx.textAlign='center';if(!on||!PORT)ctx.fillText('高度計',cx,cy-r-8)}
+function drawBag(cx,cy,s){const p=G?PR(G.h,G.P0):1013;const k=1+(1013-p)/1013*1.5;const w=26*s*k,h=32*s*Math.pow(k,.8);
+ // まわりの空気が押す矢印（あらゆる向き）
+ const L=(6+28*clamp((p-550)/463,0,1.1))*s;ctx.strokeStyle=C.navy;ctx.fillStyle=C.navy;ctx.lineWidth=2.4*s;
+ for(let i=0;i<8;i++){const a=i*Math.PI/4;const ex=cx+Math.cos(a)*(Math.max(w,h)*.62+4),ey=cy+Math.sin(a)*(Math.max(w,h)*.62+4);const sx=ex+Math.cos(a)*L,sy=ey+Math.sin(a)*L;
+  ctx.beginPath();ctx.moveTo(sx,sy);ctx.lineTo(ex,ey);ctx.stroke();ctx.beginPath();ctx.moveTo(ex,ey);ctx.lineTo(ex+Math.cos(a+.5)*7*s,ey+Math.sin(a+.5)*7*s);ctx.lineTo(ex+Math.cos(a-.5)*7*s,ey+Math.sin(a-.5)*7*s);ctx.fill()}
+ ctx.fillStyle=C.coral;ctx.beginPath();ctx.moveTo(cx-w/2,cy-h/2);for(let i=0;i<=6;i++)ctx.lineTo(cx-w/2+w*i/6,cy-h/2-(i%2?4:0)*s);ctx.quadraticCurveTo(cx+w/2+w*.12*k,cy,cx+w/2,cy+h/2);for(let i=6;i>=0;i--)ctx.lineTo(cx-w/2+w*i/6,cy+h/2+(i%2?4:0)*s);ctx.quadraticCurveTo(cx-w/2-w*.12*k,cy,cx-w/2,cy-h/2);ctx.fill();
+ ctx.fillStyle=C.cream;ctx.font='700 '+Math.round(11*s)+'px '+FB;ctx.textAlign='center';ctx.fillText('おかし',cx,cy+4*s);
+ ctx.fillStyle=C.navy;ctx.font='700 '+(PORT?10:12)+'px '+FB;const ly=cy+Math.max(w,h)*.62+L+(PORT?14:18);if(PORT)ctx.fillText('袋',cx,ly);else{ctx.fillText('袋を押す空気の力',cx,ly);ctx.fillText('（あらゆる向きから）',cx,ly+15)}}
+function drawJar(cx,y,w){const n=CAPH.length,gap=w/n;ctx.font='700 14px '+FH;ctx.fillStyle=C.navy;ctx.textAlign='center';ctx.fillText('予想カプセル　'+capCount()+' / 7',cx,y-8);
+ ctx.fillStyle='rgba(44,74,110,.12)';ctx.fillRect(cx-w/2-6,y,w+12,46);ctx.strokeStyle=C.navy;ctx.lineWidth=2;ctx.strokeRect(cx-w/2-6,y,w+12,46);
+ CAPH.forEach((h,i)=>{const x=cx-w/2+gap*(i+.5);if(h===0||S.caps[h]){ctx.fillStyle=h===0?C.navy:C.ochre;capShape(x,y+20,1,false)}else{ctx.strokeStyle='rgba(44,74,110,.5)';ctx.setLineDash([3,3]);ctx.beginPath();ctx.ellipse(x,y+20,9,13,0,0,7);ctx.stroke();ctx.setLineDash([])}
+  ctx.font='700 10px '+FB;ctx.fillStyle=C.navy;ctx.fillText(h+'m',x,y+42)})}
+function noteRows(){return S.note.filter(n=>n.p0===NORMAL).sort((a,b)=>b.h-a.h)}
+function drawMiniNote(x,y,w,hmax){const rows=noteRows();ctx.fillStyle=C.paper;const rh=PORT?17:20,n=Math.min(rows.length,Math.floor((hmax-30)/rh));if(hmax<60)return;
+ ctx.fillRect(x,y,w,30+Math.max(1,n)*rh+6);ctx.strokeStyle=C.navy;ctx.lineWidth=2;ctx.strokeRect(x,y,w,30+Math.max(1,n)*rh+6);
+ ctx.fillStyle=C.navy;ctx.fillRect(x,y,w,26);ctx.fillStyle=C.cream;ctx.font='700 '+(PORT?13:14)+'px '+FH;ctx.textAlign='left';ctx.fillText('ノート（ふつうの日1013hPa）',x+8,y+18);
+ if(!rows.length){ctx.fillStyle=C.navy;ctx.font='500 13px '+FB;ctx.fillText('輪をくぐると記録される',x+10,y+48);return}
+ let rs=rows;if(rows.length>n){let k=0;rows.forEach((r,j)=>{if(Math.abs(r.h-CAMH)<Math.abs(rows[k].h-CAMH))k=j});const s0=clamp(k-Math.floor(n/2),0,rows.length-n);rs=rows.slice(s0,s0+n)}
+ rs.forEach((r,i)=>{const yy=y+26+rh*(i+1)-4;ctx.font='700 '+(PORT?14:16)+'px '+FH;ctx.fillStyle=C.navy;ctx.textAlign='left';ctx.fillText(r.h+'m',x+12,yy);ctx.textAlign='right';ctx.fillStyle=C.coral;ctx.fillText(Math.round(r.p)+'hPa',x+w-12,yy);
+  ctx.strokeStyle='rgba(44,74,110,.25)';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(x+8,yy+5);ctx.lineTo(x+w-8,yy+5);ctx.stroke()})}
+function drawPanel(){const p=PAN;ctx.fillStyle=C.cream;ctx.fillRect(p.x,p.y,p.w,p.h);grain(p.x,p.y,p.w,p.h,.8);
+ ctx.fillStyle=C.navy;if(PORT)ctx.fillRect(p.x,p.y,p.w,5);else ctx.fillRect(p.x,p.y,5,p.h);ctx.fillStyle=C.coral;if(PORT)ctx.fillRect(p.x,p.y+5,p.w,2);else ctx.fillRect(p.x+5,p.y,2,p.h);
+ drawBaro(INS.bx,INS.by,INS.br);drawAlt(INS.ax,INS.ay,INS.ar);drawBag(INS.gx,INS.gy,INS.gs);
+ if(!PORT){drawJar(p.x+p.w/2,INS.jy,p.w-50);drawMiniNote(p.x+18,INS.ty,p.w-36,H-196-INS.ty)}
+ else if(W>=600){drawMiniNote(INS.ax+50,PAN.y+14,INS.rx-INS.ax-66,PAN.h-24)}}
+function capCount(){return CAPH.filter(h=>h===0||S.caps[h]).length}
+function drawTargets(){if(!G||!G.targets.length)return;const x=SKY.x+SKY.w-12;let y=PORT?128:74;ctx.textAlign='right';
+ ctx.font='700 '+(PORT?14:16)+'px '+FH;
+ const lab='けむりの目標';ctx.fillStyle=C.navy;const lw=ctx.measureText(lab).width+16;ctx.fillRect(x-lw,y,lw,24);ctx.fillStyle=C.cream;ctx.fillText(lab,x-8,y+17);y+=28;
+ G.targets.forEach(t=>{const s=t.h+'m'+(t.st==='hit'?' ◎':t.st==='wait'?'':' ×');const w=ctx.measureText(s).width+18;ctx.fillStyle=t.st==='hit'?C.coral:t.st==='wait'?C.paper:'#b9b2a2';ctx.fillRect(x-w,y,w,26);ctx.strokeStyle=C.navy;ctx.lineWidth=2;ctx.strokeRect(x-w,y,w,26);
+  ctx.fillStyle=t.st==='hit'?C.cream:C.navy;ctx.fillText(s,x-9,y+18);y+=30});
+ if(G.d.boss){ctx.fillStyle=C.navy;ctx.font='700 13px '+FB;ctx.fillText('第'+(G.leg+1)+'段 / 3',x,y+14)}}
+
+/* ===== 粒・カプセルの飛行 ===== */
+let PARTS=[],FLY=[];
+function burst(x,y,n,cols){if(RM)n=Math.min(n,6);cols=cols||[C.coral,C.ochre,C.cream,C.navy];for(let i=0;i<n;i++){const a=rnd(0,7),v=rnd(120,340);PARTS.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v-120,l:rnd(.7,1.3),c:cols[i%cols.length],s:rnd(5,11),r:rnd(0,6),vr:rnd(-8,8)})}}
+function stepParts(dt){PARTS=PARTS.filter(p=>(p.l-=dt)>0);PARTS.forEach(p=>{p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=500*dt;p.r+=p.vr*dt});
+ FLY=FLY.filter(f=>(f.t+=dt)<1.4);}
+function drawParts(){PARTS.forEach(p=>{ctx.save();ctx.globalAlpha=clamp(p.l*1.5,0,1);ctx.translate(p.x,p.y);ctx.rotate(p.r);ctx.fillStyle=p.c;ctx.fillRect(-p.s/2,-p.s/3,p.s,p.s*.66);ctx.restore()});
+ FLY.forEach(f=>{const k=Math.min(1,f.t/1.1),e=1-Math.pow(1-k,3);const x=lerp(f.x,f.tx,e),y=lerp(f.y,f.ty,e)-Math.sin(e*Math.PI)*120;
+  for(let i=1;i<9;i++){const e2=Math.max(0,e-i*.035);const x2=lerp(f.x,f.tx,e2),y2=lerp(f.y,f.ty,e2)-Math.sin(e2*Math.PI)*120;ctx.fillStyle='rgba(221,169,75,'+(.5-i*.05)+')';ctx.beginPath();ctx.arc(x2,y2,12-i,0,7);ctx.fill()}
+  capShape(x,y,1.4,true)})}
+function jarPos(){if(PORT)return[$('#hud').getBoundingClientRect().left+W*.55,$('#hud').getBoundingClientRect().top+20];return[PAN.x+PAN.w/2,INS.jy+20]}
+
+/* ===== 画面の切り替え ===== */
+let MODE='title',G=null,paused=false,BOT=false;
+function show(ids){clearPops();['title','map','play','test'].forEach(k=>$('#'+k).classList.toggle('hidden',!ids.includes(k)));$('#bNote').classList.toggle('hidden',!ids.includes('play'))}
+const pops=$('#pops');
+let POPQ=[];
+function clearPops(){pops.innerHTML='';POPQ=[]}
+function pop(t,sub,x,y,cls){const d=document.createElement('div');d.className='pop '+(cls||'');d.innerHTML=esc(t)+(sub?'<small>'+esc(sub)+'</small>':'');
+ const now=performance.now();POPQ=POPQ.filter(q=>now-q<1300);
+ if(MODE==='dive'){x=SKY.x+SKY.w/2;y=DY+(PORT?84:96)+POPQ.length*(PORT?58:70)}POPQ.push(now);
+ x=x==null?SKY.x+SKY.w/2:x;y=y==null?SKY.y+SKY.h*.3:y;d.style.left=clamp(x,Math.min(W/2,170),W-Math.min(W/2,170))+'px';d.style.top=clamp(y,90,H-80)+'px';pops.appendChild(d);setTimeout(()=>d.remove(),2100)}
+let slipT=null;
+function slip(html,sec){const s=$('#slip');s.innerHTML=html;s.classList.remove('hidden');placeSlip();clearTimeout(slipT);if(sec)slipT=setTimeout(()=>s.classList.add('hidden'),sec*1000)}
+function hideSlip(){$('#slip').classList.add('hidden')}
+function placeSlip(){const s=$('#slip');const top=PORT?(W>=600?128:176):74;s.style.top=top+'px';s.style.left=(SKY.x+SKY.w/2)+'px';s.style.transform='translateX(-50%)';s.style.maxWidth=Math.min(SKY.w*.9,620)+'px'}
+function ovOpen(html){$('#ovBox').innerHTML=html;$('#ov').classList.remove('hidden')}
+function ovClose(){$('#ov').classList.add('hidden')}
+function backBtn(){const b=$('#bBack');const on=MODE==='dive'||MODE==='result'||MODE==='map'||MODE==='test'||(MODE==='title'&&INHUB);b.classList.toggle('hidden',!on);b.innerHTML='<i></i>'+(MODE==='title'?'一覧へ':'もどる')}
+$('#bBack').onclick=()=>{ac();sfx.tap();
+ if(MODE==='title'){try{window.parent.postMessage({type:'rika-close-game'},'*')}catch(e){}return}
+ if(MODE==='map'){toTitle();return}
+ if(MODE==='result'){ovClose();toMap();return}
+ if(MODE==='test'){if(TEST_ONLY){if(INHUB){try{window.parent.postMessage({type:'rika-close-game'},'*')}catch(e){}}else startTest();return}
+  ovOpen('<div class="no">確認テスト</div><h2>テストをやめる？</h2><p>確認テストは、次はさいしょから。空の旅の進み具合は保存されています。</p><div class="row"><button class="tk c s" id="bkNo">つづける</button><button class="tk n" id="bkGo">ポスターの地図へ</button></div>');$('#bkNo').onclick=ovClose;$('#bkGo').onclick=()=>{ovClose();toMap()};return}
+ if(MODE==='dive'){paused=true;windSet(0);ovOpen('<div class="no">いったん止める</div><h2>ポスターの地図にもどる？</h2><p>進み具合は保存されます（封印したカプセル・★・ノートはそのまま。この便は次にはじめから）。</p><div class="row"><button class="tk c s" id="bkNo">つづける</button><button class="tk n" id="bkGo">地図へもどる</button></div>');
+  $('#bkNo').onclick=()=>{ovClose();paused=false};$('#bkGo').onclick=()=>{ovClose();paused=false;windOff();toMap()}}};
+function toTitle(){MODE='title';G=null;windOff();show(['title']);$('#bCont').classList.toggle('hidden',!S.started);backBtn();zkButtons();hideSlip()}
+function nextDive(){for(let i=0;i<DIVES.length;i++)if(!S.clr[i])return i;return DIVES.length-1}
+function toMap(){MODE='map';G=null;windOff();show(['map']);backBtn();hideSlip();const nx=nextDive();
+ $('#posters').innerHTML=DIVES.map((d,i)=>{const lock=i>0&&!S.clr[i-1];const st=S.stars[i]||[0,0,0];return '<button class="pst'+(S.clr[i]?' done':'')+(lock?' lock':'')+(i===nx&&!S.clr[i]?' next':'')+'" data-i="'+i+'" '+(lock?'disabled':'')+'><span class="n">第'+(i+1)+'便</span><span class="st">'+st.map(v=>v?'★':'☆').join('')+'</span><span class="t">'+esc(d.nm)+'<small>'+esc(d.sub)+(d.boss?'':'・'+(d.H)+'mから')+'</small></span></button>'}).join('');
+ document.querySelectorAll('.pst').forEach(b=>b.onclick=()=>{sfx.tap();startDive(+b.dataset.i,0)});
+ const nst=Object.values(S.stars).reduce((a,s)=>a+s.filter(Boolean).length,0);$('#mapInfo').textContent='★'+nst+' / 24';$('#mapJar').textContent='予想カプセル '+capCount()+' / 7';
+ const all=S.clr[7];$('#bSeal').classList.toggle('hidden',!all||S.sealed);$('#bTest').classList.toggle('hidden',!S.sealed);$('#bNext').classList.toggle('hidden',!!all);
+ $('#bNext').textContent='つぎの便へ（第'+(nx+1)+'便）';zkButtons()}
+$('#bNext').onclick=()=>{sfx.tap();startDive(nextDive(),0)};
+$('#bSeal').onclick=()=>{sfx.tap();sealScreen()};
+$('#bTest').onclick=()=>{sfx.tap();startTest()};
+$('#bGacha').onclick=()=>{sfx.tap();openGacha()};
+$('#bBook1').onclick=$('#bBook2').onclick=()=>{sfx.tap();openBook()};
+$('#bNote1').onclick=$('#bNote2').onclick=()=>{sfx.tap();openNote()};
+$('#bNote').onclick=()=>{ac();sfx.tap();openNote()};
+$('#bStart').onclick=()=>{ac();S.name=$('#nameIn').value.trim();S.started=true;save();sfx.tap();if(!S.clr[0])startDive(0,0);else toMap()};
+$('#bCont').onclick=()=>{ac();S.name=$('#nameIn').value.trim()||S.name;save();sfx.tap();toMap()};
+
+/* ===== 観測ノート ===== */
+function addNote(h,p,p0){const i=S.note.findIndex(n=>n.h===h&&n.p0===p0);const rec={h,p:Math.round(p*10)/10,p0};if(i>=0)S.note[i]=rec;else S.note.push(rec);save()}
+function noteVal(h){const n=S.note.find(n=>n.h===h&&n.p0===NORMAL);return n?Math.round(n.p):null}
+function noteSVG(){const w=420,h=300,x0=48,y0=16,x1=w-14,y1=h-36;const X=p=>x0+(p-600)/(1050-600)*(x1-x0),Y=a=>y1-(a/4200)*(y1-y0);
+ let s='<svg viewBox="0 0 '+w+' '+h+'" xmlns="http://www.w3.org/2000/svg" font-family="Kaisei Opti, serif"><rect x="0" y="0" width="'+w+'" height="'+h+'" fill="#FBF6EA"/>';
+ for(let p=600;p<=1050;p+=50){s+='<line x1="'+X(p)+'" y1="'+y0+'" x2="'+X(p)+'" y2="'+y1+'" stroke="#2C4A6E" stroke-opacity="'+(p%100?'.12':'.3')+'"/>';if(p%100===0)s+='<text x="'+X(p)+'" y="'+(y1+16)+'" font-size="12" text-anchor="middle" fill="#2C4A6E">'+p+'</text>'}
+ for(let a=0;a<=4000;a+=500){s+='<line x1="'+x0+'" y1="'+Y(a)+'" x2="'+x1+'" y2="'+Y(a)+'" stroke="#2C4A6E" stroke-opacity="'+(a%1000?'.12':'.3')+'"/>';if(a%1000===0)s+='<text x="'+(x0-6)+'" y="'+(Y(a)+4)+'" font-size="12" text-anchor="end" fill="#2C4A6E">'+a+'</text>'}
+ s+='<text x="'+((x0+x1)/2)+'" y="'+(h-4)+'" font-size="13" text-anchor="middle" fill="#2C4A6E">気圧（hPa）</text><text x="12" y="'+(y0+4)+'" font-size="13" fill="#2C4A6E">高さ(m)</text>';
+ const rows=noteRows().slice().sort((a,b)=>a.h-b.h);if(rows.length>1)s+='<polyline fill="none" stroke="#2C4A6E" stroke-width="3" points="'+rows.map(r=>X(r.p)+','+Y(r.h)).join(' ')+'"/>';
+ S.note.filter(n=>n.p0!==NORMAL).forEach(n=>{s+='<rect x="'+(X(n.p)-5)+'" y="'+(Y(n.h)-5)+'" width="10" height="10" fill="'+(n.p0<NORMAL?'#8b8f95':'#DDA94B')+'"/>'});
+ rows.forEach(r=>{s+='<circle cx="'+X(r.p)+'" cy="'+Y(r.h)+'" r="6" fill="#E07A5F" stroke="#2C4A6E" stroke-width="2"/>'});
+ return s+'</svg>'}
+function openNote(){const wasPaused=paused;if(MODE==='dive'){paused=true;windSet(0)}
+ const rows=noteRows(),oth=S.note.filter(n=>n.p0!==NORMAL).sort((a,b)=>b.p0-a.p0||b.h-a.h);
+ let tb='<table class="ntab"><tr><th>高さ</th><th>気圧計（ふつうの日）</th></tr>'+(rows.length?rows.map(r=>'<tr><td>'+r.h+' m</td><td><b>'+Math.round(r.p)+'</b> hPa</td></tr>').join(''):'<tr><td colspan="2" style="text-align:center">まだ記録がない</td></tr>')+'</table>';
+ if(oth.length)tb+='<table class="ntab" style="margin-top:8px"><tr><th>高さ</th><th>ほかの日</th></tr>'+oth.map(r=>'<tr><td>'+r.h+' m</td><td class="d">'+Math.round(r.p)+' hPa（地上'+r.p0+'の日）</td></tr>').join('')+'</table>';
+ const les=[];if(S.les.up)les.push('<b>高いところほど、気圧は小さい。</b>上にのっている空気が少ないから。');if(S.les.bag)les.push('<b>大気圧はあらゆる向きから</b>働く。上空では外からの押しが弱く、袋がふくらむ。');if(S.les.wx)les.push('<b>同じ高さでも、天気（日・時刻）で気圧は変わる。</b>だから計画には時刻も書く。');
+ const caps=CAPH.filter(h=>h&&S.caps[h]).map(h=>h+'m→'+S.caps[h].val+'hPa').join('　');
+ ovOpen('<div class="no">観測ノート</div><h2>高さと気圧計の値</h2><div class="note"><div>'+tb+'</div><div class="ngraph">'+noteSVG()+'</div></div>'+(les.length?'<div class="lesson">'+les.join('<br>')+'</div>':'')+
+  (caps?'<p class="small"><b>予想カプセル（封印中・本物は校外学習で）</b>：'+esc(caps)+'</p>':'')+'<div class="row"><button class="tk n" id="nClose">'+(MODE==='dive'?'降下にもどる':'とじる')+'</button></div>');
+ $('#nClose').onclick=()=>{ovClose();sfx.tap();if(MODE==='dive')paused=wasPaused}}
+
+/* ===== 降下 ===== */
+let BR=null;// タイムアタックの記録
+function startDive(i,leg){ac();const d=DIVES[i];if(!leg&&d.boss)BR={t:0,legs:[]};
+ const L=d.boss?d.legs[leg]:d;
+ G={i,leg:leg||0,d,H:L.H,P0:L.P0,h:L.H,x:.5,tx:.5,t:0,v:d.v,alt:!!d.alt,phase:'jump',
+  rings:(d.boss?[]:d.rings).map(r=>({h:r[0],k:r[1],x:r[2],st:'wait'})),
+  targets:L.smoke.map(h=>({h,st:'wait',at:null})),tags:[],tagGot:null,tagBad:null,puffs:[],path:[],combo:0,lid:null,lidOn:false,lidK:null,pred:0,chute:false,fast:false,wxHint:false,hinted:{},landT:0};
+ if(!d.boss&&d.cap){G.rings.push({h:d.cap[0],k:'cap',x:d.cap[1],st:'wait'});
+  const T=TAGS[d.tag],txts=[{txt:T.ok,ok:true},{txt:T.ng[0],ok:false},{txt:T.ng[1],ok:false}].sort(()=>Math.random()-.5),xs=(PORT?[.28,.72,.5]:[.3,.78,.54]);
+  txts.forEach((t,k)=>G.tags.push({txt:t.txt,ok:t.ok,h:d.tagH[k],x:xs[k],got:false,pw:tagPW(t.txt)}))}
+ G.rings.sort((a,b)=>b.h-a.h);
+ // 前回の自分（ゴースト）
+ const gh=d.ghost&&S.ghost[i+'-'+(leg||0)];G.ghost=gh||null;if(gh)(gh.sm||[]).forEach(h=>G.puffs.push({x:gh.xs[Math.floor((G.H-h)/25)]||.5,h,ok:false,ghost:true,t:2,lab:''}));
+ MODE='dive';paused=false;show(['play']);backBtn();hideSlip();ovClose();CAMH=G.h;
+ $('#hDvS').textContent='第'+(i+1)+'便'+(d.boss?'・'+(G.leg+1)+'段目':'');$('#hDv').textContent=d.nm;$('#hWx').textContent=G.P0+'hPa';
+ const wb=$('#hWxBox');wb.classList.toggle('low',G.P0<NORMAL);wb.classList.toggle('high',G.P0>NORMAL);
+ $('#hCap').textContent=capCount()+'/7';$('#hTmBox').classList.toggle('hidden',!d.boss);kk();showDial(false);updCtl();
+ if(!leg)slip(d.slip,d.boss?7:6);else slip('<span class="hd">第'+(leg+1)+'段　'+G.H+'mから</span>今日の地上の気圧 <b>'+G.P0+'hPa</b>',4);
+ S.started=true;S.tries[i]=(S.tries[i]||0)+1;save();windOn();sfx.jump()}
+function showDial(on){$('#dialCtl').classList.toggle('hidden',!on);updCtl()}
+function updCtl(){const lid=G&&G.lid;$('#bSmoke').classList.toggle('hidden',!!lid);$('#bFast').classList.toggle('hidden',!!lid);$('#bSmoke').disabled=!G||!G.targets.some(t=>t.st==='wait');if(lid)$('#dRd').innerHTML=(G.lidK==='cap'?'カプセルの予想':'輪の予想')+'<b>'+G.pred+'</b>'}
+function setPred(v){if(!G||!G.lid)return;const nv=clamp(Math.round(v),600,1050);if(nv!==G.pred){G.pred=nv;sfx.tick();updCtl()}}
+document.querySelectorAll('#dialCtl button').forEach(b=>b.onpointerdown=e=>{e.preventDefault();ac();setPred(G.pred+(+b.dataset.d))});
+const fb=$('#bFast');fb.onpointerdown=e=>{e.preventDefault();ac();if(G)G.fast=true;fb.classList.add('on')};['pointerup','pointerleave','pointercancel'].forEach(ev=>fb.addEventListener(ev,()=>{if(G)G.fast=false;fb.classList.remove('on')}));
+$('#bSmoke').onpointerdown=e=>{e.preventDefault();ac();doSmoke()};
+
+function screenOf(x,h){return[wx(x),wy(h)]}
+function update(dt){
+ if(MODE!=='dive'||!G||paused)return;const g=G,d=g.d;g.t+=dt;if(d.boss&&BR)BR.t+=dt;
+ if(BOT)botStep();
+ if(g.phase==='jump'){if(g.t>1.1){g.phase='fall'}CAMH=g.h;stepParts(dt);return}
+ if(g.phase==='next'){g.nextT+=dt;if(d.boss&&BR)BR.t-=dt;if(g.nextT>.9)startDive(g.i,g.leg+1);return}
+ if(g.phase==='land'){g.landT+=dt;stepParts(dt);g.puffs.forEach(p=>p.t+=dt);if(g.landT>1.3){g.phase='done';finishDive()}return}
+ if(g.phase!=='fall')return;
+ if(keys.L)g.tx=clamp(g.tx-dt*.8,.04,.96);if(keys.R)g.tx=clamp(g.tx+dt*.8,.04,.96);
+ g.x+=(g.tx-g.x)*Math.min(1,dt*6);
+ let v=g.v;if(g.lid&&!g.fast)v*=.6;if(g.fast&&!g.lid)v*=1.8;if(g.chute)v=10;
+ const h0=g.h;g.h-=v*dt;
+ const pi=Math.floor((g.H-g.h)/25);if(g.path[pi]==null)g.path[pi]=Math.round(g.x*1000)/1000;
+ // ふた（予想の輪・カプセルの輪の手前）
+ const nx=g.rings.find(r=>r.st==='wait'&&(r.k==='pre'||r.k==='cap')&&g.h>r.h&&g.h-r.h<=LEAD);
+ if(nx&&g.lid!==nx){const first=!g.lid;g.lid=nx;g.lidK=nx.k;if(first||nx.k==='cap')g.pred=Math.round(reading());sfx.lid();showDial(true);
+  const [sx,sy]=screenOf(g.x,g.h);pop(nx.k==='cap'?'カプセルの輪':'ふたが閉まった',nx.k==='cap'?nx.h+'mでの値を予想して封印':nx.h+'mでの値を予想しよう',sx,sy+80,nx.k==='cap'?'o':'n')}
+ if(!nx&&g.lid){g.lid=null;showDial(false)}
+ const hold=g.rings.find(r=>r.k==='cap'&&r.st!=='wait'&&g.h>r.h-100&&g.h<=r.h);
+ g.lidOn=!!g.lid||!!hold;if(hold&&!g.lid)g.lidK='cap';
+ // 輪をくぐる
+ g.rings.forEach(r=>{if(r.st==='wait'&&g.h<=r.h&&h0>r.h){const through=Math.abs(g.x-r.x)<=RR();passRing(r,through)}});
+ // 計画の札
+ g.tags.forEach(t=>{if(t.got)return;if(Math.abs(g.h-t.h)<30&&Math.abs(g.x-t.x)<t.pw/2/SKY.w+.02)grabTag(t)});
+ // 出しそびれ
+ g.targets.forEach(t=>{if(t.st==='wait'&&g.h<t.h-TOL_SMOKE){t.st='late';g.combo=0;const [sx,sy]=screenOf(g.x,g.h);pop('目印を出しそびれた',t.h+'mを過ぎた',sx,sy-60,'g');sfx.off();updCtl()}});
+ if(!g.chute&&g.h<=150){g.chute=true;sfx.chute()}
+ if(g.h<=0){g.h=0;g.phase='land';g.landT=0;sfx.land();windSet(0);addNote(0,g.P0,g.P0);const [sx,sy]=screenOf(g.x,0);burst(sx,sy,10,[C.sage,C.cream,C.ochre])}
+ g.puffs.forEach(p=>p.t+=dt);stepParts(dt);
+ windSet(g.chute?.03:clamp(v/60,0,.6)*.22);
+ CAMH=g.h;
+ if(d.boss){const left=Math.max(0,d.limit-BR.t);$('#hTm').textContent=Math.floor(left/60)+':'+String(Math.floor(left%60)).padStart(2,'0')}}
+
+function passRing(r,through){const g=G,[sx,sy]=screenOf(r.x,r.h);const real=PR(r.h,g.P0);
+ if(r.k==='rec'){if(!through){r.st='miss';pop('輪をはずれた','記録できなかった',sx,sy-40,'g');sfx.off();return}
+  r.st='ok';r.real=real;addNote(r.h,real,g.P0);sfx.rec();burst(sx,sy,8,[C.paper,C.ochre]);
+  const nv=noteVal(r.h);
+  if(g.P0!==NORMAL&&nv){pop('ノートより '+Math.round(nv-real)+'hPa '+(real<nv?'低い！':'高い！'),'同じ'+r.h+'mなのに　今日 '+Math.round(real)+' ／ ふつうの日 '+nv,sx,sy-50,'n big');slip('<span class="hd">同じ高さなのに、値がちがう</span>今日は地上の気圧が <b>'+g.P0+'hPa</b>（ふつうの日より'+Math.abs(NORMAL-g.P0)+'hPa'+(g.P0<NORMAL?'低い':'高い')+'）。どの高さでも、だいたいその分ずれて出る。',7)}
+  else pop('記録！ '+r.h+'m',Math.round(real)+'hPa'+(g.i===0&&r.h<1500?'（下りるほど大きい）':''),sx,sy-50,'n');
+  earn(10,'control','rec-first',sx,sy);return}
+ if(r.k==='pre'){if(!through){r.st='miss';pop('輪をはずれた','予想は使われなかった',sx,sy-40,'g');sfx.off();return}
+  r.pred=g.pred;r.real=real;const e=r.pred-real,ok=Math.abs(e)<=TOL_PRE;r.st=ok?'hit':'off';S.preN++;addNote(r.h,real,g.P0);sfx.reveal();
+  if(ok){S.preHit++;g.combo++;setTimeout(sfx.hit,90);burst(sx,sy,18);earn(10,'predict','p'+g.i+'-'+r.h,sx,sy);pop((g.combo>1?g.combo+'連続　':'')+'予想どおり！','予想 '+r.pred+' → 本当 '+Math.round(real)+'hPa',sx,sy-60,'big');
+   if(g.i===1&&r.h===2000)earn(30,'rule','rule-up',sx,sy);if(g.i===5&&r.h===3776)earn(30,'rule','rule-fuji',sx,sy);if(g.P0!==NORMAL)earn(30,'rule','rule-wx-pre',sx,sy)}
+  else{g.combo=0;sfx.off();pop('はずれ','予想 '+r.pred+' → 本当 '+Math.round(real)+'hPa',sx,sy-60,'n');
+   if(!g.hinted.pre){g.hinted.pre=true;slip(e>0?'<span class="hd">本当は、もっと小さかった</span>高いところほど、上にある空気が少ない＝気圧は小さい。ノートの値の減り方から考えよう。':'<span class="hd">本当は、もっと大きかった</span>低いところほど、上にある空気が多い＝気圧は大きい。ノートの近い高さの値をよく見よう。',6)}}
+  save();return}
+ if(r.k==='cap')capPass(r,through,sx,sy)}
+function capPass(r,through,sx,sy){const g=G;
+ if(!through){r.st='miss';pop('カプセルの輪をはずれた','この便をもう一度',sx,sy-40,'g');sfx.off();return}
+ const val=g.pred,planOk=!!g.tagGot&&!g.tagBad;
+ let mono=true,why='';for(const hh of CAPH){const c=S.caps[hh];if(!c||!hh||hh===r.h)continue;if(hh<r.h&&c.val<=val){mono=false;why=hh+'mの予想（'+c.val+'hPa）より大きいか同じ'}if(hh>r.h&&c.val>=val){mono=false;why=hh+'mの予想（'+c.val+'hPa）より小さいか同じ'}}
+ if(val>1045||val<600){mono=false;why='地上付近でも1013hPaくらい'}
+ if(!planOk){r.st='noplan';sfx.crack();pop('計画の札が足りない',g.tagBad?'「'+g.tagBad+'」では比べられない':'正しい計画の札を取ってからくぐろう',sx,sy-50,'n');
+  slip('<span class="hd">カプセルは、正しい計画といっしょに封印する</span>'+esc(TAGS[g.d.tag].why),7);return}
+ if(!mono){r.st='nomono';sfx.crack();burst(sx,sy,8,['#8b8f95',C.cream]);pop('カプセルにひび','高いほど小さいはず：'+why,sx,sy-50,'n');
+  slip('<span class="hd">予想どうしが「高いほど小さい」になっていない</span>'+r.h+'mの予想は '+val+'hPa。'+esc(why)+'。',7);return}
+ r.st='sealed';r.val=val;S.caps[r.h]={h:r.h,val,tag:cl(TAGS[g.d.tag].ok),at:Date.now()};save();
+ const [jx,jy]=jarPos();FLY.push({x:sx,y:sy,tx:jx,ty:jy,t:0});sfx.cap();burst(sx,sy,16,[C.ochre,C.cream,C.paper]);
+ earn(10,'control','cap'+r.h,sx,sy);pop('カプセル封印',r.h+'m：予想 '+val+'hPa（本物は校外学習で）',sx,sy-60,'o big');
+ setTimeout(()=>{$('#hCap').textContent=capCount()+'/7'},1200)}
+function grabTag(t){const g=G;t.got=true;const [sx,sy]=screenOf(t.x,t.h);
+ if(t.ok){g.tagGot=cl(t.txt);sfx.grab();burst(sx,sy,10,[C.ochre,C.cream]);pop('計画の札','「'+cl(t.txt)+'」',sx,sy-40,'o')}
+ else{g.tagBad=cl(t.txt);g.combo=0;sfx.crack();pop('その計画だと…','「'+cl(t.txt)+'」',sx,sy-40,'n');slip('<span class="hd">まちがった計画の札</span>'+esc(TAGS[g.d.tag].why)+'<br>このままではカプセルを封印できない。',6)}}
+function doSmoke(){const g=G;if(MODE!=='dive'||!g||paused||g.phase!=='fall'||g.lid)return;const tg=g.targets.find(t=>t.st==='wait');
+ const [sx,sy]=screenOf(g.x,g.h);if(!tg){pop('目印はもう全部出した','',sx,sy-60,'g');return}
+ const err=g.h-tg.h,ok=Math.abs(err)<=TOL_SMOKE,rd=Math.round(reading());tg.st=ok?'hit':'off';tg.at=g.h;tg.rd=rd;S.shots++;
+ g.puffs.push({x:g.x,h:g.h,ok,t:0,lab:ok?tg.h+'m':Math.round(g.h/10)*10+'m'});sfx.puff();
+ if(ok){S.hits++;g.combo++;setTimeout(sfx.hit,120);burst(sx,sy,20);earn(15,'hit','s'+g.i+'-'+g.leg+'-'+tg.h,sx,sy);
+  pop((g.combo>1?g.combo+'連続　':'')+'ぴったり！',tg.h+'m（ずれ '+Math.abs(Math.round(err))+'m）気圧計 '+rd+'hPa',sx,sy-70,'big');
+  if(g.P0!==NORMAL&&Math.abs(PR(tg.h,NORMAL)-PR(tg.h,g.P0))>9)earn(30,'rule','rule-wx',sx,sy)}
+ else{g.combo=0;setTimeout(sfx.off,100);pop(err>0?'まだ高かった':'下りすぎた','けむりの高さ '+Math.round(g.h/10)*10+'m（目標 '+tg.h+'m）',sx,sy-70,'n');
+  if(g.P0!==NORMAL&&!g.wxHint){g.wxHint=true;const dP=NORMAL-g.P0;slip('<span class="hd">ふつうの日のノートの値のままだと、ずれる！</span>今日の地上は <b>'+g.P0+'hPa</b>＝ふつうの日より<b>'+Math.abs(dP)+'hPa'+(dP>0?'低い':'高い')+'</b>。どの高さでも、だいたい'+Math.abs(dP)+'hPa'+(dP>0?'低く':'高く')+'出る。ノートの値から'+(dP>0?'引いた':'足した')+'値で「けむり」。',9)}
+  else if(!g.hinted[tg.h]){g.hinted[tg.h]=true;const nv=noteVal(tg.h);slip(nv?'<span class="hd">ノートでは '+tg.h+'m＝'+nv+'hPa</span>'+(err>0?'気圧計が'+nv+'になるまで待ってから。今は'+rd+'（まだ小さい＝まだ高い）。':'気圧計が'+nv+'をこえる前に。今は'+rd+'（もう大きい＝低すぎる）。'):'<span class="hd">ノートの近い高さの値から考えよう</span>高いほど小さい。',6)}}
+ save();updCtl()}
+function finishDive(){const g=G,d=g.d,i=g.i;windOff();
+ const nT=g.targets.length,hits=g.targets.filter(t=>t.st==='hit').length;
+ S.ghost[i+'-'+g.leg]={xs:g.path,sm:g.targets.filter(t=>t.at!=null).map(t=>Math.round(t.at))};
+ if(d.boss){BR.legs.push({hits,n:nT,res:g.targets.map(t=>({h:t.h,st:t.st,at:t.at}))});save();
+  if(g.leg<2){const nx=g.leg+1;pop('第'+(nx+1)+'段へ！',d.legs[nx].H+'mの気球へ',null,null,'n big');g.phase='next';g.nextT=0;return}
+  const th=BR.legs.reduce((a,l)=>a+l.hits,0),tt=Math.round(BR.t);const clear=th>=5&&BR.t<=d.limit;const stars=[clear,clear&&th===6,clear&&BR.t<=225];
+  if(clear){S.clr[i]=true;if(!S.boss||tt<S.boss)S.boss=tt}mergeStars(i,stars);save();
+  const lst=BR.legs.map((l,k)=>l.res.map(r=>'<li class="'+(r.st==='hit'?'ok':'ng')+'"><b>第'+(k+1)+'段 '+r.h+'m</b>'+(r.at!=null?'けむり '+Math.round(r.at/10)*10+'m':'出しそびれ')+(r.st==='hit'?' ◎':' ×')+'</li>').join('')).join('');
+  result(i,clear,stars,'<p>6つの目印のうち <b>'+th+'</b> 個・タイム <b>'+Math.floor(tt/60)+'分'+(tt%60)+'秒</b>（制限 4分30秒）'+(S.boss?'・ベスト '+Math.floor(S.boss/60)+'分'+(S.boss%60)+'秒':'')+'</p><ul class="lst">'+lst+'</ul>');return}
+ const pres=g.rings.filter(r=>r.k==='pre'),preOk=pres.filter(r=>r.st==='hit').length,recs=g.rings.filter(r=>r.k==='rec'),recOk=recs.filter(r=>r.st==='ok').length,cap=g.rings.find(r=>r.k==='cap');
+ const clear=i===0?recOk>=2:(!cap||cap.st==='sealed')&&hits>=Math.max(0,nT-1);
+ const s2=pres.length?preOk===pres.length:recOk===recs.length,s3=nT?hits===nT:!g.tagBad&&(!cap||cap.st==='sealed');
+ const stars=[clear,clear&&s2,clear&&(i===0?Math.abs(g.x-.62)<.12:s3)];
+ if(clear){S.clr[i]=true;if(i===0){S.les.up=true;S.les.bag=true}if(i===4)S.les.wx=true}mergeStars(i,stars);save();
+ let li='';
+ g.rings.forEach(r=>{if(r.k==='rec')li+='<li class="'+(r.st==='ok'?'ok':'ng')+'"><b>'+r.h+'m</b>'+(r.st==='ok'?'記録 '+Math.round(r.real)+'hPa':'輪をはずれた')+'</li>';
+  if(r.k==='pre')li+='<li class="'+(r.st==='hit'?'ok':'ng')+'"><b>'+r.h+'m</b>'+(r.real?'予想 '+r.pred+' → 本当 '+Math.round(r.real)+'hPa'+(r.st==='hit'?' ◎':' ×'):'輪をはずれた')+'</li>';
+  if(r.k==='cap')li+='<li class="'+(r.st==='sealed'?'cap':'ng')+'"><b>'+r.h+'m カプセル</b>'+(r.st==='sealed'?'予想 '+r.val+'hPa を封印（計画：'+esc(g.tagGot)+'）':r.st==='noplan'?'計画の札が足りず封印できず':r.st==='nomono'?'「高いほど小さい」になっておらず、ひび':'輪をはずれた')+'</li>'});
+ const gh=g.ghost;g.targets.forEach((t,k)=>{let cmp='';if(gh&&gh.sm&&gh.sm[k]!=null&&t.at!=null){const a=Math.abs(t.at-t.h),b=Math.abs(gh.sm[k]-t.h);cmp=a<b?'（前回よりずれが'+Math.round(b-a)+'m小さい）':a>b?'（前回のほうがぴったり）':''}
+  li+='<li class="'+(t.st==='hit'?'ok':'ng')+'"><b>けむり '+t.h+'m</b>'+(t.at!=null?Math.round(t.at/10)*10+'mに残した'+(t.st==='hit'?' ◎':' ×'):'出しそびれ')+esc(cmp)+'</li>'});
+ let les='';if(i===0&&clear)les='<div class="lesson">わかったこと：<b>高いところほど、気圧計の値は小さい</b>（下りるほど大きくなった）。上にのっている空気が少ないから。<br>袋の矢印は上・横・下のあらゆる向き。上空では押しが弱く、袋がふくらんでいた。</div>';
+ if(i===4&&clear)les='<div class="lesson">わかったこと：<b>同じ高さでも、天気（日・時刻）で気圧は変わる。</b>だから、測るときは高さといっしょに時刻も記録する。</div>';
+ const need=i===0?'輪を2つ以上くぐって記録する':(cap?'カプセルを封印し、':'')+(nT?'けむりを'+Math.max(0,nT-1)+'つ以上命中':'');
+ result(i,clear,stars,'<ul class="lst">'+li+'</ul>'+les+(clear?'':'<p class="small">クリアの条件：'+esc(need)+'</p>'))}
+function mergeStars(i,st){const o=S.stars[i]||[0,0,0];S.stars[i]=o.map((v,k)=>v||st[k]?1:0)}
+function result(i,clear,stars,body){const d=DIVES[i];const lab=d.boss?['6つ中5つ以上・時間内','6つ全部命中','3分45秒以内']:i===0?['輪を2つ以上記録','3つの輪を全部記録','着地の的に降りた']:[(d.cap?'カプセル封印＋':'')+'けむり命中','予想の輪をぜんぶ的中'.replace('予想の輪をぜんぶ的中',d.rings.some(r=>r[1]==='pre')?'予想の輪をぜんぶ的中':'記録の輪をくぐった'),'けむりを全部命中'];
+ if(clear)sfx.fan();else sfx.off();if(clear&&!RM)burst(W/2,H*.3,30);
+ const last=i===DIVES.length-1;
+ ovOpen('<div class="no">第'+(i+1)+'便　'+esc(d.nm)+'</div><h2>'+(clear?(last?'三段降下、成功！':'着地！　この便はクリア'):'着地。もう一度いこう')+'</h2><div class="stars">'+stars.map((v,k)=>'<div class="'+(v?'on':'')+'"><i>'+(v?'★':'☆')+'</i>'+esc(lab[k])+'</div>').join('')+'</div>'+body+
+  '<div class="row"><button class="tk c s" id="rAgain">もう一度この便</button>'+(clear&&last&&!S.sealed?'<button class="tk" id="rSeal">カプセルを封印する</button>':clear&&!last?'<button class="tk" id="rNext">つぎの便へ</button>':'')+'<button class="tk n s" id="rMap">ポスターの地図</button></div>');
+ $('#rAgain').onclick=()=>{sfx.tap();startDive(i,0)};$('#rMap').onclick=()=>{sfx.tap();ovClose();toMap()};
+ if($('#rNext'))$('#rNext').onclick=()=>{sfx.tap();startDive(i+1,0)};if($('#rSeal'))$('#rSeal').onclick=()=>{sfx.tap();sealScreen()};
+ MODE='result';backBtn();$('#bNote').classList.add('hidden');showDial(false)}
+
+/* ===== 封印（校外学習のあとに開ける） ===== */
+function sealScreen(){MODE='map';show(['map']);backBtn();
+ const hs=CAPH.filter(h=>h);const miss=hs.filter(h=>!S.caps[h]);
+ const jar='<svg viewBox="0 0 320 120" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:420px;display:block;margin:6px auto"><rect x="14" y="18" width="292" height="92" rx="16" fill="#CFE0DE" stroke="#2C4A6E" stroke-width="4"/><rect x="40" y="6" width="240" height="18" rx="4" fill="#DDA94B" stroke="#2C4A6E" stroke-width="3"/>'+
+  CAPH.map((h,k)=>{const x=38+k*41,has=h===0||S.caps[h];return '<g transform="translate('+x+',66)"><ellipse rx="13" ry="20" fill="'+(has?(h?'#DDA94B':'#2C4A6E'):'none')+'" stroke="#2C4A6E" stroke-width="2.5" '+(has?'':'stroke-dasharray="4 3"')+'/><rect x="-13" y="-3" width="26" height="6" fill="#F3E7CF"/><text y="36" font-size="11" text-anchor="middle" fill="#2C4A6E" font-family="serif">'+h+'m</text></g>'}).join('')+'</svg>';
+ const li=CAPH.map(h=>h===0?'<li class="cap"><b>0m（ふもと）</b>当日、ここで測った値を基準にする</li>':S.caps[h]?'<li class="cap"><b>'+h+'m</b>予想 '+S.caps[h].val+'hPa　<span class="small">計画：'+esc(S.caps[h].tag)+'</span></li>':'<li class="ng"><b>'+h+'m</b>まだカプセルが無い</li>').join('');
+ ovOpen('<div class="no">予想カプセルの封印</div><h2>7つのカプセルを、びんに封印する</h2>'+jar+'<ul class="lst">'+li+'</ul><p class="small">本物の値は、校外学習で携帯気圧計を使って測ってから開けよう。<b>同じ気圧計で・高さと時刻を記録して・同じ日の短い時間のうちに</b>。地上の値が1013hPaとちがう日なら、その分ずれて出るはず。</p><div class="row">'+(miss.length?'<button class="tk n" id="sMap">カプセルを集めに行く</button>':'<button class="tk" id="sGo">封印する</button><button class="tk c s" id="sMap">あとで</button>')+'</div>');
+ if($('#sMap'))$('#sMap').onclick=()=>{ovClose();toMap()};
+ if($('#sGo'))$('#sGo').onclick=()=>{const method='同じ携帯気圧計で、高さと時刻を記録しながら、同じ日の短い時間のうちに続けて測る';const slots={};
+  hs.forEach(h=>{const c=S.caps[h];slots['h'+h]={id:'h'+h,t:'高さ'+h+'m：約'+c.val+'hPa',h,val:c.val,reason:'高いところほど上にある空気が少なく、気圧は小さい',method}});
+  const predText=hs.map(h=>h+'m:'+S.caps[h].val).join('・')+'hPa';
+  const rec={v:1,koma:KOMA,game:GID,at:Date.now(),name:S.name||window.PLAYER_NAME||'',slots,predText,plan:hs.map(h=>S.caps[h].tag),reason:{id:'up',t:'高いところほど上にある空気が少なく、気圧は小さい'}};
+  try{localStorage.setItem(SEAL_KEY,JSON.stringify(rec))}catch(e){}S.sealed=true;S.seal=rec;save();sfx.cap();burst(W/2,H*.4,36,[C.ochre,C.cream,C.coral]);earn(10,'predict','seal',W/2,H*.4);
+  ovOpen('<div class="no">封印しました</div><h2>カプセルは、校外学習のあとに開けよう</h2><p>'+esc(predText)+'</p><p>最後に<b>確認テスト（10問）</b>。</p><div class="row"><button class="tk" id="sTest">確認テストへ</button></div>');
+  $('#sTest').onclick=()=>{ovClose();finalClear()}}}
+function finalClear(){const go=()=>startTest();if(!S.mc&&window.Zukan&&Zukan.mainClear){S.mc=true;save();try{Zukan.mainClear({onClose:go})}catch(e){go()}}else go()}
+
+/* ===== 確認テスト ===== */
+let TS=null;function playerName(){return window.PLAYER_NAME||S.name||''}
+function startTest(){if(!window.Quiz)return;MODE='test';G=null;windOff();TS={qs:Quiz.test(),i:0,ans:[]};show(['test']);backBtn();hideSlip();ovClose();renderQ()}
+function renderQ(){const q=TS.qs[TS.i],box=$('#tbox');
+ box.innerHTML='<span class="tno">確認テスト　'+(TS.i+1)+' / '+TS.qs.length+'</span><div class="prog">'+TS.qs.map((_,i)=>'<i class="'+(i<TS.i?'on':'')+'"></i>').join('')+'</div><div class="tq">'+q.q+'</div>'+(q.fig?'<div class="fig2">'+q.fig+'</div>':'')+'<div id="ta"></div>';
+ const ta=$('#ta');
+ if(q.t==='choice'){const d=document.createElement('div');d.className='ch';q.shown.forEach(c=>{const b=document.createElement('button');b.innerHTML=c;b.onclick=()=>ans(c);d.appendChild(b)});ta.appendChild(d)}
+ else if(q.t==='num'){ta.innerHTML='<div class="numrow"><input id="numIn" inputmode="decimal" autocomplete="off" placeholder="数を入力"><b>'+esc(q.unit||'')+'</b><button class="tk s" id="numOk">決定</button></div>';$('#numOk').onclick=()=>{const v=$('#numIn').value.trim();if(v==='')return;ans(v)}}
+ else{const picked=[];ta.innerHTML='<div class="small">正しい順にタップしよう</div><div class="ord" id="ordBox"></div><div class="ch" id="ordPool"></div><div class="row"><button class="tk c s" id="ordRe">やり直す</button><button class="tk s" id="ordOk" disabled>決定</button></div>';
+  const drawO=()=>{$('#ordBox').innerHTML=picked.map((t,i)=>'<div>'+(i+1)+'. '+t+'</div>').join('');const pool=$('#ordPool');pool.innerHTML='';q.shown.forEach(t=>{if(picked.includes(t))return;const b=document.createElement('button');b.innerHTML=t;b.onclick=()=>{picked.push(t);sfx.tap();drawO()};pool.appendChild(b)});$('#ordOk').disabled=picked.length!==q.shown.length};
+  drawO();$('#ordRe').onclick=()=>{picked.length=0;drawO()};$('#ordOk').onclick=()=>ans(picked.slice())}
+ $('#test').scrollTop=0}
+function ans(v){TS.ans.push(v);sfx.tap();TS.i++;if(TS.i<TS.qs.length)renderQ();else finishTest()}
+function finishTest(){const qs=TS.qs,review=Quiz.review(qs,TS.ans),marks=review.map(r=>r.ok),score=marks.filter(Boolean).length;sfx.fan();
+ const nst=Object.values(S.stars).reduce((a,s)=>a+s.filter(Boolean).length,0);
+ const recs=TEST_ONLY?[['モード','確認テストだけ']]:[['クリアした便',Object.keys(S.clr).length+' / 8便（★'+nst+'/24）'],['けむりの命中',S.hits+' / '+S.shots+'回'],['予想の輪の的中',S.preHit+' / '+S.preN+'回'],['封印した予想（校外学習で確かめる）',S.seal?S.seal.predText:'まだ封印していない']];
+ TS.card=SubmitCard.show({gameId:GID,grade:'chu2',koma:[KOMA],unit:UNIT,game:GTITLE+(TEST_ONLY?'（確認テストのみ）':''),name:playerName(),score,total:qs.length,marks,records:recs,review},showTestResult);showTestResult()}
+function showTestResult(){const r=TS.card||{};$('#tbox').innerHTML='<span class="tno">テストの結果</span><p style="font-family:var(--fh);font-weight:700;font-size:46px;margin:12px 0;color:var(--coral)">'+(r.score||0)+' / '+(r.total||0)+'</p><div style="display:flex;flex-direction:column;gap:12px;align-items:flex-start"><button class="tk" id="rCard">提出カードをもう一度見る</button><button class="tk n" id="rAgainT">テストをもう一度</button>'+(TEST_ONLY?'':'<button class="tk c s" id="rMapT">ポスターの地図</button>')+'<button class="tk c s zk" id="rBook">📖 図鑑</button></div>';
+ $('#rCard').onclick=()=>SubmitCard.reopen(TS.card,()=>{});$('#rAgainT').onclick=()=>startTest();if($('#rMapT'))$('#rMapT').onclick=()=>toMap();$('#rBook').onclick=openBook;zkButtons()}
+
+/* ===== 指・マウス・キー ===== */
+let steerId=null,dialDrag=null;const keys={};
+cv.addEventListener('pointerdown',e=>{ac();if(MODE!=='dive'||!G||paused)return;const x=e.clientX,y=e.clientY;
+ if(G.lid&&Math.hypot(x-INS.bx,y-INS.by)<INS.br+10){dialDrag={y,v:G.pred,id:e.pointerId};try{cv.setPointerCapture(e.pointerId)}catch(_){}return}
+ if(x>=SKY.x&&x<=SKY.x+SKY.w&&y>=SKY.y&&y<=SKY.y+SKY.h){steerId=e.pointerId;G.tx=clamp((x-SKY.x)/SKY.w,.04,.96);try{cv.setPointerCapture(e.pointerId)}catch(_){}}});
+cv.addEventListener('pointermove',e=>{if(!G)return;if(dialDrag&&e.pointerId===dialDrag.id){setPred(dialDrag.v+(dialDrag.y-e.clientY)/4);return}
+ if(steerId===e.pointerId)G.tx=clamp((e.clientX-SKY.x)/SKY.w,.04,.96)});
+const endP=e=>{if(dialDrag&&e.pointerId===dialDrag.id)dialDrag=null;if(steerId===e.pointerId)steerId=null};
+cv.addEventListener('pointerup',endP);cv.addEventListener('pointercancel',endP);
+addEventListener('keydown',e=>{if(MODE!=='dive'||!G)return;if(e.key==='ArrowLeft')keys.L=true;else if(e.key==='ArrowRight')keys.R=true;
+ else if(e.key==='ArrowUp'){if(G.lid)setPred(G.pred+(e.shiftKey?10:1));e.preventDefault()}
+ else if(e.key==='ArrowDown'){if(G.lid)setPred(G.pred-(e.shiftKey?10:1));else{G.fast=true;fb.classList.add('on')}e.preventDefault()}
+ else if(e.key===' '){doSmoke();e.preventDefault()}});
+addEventListener('keyup',e=>{if(e.key==='ArrowLeft')keys.L=false;else if(e.key==='ArrowRight')keys.R=false;else if(e.key==='ArrowDown'&&G){G.fast=false;fb.classList.remove('on')}});
+
+/* ===== 自動操作（点検用） ===== */
+function botStep(){const g=G;if(!g||g.phase!=='fall')return;
+ const nextR=g.rings.find(r=>r.st==='wait'),tag=g.tags.find(t=>!t.got&&t.ok&&t.h<g.h);
+ let tx=.5;if(tag&&(!nextR||tag.h>nextR.h))tx=tag.x;else if(nextR)tx=nextR.x;
+ // 札のまちがいは避ける
+ g.tags.forEach(t=>{if(t.got||t.ok||g.h-t.h<-35||g.h-t.h>100)return;const hw=t.pw/2/SKY.w;if(Math.abs(g.x-t.x)<hw+.06||Math.abs(tx-t.x)<hw+.06){const l=t.x-hw-.08,r=t.x+hw+.08;tx=(l<.04?r:r>.96?l:(Math.abs(g.x-l)<Math.abs(g.x-r)?l:r))}});
+ g.tx=clamp(tx,.04,.96);if(g.lid)g.pred=Math.round(PR(g.lid.h,g.P0))+(g.lid.k==='cap'?0:0);
+ const tg=g.targets.find(t=>t.st==='wait');if(tg&&Math.abs(g.h-tg.h)<25)doSmoke()}
+
+/* ===== ループ ===== */
+function render(){const t=performance.now()/1000;ctx.setTransform(DPR,0,0,DPR,0,0);
+ if(MODE==='dive'||MODE==='result'){setView(VD);
+  if(!G){return}
+  ctx.save();ctx.beginPath();ctx.rect(SKY.x,SKY.y,SKY.w,SKY.h);ctx.clip();
+  drawSky();drawFar();CLOUDS.forEach(c=>{if(c.h>CAMH)drawCloud(c)});drawMountain(G.rings.find(r=>r.k==='cap')?.h);drawGround();drawDeck();
+  // 気球
+  const bh=G.H+40+Math.max(0,G.t-.6)*28;const bs=PORT?.8:1;if(wy(bh)<SKY.y+SKY.h+100)drawBalloon(wx(.5),wy(bh)-30*bs,bs);
+  G.rings.forEach(drawRing);G.tags.forEach(drawTag);G.puffs.forEach(drawPuff);
+  // ゴースト
+  if(G.ghost&&G.ghost.xs){const gx=G.ghost.xs[Math.floor((G.H-G.h)/25)];if(gx!=null)drawDiver(wx(gx),DY,PORT?1:1.2,G.t+1,G.chute,.3,C.paper)}
+  const jumpOff=G.phase==='jump'?(1-Math.min(1,G.t/1.1))*-60:0;
+  drawDiver(wx(G.x),DY+jumpOff+(G.phase==='land'?Math.min(G.landT*40,0):0),PORT?1:1.25,G.t,G.chute,1);
+  CLOUDS.forEach(c=>{if(c.h<=CAMH)drawCloud(c,.95)});
+  // 雲の中
+  if(CAMH>DECK.h0&&CAMH<DECK.h1){ctx.fillStyle='rgba(251,246,234,.72)';ctx.fillRect(SKY.x,SKY.y,SKY.w,SKY.h)}
+  // 落ちる速さの筋
+  if(G.phase==='fall'&&!G.chute&&!RM){ctx.strokeStyle='rgba(251,246,234,.45)';STREAK.forEach(s=>{ctx.lineWidth=s.w;const y=SKY.y+((s.y-G.t*(G.fast?1.6:.8))%1+1)%1*SKY.h;ctx.beginPath();ctx.moveTo(SKY.x+s.x*SKY.w,y);ctx.lineTo(SKY.x+s.x*SKY.w,y+s.l*SKY.h);ctx.stroke()})}
+  drawGrainSky();drawTargets();
+  // ポスターの縁
+  ctx.strokeStyle=C.cream;ctx.lineWidth=10;ctx.strokeRect(SKY.x+5,SKY.y+5,SKY.w-10,SKY.h-10);ctx.strokeStyle=C.navy;ctx.lineWidth=2;ctx.strokeRect(SKY.x+11,SKY.y+11,SKY.w-22,SKY.h-22);
+  ctx.restore();
+  drawPanel();drawParts();return}
+ // タイトル・地図: 1枚のポスター
+ setView(VF);CAMH=900+Math.sin(t*.2)*8;
+ const g0=G;G=null;
+ ctx.save();drawSky();drawFar();CLOUDS.forEach(c=>drawCloud(c));drawMountain(null);drawGround();
+ drawBalloon(wx(PORT?.8:.84),wy(1480),PORT?.9:1.3);
+ drawDiver(wx(PORT?.7:.7),wy(PORT?1060:620)+Math.sin(t*1.3)*6,PORT?1.3:2.1,t,true,1);
+ drawDiver(wx(PORT?.26:.5),wy(PORT?1260:1250)+Math.sin(t*1.7)*5,PORT?1.1:1.4,t,false,1);
+ grain(0,0,W,H,.9);ctx.strokeStyle=C.cream;ctx.lineWidth=14;ctx.strokeRect(7,7,W-14,H-14);ctx.strokeStyle=C.navy;ctx.lineWidth=2;ctx.strokeRect(15,15,W-30,H-30);
+ ctx.restore();G=g0}
+let lastT=0;function loop(ts){const dt=Math.min(.05,(ts-lastT)/1000||0);lastT=ts;if(MODE==='dive')update(dt);else if(MODE==='result'&&G){stepParts(dt);G.puffs.forEach(p=>p.t+=dt)}render();requestAnimationFrame(loop)}
+
+/* ===== 起動 ===== */
+resize();
 try{window.Zukan&&Zukan.setup&&Zukan.setup({game:GID,koma:[KOMA]})}catch(e){}
-setSnd();
+setSnd();kk();
 if(window.PLAYER_NAME){$('#nameIn').value=window.PLAYER_NAME;$('#nameRow').classList.add('hidden')}else if(S.name)$('#nameIn').value=S.name;
-window.__game={R,P,state:()=>S,setAlt:a=>{alt=a},smoke:()=>$('#bSmoke').click(),phase:()=>phase,alt:()=>alt,toPred};
-if(TEST_ONLY){$('#title').classList.add('hidden');startTest()}else toTitle();
+window.__game={G:()=>G,S:()=>S,mode:()=>MODE,startDive,toMap,toTitle,startTest,sealScreen,openNote,smoke:doSmoke,setPred,
+ step:(dt,n)=>{for(let i=0;i<(n||1);i++)update(dt||1/60)},bot:v=>{BOT=v},
+ run:(i,leg)=>{BOT=true;startDive(i,leg||0);let n=0;while(MODE==='dive'&&n<200000){update(1/30);n++}BOT=false;return{mode:MODE,clr:!!S.clr[i],stars:S.stars[i],t:n/30}},
+ fill:()=>{S.note=[];[4000,3776,3500,3000,2500,2250,2000,1600,1500,1250,1000,750,500,0].forEach(h=>addNote(h,PR(h,NORMAL),NORMAL));save()}};
+if(TEST_ONLY)startTest();else toTitle();
+requestAnimationFrame(loop);
+})();
 </script>
-</body>
-</html>
+</body></html>
