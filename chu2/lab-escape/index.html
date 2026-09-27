@@ -118,6 +118,24 @@ b{font-weight:700}
 .pop small{display:block;font-size:14px;color:var(--ln);text-align:center}
 @keyframes popup{0%{transform:translate(-50%,-30%) scale(.4);opacity:0}15%{transform:translate(-50%,-50%) scale(1.15);opacity:1}25%{transform:translate(-50%,-50%) scale(1)}80%{opacity:1}100%{transform:translate(-50%,-110%);opacity:0}}
 #toast{position:absolute;left:50%;transform:translateX(-50%);z-index:9;padding:8px 14px;border:1.5px solid var(--amb);background:rgba(10,49,97,.95);color:var(--amb);font-size:15px;font-weight:700;white-space:nowrap;transition:opacity .3s}
+/* 仕上げ 2026-09-28（le-finish-2026-09-28）: 連続合格の札・★の検図印・紙吹雪（製図の線） */
+#cmb{display:flex;align-items:center;height:44px;padding:0 10px;border:1.5px solid var(--amb);color:var(--amb);background:rgba(10,49,97,.85);font-weight:700;font-size:15px;transition:transform .2s;white-space:nowrap}
+#cmb.big{transform:scale(1.35)}
+#cmb.t1{background:rgba(255,183,3,.22)}#cmb.t2,#cmb.t3{background:var(--amb);color:#0A3161}#cmb.t3{box-shadow:0 0 18px var(--amb)}
+.lestars{display:flex;gap:14px;justify-content:center;margin:4px 0 8px;clear:both}
+.lestars span{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:12px;font-weight:700;width:7.4em;text-align:center;line-height:1.3}
+.lestars svg{width:52px;height:52px;transform:scale(0) rotate(-30deg);overflow:visible}
+.lestars svg.in{transform:none;transition:transform .34s cubic-bezier(.2,1.9,.4,1)}
+.lestars polygon{fill:none;stroke:var(--ln);stroke-width:2;stroke-dasharray:4 3}
+.lestars svg.on polygon{fill:var(--amb);stroke:var(--amb);stroke-dasharray:none}
+.lecf{position:fixed;top:-24px;z-index:2147483000;pointer-events:none;width:2px;height:var(--h);background:var(--c);animation:lecf var(--t) cubic-bezier(.3,.2,.6,1) var(--d) forwards}
+.lecf.sq{width:9px;height:9px;background:none;border:2px solid var(--c)}
+@keyframes lecf{to{transform:translate(var(--dx),110vh) rotate(var(--r))}}
+.tb:active,.tag:active{transform:translateY(3px) scale(.97)}
+#scrBk{z-index:2147483300!important}
+@media (max-width:560px){.gd-band{top:calc(60px + env(safe-area-inset-top))!important}} /* 帯を もどる・音の段の下へ */ /* れんしゅうの案内より上に確認を出す */
+@media (max-width:520px){.sheet .stamp:not(.big){font-size:16px;padding:3px 8px}}
+@media (prefers-reduced-motion:reduce){.lecf{display:none}.lestars svg{transform:none}#cmb.big{transform:none}}
 @media (prefers-reduced-motion:reduce){.pop{animation:popfade 1.6s forwards}@keyframes popfade{0%,80%{opacity:1}100%{opacity:0}}#bRun.go{animation:none}.stamp.pop{animation:none}}
 @media (min-width:900px) and (min-aspect-ratio:1/1){.sheet{width:min(760px,100%)}}
 </style></head><body>
@@ -131,7 +149,7 @@ b{font-weight:700}
    <div class="name" id="nameRow"><b>設計者</b><input id="nameIn" maxlength="16" placeholder="なまえ（空でも遊べる）" autocomplete="off"></div>
    <button class="tb a" id="bStart">はじめる</button>
    <button class="tb hidden" id="bCont">つづきから</button>
-   <div class="row"><button class="tb s" id="bSnd1">音　あり</button><button class="tb s zk" id="bBook1">📖 図鑑</button></div>
+   <div class="row"><button class="tb s" id="bHowto">あそびかた</button><button class="tb s" id="bSnd1">音　あり</button><button class="tb s zk" id="bBook1">📖 図鑑</button></div>
   </div>
  </div>
 
@@ -146,13 +164,13 @@ b{font-weight:700}
   <button class="tb a pe" id="bRun">試走 ▶</button>
  </div>
 
- <div id="hudR" class="hidden"><div class="tag" id="kk"><small>PART</small>かけら<span class="mono" id="kkN">0</span></div><button class="tag pe" id="bSnd">音</button></div>
+ <div id="hudR" class="hidden"><div id="cmb" class="hidden">連続×2</div><div class="tag" id="kk"><small>PART</small>かけら<span class="mono" id="kkN">0</span></div><button class="tag pe" id="bSnd">音</button></div>
  <div id="toast" class="hidden"></div>
 
  <div id="ov" class="scr hidden pe"><div class="sheet" id="ovBox"></div></div>
  <div id="scrTest" class="scr hidden pe"><div class="sheet" id="tBoxT"></div></div>
- <div id="scrBk" class="scr hidden pe"><div class="sheet"><h2>もどりますか？</h2><p id="bkSub">進み具合は保存されます。</p><div class="row"><button class="tb" id="bkNo">つづける</button><button class="tb a" id="bkGo">もどる</button></div></div></div>
- <button class="tb hidden" id="bBack">◀ もどる</button>
+ <div id="scrBk" class="scr hidden pe" data-gd-pass><div class="sheet"><h2>もどりますか？</h2><p id="bkSub">進み具合は保存されます。</p><div class="row"><button class="tb" id="bkNo">つづける</button><button class="tb a" id="bkGo">もどる</button></div></div></div>
+ <button class="tb hidden" id="bBack" data-gd-pass>◀ もどる</button>
  <div id="pops"></div>
 </div>
 <script>/*@SUBMIT_CARD_BEGIN*/
@@ -2326,8 +2344,16 @@ const sfx={
  stamp(){noise(.12,.3,0,200,'lowpass');tone(90,.2,'sine',.12)},
  ok(n){const b=[523,659,784,1047];b.forEach((f,i)=>tone(f*(1+Math.min(n||0,6)*.06),.3,'triangle',.05,i*.07))},
  fanfare(){[523,659,784,1047,784,1047,1319].forEach((f,i)=>tone(f,.4,'triangle',.05,i*.11))},
- tick(){tone(2400,.02,'square',.015)}
+  tick(){tone(2400,.02,'square',.015)},
+  up(n){const f=523*Math.pow(2,Math.min(n,12)*2/12);tone(f,.16,'triangle',.05);tone(f*2,.1,'sine',.02,.03)},
+  star(i){noise(.1,.25,0,220,'lowpass');tone(90,.18,'sine',.1);tone([784,988,1319][i%3],.3,'triangle',.05,.04)},
+  tier(n){[523,659,784,1047,1319,1568].slice(0,3+Math.min(3,n)).forEach((f,i)=>tone(f,.25,'triangle',.05,i*.06))},
+  soft(){tone(392,.12,'triangle',.04);tone(330,.16,'triangle',.035,.1)}
 };
+function buzz(p){try{if(navigator.vibrate)navigator.vibrate(p)}catch(e){}}
+const TIERS=[3,5,8];let okfl=0,PAUSED=false;
+function cmbTag(big){const e=$('cmb');if(!e)return;const on=S.combo>=2&&(scene==='build'||scene==='map');e.classList.toggle('hidden',!on);if(!on)return;
+ e.textContent='連続×'+S.combo;const tr=TIERS.filter(x=>S.combo>=x).length;e.className='t'+tr+(big?' big':'');if(big)setTimeout(()=>e.classList.remove('big'),240)}
 function setSnd(){const t=S.sound?'音　あり':'音　なし';$('bSnd1').textContent=t;$('bSnd').textContent=S.sound?'音':'消音'}
 function toggleSnd(){S.sound=!S.sound;save();setSnd();ac();sfx.tap()}
 
@@ -2381,7 +2407,7 @@ function drawCart(x,y,rot,sc,glow){sc=sc||1;cx.save();cx.translate(x,y);cx.rotat
 
 /* ================= シーン ================= */
 let scene='title',B=null,MP=null,partic=[],shake=0,T0=performance.now();
-function show(ids){['scrTitle','scrMap','hud','ov','scrTest'].forEach(i=>$(i).classList.toggle('hidden',!ids.includes(i)));
+function show(ids){['scrTitle','scrMap','hud','ov','scrTest'].forEach(i=>$(i).classList.toggle('hidden',!ids.includes(i)));if(HELP){if(ids.includes('hud')||ids.includes('scrMap'))HELP.show();else HELP.hide()}
  $('hudR').classList.toggle('hidden',!(ids.includes('hud')||ids.includes('scrMap')));backBtn();kk()}
 function setScene(s){scene=s;backBtn()}
 const INHUB=!!window.COLLECTION_NAME||(function(){try{return window.parent!==window}catch(e){return true}})();
@@ -2393,7 +2419,7 @@ $('bBack').onclick=()=>{ac();sfx.tap();
  backFrom=scene;$('bkSub').textContent=scene==='build'?'進み具合は保存されます（渡りきった谷はそのまま。この谷は次にはじめから）。':scene==='test'?'確認テストは、次はさいしょから。本編の進み具合は保存されています。':'進み具合は保存されます。タイトルにもどります。';
  $('bkGo').textContent=scene==='build'?'全体配置図へ':'タイトルへ';$('scrBk').classList.remove('hidden')};
 $('bkNo').onclick=()=>{sfx.tap();$('scrBk').classList.add('hidden')};
-$('bkGo').onclick=()=>{sfx.tap();$('scrBk').classList.add('hidden');if(backFrom==='build'){B=null;toMap()}else toTitle()};
+$('bkGo').onclick=()=>{sfx.tap();$('scrBk').classList.add('hidden');if(PRAC)endPractice();if(backFrom==='build'){B=null;toMap()}else toTitle()};
 
 /* ---------------- タイトル ---------------- */
 function placeTitle(){const tb=$('tBox');if(PORT){tb.style.left='16px';tb.style.right='16px';tb.style.width='';tb.style.bottom='calc(18px + env(safe-area-inset-bottom))';tb.style.top=''}
@@ -2426,7 +2452,7 @@ function drawTitle(t){drawBG();
 /* ---------------- 全体配置図（マップ） ---------------- */
 function mapNodes(){const n=NV,pts=[];const top=PORT?170:130,bot=H-(PORT?170:150);
  for(let i=0;i<n;i++){let x,y;if(PORT){const k=i/(n-1);y=bot-(bot-top)*k;x=W/2+Math.sin(i*1.25)*W*.28}else{const k=i/(n-1);x=W*.08+(W*.84)*k;y=(top+bot)/2+Math.sin(i*1.1)*(bot-top)*.32}pts.push({x,y,i})}return pts}
-function toMap(){setScene('map');show(['scrMap']);MP={nodes:mapNodes(),t:0};const ni=nextIdx();$('bNext').textContent=ni<0?'確認テストへ ▶':ni===VALLEYS.length?'最後の大橋へ ▶':'次の谷へ ▶（第'+String(ni+1).padStart(2,'0')+'図）';zkButtons()}
+function toMap(){setScene('map');show(['scrMap']);cmbTag();MP={nodes:mapNodes(),t:0};const ni=nextIdx();$('bNext').textContent=ni<0?'確認テストへ ▶':ni===VALLEYS.length?'最後の大橋へ ▶':'次の谷へ ▶（第'+String(ni+1).padStart(2,'0')+'図）';zkButtons()}
 function drawMap(t){drawBG();const N=MP.nodes=mapNodes();const ni=nextIdx();
  cx.font=font(PORT?18:22,1);cx.fillStyle=LN;cx.fillText('全体配置図',PORT?20:26,PORT?88:96);cx.font=font(11,0,FM);cx.fillStyle='rgba(230,238,248,.7)';cx.fillText('SITE PLAN　谷を渡って研究所へ　'+nDone()+' / '+NV,PORT?20:26,PORT?106:114);
  /* 道のり（一点鎖線の中心線） */
@@ -2453,13 +2479,14 @@ function ovOpen(h){$('ovBox').innerHTML=h;$('ov').classList.remove('hidden');$('
 function ovClose(){$('ov').classList.add('hidden')}
 
 /* ---------------- 谷（橋づくり） ---------------- */
-function startValley(i,finalDef){ac();
+function startValley(i,finalDef,prac){ac();if(!prac&&PRAC)endPractice();
  if(i>=VALLEYS.length&&!finalDef){chooseFinal();return}
  const v=finalDef||VALLEYS[i];
  const slots=v.slots.map((s,k)=>({cat:s[0],label:s[1]||s[0],ord:s[2],plank:null,chain:null,cut:-1,slack:1,red:0,k,anim:0}));
  const planks=shuffle(v.planks).map((p,k)=>Object.assign({},p,{k,used:false,dead:false,x:0,y:0,w:0,h:0,dx:0,dy:0,rx:0,ry:0}));
  B={v,i,fin:!!finalDef,slots,planks,cart:{m:'wait',x:0,y:0,rot:0,sp:0,t:0,vx:0,vy:0,vr:0,tm:0},falls:0,drag:null,sel:null,notes:[],hint:(i===0&&!S.done.co2),timer:finalDef?finalDef.limit:0,t:0,won:false,stampT:-1,flash:0};
- setScene('build');show(['hud']);layout();resetCart();$('bRun').classList.remove('go');
+  if(prac){B.prac=true;B.hint=false}
+  setScene('build');show(['hud']);layout();resetCart();$('bRun').classList.remove('go');cmbTag();
  if(v.peak)setTimeout(()=>{if(B&&B.v===v)bigBanner('山場','いちばん長い谷。終わり方の順番に気をつけろ')},300);
  else if(B.fin)setTimeout(()=>{if(B)bigBanner('締切 '+v.limit+' 秒','計画書を仕上げて、研究所へ')},300)}
 let banner=null;function bigBanner(a,b){banner={a,b,t:0}}
@@ -2485,10 +2512,11 @@ function resetCart(){const c=B.cart;c.m='wait';c.x=B.start.x;c.y=B.start.y;c.rot
 function slotSound(s){if(!s.plank)return false;if(!s.plank.ok)return false;if(s.cat==='手順')return s.plank.o===s.ord;return true}
 function slotWhy(s){if(!s.plank)return '「'+s.label+'」の板がない。計画に「'+s.cat+'」が抜けている。';if(!s.plank.ok)return s.plank.why;if(s.cat==='手順'&&s.plank.o!==s.ord){if(s.plank.o>s.ord)return s.plank.why;return '終わり方の順番がちがう。'};return ''}
 function tryPlace(p,s){if(B.cart.m!=='wait'){toast('試走中は置けない');return false}
- if(s.cat!==p.c){sfx.bad();toast('ここは「'+s.label+'」の板を置く所',PORT?B.box.top-6:B.box.top-10);return false}
+  if(s.cat!==p.c){sfx.bad();toast('ここは「'+s.label+'」の板を置く所',PORT?B.box.top-6:B.box.top-10);return false}
+  if(B.prac&&!p.ok){sfx.soft();toast('れんしゅうでは 指がさす板を使おう',PORT?B.box.top-6:B.box.top-10);return false}
  if(s.plank&&s.plank!==p){const o=s.plank;o.used=false;o.x=o.rx;o.y=o.ry}
  B.slots.forEach(q=>{if(q.plank===p&&q!==s){q.plank=null;q.chain=null}});
- s.plank=p;p.used=true;s.chain=makeChain(s.A,s.B);s.anim=0;sfx.clack();B.hint=false;B.notes=[];
+  s.plank=p;p.used=true;s.chain=makeChain(s.A,s.B);s.anim=0;sfx.clack();B.hint=false;B.notes=[];shake=Math.max(shake,3);buzz(10);
  for(let i=0;i<14;i++){const u=Math.random();partic.push({x:s.A.x+(s.B.x-s.A.x)*u,y:s.A.y+(s.B.y-s.A.y)*u,vx:rnd(-60,60),vy:rnd(-120,-20),l:1,c:Math.random()<.5?AMB:LN,s:rnd(1.5,3)})}
  if(B.slots.every(q=>q.plank))$('bRun').classList.add('go');return true}
 function unplace(s){const p=s.plank;if(!p)return;p.used=false;p.x=p.rx;p.y=p.ry;s.plank=null;s.chain=null;$('bRun').classList.remove('go')}
@@ -2534,14 +2562,15 @@ function updCart(dt){const c=B.cart;const sp=(PORT?150:Math.max(170,W*.13))*(B.f
   const q=chainPos(s,c.t);c.x=q.x;c.y=q.y;c.rot=q.ang>Math.PI/2||q.ang<-Math.PI/2?q.ang+Math.PI:q.ang;
   if(c.t>=1){s.creaked=false;c.t=0;
    /* ほめる：板を渡りきるたびに小さな光 */
-   for(let i=0;i<6;i++)partic.push({x:s.B.x,y:s.B.y,vx:rnd(-80,80),vy:rnd(-140,-30),l:1,c:AMB,s:2});sfx.tick();
+    for(let i=0;i<(RM?4:16);i++)partic.push({x:s.B.x,y:s.B.y,vx:rnd(-110,110),vy:rnd(-200,-40),l:1,c:i%2?AMB:LN,s:rnd(2,3.5)});sfx.up(c.span);pop((s.A.x+s.B.x)/2,Math.min(s.A.y,s.B.y)-40,'+100');okfl=Math.max(okfl,.18);buzz(8);
    if(c.span+1>=B.slots.length){c.m='post';return}
    if(PORT){c.m='lift';c.ly=s.B.y;c.ty=B.slots[c.span+1].A.y;c.span++;}else c.span++}}
  else if(c.m==='lift'){c.rot=0;c.y-=sp*.8*dt;if(c.y<=c.ty){c.y=c.ty;c.m='ride';c.t=0}}
  else if(c.m==='post'){const dx=B.goal.x-c.x;c.x+=Math.sign(dx)*Math.min(Math.abs(dx),sp*dt);c.y=B.goal.y;c.rot=0;if(Math.abs(dx)<1){c.m='done';win()}}
  else if(c.m==='fall'){c.vy+=1500*dt;c.x+=c.vx*dt;c.y+=c.vy*dt;c.rot+=c.vr*dt;if(c.tm>1.7){afterFail()}}}
 function failAt(s,x,y){const c=B.cart;c.m='fall';c.vx=PORT?(s.B.x>s.A.x?60:-60):80;c.vy=-60;c.vr=rnd(-4,4);c.tm=0;sfx.fall();
- B.falls++;S.falls++;S.combo=0;save();B.failSlot=s;
+  const lost=S.combo;B.falls++;S.falls++;S.combo=0;save();B.failSlot=s;buzz([12,40,12]);cmbTag();
+  if(lost>=2){const nt=TIERS.find(x=>x>lost);setTimeout(()=>{if(nt&&nt-lost===1)pop(W/2,H*.24,'あと1回で 連続×'+nt+' だった！','連続合格 ×'+lost+' で止まった');else toast('連続合格 ×'+lost+' で止まった')},700)}
  B.notes=[{x,y,t:0,seed:rnd(0,6),text:slotWhy(s),title:'赤入れ：'+s.label}]}
 function afterFail(){const s=B.failSlot;if(s){if(s.plank){if(s.cat==='手順'){B.slots.forEach(q=>{if(q.cat==='手順'&&q.plank)unplace(q)})}else{const p=s.plank;unplace(s);if(!p.ok)p.dead=true}}}
  B.failSlot=null;resetCart();B.notes.forEach(n=>n.keep=true)}
@@ -2550,16 +2579,26 @@ function win(){B.won=true;const v=B.v,id=B.fin?'final':v.id;const first=B.falls=
  if(first){S.combo++;S.maxCombo=Math.max(S.maxCombo,S.combo)}
  const pts=100*B.slots.length+(first?300*Math.max(1,S.combo):0);S.score+=was?0:pts;
  S.plans[id]={goal:v.goal,picks:B.slots.map(s=>s.label+'＝'+s.plank.s)};save();
- sfx.ok(S.combo);shake=4;B.stampT=0;
+  sfx.ok(S.combo);shake=RM?0:9;okfl=.7;B.stampT=0;buzz([20,40,30]);cmbTag(true);
+  const tier=first?TIERS.indexOf(S.combo):-1;if(tier>=0&&!B.prac)setTimeout(()=>{sfx.tier(tier);okfl=.9;shake=RM?0:12;pop(W/2,H*.2,'連続合格 ×'+S.combo+'！',['いい調子','止まらない','検図の達人'][tier]);for(let i=0;i<(RM?10:60);i++)partic.push({x:W/2,y:H*.2,vx:rnd(-320,320),vy:rnd(-380,40),l:1.5,c:[AMB,LN,'#9fd3ff'][i%3],s:rnd(2,4),ln:Math.random()<.5})},500);
  for(let i=0;i<(RM?16:70);i++){partic.push({x:B.goal.x,y:B.goal.y-20,vx:rnd(-260,260),vy:rnd(-420,-60),l:1.4,c:[AMB,LN,'#9fd3ff'][i%3],s:rnd(2,4),ln:Math.random()<.5})}
  pop(W/2,H*.3,first?'一発合格！':'検図済',first?(S.combo>1?S.combo+'連続の一発合格':'計画の穴なし'):'直して渡りきった');
  if(first)earn(10,'first-try','ft-'+id,W/2,H*.3);
  if(v.id==='cu'&&first)earn(15,'hit','peak-cu',W/2,H*.35);
  if((v.id==='fes'||v.id==='mg')&&!was)earn(10,'control','cmp-'+v.id,W/2,H*.35);
- setTimeout(()=>{if(B&&B.won)B.fin?sealFlow():resultSheet(first)},RM?600:1900)}
-function resultSheet(first){const v=B.v;const idx=B.i;
- ovOpen('<div style="float:right;margin:4px 6px 0 10px"><span class="stamp pop">'+(first?'一発合格':'検図済')+'</span></div><h2>第'+v.no+'図　'+esc(v.name)+'</h2><p>目的：<b>'+esc(v.goal)+'</b></p><div class="plan">'+B.slots.map(s=>'<div><i>'+esc(s.label)+'</i><span>'+esc(s.plank.t)+'</span></div>').join('')+'</div><p style="color:var(--amb)">'+esc(v.point)+'</p><p class="note">'+(first?'赤入れ 0 回。':'赤入れ '+B.falls+' 回のあとに合格。')+'この設計図は図面庫にしまわれた。</p><div class="row"><button class="tb" id="rMap">全体配置図</button><button class="tb a" id="rNext">'+(idx+1<VALLEYS.length?'次の谷へ ▶':'最後の大橋へ ▶')+'</button></div>');
- $('rMap').onclick=()=>{sfx.tap();ovClose();B=null;toMap()};$('rNext').onclick=()=>{sfx.tap();ovClose();startValley(idx+1)}}
+  if(B.prac){setTimeout(()=>{if(B&&B.prac&&window.Guide)Guide.tutorialClear()},RM?500:1500);return}
+  setTimeout(()=>{if(B&&B.won)B.fin?sealFlow():resultSheet(first)},RM?600:1900)}
+function resultSheet(first){const v=B.v;const idx=B.i;const st=[1,B.falls<=1?1:0,first?1:0];
+ const SP='25,2 31,18 48,18 34,29 39,46 25,36 11,46 16,29 2,18 19,18';
+ const stars='<div class="lestars" id="leStars">'+['渡りきった','赤入れ 1回以内','一発合格'].map((t,i)=>'<span><svg viewBox="0 0 50 50" class="'+(st[i]?'on':'')+'"><polygon points="'+SP+'"/></svg>'+t+'</span>').join('')+'</div>';
+ ovOpen('<div style="float:right;margin:4px 6px 0 10px"><span class="stamp pop">'+(first?'一発合格':'検図済')+'</span></div><h2>第'+v.no+'図　'+esc(v.name)+'</h2>'+stars+'<p>目的：<b>'+esc(v.goal)+'</b></p><div class="plan">'+B.slots.map(s=>'<div><i>'+esc(s.label)+'</i><span>'+esc(s.plank.t)+'</span></div>').join('')+'</div><p style="color:var(--amb)">'+esc(v.point)+'</p><p class="note">'+(first?'赤入れ 0 回。':'赤入れ '+B.falls+' 回のあとに合格。')+'この設計図は図面庫にしまわれた。</p><div class="row"><button class="tb" id="rMap">全体配置図</button><button class="tb a" id="rNext">'+(idx+1<VALLEYS.length?'次の谷へ ▶':'最後の大橋へ ▶')+'</button></div>');
+  $('rMap').onclick=()=>{sfx.tap();ovClose();B=null;toMap()};$('rNext').onclick=()=>{sfx.tap();ovClose();startValley(idx+1)};
+  sfx.fanfare();const ss=[].slice.call(document.querySelectorAll('#leStars svg'));
+  ss.forEach((e,i)=>setTimeout(()=>{e.classList.add('in');if(st[i]){sfx.star(i);buzz(18)}else tone(220,.1,'triangle',.04)},RM?0:420+i*420));
+  setTimeout(()=>confetti(),RM?0:420+3*420)}
+function confetti(){if(RM)return;const cols=[AMB,LN,'#9fd3ff'];for(let i=0;i<64;i++){const d=document.createElement('div');d.className='lecf'+(i%3===2?' sq':'');
+  d.style.left=(Math.random()*100)+'vw';d.style.setProperty('--h',(10+Math.random()*16|0)+'px');d.style.setProperty('--c',cols[i%3]);d.style.setProperty('--dx',((Math.random()-.5)*220|0)+'px');d.style.setProperty('--r',((Math.random()-.5)*900|0)+'deg');
+  const t=1.6+Math.random()*1.3;d.style.setProperty('--t',t.toFixed(2)+'s');d.style.setProperty('--d',(Math.random()*.4).toFixed(2)+'s');document.body.appendChild(d);setTimeout(()=>d.remove(),(t+.7)*1000)}}
 /* 最後の大橋：目的を選ぶ */
 function chooseFinal(){B=null;toMap();ovOpen('<h2>最後の大橋　目的を1つ選ぶ</h2><p>研究所で実際にやる実験の計画を組む。<b>締切</b>までに橋をかけて渡りきり、計画書に封をして持っていく。</p>'+FINALS.map((f,k)=>'<button class="pcard" data-k="'+k+'"><b>'+esc(f.label)+'</b><span>目的：'+esc(f.goal)+'（締切 '+f.limit+' 秒）</span></button>').join('')+'<div class="row"><button class="tb s" id="fX">全体配置図にもどる</button></div>');
  document.querySelectorAll('.pcard').forEach(b=>b.onclick=()=>{sfx.tap();ovClose();startValley(VALLEYS.length,FINALS[+b.dataset.k])});$('fX').onclick=()=>{sfx.tap();ovClose();toMap()}}
@@ -2605,11 +2644,11 @@ function drawValley(t,dt){drawBG();const v=B.v;cx.save();if(shake>0&&!RM){cx.tra
  drawStock(t);
  if(!PORT)drawTitleBlock();
  /* 手本の手（最初の谷） */
- if(B.hint&&!B.drag){const p=B.planks.find(q=>q.ok&&!q.used&&!q.dead&&q.c===B.slots[0].cat),s=B.slots[0];if(p){const u=(t*.6)%1,e=u<.15?0:u>.8?1:(u-.15)/.65;const ex=(s.A.x+s.B.x)/2,ey=(s.A.y+s.B.y)/2-8;const hx=p.x+p.w/2+(ex-p.x-p.w/2)*e,hy=p.y+p.h/2+(ey-p.y-p.h/2)*e;
+  if(B.hint&&!B.drag&&!B.prac){const p=B.planks.find(q=>q.ok&&!q.used&&!q.dead&&q.c===B.slots[0].cat),s=B.slots[0];if(p){const u=(t*.6)%1,e=u<.15?0:u>.8?1:(u-.15)/.65;const ex=(s.A.x+s.B.x)/2,ey=(s.A.y+s.B.y)/2-8;const hx=p.x+p.w/2+(ex-p.x-p.w/2)*e,hy=p.y+p.h/2+(ey-p.y-p.h/2)*e;
   cx.strokeStyle=AMB;cx.lineWidth=2;cx.setLineDash([6,5]);line(p.x+p.w/2,p.y+p.h/2,ex,ey);cx.setLineDash([]);cx.fillStyle='rgba(255,183,3,.35)';cx.beginPath();cx.arc(hx,hy,16,0,7);cx.fill();cx.stroke();
   cx.font=font(14,1);cx.fillStyle=AMB;cx.textAlign='center';cx.fillText('板を谷へドラッグ',ex,ey-30);cx.textAlign='left'}}
  /* ドラッグ中の板は最前面 */
- if(B.drag)drawPlank(B.drag.p,true);
+  if(B.drag){const dp=B.drag.p;cx.save();if(!RM){const cxp=dp.x+dp.w/2,cyp=dp.y+dp.h/2;cx.translate(cxp,cyp);cx.rotate(Math.sin(t*28)*.025);cx.translate(-cxp,-cyp)}drawPlank(dp,true);cx.restore()}
  /* 検図済スタンプ */
  if(B.stampT>=0){B.stampT+=dt;const k=Math.min(1,B.stampT*4);const sc=RM?1:1+2.2*(1-k);cx.save();cx.translate(W/2,PORT?B.box.top+100:H*.34);cx.rotate(-.18);cx.scale(sc,sc);cx.globalAlpha=k;cx.strokeStyle=AMB;cx.lineWidth=5;cx.strokeRect(-120,-44,240,88);cx.lineWidth=1.5;cx.strokeRect(-112,-36,224,72);cx.fillStyle=AMB;cx.font=font(40,1);cx.textAlign='center';cx.fillText(B.falls===0?'一発合格':'検図済',0,14);cx.restore();cx.textAlign='left'}
  if(banner){banner.t+=dt;const a=banner.t<.3?banner.t/.3:banner.t>2.4?Math.max(0,1-(banner.t-2.4)/.5):1;cx.globalAlpha=a;cx.fillStyle='rgba(8,34,70,.92)';const bh=90,by=H*.36;cx.fillRect(0,by,W,bh);cx.strokeStyle=AMB;cx.lineWidth=2;line(0,by,W,by);line(0,by+bh,W,by+bh);cx.fillStyle=AMB;cx.font=font(PORT?30:40,1);cx.textAlign='center';cx.fillText(banner.a,W/2,by+44);cx.fillStyle=LN;cx.font=font(PORT?14:17,1);cx.fillText(banner.b,W/2,by+72);cx.textAlign='left';cx.globalAlpha=1;if(banner.t>3)banner=null}
@@ -2698,7 +2737,9 @@ function showTestResult(){const r=TS.card||{};$('tBoxT').innerHTML='<h2>テス�
  $('rCard').onclick=()=>SubmitCard.reopen(TS.card,()=>{});$('rAgain').onclick=()=>startTest();if($('rTitle'))$('rTitle').onclick=()=>toTitle();$('rBook').onclick=openBook;zkButtons()}
 
 /* ================= タイトルのボタン ================= */
-$('bStart').onclick=()=>{ac();sfx.tap();const nm=$('nameIn').value.trim()||S.name,snd=S.sound;S=fresh();S.name=nm;S.sound=snd;S.started=true;save();startValley(0)};
+$('bStart').onclick=()=>{ac();sfx.tap();buzz(10);const nm=$('nameIn').value.trim()||S.name,snd=S.sound;S=fresh();S.name=nm;S.sound=snd;S.started=true;save();firstRun()};
+function firstRun(){if(!window.Guide){startValley(0);return}Guide.intro(INTRO).then(()=>Guide.tutorial(PRACTICE))}
+$('bHowto').onclick=()=>{ac();sfx.tap();const v=$('nameIn').value.trim();if(v)S.name=v;S.started=true;save();if(window.Guide)Guide.tutorial(PRACTICE);else startValley(0)};
 $('bCont').onclick=()=>{ac();sfx.tap();const v=$('nameIn').value.trim();if(v)S.name=v;save();toMap()};
 $('bSnd1').onclick=toggleSnd;$('bSnd').onclick=toggleSnd;$('bBook1').onclick=openBook;$('bBook2').onclick=openBook;$('bGacha').onclick=openGacha;
 
@@ -2708,18 +2749,55 @@ function loop(now){const dt=Math.min(.05,(now-last)/1000);last=now;const t=(now-
  if(shake>0)shake=Math.max(0,shake-dt*30);
  if(scene==='title')drawTitle(t);
  else if(scene==='map'&&MP)drawMap(t);
- else if(scene==='build'&&B){if(!B.won){S.t+=dt;B.t+=dt;if(B.fin&&$('ov').classList.contains('hidden')){B.timer-=dt;if(B.timer<=0&&B.cart.m==='wait'||B.timer<=-3){timeUp();}}}
+  else if(scene==='build'&&B&&PAUSED){drawValley(t,0)}
+  else if(scene==='build'&&B){if(!B.won){S.t+=dt;B.t+=dt;if(B.fin&&$('ov').classList.contains('hidden')){B.timer-=dt;if(B.timer<=0&&B.cart.m==='wait'||B.timer<=-3){timeUp();}}}
   for(let i=0;i<2;i++)stepChains(dt/2);updCart(dt);drawValley(t,dt)}
  else drawBG();
- drawPartic(dt);requestAnimationFrame(loop)}
+  drawPartic(PAUSED?0:dt);if(okfl>0){okfl=Math.max(0,okfl-dt*1.6);if(!RM){cx.fillStyle='rgba(255,183,3,'+(okfl*.32)+')';cx.fillRect(0,0,W,H)}}requestAnimationFrame(loop)}
 function timeUp(){if(!B)return;B.timer=0;sfx.bad();const def=B.v;ovOpen('<h2 style="color:var(--red);border-color:var(--red)">締切を過ぎた</h2><p>計画書が間に合わなかった。もう一度、はじめから組もう。</p><p class="note">ヒント：目的に合う「物質」から先に決めると、ほかの板も選びやすい。</p><div class="row"><button class="tb a" id="tuR">もう一度</button></div>');$('tuR').onclick=()=>{sfx.tap();ovClose();startValley(VALLEYS.length,def)}}
+/* ================= 遊び方案内（Guide）2026-09-28 ================= */
+const INTRO={title:'計画の橋をかけろ',
+  learn:'実験の計画は **目的に合う化学変化** を選び、**器具・安全・確かめ方** までそろえて立てる',
+  how:'板を谷へ **ドラッグ** して橋をかけ、**試走** で荷車を向こう岸へ渡す',gesture:'drag'};
+let PRAC=false,HELP=null;
+function endPractice(){if(!PRAC)return;PRAC=false;if(B)B.prac=false;if(window.Guide)Guide.tutorialEnd()}
+function pracPlank(si){if(!B)return null;const sl=B.slots[si];return B.planks.find(q=>q.ok&&!q.used&&!q.dead&&q.c===sl.cat)||null}
+function plankBox(si){const p=pracPlank(si);if(!p)return {x:W/2,y:H*.8,r:8};return {x:p.x+p.w/2,y:p.y+p.h/2,w:p.w+10,h:p.h+10}}
+function slotMid(si){if(!B)return {x:W/2,y:H/2,r:30};const s=B.slots[si];return {x:(s.A.x+s.B.x)/2,y:(s.A.y+s.B.y)/2,w:Math.max(80,Math.abs(s.B.x-s.A.x)-10),h:46}}
+const PRACTICE={label:'れんしゅう中　第01図',block:true,clearOn:'manual',clearText:'れんしゅうクリア！',
+  start:()=>{PRAC=true;ovClose();$('scrBk').classList.add('hidden');startValley(0,null,true)},
+  steps:[
+    {gesture:'drag',target:()=>plankBox(0),to:()=>slotMid(0),until:()=>B&&B.prac&&B.slots[0].plank&&B.slots[0].plank.ok,
+     text:'目的は **二酸化炭素を出す**。出てくるのは **炭酸水素ナトリウムの加熱**。その板を谷へ **ドラッグ**',praise:'橋がのびた！'},
+    {gesture:'drag',target:()=>plankBox(1),to:()=>slotMid(1),until:()=>B&&B.prac&&B.slots[1].plank&&B.slots[1].plank.ok,
+     text:'二酸化炭素は **石灰水が白くにごる** で確かめる。その板も **ドラッグ**',praise:'つながった！'},
+    {gesture:'tap',target:'#bRun',until:()=>B&&B.prac&&B.cart.m!=='wait',
+     text:'板がそろったら **試走**！ 荷車が渡りきれば、計画に穴がない',praise:'発車！'}
+  ],
+  onExit:res=>{const was=PRAC;PRAC=false;if(B)B.prac=false;
+    if(res&&res.cleared&&scene==='build'&&B&&B.won)resultSheet(B.falls===0);
+    else if(was&&scene==='build'&&B&&!B.won)B.hint=false}};
+if(window.Guide){
+  Guide.setup({theme:{bg:'#0A3161',fg:'#E6EEF8',accent:'#FFB703',accentText:'#0A3161',font:'"BIZ UDPGothic","Hiragino Kaku Gothic ProN",sans-serif',bodyFont:'"BIZ UDPGothic","Hiragino Kaku Gothic ProN",sans-serif',
+      radius:0,texture:'grid',line:'#E6EEF8',dim:'rgba(4,20,44,.62)',shadow:'0 0 0 4px #0A3161, 0 0 0 5px rgba(230,238,248,.5), 0 10px 30px rgba(0,0,0,.45)',outline:'#0A3161',hand:'#E6EEF8',handLine:'#0A3161'},
+    sfx:k=>{ac();if(k==='step'||k==='done')sfx.clack();else if(k==='clear')sfx.fanfare();else if(k==='open'||k==='close')sfx.tap();else if(k==='cheer')sfx.ok(1);else if(k==='nudge')sfx.tick()},
+    muted:()=>!S.sound});
+  HELP=Guide.help({title:'計画の橋をかけろ',learn:INTRO.learn,how:INTRO.how,gesture:'drag',mount:$('hudR'),size:44,attention:true,replay:'tutorial',
+    rules:['部材置場の板を、谷の **同じ区分の枠**（物質・器具・安全・確かめ方・手順）へ **ドラッグ**。タップ→枠タップでも置ける',
+      '全部の枠に板を置いたら **試走**。目的に合わない板は **たわんで折れ**、荷車が落ちる',
+      '落ちた所には **赤入れ** で理由が出る。まちがいの板は消えるので、直してもう一度',
+      '一発で渡ると **一発合格**。続けると **連続合格** の点がふえる',
+      '最後の大橋は **締切つき**。計画書に封をして実験へ持っていく'],
+    onOpen:()=>{PAUSED=true},onClose:()=>{PAUSED=false;last=performance.now()}});
+  HELP.hide();
+}
 addEventListener('resize',resize);
 resize();
 try{window.Zukan&&Zukan.setup&&Zukan.setup({game:GID,koma:[KOMA]})}catch(e){}
 setSnd();zkButtons();
 if(window.PLAYER_NAME){$('nameIn').value=window.PLAYER_NAME;$('nameRow').classList.add('hidden')}else if(S.name)$('nameIn').value=S.name;
 /* 自動テスト用の取っ手 */
-window.__LE={S:()=>S,B:()=>B,scene:()=>scene,start:startValley,map:toMap,test:startTest,
+window.__LE={prac:()=>PRAC,paused:()=>PAUSED,S:()=>S,B:()=>B,scene:()=>scene,start:startValley,map:toMap,test:startTest,
  solve:()=>{if(!B)return;const used=new Set();B.slots.forEach(s=>{const p=B.planks.find(q=>!used.has(q)&&q.c===s.cat&&q.ok&&(s.cat!=='手順'||q.o===s.ord));if(p){used.add(p);tryPlace(p,s)}})},
  wrong:()=>{if(!B)return;const s=B.slots.find(q=>!q.plank);const p=B.planks.find(q=>!q.used&&!q.dead&&!q.ok&&q.c===(s||B.slots[0]).cat);if(s&&p)tryPlace(p,s)},
  run:()=>$('bRun').click(),final:k=>startValley(VALLEYS.length,FINALS[k||0]),finish:finishMain};

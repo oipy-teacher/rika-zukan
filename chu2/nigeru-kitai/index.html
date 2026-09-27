@@ -167,13 +167,19 @@ body.land #tFig svg{width:100%;max-height:52vh}
   box-shadow:inset 0 0 0 6px var(--shu),inset 0 0 0 9px var(--cloth)}
 #clear .take{max-width:min(92vw,700px);font-size:clamp(15px,.5vw + 12px,20px)}
 #clear .recb{background:var(--cloth);padding:10px 20px;border-radius:2px;box-shadow:inset 0 0 0 3px var(--ai);font-weight:700}
+/* 仕上げ 2026-09-28（nk-finish-2026-09-28）: 確認の窓は案内より上に・帯はボタンの段の下へ */
+#conf{z-index:2147483300!important}
+#bBack{z-index:60} /* 札（dlg）が開いていても もどるを押せるように */
+@media (max-width:560px){.gd-band{top:calc(64px + env(safe-area-inset-top))!important}}
+#bBack:active,.ib:active{transform:translateY(3px) scale(.96)}
+@media (max-width:560px){#btnStart{font-size:22px;min-height:54px;padding:8px 22px}#tBox{gap:9px}} /* 「つづきから」と横に並べて、あそびかたを画面内に */
 @media (prefers-reduced-motion:reduce){.seal .band{transition:none}#tNoren,#tNoren .kick,#btnStart,#tBox,.stars div{animation:none!important}}
 </style>
 </head>
 <body>
 <canvas id="cv" aria-label="縁日の屋台"></canvas>
 
-<button id="bBack" class="hidden" aria-label="もどる"><b>◀</b>もどる</button>
+<button id="bBack" class="hidden" aria-label="もどる" data-gd-pass><b>◀</b>もどる</button>
 <div id="topR" class="hidden"><span id="kk"><i></i><span id="kkN">0</span></span><button id="bBook2" class="ib">型紙帖</button><button id="bSnd" class="ib" aria-label="音のオン・オフ">音</button></div>
 <div id="strip" class="hidden"></div>
 <button id="act" class="fuda hidden"></button>
@@ -190,12 +196,12 @@ body.land #tFig svg{width:100%;max-height:52vh}
       <button id="btnStart" class="fuda">はじめる</button>
       <button id="btnCont" class="fuda ai hidden">つづきから</button>
     </div>
-    <div class="row" style="margin-top:0"><button id="btnBook" class="fuda odo sm">📖 図鑑</button></div>
+    <div class="row" style="margin-top:0"><button id="btnHowto" class="fuda ai sm">あそびかた（れんしゅう）</button><button id="btnBook" class="fuda odo sm">📖 図鑑</button></div>
   </div>
 </div>
 
 <div id="dlg" class="ov hidden"><div class="box" id="dlgBox"></div></div>
-<div id="conf" class="ov hidden" style="background:rgba(19,40,66,.3)"><div class="box">
+<div id="conf" class="ov hidden" style="background:rgba(19,40,66,.3)" data-gd-pass><div class="box">
   <div class="nh">もどる？<small>進み具合は保存されます</small></div>
   <div class="bd" id="confTx" style="text-align:center"></div>
   <div class="row"><button class="fuda ai" id="confNo">つづける</button><button class="fuda" id="confGo">もどる</button></div>
@@ -2694,7 +2700,7 @@ function startReaction(){const p=R.p;R.mixed=true;R.lidAtStart=R.lidOn;judgePred
  nextPhase()}
 
 /* ---------- 毎フレームの更新 ---------- */
-function update(dt){T+=dt;if(scene==='stall'&&R){S.t+=dt;updStall(dt)}
+function update(dt){if(PAUSED)return;T+=dt;if(scene==='stall'&&R){S.t+=dt;updStall(dt)}
  for(let i=parts.length-1;i>=0;i--){const q=parts[i];q.l-=dt;q.x+=q.vx*dt;q.y+=q.vy*dt;q.vy+=(q.fw?90:420)*dt;q.vx*=.985;if(q.l<=0)parts.splice(i,1)}
  flash=Math.max(0,flash-dt*2.6);comboPop=Math.max(0,comboPop-dt*4);if(stamp){stamp.a+=dt;if(stamp.a>1.4)stamp=null}
  for(let i=floats.length-1;i>=0;i--){const f=floats[i];f.l-=dt;f.a+=dt;f.y-=(f.a<.12?160:40)*dt;if(f.l<=0)floats.splice(i,1)}
@@ -2769,7 +2775,8 @@ function updStall(dt){const p=R.p,cg=contGeo();R.t+=dt;if(R.glow>0)R.glow-=dt;
    else{b.vy=-Math.max(6,Math.abs(b.vy));if(b.ly<top+9*bb){b.lx*=Math.pow(.02,dt)}if(Math.abs(b.lx)>hw){b.lx=Math.sign(b.lx)*hw;b.vx*=-1}
     if(b.ly<top){exitBall(b)}}
    continue}
-  if(b.st==='up'){b.s=Math.min(1,b.s+dt*2.2);const G=GAS[b.k];b.vy=b.vy||-rnd(G.v[0],G.v[1])*K*.75;b.y+=b.vy*dt;
+  if(b.st==='up'){b.s=Math.min(1,b.s+dt*2.2);const G=GAS[b.k];b.vy=b.vy||-rnd(G.v[0],G.v[1])*K*.75*(R.prac?.55:1);b.y+=b.vy*dt;
+    if(R.prac){if(b.vy<0&&b.y<HUDY+b.r*1.4){b.vy=Math.abs(b.vy)*.8}else if(b.vy>0&&b.y>H*.5){b.vy=-Math.abs(b.vy)}}
    const wind=p.wind?Math.sin(T*.7)*60+Math.sin(T*1.9+1)*30:0;b.vx=lerp(b.vx||0,wind+Math.sin(T*1.3+b.ph)*24,dt*1.5);b.x+=b.vx*dt;b.x=clamp(b.x,b.r*.6,W-b.r*.6);
    if(b.inv&&!b.rev)b.hint=R.trapHint?.14+.08*Math.sin(T*6+b.ph):0;
    if(b.y<-b.r*2.4){b.st='gone';R.gone++;R.goneM+=GAS[b.k].m;comboBreak();SFX.esc();if(!b.inv||b.rev||R.trapHint)floatT('にげた −'+(GAS[b.k].m<.01?GAS[b.k].m.toFixed(3):f2(GAS[b.k].m))+' g',clamp(b.x,70,W-70),Math.max(HUDY+40,60),C.shu,Math.max(15,4*K))}}
@@ -2820,7 +2827,9 @@ function burstAt(xy,n,c){burst(xy[0],xy[1],n,c)}
 function floatAtU(t,u,v,c){const [x,y]=P(u,v);floatT(t,x,y,c)}
 
 /* ---------- 1軒ぶんの結果 ---------- */
-function finishPart(){if(!R||R.done)return;R.done=true;const p=R.p,st=STALLS[STI];hideAct();
+function finishPart(){if(!R||R.done)return;if(R.prac){R.done=true;hideAct();bigStamp('的中！','予想どおり「へる」',C.shu);doFlash(.55,C.odoL);shake=RM?0:10;SFX.hit();buzz(30);burst(W/2,H*.38,RM?8:60,[C.shu,C.odoL,C.ai,C.cloth]);
+  const RR=R;setTimeout(()=>{if(R===RR&&window.Guide)Guide.tutorialClear()},RM?600:1300);return}
+  R.done=true;const p=R.p,st=STALLS[STI];hideAct();
  R.preds.forEach(q=>{if(q.truth==null){q.truth=truthOf(q.which);q.ok=q.v===q.truth}});
  const predOK=R.preds.every(q=>q.ok),nP=R.preds.length;
  // 罠：見えない気体を放っておいた
@@ -3000,7 +3009,7 @@ cv.addEventListener('pointermove',e=>{if(!drag)return;const [x,y]=toLocal(e),[u,
   else if(R.open>.18&&Math.random()<.08)SFX.tick();return}});
 function endDrag(e){if(!drag)return;const d=drag;drag=null;if(!R)return;const [x,y]=toLocal(e),[u,v]=U(x,y),p=R.p;
  if(d.m==='net'){net.on=false;return}
- if(d.m==='dial'){R.dial.drag=false;const a=R.dial.ang;R.dial.v=a<Math.PI*1.35?'dec':a<Math.PI*1.65?'even':'inc';R.dial.ang=angOf(R.dial.v);SFX.tap();showAct('この予想で決める',()=>{SFX.tap();lockDial();hideAct();nextPhase()});return}
+ if(d.m==='dial'){R.dial.drag=false;const a=R.dial.ang;R.dial.v=a<Math.PI*1.35?'dec':a<Math.PI*1.65?'even':'inc';R.dial.ang=angOf(R.dial.v);SFX.tap();showAct('この予想で決める',()=>{if(R.prac&&R.dial.v!=='dec'){SFX.miss();floatT('ふたがない → 気体が外へ → 「へる」',W/2,H*.3,C.shu,Math.max(16,4*K));return}SFX.tap();lockDial();hideAct();nextPhase()});if(R.dial.v)floatAtU(DIAL[R.dial.v]+'！',DX,DY-DR-6,C.shu);return}
  if(d.m==='gog'){if(y<H*.35){S.goggles=true;save();SFX.lid();floatT('保護眼鏡 よし！',W/2,H*.3,C.ai);earn(10,'first-try');nextPhase()}return}
  if(d.m==='lid'){const cg=contGeo();if(Math.abs(u)<9&&Math.abs(v-cg.top)<10){R.lidOn=true;SFX.lid();shake=RM?0:3;floatAtU('パチン！',0,cg.top-6,C.shu);if(R.phase==='react'){R.glow=1.2;strip('数字が<b>ぴたりと止まった</b>！ にげた風船は <b>網でつかまえろ</b>');SFX.bell()}}return}
  if(d.m==='burn'){if((Math.abs(u-HEATX)<15||Math.abs(u)<12)&&v>-90&&v<-22){R.burnX=HEATX;SFX.drum();startReaction()}return}
@@ -3011,7 +3020,7 @@ function setDial(u,v){let a=Math.atan2(v-DY,u-DX);if(a<0)a+=Math.PI*2;if(a<Math.
 addEventListener('keydown',e=>{if(e.key==='Escape'&&scene==='stall')$('bBack').click()});
 
 /* ================= DOM の部品 ================= */
-function strip(h,warn){const s=$('strip');if(!h){s.classList.add('hidden');return}s.innerHTML=h;s.classList.toggle('warn',!!warn);if(scene==='stall'||scene==='map'||scene==='fall')s.classList.remove('hidden');placeStrip()}
+function strip(h,warn){const s=$('strip');if(!h||(R&&R.prac)){s.classList.add('hidden');return}s.innerHTML=h;s.classList.toggle('warn',!!warn);if(scene==='stall'||scene==='map'||scene==='fall')s.classList.remove('hidden');placeStrip()}
 function placeStrip(){const s=$('strip');s.style.top=(LAND?70:(HUDY+4))+'px'}
 let actFn=null;
 function showAct(t,f){const a=$('act');a.textContent=t;a.disabled=false;actFn=f;a.classList.remove('hidden');placeAct();updAct()}
@@ -3026,14 +3035,14 @@ function setUI(){const inStall=scene==='stall'||scene==='map';$('topR').classLis
  const b=$('bBack');const on=scene==='stall'||scene==='map'||scene==='test'||scene==='clear'||(scene==='title'&&INHUB);b.classList.toggle('hidden',!on);b.innerHTML='<b>◀</b>'+(scene==='title'?'一覧へ':'もどる');
  $('title').classList.toggle('hidden',scene!=='title');$('test').classList.toggle('hidden',scene!=='test');$('clear').classList.toggle('hidden',scene!=='clear');
  if(!inStall){$('strip').classList.add('hidden');hideAct()}
- $('bSnd').classList.toggle('off',!AU.on);refreshKK()}
+ $('bSnd').classList.toggle('off',!AU.on);refreshKK();if(HELP){if(inStall)HELP.show();else HELP.hide()}}
 $('bSnd').onclick=()=>{AU.init();AU.on=!AU.on;S.sound=AU.on;save();$('bSnd').classList.toggle('off',!AU.on);if(AU.on)SFX.bell()};
 $('bBack').onclick=()=>{AU.init();SFX.tap();
  if(scene==='title'||(scene==='test'&&TEST)){try{window.parent.postMessage({type:'rika-close-game'},'*')}catch(e){}return}
  $('confTx').textContent=scene==='stall'?'この屋台は、次はさいしょから。回り終えた屋台と★はそのまま。':scene==='test'?'確認テストは、次はさいしょから。':'タイトルにもどります。';
  $('confGo').textContent=scene==='stall'?'参道の地図へ':'タイトルへ';$('conf').classList.remove('hidden')};
 $('confNo').onclick=()=>{$('conf').classList.add('hidden')};
-$('confGo').onclick=()=>{$('conf').classList.add('hidden');closeDlg();hideAct();if(scene==='stall'||scene==='fall')toMap();else toTitle()};
+$('confGo').onclick=()=>{$('conf').classList.add('hidden');if(PRAC)endPractice();closeDlg();hideAct();if(scene==='stall'||scene==='fall')toMap();else toTitle()};
 function openBook(){const cards=STALLS.map((st,i)=>{const got=!!S.cleared[st.id];return'<div class="card'+(got?'':' no')+'">'+(got?cardSvg(st.id):'<svg viewBox="0 0 84 84"><rect x="6" y="6" width="72" height="72" rx="3" fill="#E6D7B6"/><text x="42" y="54" text-anchor="middle" font-size="34" fill="#b9a987">？</text></svg>')+'<b>'+(got?esc(st.card.nm):'？？？')+'</b>'+(got?esc(st.card.d):(i+1)+'軒目 '+esc(st.nm)+'で')+'</div>'}).join('');$('bookCards').innerHTML=cards;$('book').classList.remove('hidden')}
 $('bookClose').onclick=()=>{$('book').classList.add('hidden')};
 $('bBook2').onclick=()=>{AU.init();SFX.tap();openBook()};
@@ -3057,7 +3066,9 @@ function toTitle(){scene='title';seedDecor();R=null;balls.length=0;bgKey='';setU
 let armed=false,introSnd=false;
 addEventListener('pointerdown',()=>{if(scene==='title'&&!introSnd){introSnd=true;AU.init();SFX.drum();setTimeout(()=>SFX.fue(),180)}},true);
 $('btnStart').onclick=()=>{AU.init();const sv=load();if(sv&&sv.started&&!armed){armed=true;$('btnStart').textContent='もう一度おすと最初から';return}
- const nm=($('nameIn').value||'').trim();S=fresh();S.sound=AU.on;S.started=true;NAME=window.PLAYER_NAME||nm;S.name=NAME;save();SFX.fue();startStall(0)};
+ const nm=($('nameIn').value||'').trim();S=fresh();S.sound=AU.on;S.started=true;NAME=window.PLAYER_NAME||nm;S.name=NAME;save();SFX.fue();firstRun()};
+function firstRun(){if(!window.Guide){startStall(0);return}Guide.intro(INTRO).then(()=>Guide.tutorial(PRACTICE))}
+$('btnHowto').onclick=()=>{AU.init();SFX.tap();const sv=load();if(sv)S=sv;const nm=($('nameIn').value||'').trim();if(nm&&!window.PLAYER_NAME){NAME=nm;S.name=nm}S.started=true;save();if(window.Guide)Guide.tutorial(PRACTICE);else startStall(0)};
 $('btnCont').onclick=()=>{AU.init();S=load()||fresh();AU.on=S.sound!==false;const nm=($('nameIn').value||'').trim();if(nm&&!window.PLAYER_NAME){NAME=nm;S.name=nm;save()}SFX.fue();if(S.done)showClear();else toMap()};
 $('btnBook').onclick=()=>{window.Zukan&&Zukan.openBook()};$('clBook').onclick=()=>{window.Zukan&&Zukan.openBook()};
 function showClear(){scene='clear';R=null;balls.length=0;bgKey='';setUI();fireworks(RM?1:4);
@@ -3086,6 +3097,40 @@ function finishTest(){const qs=TQ,review=Quiz.review(qs,TA),marks=review.map(r=>
  SubmitCard.show({gameId:GID,grade:'chu2',koma:[KOMA],unit:'中2理科　化学変化と原子・分子　第27回',game:'にげる気体をつかまえろ ～開いた系と閉じた系～'+(TEST?'（確認テストのみ）':''),
   name:nm,score,total:qs.length,marks,records:recs,review},()=>{if(TEST)startTest();else toTitle()})}
 
+/* ================= 遊び方案内（Guide）2026-09-28 ================= */
+let PAUSED=false,PRAC=false,HELP=null;
+const PRAC_STALL=2;
+const INTRO={title:'にげる気体をつかまえろ',
+  learn:'気体が出る反応で軽くなるのは **気体が外へ出ていくから**。**閉じた容器** なら質量の総和は変わらない',
+  how:'**うちわの針** で予想 → 容器を **かたむけて** 反応 → 出てきた風船を **網でつかまえる**（画面をドラッグ）',gesture:'drag'};
+function endPractice(){if(!PRAC)return;PRAC=false;if(window.Guide)Guide.tutorialEnd()}
+const dialPt=v=>{const a=v==='dec'?Math.PI*1.2:v==='inc'?Math.PI*1.8:Math.PI*1.5;const [x,y]=P(DX+Math.cos(a)*DR*.62,DY+Math.sin(a)*DR*.62);return {x,y,r:Math.max(18,DR*K*.3)}};
+const PRACTICE={label:'れんしゅう中　ヨーヨー釣り',block:false,clearOn:'manual',clearText:'れんしゅうクリア！',
+  start:()=>{PRAC=true;closeDlg();$('conf').classList.add('hidden');S.started=true;startStall(PRAC_STALL);R.prac=true;R.n=8;$('strip').classList.add('hidden')},
+  steps:[
+    {gesture:'drag',target:()=>{const [x,y]=P(DX,DY);return {x,y,r:DR*K*1.15}},to:()=>dialPt('dec'),until:()=>R&&R.prac&&R.dial&&R.dial.v==='dec',
+     text:'ふたのない容器で気体が出たら、てんびんの数字は？ **うちわの針** を **「へる」** へ **ドラッグ**',praise:'予想した！'},
+    {gesture:'tap',target:'#act',until:()=>R&&R.prac&&R.phase!=='pred',text:'**この予想で決める**',praise:'決まり！'},
+    {gesture:'swipe',target:()=>{const cg=contGeo();const [x,y]=P(0,(cg.top-44)/2);return {x,y,w:Math.max(80,cg.w*K*1.6),h:Math.max(90,(-44-cg.top)*K+20)}},dir:'right',dist:110,until:()=>R&&R.prac&&R.mixed,
+     text:'容器を押したまま **横へずらして かたむける**。中の試験管の塩酸がこぼれて、反応が始まる',praise:'反応した！'},
+    {gesture:'drag',target:()=>{const cg=contGeo();const [x,y]=P(0,cg.top-4);return {x,y:y-netR()*.6,r:netR()}},to:()=>{const cg=contGeo();const [x,y]=P(0,cg.top-40);return {x,y,r:netR()}},dim:false,place:'below',
+     until:()=>R&&R.prac&&R.caught>=3,text:'出てきた風船は **画面を押したまま動かす** と **網** でつかまえられる。**3つ** つかまえよう',praise:'つかまえた！'}
+  ],
+  onExit:res=>{const was=PRAC;PRAC=false;if(res&&res.stopped)return;if(scene==='stall'&&R&&R.prac){R.prac=false;closeDlg();hideAct();const nx=nextStall();if(nx<=0)startStall(0);else toMap()}}};
+if(window.Guide){
+  Guide.setup({theme:{bg:'#F1E7D0',fg:'#132842',accent:'#D2452B',accentText:'#F1E7D0',font:'"Potta One","Hiragino Maru Gothic ProN",sans-serif',bodyFont:'"Hiragino Kaku Gothic ProN","Hiragino Sans",sans-serif',
+      radius:3,texture:'paper',line:'#1E3A5F',dim:'rgba(19,40,66,.5)',shadow:'0 0 0 4px #1E3A5F, 0 0 0 6px #F1E7D0, 0 0 0 9px #1E3A5F',outline:'#F1E7D0',hand:'#F1E7D0',handLine:'#1E3A5F'},
+    sfx:k=>{AU.init();if(k==='step'||k==='done')SFX.koto(3);else if(k==='clear')SFX.fue();else if(k==='open'||k==='close')SFX.tap();else if(k==='cheer')SFX.bell();else if(k==='nudge')SFX.tick()},
+    muted:()=>!AU.on});
+  HELP=Guide.help({title:'にげる気体をつかまえろ',learn:INTRO.learn,how:INTRO.how,gesture:'drag',mount:$('topR'),size:46,attention:true,replay:'tutorial',
+    rules:['反応の前に **うちわの針** で予想（へる・同じ・ふえる）。当たると連続的中',
+      '容器は押したまま **横へずらして かたむける**。ふた・ビーカー・バーナーは **ドラッグ** で動かす',
+      '空へにげる風船は **網** でつかまえる（画面を押したまま動かす）。にがすと てんびんの数字が下がる',
+      '**熱のゆらめき** はつかまえない（熱には質量がない）',
+      '**ふたを閉めた容器** では、気体が出ても数字は変わらない'],
+    onOpen:()=>{PAUSED=true},onClose:()=>{PAUSED=false;last=performance.now()}});
+  HELP.hide();
+}
 /* ================= ループ ================= */
 let last=performance.now();
 function loop(now){const dt=Math.min(.05,(now-last)/1000);last=now;try{update(dt);draw()}catch(err){console.error(err)}requestAnimationFrame(loop)}
@@ -3098,7 +3143,7 @@ if(TEST){startTest()}else toTitle();
 requestAnimationFrame(loop);
 
 /* 自動テスト用の窓口（画面には出ない） */
-window.__nk={P:(u,v)=>P(u,v),get S(){return S},get R(){return R},get scene(){return scene},balls,start:i=>{S.started=true;startStall(i)},
+window.__nk={prac:()=>PRAC,paused:()=>PAUSED,mapNodes:()=>mapNodes,contGeo:()=>contGeo(),netR:()=>netR(),P:(u,v)=>P(u,v),get S(){return S},get R(){return R},get scene(){return scene},balls,start:i=>{S.started=true;startStall(i)},
  phase:()=>R&&R.phase,setPred:v=>{R.dial.v=v;R.dial.ang=angOf(v);lockDial();nextPhase()},tip:()=>startReaction(),lid:()=>{R.lidOn=true},
  catchAll:()=>{balls.forEach(b=>{if(b.st==='up'&&b.kind==='gas')catchBall(b)})},net:(x,y)=>{net.on=true;net.x=x;net.y=y;net.px=x;net.py=y+40},netOff:()=>{net.on=false},
  goggles:()=>{S.goggles=true;nextPhase()},next:()=>nextPhase(),finish:()=>finishPart(),map:()=>toMap(),clearAll:()=>{STALLS.forEach(s=>S.cleared[s.id]=1);save()}};

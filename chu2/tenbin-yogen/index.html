@@ -105,6 +105,20 @@ b{font-weight:700}
 .pop small{display:block;font-family:var(--fb);font-size:15px;text-align:center;color:#fbe6c6}
 @keyframes popup{0%{transform:translate(-50%,-30%) scale(.4);opacity:0}15%{transform:translate(-50%,-50%) scale(1.12);opacity:1}25%{transform:translate(-50%,-50%) scale(1)}80%{opacity:1}100%{transform:translate(-50%,-110%);opacity:0}}
 #toast{position:absolute;left:50%;transform:translateX(-50%);z-index:9;padding:9px 18px;border:1.5px solid var(--au);border-radius:22px;background:rgba(28,43,35,.96);color:#f6e4b2;font-size:15px;max-width:92vw;text-align:center;transition:opacity .3s}
+/* 仕上げ 2026-09-28（ty-finish-2026-09-28）: 連続的中の札・★の封蝋・花びらの紙吹雪 */
+#cmb{display:flex;align-items:center;height:46px;padding:0 14px;border:1.5px solid var(--au);border-radius:23px;background:#1c2b23;font-family:var(--fh);font-size:16px;color:#f6e4b2;transition:transform .2s;white-space:nowrap}
+#cmb.big{transform:scale(1.3)}#cmb.t1{background:#6b2c1e}#cmb.t2{background:linear-gradient(180deg,#c4623f,#9c4430);box-shadow:0 0 16px rgba(246,228,178,.7)}
+.tystars{display:flex;gap:12px;justify-content:center;margin:2px 0 8px}
+.tystars span{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:12px;width:7.4em;text-align:center;line-height:1.3;color:#5b4a2e}
+.tystars i{display:flex;align-items:center;justify-content:center;width:52px;height:52px;border-radius:50%;border:2px dashed #b89b5e;font-style:normal;font-family:var(--fh);font-size:24px;color:transparent;transform:scale(0) rotate(-40deg)}
+.tystars i.in{transform:none;transition:transform .34s cubic-bezier(.2,1.9,.4,1)}
+.tystars i.on{border:0;background:radial-gradient(circle at 40% 35%,#d0674a,#8e3322);color:#fbe7c4;box-shadow:0 0 0 4px rgba(142,51,34,.3),inset 0 -5px 10px rgba(0,0,0,.3)}
+.tycf{position:fixed;top:-24px;z-index:2147483000;pointer-events:none;width:var(--w);height:calc(var(--w)*.55);background:var(--c);border-radius:100% 0 100% 0;animation:tycf var(--t) cubic-bezier(.3,.2,.6,1) var(--d) forwards}
+@keyframes tycf{to{transform:translate(var(--dx),110vh) rotate(var(--r))}}
+.nb:active,.med:active,#bSnd:active{transform:translateY(3px) scale(.97)}
+#scrBk{z-index:2147483300!important}
+@media (max-width:560px){.gd-band{top:calc(60px + env(safe-area-inset-top))!important}} /* 帯を もどる・音の段の下へ */
+@media (prefers-reduced-motion:reduce){.tycf{display:none}.tystars i{transform:none}#cmb.big{transform:none}}
 @media (prefers-reduced-motion:reduce){.pop{animation:popfade 1.7s forwards}@keyframes popfade{0%,80%{opacity:1}100%{opacity:0}}.seal.pop{animation:none}}
 </style></head><body>
 <div id="app">
@@ -116,16 +130,17 @@ b{font-weight:700}
    <div class="name" id="nameRow"><b>なまえ</b><input id="nameIn" maxlength="16" placeholder="（空でも遊べる）" autocomplete="off"></div>
    <button class="nb t" id="bStart">館に入る</button>
    <button class="nb hidden" id="bCont">つづきから</button>
-   <div class="row"><button class="nb s" id="bTilt">傾き：切</button><button class="nb s" id="bSnd1">音 あり</button><button class="nb s zk" id="bBook1">📖 図鑑</button></div>
+   <button class="nb s" id="bHowto">あそびかた（れんしゅう）</button>
+    <div class="row"><button class="nb s" id="bTilt">傾き：切</button><button class="nb s" id="bSnd1">音 あり</button><button class="nb s zk" id="bBook1">📖 図鑑</button></div>
   </div>
  </div>
  <div id="ctl" class="hidden"></div>
- <div id="hudR" class="hidden"><div class="med" id="kk"><i></i>かけら<b id="kkN">0</b></div><button class="pe" id="bSnd">鈴</button></div>
+ <div id="hudR" class="hidden"><div id="cmb" class="hidden">連続×2</div><div class="med" id="kk"><i></i>かけら<b id="kkN">0</b></div><button class="pe" id="bSnd">鈴</button></div>
  <div id="toast" class="hidden"></div>
  <div id="ov" class="scr hidden pe"><div class="card" id="ovBox"></div></div>
  <div id="scrTest" class="scr hidden pe"><div class="card" id="tBoxT"></div></div>
- <div id="scrBk" class="scr hidden pe"><div class="card"><h2>もどりますか？</h2><p id="bkSub">進み具合は保存されます。</p><div class="row"><button class="nb" id="bkNo">つづける</button><button class="nb t" id="bkGo">もどる</button></div></div></div>
- <button class="nb hidden" id="bBack">◀ もどる</button>
+ <div id="scrBk" class="scr hidden pe" data-gd-pass><div class="card"><h2>もどりますか？</h2><p id="bkSub">進み具合は保存されます。</p><div class="row"><button class="nb" id="bkNo">つづける</button><button class="nb t" id="bkGo">もどる</button></div></div></div>
+ <button class="nb hidden" id="bBack" data-gd-pass>◀ もどる</button>
  <div id="pops"></div>
 </div>
 <script>/*@SUBMIT_CARD_BEGIN*/
@@ -2225,8 +2240,17 @@ const sfx={
  near(){[659,622].forEach((f,i)=>bell(f,.6,.03,i*.15))},
  seal(){tone(90,.5,'sine',.12,0,45);noise(.3,.15,0,300,'lowpass');bell(523,1.4,.04,.2)},
  fanfare(){[523,659,784,1047,784,1047,1319].forEach((f,i)=>bell(f,.9,.04,i*.12))},
- mist(){for(let i=0;i<6;i++)bell(1200+Math.random()*1800,.8,.012,i*.07)}
+ mist(){for(let i=0;i<6;i++)bell(1200+Math.random()*1800,.8,.012,i*.07)},
+ up(n){bell(784*Math.pow(2,Math.min(n,10)*2/12),.5,.035)},
+ star(i){tone(90,.3,'sine',.1,0,50);bell([784,988,1319][i%3],.8,.04,.05)},
+ tier(n){[523,659,784,1047,1319,1568].slice(0,3+Math.min(3,n)).forEach((f,i)=>bell(f,.8,.035,i*.07))},
+ soft(){bell(440,.4,.03);bell(392,.5,.025,.12)}
 };
+function buzz(p){try{if(navigator.vibrate)navigator.vibrate(p)}catch(e){}}
+const TIERS=[3,5];let okfl=0,PAUSED=false,PRAC=false,HELP=null,placeN=0;
+function cmbTag(big){const e=$('cmb');if(!e)return;const on=S.combo>=2&&(scene==='room'||scene==='map');e.classList.toggle('hidden',!on);if(!on)return;
+ e.textContent='連続的中×'+S.combo;e.className='t'+TIERS.filter(x=>S.combo>=x).length+(big?' big':'');if(big)setTimeout(()=>e.classList.remove('big'),240)}
+function placed(it){placeN++;sfx.up(placeN);buzz(8);for(let i=0;i<(RM?3:12);i++)partic.push({x:it.x+rnd(-14,14),y:it.y-30*SC,vx:rnd(-90,90),vy:rnd(-200,-40),l:.9,c:[C.au,'#fff6d8',C.te][i%3],s:rnd(2,4),star:1})}
 function setSnd(){$('bSnd1').textContent=S.sound?'音 あり':'音 なし';$('bSnd').textContent=S.sound?'鈴':'消音'}
 function toggleSnd(){S.sound=!S.sound;save();setSnd();ac();sfx.tap()}
 
@@ -2310,7 +2334,7 @@ function itemSize(it){return{beaker:[54,72],paper:[56,24],box:[62,54],lid:[68,18
 /* ================= シーン管理 ================= */
 let scene='title',Rm=null,MP=null,partic=[],shake=0,T0=performance.now();
 const INHUB=!!window.COLLECTION_NAME||(function(){try{return window.parent!==window}catch(e){return true}})();
-function show(ids){['scrTitle','ov','scrTest'].forEach(i=>$(i).classList.toggle('hidden',!ids.includes(i)));$('hudR').classList.toggle('hidden',!(scene==='room'||scene==='map'));backBtn();kk()}
+function show(ids){['scrTitle','ov','scrTest'].forEach(i=>$(i).classList.toggle('hidden',!ids.includes(i)));$('hudR').classList.toggle('hidden',!(scene==='room'||scene==='map'));backBtn();kk();cmbTag();if(HELP){if(scene==='room'||scene==='map')HELP.show();else HELP.hide()}}
 function setScene(s){scene=s;backBtn();if(s!=='room')setCtl('')}
 function backBtn(){const b=$('bBack'),on=scene==='room'||scene==='map'||scene==='test'||(scene==='title'&&INHUB);b.classList.toggle('hidden',!on);b.textContent=scene==='title'?'◀ 一覧へ':'◀ もどる'}
 let backFrom=null;
@@ -2319,7 +2343,7 @@ $('bBack').onclick=()=>{ac();sfx.tap();
  backFrom=scene;if(Rm)Rm.pause=true;$('bkSub').textContent=scene==='room'?'進み具合は保存されます（まわり終えた部屋はそのまま。この部屋は次にはじめから）。':scene==='test'?'確認テストは、次はさいしょから。本編の進み具合は保存されています。':'進み具合は保存されます。タイトルにもどります。';
  $('bkGo').textContent=scene==='room'?'館の見取り図へ':'タイトルへ';$('scrBk').classList.remove('hidden')};
 $('bkNo').onclick=()=>{sfx.tap();$('scrBk').classList.add('hidden');if(Rm)Rm.pause=false};
-$('bkGo').onclick=()=>{sfx.tap();$('scrBk').classList.add('hidden');if(backFrom==='room'){Rm=null;toMap()}else toTitle()};
+$('bkGo').onclick=()=>{sfx.tap();$('scrBk').classList.add('hidden');if(PRAC)endPractice();if(backFrom==='room'){Rm=null;toMap()}else toTitle()};
 function setCtl(h){const c=$('ctl');c.innerHTML=h;c.classList.toggle('hidden',!h)}
 
 /* ---------------- タイトル ---------------- */
@@ -2367,9 +2391,10 @@ function openCab(){const all=ROOMS.map(r=>({id:r.id,tool:r.tool})).concat([{id:'
 
 /* ================= 部屋 ================= */
 /* phase: load（棚から載せる）→ carry（運ぶ）→ weigh（のせて記録）→ predict（予言）→ change（変化）→ after（前と同じ物をのせてはかる）→ done */
-function startRoom(i){ac();const fin=i>=ROOMS.length;const def=fin?FINAL:ROOMS[i];
+function startRoom(i,prac){ac();if(!prac&&PRAC)endPractice();placeN=0;const fin=i>=ROOMS.length;const def=fin?FINAL:ROOMS[i];
  Rm={i,fin,def,phase:fin?'pair':'load',items:[],pause:false,t:0,prog:0,th:0,om:0,sl:0,sv:0,u:0,spilled:0,spillT:0,drag:null,before:null,dial:null,shown:null,chg:0,rec:false,warn:'',tries:0,missing:false,fx:{},seq:0,hzHit:{},margin:1,cat:[]};
  if(!fin)Rm.items=shuffle(def.items).map(o=>Object.assign({},o,{where:'shelf',x:0,y:0}));
+ if(prac){Rm.prac=true;Rm.hinted=true}
  setScene('room');show([]);layRoom();
  if(fin){pairPick()}else loadUI();
  if(def.peak)bigBan('山場','見た目が大きく変わる。数字はどうなる？');}
@@ -2387,7 +2412,7 @@ function itemHit(x,y,where){const s=SC*(where==='shelf'?1.15:1.05);for(const it 
 function inBox(x,y,b,pad){pad=pad||20;return x>b.x-pad&&x<b.x+b.w+pad&&y>b.y-pad-40&&y<b.y+b.h+pad}
 /* ---- 2. 運ぶ ---- */
 function startCarry(){Rm.phase='carry';Rm.prog=0;Rm.th=0;Rm.om=0;Rm.sl=0;Rm.sv=0;Rm.u=0;Rm.spilled=0;Rm.hzHit={};Rm.cat=[];Rm.margin=1;Rm.fast=1;Rm.minM=99;
- Rm.dur=(Rm.def.dur||30)*(Rm.missing?.5:1);Rm.carryItems=Rm.items.filter(i=>i.where==='tray');setCtl('');
+ Rm.dur=Rm.prac?12:(Rm.def.dur||30)*(Rm.missing?.5:1);Rm.carryItems=Rm.items.filter(i=>i.where==='tray');setCtl('');
  if(!Rm.hinted&&Rm.i===0){Rm.hinted=true;toast(S.tilt?'端末をかたむけて、トレーを水平に':'指を左右にずらして、トレーを水平に（上へずらすと急ぐ）',TY(),3500)}}
 let ptr=null,gamma=0;
 function carryUpd(dt){const R=Rm,def=R.def;if(R.spillT>0){R.spillT-=dt;if(R.spillT<=0){R.remeasureNote=true;startCarry()}return}
@@ -2401,7 +2426,7 @@ function carryUpd(dt){const R=Rm,def=R.def;if(R.spillT>0){R.spillT-=dt;if(R.spil
   if(ty==='pend'&&p>at&&p<at+L)tq+=Math.sin(R.t*2.4)*7*dir*DF;
   if(ty==='draft'&&p>at&&p<at+L)tq+=(Math.sin(R.t*1.3)*4+Math.sin(R.t*3.7)*2)*DF;
   if(ty==='slip'&&p>at&&p<at+L){k=7;c=2.2}
-  const trig=(key,imp)=>{if(!R.hzHit[key]&&p>=at+(imp.d||0)){R.hzHit[key]=1;R.om+=imp.v*DF;shake=Math.max(shake,imp.sh||3);sfx.bump()}};
+   const trig=(key,imp)=>{if(!R.hzHit[key]&&p>=at+(imp.d||0)){R.hzHit[key]=1;R.om+=imp.v*DF;shake=Math.max(shake,imp.sh||3);sfx.bump();R.dodge=R.dodge||[];R.dodge.push({t:R.t+.9,sp:R.spilled})}};
   if(ty==='rug')trig(hi,{v:dir*1.5});
   if(ty==='cat')trig(hi,{v:dir*2.1,sh:4});
   if(ty==='stairs')for(let s=0;s<4;s++)trig(hi+'-'+s,{v:(s%2?-dir:dir)*1.7,d:s*.028,sh:3})});
@@ -2412,13 +2437,16 @@ function carryUpd(dt){const R=Rm,def=R.def;if(R.spillT>0){R.spillT-=dt;if(R.spil
  let minM=99,crit=null;R.carryItems.forEach(it=>{if(it.lim){const rel=Math.abs(it.k==='paper'?R.th:R.th+R.sl*.6);const m=(it.lim||.5)-rel;if(m<minM){minM=m;crit=it}}
   if(Math.abs(R.th)>.95){minM=Math.min(minM,-.01);crit=crit||it}});
  R.margin=minM;R.minM=Math.min(R.minM,minM);
+ if(minM<0&&R.prac){R.th*=.4;R.om=0;R.sv=0;R.sl*=.2;R.margin=.05;sfx.bump();if(window.Guide)Guide.cheer('おっと！ 逆へずらして水平に',{x:W/2,y:H*.45,once:'ty-prac-save',sound:false});return}
  if(minM<0){R.spillT=2.2;R.spilled++;S.spills++;save();sfx.spill();shake=8;R.spillWho=crit;
   const tr=trayGeom();for(let i=0;i<40;i++)partic.push({x:tr.x+(R.th>0?tr.w/2:-tr.w/2),y:tr.y-10,vx:rnd(-60,60)+(R.th>0?80:-80),vy:rnd(-80,40),l:1.2,c:crit&&crit.k==='paper'?'#fff':'#cfe6f0',s:rnd(2,5)});return}
+ if(R.dodge&&R.dodge.length&&R.t>=R.dodge[0].t){const d=R.dodge.shift();if(d.sp===R.spilled&&minM>0){R.dg=(R.dg||0)+1;const tr=trayGeom();pop(tr.x,tr.y-90,'よけた！',R.dg>1?R.dg+'回目':'');sfx.up(R.dg+1);buzz(10);okfl=Math.max(okfl,.25)}}
  if(R.t%0.5<dt)sfx.step();
  if(p>=1){arrive()}}
 function trayGeom(){const R=Rm;return PORT?{x:W/2,y:H*.72,w:Math.min(W*.86,420)}:{x:W*.36,y:H*.68,w:Math.min(W*.4,520,H*.66)}}
 function arrive(){const R=Rm;R.phase='weigh';R.th=0;R.missing=false;const bonus=R.minM>.12&&R.spilled===0;
  pop(W/2,PORT?H*.73:H*.3,R.spilled?'運び終えた':'こぼさず運んだ！',R.spilled?'こぼした回数 '+R.spilled:'水準器が一度も赤くならなかった');sfx.clink();
+ if(!R.spilled){shake=RM?0:5;okfl=.5;buzz([15,30,15]);sfx.tier(0);for(let i=0;i<(RM?10:50);i++)partic.push({x:W/2,y:PORT?H*.7:H*.35,vx:rnd(-260,260),vy:rnd(-320,40),l:1.3,c:[C.au,'#fff6d8',C.te][i%3],s:rnd(2,5),star:1})}
  weighUI()}
 /* ---- 3. はかる ---- */
 function weighUI(){setCtl('<button class="nb t pe" id="bRec">⚖ 混ぜる前の全体を記録</button>');$('bRec').onclick=recBefore;Rm.phase='weigh'}
@@ -2437,14 +2465,14 @@ function recBefore(){ac();const R=Rm;const need=R.items.filter(i=>i.need),onPan=
  setTimeout(()=>{if(Rm===R)predictUI()},900)}
 /* ---- 4. 予言（ダイヤル） ---- */
 function predictUI(){const R=Rm,dp=R.def.dp;R.phase='predict';const step=dp===2?.01:.1;const off=(dp===2?rnd(.15,.4):rnd(1.2,3))*(Math.random()<.5?-1:1);
- R.dial={v:Math.round((R.before+off)/step)*step,step,acc:0,drag:false};
+ R.dial={v:Math.round((R.before+(R.prac?(Math.random()<.5?-.4:.4):off))/step)*step,step,acc:0,drag:false};
  setCtl('<button class="nb s pe" id="bDn">▼</button><button class="nb t pe" id="bLock">この数字で予言</button><button class="nb s pe" id="bUp">▲</button>');
  $('bDn').onclick=()=>{R.dial.v-=R.dial.step;sfx.tick()};$('bUp').onclick=()=>{R.dial.v+=R.dial.step;sfx.tick()};
- $('bLock').onclick=()=>{ac();sfx.mist();R.pred=+fx(R.dial.v,dp);if(R.fin){sealTilt();return}changeUI()};
- if(R.i===0&&!S.done.sugar)toast('水晶玉のまわりの輪を回して、変化の後の数字を予言',TY(),3500)}
+ $('bLock').onclick=()=>{ac();if(R.prac&&Math.abs(R.dial.v-R.before)>1e-6){sfx.soft();toast('れんしゅうでは 輪を回して '+fx(R.before,dp)+' g に合わせよう',TY());return}sfx.mist();buzz(12);R.pred=+fx(R.dial.v,dp);if(R.fin){sealTilt();return}changeUI()};
+ if(R.i===0&&!S.done.sugar&&!R.prac)toast('水晶玉のまわりの輪を回して、変化の後の数字を予言',TY(),3500)}
 /* ---- 5. 変化 ---- */
 function changeUI(){const R=Rm,ch=R.def.ch;R.phase='change';
- if(ch.t==='pour'){setCtl('');toast('薬包紙をビーカーの上へドラッグして入れる',TY(),3000);return}
+ if(ch.t==='pour'){setCtl('');if(!R.prac)toast('薬包紙をビーカーの上へドラッグして入れる',TY(),3000);return}
  setCtl('<button class="nb t pe" id="bHold" style="position:relative;overflow:hidden"><i id="hI" style="position:absolute;left:0;top:0;bottom:0;width:0;background:rgba(255,255,255,.25)"></i><span style="position:relative">'+esc(ch.verb)+'</span></button>');
  const b=$('bHold');let iv=0;const go=()=>{clearInterval(iv);iv=setInterval(()=>{R.chg=Math.min(1,R.chg+.025);$('hI').style.width=(R.chg*100)+'%';if(Math.random()<.3)sfx.tick();if(R.chg>=1){clearInterval(iv);afterUI()}},40)};
  b.addEventListener('pointerdown',e=>{e.preventDefault();ac();go()});['pointerup','pointerleave','pointercancel'].forEach(ev=>b.addEventListener(ev,()=>clearInterval(iv)))}
@@ -2452,21 +2480,30 @@ function doPour(){const R=Rm,ch=R.def.ch;const from=R.items.find(i=>i.id===ch.fr
  for(let i=0;i<24;i++)partic.push({x:to.x+rnd(-10,10),y:to.y-70*SC,vx:rnd(-20,20),vy:rnd(20,120),l:.8,c:'#fff',s:2});afterUI()}
 /* ---- 6. 前と同じ物をのせてはかる ---- */
 function afterUI(){const R=Rm;R.phase='after';setCtl('<button class="nb t pe" id="bRec2">⚖ 変化の後をはかる</button>');$('bRec2').onclick=recAfter;
- if(R.def.ch.t==='pour')toast('前と同じ物をのせてからはかろう',TY(),2400)}
+ if(R.def.ch.t==='pour'&&!R.prac)toast('前と同じ物をのせてからはかろう',TY(),2400)}
 function recAfter(){ac();const R=Rm;const need=R.items.filter(i=>i.need&&i.where!=='pan');
  if(need.length){R.putBackMiss=true;sfx.bad();toast(need.map(i=>i.empty?'空になった薬包紙':i.nm).join('・')+' ものせないと、前と同じ物にならない',TY(),3000);return}
  const after=R.def.ch.after!=null?R.def.ch.after:R.before;R.after=after;R.phase='reveal';R.settle=1;R.shownV=R.before;setCtl('');
  const dp=R.def.dp;const ok=R.def.open?(R.pred<R.before-1e-6):Math.abs(R.pred-after)<1e-6;const diff=Math.abs(R.pred-after);
  setTimeout(()=>{if(Rm!==R)return;R.shownV=after;R.settle=0;
-  if(ok){S.combo++;S.maxCombo=Math.max(S.maxCombo,S.combo);S.hits[R.def.id]=true;S.score+=100*S.combo;sfx.hit(S.combo);shake=5;
+   const lost=S.combo;
+   if(ok){S.combo++;S.maxCombo=Math.max(S.maxCombo,S.combo);S.hits[R.def.id]=true;S.score+=100*S.combo;sfx.hit(S.combo);shake=RM?0:10;okfl=.8;buzz([20,40,30]);cmbTag(true);
+    const tier=TIERS.indexOf(S.combo);if(tier>=0)setTimeout(()=>{if(Rm!==R)return;sfx.tier(tier+1);okfl=1;shake=RM?0:12;pop(W/2,PORT?H*.2:H*.18,'連続的中 ×'+S.combo+'！',['星が味方している','館の主も おどろいた'][tier]);for(let i=0;i<(RM?10:70);i++)partic.push({x:W/2,y:H*.2,vx:rnd(-320,320),vy:rnd(-360,60),l:1.6,c:[C.au,'#fff6d8',C.te][i%3],s:rnd(3,6),star:1})},600);
    for(let i=0;i<(RM?12:60);i++)partic.push({x:R.L.ball.x,y:R.L.ball.y,vx:rnd(-240,240),vy:rnd(-300,60),l:1.4,c:[C.au,'#fff6d8',C.te][i%3],s:rnd(2,5),star:1});
    pop(W/2,PORT?H*.73:H*.3,'大当たり！',R.def.open?'開いている＝軽くなる、を読んだ':(S.combo>1?S.combo+'連続の的中':'予言どおり '+fx(after,dp)+' g'));earn(15,'hit','hit-'+R.def.id,W/2,H*.3)}
-  else{S.combo=0;sfx.near();pop(W/2,PORT?H*.73:H*.3,R.def.open?'はずれ':'あと '+fx(diff,dp)+' g',R.def.open?'ふたがないと、出ていく物がある':'予言とのずれ')}
+   else{S.combo=0;cmbTag();const nt=TIERS.find(x=>x>lost);if(lost>=2)setTimeout(()=>{if(Rm===R)pop(W/2,PORT?H*.2:H*.18,nt&&nt-lost===1?'あと1回で 連続×'+nt+' だった！':'連続的中 ×'+lost+' で止まった','')},700);sfx.near();pop(W/2,PORT?H*.73:H*.3,R.def.open?'はずれ':'あと '+fx(diff,dp)+' g',R.def.open?'ふたがないと、出ていく物がある':'予言とのずれ')}
   if(R.def.open&&!R.putBackMiss)earn(30,'rule','rule-open',W/2,H*.35);
-  save();setTimeout(()=>{if(Rm===R)roomResult(ok)},RM?600:1500)},1100)}
+   save();if(R.prac){setTimeout(()=>{if(Rm===R&&window.Guide)Guide.tutorialClear()},RM?500:1300);return}
+   setTimeout(()=>{if(Rm===R)roomResult(ok)},RM?600:1500)},1100)}
 function roomResult(ok){const R=Rm,d=R.def;S.done[d.id]=true;save();
- ovOpen('<div class="orn">❦</div><h2>'+esc(d.room)+'　'+(ok?'大当たり':'予言は外れ')+'</h2><p>'+esc(d.task)+'<br>前 <b>'+fx(R.before,d.dp)+' g</b> → 後 <b>'+fx(R.after,d.dp)+' g</b>（予言 '+fx(R.pred,d.dp)+' g）</p><p>'+esc(d.why)+'</p><p class="note">標本箱に「'+esc(d.tool[0])+'」が入った。</p><div class="row"><button class="nb" id="rMap">見取り図</button><button class="nb t" id="rNext">'+(R.i+1<ROOMS.length?'次の部屋へ ▶':'占いの間へ ▶')+'</button></div>');
- $('rMap').onclick=()=>{sfx.tap();ovClose();toMap()};$('rNext').onclick=()=>{sfx.tap();ovClose();startRoom(R.i+1)}}
+ const st=[1,R.firstOK?1:0,ok?1:0];
+ ovOpen('<div class="orn">❦</div><h2>'+esc(d.room)+'　'+(ok?'大当たり':'予言は外れ')+'</h2><div class="tystars" id="tyStars">'+['運びきった','一発で正しくはかれた','予言が大当たり'].map((t,i)=>'<span><i class="'+(st[i]?'on':'')+'">封</i>'+t+'</span>').join('')+'</div><p>'+esc(d.task)+'<br>前 <b>'+fx(R.before,d.dp)+' g</b> → 後 <b>'+fx(R.after,d.dp)+' g</b>（予言 '+fx(R.pred,d.dp)+' g）</p><p>'+esc(d.why)+'</p><p class="note">標本箱に「'+esc(d.tool[0])+'」が入った。</p><div class="row"><button class="nb" id="rMap">見取り図</button><button class="nb t" id="rNext">'+(R.i+1<ROOMS.length?'次の部屋へ ▶':'占いの間へ ▶')+'</button></div>');
+ $('rMap').onclick=()=>{sfx.tap();ovClose();toMap()};$('rNext').onclick=()=>{sfx.tap();ovClose();startRoom(R.i+1)};
+ sfx.fanfare();[].slice.call(document.querySelectorAll('#tyStars i')).forEach((e,i)=>setTimeout(()=>{e.classList.add('in');if(st[i]){sfx.star(i);buzz(18)}else tone(220,.1,'triangle',.03)},RM?0:420+i*420));
+ setTimeout(petals,RM?0:420+3*420)}
+function petals(){if(RM)return;const cols=['#C9A86A','#B5523B','#7E9C83','#f1e1b4'];for(let i=0;i<56;i++){const d=document.createElement('div');d.className='tycf';
+  d.style.left=(Math.random()*100)+'vw';d.style.setProperty('--w',(10+Math.random()*12|0)+'px');d.style.setProperty('--c',cols[i%4]);d.style.setProperty('--dx',((Math.random()-.5)*240|0)+'px');d.style.setProperty('--r',((Math.random()-.5)*720|0)+'deg');
+  const t=2+Math.random()*1.4;d.style.setProperty('--t',t.toFixed(2)+'s');d.style.setProperty('--d',(Math.random()*.4).toFixed(2)+'s');document.body.appendChild(d);setTimeout(()=>d.remove(),(t+.7)*1000)}}
 
 /* ================= 占いの間（封印） ================= */
 function pairPick(){const R=Rm;R.phase='pair';setCtl('');
@@ -2521,9 +2558,9 @@ function endPtr(e){if(!ptr||!Rm){ptr=null;return}const R=Rm,P=ptr;ptr=null;
  const x=R.drag?R.drag.x:e.clientX,y=R.drag?R.drag.y:e.clientY;
  if(P.mode==='item'){const it=P.it;R.drag=null;
   if(R.phase==='load'){const toTray=P.moved?inBox(x,y,R.L.tray,30):it.where==='shelf';const toShelf=P.moved?inBox(x,y,R.L.shelf,20):it.where==='tray';
-   if(toTray&&it.where!=='tray'){if(R.items.filter(i=>i.where==='tray').length>=4){toast('トレーにのるのは4つまで');return}it.where='tray';sfx.place()}else if(toShelf&&it.where!=='shelf'){it.where='shelf';sfx.place()}return}
+     if(toTray&&it.where!=='tray'){if(R.prac&&!it.need){sfx.soft();toast('れんしゅうでは 指がさす品だけ運ぼう',TY());return}if(R.items.filter(i=>i.where==='tray').length>=4){toast('トレーにのるのは4つまで');return}it.where='tray';sfx.place();placed(it)}else if(toShelf&&it.where!=='shelf'){it.where='shelf';sfx.place()}return}
   const b=R.L.bal;const onPan=P.moved?(Math.abs(x-b.x)<b.w*.5&&y<b.y+b.w*.1&&y>b.y-b.w*.6):it.where!=='pan';
-  if(onPan&&it.where!=='pan'){if(!it.need){sfx.bad();toast(it.no||'これは はかる物に入らない',TY());return}it.where='pan';sfx.place()}
+   if(onPan&&it.where!=='pan'){if(!it.need){sfx.bad();toast(it.no||'これは はかる物に入らない',TY());return}it.where='pan';sfx.place();placed(it)}
   else if(!onPan&&it.where==='pan'&&P.moved){it.where=it.empty?'aside':'tray';sfx.place()}return}
  if(P.mode==='pour'){R.drag=null;const to=R.items.find(i=>i.id===R.def.ch.to);if(Math.abs(x-to.x)<60*SC&&y<to.y&&y>to.y-160*SC)doPour();else toast('ビーカーの真上まで運んで入れよう',TY());return}
  if(P.mode==='ghost'){R.drag=null;const g=ghostPan();const inside=P.moved?(Math.abs(x-g.x)<g.w*.55&&Math.abs(y-g.y)<70):!P.o.on;P.o.on=inside;sfx.place();return}
@@ -2698,7 +2735,9 @@ function showTestResult(){const r=TS.card||{};$('tBoxT').innerHTML='<div class="
  $('rCard').onclick=()=>SubmitCard.reopen(TS.card,()=>{});$('rAgain').onclick=()=>startTest();if($('rTitle'))$('rTitle').onclick=()=>toTitle();$('rBook').onclick=openBook;zkButtons()}
 
 /* ================= タイトルのボタン ================= */
-$('bStart').onclick=()=>{ac();sfx.tap();const nm=$('nameIn').value.trim()||S.name,snd=S.sound,tl=S.tilt;S=fresh();S.name=nm;S.sound=snd;S.tilt=tl;S.started=true;save();startRoom(0)};
+$('bStart').onclick=()=>{ac();sfx.tap();buzz(10);const nm=$('nameIn').value.trim()||S.name,snd=S.sound,tl=S.tilt;S=fresh();S.name=nm;S.sound=snd;S.tilt=tl;S.started=true;save();firstRun()};
+function firstRun(){if(!window.Guide){startRoom(0);return}Guide.intro(INTRO).then(()=>Guide.tutorial(PRACTICE))}
+$('bHowto').onclick=()=>{ac();sfx.tap();const v=$('nameIn').value.trim();if(v)S.name=v;S.started=true;save();if(window.Guide)Guide.tutorial(PRACTICE);else startRoom(0)};
 $('bCont').onclick=()=>{ac();sfx.tap();const v=$('nameIn').value.trim();if(v)S.name=v;save();toMap()};
 $('bSnd1').onclick=toggleSnd;$('bSnd').onclick=toggleSnd;$('bBook1').onclick=openBook;
 
@@ -2707,15 +2746,59 @@ let last=performance.now(),kkT=0;
 function loop(now){const dt=Math.min(.05,(now-last)/1000);last=now;const t=(now-T0)/1000;kkT-=dt;if(kkT<=0){kk();kkT=1.5}if(shake>0)shake=Math.max(0,shake-dt*25);
  if(scene==='title')drawTitle(t);
  else if(scene==='map')drawMap(t);
- else if(scene==='room'&&Rm){if(!Rm.pause&&$('ov').classList.contains('hidden')){Rm.t+=dt;S.t+=dt;if(Rm.phase==='carry')carryUpd(dt)}drawRoom(t,dt)}
+ else if(scene==='room'&&Rm){if(!Rm.pause&&!PAUSED&&$('ov').classList.contains('hidden')){Rm.t+=dt;S.t+=dt;if(Rm.phase==='carry')carryUpd(dt)}drawRoom(t,dt)}
  else{cx.drawImage(bgc,0,0,W,H);frame()}
- drawPartic(dt);requestAnimationFrame(loop)}
+ drawPartic(dt);if(okfl>0){okfl=Math.max(0,okfl-dt*1.5);if(!RM){cx.fillStyle='rgba(246,228,178,'+(okfl*.3)+')';cx.fillRect(0,0,W,H)}}requestAnimationFrame(loop)}
+/* ================= 遊び方案内（Guide）2026-09-28 ================= */
+const INTRO={title:'てんびんの予言',
+  learn:'物質が変化したとき、**全体の質量** は前と後でどうなる？ **はかる物を全部** のせて比べ、後の数字を **予言** する',
+  how:'品を **ドラッグ** でトレーへ → 指を **左右にずらして** こぼさず運ぶ → てんびんへのせて記録',gesture:'drag'};
+function endPractice(){if(!PRAC)return;PRAC=false;if(Rm)Rm.prac=false;if(window.Guide)Guide.tutorialEnd()}
+function itTarget(it){if(!it)return {x:W/2,y:H/2,r:8};const [w,h]=itemSize(it);const sc=SC*(it.where==='shelf'?1.15:1.05);return {x:it.x,y:it.y-h*sc*.45,w:Math.max(64,w*sc+16),h:h*sc+22}}
+const PI_=id=>Rm&&Rm.items.find(i=>i.id===id);
+const needLeft=w=>Rm?Rm.items.find(i=>i.need&&i.where!==w&&!(w==='tray'&&i.where==='pan')):null;
+const inPh=p=>()=>Rm&&Rm.prac&&Rm.phase===p;
+const PRACTICE={label:'れんしゅう中　玄関ホール',block:false,clearOn:'manual',clearText:'れんしゅうクリア！',
+  start:()=>{PRAC=true;ovClose();$('scrBk').classList.add('hidden');startRoom(0,true)},
+  steps:[
+    {gesture:'drag',target:()=>itTarget(needLeft('tray')),to:()=>{const t=Rm.L.tray;return {x:t.x+t.w/2,y:t.y+t.h*.5,w:t.w,h:t.h+20}},until:()=>Rm&&Rm.prac&&!needLeft('tray'),
+     text:'砂糖を水にとかす儀式。**ビーカー** と **砂糖の薬包紙** を、棚からトレーへ **ドラッグ**（2つとも）',praise:'のせた！'},
+    {gesture:'tap',target:'#bGo',until:()=>Rm&&Rm.prac&&Rm.phase!=='load',text:'はかる物がそろったら **出発**',praise:'出発！'},
+    {gesture:'swipe',target:()=>{const t=trayGeom();return {x:t.x,y:t.y,w:t.w,h:120}},dir:'right',dist:120,dim:false,place:'above',until:()=>Rm&&Rm.prac&&Rm.phase!=='carry',
+     text:'画面を押したまま **指を左右にずらす** とトレーが傾く。**水準器の泡** をまん中に保って運ぼう',praise:'着いた！'},
+    {gesture:'drag',target:()=>itTarget(needLeft('pan')),to:()=>{const b=Rm.L.bal;return {x:b.x,y:b.y-b.w*.22,w:b.w*.7,h:b.w*.3}},until:()=>Rm&&Rm.prac&&!needLeft('pan'),
+     text:'トレーの品を **全部** てんびんの皿へ **ドラッグ**。容器や紙も「全体」に入る',praise:'のった！'},
+    {gesture:'tap',target:'#bRec',until:()=>Rm&&Rm.prac&&Rm.before!=null,text:'**混ぜる前の全体** を記録',praise:'記録！'},
+    {gesture:'draw',target:()=>{const b=Rm.L.ball;return {x:b.x,y:b.y,r:b.r*1.6}},until:()=>Rm&&Rm.prac&&Rm.phase==='predict'&&Rm.before!=null&&Rm.dial&&Math.abs(Rm.dial.v-Rm.before)<1e-6,
+     text:'砂糖は見えなくなっても、粒は全部ある。水晶玉の **輪をぐるっと回して**、前と同じ数字に合わせよう（▲▼でもよい）',praise:'ぴたり！'},
+    {gesture:'tap',target:'#bLock',until:()=>Rm&&Rm.prac&&Rm.phase!=='predict',text:'**この数字で予言**',praise:'予言した！'},
+    {gesture:'drag',target:()=>itTarget(PI_('pp')),to:()=>{const b=PI_('bk');return b?{x:b.x,y:b.y-80*SC,w:90,h:100}:{x:W/2,y:H/2,r:8}},until:()=>Rm&&Rm.prac&&Rm.phase==='after',
+     text:'薬包紙を **ビーカーの真上へドラッグ** して、砂糖を入れる',praise:'とけた！'},
+    {gesture:'drag',target:()=>itTarget(PI_('pp')),to:()=>{const b=Rm.L.bal;return {x:b.x,y:b.y-b.w*.22,w:b.w*.7,h:b.w*.3}},until:()=>Rm&&Rm.prac&&!needLeft('pan'),
+     text:'**空になった薬包紙** も皿へもどす。前と同じ物をのせないと比べられない',praise:'そろった！'},
+    {gesture:'tap',target:'#bRec2',until:()=>Rm&&Rm.prac&&Rm.phase==='reveal',text:'**変化の後をはかる**。予言は当たる？',praise:false}
+  ],
+  onExit:res=>{const was=PRAC;PRAC=false;if(Rm)Rm.prac=false;if(res&&res.cleared&&scene==='room'&&Rm&&Rm.phase==='reveal')roomResult(true)}};
+if(window.Guide){
+  Guide.setup({theme:{bg:'#efe0b8',fg:'#2b2418',accent:'#B5523B',accentText:'#fbf1dc',font:'"Hina Mincho","Hiragino Mincho ProN",serif',bodyFont:'"Hiragino Mincho ProN","Yu Mincho",serif',
+      radius:22,texture:'paper',line:'#8a6a32',dim:'rgba(14,22,18,.6)',shadow:'inset 0 0 0 5px #efe0b8, inset 0 0 0 6.5px #b5523b, 0 10px 30px rgba(0,0,0,.45)',outline:'#1c2b23',hand:'#f6e4b2',handLine:'#6b2c1e'},
+    sfx:k=>{ac();if(k==='step'||k==='done')sfx.clink();else if(k==='clear')sfx.fanfare();else if(k==='open'||k==='close')sfx.tap();else if(k==='cheer')sfx.hit(0);else if(k==='nudge')sfx.tick()},
+    muted:()=>!S.sound});
+  HELP=Guide.help({title:'てんびんの予言',learn:INTRO.learn,how:INTRO.how,gesture:'drag',mount:$('hudR'),size:46,attention:true,replay:'tutorial',
+    rules:['棚から **はかる物を全部** トレーへ（ドラッグかタップ）。使わない物は置いていく',
+      '運ぶ間は画面を押したまま **指を左右にずらして** 水平に。上へずらすと急ぎ足。**こぼすと運び直し**',
+      'てんびんに全部のせて **記録** → 水晶玉の **輪を回して** 変化の後の数字を予言',
+      '変化の後は **前と同じ物**（空になった薬包紙も）をのせてはかる',
+      '**ふたのない** 入れ物は、出ていく物があるかもしれない'],
+    onOpen:()=>{PAUSED=true},onClose:()=>{PAUSED=false;last=performance.now()}});
+  HELP.hide();
+}
 addEventListener('resize',resize);
 resize();
 try{window.Zukan&&Zukan.setup&&Zukan.setup({game:GID,koma:[KOMA]})}catch(e){}
 setSnd();zkButtons();
 if(window.PLAYER_NAME){$('nameIn').value=window.PLAYER_NAME;$('nameRow').classList.add('hidden')}else if(S.name)$('nameIn').value=S.name;
-window.__TY={step:(n,uf)=>{let k=0;while(k++<n&&Rm.phase==='carry'&&Rm.spillT<=0){if(uf)Rm.u=uf(Rm);Rm.t+=1/60;carryUpd(1/60)}return{ph:Rm.phase,sp:Rm.spilled,minM:Rm.minM,prog:Rm.prog}},S:()=>S,R:()=>Rm,scene:()=>scene,start:startRoom,map:toMap,test:startTest,
+window.__TY={prac:()=>PRAC,paused:()=>PAUSED,step:(n,uf)=>{let k=0;while(k++<n&&Rm.phase==='carry'&&Rm.spillT<=0){if(uf)Rm.u=uf(Rm);Rm.t+=1/60;carryUpd(1/60)}return{ph:Rm.phase,sp:Rm.spilled,minM:Rm.minM,prog:Rm.prog}},S:()=>S,R:()=>Rm,scene:()=>scene,start:startRoom,map:toMap,test:startTest,
  load:()=>{Rm.items.forEach(i=>{i.where=i.need?'tray':'shelf'});},go:()=>$('bGo').click(),
  arrive:()=>{Rm.prog=.999},pan:()=>{Rm.items.forEach(i=>{if(i.need)i.where='pan'})},rec:()=>$('bRec').click(),
  dial:v=>{Rm.dial.v=v},lock:()=>$('bLock').click(),change:()=>{if(Rm.def.ch.t==='pour')doPour();else{Rm.chg=1;afterUI()}},rec2:()=>$('bRec2').click(),

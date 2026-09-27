@@ -155,13 +155,17 @@ body.land #tFig svg{width:100%;max-height:52vh}
 #clear h2::after{content:"";position:absolute;inset:7px;border:2.5px dashed rgba(243,238,227,.7);border-radius:10px}
 #clear .take{max-width:min(92vw,720px);font-size:clamp(15px,.5vw + 12px,20px)}
 #clear .recb{background:var(--lin);padding:10px 20px;border-radius:10px;box-shadow:0 0 0 2px var(--nv);font-weight:800}
+/* 仕上げ 2026-09-28（tn-finish-2026-09-28）: 確認の窓は案内より上に・帯はボタンの段の下へ */
+#conf{z-index:2147483300!important}
+#bBack{z-index:60} /* 札（dlg）が開いていても もどるを押せるように */
+@media (max-width:560px){.gd-band{top:calc(64px + env(safe-area-inset-top))!important}#btnStart{font-size:22px;min-height:56px;padding:8px 24px}}
 @media (prefers-reduced-motion:reduce){#logo,#btnStart,#tBox,.stars div{animation:none!important}}
 </style>
 </head>
 <body>
 <canvas id="cv" aria-label="刺繍の見本布と天秤"></canvas>
 
-<button id="bBack" class="patch hidden" aria-label="もどる"><b>◀</b>もどる</button>
+<button id="bBack" class="patch hidden" aria-label="もどる" data-gd-pass><b>◀</b>もどる</button>
 <div id="hudC" class="hidden"></div>
 <div id="topR" class="hidden"><span id="kk"><i></i><span id="kkN">0</span></span><button id="bBook2" class="patch ln">図案帳</button><button id="bSnd" class="patch ib" aria-label="音のオン・オフ">音</button></div>
 <div id="strip" class="hidden"></div>
@@ -179,12 +183,12 @@ body.land #tFig svg{width:100%;max-height:52vh}
       <button id="btnStart" class="patch rd">はじめる</button>
       <button id="btnCont" class="patch hidden">つづきから</button>
     </div>
-    <div class="row" style="margin-top:0"><button id="btnBook" class="patch gd sm">📖 図鑑</button></div>
+    <div class="row" style="margin-top:0"><button id="btnHowto" class="patch sm">あそびかた（れんしゅう）</button><button id="btnBook" class="patch gd sm">📖 図鑑</button></div>
   </div>
 </div>
 
 <div id="dlg" class="ov hidden"><div class="box" id="dlgBox"></div></div>
-<div id="conf" class="ov hidden"><div class="box">
+<div id="conf" class="ov hidden" data-gd-pass><div class="box">
   <div class="nh">もどる？<small>進み具合は保存されます</small></div>
   <div class="bd" id="confTx" style="text-align:center"></div>
   <div class="row"><button class="patch" id="confNo">つづける</button><button class="patch rd" id="confGo">もどる</button></div>
@@ -2649,7 +2653,8 @@ function dropRun(x,y){const o=geo(),d=drag;drag=null;let ci=-1;for(let i=0;i<G.c
  const back=()=>{const pl=G.piles[d.side];d.run.slice().reverse().forEach(p=>{p.arr=false;pl.push(p);const k=pl.length-1;const [tx,ty]=pileSlot(o,d.side,k);flyers.push({el:p.el,x0:x,y0:y,x1:tx,y1:ty,t:0,d:.25,r:o.pa/2,arc:20,done:()=>{p.arr=true}})})};
  if(ci<0){back();return}
  const c=G.cols[ci];
- if(c.el!==d.run[0].el){back();G.miss++;S.miss++;comboBreak();SFX.bad();shake=5;buzz(40);strip('それは <b>'+d.run[0].el+'（'+EL[d.run[0].el].nm+'）</b>。'+c.el+' の柱には のらない',true);floatT('ちがう柱',x,y-30,C.rd,20);return}
+ if(c.el!==d.run[0].el&&G.prac){back();SFX.bad();floatT('同じ色・同じ記号の柱へ',x,y-30,C.rd,20);return}
+  if(c.el!==d.run[0].el){back();G.miss++;S.miss++;comboBreak();SFX.bad();shake=5;buzz(40);strip('それは <b>'+d.run[0].el+'（'+EL[d.run[0].el].nm+'）</b>。'+c.el+' の柱には のらない',true);floatT('ちがう柱',x,y-30,C.rd,20);return}
  // 正しい柱
  const side=d.side,n=d.run.length;const tb=tierOf(G.combo);
  d.run.forEach((p,j)=>{const k=c[side]+j;const [tx,ty]=slot(o,ci,side,k);flyers.push({el:p.el,x0:x,y0:y-j*o.pa*.9,x1:tx,y1:ty,t:0,d:.16+j*.03,r:o.a/2,arc:14,done:()=>{}})});
@@ -2681,7 +2686,8 @@ function balanced(){const st=STAGES[STI];G.phase='balanced';G.needleV+=(RM?0:2)*
  SFX.fan();doFlash(.55);shake=RM?0:10;buzz(40);bigStamp('つりあった！',G.boss?('大作 '+(G.si+1)+' / 3'):'原子の種類と数が同じ',C.rd);confetti();
  const o=geo();G.cols.forEach((c,i)=>setTimeout(()=>{burst(colX(o,i),LAND?o.base-o.a*2:o.mid,RM?4:22,[C.gd,EL[c.el].c,C.lin]);SFX.put(4+i)},200+i*140));
  if(G.boss){if(G.si<2){setTimeout(()=>{if(G&&G.phase==='balanced'&&scene==='play'){G.si++;const sub=st.subs[G.si];flyers.length=0;setupRound(sub);hudBoss();strip('つぎ：<b>'+sub.eq+'</b>')}},RM?600:1500)}else{G.phase='over';setTimeout(bossWin,RM?600:1600)}return}
- setTimeout(()=>{if(G&&scene==='play')stageResult()},RM?700:1700)}
+ if(G.prac){const GG=G;setTimeout(()=>{if(G===GG&&scene==='play'&&window.Guide)Guide.tutorialClear()},RM?700:1500);return}
+  setTimeout(()=>{if(G&&scene==='play')stageResult()},RM?700:1700)}
 
 /* ---------- 空の分子（外へ出た気体・空気） ---------- */
 function dropSky(x,y){const o=geo(),m=drag.m,st=STAGES[STI];let side=null;['pre','post'].forEach(s=>{const h=o.hoop[s];if(Math.hypot(x-h[0],y-h[1])<o.Rh*1.15)side=s});
@@ -2716,7 +2722,7 @@ function molSvg(k,sz){const a=MOL[k].a,s=span(k),u=Math.min(sz/(s.w+.4),sz/(s.h+
  return'<svg viewBox="0 0 '+sz+' '+sz+'">'+a.slice().sort((p,q)=>p[2]-q[2]).map(q=>{const e=EL[q[0]],x=cx+q[1]*u,y=cy+q[2]*u;return'<circle cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="'+r.toFixed(1)+'" fill="'+e.c+'" stroke="'+mix(e.c,'k',.35)+'" stroke-width="'+(r*.1).toFixed(1)+'" stroke-dasharray="'+(r*.3).toFixed(1)+' '+(r*.12).toFixed(1)+'"/><circle cx="'+(x-r*.35).toFixed(1)+'" cy="'+(y-r*.35).toFixed(1)+'" r="'+(r*.28).toFixed(1)+'" fill="rgba(255,255,255,.45)"/><text x="'+x.toFixed(1)+'" y="'+(y+r*.36).toFixed(1)+'" text-anchor="middle" font-size="'+(r*(q[0].length>1?.9:1.1)).toFixed(1)+'" font-weight="900" fill="'+e.t+'">'+q[0]+'</text>'}).join('')+'</svg>'}
 
 /* ================= 1枚の図案の流れ ================= */
-function startStage(i){STI=i;const st=STAGES[i];scene='play';flyers.length=0;parts.length=0;
+function startStage(i,prac){if(!prac&&PRAC)endPractice();STI=i;const st=STAGES[i];scene='play';flyers.length=0;parts.length=0;
  G={st,si:0,combo:0,maxCombo:0,miss:0,t:0,boss:!!st.boss,timeLeft:st.time||0,tut:st.tut&&!S.cleared[st.id]?1:0,phase:'intro'};
  setupRound(st.boss?st.subs[0]:st);G.phase='intro';setUI();hud();
  const eq=st.boss?st.subs[0].eq:st.eq;
@@ -2733,9 +2739,10 @@ function startStage(i){STI=i;const st=STAGES[i];scene='play';flyers.length=0;par
   else if(st.air)strip('反応前はマグネシウムだけ。ほどいて柱へ積もう');
   else if(st.boss)strip('<b>'+eq+'</b>');
   else strip('分子をほどいて、原子を<b>種類ごとの柱</b>へ');
-  if(st.escape){setTimeout(()=>{if(G&&scene==='play')launchEscape()},RM?300:900)}}}
+     if(st.escape){setTimeout(()=>{if(G&&scene==='play')launchEscape()},RM?300:900)}};
+ if(prac){closeDlg();G.phase='play';G.tut=0;G.prac=true;G.prac0=G.hoops.pre.mols.length;$('strip').classList.add('hidden');hud()}}
 function launchEscape(){const m=G.hoops.post.mols.find(q=>q.leaving);if(!m)return;m.leaving=.01;SFX.air();G.escaping=m}
-function hud(){const st=STAGES[STI];const h=$('hudC');if(scene!=='play'||W<640){h.classList.add('hidden');return}h.classList.remove('hidden');
+function hud(){const st=STAGES[STI];const h=$('hudC');if(scene!=='play'||W<640||(G&&G.prac)){h.classList.add('hidden');return}h.classList.remove('hidden');
  h.innerHTML=(STI+1)+'. '+esc(st.nm)+(G&&G.boss?'　<em>'+(G.si+1)+' / 3</em>':'')}
 function hudBoss(){hud()}
 function stageResult(){const st=STAGES[STI];const first=!S.cleared[st.id];S.cleared[st.id]=1;S.started=true;
@@ -2760,7 +2767,7 @@ function bossFail(){G.phase='over';SFX.bad();dlg('<div class="nh rd">時間切�
 function earn(n,why,opt){try{if(window.Zukan&&Zukan.earn)Zukan.earn(n,why,Object.assign({x:W/2,y:H*.4},opt||{}))}catch(e){}refreshKK()}
 
 /* ================= 毎フレーム ================= */
-function update(dt){T+=dt;
+function update(dt){if(PAUSED)return;T+=dt;
  for(let i=parts.length-1;i>=0;i--){const q=parts[i];q.l-=dt;q.x+=q.vx*dt;q.y+=q.vy*dt;q.vy+=(q.fw?60:520)*dt;q.vx*=.985;if(q.l<=0)parts.splice(i,1)}
  for(let i=floats.length-1;i>=0;i--){const f=floats[i];f.l-=dt;f.a+=dt;f.y-=(f.a<.12?160:40)*dt;if(f.l<=0)floats.splice(i,1)}
  flash=Math.max(0,flash-dt*2.6);comboPop=Math.max(0,comboPop-dt*4);if(stamp){stamp.a+=dt;if(stamp.a>1.4)stamp=null}if(shake>0)shake=Math.max(0,shake-dt*22);
@@ -2795,7 +2802,7 @@ function endDrag(e){if(!drag)return;const [x,y]=pt(e);const d=drag;
 cv.addEventListener('pointerup',endDrag);cv.addEventListener('pointercancel',endDrag);
 
 /* ================= DOM ================= */
-function strip(h,warn){const s=$('strip');if(!h){s.classList.add('hidden');return}s.innerHTML=h;s.classList.toggle('warn',!!warn);if(scene==='play'||scene==='map')s.classList.remove('hidden');placeStrip()}
+function strip(h,warn){const s=$('strip');if(!h||(G&&G.prac&&scene==='play')){s.classList.add('hidden');return}s.innerHTML=h;s.classList.toggle('warn',!!warn);if(scene==='play'||scene==='map')s.classList.remove('hidden');placeStrip()}
 function placeStrip(){const s=$('strip');s.style.top=(LAND?(G&&G.skyOn&&scene==='play'?HUDY-2:HUDY):62)+'px';if(LAND&&G&&G.skyOn&&scene==='play')s.style.top=(HUDY-2)+'px'}
 function dlg(h){$('dlgBox').innerHTML=h;$('dlg').classList.remove('hidden');$('dlgBox').scrollTop=0}
 function closeDlg(){$('dlg').classList.add('hidden')}
@@ -2804,14 +2811,14 @@ function setUI(){const inG=scene==='play'||scene==='map';$('topR').classList.tog
  const b=$('bBack');const on=scene!=='title'||INHUB;b.classList.toggle('hidden',!on);b.innerHTML='<b>◀</b>'+(scene==='title'?'一覧へ':'もどる');
  $('title').classList.toggle('hidden',scene!=='title');$('test').classList.toggle('hidden',scene!=='test');$('clear').classList.toggle('hidden',scene!=='clear');
  if(!inG){$('strip').classList.add('hidden')}if(scene!=='play')$('patBar').classList.add('hidden');hud();
- $('bSnd').classList.toggle('off',!AU.on);refreshKK()}
+ $('bSnd').classList.toggle('off',!AU.on);refreshKK();if(HELP){if(inG)HELP.show();else HELP.hide()}}
 $('bSnd').onclick=()=>{AU.init();AU.on=!AU.on;S.sound=AU.on;save();$('bSnd').classList.toggle('off',!AU.on);if(AU.on)SFX.pair()};
 $('bBack').onclick=()=>{AU.init();SFX.tap();
  if(scene==='title'||(scene==='test'&&TEST)){try{window.parent.postMessage({type:'rika-close-game'},'*')}catch(e){}return}
  $('confTx').textContent=scene==='play'?'この図案は、次はさいしょから。縫い終えた図案と★はそのまま。':scene==='test'?'確認テストは、次はさいしょから。':'タイトルにもどります。';
  $('confGo').textContent=scene==='play'?'見本布へ':'タイトルへ';$('conf').classList.remove('hidden')};
 $('confNo').onclick=()=>{$('conf').classList.add('hidden')};
-$('confGo').onclick=()=>{$('conf').classList.add('hidden');closeDlg();if(scene==='play')toMap();else toTitle()};
+$('confGo').onclick=()=>{$('conf').classList.add('hidden');if(PRAC)endPractice();closeDlg();if(scene==='play')toMap();else toTitle()};
 function openBook(){$('bookCards').innerHTML=BOOK_ORDER.map(k=>{const got=!!S.seen[k];return'<div class="card'+(got?'':' no')+'">'+(got?molSvg(k,76):'<svg viewBox="0 0 76 76"><text x="38" y="48" text-anchor="middle" font-size="30" fill="#b9ab8b">？</text></svg>')+'<b>'+(got?esc(MOL[k].f):'？？？')+'</b>'+(got?esc(MOL[k].nm):'まだ ほどいていない')+'</div>'}).join('');$('book').classList.remove('hidden')}
 $('bookClose').onclick=()=>{$('book').classList.add('hidden')};
 $('bBook2').onclick=()=>{AU.init();SFX.tap();openBook()};
@@ -2823,7 +2830,9 @@ function toMap(){scene='map';G=null;flyers.length=0;drag=null;bgKey='';setUI();c
 let armed=false,introSnd=false;
 addEventListener('pointerdown',()=>{if(scene==='title'&&!introSnd){introSnd=true;AU.init();SFX.pair()}},true);
 $('btnStart').onclick=()=>{AU.init();const sv=load();if(sv&&sv.started&&!armed){armed=true;$('btnStart').textContent='もう一度おすと最初から';return}
- const nm=($('nameIn').value||'').trim();S=fresh();S.sound=AU.on;S.started=true;NAME=window.PLAYER_NAME||nm;S.name=NAME;save();SFX.fan();startStage(0)};
+ const nm=($('nameIn').value||'').trim();S=fresh();S.sound=AU.on;S.started=true;NAME=window.PLAYER_NAME||nm;S.name=NAME;save();SFX.fan();firstRun()};
+function firstRun(){if(!window.Guide){startStage(0);return}Guide.intro(INTRO).then(()=>Guide.tutorial(PRACTICE))}
+$('btnHowto').onclick=()=>{AU.init();SFX.tap();const sv=load();if(sv)S=sv;const nm=($('nameIn').value||'').trim();if(nm&&!window.PLAYER_NAME){NAME=nm;S.name=nm}S.started=true;save();if(window.Guide)Guide.tutorial(PRACTICE);else startStage(0)};
 $('btnCont').onclick=()=>{AU.init();S=load()||fresh();AU.on=S.sound!==false;const nm=($('nameIn').value||'').trim();if(nm&&!window.PLAYER_NAME){NAME=nm;S.name=nm;save()}SFX.pair();if(S.done)showClear();else toMap()};
 $('btnBook').onclick=()=>{window.Zukan&&Zukan.openBook()};$('clBook').onclick=()=>{window.Zukan&&Zukan.openBook()};
 function showClear(){scene='clear';G=null;bgKey='';setUI();confetti();SFX.fan();
@@ -2852,6 +2861,42 @@ function finishTest(){const qs=TQ,review=Quiz.review(qs,TA),marks=review.map(r=>
  SubmitCard.show({gameId:GID,grade:'chu2',koma:[KOMA],unit:'中2理科　化学変化と原子・分子　第28回',game:'天秤の中をのぞけ ～質量が保存されるわけ～'+(TEST?'（確認テストのみ）':''),
   name:nm,score,total:qs.length,marks,records:recs,review},()=>{if(TEST)startTest();else toTitle()})}
 
+/* ================= 遊び方案内（Guide）2026-09-28 ================= */
+let PAUSED=false,PRAC=false,HELP=null;
+const INTRO={title:'天秤の中をのぞけ',
+  learn:'反応の前と後で **原子の種類と数** は変わらない。だから **質量の総和** も変わらない（質量保存の法則）',
+  how:'分子を **タップ** してほどき、原子を同じ種類の **柱へドラッグ**。左右の柱がそろうと天秤がつりあう',gesture:'tap'};
+function endPractice(){if(!PRAC)return;PRAC=false;if(G)G.prac=false;if(window.Guide)Guide.tutorialEnd()}
+function pracMol(sides){if(!G)return null;const o=geo();for(const side of sides){const m=G.hoops[side].mols.find(q=>!q.leaving);if(m){const [x,y]=molPos(o,side,m),s=span(m.k),u=molAR(o,side)*1.72;return {x,y,w:s.w*u+30,h:s.h*u+30}}}return null}
+function pracPile(){if(!G)return null;const o=geo();for(const side of ['pre','post']){const pl=G.piles[side];if(pl.length&&pl[pl.length-1].arr){const [x,y]=pileSlot(o,side,pl.length-1);const ci=G.cols.findIndex(c=>c.el===pl[pl.length-1].el);return {side,x,y,ci}}}return null}
+const NONE={x:-100,y:-100,r:4};
+const PRACTICE={label:'れんしゅう中　炭素の燃焼',block:false,clearOn:'manual',clearText:'れんしゅうクリア！',
+  start:()=>{PRAC=true;closeDlg();$('conf').classList.add('hidden');S.started=true;startStage(0,true)},
+  steps:[
+    {gesture:'tap',target:()=>pracMol(['pre'])||NONE,until:()=>G&&G.prac&&G.hoops.pre.mols.length<G.prac0,
+     text:'左は **反応前**。枠の中の **分子をタップ** すると、糸がほどけて原子になる',praise:'ほどけた！'},
+    {gesture:'drag',target:()=>{const p=pracPile();if(!p)return NONE;const o=geo();return {x:p.x,y:p.y,r:o.pa*1.1}},to:()=>{const p=pracPile();if(!p||p.ci<0)return NONE;const o=geo();return {x:colX(o,p.ci),y:LAND?o.base-o.a*1.5:o.mid,w:o.pw*.9,h:LAND?o.a*3.4:(o.midB-o.midT)}},
+     until:()=>G&&G.prac&&G.cols.some(c=>c.pre+c.post>0),text:'糸だまりの **いちばん上** の原子を、同じ種類の **柱へドラッグ**',praise:'積めた！'},
+    {gesture:'tap',target:()=>pracMol(['pre','post'])||NONE,until:()=>G&&G.prac&&!G.hoops.pre.mols.length&&!G.hoops.post.mols.length,
+     text:'右は **反応後**。こちらの分子も、残りも、**ぜんぶタップ** してほどこう',praise:'ぜんぶほどけた！'},
+    {gesture:'drag',target:()=>{const p=pracPile();if(!p)return NONE;const o=geo();return {x:p.x,y:p.y,r:o.pa*1.1}},to:()=>{const p=pracPile();if(!p||p.ci<0)return NONE;const o=geo();return {x:colX(o,p.ci),y:LAND?o.base-o.a*1.5:o.mid,w:o.pw*.9,h:LAND?o.a*3.4:(o.midB-o.midT)}},
+     until:()=>G&&G.prac&&G.phase==='balanced',text:'原子を **ぜんぶ柱へ**。左右で **種類ごとの数** がそろうと、天秤がつりあう',praise:false}
+  ],
+  onExit:res=>{PRAC=false;if(res&&res.stopped)return;if(scene==='play'&&G&&G.prac){G.prac=false;if(res&&res.cleared&&G.phase==='balanced')stageResult();else{G.tut=0;strip('分子をほどいて、原子を<b>種類ごとの柱</b>へ');hud()}}}};
+if(window.Guide){
+  Guide.setup({theme:{bg:'#FAF6EE',fg:'#1E2B3B',accent:'#E4572E',accentText:'#FAF6EE',font:'"M PLUS 1p","Hiragino Kaku Gothic ProN",sans-serif',bodyFont:'"M PLUS 1p","Hiragino Kaku Gothic ProN",sans-serif',
+      radius:10,texture:'grid',line:'#2E4057',dim:'rgba(30,43,59,.45)',shadow:'0 0 0 3px #FAF6EE, 0 0 0 5px #2E4057, 0 8px 20px rgba(30,43,59,.3)',outline:'#FAF6EE',hand:'#FAF6EE',handLine:'#2E4057'},
+    sfx:k=>{AU.init();if(k==='step'||k==='done')SFX.put(5);else if(k==='clear')SFX.fan();else if(k==='open'||k==='close')SFX.tap();else if(k==='cheer')SFX.pair();else if(k==='nudge')SFX.tick()},
+    muted:()=>!AU.on});
+  HELP=Guide.help({title:'天秤の中をのぞけ',learn:INTRO.learn,how:INTRO.how,gesture:'tap',mount:$('topR'),size:46,attention:true,replay:'tutorial',
+    rules:['枠の中の **分子をタップ** → 糸がほどけて原子が **糸だまり** に積まれる',
+      '糸だまりの **いちばん上** の原子を、同じ種類の **柱へドラッグ**（同じ原子が続けば まとめて運べる）',
+      '反応前と反応後の柱が **種類ごとに同じ高さ** になると、天秤がつりあう',
+      '反応後の枠が空の図案は、**図案から縫い足す**。空へ出ていった気体・入ってきた空気は **枠へドラッグ** で数に入れる',
+      '続けて正しく積むと **連続**。まちがえた柱に置くと連続が切れる'],
+    onOpen:()=>{PAUSED=true},onClose:()=>{PAUSED=false;last=performance.now()}});
+  HELP.hide();
+}
 /* ================= ループ ================= */
 let last=performance.now();
 function loop(now){const dt=Math.min(.05,(now-last)/1000);last=now;try{update(dt);draw()}catch(err){console.error(err)}requestAnimationFrame(loop)}
@@ -2864,7 +2909,7 @@ if(TEST){startTest()}else toTitle();
 requestAnimationFrame(loop);
 
 /* 自動テスト用の窓口（画面には出ない） */
-window.__tn={get G(){return G},get S(){return S},get scene(){return scene},geo:()=>geo(),colX:i=>colX(geo(),i),pileSlot:(s,k)=>pileSlot(geo(),s,k),molPos:(s,m)=>molPos(geo(),s,m),skyPos:m=>skyPos(m),
+window.__tn={prac:()=>PRAC,paused:()=>PAUSED,mapNodes:()=>mapNodes,get G(){return G},get S(){return S},get scene(){return scene},geo:()=>geo(),colX:i=>colX(geo(),i),pileSlot:(s,k)=>pileSlot(geo(),s,k),molPos:(s,m)=>molPos(geo(),s,m),skyPos:m=>skyPos(m),
  start:i=>{S.started=true;startStage(i)},go:()=>{const b=$('goB');b&&b.click()},map:()=>toMap(),stitch:k=>stitchPat(k),
  // 1手ずつ正しく進める（自動テスト用）
  step:()=>{if(!G||G.phase==='intro'||G.phase==='balanced'||G.phase==='over'||flyers.length)return'wait';const o=geo();
