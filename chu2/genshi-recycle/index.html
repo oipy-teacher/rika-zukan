@@ -1,175 +1,304 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#F7F3EA">
 <title>原子リサイクル工房 ～反応の前後で変わらないもの～</title>
+<!--
+  ゲームID: genshi-recycle ／ コマID: chu2-kagaku-14（化学変化と原子・分子 第14回）★
+  ねらい: 化学変化の前後で、原子の組合せは変わるが、原子の種類と数は変わらない
+  （素案が悪い例に挙げた「反応の前後で原子の数は？→変わらない」を、一問一答ではなく操作で見つけさせるコマ。
+    ゲームは規則を一度も言わない。カウンターと帳面の数字から、最後に自分の言葉で1文書く）
+
+  【6. 別の世界】画風＝折り紙（折り目の陰影・紙の厚み）
+   1 世界とメタファー: 紙の工房。届いた「分子の折り紙」をほどき、原子の紙玉を空中に放り上げて、
+     反応後の物質の「型紙」で受け止め直す。台は枡（ます）の形に折った紙の箱。旗は色紙の三角。
+   2 配色: 和紙 #F7F3EA ／ 墨色の紙 #2E2E2E ／ 朱の色紙 #E4572E（原子の色は制作ルール5.の表）
+   3 書体: 見出し・数字 M PLUS 1（800/900）。本文もM PLUS 1。丸ゴシックは使わない
+   4 画面: 全画面canvasが工房。横長＝左に反応前の枡・右に反応後の枡・真ん中が空中。
+     縦長＝下に反応前・上に反応後で、原子は上へ放り上げる。タイトルは紙玉が弧を描いて飛び交う1枚絵
+   5 HUD: 上端の墨色の紙テープ（注文番号・連続・かけら・音）。反応前後の原子カウンターは枡の上の紙札（中盤で解禁）
+   6 音: 紙のこすれ（ノイズ）・紙玉がはまる「パチ」・完成の琴のような撥音（三角波）・落とすとコトッ（WebAudio合成）
+  【7. 動かす遊び】ジャグリング（落とさずに投げ渡し続ける）
+   分子をタップ→ほどけて原子の紙玉が宙に舞う→落ちる前につかんで反応後の型へ投げ入れる／タップではね上げて時間をかせぐ。
+   原子は出せない・消せない（工房のおきて）。落とした紙玉は床に転がって残る（拾わないと注文は完成しない）。
+   中盤から「型の数」を自分で決める（予想＝封印）→ 組み替えの結果、足りない・余るが本当の数で出る。
+  30分: 注文9件（1〜3 型つき／4で原子カウンター解禁・型を自分で置く／8 還元／9 ボス＝二酸化炭素の中のマグネシウム）
+        → 帳面を見比べて、見つけたきまりを自分の言葉で1文書く → 確認テスト10問 → 提出カード
+-->
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;700;800&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=M+PLUS+1:wght@400;600;800;900&display=swap" rel="stylesheet">
 <style>
-:root{--kraft:#efe3cf;--kraft2:#e4d3b7;--ink:#3a2e22;--sub:#7a6a57;--wood:#d9b98c;--wood2:#c49a64;--woodD:#8a6238;
- --red:#d8483b;--green:#4f8a3c;--blue:#3c6c9a;--line:#caa878;
- --f:'M PLUS Rounded 1c','Hiragino Maru Gothic ProN','Hiragino Sans','Meiryo',sans-serif}
+:root{--bg:#F7F3EA;--ink:#2E2E2E;--red:#E4572E;--kraft:#EFE7D6;--under:#F7F3EA}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{margin:0;height:100%}
-body{background:var(--kraft);color:var(--ink);font-family:var(--f);overflow-x:hidden;-webkit-user-select:none;user-select:none;touch-action:manipulation;
- background-image:radial-gradient(rgba(120,80,30,.06) 1px,transparent 1.5px);background-size:9px 9px}
-button{font-family:inherit;cursor:pointer;color:inherit}
+html,body{margin:0;height:100%;background:var(--bg);overflow:hidden;overscroll-behavior:none;-webkit-user-select:none;user-select:none;
+  font-family:"M PLUS 1","Hiragino Kaku Gothic ProN","Hiragino Sans","Noto Sans JP","Yu Gothic",Meiryo,sans-serif;color:var(--ink);-webkit-text-size-adjust:100%}
+#cv{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none}
 .hidden{display:none!important}
-.scr{position:fixed;inset:0;overflow-y:auto;overflow-x:hidden}
-.wrap{width:100%;max-width:520px;margin:0 auto;padding:10px 12px 28px}
-.btn{min-height:48px;border:none;border-radius:14px;padding:10px 18px;font-size:18px;font-weight:800;background:var(--ink);color:#fff;box-shadow:0 4px 0 #0008}
-.btn:active{transform:translateY(3px);box-shadow:0 1px 0 #0008}
-.btn.red{background:var(--red);box-shadow:0 4px 0 #8c2a20}
-.btn.green{background:var(--green);box-shadow:0 4px 0 #2e5522}
-.btn.ghost{background:#fbf5ea;color:var(--ink);border:2px solid var(--line);box-shadow:0 3px 0 var(--line)}
-.btn.wide{width:100%}
-.btn:disabled{opacity:.45}
-.card{background:#fbf5ea;border:2px solid var(--line);border-radius:18px;padding:12px 14px;margin:10px 0;box-shadow:0 3px 0 var(--line)}
-.small{font-size:13px;color:var(--sub)}
-.badge{display:inline-block;background:var(--ink);color:#fff;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:800}
-/* 木の玉 */
-.a{--c:#ccc;--d:#888;--t:#fff;display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:50%;
- background:radial-gradient(circle at 34% 28%,rgba(255,255,255,.75) 0 7%,transparent 22%),radial-gradient(circle at 40% 38%,var(--c) 40%,var(--d));
- color:var(--t);font-weight:800;font-size:16px;box-shadow:0 3px 0 rgba(0,0,0,.25),inset 0 -3px 4px rgba(0,0,0,.18);position:relative;flex:none}
-.a.sm{width:24px;height:24px;font-size:10px;box-shadow:0 1px 0 rgba(0,0,0,.25)}
-.a.xs{width:18px;height:18px;font-size:8px;box-shadow:none}
-.mol{display:inline-flex;align-items:center;position:relative;padding:2px 4px}
-.mol::before{content:'';position:absolute;left:14px;right:14px;top:50%;height:7px;margin-top:-3.5px;background:linear-gradient(#e8cf9f,#b88c55);border-radius:4px}
-.mol.s::before{left:10px;right:10px;height:4px;margin-top:-2px}
-.mol.nob::before,.grp.bonded.nob::before{display:none}.grp.bonded.nob{box-shadow:0 0 0 2px rgba(140,98,56,.35);border-radius:28px}
-.mol .a{margin:0 -2px}
-.mol .a.sm,.mol .a.xs{margin:0 -1px}
-.mols{display:inline-flex;flex-wrap:wrap;align-items:center;gap:2px;justify-content:center}
-.bentw{position:relative;display:inline-block;vertical-align:middle;width:calc(var(--z)*2.05);height:calc(var(--z)*1.5);flex:none;margin:0 2px}
-.bentw>.a{position:absolute;margin:0!important}.bentw>.a:nth-child(1){left:0;top:calc(var(--z)*.5)}.bentw>.a:nth-child(2){left:calc(var(--z)*.52);top:0;z-index:2}.bentw>.a:nth-child(3){left:calc(var(--z)*1.05);top:calc(var(--z)*.5)}
-.grp.bonded.bw::before{display:none}
-.app{background:#fff;border-radius:12px;padding:4px;margin:6px 0}
-.op{font-weight:800;color:var(--sub);margin:0 3px}
-/* タイトル */
-#title .wrap{text-align:center;padding-top:26px}
-.logo{font-size:clamp(34px,10vw,50px);font-weight:800;line-height:1.15;margin:6px 0}
-.subt{font-size:16px;font-weight:700;color:var(--sub);margin-bottom:12px}
-.toybox{margin:14px auto;width:220px;height:110px;position:relative;background:linear-gradient(#c79a60,#a8783f);border-radius:10px 10px 16px 16px;box-shadow:0 6px 0 #6e4a22}
-.toybox::before{content:'♻️';position:absolute;left:50%;top:50%;transform:translate(-50%,-40%);font-size:42px}
-.toybox .a{position:absolute;top:-26px;animation:hop 2s ease-in-out infinite}
-@keyframes hop{50%{transform:translateY(-10px)}}
-.namein{width:100%;font:inherit;font-size:18px;padding:10px 12px;border-radius:12px;border:2px solid var(--line);background:#fff;margin-top:6px}
-.tbtns{display:grid;gap:10px;margin-top:12px}
-/* ゲーム */
-.hud{display:flex;align-items:center;gap:6px}
-.icon{min-width:44px;min-height:44px;border-radius:12px;border:2px solid var(--line);background:#fbf5ea;font-size:20px;padding:0}
-#pkName{flex:1;font-weight:800;font-size:15px;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.bookBtn{min-height:44px;border-radius:12px;border:2px solid var(--line);background:#fbf5ea;font-weight:800;font-size:14px;padding:0 10px}
-.pages{display:flex;gap:6px;overflow-x:auto;padding:6px 2px 4px;margin:4px 0}
-.page{flex:none;min-width:92px;background:#fffaf0;border:2px dashed var(--line);border-radius:12px;padding:6px;text-align:center;font-size:12px;font-weight:700;line-height:1.3}
-.page.got{border-style:solid;border-color:var(--green);background:#eef6e6}
-.page .sil{height:22px;display:flex;align-items:center;justify-content:center;gap:2px}
-.page .sil i{display:inline-block;width:18px;height:18px;border-radius:50%;background:#5a4a38;opacity:.55}
-.bench{position:relative;min-height:112px;border-radius:16px;padding:12px 10px 10px;margin-top:4px;
- background:repeating-linear-gradient(92deg,rgba(120,80,30,.08) 0 2px,transparent 2px 13px),linear-gradient(#e7cc9f,#d6b27b);
- box-shadow:inset 0 2px 0 rgba(255,255,255,.4),0 5px 0 var(--woodD);display:flex;flex-wrap:wrap;gap:10px 8px;align-content:flex-start;justify-content:center}
-.bench .lbl{position:absolute;left:10px;top:-10px;background:var(--woodD);color:#fff;font-size:11px;font-weight:800;border-radius:999px;padding:1px 10px}
-.grp{display:inline-flex;align-items:center;border-radius:28px;padding:3px;border:none;background:transparent;min-height:50px}
-.grp.bonded{background:rgba(255,255,255,.28);box-shadow:0 0 0 2px rgba(140,98,56,.35)}
-.grp.bonded .a{margin:0 -3px}
-.grp.bonded{position:relative}
-.grp.bonded::before{content:'';position:absolute;left:22px;right:22px;top:50%;height:9px;margin-top:-4.5px;background:linear-gradient(#f0d7a8,#b88c55);border-radius:5px}
-.grp.bonded .a{z-index:1}
-.grp.hl{animation:wig 1s ease-in-out infinite}
-@keyframes wig{25%{transform:rotate(-4deg)}75%{transform:rotate(4deg)}}
-.plates{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
-.plate{position:relative;min-height:86px;border-radius:18px;background:radial-gradient(ellipse at 50% 40%,#fbf1de 55%,#e8d2ab);border:3px solid #d9bb8a;padding:8px 6px 26px;
- display:flex;flex-wrap:wrap;align-content:center;justify-content:center;gap:2px}
-.plate.act{border-color:var(--red);box-shadow:0 0 0 4px rgba(216,72,59,.18)}
-.plate .pl{position:absolute;left:0;right:0;bottom:4px;text-align:center;font-size:13px;font-weight:800;color:var(--sub)}
-.plate.ok .pl{color:var(--green)}
-.plate.ng .pl{color:var(--red)}
-.plate .tag{position:absolute;left:8px;top:4px;font-size:11px;font-weight:800;color:#b8996a}
-.plate .a{width:38px;height:38px;font-size:14px}
-#msg{min-height:42px;margin:8px 0 0;text-align:center;font-weight:800;font-size:15px;line-height:1.45}
-.acts{display:grid;grid-template-columns:1fr 1.4fr;gap:8px;position:sticky;bottom:0;z-index:5;padding:8px 0 calc(8px + env(safe-area-inset-bottom));background:linear-gradient(transparent,var(--kraft) 18%)}
-#counter{margin:4px 0 14px;background:#2f3a2c;color:#f3ecd8;border-radius:14px;padding:8px 10px;font-family:ui-monospace,'SF Mono',Menlo,monospace;box-shadow:0 4px 0 #1b2219}
-#counter h4{margin:0 0 4px;font-family:var(--f);font-size:13px;letter-spacing:.05em;color:#ffd98a}
-#counter table{width:100%;border-collapse:collapse;font-size:16px}
-#counter td,#counter th{padding:3px 4px;text-align:center;border-bottom:1px dashed rgba(255,255,255,.18)}
-#counter th{font-family:var(--f);font-size:12px;color:#cfc5a8;font-weight:700}
-#counter .nm{text-align:left;font-family:var(--f);font-size:13px}
-#counter .sub{font-family:var(--f);font-size:12px;color:#e7dcc0;text-align:left}
-#fx{position:fixed;inset:0;pointer-events:none;z-index:60}
-/* オーバーレイ */
-.ov{position:fixed;inset:0;background:rgba(40,28,14,.6);display:flex;align-items:center;justify-content:center;padding:12px;z-index:40}
-.ovc{width:100%;max-width:440px;max-height:92vh;overflow:auto;background:#fbf5ea;border-radius:20px;padding:16px;text-align:center;box-shadow:0 10px 30px rgba(0,0,0,.4)}
-.ovc h2{margin:6px 0 8px;font-size:23px}
-.lead{font-size:16px;line-height:1.6;margin:8px 0}
-.box{background:#f1e4cc;border-radius:14px;padding:8px;margin:8px 0}
-.opts{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:8px 0}
-.opts button{min-height:56px;border-radius:14px;border:2px solid var(--line);background:#fff;font-size:24px;font-weight:800}
-.opts button.sel{background:var(--red);color:#fff;border-color:#8c2a20}
-.big{font-size:42px;font-weight:800;color:var(--red)}
-.eqline{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:2px;margin:6px 0}
-.bookgrid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;text-align:center}
-.bp{background:#fff;border:2px dashed var(--line);border-radius:12px;padding:8px 4px;font-size:12px;font-weight:700;min-height:92px}
-.bp.got{border-style:solid;border-color:var(--green)}
-/* 記録・規則 */
-.rec{width:100%;border-collapse:collapse;font-size:13px;background:#fff;border-radius:12px;overflow:hidden}
-.rec th{background:#2f3a2c;color:#f3ecd8;font-weight:700;padding:5px 3px}
-.rec td{border-bottom:1px solid #eadcc4;padding:5px 3px;text-align:center;vertical-align:middle}
-.rec td.l{text-align:left}
-textarea{width:100%;font:inherit;font-size:17px;padding:10px;border-radius:12px;border:2px solid var(--line);min-height:84px;resize:vertical;background:#fff;-webkit-user-select:text;user-select:text}
-/* テスト */
-.tq{font-size:18px;font-weight:800;line-height:1.6;margin:8px 0 10px}
-.tfig{background:#fff;border-radius:12px;padding:6px;margin:6px 0;text-align:center}.tfig svg{max-width:100%;height:auto}
-.choice{display:block;width:100%;min-height:52px;margin:8px 0;padding:10px 14px;text-align:left;font-size:17px;font-weight:700;border-radius:14px;border:2px solid var(--line);background:#fff;box-shadow:0 3px 0 var(--line)}
-.prog{display:flex;gap:4px;margin:6px 0}.prog i{flex:1;height:6px;border-radius:3px;background:#dcc9a6}.prog i.on{background:var(--red)}
-.numshow{font-size:30px;font-weight:800;text-align:center;background:#fff;border:2px solid var(--line);border-radius:12px;padding:6px;margin:6px 0}
-.keys{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.keys button{min-height:54px;font-size:22px;font-weight:800;border-radius:12px;border:2px solid var(--line);background:#fff}
-.ordsel{min-height:52px;background:#fff;border:2px dashed var(--line);border-radius:12px;padding:6px;margin:6px 0}
-.ordsel div{background:#f1e4cc;border-radius:10px;padding:8px 10px;margin:4px 0;font-weight:700;font-size:15px}
-@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+input,textarea{-webkit-user-select:text;user-select:text;font-family:inherit}
+b{font-weight:800}
+/* ---------- 紙のタグ（ボタン）: 朱の色紙・右上の角を折り返し・斜めの折り目 ---------- */
+.tag{position:relative;display:inline-flex;align-items:center;justify-content:center;gap:.4em;min-height:50px;padding:8px 30px 8px 24px;border:0;cursor:pointer;
+  color:#fff;font:800 19px/1.2 "M PLUS 1",sans-serif;letter-spacing:.06em;
+  background:linear-gradient(158deg,rgba(255,255,255,.2) 0 47%,rgba(0,0,0,.1) 53% 100%),var(--red);box-shadow:3px 4px 0 rgba(46,46,46,.3)}
+.tag::after{content:"";position:absolute;top:0;right:0;border-style:solid;border-width:0 17px 17px 0;border-color:transparent var(--under) #a93a1a transparent;filter:drop-shadow(-1px 1px 0 rgba(0,0,0,.15))}
+.tag:active{transform:translate(2px,3px);box-shadow:1px 1px 0 rgba(46,46,46,.3)}
+.tag.k{background:linear-gradient(158deg,rgba(255,255,255,.12) 0 47%,rgba(0,0,0,.18) 53% 100%),var(--ink)}
+.tag.k::after{border-color:transparent var(--under) #111 transparent}
+.tag.w{color:var(--ink);background:linear-gradient(158deg,#fff 0 47%,#ece5d6 53% 100%)}
+.tag.w::after{border-color:transparent var(--under) #cfc4ae transparent}
+.tag.sm{min-height:44px;font-size:16px;padding:6px 24px 6px 18px}
+.tag[disabled]{opacity:.45;cursor:default}
+/* ---------- 紙の上端テープ（HUD） ---------- */
+#hud{position:fixed;left:0;right:0;top:0;z-index:5;display:flex;align-items:center;gap:10px;padding:0 10px 0 8px;height:var(--hh,60px);
+  background:linear-gradient(180deg,rgba(255,255,255,.07),rgba(0,0,0,.15)),var(--ink);color:#F7F3EA;
+  clip-path:polygon(0 0,100% 0,100% 88%,97% 100%,92% 90%,80% 100%,64% 91%,45% 100%,30% 91%,14% 100%,4% 91%,0 100%)}
+#hud .hord{flex:1;min-width:0;display:flex;align-items:baseline;gap:10px;white-space:nowrap;overflow:hidden}
+#hud .no{font:900 clamp(15px,2.2vw,20px) "M PLUS 1";color:#fff;background:var(--red);padding:2px 10px;transform:rotate(-2deg);display:inline-block}
+#hud .nm{font:800 clamp(14px,2vw,19px) "M PLUS 1";overflow:hidden;text-overflow:ellipsis}
+#hud .st{display:flex;align-items:center;gap:12px;font:800 15px "M PLUS 1";white-space:nowrap}
+#hud .st i{font-style:normal;font-weight:400;font-size:12px;opacity:.75;margin-right:3px}
+#hud .combo{font:900 20px "M PLUS 1";color:#FFD5C7;min-width:3.2em;text-align:right}
+#bBack{position:fixed;z-index:30;left:8px;top:calc((var(--hh,60px) - 44px)/2);min-height:44px;padding:4px 22px 4px 14px;font-size:16px;--under:#2E2E2E}
+#bBack.onbg{--under:#F7F3EA}
+#bMute{position:fixed;z-index:30;right:8px;top:calc((var(--hh,60px) - 40px)/2);min-height:40px;width:48px;padding:0;font-size:17px;--under:#2E2E2E}
+#bMute.off{opacity:.5}
+body.play #hud{padding-left:128px;padding-right:64px}
+#tools{position:fixed;z-index:6;display:flex;gap:8px}
+#tools .tag{--under:#F7F3EA}
+#bRemold.blink{animation:bl .9s steps(2) infinite}
+@keyframes bl{50%{background:linear-gradient(158deg,rgba(255,255,255,.2) 0 47%,rgba(0,0,0,.1) 53% 100%),#E4572E}}
+/* ---------- 紙のシート（重なり・折り目・厚み） ---------- */
+.ov{position:fixed;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;padding:calc(var(--hh,60px) + 2px) 10px 10px;background:rgba(46,46,46,.28)}
+.ov.clear{background:transparent;pointer-events:none}
+.ov.clear>*{pointer-events:auto}
+.sheet{position:relative;max-width:min(760px,96vw);max-height:calc(100vh - var(--hh,60px) - 14px);overflow:auto;padding:26px 26px 22px;--under:#FBF8F1;
+  background:linear-gradient(135deg,rgba(255,255,255,.6) 0 50%,rgba(0,0,0,.035) 50% 100%),#FBF8F1;
+  box-shadow:4px 6px 0 #d9cfbb,12px 20px 34px rgba(46,46,46,.22)}
+.sheet::before{content:"";position:absolute;left:0;top:0;border-style:solid;border-width:26px 26px 0 0;border-color:#e9dfcb transparent transparent transparent;box-shadow:2px 2px 3px rgba(0,0,0,.12)}
+.sheet h2{margin:0 0 6px;font:900 clamp(22px,3.4vw,32px)/1.2 "M PLUS 1";letter-spacing:.04em}
+.sheet h3{margin:14px 0 6px;font:800 16px "M PLUS 1";color:#6b6254;letter-spacing:.08em}
+.sheet p{margin:6px 0;line-height:1.7;font-size:16px}
+.ribbon{display:inline-block;background:var(--red);color:#fff;font:900 15px "M PLUS 1";padding:3px 12px 3px 10px;transform:rotate(-2deg);margin-bottom:8px;clip-path:polygon(0 0,100% 0,94% 50%,100% 100%,0 100%)}
+.ribbon.k{background:var(--ink)}
+.row{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:center;margin-top:14px}
+/* 分子の紙玉（DOM用の画像） */
+.mol{position:relative;display:inline-block;vertical-align:middle}
+.mol img{position:absolute;display:block}
+.mats{display:flex;flex-wrap:wrap;gap:14px 20px;align-items:flex-end;justify-content:center;padding:10px 6px}
+.mats .it{display:flex;flex-direction:column;align-items:center;gap:4px;font:700 13px "M PLUS 1";color:#5b5347}
+.mats .it b{font-size:18px;color:var(--ink)}
+.arrow{font:900 30px "M PLUS 1";color:var(--red);padding:0 4px}
+.eq{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px 12px;padding:10px;background:#fff;border:2px dashed rgba(46,46,46,.35);margin:10px 0}
+.eqtxt{font:900 clamp(18px,2.6vw,24px) "M PLUS 1";letter-spacing:.04em;text-align:center;margin:4px 0}
+/* 型の数を決める段（予想の封印） */
+.mrow{display:flex;align-items:center;gap:14px;justify-content:space-between;padding:10px 12px;margin:8px 0;background:#fff;border-left:8px solid var(--red);box-shadow:2px 3px 0 #ddd3c0}
+.mrow .nm{flex:1;font:800 17px "M PLUS 1"}
+.mrow .nm small{display:block;font-weight:400;font-size:13px;color:#6b6254}
+.step{display:flex;align-items:center;gap:6px}
+.step button{width:48px;height:48px;border:0;background:var(--ink);color:#fff;font:900 24px "M PLUS 1";cursor:pointer;clip-path:polygon(0 0,100% 0,100% 72%,72% 100%,0 100%)}
+.step button:active{transform:translateY(2px)}
+.step .n{min-width:1.6em;text-align:center;font:900 30px "M PLUS 1"}
+.hint{background:#2E2E2E;color:#F7F3EA;padding:10px 14px;line-height:1.7;font-size:15px;margin:8px 0}
+.hint b{color:#FFB199}
+/* カウンター表（帳面） */
+table.led{border-collapse:collapse;width:100%;font-size:14px;background:#fff}
+table.led th,table.led td{border:1.5px solid #cfc4ae;padding:4px 6px;text-align:center;vertical-align:middle}
+table.led th{background:#2E2E2E;color:#F7F3EA;font-weight:800}
+table.led td.l{text-align:left;font-weight:800}
+.cnt{display:inline-flex;align-items:center;gap:3px;margin:1px 4px;font:800 15px "M PLUS 1";white-space:nowrap}
+.cnt img{width:22px;height:22px}
+.same{outline:3px solid #E4572E;outline-offset:-3px}
+/* 注文完成 */
+.bigok{font:900 clamp(34px,6vw,58px)/1 "M PLUS 1";color:var(--red);letter-spacing:.06em;text-shadow:3px 3px 0 #2E2E2E;transform:rotate(-3deg);display:inline-block;margin:0 0 8px}
+.cmp{display:grid;grid-template-columns:1fr auto 1fr;gap:6px 10px;align-items:center;background:#fff;padding:10px;margin:8px 0}
+.cmp .hd{font:800 13px "M PLUS 1";color:#6b6254;text-align:center}
+.cmp .side{display:flex;flex-wrap:wrap;justify-content:center;gap:2px}
+.cmp .mid{font:900 22px "M PLUS 1";color:#6b6254}
+.cmp.glow{animation:glow 1.2s ease-in-out 2}
+@keyframes glow{50%{box-shadow:0 0 0 5px #E4572E}}
+/* 帳面（最後の1文） */
+textarea#ruleIn{width:100%;min-height:92px;font-size:18px;line-height:1.6;padding:10px 12px;border:0;border-bottom:3px solid var(--ink);background:repeating-linear-gradient(#fff 0 34px,#e5dccb 34px 35px);resize:vertical}
+/* タイトル（1枚絵の上の紙の看板） */
+#scrTitle{background:transparent;pointer-events:none;align-items:flex-end;padding-bottom:max(3vh,14px)}
+#scrTitle .sign{pointer-events:auto;position:relative;padding:24px 26px 22px;transform:rotate(-1.5deg);max-width:min(700px,94vw);text-align:center}
+#scrTitle .kicker{font:800 14px "M PLUS 1";letter-spacing:.3em;color:#6b6254}
+#scrTitle h1{margin:6px 0 2px;font:900 clamp(26px,7.2vw,60px)/1.08 "M PLUS 1";letter-spacing:.01em;white-space:nowrap}
+#scrTitle h1 .r{color:var(--red)}
+#scrTitle .sub{font:800 clamp(15px,2.2vw,20px) "M PLUS 1";color:#4b453b}
+#scrTitle .nm{margin:14px auto 4px;display:flex;gap:8px;align-items:center;justify-content:center;font-size:15px}
+#scrTitle .nm input{font-size:17px;padding:8px 10px;border:0;border-bottom:3px solid var(--ink);background:#fff;width:12em}
+#scrTitle .law{margin-top:12px;display:inline-block;background:var(--ink);color:#F7F3EA;font:800 clamp(12px,1.6vw,14px) "M PLUS 1";padding:6px 12px;letter-spacing:.04em}
+/* 紙きれのメッセージ */
+#slip{position:fixed;z-index:8;left:50%;transform:translate(-50%,0) rotate(-1deg);width:max-content;max-width:min(560px,92vw);padding:10px 18px 10px 22px;
+  background:#fff;box-shadow:3px 4px 0 rgba(46,46,46,.25);font:700 16px/1.55 "M PLUS 1";border-left:10px solid var(--red);pointer-events:none;opacity:0;transition:opacity .25s}
+#slip.on{opacity:1}
+#slip.k{border-left-color:var(--ink)}
+#slip b{color:var(--red)}
+/* 確認テスト */
+#scrTest{align-items:stretch;background:rgba(247,243,234,.93);padding:0}
+#scrTest .paper{width:100%;height:100%;overflow:auto;padding:calc(var(--hh,60px) + 14px) max(16px,4vw) 30px}
+#scrTest .inner{max-width:880px;margin:0 auto}
+#tNo{display:inline-block;background:var(--ink);color:#fff;font:900 18px "M PLUS 1";padding:4px 14px;transform:rotate(-2deg)}
+#tQ{font:800 clamp(18px,2.4vw,22px)/1.65 "M PLUS 1";margin:14px 0}
+#tFig{text-align:center;margin:8px 0;overflow-x:auto}
+#tFig svg{width:min(100%,600px);height:auto;background:#fff;padding:8px;box-shadow:2px 3px 0 #ddd3c0}
+#tA{display:flex;flex-direction:column;gap:10px;margin-top:10px}
+#tA .tag{justify-content:flex-start;text-align:left;width:100%;--under:var(--bg);font-size:17px;font-weight:700;min-height:54px}
+#tA .tag.ok{background:linear-gradient(158deg,rgba(255,255,255,.2) 0 47%,rgba(0,0,0,.1) 53% 100%),#2f8a4e}
+#tA .tag.ng{background:#8a8378}
+#tA .tag.pickd{opacity:.4}
+.numrow{display:flex;gap:10px;align-items:center}
+#tA .numrow .tag{width:auto;min-width:120px;justify-content:center}
+.numrow input{font-size:22px;width:7em;padding:8px 10px;border:0;border-bottom:3px solid var(--ink);background:#fff}
+.ord{display:flex;flex-direction:column;gap:4px;font:700 15px "M PLUS 1";margin:4px 0}
+#tFb{margin-top:14px;font-size:16px;line-height:1.7}
+#tFb .mk{font:900 34px "M PLUS 1";margin-right:10px;color:var(--red)}
+#tFb .ex{display:block;background:#fff;padding:8px 12px;margin:6px 0 10px;border-left:6px solid var(--ink)}
+/* 見本帳 */
+.book{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;margin-top:10px}
+.book .pg{background:#fff;padding:12px 8px 10px;text-align:center;box-shadow:2px 3px 0 #ddd3c0;min-height:132px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:6px}
+.book .pg.no{background:#efe8da}
+.book .pg.no .mol{filter:grayscale(1) brightness(.35);opacity:.35}
+.book .pg b{font:800 15px "M PLUS 1"}
+.book .pg small{font-size:12px;color:#6b6254}
+@media (max-width:600px){
+  .step button{width:42px;height:42px}.step .n{font-size:26px}.mrow{gap:8px;padding:8px}
+  .sheet{padding:22px 16px 18px}
+  #hud .st i{display:none}
+  #hud .st{gap:8px;font-size:14px}
+  .mrow .nm{font-size:15px}
+}
+@media (prefers-reduced-motion:reduce){.cmp.glow{animation:none}}
 </style>
 </head>
 <body>
-<canvas id="fx"></canvas>
+<canvas id="cv"></canvas>
 
-<div id="title" class="scr"><div class="wrap">
- <div class="small" style="font-weight:800">中2理科　化学変化と原子・分子</div>
- <div class="logo">♻️ 原子リサイクル<br>工房</div>
- <div class="subt">～反応の前後で変わらないもの～</div>
- <div class="toybox" id="tBox"></div>
- <div class="card" style="text-align:left;font-size:15px;line-height:1.7">
-  <b>この工房のきまり</b><br>届いたパックの原子を<b>ばらして、つなぎ直す</b>。<br>原子は<b>出せない・捨てられない</b>。つなぐ・はずすだけ。<br>作れた物質は、レシピ帳にのる！
- </div>
- <div id="nameBox" class="card" style="text-align:left"><label style="font-weight:800;font-size:14px">なまえ（番号でもOK・空でも遊べる）</label><input id="nameIn" class="namein" maxlength="20" autocomplete="off"></div>
- <div class="tbtns">
-  <button class="btn red wide" id="bStart">▶ はじめる</button>
-  <button class="btn ghost wide hidden" id="bCont">つづきから</button>
-  <button class="btn ghost wide zk hidden" id="bBook1">📖 図鑑</button>
-  <button class="btn ghost wide" id="bMute1">🔊 音：オン</button>
- </div>
-</div></div>
+<div id="hud" class="hidden">
+  <div class="hord"><span class="no" id="hNo">注文 1</span><span class="nm" id="hNm">水をつくる</span></div>
+  <div class="st"><span><i>連続</i><span class="combo" id="hCb">×0</span></span><span id="hKkW"><i>かけら</i><span id="hKk">0</span></span></div>
+</div>
+<button class="tag hidden" id="bBack" aria-label="もどる">◀ もどる</button>
+<button class="tag k" id="bMute" aria-label="音">♪</button>
+<div id="tools" class="hidden">
+  <button class="tag k sm" id="bRemold">型を選び直す</button>
+  <button class="tag w sm hidden" id="bLedger">帳面</button>
+</div>
+<div id="slip"></div>
 
-<div id="game" class="scr hidden"><div class="wrap">
- <div class="hud">
-  <button class="icon" id="bHome" aria-label="タイトルへ">🏠</button>
-  <div id="pkName"></div>
-  <button class="bookBtn" id="bBook">📒 <span id="bookN"></span></button>
-  <button class="icon" id="bMute" aria-label="音">🔊</button>
- </div>
- <div class="pages" id="pages"></div>
- <div id="counter" class="hidden"></div>
- <div class="bench" id="bench"><span class="lbl">作業台</span></div>
- <div class="plates" id="plates"></div>
- <div id="msg"></div>
- <div class="acts">
-  <button class="btn ghost" id="bReset">↺ パックに戻す</button>
-  <button class="btn green" id="bDone">✔ できあがり！</button>
- </div>
-</div></div>
+<!-- タイトル -->
+<div id="scrTitle" class="ov hidden">
+  <div class="sheet sign">
+    <div class="kicker">中2理科　化学変化と原子・分子</div>
+    <h1>原子<span class="r">リサイクル</span>工房</h1>
+    <div class="sub">～反応の前後で変わらないもの～</div>
+    <div class="nm" id="nameBox">なまえ <input id="nameIn" maxlength="16" placeholder="（空でもOK）" autocomplete="off"></div>
+    <div class="row">
+      <button class="tag" id="btnStart">はじめる</button>
+      <button class="tag k hidden" id="btnCont">つづきから</button>
+    </div>
+    <div class="row" style="margin-top:10px">
+      <button class="tag w sm" id="btnBook2">見本帳</button>
+      <button class="tag w sm hidden" id="btnBook">📖 図鑑</button>
+    </div>
+    <div class="law">工房のおきて：原子は 出せない・消せない</div>
+  </div>
+</div>
 
-<div id="rule" class="scr hidden"><div class="wrap" id="ruleBox"></div></div>
-<div id="test" class="scr hidden"><div class="wrap" id="tBoxT"></div></div>
-<div id="ov" class="ov hidden"><div class="ovc" id="ovc"></div></div>
+<!-- 注文票（型の数を決める＝予想の封印） -->
+<div id="scrOrder" class="ov hidden">
+  <div class="sheet" style="width:min(720px,96vw)">
+    <span class="ribbon" id="oNo">注文 1</span>
+    <h2 id="oTitle">水をつくる</h2>
+    <div id="oKind" style="font:700 14px 'M PLUS 1';color:#6b6254"></div>
+    <h3>届いた材料（反応前）</h3>
+    <div class="mats" id="oSrc"></div>
+    <div class="hint hidden" id="oHint"></div>
+    <div id="oMoldBox">
+      <h3 id="oMoldH">反応後の型</h3>
+      <div id="oMold"></div>
+    </div>
+    <p id="oNote" style="font-size:14px;color:#6b6254"></p>
+    <div class="row"><button class="tag" id="oGo">とりかかる</button></div>
+  </div>
+</div>
+
+<!-- 注文完成 -->
+<div id="scrDone" class="ov hidden">
+  <div class="sheet" style="width:min(720px,96vw);text-align:center">
+    <div class="bigok" id="dBig">完成！</div>
+    <div class="eq" id="dEq"></div>
+    <div class="eqtxt" id="dEqT"></div>
+    <div id="dCmp"></div>
+    <p id="dNote"></p>
+    <div class="row"><button class="tag" id="dNext">次の注文へ</button></div>
+  </div>
+</div>
+
+<!-- 帳面 -->
+<div id="scrLedger" class="ov hidden">
+  <div class="sheet" style="width:min(820px,96vw)">
+    <span class="ribbon k">工房の帳面</span>
+    <h2>原子カウンターの記録</h2>
+    <div id="lgBody"></div>
+    <div class="row"><button class="tag k sm" id="lgClose">とじる</button></div>
+  </div>
+</div>
+
+<!-- 最後の1文 -->
+<div id="scrRule" class="ov hidden">
+  <div class="sheet" style="width:min(820px,96vw)">
+    <span class="ribbon">最後の仕事</span>
+    <h2>帳面を見くらべて、見つけたきまりを書こう</h2>
+    <p>9件の注文で、<b>反応前</b>と<b>反応後</b>の原子を数えた記録です。何が変わって、何が変わらなかった？ 自分の言葉で1文。</p>
+    <div id="ruBody"></div>
+    <textarea id="ruleIn" maxlength="120" placeholder="例のように書かなくていい。見て気づいたことを、そのまま。"></textarea>
+    <p id="ruFb" style="min-height:1.7em"></p>
+    <div class="row"><button class="tag" id="ruGo">工房の壁に貼る</button></div>
+  </div>
+</div>
+
+<!-- 見本帳 -->
+<div id="scrBook" class="ov hidden">
+  <div class="sheet" style="width:min(820px,96vw)">
+    <span class="ribbon k">見本帳</span>
+    <h2>組み替えてできた物質の見本</h2>
+    <div class="book" id="bkBody"></div>
+    <div class="row"><button class="tag k sm" id="bkClose">とじる</button></div>
+  </div>
+</div>
+
+<!-- クリア -->
+<div id="scrClear" class="ov hidden">
+  <div class="sheet" style="width:min(640px,96vw);text-align:center">
+    <span class="ribbon">工房の仕事 おしまい</span>
+    <h2>9件の注文を 仕上げた！</h2>
+    <p id="clRec"></p>
+    <p id="clRule" style="background:#fff;padding:10px;border-left:8px solid #E4572E;text-align:left"></p>
+    <div class="row"><button class="tag" id="toTest">確認テストへ</button></div>
+    <div class="row"><button class="tag w sm" id="clBook2">見本帳</button><button class="tag w sm hidden" id="clBook">📖 図鑑</button></div>
+  </div>
+</div>
+
+<!-- もどる確認 -->
+<div id="scrBack" class="ov hidden" style="z-index:40">
+  <div class="sheet" style="width:min(460px,94vw);text-align:center">
+    <h2>もどりますか？</h2>
+    <p id="bkSub">進み具合は保存されます。</p>
+    <div class="row"><button class="tag k" id="bkNo">つづける</button><button class="tag" id="bkGo">タイトルへ</button></div>
+  </div>
+</div>
+
+<!-- 確認テスト -->
+<div id="scrTest" class="ov hidden">
+  <div class="paper"><div class="inner">
+    <span id="tNo">1 / 10</span> <span style="font:800 15px 'M PLUS 1';color:#6b6254;margin-left:8px">確認テスト</span>
+    <div id="tQ"></div><div id="tFig"></div><div id="tA"></div><div id="tFb"></div>
+  </div></div>
+</div>
 
 <script>/*@SUBMIT_CARD_BEGIN*/
 /* ==========================================================
@@ -1406,441 +1535,515 @@ window.ZUKAN_CARDS={"v": 1, "grade": "chu2", "name": "中2理科図鑑", "econom
 
 /*@ZUKAN_END*/</script>
 <script>
-(function(){
-'use strict';
-const GAME_ID='genshi-recycle',KOMA='chu2-kagaku-14',SAVE_KEY='rika-zukan:chu2:game:'+GAME_ID+':v1';
-const TEST_ONLY=window.GAME_MODE==='test';
-const RM=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
-const $=id=>document.getElementById(id);
-const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
-const fmtT=s=>String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');
-window.Zukan&&Zukan.setup&&Zukan.setup({game:GAME_ID,koma:[KOMA]});
-/* ===== 実験装置図（自作SVG・教材図） ===== */
-const APP=(function(){
- const W='viewBox="0 0 240 150" width="100%" style="max-width:300px;display:block;margin:0 auto" font-family="sans-serif"';
- const glass='fill="rgba(220,238,250,.55)" stroke="#6f8596" stroke-width="1.6"';
- function lab(x,y,t,a){return `<text x="${x}" y="${y}" font-size="10" font-weight="700" fill="#3a3a3a" text-anchor="${a||'middle'}">${t}</text>`}
- function burner(x,y,flame){return `<g><rect x="${x-20}" y="${y-7}" width="40" height="7" rx="3" fill="#56606b"/><rect x="${x-6}" y="${y-46}" width="12" height="40" fill="#8f99a4"/><rect x="${x-8}" y="${y-30}" width="16" height="4" rx="1" fill="#6c7580"/><rect x="${x-9}" y="${y-20}" width="18" height="4" rx="1" fill="#6c7580"/><rect x="${x-7}" y="${y-48}" width="14" height="4" fill="#737c87"/>
-  ${flame===false?'':`<path d="M${x-6},${y-49} C${x-7},${y-62} ${x},${y-76} ${x},${y-80} C${x},${y-76} ${x+7},${y-62} ${x+6},${y-49}Z" fill="#a9ccff" opacity=".75"/><path d="M${x-3},${y-49} C${x-3},${y-57} ${x},${y-64} ${x},${y-66} C${x},${y-64} ${x+3},${y-57} ${x+3},${y-49}Z" fill="#3c6fd8"/>`}</g>`}
- function stand(x,y1,y2){return `<rect x="${x-24}" y="${y2-6}" width="52" height="6" rx="2" fill="#4c4c4c"/><rect x="${x-2}" y="${y1}" width="4" height="${y2-y1-6}" fill="#6a6a6a"/>`}
- // 試験管を加熱（口を少し下げる）。gas=true で水上置換まで
- function tubeHeat(o){o=o||{};const c=o.content||'#555',c2=o.content2||c;
-  const tube=`<g transform="translate(92,58) rotate(9)"><path d="M52,-9 H-44 A9,9 0 0 0 -44,9 H52 Z" ${glass}/><path d="M-18,-7 H-44 A7,7 0 0 0 -44,7 H-18 Z" fill="${c}"/><path d="M-28,-7 h10 v14 h-10z" fill="${c2}" opacity=".9"/>${o.gas?'<rect x="50" y="-8" width="10" height="16" rx="2" fill="#9b6b43"/>':''}</g>`;
-  let s=stand(118,20,142)+`<rect x="100" y="48" width="20" height="4" fill="#6a6a6a"/>`+tube+burner(52,142);
-  if(o.gas){s+=`<path d="M150,67 L166,67 L166,124 L198,124" fill="none" stroke="#7f8e9b" stroke-width="3"/><rect x="170" y="100" width="66" height="40" rx="3" fill="rgba(120,180,230,.35)" stroke="#6f8596" stroke-width="1.6"/><rect x="171" y="106" width="64" height="33" fill="rgba(90,160,220,.35)"/><path d="M195,128 V70 a8,8 0 0 1 16,0 V128" ${glass}/><rect x="196.5" y="92" width="13" height="35" fill="rgba(90,160,220,.4)"/>`+(o.bubbles?`<circle cx="201" cy="115" r="2" fill="#fff" stroke="#6f8596" stroke-width=".6"/><circle cx="205" cy="104" r="2.4" fill="#fff" stroke="#6f8596" stroke-width=".6"/>`:'')+lab(203,62,'気体')+lab(203,148,'水上置換')}
-  s+=lab(8,14,o.label||'','start')+lab(52,148,'ガスバーナー');
-  return `<svg ${W}>${s}</svg>`}
- // 試験管をほぼ立てて加熱（鉄と硫黄など）
- function tubeUp(o){o=o||{};const c=o.content||'#8a8a60';
-  return `<svg ${W}>${stand(70,14,142)}<rect x="70" y="36" width="42" height="4" fill="#6a6a6a"/><path d="M104,20 V96 a10,10 0 0 0 20,0 V20" ${glass}/><rect x="103" y="14" width="22" height="8" rx="2" fill="#f4f1e6" stroke="#bbb"/><path d="M106,70 V96 a8,8 0 0 0 16,0 V70z" fill="${c}"/>${o.top?`<path d="M106,70 h16 v8 h-16z" fill="${o.top}"/>`:''}${burner(150,142)}<path d="M150,66 C140,70 128,72 124,74" stroke="#e98b2a" stroke-width="2" fill="none" stroke-dasharray="3 3"/>${o.wire?`<path d="M114,4 V40 q-5,4 0,8 q5,4 0,8 q-5,4 0,8" stroke="#C8773C" stroke-width="3" fill="none"/>`:''}${lab(8,12,o.label||'','start')}${lab(150,148,'ガスバーナー')}${o.note?lab(170,40,o.note,'middle'):''}</svg>`}
- // 水の電気分解（H字管型）
- function elec(){return `<svg ${W}><path d="M70,18 V112 H170 V18" fill="none" stroke="#6f8596" stroke-width="16" stroke-linejoin="round" opacity=".25"/>
-  <rect x="62" y="16" width="16" height="100" rx="6" ${glass}/><rect x="162" y="16" width="16" height="100" rx="6" ${glass}/><rect x="70" y="104" width="100" height="14" ${glass}/><rect x="113" y="28" width="14" height="80" ${glass}/><path d="M104,16 L136,16 L127,30 L113,30Z" ${glass}/>
-  <rect x="63.5" y="58" width="13" height="56" fill="rgba(90,160,220,.45)"/><rect x="163.5" y="38" width="13" height="76" fill="rgba(90,160,220,.45)"/><rect x="71" y="105" width="98" height="12" fill="rgba(90,160,220,.45)"/><rect x="114.5" y="50" width="11" height="56" fill="rgba(90,160,220,.45)"/>
-  <rect x="66" y="96" width="8" height="18" fill="#9a9a9a"/><rect x="166" y="96" width="8" height="18" fill="#9a9a9a"/>
-  <circle cx="69" cy="90" r="1.6" fill="#fff"/><circle cx="72" cy="80" r="1.6" fill="#fff"/><circle cx="169" cy="88" r="1.6" fill="#fff"/>
-  <rect x="96" y="126" width="48" height="20" rx="3" fill="#40474f"/><text x="120" y="140" font-size="9" fill="#fff" text-anchor="middle">電源装置</text>
-  <path d="M70,118 V136 H96" stroke="#2549C9" stroke-width="2" fill="none"/><path d="M170,118 V136 H144" stroke="#d33" stroke-width="2" fill="none"/>
-  ${lab(70,12,'陰極（－）')}${lab(170,12,'陽極（＋）')}${lab(40,40,'水素','middle')}${lab(40,52,'（多い）','middle')}${lab(204,32,'酸素','middle')}${lab(204,44,'（少ない）','middle')}
-  <path d="M50,44 L62,40" stroke="#555"/><path d="M190,30 L178,30" stroke="#555"/>${lab(120,122,'水（水酸化ナトリウムを少しとかす）')}</svg>`}
- // 三脚＋皿で金属を加熱
- function dish(o){o=o||{};const mg=o.mode==='mg';
-  return `<svg ${W}><path d="M88,142 L100,84 M152,142 L140,84 M120,142 L120,84" stroke="#555" stroke-width="3"/><ellipse cx="120" cy="84" rx="36" ry="5" fill="none" stroke="#555" stroke-width="3"/><rect x="82" y="78" width="76" height="4" fill="#9aa0a6"/>
-  <path d="M92,72 Q120,86 148,72 Z" fill="#c9ced4" stroke="#7d848b"/><ellipse cx="120" cy="72" rx="28" ry="4" fill="${mg?'#e9ece6':'#2b2b2b'}"/>${mg?'':'<ellipse cx="110" cy="71" rx="8" ry="2" fill="#C8773C"/>'}
-  ${burner(120,142)}
-  ${mg?`<g><circle cx="120" cy="62" r="16" fill="#fffbe6" opacity=".95"/>${[0,30,60,90,120,150,180,210,240,270,300,330].map(a=>{const r=a*Math.PI/180;return `<line x1="${120+Math.cos(r)*18}" y1="${62+Math.sin(r)*18}" x2="${120+Math.cos(r)*34}" y2="${62+Math.sin(r)*34}" stroke="#ffd84a" stroke-width="2.5"/>`}).join('')}</g>`:''}
-  ${lab(120,12,o.label||'')}${lab(190,78,'ステンレス皿','middle')}${lab(40,120,'三脚・金網','middle')}</svg>`}
- // 水素と酸素の混合気体に点火（ポリエチレン袋）
- function bag(){return `<svg ${W}><path d="M40,30 Q120,10 200,30 Q214,75 200,120 Q120,138 40,120 Q26,75 40,30Z" fill="rgba(235,245,255,.7)" stroke="#8aa0b4" stroke-width="2"/>
-  <path d="M60,40 Q70,70 58,110 M180,40 Q170,76 184,110" stroke="#d5e2ec" stroke-width="2" fill="none"/>
-  ${[[80,60],[100,90],[140,70],[160,100],[120,110],[90,112],[150,48]].map(p=>`<circle cx="${p[0]}" cy="${p[1]}" r="2.2" fill="#b7c9d8"/>`).join('')}
-  <rect x="108" y="126" width="24" height="16" rx="3" fill="#40474f"/><path d="M114,126 V90 M126,126 V90" stroke="#444" stroke-width="1.6"/><path d="M114,90 l4,-6 l-3,-2 l5,-6 M126,90 l-3,-6 l3,-2 l-4,-6" stroke="#ffb400" stroke-width="2" fill="none"/>
-  <rect x="150" y="52" width="26" height="12" rx="2" fill="#f2b6c6"/>${lab(163,48,'塩化コバルト紙')}${lab(120,146,'点火装置')}${lab(120,24,'水素と酸素（体積 2：1）')}</svg>`}
- // 炭を燃やして石灰水
- function jar(){return `<svg ${W}><path d="M84,34 V132 a6,6 0 0 0 6,6 H150 a6,6 0 0 0 6,-6 V34" ${glass}/><rect x="80" y="28" width="80" height="6" rx="2" fill="#cfd8df" stroke="#6f8596"/><rect x="86" y="112" width="68" height="24" fill="rgba(240,240,236,.95)"/>
-  <path d="M120,10 V80" stroke="#666" stroke-width="2"/><path d="M110,80 q10,8 20,0" stroke="#666" stroke-width="3" fill="none"/><ellipse cx="120" cy="76" rx="9" ry="6" fill="#2d2a28"/><ellipse cx="118" cy="74" rx="4" ry="2.5" fill="#ff7a2a"/>
-  ${lab(190,126,'石灰水','middle')}${lab(188,138,'（白くにごる）','middle')}${lab(40,76,'木炭（炭素）','middle')}${lab(40,20,'燃焼さじ','middle')}<path d="M190,120 L156,122" stroke="#555"/></svg>`}
- // ドライアイスの中でマグネシウムを燃やす
- function dryice(){return `<svg ${W}><rect x="50" y="86" width="140" height="44" rx="4" fill="#eef4f8" stroke="#9ab" stroke-width="1.5"/><rect x="50" y="46" width="140" height="36" rx="4" fill="#f4f8fb" stroke="#9ab" stroke-width="1.5"/>
-  <path d="M96,86 q24,-14 48,0" fill="#dfe8ee" stroke="#9ab"/><circle cx="120" cy="80" r="12" fill="#fffbe6"/>${[0,45,90,135,180,225,270,315].map(a=>{const r=a*Math.PI/180;return `<line x1="${120+Math.cos(r)*13}" y1="${80+Math.sin(r)*13}" x2="${120+Math.cos(r)*22}" y2="${80+Math.sin(r)*22}" stroke="#ffd84a" stroke-width="2.2"/>`}).join('')}
-  ${[62,78,160,176].map(x=>`<path d="M${x},46 q-4,-10 2,-18 q6,-8 0,-16" stroke="#dde7ee" stroke-width="3" fill="none"/>`).join('')}
-  ${lab(120,145,'ドライアイス（固体の二酸化炭素）')}${lab(120,20,'くぼみの中で、火をつけたマグネシウム')}</svg>`}
- // スチールウールと電子てんびん
- function balance(o){o=o||{};return `<svg viewBox="0 50 240 100" width="100%" style="max-width:300px;display:block;margin:0 auto" font-family="sans-serif"><rect x="40" y="108" width="160" height="30" rx="6" fill="#dfe3e6" stroke="#7d848b" stroke-width="1.5"/><rect x="58" y="116" width="54" height="16" rx="2" fill="#20282e"/><text x="108" y="128" font-size="11" fill="#7cf0a0" text-anchor="end" font-family="monospace">${o.disp||'_.__ g'}</text>
-  <rect x="120" y="100" width="72" height="8" rx="2" fill="#aab2b9"/><path d="M128,100 q28,-10 56,0Z" fill="#c9ced4" stroke="#7d848b"/>
-  <g stroke="${o.burnt?'#2f2f35':'#8d939b'}" stroke-width="1.1" fill="none">${Array.from({length:22},(_,i)=>`<path d="M${132+i*2.4},${97-(i%3)*2} q${8-(i%4)*4},-22 ${12-(i%5)*5},-10 q5,8 ${-5+(i%3)*4},14"/>`).join('')}</g>
-  ${lab(156,70,o.label||'スチールウール')}${lab(85,146,'電子てんびん')}</svg>`}
- return {tubeHeat,tubeUp,elec,dish,bag,jar,dryice,balance};
-})();
+var GID='genshi-recycle',KOMA=['chu2-kagaku-14'],SAVE='rika-zukan:chu2:game:genshi-recycle:v1';
+var TEST=window.GAME_MODE==='test';
+var RM=!!(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches);
+function $(id){return document.getElementById(id)}
+function clamp(v,a,b){return v<a?a:v>b?b:v}
+function rnd(a,b){return a+Math.random()*(b-a)}
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
 
-
-/* ============ 原子と物質 ============ */
-const EL={H:['水素','#EAF6FF','#9fb6c9','#1c4f86'],O:['酸素','#E4572E','#8f2a10','#fff'],C:['炭素','#3a3d46','#15161a','#fff'],S:['硫黄','#EAD23C','#9c8a10','#4d3f00'],
- Fe:['鉄','#767C8A','#3a3e47','#fff'],Cu:['銅','#C8773C','#7a3f16','#fff'],Mg:['マグネシウム','#B9C6D4','#6f7d8c','#1f2a36'],Ag:['銀','#C9CDD4','#7d838c','#2a2f38']};
-const ORDER=['H','C','Mg','Fe','Cu','Ag','S','O'];
-// 物質（分子をつくる物質は数ぴったり、つくらない物質は割合で判定）
-const SUB={
- H2O:{n:'水',f:'H₂O',ex:{H:2,O:1},hint:'酸素原子1個に、水素原子2個がつながる'},
- H2:{n:'水素',f:'H₂',ex:{H:2},hint:'火を近づけるとポンと燃える気体。同じ原子2個のまとまり'},
- O2:{n:'酸素',f:'O₂',ex:{O:2},hint:'線香を激しく燃やす気体。同じ原子2個のまとまり'},
- CO2:{n:'二酸化炭素',f:'CO₂',ex:{C:1,O:2},hint:'石灰水を白くにごらせる気体'},
- FeS:{n:'硫化鉄',f:'FeS',ratio:{Fe:1,S:1},hint:'鉄原子と硫黄原子が1：1。磁石につかない'},
- CuO:{n:'酸化銅',f:'CuO',ratio:{Cu:1,O:1},hint:'銅を熱すると黒くなる。銅原子と酸素原子が1：1'},
- MgO:{n:'酸化マグネシウム',f:'MgO',ratio:{Mg:1,O:1},hint:'まぶしく燃えたあとに残る白い粉'},
- Ag2O:{n:'酸化銀',f:'Ag₂O',ratio:{Ag:2,O:1},hint:'黒い粉。銀原子2：酸素原子1'},
- Ag:{n:'銀',f:'Ag',el:'Ag',hint:'こすると銀色に光る。1種類の原子だけが集まる'},
- Fe:{n:'鉄',f:'Fe',el:'Fe'},Cu:{n:'銅',f:'Cu',el:'Cu'},Mg:{n:'マグネシウム',f:'Mg',el:'Mg'},
- C:{n:'炭素',f:'C',el:'C',hint:'黒いすすのような物質。1種類の原子だけ'},S:{n:'硫黄',f:'S',el:'S'}
+/* ================= 原子と物質 ================= */
+var EL={H:{c:'#EAF6FF',t:'#1c4f86',n:'水素'},C:{c:'#3a3d46',t:'#fff',n:'炭素'},O:{c:'#E4572E',t:'#fff',n:'酸素'},S:{c:'#EAD23C',t:'#4d3f00',n:'硫黄'},
+  Fe:{c:'#767C8A',t:'#fff',n:'鉄'},Cu:{c:'#C8773C',t:'#fff',n:'銅'},Mg:{c:'#B9C6D4',t:'#1f2a36',n:'マグネシウム'},Ag:{c:'#C9CDD4',t:'#2a2f38',n:'銀'}};
+var ELORD=['H','C','O','Mg','S','Fe','Cu','Ag'];
+/* a: [元素, x, y]（原子の直径を1とした並び。水はくの字・二酸化炭素は一直線） */
+var SP={
+ H2:{n:'水素',f:'H₂',a:[['H',0,0],['H',.84,0]]},
+ O2:{n:'酸素',f:'O₂',a:[['O',0,0],['O',.84,0]]},
+ H2O:{n:'水',f:'H₂O',a:[['H',0,.6],['O',.52,0],['H',1.04,.6]]},
+ CO2:{n:'二酸化炭素',f:'CO₂',a:[['O',0,0],['C',.84,0],['O',1.68,0]]},
+ C:{n:'炭素',f:'C',a:[['C',0,0]]},
+ Fe:{n:'鉄',f:'Fe',a:[['Fe',0,0]]},
+ S:{n:'硫黄',f:'S',a:[['S',0,0]]},
+ Cu:{n:'銅',f:'Cu',a:[['Cu',0,0]]},
+ Mg:{n:'マグネシウム',f:'Mg',a:[['Mg',0,0]]},
+ Ag:{n:'銀',f:'Ag',a:[['Ag',0,0]]},
+ FeS:{n:'硫化鉄',f:'FeS',a:[['Fe',0,0],['S',.84,0]]},
+ CuO:{n:'酸化銅',f:'CuO',a:[['Cu',0,0],['O',.84,0]]},
+ MgO:{n:'酸化マグネシウム',f:'MgO',a:[['Mg',0,0],['O',.84,0]]},
+ Ag2O:{n:'酸化銀',f:'Ag₂O',a:[['Ag',0,0],['O',.84,0],['Ag',1.68,0]]}
 };
-const BOOK=['H2O','FeS','Ag','O2','CuO','CO2','H2','MgO','C'];
-function countOf(atoms){const c={};atoms.forEach(e=>c[e]=(c[e]||0)+1);return c}
-function identify(atoms){
- if(!atoms.length)return null;const c=countOf(atoms),ks=Object.keys(c);
- for(const k in SUB){const s=SUB[k];
-  if(s.el){if(ks.length===1&&ks[0]===s.el)return k;continue}
-  if(s.ex){const e=Object.keys(s.ex);if(e.length===ks.length&&e.every(x=>c[x]===s.ex[x]))return k;continue}
-  if(s.ratio){const e=Object.keys(s.ratio);if(e.length!==ks.length||!e.every(x=>c[x]))continue;const k0=c[e[0]]/s.ratio[e[0]];if(Number.isInteger(k0)&&e.every(x=>c[x]===s.ratio[x]*k0))return k}
- }
- return null;
-}
-function formulaOf(atoms){const c=countOf(atoms);return ORDER.filter(e=>c[e]).map(e=>e+(c[e]>1?String(c[e]).replace(/\d/g,d=>'₀₁₂₃₄₅₆₇₈₉'[d]):'')).join('')}
-function whyNot(atoms){
- const c=countOf(atoms),ks=Object.keys(c);
- if(ks.length===1&&ks[0]==='O'&&c.O===1)return '酸素原子1個だけの物質はない。酸素は原子2個で1つのまとまり';
- if(ks.length===1&&ks[0]==='H'&&c.H===1)return '水素原子1個だけの物質はない。水素は原子2個で1つのまとまり';
- if(ks.length===1&&(ks[0]==='H'||ks[0]==='O'))return `${formulaOf(atoms)} はこの工房のレシピにない。${EL[ks[0]][0]}は原子2個で1つのまとまり`;
- return `${formulaOf(atoms)} は、この工房のレシピ帳にない組合せ`;
-}
+function spDim(k){var a=SP[k].a,mx=0,my=0;a.forEach(function(p){mx=Math.max(mx,p[1]);my=Math.max(my,p[2])});return {w:mx+1,h:my+1}}
+function spCount(k){var o={};SP[k].a.forEach(function(p){o[p[0]]=(o[p[0]]||0)+1});return o}
 
-/* ============ パック（1周＝1パック） ============ */
-const PACKS=[
- {name:'水素と酸素のパック',app:()=>APP.bag(),eq:'2H₂ ＋ O₂ → 2H₂O',groups:[['H','H'],['H','H'],['O','O']],pages:['H2O'],predict:{sub:'H2O',max:2,q:'この材料で、水の分子は最大いくつできる？',opts:[1,2,3,4]}},
- {name:'鉄と硫黄のパック',app:()=>APP.tubeUp({content:'#8f8f6a',top:'#EAD23C',label:'鉄粉と硫黄の混合物を加熱'}),eq:'Fe ＋ S → FeS',groups:[['Fe','Fe','Fe'],['S'],['S']],pages:['FeS'],predict:{sub:'FeS',max:2,q:'硫化鉄（鉄原子1：硫黄原子1）は最大いくつできる？',opts:[1,2,3,5]}},
- {name:'酸化銀のパック',app:()=>APP.tubeHeat({content:'#2a2a2a',gas:true,bubbles:true,label:'酸化銀を加熱し、気体を集める'}),eq:'2Ag₂O → 4Ag ＋ O₂',groups:[['Ag','O','Ag'],['Ag','O','Ag']],pages:['Ag','O2'],tool:'🔥 加熱'},
- {name:'銅と酸素のパック',app:()=>APP.dish({label:'銅の粉末を加熱'}),eq:'2Cu ＋ O₂ → 2CuO',groups:[['Cu','Cu','Cu'],['O','O']],pages:['CuO'],counter:true,predict:{sub:'CuO',max:2,q:'酸化銅（銅原子1：酸素原子1）は最大いくつできる？',opts:[1,2,3,4]}},
- {name:'炭と水素のパック',app:()=>APP.jar(),eq:'C ＋ O₂ → CO₂　／　2H₂ ＋ O₂ → 2H₂O',groups:[['C'],['O','O'],['O','O'],['H','H'],['H','H']],pages:['CO2','H2O']},
- {name:'水のパック（電気分解）',app:()=>APP.elec(),eq:'2H₂O → 2H₂ ＋ O₂',groups:[['H','O','H'],['H','O','H']],pages:['H2','O2'],tool:'⚡ 電流',predict:{sub:'H2',max:2,q:'水素分子は最大いくつできる？',opts:[1,2,3,4]}},
- {name:'なぞのパック',app:()=>APP.dryice(),eq:'2Mg ＋ CO₂ → 2MgO ＋ C',groups:[['Mg','Mg'],['O','C','O']],pages:['MgO','C'],mystery:true}
+/* ================= 注文（9件） ================= */
+var ST=[
+ {nm:'水をつくる',kd:'結び付く変化',src:[['H2',2],['O2',1]],tgt:{H2O:2},gf:.40,eq:'2H₂ ＋ O₂ → 2H₂O',
+  say:'水素分子と酸素分子が届いた。ほどいて、<b>水分子の型</b>にはめ直そう。'},
+ {nm:'二酸化炭素をつくる',kd:'結び付く変化（炭素が燃える）',src:[['C',2],['O2',2]],tgt:{CO2:2},gf:.46,eq:'C ＋ O₂ → CO₂（2回分）',
+  say:'炭素と酸素分子。<b>二酸化炭素</b>は O・C・O が一直線。'},
+ {nm:'酸化銀を分解する',kd:'分解（加熱）',src:[['Ag2O',2]],tgt:{Ag:4,O2:1},gf:.50,eq:'2Ag₂O → 4Ag ＋ O₂',
+  say:'今度は<b>分解</b>。酸化銀をほどいて、<b>銀</b>と<b>酸素分子</b>の型へ。'},
+ {nm:'硫化鉄を できるだけ多く',kd:'結び付く変化（加熱）',src:[['Fe',3],['S',2]],tgt:{FeS:2},gf:.54,eq:'Fe ＋ S → FeS',choose:['FeS'],counter:1,
+  say:'ここからは<b>型の数を自分で決める</b>。硫化鉄は 鉄原子1：硫黄原子1。使わない材料は、ほどかずに台に残してよい。'},
+ {nm:'酸化銅を できるだけ多く',kd:'結び付く変化（銅の酸化）',src:[['Cu',4],['O2',3]],tgt:{CuO:4},gf:.58,eq:'2Cu ＋ O₂ → 2CuO',choose:['CuO'],
+  say:'銅と酸素分子。酸化銅は 銅原子1：酸素原子1。'},
+ {nm:'水を 電気分解する',kd:'分解（電流）',src:[['H2O',4]],tgt:{H2:4,O2:2},gf:.62,eq:'2H₂O → 2H₂ ＋ O₂',choose:['H2','O2'],
+  say:'水分子を全部ほどいて、<b>水素分子</b>と<b>酸素分子</b>に。それぞれ型はいくつ？'},
+ {nm:'マグネシウムを 燃やす',kd:'結び付く変化（燃焼）',src:[['Mg',5],['O2',2]],tgt:{MgO:4},gf:.70,eq:'2Mg ＋ O₂ → 2MgO',choose:['MgO'],
+  say:'酸化マグネシウムを できるだけ多く。紙玉が重くなってきた。'},
+ {nm:'酸化銅から 銅をとり出す',kd:'酸化と還元（炭素と加熱）',src:[['CuO',4],['C',2]],tgt:{Cu:4,CO2:2},gf:.76,eq:'2CuO ＋ C → 2Cu ＋ CO₂',choose:['Cu','CO2','O2'],
+  say:'酸化銅と炭素を混ぜて加熱した。',hint:'実験では、試験管に<b>赤い銅</b>が残り、出てきた気体で<b>石灰水が白くにごった</b>。',
+  miss:'石灰水が白くにごった＝出てきた気体は<b>二酸化炭素</b>。炭素原子は、どこへ行った？'},
+ {nm:'二酸化炭素の中の マグネシウム',kd:'？（最後の注文）',src:[['Mg',4],['CO2',2]],tgt:{MgO:4,C:2},gf:.84,eq:'2Mg ＋ CO₂ → 2MgO ＋ C',choose:['MgO','C','O2'],boss:1,auto:6.5,
+  say:'最後の注文。何ができるかは書いていない。',hint:'二酸化炭素を入れた集気びんの中でも、火のついたマグネシウムは燃え続けた。燃えたあとには<b>白い粉</b>と<b>黒い粒</b>が残った。',
+  miss:'白い粉と<b>黒い粒</b>。黒い粒は、どの原子でできている？ 酸素は気体になって出ていった？'}
 ];
-function packSubs(p){return p.groups.map(g=>identify(g))}
+var NST=ST.length;
 
-/* ============ セーブ・音 ============ */
-function fresh(){return{v:1,name:'',pack:0,started:false,book:[],packDone:[],records:[],counterOn:false,t:0,hits:0,preds:{},firstTry:{},rule:'',ruleOK:false,cleared:false,mainDone:false,builds:0}}
-let S=fresh();try{const o=JSON.parse(localStorage.getItem(SAVE_KEY));if(o&&o.v===1)S=Object.assign(fresh(),o)}catch(e){}
-function save(){try{localStorage.setItem(SAVE_KEY,JSON.stringify(S))}catch(e){}}
-let MUTE=false;try{MUTE=JSON.parse(localStorage.getItem('rika-zukan:profile:v1')||'{}').mute===true}catch(e){}
-let AC=null;function ac(){if(!AC){try{AC=new(window.AudioContext||window.webkitAudioContext)()}catch(e){}}if(AC&&AC.state==='suspended')AC.resume();return AC}
-function tone(f,d,type,vol,when,slide){if(MUTE)return;const a=ac();if(!a)return;const t=a.currentTime+(when||0);const o=a.createOscillator(),g=a.createGain();o.type=type||'sine';o.frequency.setValueAtTime(f,t);if(slide)o.frequency.exponentialRampToValueAtTime(slide,t+d);g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol||.12,t+.008);g.gain.exponentialRampToValueAtTime(.0008,t+d);o.connect(g);g.connect(a.destination);o.start(t);o.stop(t+d+.02)}
-function knock(when,f){tone(f||420,.07,'triangle',.16,when);tone((f||420)*2.7,.03,'sine',.05,when)}
-const sfx={tap:()=>knock(0,520),pop:()=>{knock(0,380);knock(.05,300);knock(.1,460)},put:()=>knock(0,640),back:()=>knock(0,300),
- ok:()=>{[523,659,784,1047].forEach((f,i)=>tone(f,.22,'triangle',.1,i*.08));tone(1568,.5,'sine',.05,.34)},
- page:()=>{tone(880,.1,'sine',.1);tone(1320,.25,'sine',.08,.08);tone(1760,.35,'triangle',.05,.18)},
- no:()=>{tone(200,.15,'triangle',.12);tone(160,.2,'triangle',.1,.08)},
- open:()=>{knock(0,260);tone(700,.3,'sine',.06,.08,1400)},
- counter:()=>{for(let i=0;i<8;i++)tone(400+i*90,.05,'square',.03,i*.04)}};
-function setMute(m){MUTE=m;try{const p=JSON.parse(localStorage.getItem('rika-zukan:profile:v1')||'{}');p.mute=m;localStorage.setItem('rika-zukan:profile:v1',JSON.stringify(p))}catch(e){}$('bMute').textContent=m?'🔇':'🔊';$('bMute1').textContent=m?'🔇 音：オフ':'🔊 音：オン'}
-function earn(n,why,x,y){try{return window.Zukan&&Zukan.earn?Zukan.earn(n,why,{koma:KOMA,x,y}):0}catch(e){return 0}}
+/* ================= 画面の大きさ ================= */
+var cv=$('cv'),cx=cv.getContext('2d'),DPR=1,W=0,H=0,PORT=false,L={hh:60};
+function layout(){DPR=Math.min(2,window.devicePixelRatio||1);W=innerWidth;H=innerHeight;cv.width=Math.round(W*DPR);cv.height=Math.round(H*DPR);cx.setTransform(DPR,0,0,DPR,0,0);
+  PORT=H>W*1.02;L.hh=PORT?clamp(H*.068,54,70):clamp(H*.07,50,66);document.documentElement.style.setProperty('--hh',L.hh+'px');
+  if(PORT){L.TA={x:W*.035,y:L.hh+46,w:W*.93,h:H*.26};L.TB={x:W*.035,y:H*.655,w:W*.93,h:H*.265};L.floor=H-10}
+  else{L.TB={x:W*.025,y:H*.40,w:W*.31,h:H*.5};L.TA={x:W*.665,y:H*.34,w:W*.31,h:H*.56};L.floor=H-10}
+  bgC=null;spriteC={};if(RUN)placeAll();placeTools()}
+function placeTools(){var t=$('tools');if(PORT){t.style.left='';t.style.right='8px';t.style.top=(L.TA.y+L.TA.h+8)+'px';t.style.bottom='';t.style.transform=''}
+  else{t.style.right='';t.style.left='50%';t.style.transform='translateX(-50%)';t.style.top='';t.style.bottom='18px'}}
 
-/* ============ 表示の部品 ============ */
-function aHTML(e,cls,id){const E=EL[e];return `<span class="a ${cls||''}" ${id!=null?`data-a="${id}"`:''} style="--c:${E[1]};--d:${E[2]};--t:${E[3]}">${e}</span>`}
-function isMetalLump(atoms){const id=identify(atoms);return !!(id&&(SUB[id].el||SUB[id].ratio))}
-function isWater(atoms){return atoms.length===3&&atoms.filter(e=>e==='H').length===2&&atoms.includes('O')}
-function zOf(cls){return cls==='xs'?18:cls==='sm'?24:44}
-function molHTML(atoms,cls){if(isWater(atoms))return `<span class="bentw" style="--z:${zOf(cls)}px">${['H','O','H'].map(e=>aHTML(e,cls)).join('')}</span>`;if(atoms.length===1)return aHTML(atoms[0],cls);return `<span class="mol ${cls==='xs'||cls==='sm'?'s':''} ${isMetalLump(atoms)?'nob':''}">${atoms.map(e=>aHTML(e,cls)).join('')}</span>`}
-function subAtoms(k){const s=SUB[k];if(s.ex){const r=[];for(const e of ORDER)for(let i=0;i<(s.ex[e]||0);i++)r.push(e);if(k==='H2O')return['H','O','H'];if(k==='CO2')return['O','C','O'];return r}
- if(s.ratio){const r=[];for(const e of ORDER)for(let i=0;i<s.ratio[e]||0;i++)r.push(e);return r}return[s.el]}
-function groupsHTML(groups,cls){return `<span class="mols">${groups.map(g=>molHTML(g,cls)).join('<span class="op">＋</span>')}</span>`}
-function show(id){['title','game','rule','test'].forEach(x=>$(x).classList.toggle('hidden',x!==id));document.querySelectorAll('.scr').forEach(s=>s.scrollTop=0)}
-function overlay(h){$('ovc').innerHTML=h;$('ov').classList.remove('hidden');$('ovc').scrollTop=0}
-function closeOv(){$('ov').classList.add('hidden')}
-function zkBtns(){document.querySelectorAll('.zk').forEach(b=>b.classList.toggle('hidden',!(window.Zukan&&Zukan.openBook)))}
-function setMsg(h,col){$('msg').innerHTML=h;$('msg').style.color=col||'var(--ink)'}
+/* ================= 折り紙の原子玉（スプライト） ================= */
+var spriteC={};
+function shade(hex,k){var n=parseInt(hex.slice(1),16),r=n>>16,g=(n>>8)&255,b=n&255,t=k>0?255:0,a=Math.abs(k);
+  return 'rgb('+Math.round(r+(t-r)*a)+','+Math.round(g+(t-g)*a)+','+Math.round(b+(t-b)*a)+')'}
+function atomSprite(el,r){r=Math.round(r*2)/2;var key=el+'@'+r+'@'+DPR;if(spriteC[key])return spriteC[key];
+  var pad=4,s=Math.ceil((r+pad)*2),c=document.createElement('canvas');c.width=s*DPR;c.height=s*DPR;var g=c.getContext('2d');g.scale(DPR,DPR);
+  drawOrigami(g,s/2,s/2,r,el);spriteC[key]={c:c,s:s};return spriteC[key]}
+function drawOrigami(g,x,y,r,el){var E=EL[el],base=E.c,n=8,i,o=[],inn=[],a0=Math.PI/8,LA=-2.3;
+  for(i=0;i<n;i++){var a=a0+i*Math.PI*2/n;o.push([x+Math.cos(a)*r,y+Math.sin(a)*r]);var b=a0+(i+.5)*Math.PI*2/n;inn.push([x+Math.cos(b)*r*.56,y+Math.sin(b)*r*.56])}
+  /* 紙の厚み（下に一枚ずらした影） */
+  g.beginPath();o.forEach(function(p,i){var q=[p[0]+1.4,p[1]+2.2];i?g.lineTo(q[0],q[1]):g.moveTo(q[0],q[1])});g.closePath();g.fillStyle=shade(base,-.5);g.fill();
+  function tri(p1,p2,p3,k){g.beginPath();g.moveTo(p1[0],p1[1]);g.lineTo(p2[0],p2[1]);g.lineTo(p3[0],p3[1]);g.closePath();g.fillStyle=k>0?shade(base,k*.55):shade(base,k*.42);g.fill()}
+  /* 外側の面（外周の辺と内側の頂点でできる三角） */
+  for(i=0;i<n;i++){var p1=o[i],p2=o[(i+1)%n],q=inn[i],am=Math.atan2((p1[1]+p2[1])/2-y,(p1[0]+p2[0])/2-x);
+    var k=Math.cos(am-LA);tri(p1,p2,q,k*.5-.06)}
+  for(i=0;i<n;i++){var q1=inn[i],q2=inn[(i+n-1)%n],pp=o[i],am2=Math.atan2(pp[1]-y,pp[0]-x);tri(q2,q1,pp,Math.cos(am2-LA)*.42+.02)}
+  /* 内側の面（中心へ向かう三角） */
+  for(i=0;i<n;i++){var s1=inn[i],s2=inn[(i+1)%n],am3=Math.atan2((s1[1]+s2[1])/2-y,(s1[0]+s2[0])/2-x);tri(s1,s2,[x,y],Math.cos(am3-LA)*.3+.12)}
+  /* 折り目の線 */
+  g.lineWidth=.8;g.strokeStyle='rgba(255,255,255,.38)';g.beginPath();for(i=0;i<n;i++){g.moveTo(inn[i][0],inn[i][1]);g.lineTo(o[i][0],o[i][1]);g.moveTo(inn[i][0],inn[i][1]);g.lineTo(o[(i+1)%n][0],o[(i+1)%n][1])}g.stroke();
+  g.beginPath();o.forEach(function(p,i){i?g.lineTo(p[0],p[1]):g.moveTo(p[0],p[1])});g.closePath();g.lineWidth=1.2;g.strokeStyle='rgba(46,46,46,.55)';g.stroke();
+  /* 元素記号（中央に小さな紙の円を貼る） */
+  var fs=el.length>1?r*.74:r*.9;g.font='900 '+fs+'px "M PLUS 1",sans-serif';g.textAlign='center';g.textBaseline='middle';
+  g.fillStyle=E.t;g.fillText(el,x,y+r*.05)}
+function drawAtom(el,x,y,r,rot,alpha){var sp=atomSprite(el,r);cx.save();cx.translate(x,y);if(rot)cx.rotate(rot);if(alpha!=null)cx.globalAlpha=alpha;cx.drawImage(sp.c,-sp.s/2,-sp.s/2,sp.s,sp.s);cx.restore()}
+/* DOM用の画像 */
+var urlC={};
+function atomURL(el){if(urlC[el])return urlC[el];var r=40,s=(r+4)*2,c=document.createElement('canvas');c.width=c.height=s;drawOrigami(c.getContext('2d'),s/2,s/2,r,el);return urlC[el]=c.toDataURL()}
+function molHTML(k,d){d=d||30;var dm=spDim(k);var h='<span class="mol" style="width:'+(dm.w*d+d*.1)+'px;height:'+(dm.h*d+d*.1)+'px">';
+  SP[k].a.forEach(function(p){h+='<img alt="'+p[0]+'" src="'+atomURL(p[0])+'" style="left:'+(p[1]*d-d*.05)+'px;top:'+(p[2]*d-d*.05)+'px;width:'+(d*1.2)+'px;height:'+(d*1.2)+'px">'});return h+'</span>'}
+function cntHTML(o){return ELORD.filter(function(e){return o[e]}).map(function(e){return '<span class="cnt"><img src="'+atomURL(e)+'" alt="">'+e+' '+o[e]+'</span>'}).join('')}
 
-/* ============ 演出（紙ふぶき・木くず） ============ */
-const fx=$('fx'),fc=fx.getContext('2d');let P=[];
-function fxSize(){const d=Math.min(2,devicePixelRatio||1);fx.width=innerWidth*d;fx.height=innerHeight*d;fc.setTransform(d,0,0,d,0,0)}
-fxSize();addEventListener('resize',fxSize);
-function burst(x,y,cols,n){n=RM?Math.min(6,n):n;for(let i=0;i<n;i++){const a=Math.random()*6.28,v=2+Math.random()*6;P.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v-3,c:cols[i%cols.length],t:0,s:3+Math.random()*5,r:Math.random()*6})}}
-function floatTxt(x,y,s,col){P.push({x,y,txt:s,t:0,c:col||'#3a2e22'})}
-(function loop(){requestAnimationFrame(loop);fc.clearRect(0,0,innerWidth,innerHeight);
- for(let i=P.length-1;i>=0;i--){const p=P[i];p.t++;
-  if(p.txt){fc.globalAlpha=Math.max(0,1-p.t/70);fc.font="800 22px 'M PLUS Rounded 1c',sans-serif";fc.textAlign='center';fc.lineWidth=5;fc.strokeStyle='#fff';fc.strokeText(p.txt,p.x,p.y-p.t*.7);fc.fillStyle=p.c;fc.fillText(p.txt,p.x,p.y-p.t*.7);if(p.t>70)P.splice(i,1);continue}
-  p.x+=p.vx;p.y+=p.vy;p.vy+=.22;p.r+=.1;fc.globalAlpha=Math.max(0,1-p.t/60);fc.save();fc.translate(p.x,p.y);fc.rotate(p.r);fc.fillStyle=p.c;fc.fillRect(-p.s/2,-p.s/4,p.s,p.s/2);fc.restore();if(p.t>60)P.splice(i,1)}
- fc.globalAlpha=1})();
-function rectC(el){const r=el.getBoundingClientRect();return[r.left+r.width/2,r.top+r.height/2]}
+/* ================= 音（紙と琴） ================= */
+var AU={ctx:null,mute:false,nb:null,
+  init:function(){if(this.ctx)return;try{this.ctx=new (window.AudioContext||window.webkitAudioContext)();var n=this.ctx.sampleRate*.5,b=this.ctx.createBuffer(1,n,this.ctx.sampleRate),d=b.getChannelData(0);for(var i=0;i<n;i++)d[i]=Math.random()*2-1;this.nb=b}catch(e){}},
+  noise:function(f,q,dur,vol,dl){if(this.mute||!this.ctx)return;var c=this.ctx,t=c.currentTime+(dl||0),s=c.createBufferSource(),bp=c.createBiquadFilter(),g=c.createGain();s.buffer=this.nb;bp.type='bandpass';bp.frequency.value=f;bp.Q.value=q;
+    g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol,t+.01);g.gain.exponentialRampToValueAtTime(.001,t+dur);s.connect(bp);bp.connect(g);g.connect(c.destination);s.start(t,Math.random()*.3);s.stop(t+dur+.05)},
+  tone:function(type,f1,f2,dur,vol,dl){if(this.mute||!this.ctx)return;var c=this.ctx,t=c.currentTime+(dl||0),o=c.createOscillator(),g=c.createGain();o.type=type;o.frequency.setValueAtTime(f1,t);if(f2)o.frequency.exponentialRampToValueAtTime(f2,t+dur);
+    g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol,t+.006);g.gain.exponentialRampToValueAtTime(.001,t+dur);o.connect(g);g.connect(c.destination);o.start(t);o.stop(t+dur+.05)}};
+var PENT=[523.25,587.33,659.25,783.99,880,1046.5,1174.66,1318.5,1568,1760];
+var SFX={
+  unfold:function(){AU.noise(2600,.8,.22,.22);AU.noise(4200,1.2,.16,.12,.07)},
+  toss:function(){AU.noise(3400,2,.08,.1);AU.tone('sine',520,780,.09,.05)},
+  catch:function(n){var f=PENT[Math.min(PENT.length-1,n)];AU.noise(5200,3,.05,.2);AU.tone('triangle',f,0,.35,.11)},
+  fold:function(){[0,1,2,3].forEach(function(i){AU.tone('triangle',PENT[i*2]||1318,0,.5,.08,i*.07)});AU.noise(2400,.7,.3,.15,.02)},
+  drop:function(){AU.tone('sine',170,70,.18,.18);AU.noise(900,1,.12,.12)},
+  wrong:function(){AU.tone('square',220,180,.1,.05);AU.tone('square',180,150,.12,.05,.1)},
+  done:function(){[523.25,659.25,783.99,1046.5,1318.5].forEach(function(f,i){AU.tone('triangle',f,0,.7,.1,i*.09)});AU.noise(3000,.6,.5,.12,.3)},
+  tick:function(){AU.noise(4800,4,.03,.1)}};
 
-/* ============ 工房の状態 ============ */
-let W=null;let AID=1;
-function startPack(i){
- const p=PACKS[i];
- W={i,p,bench:p.groups.map(g=>({id:AID++,bonded:g.length>1,atoms:g.map(e=>({id:AID++,e}))})),plates:[[],[],[],[]],active:0,found:[],fails:0,pred:null,predDone:false,step:0};
- S.pack=i;S.started=true;save();
-}
-function resetPack(){const p=W.p;W.bench=p.groups.map(g=>({id:AID++,bonded:g.length>1,atoms:g.map(e=>({id:AID++,e}))}));W.plates=[[],[],[],[]];W.active=0}
-function allAtoms(){const r=[];W.bench.forEach(g=>g.atoms.forEach(a=>r.push(a.e)));W.plates.forEach(pl=>pl.forEach(a=>r.push(a.e)));return r}
+/* ================= 状態 ================= */
+var G=null,state='title',NAME=window.PLAYER_NAME||'',RUN=null;
+function fresh(){return {v:1,name:'',stage:0,ledger:[],made:{},st:{caught:0,drops:0,wrongs:0,best:0,time:0,pred:0,clean:0},rule:'',ruleOK:0,done:0,wrote:0}}
+function saveGame(){if(!G||TEST)return;try{localStorage.setItem(SAVE,JSON.stringify(G))}catch(e){}}
+function loadGame(){try{var o=JSON.parse(localStorage.getItem(SAVE));if(o&&o.v===1&&typeof o.stage==='number')return o}catch(e){}return null}
 
-/* FLIP: 原子が動いたように見せる */
-function snapRects(){const m={};document.querySelectorAll('#game [data-a]').forEach(el=>{m[el.dataset.a]=el.getBoundingClientRect()});return m}
-function flip(before){if(RM)return;document.querySelectorAll('#game [data-a]').forEach(el=>{const b=before[el.dataset.a];if(!b)return;const a=el.getBoundingClientRect();const dx=b.left-a.left,dy=b.top-a.top;if(Math.abs(dx)+Math.abs(dy)<2)return;
- el.style.transition='none';el.style.transform=`translate(${dx}px,${dy}px)`;requestAnimationFrame(()=>{requestAnimationFrame(()=>{el.style.transition='transform .28s cubic-bezier(.3,1.4,.5,1)';el.style.transform=''})})})}
+/* 1件の注文の遊び場 */
+function newRun(i){var S=ST[i];var R={i:i,S:S,box:[],atoms:[],combo:0,drops:0,wrongs:0,caught:0,phase:'order',pred:null,predOK:false,t:0,autoT:S.auto||0,msgKey:'',idle:0,remolds:0,firstDrop:!(G&&G.st.drops)};
+  S.src.forEach(function(s){for(var n=0;n<s[1];n++){var b=mkBox('src',s[0]);b.sk.forEach(function(k){var a={el:k.el,x:0,y:0,vx:0,vy:0,st:'in',box:b,rot:0,vr:0,nc:0,sc:1};k.atom=a;R.atoms.push(a)});R.box.push(b)}});
+  return R}
+function mkBox(side,k){return {side:side,k:k,x:0,y:0,w:0,h:0,sk:SP[k].a.map(function(p){return {el:p[0],dx:p[1],dy:p[2],atom:null}}),opened:false,done:false,pop:0,shake:0}}
+function srcBoxes(){return RUN.box.filter(function(b){return b.side==='src'})}
+function dstBoxes(){return RUN.box.filter(function(b){return b.side==='dst'})}
+function full(b){return b.sk.every(function(k){return k.atom})}
+function empty(b){return b.sk.every(function(k){return !k.atom})}
 
-function render(){
- const before=snapRects();
- const p=W.p;
- $('pkName').textContent=`パック ${W.i+1}／${PACKS.length}　${p.name}`;
- $('bookN').textContent=`${S.book.length}/${BOOK.length}`;
- // レシピのページ（この周で埋めたいもの）
- $('pages').innerHTML=p.pages.map(k=>{const got=W.found.includes(k);const s=SUB[k];const n=subAtoms(k).length;
-  return `<div class="page ${got?'got':''}"><div class="sil">${got?molHTML(subAtoms(k),'xs'):'<i></i>'.repeat(Math.min(n,3))}</div>${got?esc(s.n)+' '+s.f:(p.mystery?'？？？':'？？？')}<div class="small" style="font-size:11px;font-weight:700">${got?'✓ レシピ帳にのった':esc(s.hint||'')}</div></div>`}).join('')+
-  (p.tool?`<div class="page" style="border-style:solid;background:#fff2e0"><div class="sil" style="font-size:20px">${p.tool.slice(0,2)}</div>${esc(p.tool.slice(2))}<div class="small" style="font-size:11px">分子をタップ＝${esc(p.tool.slice(2))}でばらす</div></div>`:'');
- // 作業台
- const bench=$('bench');bench.innerHTML='<span class="lbl">作業台（原子は捨てられない）</span>';
- W.bench.forEach(g=>{const b=document.createElement('button');b.className='grp'+(g.bonded?' bonded':'')+(g.bonded&&isMetalLump(g.atoms.map(a=>a.e))?' nob':'')+(W.i===0&&W.step===0&&g.bonded?' hl':'');const wat=g.bonded&&isWater(g.atoms.map(a=>a.e));
-  if(wat){const hs=g.atoms.filter(a=>a.e==='H'),o=g.atoms.find(a=>a.e==='O');b.classList.add('bw');b.innerHTML=`<span class="bentw" style="--z:44px">${[hs[0],o,hs[1]].map(a=>aHTML(a.e,'',a.id)).join('')}</span>`}
-  else b.innerHTML=g.atoms.map(a=>aHTML(a.e,'',a.id)).join('');
-  b.setAttribute('aria-label',g.atoms.map(a=>EL[a.e][0]).join('・'));
-  b.onclick=ev=>{ac();if(g.bonded)splitGroup(g,b);else toPlate(g)};bench.appendChild(b)});
- if(!W.bench.length)bench.insertAdjacentHTML('beforeend','<div class="small" style="margin-top:40px">（作業台はからっぽ）</div>');
- // 皿
- const pl=$('plates');pl.innerHTML='';
- W.plates.forEach((atoms,k)=>{const d=document.createElement('div');const id=identify(atoms.map(a=>a.e));
-  d.className='plate'+(W.active===k?' act':'')+(atoms.length?(id?' ok':' ng'):'');
-  const inner=id==='H2O'?(()=>{const hs=atoms.filter(a=>a.e==='H'),o=atoms.find(a=>a.e==='O');return `<span class="bentw" style="--z:38px">${[hs[0],o,hs[1]].map(a=>aHTML(a.e,'',a.id)).join('')}</span>`})():atoms.map(a=>aHTML(a.e,'',a.id)).join('');
-  d.innerHTML=`<span class="tag">皿${'ABCD'[k]}</span>`+inner+`<div class="pl">${atoms.length?(id?`${SUB[id].n}（${formulaOf(atoms.map(a=>a.e))}）`:'？ '+formulaOf(atoms.map(a=>a.e))):(W.active===k?'← ここに入る':'タップで選ぶ')}</div>`;
-  d.onclick=ev=>{ac();const t=ev.target.closest('[data-a]');if(t){backToBench(k,+t.dataset.a)}else{W.active=k;sfx.tap();render()}};
-  pl.appendChild(d)});
- renderCounter();
- flip(before);
-}
-function renderCounter(){
- const c=$('counter');if(!S.counterOn){c.classList.add('hidden');return}
- c.classList.remove('hidden');
- const pre=countOf(W.p.groups.flat()),now=countOf(allAtoms());
- const els=ORDER.filter(e=>pre[e]||now[e]);
- const preSubs=packSubs(W.p),nowSubs=W.plates.filter(x=>x.length).map(x=>identify(x.map(a=>a.e))).filter(Boolean);
- const benchLoose=W.bench.filter(g=>g.bonded).map(g=>identify(g.atoms.map(a=>a.e)));
- const nameList=a=>{const m={};a.forEach(k=>{if(k)m[SUB[k].n]=(m[SUB[k].n]||0)+1});return Object.keys(m).map(k=>k+(m[k]>1?'×'+m[k]:'')).join('・')||'―'};
- c.innerHTML=`<table><tr><th class="nm">🔢 原子</th>${els.map(e=>`<th>${aHTML(e,'xs')}</th>`).join('')}</tr>
-  <tr><td class="nm">反応前</td>${els.map(e=>`<td>${pre[e]||0}</td>`).join('')}</tr>
-  <tr><td class="nm">いま</td>${els.map(e=>`<td>${now[e]||0}</td>`).join('')}</tr></table>
-  <div class="sub" style="margin-top:4px">反応前：${esc(nameList(preSubs))}　／　いま：${esc(nameList(nowSubs.concat(benchLoose)))}</div>`;
-}
+/* 箱の並べ方（枡の中に、行を折り返して詰める） */
+function placeAll(){if(!RUN)return;var R0=PORT?clamp(Math.min(W,H)*.052,15,30):clamp(Math.min(W*.03,H*.05),16,32),r=R0;
+  for(var tries=0;tries<14;tries++){if(pack(srcBoxes(),L.TB,r,true)&&pack(dstBoxes(),L.TA,r,true))break;r*=.92}
+  RUN.r=r;pack(srcBoxes(),L.TB,r,false);pack(dstBoxes(),L.TA,r,false);
+  RUN.atoms.forEach(function(a){if(a.st==='in'){var p=skPos(a.box,a.box.sk.indexOf(skOf(a)));a.x=p[0];a.y=p[1]}})}
+function skOf(a){for(var i=0;i<a.box.sk.length;i++)if(a.box.sk[i].atom===a)return a.box.sk[i];return null}
+function pack(list,T,r,test){var d=r*2,pad=r*.55,lab=Math.max(15,r*.62),band=26,ix=T.x+14,iw=T.w-28,iy=T.y+14,ih=T.h-28-band;
+  var x=ix,y=iy,rowH=0,rows=[],cur=[];
+  for(var i=0;i<list.length;i++){var b=list[i],dm=spDim(b.k),bw=dm.w*d+pad*2,bh=dm.h*d+pad*2+lab;
+    if(x+bw>ix+iw+.5&&cur.length){rows.push({it:cur,h:rowH,w:x-ix});cur=[];x=ix;y+=rowH+6;rowH=0}
+    if(bw>iw)return false;cur.push({b:b,w:bw,h:bh});x+=bw+8;rowH=Math.max(rowH,bh)}
+  if(cur.length)rows.push({it:cur,h:rowH,w:x-ix});var tot=0;rows.forEach(function(rw){tot+=rw.h+6});
+  if(tot-6>ih+.5)return false;if(test)return true;
+  var yy=iy+Math.max(0,(ih-(tot-6))/2);rows.forEach(function(rw){var xx=ix+Math.max(0,(iw-(rw.w-8))/2);rw.it.forEach(function(o){o.b.x=xx;o.b.y=yy+(rw.h-o.h)/2;o.b.w=o.w;o.b.h=o.h;o.b.pad=pad;o.b.r=r;o.b.lab=lab;xx+=o.w+8});yy+=rw.h+6});return true}
+function skPos(b,i){var k=b.sk[i],d=b.r*2;return [b.x+b.pad+k.dx*d+b.r,b.y+b.pad+k.dy*d+b.r]}
 
-/* ============ 操作 ============ */
-function splitGroup(g,btn){
- const idx=W.bench.indexOf(g);if(idx<0)return;
- const [x,y]=rectC(btn);burst(x,y,['#e8cf9f','#b88c55','#fff'],14);
- sfx.pop();
- const loose=g.atoms.map(a=>({id:AID++,bonded:false,atoms:[a]}));
- W.bench.splice(idx,1,...loose);
- if(W.i===0&&W.step===0){W.step=1;setMsg('ばらせた！ 次は<b>原子をタップ</b>。赤いわくの皿に入るよ')}
- else setMsg(W.p.tool?`${W.p.tool.slice(2)}で、つながりがほどけた！`:'つながりをはずした');
- render();
-}
-function toPlate(g){
- const idx=W.bench.indexOf(g);if(idx<0)return;
- const a=g.atoms[0];W.bench.splice(idx,1);W.plates[W.active].push(a);sfx.put();
- if(W.i===0&&W.step===1){W.step=2;setMsg('皿の上で原子がつながる。<b>全部の原子を皿に入れたら「できあがり！」</b>')}
- const id=identify(W.plates[W.active].map(x=>x.e));
- render();
- if(id){const el=document.querySelectorAll('.plate')[W.active];const[x,y]=rectC(el);floatTxt(x,y-20,SUB[id].n+'！',id&&W.p.pages.includes(id)?'#4f8a3c':'#7a6a57');if(W.p.pages.includes(id))sfx.page()}
-}
-function backToBench(k,aid){
- const i=W.plates[k].findIndex(a=>a.id===aid);if(i<0)return;const a=W.plates[k].splice(i,1)[0];
- W.bench.push({id:AID++,bonded:false,atoms:[a]});W.active=k;sfx.back();render();
-}
-function check(){
- ac();
- if(W.bench.length){
-  const left=countOf(W.bench.flatMap(g=>g.atoms.map(a=>a.e)));
-  const bondedLeft=W.bench.some(g=>g.bonded);
-  if(bondedLeft&&W.bench.every(g=>g.bonded)&&W.plates.every(p=>!p.length)){sfx.no();W.fails++;setMsg('まだ何も組み替えていない。分子をタップしてばらそう','var(--red)');return}
-  sfx.no();W.fails++;
-  setMsg(`作業台に ${Object.keys(left).map(e=>EL[e][0]+'原子×'+left[e]).join('・')} が残っている。<br>この工房では原子を捨てられない！ どれかの皿に入れよう`,'var(--red)');shakeEl($('bench'));return}
- const used=W.plates.map((p,k)=>({k,atoms:p.map(a=>a.e)})).filter(x=>x.atoms.length);
- for(const u of used){const id=identify(u.atoms);if(!id){sfx.no();W.fails++;setMsg(`皿${'ABCD'[u.k]}：${whyNot(u.atoms)}`,'var(--red)');shakeEl(document.querySelectorAll('.plate')[u.k]);return}}
- // 成功：この組み替えを記録する
- const made=used.map(u=>identify(u.atoms));
- const pre=packSubs(W.p);
- const fresh=made.filter(k=>!pre.includes(k));
- if(!fresh.length){sfx.no();W.fails++;setMsg('パックのときと同じ物質にもどっただけ。<b>ちがう組合せ</b>をさがそう','var(--red)');return}
- success(used,made,fresh);
-}
-function shakeEl(el){if(RM||!el)return;el.animate([{transform:'translateX(0)'},{transform:'translateX(-8px)'},{transform:'translateX(8px)'},{transform:'translateX(0)'}],{duration:300})}
-function success(used,made,fresh){
- S.builds++;
- const preCount=countOf(W.p.groups.flat()),nowCount=countOf(used.flatMap(u=>u.atoms));
- const rec={pack:W.i,before:packSubs(W.p),after:made,pre:preCount,post:nowCount,counter:S.counterOn};
- S.records.push(rec);if(S.records.length>40)S.records.shift();
- const newPages=[];
- fresh.forEach(k=>{if(W.p.pages.includes(k)&&!W.found.includes(k))W.found.push(k);if(BOOK.includes(k)&&!S.book.includes(k)){S.book.push(k);newPages.push(k)}});
- save();
- sfx.ok();const[x,y]=rectC($('plates'));burst(x,y,['#d8483b','#e8b92e','#4f8a3c','#3c6c9a','#f6efe2'],RM?8:50);
- // 予想の開封
- let predHTML='';
- const pr=W.p.predict;
- if(pr&&W.pred!=null&&!W.predDone&&made.includes(pr.sub)){
-  const rs=SUB[pr.sub].ratio,unit=rs?Object.values(rs).reduce((a,b)=>a+b,0):0;
-  const n=used.filter(u=>identify(u.atoms)===pr.sub).reduce((s,u)=>s+(rs?u.atoms.length/unit:1),0);
-  if(n>=pr.max){W.predDone=true;const hit=W.pred===pr.max;let g=0;if(hit){S.hits++;if(!S.preds[W.i]){S.preds[W.i]=1;g=earn(15,'hit',innerWidth/2,innerHeight/3)}}else S.preds[W.i]=S.preds[W.i]||0;save();
-   predHTML=`<div class="box"><div class="small">封印した予想を開封！</div><div style="font-size:20px;font-weight:800">予想 ${W.pred} ／ 結果 <span style="color:var(--red)">${n}</span></div><div style="font-weight:800;color:${hit?'var(--green)':'var(--sub)'}">${hit?'🎯 的中！'+(g?`　かけら +${g}`:''):(W.pred>pr.max?'原子が足りなくなった。原子は出せない！':'思ったより多く作れた')}</div></div>`}
-  else predHTML=`<div class="box small">${SUB[pr.sub].n}は、あと ${pr.max-n} 個ぶん作れる原子がまだ使われていないかも？（予想はまだ封印中）</div>`;
- }
- const allDone=W.p.pages.every(k=>W.found.includes(k));
- const beforeG=W.p.groups,afterG=used.map(u=>arrange(u.atoms));
- overlay(`<div class="badge">組み替え成功</div><h2>${[...new Set(fresh.map(k=>SUB[k].n))].map(esc).join('と')}ができた！</h2>
-  <div class="box"><div class="small" style="font-weight:800">反応前（パック）</div><div class="eqline">${groupsHTML(beforeG,'sm')}</div><div style="font-size:22px;font-weight:800;color:var(--sub)">↓</div><div class="small" style="font-weight:800">反応後（皿）</div><div class="eqline">${groupsHTML(afterG,'sm')}</div></div>
-  ${newPages.length?`<div style="font-weight:800;color:var(--green)">📒 レシピ帳に新しいページ：${newPages.map(k=>esc(SUB[k].n)).join('・')}</div>`:''}
-  ${predHTML}
-  ${allDone?`<div class="box"><div class="small" style="font-weight:800">化学反応式で書くと</div><div style="font-size:19px;font-weight:800;margin:4px 0">${W.p.eq}</div><div class="small">式の前の大きい数字＝分子などの数　／　小さい数字＝その中の原子の数</div></div>`:''}
-  ${allDone?'<p class="lead"><b>このパックのページが全部うまった！</b></p><button class="btn red wide" id="oNext">つぎのパックへ</button>':
-   `<p class="lead">このパックには、まだ埋まっていないページがある。<br>同じ原子で、組み直してみよう。</p><button class="btn red wide" id="oAgain">🔄 パックに戻して組み直す</button>`}`);
- if(allDone){
-  const first=W.fails===0&&!S.firstTry[W.i];let g=0;if(first){S.firstTry[W.i]=1;g=earn(10,'first-try',innerWidth/2,innerHeight/2)}
-  if(!S.packDone.includes(W.i))S.packDone.push(W.i);save();
-  if(g)$('ovc').insertAdjacentHTML('beforeend',`<div class="small" style="margin-top:6px">✨ 一発でできあがり！ かけら +${g}</div>`);
-  $('oNext').onclick=()=>{sfx.tap();closeOv();if(W.i+1<PACKS.length)openPack(W.i+1);else openRule()};
- }else $('oAgain').onclick=()=>{sfx.tap();closeOv();resetPack();setMsg('パックに戻した。ちがう組合せをためそう');render()};
-}
-function arrange(atoms){const id=identify(atoms);if(id==='H2O')return['H','O','H'];if(id==='CO2')return['O','C','O'];const c=countOf(atoms);const r=[];ORDER.forEach(e=>{for(let i=0;i<(c[e]||0);i++)r.push(e)});
- if(id==='CuO'||id==='MgO'||id==='FeS'){const m=Object.keys(c);const a=[];for(let i=0;i<c[m[0]];i++)a.push(...m);return a}return r}
+/* ================= 描画 ================= */
+var bgC=null,PT=[],FT=[],SHK=0,FL=0,now=0;
+function paperBg(){var c=document.createElement('canvas');c.width=Math.round(W*DPR);c.height=Math.round(H*DPR);var g=c.getContext('2d');g.scale(DPR,DPR);
+  g.fillStyle='#F7F3EA';g.fillRect(0,0,W,H);
+  /* 和紙の繊維 */
+  var n=Math.round(W*H/900);for(var i=0;i<n;i++){var x=Math.random()*W,y=Math.random()*H,a=Math.random()*Math.PI,l=4+Math.random()*16;
+    g.strokeStyle=Math.random()<.5?'rgba(120,100,70,.07)':'rgba(255,255,255,.55)';g.lineWidth=Math.random()*1.1+.3;g.beginPath();g.moveTo(x,y);g.quadraticCurveTo(x+Math.cos(a)*l*.5+rnd(-3,3),y+Math.sin(a)*l*.5+rnd(-3,3),x+Math.cos(a)*l,y+Math.sin(a)*l);g.stroke()}
+  /* 一度ひろげた折り紙の折り筋（大きな山折り・谷折り） */
+  var S=Math.max(W,H);function crease(x1,y1,x2,y2){g.strokeStyle='rgba(120,100,70,.10)';g.lineWidth=1.2;g.beginPath();g.moveTo(x1,y1);g.lineTo(x2,y2);g.stroke();
+    g.strokeStyle='rgba(255,255,255,.7)';g.lineWidth=1;g.beginPath();g.moveTo(x1+1.2,y1+1.2);g.lineTo(x2+1.2,y2+1.2);g.stroke()}
+  crease(0,0,S,S);crease(W,0,W-S,S);crease(W/2,0,W/2,H);crease(0,H/2,W,H/2);crease(W/2,0,0,H/2);crease(W/2,0,W,H/2);crease(0,H/2,W/2,H);crease(W,H/2,W/2,H);
+  /* 面ごとのわずかな陰影 */
+  g.fillStyle='rgba(120,100,70,.035)';g.beginPath();g.moveTo(W/2,0);g.lineTo(W,H/2);g.lineTo(W,0);g.closePath();g.fill();g.beginPath();g.moveTo(0,H/2);g.lineTo(W/2,H);g.lineTo(0,H);g.closePath();g.fill();
+  /* 色紙の三角旗（工房の飾り） */
+  var y0=L.hh+(PORT?16:14);var cols=['#E4572E','#2E2E2E','#EAD23C','#2549C9','#C8773C','#2FA36B','#B9C6D4'],step=PORT?34:44;
+  g.strokeStyle='rgba(46,46,46,.5)';g.lineWidth=1;g.beginPath();g.moveTo(0,y0);for(var xx=0;xx<=W+step;xx+=step)g.quadraticCurveTo(xx-step/2,y0+6,xx,y0);g.stroke();
+  for(xx=step/2,i=0;xx<W;xx+=step,i++){var cl=cols[i%cols.length],yy=y0+3,w=step*.36,h=step*.55;
+    g.fillStyle=cl;g.beginPath();g.moveTo(xx-w,yy);g.lineTo(xx+w,yy);g.lineTo(xx,yy+h);g.closePath();g.fill();
+    g.fillStyle='rgba(0,0,0,.18)';g.beginPath();g.moveTo(xx,yy);g.lineTo(xx+w,yy);g.lineTo(xx,yy+h);g.closePath();g.fill()}
+  /* 遠景：折り紙の山（山折りの面は明るく、谷側は暗く） */
+  function hills(base,amp,col,step,ph){var pts=[],i=0;for(var x=-step+ph;x<=W+step;x+=step/2,i++)pts.push([x,i%2?base-amp*(.55+.45*Math.abs(Math.sin(x*.013+ph))):base-amp*.12]);
+    for(i=1;i<pts.length-1;i+=2){var a=pts[i-1],pk=pts[i],c=pts[i+1];g.fillStyle=shade(col,.28);g.beginPath();g.moveTo(a[0],a[1]);g.lineTo(pk[0],pk[1]);g.lineTo(pk[0],L.floor);g.lineTo(a[0],L.floor);g.closePath();g.fill();
+      g.fillStyle=shade(col,-.04);g.beginPath();g.moveTo(pk[0],pk[1]);g.lineTo(c[0],c[1]);g.lineTo(c[0],L.floor);g.lineTo(pk[0],L.floor);g.closePath();g.fill();
+      g.strokeStyle='rgba(255,255,255,.5)';g.lineWidth=1;g.beginPath();g.moveTo(pk[0],pk[1]);g.lineTo(pk[0],L.floor);g.stroke()}}
+  hills(L.floor-H*.02,H*(PORT?.2:.3),'#E6DBC6',PORT?W*.5:W*.26,W*.07);hills(L.floor,H*(PORT?.12:.17),'#DDCFB6',PORT?W*.36:W*.17,W*.02);
+  /* 糸で吊った折り鶴 */
+  var cr=PORT?[[W*.5,L.hh+H*.37,.42,0]]:[[W*.5,H*.2,.62,0],[W*.42,H*.33,.4,1],[W*.585,H*.3,.36,0]];
+  cr.forEach(function(q){g.strokeStyle='rgba(46,46,46,.3)';g.lineWidth=1;g.beginPath();g.moveTo(q[0],y0+4);g.lineTo(q[0],q[1]-30*q[2]);g.stroke();crane(g,q[0],q[1],q[2],q[3])});
+  /* 床（畳の縁のような墨の帯） */
+  g.fillStyle='rgba(46,46,46,.08)';g.fillRect(0,L.floor,W,H-L.floor);g.fillStyle='#2E2E2E';g.fillRect(0,L.floor,W,2);
+  return c}
+function drawBg(){if(!bgC)bgC=paperBg();cx.drawImage(bgC,0,0,W,H)}
+/* 枡（紙の箱）の台 */
+function drawMasu(T,label,sub,col){var x=T.x,y=T.y,w=T.w,h=T.h,e=Math.min(16,w*.05);
+  cx.fillStyle='rgba(46,46,46,.12)';cx.fillRect(x+6,y+9,w,h);
+  cx.fillStyle='#EFE7D6';cx.fillRect(x,y,w,h);
+  var face=function(pts,c){cx.fillStyle=c;cx.beginPath();pts.forEach(function(p,i){i?cx.lineTo(p[0],p[1]):cx.moveTo(p[0],p[1])});cx.closePath();cx.fill()};
+  face([[x,y],[x+w,y],[x+w-e,y+e],[x+e,y+e]],'#fbf6ec');face([[x,y],[x+e,y+e],[x+e,y+h-e],[x,y+h]],'#f1e9d9');
+  face([[x+w,y],[x+w,y+h],[x+w-e,y+h-e],[x+w-e,y+e]],'#ddd2bd');face([[x,y+h],[x+e,y+h-e],[x+w-e,y+h-e],[x+w,y+h]],'#d3c6ae');
+  cx.strokeStyle='rgba(46,46,46,.35)';cx.lineWidth=1;cx.strokeRect(x+.5,y+.5,w-1,h-1);cx.strokeRect(x+e+.5,y+e+.5,w-2*e-1,h-2*e-1);
+  /* 前の帯 */
+  var bh=26;cx.fillStyle=col;cx.fillRect(x-4,y+h-bh+4,w+8,bh);cx.fillStyle='rgba(255,255,255,.12)';cx.beginPath();cx.moveTo(x-4,y+h-bh+4);cx.lineTo(x+w*.55,y+h-bh+4);cx.lineTo(x+w*.45,y+h+4);cx.lineTo(x-4,y+h+4);cx.fill();
+  cx.fillStyle='#F7F3EA';cx.font='900 15px "M PLUS 1",sans-serif';cx.textAlign='left';cx.textBaseline='middle';cx.fillText(label,x+8,y+h-bh/2+4);
+  if(sub){cx.font='600 12px "M PLUS 1",sans-serif';cx.textAlign='right';cx.globalAlpha=.8;cx.fillText(sub,x+w-4,y+h-bh/2+4);cx.globalAlpha=1}}
+function boxLabel(b){return SP[b.k].n}
+function drawBox(b){var r=b.r,p=b.pop>0?1+Math.sin(b.pop*Math.PI)*.12:1,sh=b.shake>0?Math.sin(now*60)*b.shake:0;
+  cx.save();var cxm=b.x+b.w/2,cym=b.y+b.h/2;cx.translate(cxm+sh,cym);cx.scale(p,p);cx.translate(-cxm,-cym);
+  var bw=b.w,bh=b.h-b.lab;
+  if(b.side==='dst'){
+    if(b.done){/* 折り上がった見本：色紙の台紙 */cx.fillStyle='rgba(46,46,46,.12)';cx.fillRect(b.x+3,b.y+4,bw,bh);cx.fillStyle='#fffdf7';cx.fillRect(b.x,b.y,bw,bh);
+      cx.fillStyle='#E4572E';cx.beginPath();cx.moveTo(b.x+bw,b.y);cx.lineTo(b.x+bw-12,b.y);cx.lineTo(b.x+bw,b.y+12);cx.fill()}
+    else{/* 型紙：切り取り線 */cx.fillStyle='rgba(255,255,255,.75)';cx.fillRect(b.x,b.y,bw,bh);cx.setLineDash([6,4]);cx.strokeStyle='rgba(46,46,46,.55)';cx.lineWidth=1.4;cx.strokeRect(b.x+.5,b.y+.5,bw-1,bh-1);cx.setLineDash([])}}
+  else if(b.opened){cx.setLineDash([3,4]);cx.strokeStyle='rgba(46,46,46,.4)';cx.lineWidth=1.2;cx.strokeRect(b.x+.5,b.y+.5,bw-1,bh-1);cx.setLineDash([])}
+  /* 原子どうしのつながり（紙のこより） */
+  if(b.side==='src'&&!b.opened||b.done){var ps=b.sk.map(function(k,i){return skPos(b,i)});cx.strokeStyle='rgba(46,46,46,.45)';cx.lineWidth=Math.max(2,r*.16);
+    var prs=b.k==='H2O'?[[1,0],[1,2]]:ps.slice(1).map(function(_,i){return [i,i+1]});prs.forEach(function(q){cx.beginPath();cx.moveTo(ps[q[0]][0],ps[q[0]][1]);cx.lineTo(ps[q[1]][0],ps[q[1]][1]);cx.stroke()})}
+  b.sk.forEach(function(k,i){var q=skPos(b,i);if(k.atom){if(k.atom.st==='in')drawAtom(k.el,q[0],q[1],r,0)}
+    else{var E=EL[k.el];cx.beginPath();cx.arc(q[0],q[1],r*.92,0,Math.PI*2);cx.fillStyle='rgba(46,46,46,.05)';cx.fill();cx.setLineDash([4,3]);cx.lineWidth=2;cx.strokeStyle=E.c==='#EAF6FF'?'#8fb4d6':E.c;cx.stroke();cx.setLineDash([]);
+      cx.font='800 '+Math.round(r*.72)+'px "M PLUS 1",sans-serif';cx.textAlign='center';cx.textBaseline='middle';cx.fillStyle='rgba(46,46,46,.45)';cx.fillText(k.el,q[0],q[1]+1)}});
+  cx.font='700 '+Math.round(clamp(b.lab*.78,11,15))+'px "M PLUS 1",sans-serif';cx.textAlign='center';cx.textBaseline='middle';cx.fillStyle=b.side==='dst'&&!b.done?'#8a7f6d':'#2E2E2E';
+  cx.fillText((b.side==='src'&&b.opened&&!full(b)?'（'+boxLabel(b)+'）':boxLabel(b)),b.x+bw/2,b.y+bh+b.lab/2);
+  cx.restore()}
+/* 原子カウンター（紙札） */
+function tally(fn){var o={};RUN.atoms.forEach(function(a){if(fn(a))o[a.el]=(o[a.el]||0)+1});return o}
+function drawCounter(T,title,o,ref,glow){var els=ELORD.filter(function(e){return ref[e]}),r=11,cw=58,w=Math.min(T.w,86+els.length*cw),h=32,x=T.x+(T.w-w)/2,y=T.y-h-6;
+  if(glow>0){cx.save();cx.globalAlpha=clamp(glow,0,1);cx.fillStyle='#E4572E';for(var i=0;i<12;i++){var a=i*Math.PI/6+now;cx.beginPath();cx.moveTo(x+w/2,y+h/2);cx.lineTo(x+w/2+Math.cos(a)*w*.7,y+h/2+Math.sin(a)*w*.7);cx.lineTo(x+w/2+Math.cos(a+.12)*w*.7,y+h/2+Math.sin(a+.12)*w*.7);cx.fill()}cx.restore()}
+  cx.fillStyle='rgba(46,46,46,.2)';cx.fillRect(x+3,y+4,w,h);cx.fillStyle='#fff';cx.fillRect(x,y,w,h);cx.fillStyle='#2E2E2E';cx.fillRect(x,y,78,h);
+  cx.fillStyle='#F7F3EA';cx.font='800 13px "M PLUS 1",sans-serif';cx.textAlign='center';cx.textBaseline='middle';cx.fillText(title,x+39,y+h/2+1);
+  els.forEach(function(e,i){var xx=x+86+i*cw+r;drawAtom(e,xx,y+h/2,r,0);var v=o[e]||0;cx.font='900 18px "M PLUS 1",sans-serif';cx.textAlign='left';cx.fillStyle=v===ref[e]?'#2E2E2E':'#b0a590';cx.fillText(v,xx+r+4,y+h/2+1)})}
+function draw(){cx.setTransform(DPR,0,0,DPR,0,0);var sx=SHK>0&&!RM?(Math.random()-.5)*SHK:0,sy=SHK>0&&!RM?(Math.random()-.5)*SHK:0;cx.save();cx.translate(sx,sy);drawBg();
+  if(state==='play'||state==='done'||state==='order'){if(RUN){
+    drawMasu(L.TB,'反応前','ここから ほどく','#2E2E2E');drawMasu(L.TA,'反応後','型にはめる','#E4572E');
+    if(RUN.i>=3){var ref=tally(function(){return true});
+      drawCounter(L.TB,'反応前',ref,ref,0);drawCounter(L.TA,'反応後',tally(function(a){return a.st==='in'&&a.box.side==='dst'||RUN.phase==='done'&&a.st==='in'}),ref,RUN.glow||0)}
+    RUN.box.forEach(drawBox);
+    /* 床の原子 */
+    RUN.atoms.forEach(function(a){if(a.st==='floor'){cx.fillStyle='rgba(46,46,46,.18)';cx.beginPath();cx.ellipse(a.x+2,L.floor-1,RUN.r*.9,RUN.r*.22,0,0,Math.PI*2);cx.fill();drawAtom(a.el,a.x,a.y,RUN.r,a.rot);
+      if(Math.sin(now*6)>0){cx.strokeStyle='rgba(228,87,46,.8)';cx.lineWidth=2;cx.beginPath();cx.arc(a.x,a.y,RUN.r*1.25,0,Math.PI*2);cx.stroke()}}});
+    /* 空中の原子（影つき） */
+    RUN.atoms.forEach(function(a){if(a.st==='air'||a.st==='drag'){var hgt=clamp((L.floor-a.y)/H,0,1);cx.fillStyle='rgba(46,46,46,'+(0.16*(1-hgt))+')';cx.beginPath();cx.ellipse(a.x,L.floor-2,RUN.r*(1-hgt*.5),RUN.r*.2,0,0,Math.PI*2);cx.fill();
+      if(a.st==='air'&&a.vy>0&&a.y>L.floor-H*.2){cx.strokeStyle='rgba(228,87,46,'+clamp((a.y-(L.floor-H*.2))/(H*.2),0,1)+')';cx.lineWidth=2;cx.setLineDash([3,3]);cx.beginPath();cx.moveTo(a.x,a.y+RUN.r);cx.lineTo(a.x,L.floor);cx.stroke();cx.setLineDash([])}
+      drawAtom(a.el,a.x,a.y,RUN.r*(a.st==='drag'?1.15:1),a.rot)}});
+    /* はじめての手順の指さし */
+    if(RUN.i===0&&RUN.phase==='play')drawTut()}}
+  else drawTitleArt();
+  /* 紙吹雪 */
+  PT.forEach(function(p){var k=1-p.t/p.life;cx.save();cx.translate(p.x,p.y);cx.rotate(p.rot);cx.globalAlpha=Math.min(1,k*1.5);cx.fillStyle=p.col;cx.beginPath();cx.moveTo(-p.s,-p.s*.6);cx.lineTo(p.s,-p.s*.6);cx.lineTo(0,p.s*.8);cx.closePath();cx.fill();
+    cx.fillStyle='rgba(0,0,0,.2)';cx.beginPath();cx.moveTo(0,-p.s*.6);cx.lineTo(p.s,-p.s*.6);cx.lineTo(0,p.s*.8);cx.closePath();cx.fill();cx.restore()});
+  FT.forEach(function(f){var k=f.t/f.life;cx.save();cx.globalAlpha=k<.7?1:1-(k-.7)/.3;cx.translate(f.x,f.y-k*40);var s=f.sz*(k<.12?.6+k/.12*.4:1);cx.rotate(-.05);
+    cx.font='900 '+s+'px "M PLUS 1",sans-serif';cx.textAlign='center';cx.textBaseline='middle';cx.lineWidth=Math.max(3,s*.16);cx.strokeStyle='#fff';cx.lineJoin='round';cx.strokeText(f.txt,0,0);cx.fillStyle=f.col||'#2E2E2E';cx.fillText(f.txt,0,0);cx.restore()});
+  cx.restore();
+  if(FL>0){cx.fillStyle='rgba(255,250,240,'+FL*.5+')';cx.fillRect(0,0,W,H)}}
+function drawTut(){var R=RUN,tgt=null;if(R.caught===0){var air=R.atoms.filter(function(a){return a.st==='air'||a.st==='floor'});
+    if(!air.length){var sb=srcBoxes().filter(function(b){return !b.opened})[0];if(sb)tgt=[sb.x+sb.w/2,sb.y+sb.h*.4]}
+    else{var a=air[0],q=null;dstBoxes().forEach(function(d){if(q||d.done)return;var ii=d.sk.findIndex(function(k){return k.el===a.el&&!k.atom});if(ii>=0)q=skPos(d,ii)});if(q){{tgt=[a.x,a.y];var t=(now*.7)%1;
+      cx.strokeStyle='rgba(228,87,46,.7)';cx.lineWidth=3;cx.setLineDash([8,6]);cx.beginPath();cx.moveTo(a.x,a.y);cx.quadraticCurveTo((a.x+q[0])/2,Math.min(a.y,q[1])-H*.12,q[0],q[1]);cx.stroke();cx.setLineDash([]);
+      tgt=[a.x+(q[0]-a.x)*t,a.y+(q[1]-a.y)*t-Math.sin(t*Math.PI)*H*.08]}}}}
+  if(!tgt)return;var x=tgt[0]+12,y=tgt[1]+14+Math.sin(now*5)*5;
+  /* 紙を折った指（三角と四角の組み合わせ） */
+  cx.save();cx.translate(x,y);cx.rotate(-.5);cx.fillStyle='rgba(46,46,46,.2)';cx.fillRect(3,4,16,38);cx.fillStyle='#fff';cx.fillRect(0,0,16,38);cx.fillStyle='#E4572E';cx.fillRect(0,26,16,12);
+  cx.strokeStyle='#2E2E2E';cx.lineWidth=1.5;cx.strokeRect(0,0,16,38);cx.beginPath();cx.moveTo(0,8);cx.lineTo(16,8);cx.stroke();cx.restore()}
+/* タイトルの1枚絵：紙玉が弧を描いて飛び交う */
+var DEMO=null;
+function drawTitleArt(){if(!DEMO){DEMO=[];var els=['H','O','H','C','O','Fe','S','Cu','O','Mg','H','Ag'];for(var i=0;i<els.length;i++)DEMO.push({el:els[i],ph:i/els.length,sp:.11+Math.random()*.06,side:i%2})}
+  var r=clamp(Math.min(W,H)*.045,16,36),x0=W*(PORT?.2:.12),x1=W*(PORT?.8:.88),yb=H*(PORT?.3:.62),a1=H*(PORT?.1:.12),a2=H*(PORT?.2:.3),top=0;
+  /* 左右の枡 */
+  var mw=Math.min(W*.22,220),mh=Math.min(H*.12,90);drawMasu({x:x0-mw/2,y:yb-mh*.4,w:mw,h:mh},'反応前','','#2E2E2E');drawMasu({x:x1-mw/2,y:yb-mh*.4,w:mw,h:mh},'反応後','','#E4572E');
+  /* 弧の軌跡（点線）と紙玉 */
+  cx.strokeStyle='rgba(46,46,46,.18)';cx.lineWidth=1.5;cx.setLineDash([5,7]);cx.beginPath();cx.moveTo(x0,yb);cx.quadraticCurveTo(W/2,2*a1-yb,x1,yb);cx.stroke();cx.beginPath();cx.moveTo(x0,yb);cx.quadraticCurveTo(W/2,2*a2-yb,x1,yb);cx.stroke();cx.setLineDash([]);
+  DEMO.forEach(function(d,i){var t=(now*d.sp+d.ph)%1,u=d.side?t:1-t,ctrlY=d.side?2*a1-yb:2*a2-yb,x=(1-u)*(1-u)*x0+2*u*(1-u)*W/2+u*u*x1,y=(1-u)*(1-u)*yb+2*u*(1-u)*ctrlY+u*u*yb;
+    drawAtom(d.el,x,y,r*(1+(i%3)*.12),now*(d.side?1.4:-1.1)+i)});
+  /* 右下に折り鶴 */
+  crane(cx,W-(PORT?50:120),H*(PORT?.4:.38),PORT?.6:1.2);crane(cx,PORT?44:110,H*(PORT?.16:.26),PORT?.45:.9,1)}
+function crane(cx,x,y,s,flip){cx.save();cx.translate(x,y);cx.scale(flip?-s:s,s);var P=function(pts,c){cx.fillStyle=c;cx.beginPath();pts.forEach(function(p,i){i?cx.lineTo(p[0],p[1]):cx.moveTo(p[0],p[1])});cx.closePath();cx.fill()};
+  P([[-40,10],[0,0],[40,10],[0,24]],'#c8452a');P([[0,0],[-6,-46],[10,-4]],'#E4572E');P([[0,0],[18,-40],[14,2]],'#b23c20');P([[-40,10],[-62,-24],[-50,-24],[-30,8]],'#E4572E');P([[40,10],[60,-18],[64,-14],[30,16]],'#c8452a');P([[60,-18],[70,-16],[64,-14]],'#9c3219');
+  cx.restore()}
 
-/* ============ 周の流れ ============ */
-let timer=null;
-function startTimer(){if(timer)return;timer=setInterval(()=>{if(!$('game').classList.contains('hidden')&&document.visibilityState==='visible'&&!S.cleared){S.t++;if(S.t%5===0)save()}},1000)}
-function openPack(i){
- startPack(i);show('game');render();setMsg('');startTimer();
- const p=PACKS[i];sfx.open();
- let counterNote='';
- if(p.counter&&!S.counterOn){S.counterOn=true;save();counterNote=`<div class="box" style="background:#2f3a2c;color:#f3ecd8"><div style="font-weight:800;color:#ffd98a">🔢 新しい道具「原子カウンター」が届いた！</div><div style="font-size:14px;margin-top:4px">画面の下に、パックに入っていた原子と、いまの原子の数が出る。<br>組み替えながら、ときどき見てみよう。</div></div>`;setTimeout(sfx.counter,300)}
- const pr=p.predict;
- overlay(`<div class="badge">パック ${i+1} / ${PACKS.length}</div><h2>📦 ${esc(p.name)}</h2>
-  ${p.app?`<div class="app">${p.app()}</div>`:''}<div class="box"><div class="small" style="font-weight:800">中身</div><div class="eqline">${groupsHTML(p.groups,'sm')}</div></div>
-  ${p.mystery?'<p class="lead"><b>レシピ帳のヒントだけが手がかり。</b><br>何ができるか、組み替えて当てよう！</p>':''}
-  <div class="small" style="font-weight:800">このパックで埋めたいページ</div>
-  <div class="box" style="text-align:left;font-size:14px;line-height:1.6">${p.pages.map(k=>`・${p.mystery?'？？？':esc(SUB[k].n)}：${esc(SUB[k].hint||'')}`).join('<br>')}</div>
-  ${counterNote}
-  ${pr?`<div class="small" style="font-weight:800;margin-top:6px">📝 まず予想して封印</div><p class="lead" style="margin:4px 0">${esc(pr.q)}</p><div class="opts">${pr.opts.map(n=>`<button data-n="${n}">${n}</button>`).join('')}</div>`:''}
-  <button class="btn red wide" id="oGo" ${pr?'disabled':''}>${pr?'予想を封印してスタート':'スタート'}</button>`);
- if(pr)document.querySelectorAll('.opts button').forEach(b=>b.onclick=()=>{sfx.tap();document.querySelectorAll('.opts button').forEach(x=>x.classList.remove('sel'));b.classList.add('sel');W.pred=+b.dataset.n;$('oGo').disabled=false});
- $('oGo').onclick=()=>{sfx.tap();closeOv();
-  if(i===0&&!S.packDone.length)setMsg('ゆれている<b>分子をタップ</b>して、ばらしてみよう');
-  else if(pr)setMsg(`予想「${W.pred}」を封印した。組み替えて確かめよう`);
-  else setMsg(p.tool?`分子をタップすると ${p.tool.slice(2)} でばらせる`:'')};
-}
-$('bDone').onclick=()=>check();
-$('bReset').onclick=()=>{ac();sfx.back();resetPack();setMsg('パックに戻した');render()};
-$('bBook').onclick=()=>{sfx.tap();openBookOv()};
-function openBookOv(){
- overlay(`<h2>📒 レシピ帳 ${S.book.length}/${BOOK.length}</h2><div class="bookgrid">${BOOK.map(k=>{const got=S.book.includes(k);return `<div class="bp ${got?'got':''}">${got?`<div style="height:30px">${molHTML(subAtoms(k),'xs')}</div><b>${esc(SUB[k].n)}</b><br>${SUB[k].f}`:`<div style="font-size:24px;opacity:.4">❔</div><span class="small" style="font-size:11px">${esc(SUB[k].hint||'')}</span>`}</div>`}).join('')}</div>
-  <button class="btn ghost wide" style="margin-top:12px" id="oClose">とじる</button>`);$('oClose').onclick=closeOv}
+/* ================= 粒と文字 ================= */
+function confetti(x,y,cols,n,sp){if(RM)n=Math.min(n,6);for(var i=0;i<n;i++){var a=Math.random()*Math.PI*2,v=(sp||220)*(.4+Math.random());PT.push({x:x,y:y,vx:Math.cos(a)*v,vy:Math.sin(a)*v-120,rot:Math.random()*6,vr:rnd(-8,8),s:rnd(4,8),col:cols[i%cols.length],t:0,life:rnd(.7,1.3)})}}
+function ft(x,y,txt,col,sz,life){FT.push({x:x,y:y,txt:txt,col:col,sz:sz||26,t:0,life:life||1.1})}
+var slipT=0;function slip(html,kind,sec){var s=$('slip');s.innerHTML=html;s.className='on'+(kind?' '+kind:'');slipT=sec||3.2;
+  if(PORT){s.style.top=(L.TA.y+L.TA.h+(state==='play'?64:14))+'px';s.style.bottom=''}else{s.style.top=(L.hh+44)+'px';s.style.bottom=''}}
 
-/* ============ 規則を書く（本編のクリア条件） ============ */
-function openRule(){
- show('rule');
- const recs=S.records.filter(r=>r.counter);const use=recs.slice(-6);
- const nm=a=>{const m={};a.forEach(k=>{if(k)m[SUB[k].n]=(m[SUB[k].n]||0)+1});return Object.keys(m).map(k=>k+(m[k]>1?'×'+m[k]:'')).join('・')};
- const cnt=c=>ORDER.filter(e=>c[e]).map(e=>`${e} ${c[e]}`).join('<br>');
- $('ruleBox').innerHTML=`<div class="badge" style="margin-top:8px">本編ラスト</div><h2 style="margin:8px 0">カウンターの記録から、規則を見つけよう</h2>
-  <p class="small">原子カウンターが開いてからの、きみの組み替えの記録（${recs.length}回）</p>
-  <table class="rec"><tr><th>反応前の物質</th><th>原子</th><th>反応後の物質</th><th>原子</th></tr>
-  ${use.map(r=>`<tr><td class="l">${esc(nm(r.before))}</td><td>${cnt(r.pre)}</td><td class="l">${esc(nm(r.after))}</td><td>${cnt(r.post)}</td></tr>`).join('')}</table>
-  <div class="card" style="margin-top:12px"><b>反応の前と後で、変わったもの・変わらなかったものは？</b><br><span class="small">記録を見くらべて、自分の言葉で1文で書こう（選択肢はない）</span>
-  <textarea id="ruleIn" maxlength="60" placeholder="（ここに書く）">${esc(S.rule||'')}</textarea>
-  <div id="ruleMsg" style="min-height:40px;font-weight:800;margin-top:6px"></div>
-  <button class="btn red wide" id="ruleOk">書けた！</button></div>`;
- let tries=0;
- $('ruleOk').onclick=()=>{
-  const v=$('ruleIn').value.trim();if(v.length<6){$('ruleMsg').textContent='もう少しくわしく書こう（何が・どうなったか）';$('ruleMsg').style.color='var(--red)';sfx.no();return}
-  const num=/(数|すう|かず|個)/.test(v)&&/(変わらな|かわらな|同じ|おなじ|等し|ひとし|そのまま|一緒|いっしょ|変化しな)/.test(v);
-  const comb=/(組|くみ)/.test(v)&&/(変わ|かわ|変化)/.test(v);
-  const kind=/(種類|しゅるい)/.test(v)&&/(変わらな|かわらな|同じ|おなじ|そのまま)/.test(v);
-  tries++;
-  if(num||comb||kind||tries>=2){
-   S.rule=v.slice(0,60);let g=0;if((num||comb||kind)&&!S.ruleOK){S.ruleOK=true;g=earn(30,'rule',innerWidth/2,innerHeight/2)}
-   S.cleared=true;save();sfx.ok();burst(innerWidth/2,innerHeight/2,['#d8483b','#e8b92e','#4f8a3c'],40);
-   const pts=[];if(num)pts.push('原子の数');if(kind)pts.push('原子の種類');if(comb)pts.push('原子の組合せ');
-   $('ruleBox').innerHTML=`<div class="card" style="text-align:center;margin-top:20px"><div style="font-size:44px">♻️</div><h2>きみが見つけた規則</h2>
-    <div class="box" style="font-size:18px;font-weight:800;line-height:1.6">「${esc(S.rule)}」</div>
-    ${pts.length?`<p class="lead">カウンターの記録と、きみの1文がつながっている：<b>${pts.join('・')}</b>${g?`<br>✨ かけら +${g}`:''}</p>`:'<p class="lead">記録の「原子」の列を、反応前と反応後でもう一度見くらべてみよう。</p>'}
-    <p class="small">この1文は提出カードにのる。</p>
-    <div class="tbtns"><button class="btn red wide" id="rTest">📝 確認テストへ</button><button class="btn ghost wide zk hidden" id="rBookZ">📖 図鑑</button></div></div>`;zkBtns();
-   $('rTest').onclick=()=>{sfx.tap();const go=()=>startTest();if(window.Zukan&&Zukan.mainClear&&!S.mainDone){S.mainDone=true;save();Zukan.mainClear({onClose:go})}else go()};
-   $('rBookZ').onclick=()=>window.Zukan&&Zukan.openBook&&Zukan.openBook();
-  }else{sfx.no();$('ruleMsg').innerHTML='表の「原子」の列を、反応前と反応後で見くらべてみよう。<br>何が同じで、何がちがう？';$('ruleMsg').style.color='var(--red)'}
- };
-}
+/* ================= 物理とつかむ・投げる ================= */
+function grav(){return H*1.05*(RUN?RUN.S.gf:.5)}
+function popV(h){return -Math.sqrt(2*grav()*h)}
+function unfold(b){AU.init();var r=RUN.r;b.opened=true;SFX.unfold();
+  b.sk.forEach(function(k,i){var a=k.atom;if(!a)return;var p=skPos(b,i);k.atom=null;a.st='air';a.x=p[0];a.y=p[1];a.nc=.7;a.box=null;
+    var h=PORT?H*rnd(.2,.3):H*rnd(.26,.36);a.vy=popV(h);a.vx=PORT?rnd(-W*.12,W*.12):(L.TA.x-L.TB.x)*rnd(.08,.22)+rnd(-30,30);a.vr=rnd(-6,6)});
+  confetti(b.x+b.w/2,b.y+b.h/2,['#fff','#E4572E','#EFE7D6'],10,160);b.pop=0.01;RUN.idle=0}
+function bump(a){AU.init();var hB=PORT?H*.3:H*.24;a.st='air';a.vy=popV(hB);var tx=L.TA.x+L.TA.w/2;a.vx=PORT?clamp((W/2-a.x)*.6,-W*.2,W*.2)+rnd(-20,20):clamp((tx-a.x)*.22,-W*.12,W*.18)+rnd(-15,15);a.vr=rnd(-8,8);a.nc=.35;SFX.toss();RUN.idle=0;
+  if(RUN.i===0&&!RUN.tipB){RUN.tipB=1;slip('タップで<b>はね上げる</b>と時間がかせげる。つかんで型へ運ぼう。','k',3)}}
+function place(a,b,k){k.atom=a;a.st='in';a.box=b;a.vx=a.vy=0;var i=b.sk.indexOf(k),p=skPos(b,i);a.x=p[0];a.y=p[1];RUN.idle=0;var back=a.orig===k;a.orig=null;
+  if(back){SFX.tick()}else if(b.side==='dst'||b.opened){RUN.combo++;RUN.caught++;G.st.caught++;if(RUN.combo>G.st.best)G.st.best=RUN.combo;SFX.catch(Math.min(9,RUN.combo));
+    confetti(p[0],p[1],[EL[a.el].c,'#fff'],6+Math.min(10,RUN.combo),140+RUN.combo*10);if(RUN.combo>=3)ft(p[0],p[1]-RUN.r*1.4,RUN.combo+'連！','#E4572E',20+Math.min(16,RUN.combo*2),.9);else ft(p[0],p[1]-RUN.r*1.3,'パチッ','#2E2E2E',18,.7)}
+  if(full(b)){if(b.side==='dst'){b.done=true;b.pop=0.01;SFX.fold();SHK=RM?0:5;var c=[b.x+b.w/2,b.y+b.h/2];confetti(c[0],c[1],['#E4572E','#EAD23C','#2549C9','#fff','#2E2E2E'],24,260);ft(c[0],c[1]-b.h*.6,SP[b.k].n+'（'+SP[b.k].f+'）','#E4572E',22,1.3)}
+    else if(b.opened){b.opened=false;b.pop=0.01;SFX.fold();ft(b.x+b.w/2,b.y-6,'もとの'+SP[b.k].n+'にもどした','#2E2E2E',15,1.2)}}
+  updHud();setTimeout(checkState,30)}
+function unplace(a){var k=skOf(a);if(k)k.atom=null;a.orig=k;var b=a.box;a.box=null;if(b&&b.side==='src'&&!b.opened)b.opened=true}
+function findSock(x,y,el,rad,allowSrc){var best=null,bd=rad,wrong=null,wd=rad*.8;RUN.box.forEach(function(b){if(b.side==='dst'&&b.done)return;if(b.side==='src'&&!(b.opened&&allowSrc))return;
+  b.sk.forEach(function(k,i){if(k.atom)return;var p=skPos(b,i),d=Math.hypot(p[0]-x,p[1]-y);if(k.el===el){if(d<bd){bd=d;best={b:b,k:k}}}else if(d<wd){wd=d;wrong={b:b,k:k}}})});return {ok:best,ng:best?null:wrong}}
+function wrongHit(a,w){RUN.combo=0;RUN.wrongs++;G.st.wrongs++;SFX.wrong();w.b.shake=5;a.st='air';a.vy=popV(H*.14);a.vx=rnd(-80,80);a.nc=.5;
+  var p=skPos(w.b,w.b.sk.indexOf(w.k));ft(p[0],p[1]-RUN.r*1.2,'ちがう','#8a7f6d',18,.8);slip('そこは <b>'+w.k.el+'原子</b>（'+EL[w.k.el].n+'）の場所。'+a.el+'原子（'+EL[a.el].n+'）は入らない。','k',2.6);updHud()}
+function dropped(a){a.st='floor';a.y=L.floor-RUN.r;a.vy=0;a.vx*=.5;RUN.combo=0;RUN.drops++;G.st.drops++;SFX.drop();SHK=RM?0:3;ft(a.x,a.y-RUN.r*1.6,'コトッ','#8a7f6d',18,.8);
+  if(RUN.firstDrop){RUN.firstDrop=false;slip('落とした！ でも紙玉は床に<b>残っている</b>。タップで拾い上げよう（連続は0にもどる）。','',3.6)}updHud()}
+/* ポインタ */
+var PTR={};
+function evPos(e){return [e.clientX,e.clientY]}
+function onDown(e){if(state!=='play'||!RUN||RUN.phase!=='play')return;AU.init();var p=evPos(e),best=null,bd=RUN.r*(e.pointerType==='touch'?2:1.6);
+  RUN.atoms.forEach(function(a){if(a.st!=='air'&&a.st!=='floor')return;if(Object.keys(PTR).some(function(id){return PTR[id].a===a}))return;var d=Math.hypot(a.x-p[0],a.y-p[1]);if(d<bd){bd=d;best=a}});
+  if(!best){RUN.box.forEach(function(b){if(b.side==='dst'&&b.done)return;if(b.side==='src'&&!b.opened)return;b.sk.forEach(function(k,i){if(!k.atom)return;var q=skPos(b,i),d=Math.hypot(q[0]-p[0],q[1]-p[1]);if(d<RUN.r*1.05&&d<bd){bd=d;best=k.atom}})});
+    if(best){unplace(best);best.st='drag';best.nc=.2}}
+  if(!best){for(var i=0;i<RUN.box.length;i++){var b=RUN.box[i];if(b.side==='src'&&!b.opened&&full(b)&&p[0]>=b.x-4&&p[0]<=b.x+b.w+4&&p[1]>=b.y-4&&p[1]<=b.y+b.h+4){unfold(b);return}}return}
+  if(best.st!=='drag')best.st='drag';best.from=best.from||'air';
+  PTR[e.pointerId]={a:best,x0:p[0],y0:p[1],t0:now,hist:[[p[0],p[1],now]],moved:false,off:e.pointerType==='touch'?-RUN.r*.5:0};try{cv.setPointerCapture(e.pointerId)}catch(_){}
+  best.tx=p[0];best.ty=p[1];e.preventDefault()}
+function onMove(e){var P=PTR[e.pointerId];if(!P)return;var p=evPos(e);P.hist.push([p[0],p[1],now]);if(P.hist.length>8)P.hist.shift();if(Math.hypot(p[0]-P.x0,p[1]-P.y0)>9)P.moved=true;P.a.tx=p[0];P.a.ty=p[1]+(P.moved?P.off:0)}
+function onUp(e){var P=PTR[e.pointerId];if(!P)return;delete PTR[e.pointerId];var a=P.a;if(a.st!=='drag')return;
+  if(!P.moved&&now-P.t0<.3){bump(a);return}
+  var f=findSock(a.x,a.y,a.el,RUN.r*1.35,true);
+  if(f.ok){place(a,f.ok.b,f.ok.k);return}
+  if(f.ng){wrongHit(a,f.ng);return}
+  var h=P.hist,o=h[0],l=h[h.length-1],dt=Math.max(.016,l[2]-o[2]),vx=(l[0]-o[0])/dt,vy=(l[1]-o[1])/dt,m=Math.hypot(vx,vy),mx=H*2.6;if(m>mx){vx*=mx/m;vy*=mx/m}
+  if(now-o[2]>.25){vx*=.2;vy*=.2}
+  a.st='air';a.vx=vx;a.vy=vy;a.vr=vx/60;a.nc=.12;if(m>H*.8)SFX.toss()}
+/* 1フレーム */
+function step(dt){var R=RUN,g=grav(),r=R.r;R.t+=dt;G.st.time+=dt;R.idle+=dt;
+  R.atoms.forEach(function(a){if(a.st==='drag'){var k=Math.min(1,dt*28);a.x+=(a.tx-a.x)*k;a.y+=(a.ty-a.y)*k;a.rot*=.9;
+      return}
+    if(a.st==='air'){a.vy+=g*dt;a.vx*=(1-.25*dt);a.x+=a.vx*dt;a.y+=a.vy*dt;a.rot+=a.vr*dt;a.nc-=dt;
+      if(a.x<r){a.x=r;a.vx=Math.abs(a.vx)*.6}if(a.x>W-r){a.x=W-r;a.vx=-Math.abs(a.vx)*.6}if(a.y<L.hh+r){a.y=L.hh+r;a.vy=Math.abs(a.vy)*.4}
+      if(a.nc<=0){var f=findSock(a.x,a.y,a.el,r*1.0,false);if(f.ok){place(a,f.ok.b,f.ok.k);return}}
+      if(a.y>L.floor-r)dropped(a);return}
+    if(a.st==='floor'){a.x+=a.vx*dt;a.vx*=(1-3*dt);a.rot+=a.vx*dt/r;if(a.x<r)a.x=r;if(a.x>W-r)a.x=W-r}});
+  R.box.forEach(function(b){if(b.pop>0){b.pop+=dt*2.6;if(b.pop>=1)b.pop=0}if(b.shake>0)b.shake=Math.max(0,b.shake-dt*20)});
+  if(R.glow>0)R.glow=Math.max(0,R.glow-dt*.25);
+  /* ボス：折り紙がひとりでにほどける */
+  if(R.S.auto&&R.phase==='play'){R.autoT-=dt;if(R.autoT<=0){R.autoT=R.S.auto;var sb=srcBoxes().filter(function(b){return !b.opened&&full(b)});if(sb.length){var b=sb[(Math.random()*sb.length)|0];b.shake=6;ft(b.x+b.w/2,b.y-4,'ほどけた！','#E4572E',18,.9);unfold(b)}}}
+  if(R.idle>7&&R.phase==='play'){R.idle=0;hintIdle()}}
 
-/* ============ 確認テスト ============ */
-let T=null;
-function startTest(){if(!window.Quiz){alert('問題データが読み込まれていません');return}T={qs:Quiz.test(),i:0,ans:[],cur:null};show('test');renderTest()}
-function renderTest(){
- const q=T.qs[T.i];T.cur=q.t==='order'?[]:'';
- let h=`<div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px"><span class="badge">📝 確認テスト</span><b>第 ${T.i+1} 問 / ${T.qs.length}</b></div>
-  <div class="prog">${T.qs.map((_,i)=>`<i class="${i<T.i?'on':''}"></i>`).join('')}</div><div class="tq">${q.q}</div>${q.fig?`<div class="tfig">${q.fig}</div>`:''}`;
- if(q.t==='choice')h+=q.shown.map((c,k)=>`<button class="choice" data-k="${k}">${c}</button>`).join('');
- else if(q.t==='num')h+=`<div class="numshow"><span id="numv">　</span> <small>${esc(q.unit||'')}</small></div><div class="keys">${['7','8','9','4','5','6','1','2','3','0','.','⌫'].map(k=>`<button data-n="${k}">${k}</button>`).join('')}</div><button class="btn red wide" style="margin-top:10px" id="tOk">決定</button>`;
- else h+=`<p class="small">上から順になるように、タップして並べよう（もう一度タップで外す）</p><div class="ordsel" id="ordSel"></div>${q.shown.map((c,k)=>`<button class="choice" data-o="${k}">${c}</button>`).join('')}<button class="btn red wide" style="margin-top:8px" id="tOk" disabled>決定</button>`;
- $('tBoxT').innerHTML=h;
- const next=a=>{T.ans.push(a);sfx.tap();setTimeout(()=>{T.i++;if(T.i<T.qs.length)renderTest();else finishTest()},180)};
- if(q.t==='choice')document.querySelectorAll('#tBoxT .choice').forEach(b=>b.onclick=()=>{document.querySelectorAll('#tBoxT .choice').forEach(x=>x.disabled=true);b.style.borderColor='var(--red)';next(q.shown[+b.dataset.k])});
- else if(q.t==='num'){document.querySelectorAll('[data-n]').forEach(b=>b.onclick=()=>{sfx.tap();const k=b.dataset.n;if(k==='⌫')T.cur=T.cur.slice(0,-1);else if(T.cur.length<8)T.cur+=k;$('numv').textContent=T.cur||'　'});$('tOk').onclick=()=>{if(!T.cur)return;next(T.cur)}}
- else{const upd=()=>{$('ordSel').innerHTML=T.cur.map((k,n)=>`<div data-r="${n}">${n+1}. ${q.shown[k]}</div>`).join('');
-   document.querySelectorAll('[data-o]').forEach(b=>b.style.display=T.cur.includes(+b.dataset.o)?'none':'block');
-   document.querySelectorAll('[data-r]').forEach(d=>d.onclick=()=>{T.cur.splice(+d.dataset.r);sfx.back();upd()});$('tOk').disabled=T.cur.length!==q.shown.length};
-  document.querySelectorAll('[data-o]').forEach(b=>b.onclick=()=>{sfx.tap();T.cur.push(+b.dataset.o);upd()});$('tOk').onclick=()=>{if(T.cur.length!==q.shown.length)return;next(T.cur.map(k=>q.shown[k]))};upd()}
-}
-function finishTest(){
- const qs=T.qs,answers=T.ans;
- const review=Quiz.review(qs,answers),marks=review.map(r=>r.ok),score=marks.filter(Boolean).length;
- const name=S.name||window.PLAYER_NAME||'';
- const predN=Object.keys(S.preds).length;
- const records=TEST_ONLY?[['モード','確認テストだけ']]:[['クリアタイム',fmtT(S.t)],['レシピ帳',S.book.length+' / '+BOOK.length],['予想的中',S.hits+' / 4'],['見つけた規則',S.rule?('「'+S.rule.slice(0,40)+'」'):'（未記入）']];
- sfx.ok();
- const rec=SubmitCard.show({gameId:GAME_ID,grade:'chu2',koma:[KOMA],unit:'中2理科　化学変化と原子・分子　第14回',
-  game:'原子リサイクル工房 ～反応の前後で変わらないもの～'+(TEST_ONLY?'（確認テストのみ）':''),name,score,total:qs.length,marks,records,review},()=>renderResult(score,qs.length));
- T.rec=rec;if(!TEST_ONLY){S.test={score,total:qs.length};save()}
- renderResult(score,qs.length);
-}
-function renderResult(score,total){
- show('test');
- $('tBoxT').innerHTML=`<div class="card" style="text-align:center;margin-top:16px"><span class="badge">確認テスト</span>
-  <div class="big" style="font-size:58px">${score}<span style="font-size:22px"> / ${total}</span></div>
-  <p class="lead">${score===total?'満点！ モデルを見くらべる目が育った。':score>=Math.ceil(total*.7)?'合格ライン突破！':'解説を読んで、もう一度ためそう。'}</p>
-  <div class="tbtns"><button class="btn red wide" id="rCard">📝 提出カードを表示</button><button class="btn ghost wide" id="rRetry">もう一度テストを解く</button>
-  ${TEST_ONLY?'':'<button class="btn ghost wide zk hidden" id="rBookZ2">📖 図鑑</button><button class="btn ghost wide" id="rTitle">🏠 タイトルへ</button>'}</div></div>`;
- zkBtns();$('rCard').onclick=()=>{if(T&&T.rec&&SubmitCard.reopen)SubmitCard.reopen(T.rec)};$('rRetry').onclick=()=>startTest();
- if(!TEST_ONLY){$('rBookZ2').onclick=()=>window.Zukan&&Zukan.openBook&&Zukan.openBook();$('rTitle').onclick=()=>initTitle()}
-}
+/* ================= 注文の判定 ================= */
+function settled(){return RUN.atoms.every(function(a){return a.st==='in'})}
+function checkState(){var R=RUN;if(!R||R.phase!=='play')return;if(!settled())return;
+  var D=dstBoxes(),S=srcBoxes(),part=S.filter(function(b){return !full(b)&&!empty(b)});
+  var dn=D.filter(function(b){return !b.done});
+  if(dn.length){/* まだ空いている型がある */
+    var need={},avail={};dn.forEach(function(b){b.sk.forEach(function(k){if(!k.atom)need[k.el]=(need[k.el]||0)+1})});
+    S.forEach(function(b){b.sk.forEach(function(k){if(k.atom)avail[k.el]=(avail[k.el]||0)+1})});
+    var short=Object.keys(need).filter(function(e){return need[e]>(avail[e]||0)});
+    if(short.length){var e=short[0],n=need[e]-(avail[e]||0);msgOnce('short'+e+n,'<b>'+e+'原子（'+EL[e].n+'）があと'+n+'個</b>足りない。でも工房では原子を出せない。<br>→「型を選び直す」で、型の数を直そう。','',5);$('bRemold').classList.add('blink');return}
+    return}
+  if(part.length){var b=part[0],c=b.sk.filter(function(k){return k.atom}).length;msgOnce('part'+b.k+c,'台の上の「'+SP[b.k].n+'」の型に原子が'+c+'個だけ。そのままでは<b>'+SP[b.k].n+'（'+SP[b.k].f+'）</b>にならない。','',4);return}
+  /* できた物質を数えて、注文と比べる */
+  var made={};D.forEach(function(b){made[b.k]=(made[b.k]||0)+1});var T=R.S.tgt,same=true,fewer=true;
+  var keys={};for(var k in T)keys[k]=1;for(k in made)keys[k]=1;for(k in keys){if((made[k]||0)!==(T[k]||0))same=false;if((made[k]||0)>(T[k]||0))fewer=false}
+  if(same){finishOrder();return}
+  if(fewer&&Object.keys(made).every(function(k){return T[k]})){var lack=Object.keys(T).filter(function(k){return (made[k]||0)<T[k]})[0];
+    msgOnce('more'+lack,'型は全部うまった。でも、台の上の材料で <b>'+SP[lack].n+'をあと'+(T[lack]-(made[lack]||0))+'つ</b> 作れる原子が残っている。<br>→「型を選び直す」','',5);$('bRemold').classList.add('blink');return}
+  msgOnce('bad'+JSON.stringify(made),(R.S.miss||'できた物質が、注文（実験の結果）と合わない。')+'<br>→「型を選び直す」','',6);$('bRemold').classList.add('blink')}
+function msgOnce(key,html,kind,sec){if(RUN.msgKey===key)return;RUN.msgKey=key;slip(html,kind,sec);SFX.tick()}
+function hintIdle(){var R=RUN;if(!R)return;var air=R.atoms.filter(function(a){return a.st!=='in'}).length;if(air)return;
+  var sb=srcBoxes().filter(function(b){return !b.opened&&full(b)}),dn=dstBoxes().filter(function(b){return !b.done});
+  if(dn.length&&sb.length)slip('空いている型がある。台の分子をタップしてほどこう。','k',3);
+  else if(dn.length)slip('台の型に入れた原子も、<b>つかんで取り出せる</b>。','k',3)}
 
-/* ============ タイトル ============ */
-function initTitle(){
- show('title');zkBtns();
- $('tBox').innerHTML=['H','O','C','Fe','Cu'].map((e,i)=>{const E=EL[e];return `<span class="a" style="left:${8+i*42}px;animation-delay:${i*.25}s;--c:${E[1]};--d:${E[2]};--t:${E[3]}">${e}</span>`}).join('');
- $('nameIn').value=S.name||window.PLAYER_NAME||'';if(window.PLAYER_NAME)$('nameBox').classList.add('hidden');
- $('bCont').classList.toggle('hidden',!S.started);
- $('bCont').textContent=S.cleared?'つづきから（確認テスト・パックえらび）':`つづきから（パック ${Math.min(S.pack+1,PACKS.length)}）`;
-}
-function takeName(){const v=$('nameIn').value.trim();S.name=v||window.PLAYER_NAME||S.name||'';save()}
-$('bStart').onclick=()=>{ac();sfx.tap();takeName();if(S.started&&S.pack>0&&!confirm('はじめから遊びますか？（レシピ帳は残ります）'))return;openPack(0)};
-$('bCont').onclick=()=>{ac();sfx.tap();takeName();
- if(S.cleared){overlay(`<h2>どこから遊ぶ？</h2><div class="tbtns"><button class="btn red wide" id="oT">📝 確認テスト</button><button class="btn ghost wide" id="oR">✍️ 規則を書き直す</button>
-  ${PACKS.map((p,i)=>`<button class="btn ghost wide" data-p="${i}" style="font-size:15px">${i+1}. ${esc(p.name)}</button>`).join('')}<button class="btn ghost wide" id="oC">とじる</button></div>`);
-  $('oT').onclick=()=>{closeOv();startTest()};$('oR').onclick=()=>{closeOv();openRule()};$('oC').onclick=closeOv;
-  document.querySelectorAll('[data-p]').forEach(b=>b.onclick=()=>{closeOv();openPack(+b.dataset.p)})}
- else openPack(Math.min(S.pack,PACKS.length-1))};
-$('bBook1').onclick=()=>window.Zukan&&Zukan.openBook&&Zukan.openBook();
-$('bMute1').onclick=()=>{setMute(!MUTE);if(!MUTE){ac();sfx.tap()}};
-$('bMute').onclick=()=>{setMute(!MUTE);if(!MUTE){ac();sfx.tap()}};
-$('bHome').onclick=()=>{sfx.tap();save();initTitle()};
-document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')save()});
-setMute(MUTE);
-if(window.PLAYER_NAME&&!S.name)S.name=window.PLAYER_NAME;
-if(TEST_ONLY){S.name=window.PLAYER_NAME||S.name||'';startTest()}else initTitle();
-window.__GR={W:()=>W,S:()=>S,open:openPack,rule:openRule,test:startTest,check,
- build:(plates)=>{/* 自動テスト用: 原子を指定の皿へ */W.bench=[];W.plates=plates.map(pl=>pl.map(e=>({id:AID++,e})));while(W.plates.length<4)W.plates.push([]);render()}};
-})();
+/* ================= 注文の流れ ================= */
+function beginOrder(i){RUN=newRun(i);state='order';placeAll();showOrder()}
+function showOrder(){var R=RUN,S=R.S;hideAll();state='order';$('scrOrder').classList.remove('hidden');backBtn();
+  $('oNo').textContent='注文 '+(R.i+1)+' / '+NST+(S.boss?'　最後の注文':'');$('oTitle').textContent=S.nm;$('oKind').textContent=S.boss?'何が起こる？':S.kd;
+  var srcH='';S.src.forEach(function(s){srcH+='<div class="it">'+molHTML(s[0],PORT?24:30)+'<span><b>'+SP[s[0]].n+'</b> ×'+s[1]+'</span></div>'});$('oSrc').innerHTML=srcH;
+  $('oHint').classList.toggle('hidden',!S.hint);$('oHint').innerHTML=S.hint||'';
+  R.sel={};
+  if(!S.choose){/* 型つきの注文 */
+    $('oMoldH').textContent='反応後の型（工房で用意ずみ）';var h='<div class="mats">';for(var k in S.tgt)h+='<div class="it">'+molHTML(k,PORT?24:30)+'<span><b>'+SP[k].n+'</b> ×'+S.tgt[k]+'</span></div>';$('oMold').innerHTML=h+'</div>';
+    $('oNote').innerHTML=S.say;$('oGo').textContent='とりかかる'}
+  else{$('oMoldH').textContent=R.remolds?'型を選び直す':'反応後の型を いくつ置く？（予想）';var h2='';S.choose.forEach(function(k){R.sel[k]=R.pred&&R.pred[k]!=null?R.pred[k]:0;
+      h2+='<div class="mrow"><div>'+molHTML(k,PORT?22:28)+'</div><div class="nm">'+SP[k].n+'<small>'+SP[k].f+'　'+descCount(k)+'</small></div><div class="step"><button data-k="'+k+'" data-d="-1">−</button><span class="n" id="n_'+k+'">'+R.sel[k]+'</span><button data-k="'+k+'" data-d="1">＋</button></div></div>'});
+    $('oMold').innerHTML=h2;[].forEach.call($('oMold').querySelectorAll('button'),function(b){b.onclick=function(){AU.init();var k=b.getAttribute('data-k');R.sel[k]=clamp(R.sel[k]+ +b.getAttribute('data-d'),0,8);$('n_'+k).textContent=R.sel[k];SFX.tick()}});
+    $('oNote').innerHTML=S.say+(R.remolds?'':'<br><b>型を置いたら、その数が予想として封印される。</b>');$('oGo').textContent=R.remolds?'この数で置き直す':'この数で型を置く'}}
+function descCount(k){var c=spCount(k);return Object.keys(c).map(function(e){return e+'原子'+c[e]+'個'}).join('・')}
+function goOrder(){var R=RUN,S=R.S;AU.init();
+  if(S.choose){var tot=0;for(var k in R.sel)tot+=R.sel[k];if(!tot){SFX.wrong();$('oNote').innerHTML='型が1つもない。いくつ置く？';return}
+    if(!R.pred){R.pred=JSON.parse(JSON.stringify(R.sel));var ok=true;var keys={};for(k in S.tgt)keys[k]=1;for(k in R.sel)keys[k]=1;for(k in keys)if((R.sel[k]||0)!==(S.tgt[k]||0))ok=false;R.predOK=ok}
+    /* 型の箱を作り直す（入っていた原子は宙へ） */
+    dstBoxes().forEach(function(b){b.sk.forEach(function(k){if(k.atom){var a=k.atom;var p=skPos(b,b.sk.indexOf(k));a.st='air';a.box=null;a.x=p[0];a.y=p[1];a.vy=popV(H*.18);a.vx=rnd(-120,-20);a.nc=.8;k.atom=null}})});
+    RUN.box=srcBoxes();S.choose.forEach(function(k){for(var i=0;i<R.sel[k];i++)RUN.box.push(mkBox('dst',k))})}
+  else if(!dstBoxes().length){for(var k2 in S.tgt)for(var i2=0;i2<S.tgt[k2];i2++)RUN.box.push(mkBox('dst',k2))}
+  placeAll();hideAll();state='play';R.phase='play';R.msgKey='';$('hud').classList.remove('hidden');$('tools').classList.remove('hidden');$('bRemold').classList.toggle('hidden',!S.choose);$('bRemold').classList.remove('blink');
+  $('bLedger').classList.toggle('hidden',!(R.i>=3));document.body.classList.add('play');backBtn();updHud();
+  if(R.i===3&&!R.remolds&&!R.cntShown){R.cntShown=1;R.glow=1.2;slip('新しい道具：<b>原子カウンター</b>。枡の上の札が、反応前と反応後の原子を数える。','',5)}
+  else if(R.i===0&&!R.remolds)slip(PORT?'下の台の<b>分子をタップ</b>して、ほどこう。':'左の台の<b>分子をタップ</b>して、ほどこう。','',4);
+  else if(S.boss&&!R.remolds)slip('折り紙が<b>ひとりでにほどけていく</b>。落とさないで！','',4);
+  R.remolds++;saveGame()}
+function remold(){if(!RUN||RUN.phase!=='play')return;RUN.combo=0;$('bRemold').classList.remove('blink');showOrder()}
+function finishOrder(){var R=RUN,S=R.S;R.phase='done';state='done';R.glow=R.i>=3?2.2:0;SFX.done();FL=.6;
+  dstBoxes().forEach(function(b,i){setTimeout(function(){b.pop=.01;confetti(b.x+b.w/2,b.y+b.h/2,['#E4572E','#EAD23C','#fff','#2549C9'],12,220)},i*90)});
+  var before=tally(function(){return true}),after=tally(function(a){return a.st==='in'}),left=srcBoxes().filter(function(b){return full(b)});
+  var made={};dstBoxes().forEach(function(b){made[b.k]=(made[b.k]||0)+1;G.made[b.k]=(G.made[b.k]||0)+1});var lf={};left.forEach(function(b){lf[b.k]=(lf[b.k]||0)+1});
+  var ent={i:R.i,nm:S.nm,eq:S.eq,src:S.src,made:made,left:lf,before:before,after:after,pb:srcBoxes().length,pa:dstBoxes().length+left.length,clean:!R.drops&&!R.wrongs};
+  G.ledger=G.ledger.filter(function(x){return x.i!==R.i});G.ledger.push(ent);G.ledger.sort(function(a,b){return a.i-b.i});
+  var cx0=W/2,cy0=H*.4;if(window.Zukan&&Zukan.earn){Zukan.earn(10,'hit',{x:cx0,y:cy0});if(ent.clean)Zukan.earn(10,'first-try',{x:cx0,y:cy0+30});if(S.choose&&R.predOK)Zukan.earn(10,'predict',{x:cx0,y:cy0+60})}
+  if(ent.clean)G.st.clean++;if(S.choose&&R.predOK)G.st.pred++;
+  G.stage=Math.max(G.stage,R.i+1);saveGame();updHud();
+  setTimeout(function(){showDone(ent)},RM?400:1500)}
+function showDone(e){var R=RUN,S=R.S;hideAll();state='done';$('scrDone').classList.remove('hidden');backBtn();
+  $('dBig').textContent=S.boss?'最後の注文 完成！':'注文 '+(R.i+1)+' 完成！';
+  var sz=PORT?20:26,L1='',L2='';S.src.forEach(function(s,i){L1+=(i?'<span class="arrow">＋</span>':'')+'<span class="it">'+rep(s[0],s[1]-(e.left[s[0]]||0),sz)+'</span>'});
+  Object.keys(e.made).forEach(function(k,i){L2+=(i?'<span class="arrow">＋</span>':'')+rep(k,e.made[k],sz)});
+  $('dEq').innerHTML=L1+'<span class="arrow">→</span>'+L2;$('dEqT').textContent=S.eq;
+  var h='';if(R.i>=3){h='<div class="cmp glow"><div class="hd">反応前（台の上）</div><div></div><div class="hd">反応後（型の中＋残った材料）</div>'+
+      '<div class="side">'+cntHTML(e.before)+'</div><div class="mid">⇄</div><div class="side">'+cntHTML(e.after)+'</div>'+
+      '<div class="hd">分子などの まとまり '+e.pb+'個</div><div></div><div class="hd">まとまり '+e.pa+'個</div></div>'}
+  $('dCmp').innerHTML=h;
+  var n=[];if(Object.keys(e.left).length)n.push('反応しなかった材料：'+Object.keys(e.left).map(function(k){return SP[k].n+' ×'+e.left[k]}).join('・'));
+  if(S.choose)n.push(R.predOK?'<b>型の数の予想：ぴったり！</b>':'型の数の予想は '+fmtSel(R.pred)+' → 実際は '+fmtSel(S.tgt));
+  n.push(e.clean?'<b>1つも落とさず・まちがえず！</b>':'落とした '+R.drops+'回・ちがう型 '+R.wrongs+'回');
+  if(R.i===2)n.push('分解でも、紙玉をほどいて、べつの組にはめ直しただけ。');
+  $('dNote').innerHTML=n.join('<br>');$('dNext').textContent=R.i+1<NST?'次の注文へ':'帳面を見る'}
+function rep(k,n,sz){var h='';for(var i=0;i<n;i++)h+=molHTML(k,sz);return h}
+function fmtSel(o){return Object.keys(o).filter(function(k){return o[k]}).map(function(k){return SP[k].n+' '+o[k]}).join('・')||'なし'}
+function nextOrder(){if(G.stage>=NST){showRule();return}beginOrder(G.stage)}
+
+/* ================= 帳面・最後の1文 ================= */
+function ledgerHTML(){if(!G.ledger.length)return '<p>まだ記録がない。</p>';
+  var h='<div style="overflow-x:auto"><table class="led"><tr><th>注文</th><th>反応前の原子</th><th>反応後の原子</th><th>まとまり</th></tr>';
+  G.ledger.forEach(function(e){h+='<tr><td class="l">'+(e.i+1)+'. '+esc(e.nm)+'<br><small style="font-weight:400">'+esc(e.eq)+'</small></td><td>'+cntHTML(e.before)+'</td><td>'+cntHTML(e.after)+'</td><td style="font:800 16px \'M PLUS 1\'">'+e.pb+' → '+e.pa+'</td></tr>'});
+  return h+'</table></div>'}
+function openLedger(){$('lgBody').innerHTML=ledgerHTML()+'<p style="font-size:14px;color:#6b6254">「まとまり」は、分子や、分子をつくらない物質の1つ分（例：酸化銅 CuO 1つ分）の数。</p>';$('scrLedger').classList.remove('hidden')}
+function showRule(){hideAll();state='rule';$('scrRule').classList.remove('hidden');$('ruBody').innerHTML=ledgerHTML();$('ruleIn').value=G.rule||'';$('ruFb').textContent='';RUN=null;backBtn()}
+var ruleTry=0;
+function submitRule(){var t=$('ruleIn').value.trim();AU.init();if(t.length<6){$('ruFb').innerHTML='もう少し書いてみよう（6文字以上）。';SFX.wrong();return}
+  var hasN=/(数|かず|個|種類|しゅるい)/.test(t),hasSame=/(変わらな|かわらな|同じ|おなじ|そのまま|等し|ひとし|一緒|いっしょ|一致|そろ)/.test(t);
+  ruleTry++;if(!(hasN&&hasSame)&&ruleTry<2){$('ruFb').innerHTML='帳面の<b>「反応前の原子」と「反応後の原子」の列</b>を、元素ごとに見くらべてみよう。何がどうなっている？（もう一度書き直せる）';SFX.tick();return}
+  G.rule=t.slice(0,120);G.wrote=1;if(hasN&&hasSame){G.ruleOK=1;window.Zukan&&Zukan.earn&&Zukan.earn(30,'rule',{x:W/2,y:H*.5})}
+  G.done=1;saveGame();SFX.done();confetti(W/2,H*.45,['#E4572E','#EAD23C','#2549C9','#fff','#2E2E2E'],40,320);
+  $('ruFb').innerHTML=G.ruleOK?'<b>工房長のはんこ：見つけたきまりを、帳面の数字で言えた！</b> 組合せは変わっても、原子の種類と数は反応の前後でそろっていた。':'壁に貼った。帳面の数字は、どの注文でも反応前と反応後で同じ原子が同じ数だった。';
+  $('ruGo').disabled=true;setTimeout(function(){$('ruGo').disabled=false;if(window.Zukan&&Zukan.mainClear)Zukan.mainClear({onClose:showClear});else showClear()},2600)}
+function showClear(){hideAll();state='clear';$('scrClear').classList.remove('hidden');backBtn();
+  $('clRec').innerHTML='組み替えた原子 <b>'+G.st.caught+'個</b> ／ 最大 <b>'+G.st.best+'連</b><br>落とした '+G.st.drops+'回 ／ 型の数の予想ぴったり '+G.st.pred+'/6 ／ '+fmtTime(G.st.time);
+  $('clRule').innerHTML='<b>壁に貼った1文：</b><br>'+esc(G.rule||'（まだ書いていない）');$('clBook').classList.toggle('hidden',!window.Zukan)}
+function fmtTime(s){s=Math.round(s);return Math.floor(s/60)+'分'+('0'+s%60).slice(-2)+'秒'}
+function openBook(){var all=['H2O','CO2','Ag','O2','FeS','CuO','H2','MgO','Cu','C'];$('bkBody').innerHTML=all.map(function(k){var n=G&&G.made[k]||0;
+  return '<div class="pg'+(n?'':' no')+'">'+molHTML(k,30)+'<b>'+(n?SP[k].n:'？？？')+'</b><small>'+(n?SP[k].f+'　'+n+'つ 組み替えた':'まだ組み替えていない')+'</small></div>'}).join('');$('scrBook').classList.remove('hidden')}
+
+/* ================= 確認テスト ================= */
+var TQ=[],TA=[],TI=0;
+function startTest(){hideAll();state='test';RUN=null;$('scrTest').classList.remove('hidden');backBtn();TQ=window.Quiz?Quiz.test():[];TA=[];TI=0;showQ()}
+function showQ(){var q=TQ[TI];if(!q){finishTest();return}$('scrTest').querySelector('.paper').scrollTop=0;
+  $('tNo').textContent=(TI+1)+' / '+TQ.length;$('tQ').textContent=q.q;$('tFig').innerHTML=q.fig||'';$('tFb').innerHTML='';var A=$('tA');A.innerHTML='';
+  if(q.t==='choice'){q.shown.forEach(function(c){var b=document.createElement('button');b.className='tag w';b.textContent=c;b.onclick=function(){answer(c,b)};A.appendChild(b)})}
+  else if(q.t==='num'){var row=document.createElement('div');row.className='numrow';row.innerHTML='<input id="numIn" inputmode="decimal" autocomplete="off"><span style="font:800 18px \'M PLUS 1\'">'+esc(q.unit||'')+'</span>';
+    var b=document.createElement('button');b.className='tag sm';b.textContent='決定';row.appendChild(b);A.appendChild(row);b.onclick=function(){var v=$('numIn').value.trim();if(!v)return;answer(v)}}
+  else if(q.t==='order'){var sel=[],box=document.createElement('div');box.className='ord';A.appendChild(box);var btns=[];
+    q.shown.forEach(function(c){var bt=document.createElement('button');bt.className='tag w';bt.textContent=c;bt.onclick=function(){if(bt.classList.contains('pickd'))return;sel.push(c);bt.classList.add('pickd');
+      var d=document.createElement('div');d.textContent=sel.length+'. '+c;box.appendChild(d);if(sel.length===q.shown.length)answer(sel.slice())};A.appendChild(bt);btns.push(bt)});
+    var rs=document.createElement('button');rs.className='tag k sm';rs.textContent='やり直す';rs.onclick=function(){sel=[];box.innerHTML='';btns.forEach(function(b){b.classList.remove('pickd')})};A.appendChild(rs)}}
+function answer(v,btn){var q=TQ[TI];if(TA[TI]!==undefined)return;TA[TI]=v;var ok=Quiz.check(q,v);AU.init();if(ok)SFX.catch(6);else SFX.wrong();
+  [].forEach.call($('tA').querySelectorAll('button,input'),function(b){b.disabled=true;if(q.t==='choice'&&b.textContent===q.choices[0])b.classList.add('ok')});if(btn&&!ok)btn.classList.add('ng');
+  $('tFb').innerHTML='<span class="mk">'+(ok?'○':'×')+'</span>'+(ok?'正解':'正解は「'+esc(Quiz.answer(q))+'」')+'<span class="ex">'+esc(q.ex||'')+'</span>';
+  var nx=document.createElement('button');nx.className='tag sm';nx.textContent=TI+1<TQ.length?'つぎへ':'結果を見る';nx.onclick=function(){TI++;showQ()};$('tFb').appendChild(nx);
+  setTimeout(function(){nx.scrollIntoView({block:'nearest',behavior:'smooth'})},50)}
+function finishTest(){var qs=TQ,review=Quiz.review(qs,TA),marks=review.map(function(r){return r.ok}),score=marks.filter(Boolean).length;
+  var g=G||loadGame(),rule=g&&g.rule?g.rule:'';
+  var recs=TEST?[['モード','確認テストだけ']]:[['仕上げた注文',(g?Math.min(g.stage,NST):0)+' / '+NST+'件'],['組み替えた原子',(g?g.st.caught:0)+'個（最大 '+(g?g.st.best:0)+'連）'],['型の数の予想ぴったり',(g?g.st.pred:0)+' / 6'],['見つけたきまり',rule?rule.slice(0,60):'（未記入）']];
+  SubmitCard.show({gameId:GID,grade:'chu2',koma:KOMA,unit:'中2理科　化学変化と原子・分子　第14回',game:'原子リサイクル工房 ～反応の前後で変わらないもの～'+(TEST?'（確認テストのみ）':''),
+    name:(NAME||'').trim(),score:score,total:qs.length,marks:marks,records:recs,review:review},function(){if(TEST)startTest();else toTitle()})}
+
+/* ================= 画面の切りかえ ================= */
+var OVS=['scrTitle','scrOrder','scrDone','scrLedger','scrRule','scrBook','scrClear','scrTest','scrBack'];
+function hideAll(){OVS.forEach(function(id){$(id).classList.add('hidden')});$('hud').classList.add('hidden');$('tools').classList.add('hidden');document.body.classList.remove('play');$('slip').className=''}
+var INHUB=!!window.COLLECTION_NAME||(function(){try{return window.parent!==window}catch(e){return true}})();
+function backBtn(){var b=$('bBack'),on=state!=='title'||INHUB;b.classList.toggle('hidden',!on);b.textContent=state==='title'?'◀ 一覧へ':'◀ もどる';
+  b.classList.toggle('onbg',!(state==='play'));$('bMute').classList.toggle('onbg',!(state==='play'))}
+function toTitle(){hideAll();state='title';RUN=null;$('scrTitle').classList.remove('hidden');var sv=loadGame();$('btnCont').classList.toggle('hidden',!sv);$('btnStart').textContent=sv?'はじめから':'はじめる';
+  $('btnBook').classList.toggle('hidden',!window.Zukan);armed=false;backBtn()}
+var armed=false;
+function startGame(cont){AU.init();var sv=loadGame();if(!cont&&sv&&!armed){armed=true;$('btnStart').textContent='もう一度おすと最初から';return}
+  G=cont&&sv?sv:fresh();if(!cont||!sv)G.name=NAME;else if(!NAME)NAME=G.name||'';saveGame();
+  if(G.done){showClear();return}if(G.stage>=NST){showRule();return}beginOrder(G.stage)}
+function updHud(){if(!RUN)return;$('hNo').textContent='注文 '+(RUN.i+1)+'/'+NST;$('hNm').textContent=RUN.S.nm;$('hCb').textContent='×'+RUN.combo;
+  var z=window.Zukan&&Zukan.state?Zukan.state():null;$('hKkW').style.display=z?'':'none';if(z)$('hKk').textContent=z.kakera}
+var backFrom=null;
+$('bBack').onclick=function(){AU.init();if(state==='title'){try{window.parent.postMessage({type:'rika-close-game'},'*')}catch(e){}return}
+  backFrom=state;$('bkSub').textContent=state==='test'?'確認テストは、次はさいしょから。工房の進み具合は保存されています。':(state==='play'||state==='order')?'進み具合は保存されます（仕上げた注文はそのまま。この注文は次はさいしょから）。':'進み具合は保存されます。';
+  $('scrBack').classList.remove('hidden')};
+$('bkNo').onclick=function(){$('scrBack').classList.add('hidden')};
+$('bkGo').onclick=function(){$('scrBack').classList.add('hidden');saveGame();PTR={};toTitle()};
+
+/* ================= ループ ================= */
+var last=performance.now();
+function frame(t){var dt=Math.min(.05,(t-last)/1000);last=t;now+=dt;
+  if(state==='play'&&RUN&&RUN.phase==='play')step(dt);
+  else if(RUN&&state==='done'){RUN.box.forEach(function(b){if(b.pop>0){b.pop+=dt*2.6;if(b.pop>=1)b.pop=0}});if(RUN.glow>0)RUN.glow=Math.max(0,RUN.glow-dt*.5)}
+  if(SHK>0)SHK=Math.max(0,SHK-dt*30);if(FL>0)FL=Math.max(0,FL-dt*1.5);
+  PT=PT.filter(function(p){p.t+=dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=500*dt;p.vx*=(1-1.5*dt);p.rot+=p.vr*dt;return p.t<p.life});
+  FT=FT.filter(function(f){f.t+=dt;return f.t<f.life});
+  if(slipT>0){slipT-=dt;if(slipT<=0)$('slip').classList.remove('on')}
+  draw();requestAnimationFrame(frame)}
+
+/* ================= 起動 ================= */
+cv.addEventListener('pointerdown',onDown);addEventListener('pointermove',onMove);addEventListener('pointerup',onUp);addEventListener('pointercancel',onUp);
+addEventListener('resize',layout);
+$('btnStart').onclick=function(){NAME=$('nameIn').value.trim()||NAME;startGame(false)};
+$('btnCont').onclick=function(){NAME=$('nameIn').value.trim()||NAME;startGame(true)};
+$('oGo').onclick=goOrder;$('bRemold').onclick=remold;$('bLedger').onclick=function(){if(G)openLedger()};$('lgClose').onclick=function(){$('scrLedger').classList.add('hidden')};
+$('dNext').onclick=nextOrder;$('ruGo').onclick=submitRule;$('toTest').onclick=startTest;
+$('btnBook').onclick=$('clBook').onclick=function(){window.Zukan&&Zukan.openBook()};
+$('btnBook2').onclick=$('clBook2').onclick=function(){if(!G)G=loadGame()||fresh();openBook()};$('bkClose').onclick=function(){$('scrBook').classList.add('hidden')};
+$('bMute').onclick=function(){AU.init();AU.mute=!AU.mute;$('bMute').classList.toggle('off',AU.mute);$('bMute').textContent=AU.mute?'×':'♪';try{localStorage.setItem('rika-zukan:chu2:game:genshi-recycle:mute',AU.mute?'1':'')}catch(e){}};
+try{AU.mute=localStorage.getItem('rika-zukan:chu2:game:genshi-recycle:mute')==='1';$('bMute').classList.toggle('off',AU.mute);$('bMute').textContent=AU.mute?'×':'♪'}catch(e){}
+addEventListener('keydown',function(e){if(e.key==='Escape'&&state==='play')$('bBack').click()});
+if(window.PLAYER_NAME){$('nameIn').value=window.PLAYER_NAME;$('nameBox').classList.add('hidden')}
+window.Zukan&&Zukan.setup&&Zukan.setup({game:GID,koma:KOMA});
+window.Zukan&&Zukan.onChange&&Zukan.onChange(function(){updHud()});
+layout();
+if(document.fonts&&document.fonts.load){document.fonts.load('900 20px "M PLUS 1"').then(function(){spriteC={};urlC={}}).catch(function(){})}
+if(TEST)startTest();else toTitle();
+requestAnimationFrame(frame);
+/* 自動テスト用の読み取り口（ゲームの外からは使わない） */
+window.__GR={get G(){return G},get R(){return RUN},get state(){return state},skPos:skPos,ST:ST,SP:SP,get L(){return L}};
 </script>
 </body>
 </html>

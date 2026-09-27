@@ -1,153 +1,227 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>反応式ソート ～化学反応式を読む～</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#120C0A">
+<title>反応式ズーマー ～化学反応式を読む～</title>
+<!--
+  ゲームID: hannoshiki-sort ／ コマID: chu2-kagaku-16（化学変化と原子・分子 第16回）
+  ねらい: 化学反応式を見ると、反応に関係する分子の種類と数の関係が読み取れる（2H₂＋O₂→2H₂O なら 2：1：2）
+
+  【6. 別の世界】画風＝蒔絵・漆（黒漆に金の線）
+   1 世界とメタファー: 漆塗りの盤に彫った金の溝。溝を転がる分子の玉（黒漆の香合の蓋に原子を象嵌したもの）の列に、
+     朱漆の砲台から分子を撃ちこむ。反応式は左の「巻物」（金泥の文字）。溝の終わりは金の炉。
+   2 配色: 黒漆 #120C0A ／ 金 #C9A043 ／ 朱 #B22222（原子の色は制作ルール5.の表）。背景は梨子地の金粉・青海波・秋草・月（金の線描き）
+   3 書体: 見出し Yuji Mai（筆の明朝）。数字・本文はゴシック
+   4 画面: 全画面canvasが漆の盤。横長＝左に巻物の列・右に横長の渦巻きの溝、砲台は渦の中心。
+     縦長＝上に巻物・その下を蛇行する溝、砲台は画面下中央。タイトルは金の渦を玉が転がる1枚絵
+   5 HUD: 上端の黒漆の帯に金の縁（蔵の名・残りの玉・連鎖・かけら・音）。もどるは朱漆の札
+   6 音: 琴を弾く音（撥音）・鼓の発射音・反応は都節の音階のアルペジオ（WebAudio合成）
+  【7. 動かす遊び】ズーマー（転がる玉の列に撃ちこむ）
+   列の中で、反応式の左辺と同じ種類・同じ数の分子がとなり合うと、右辺の分子に変わって消える
+   （H₂ 2つ＋O₂ 1つ → H₂O 2つ）。比が合わない組は消えずに列が炉へ迫る。
+   できた分子がほかの反応式の左辺なら列に残り、となりと反応する＝連鎖（例: 2Ag₂O→4Ag＋O₂ の O₂ が 2Mg と燃える）。
+   「あと O₂ 1個」は本当の過不足だけを出す。反応しない一発で連続（倍率）は0にもどる。
+  30分: 8つの蔵（溝が長く・速くなる。蔵4で連鎖が解禁、蔵8が大蔵）→ 確認テスト10問 → 提出カード
+-->
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Yuji+Mai&display=swap" rel="stylesheet">
 <style>
-:root{--panel:#23282d;--panel2:#2d3339;--steel:#3a424a;--line:#4a535c;--yel:#f2c230;--yel2:#c99a0b;--ink:#eef1f3;--sub:#a9b3bb;--red:#ff5b4a;--grn:#5fd18b;
- --f:'BIZ UDPGothic','Hiragino Sans','Meiryo',sans-serif;--mono:'Share Tech Mono',ui-monospace,Menlo,monospace}
+:root{--lq:#120C0A;--gold:#C9A043;--shu:#B22222;--cream:#F1E6C8}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{margin:0;height:100%}
-body{background:#1b1f23;color:var(--ink);font-family:var(--f);overflow-x:hidden;-webkit-user-select:none;user-select:none;touch-action:manipulation;
- background-image:linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px);background-size:22px 22px}
-button{font-family:inherit;cursor:pointer;color:inherit}
+html,body{margin:0;height:100%;background:var(--lq);overflow:hidden;overscroll-behavior:none;-webkit-user-select:none;user-select:none;
+  font-family:"Hiragino Kaku Gothic ProN","Hiragino Sans","Noto Sans JP","Yu Gothic",Meiryo,sans-serif;color:var(--cream);-webkit-text-size-adjust:100%}
+#cv{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none}
 .hidden{display:none!important}
-.scr{position:fixed;inset:0;overflow-y:auto;overflow-x:hidden}
-.wrap{width:100%;max-width:520px;margin:0 auto;padding:8px 10px 24px}
-.hz{height:10px;border-radius:3px;background:repeating-linear-gradient(135deg,var(--yel) 0 12px,#111 12px 24px);margin:6px 0}
-.btn{min-height:48px;border:none;border-radius:10px;padding:10px 18px;font-size:18px;font-weight:700;background:var(--steel);color:#fff;box-shadow:0 4px 0 #0009}
-.btn:active{transform:translateY(3px);box-shadow:0 1px 0 #0009}
-.btn.y{background:var(--yel);color:#1b1b1b;box-shadow:0 4px 0 var(--yel2)}
-.btn.red{background:#d9412f;box-shadow:0 4px 0 #7d1f14}
-.btn.ghost{background:transparent;border:2px solid var(--line);box-shadow:none}
-.btn.wide{width:100%}
-.btn:disabled{opacity:.4}
-.card{background:var(--panel);border:2px solid var(--line);border-radius:12px;padding:12px 14px;margin:10px 0}
-.small{font-size:13px;color:var(--sub)}
-.badge{display:inline-block;background:var(--yel);color:#1b1b1b;border-radius:4px;padding:2px 10px;font-size:12px;font-weight:700}
-/* 原子・分子 */
-.a{--c:#999;--t:#fff;--z:14px;width:var(--z);height:var(--z);border-radius:50%;display:inline-flex;align-items:center;justify-content:center;flex:none;
- font-weight:700;font-size:calc(var(--z)*.42);color:var(--t);line-height:1;
- background:radial-gradient(circle at 32% 28%,rgba(255,255,255,.95) 0 8%,rgba(255,255,255,.35) 18%,transparent 42%),radial-gradient(circle at 50% 50%,transparent 55%,rgba(0,0,0,.32) 100%),var(--c);box-shadow:0 1px 2px rgba(0,0,0,.4)}
-.mdl{position:relative;display:inline-block;flex:none}
-.mdl>.a{position:absolute}
-/* コイン */
-.coin{width:46px;height:46px;border-radius:50%;flex:none;position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;
- background:radial-gradient(circle at 35% 30%,#fbfcfd,#c9cfd5 45%,#8e979f 90%);box-shadow:inset 0 0 0 3px #a6aeb5,inset 0 0 0 5px #e5e9ec,0 3px 0 #0008}
-.coin .fm{font-size:9px;font-weight:700;color:#2a3035;margin-top:1px;line-height:1}
-.coin .mdl{margin-top:2px}
-/* HUD */
-.hud{display:flex;align-items:center;gap:6px}
-.icon{min-width:44px;min-height:44px;border-radius:10px;border:2px solid var(--line);background:var(--panel);font-size:20px;padding:0}
-#fName{flex:1;min-width:0;font-weight:700;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.lcd{font-family:var(--mono);background:#0e1a12;color:var(--grn);border:2px solid #34413a;border-radius:6px;padding:2px 8px;font-size:17px;min-width:64px;text-align:center}
-/* 注文と設計図 */
-.order{background:var(--panel);border:2px solid var(--line);border-radius:12px;padding:8px 10px;margin-top:6px;position:relative}
-.order .ot{font-size:17px;font-weight:700}
-.order .ot b{color:var(--yel);font-size:22px}
-.bp{margin-top:6px;background:#12314f;border:2px solid #2b5a86;border-radius:8px;padding:6px 8px;font-size:21px;font-weight:700;text-align:center;letter-spacing:.02em;
- background-image:linear-gradient(rgba(255,255,255,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.06) 1px,transparent 1px);background-size:12px 12px}
-.bp .cf{color:var(--yel);font-size:25px;margin-right:1px}
-.bp .lhs{color:#bfe3ff}.bp .rhs{color:#ffd9b0}
-.bp .blank{display:inline-block;min-width:24px;border-bottom:3px solid var(--yel);color:var(--yel)}
-.bp small{display:block;font-size:11px;color:#9fc4e6;font-weight:400;letter-spacing:0}
-.meta{display:flex;justify-content:space-between;align-items:center;margin-top:6px;font-size:13px;color:var(--sub)}
-#combo{color:var(--yel);font-weight:700;font-size:15px}
-/* 棚 */
-.shelves{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-top:10px}
-.shelf{position:relative;height:238px;border-radius:10px 10px 6px 6px;background:linear-gradient(90deg,#2a3036,#353d44 50%,#2a3036);border:2px solid var(--line);padding:0;display:flex;flex-direction:column-reverse;align-items:center;justify-content:flex-start;padding-bottom:6px}
-.shelf::after{content:'';position:absolute;left:4px;right:4px;bottom:0;height:5px;background:var(--yel);border-radius:2px;opacity:.7}
-.shelf.sel{border-color:var(--yel);box-shadow:0 0 0 3px rgba(242,194,48,.35)}
-.shelf .coin{margin-top:-8px;transition:transform .15s}
-.shelf .coin:last-child{}
-.shelf .coin.up{transform:translateY(-10px);box-shadow:inset 0 0 0 3px #f2c230,inset 0 0 0 5px #fff4c4,0 6px 8px #000a}
-.shelf .cap{position:absolute;top:3px;left:0;right:0;text-align:center;font-family:var(--mono);font-size:10px;color:#6f7a83}
-/* 皿 */
-.plates{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
-.plate{flex:1 1 30%;min-width:100px;min-height:96px;background:var(--panel2);border:2px solid var(--line);border-radius:12px;padding:6px;position:relative}
-.plate.sel{border-color:var(--yel)}
-.plate .ph{display:flex;align-items:center;justify-content:space-between;gap:4px}
-.plate .pf{font-weight:700;font-size:15px}
-.plate .cnt{font-family:var(--mono);font-size:22px;color:var(--grn);background:#0e1a12;border-radius:4px;padding:0 6px;min-width:34px;text-align:center}
-.plate .pc{display:flex;flex-wrap:wrap;gap:0;margin-top:4px;min-height:46px}
-.plate .pc .coin{width:34px;height:34px;margin-right:-10px}
-.plate .pc .coin .fm{display:none}
-.plate.lhs{border-top:4px solid #5aa9e6}
-.plate.rhs{border-top:4px solid #f0a15a}
-.stepper{display:flex;align-items:center;justify-content:center;gap:6px;margin-top:6px}
-.stepper button{width:44px;height:44px;border-radius:10px;border:2px solid var(--line);background:var(--steel);font-size:22px;font-weight:700}
-.side{font-size:11px;color:var(--sub);margin-top:8px}
-#msg{min-height:44px;margin:8px 0 4px;text-align:center;font-weight:700;font-size:15px;line-height:1.45}
-.acts{position:sticky;bottom:0;z-index:5;padding:8px 0 calc(8px + env(safe-area-inset-bottom));background:linear-gradient(transparent,#1b1f23 20%)}
-#fx{position:fixed;inset:0;pointer-events:none;z-index:60}
-/* オーバーレイ */
-.ov{position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;padding:12px;z-index:40}
-.ovc{width:100%;max-width:440px;max-height:92vh;overflow:auto;background:var(--panel);border:2px solid var(--line);border-radius:14px;padding:16px;text-align:center}
-.ovc h2{margin:6px 0 8px;font-size:22px}
-.lead{font-size:16px;line-height:1.6;margin:8px 0}
-.big{font-size:42px;font-weight:700;color:var(--yel);font-family:var(--mono)}
-.stars{font-size:34px;letter-spacing:4px}.stars .off{opacity:.2}
-.ratio{font-family:var(--mono);font-size:22px;color:var(--yel)}
-.app{background:#fff;border-radius:10px;padding:4px;margin:6px 0}
+input{-webkit-user-select:text;user-select:text;font-family:inherit}
+.fude{font-family:"Yuji Mai","Hiragino Mincho ProN","Yu Mincho",serif;font-weight:400}
+/* ---------- 朱漆の札・金の札（ボタン） ---------- */
+.fuda{position:relative;display:inline-flex;align-items:center;justify-content:center;gap:.4em;min-height:50px;padding:8px 26px;border:0;cursor:pointer;
+  font:400 20px/1.2 "Yuji Mai","Hiragino Mincho ProN",serif;letter-spacing:.08em;color:#FFF3DA;
+  background:radial-gradient(120% 90% at 30% 20%,#d23a2e 0,#9d1b1b 55%,#6e1010 100%);
+  box-shadow:inset 0 0 0 2px #C9A043,inset 0 0 0 4px #5a0e0e,inset 0 0 0 5px rgba(201,160,67,.5),0 4px 0 #3a0808,0 8px 16px rgba(0,0,0,.5);border-radius:3px}
+.fuda:active{transform:translateY(3px);box-shadow:inset 0 0 0 2px #C9A043,inset 0 0 0 4px #5a0e0e,0 1px 0 #3a0808}
+.fuda.kin{color:#1b120c;background:linear-gradient(160deg,#f3d98c 0,#C9A043 45%,#8d6a22 100%);box-shadow:inset 0 0 0 2px #fff1bf,inset 0 0 0 3px #7a5a18,0 4px 0 #4a360e,0 8px 16px rgba(0,0,0,.5)}
+.fuda.kuro{background:radial-gradient(120% 90% at 30% 20%,#2c201a 0,#120C0A 70%);box-shadow:inset 0 0 0 2px #C9A043,inset 0 0 0 4px #120C0A,inset 0 0 0 5px rgba(201,160,67,.45),0 4px 0 #000,0 8px 16px rgba(0,0,0,.5)}
+.fuda.sm{min-height:44px;font-size:17px;padding:6px 18px}
+.fuda[disabled]{opacity:.45;cursor:default}
+/* ---------- 黒漆の帯（HUD） ---------- */
+#hud{position:fixed;left:0;right:0;top:0;z-index:5;height:var(--hh,58px);display:flex;align-items:center;gap:12px;padding:0 70px 0 128px;
+  background:linear-gradient(180deg,#241913,#0d0806);border-bottom:2px solid #C9A043;box-shadow:0 2px 0 #3d2c10,0 6px 14px rgba(0,0,0,.6)}
+#hud .kura{font:400 clamp(17px,2.3vw,24px) "Yuji Mai",serif;color:#E9C874;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0;letter-spacing:.06em}
+#hud .kura small{font:700 13px sans-serif;color:#b99d62;margin-right:8px;letter-spacing:.1em}
+#hud .st{display:flex;gap:14px;align-items:baseline;font:800 17px "Hiragino Sans",sans-serif;white-space:nowrap;color:#F1E6C8}
+#hud .st i{font-style:normal;font-weight:400;font-size:12px;color:#b99d62;margin-right:4px}
+#hud .cb{color:#ff9c7a}
+#bBack{position:fixed;z-index:30;left:8px;top:calc((var(--hh,58px) - 44px)/2);min-height:44px;padding:4px 16px;font:800 17px "Hiragino Sans","Noto Sans JP",sans-serif;letter-spacing:.04em}
+#bMute{position:fixed;z-index:30;right:8px;top:calc((var(--hh,58px) - 42px)/2);min-height:42px;width:50px;padding:0;font-size:18px}
+#bMute.off{opacity:.45}
+/* 巻物（反応式） */
+#eqs{position:fixed;z-index:4;display:flex;gap:10px;pointer-events:none}
+#eqs.col{flex-direction:column}
+.maki{position:relative;padding:10px 14px 10px 18px;background:linear-gradient(90deg,#1d130e,#120C0A 60%,#1d130e);
+  box-shadow:inset 0 0 0 1.5px #C9A043,inset 0 0 0 4px #120C0A,inset 0 0 0 5px rgba(201,160,67,.35),0 6px 14px rgba(0,0,0,.55);border-radius:2px}
+.maki::before,.maki::after{content:"";position:absolute;top:-4px;bottom:-4px;width:8px;background:linear-gradient(90deg,#6e1010,#c33a2c,#6e1010);border-radius:4px;box-shadow:0 0 0 1px #C9A043}
+.maki::before{left:-3px}.maki::after{right:-3px}
+.maki .nm{font:400 15px "Yuji Mai",serif;color:#b99d62;letter-spacing:.1em;margin-bottom:4px}
+.maki .row{display:flex;align-items:center;gap:4px;flex-wrap:wrap}
+.maki .k{font:800 22px "Hiragino Sans",sans-serif;color:#E9C874;margin-left:4px}
+.maki .op{font:800 18px sans-serif;color:#C9A043;margin:0 3px}
+.maki .ar{font:800 20px sans-serif;color:#ff8a6a;margin:0 4px}
+.maki .tx{font:700 13px sans-serif;color:#d9c79a;margin-top:4px;letter-spacing:.04em}
+.maki.hot{box-shadow:inset 0 0 0 1.5px #ffe9a8,inset 0 0 0 4px #120C0A,inset 0 0 0 5px #C9A043,0 0 22px rgba(233,200,116,.55)}
+#eqs.cmp .maki{padding:6px 10px 6px 12px}
+#eqs.cmp .maki .nm,#eqs.cmp .maki .tx{display:none}
+#eqs.cmp .maki .k{font-size:18px}
+.mol{position:relative;display:inline-block;vertical-align:middle}
+.mol img{position:absolute;display:block}
+/* ---------- 黒漆のシート ---------- */
+.ov{position:fixed;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;padding:calc(var(--hh,58px) + 4px) 10px 10px;background:rgba(5,3,2,.55)}
+.sheet{position:relative;width:min(720px,96vw);max-height:calc(100vh - var(--hh,58px) - 16px);overflow:auto;padding:28px 28px 24px;color:var(--cream);
+  background:radial-gradient(140% 100% at 20% 0%,#2a1d16 0,#150e0b 45%,#0c0806 100%);
+  box-shadow:inset 0 0 0 2px #C9A043,inset 0 0 0 7px #120C0A,inset 0 0 0 8px rgba(201,160,67,.5),0 18px 40px rgba(0,0,0,.7)}
+.sheet h2{margin:0 0 8px;font:400 clamp(26px,4vw,38px)/1.25 "Yuji Mai",serif;color:#E9C874;letter-spacing:.08em;text-shadow:0 2px 0 #000}
+.sheet h3{margin:14px 0 6px;font:700 14px sans-serif;color:#b99d62;letter-spacing:.14em}
+.sheet p{margin:8px 0;line-height:1.75;font-size:16px}
+.sheet b{color:#FFD98A}
+.sheet .kicker{display:inline-block;font:400 16px "Yuji Mai",serif;color:#FFF3DA;background:#8d1a1a;padding:3px 14px;box-shadow:inset 0 0 0 1px #C9A043;letter-spacing:.12em;margin-bottom:10px}
+.btns{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-top:16px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin:12px 0}
+.stats div{background:rgba(201,160,67,.08);box-shadow:inset 0 0 0 1px rgba(201,160,67,.4);padding:8px 10px;text-align:center;font-size:13px;color:#b99d62}
+.stats b{display:block;font:800 24px sans-serif;color:#FFE3A0}
+.eqbig{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;justify-content:center;margin:10px 0;padding:12px;box-shadow:inset 0 0 0 1px rgba(201,160,67,.5);background:rgba(0,0,0,.35)}
+.eqbig .k{font:800 28px sans-serif;color:#E9C874}
+.eqbig .op{font:800 22px sans-serif;color:#C9A043}.eqbig .ar{font:800 26px sans-serif;color:#ff8a6a}
+.read{font:700 15px sans-serif;color:#d9c79a;text-align:center;margin:-2px 0 10px}
 /* タイトル */
-#title .wrap{text-align:center;padding-top:22px}
-.logo{font-size:clamp(34px,10vw,50px);font-weight:700;line-height:1.15;margin:8px 0}
-.logo span{color:var(--yel)}
-.subt{font-size:16px;color:var(--sub);margin-bottom:10px}
-.namein{width:100%;font:inherit;font-size:18px;padding:10px;border-radius:8px;border:2px solid var(--line);background:#11161a;color:#fff;margin-top:6px}
-.tbtns{display:grid;gap:10px;margin-top:12px}
-.tcoins{display:flex;justify-content:center;gap:8px;margin:14px 0}
-.tcoins .coin{animation:bob 2s ease-in-out infinite}.tcoins .coin:nth-child(2){animation-delay:.3s}.tcoins .coin:nth-child(3){animation-delay:.6s}
-@keyframes bob{50%{transform:translateY(-8px)}}
-/* テスト */
-.tq{font-size:18px;font-weight:700;line-height:1.6;margin:8px 0 10px}
-.tfig{background:#fff;border-radius:10px;padding:6px;margin:6px 0;text-align:center}.tfig svg{max-width:100%;height:auto}
-.choice{display:block;width:100%;min-height:52px;margin:8px 0;padding:10px 14px;text-align:left;font-size:17px;font-weight:700;border-radius:10px;border:2px solid var(--line);background:var(--panel2)}
-.prog{display:flex;gap:4px;margin:6px 0}.prog i{flex:1;height:6px;border-radius:3px;background:#3a424a}.prog i.on{background:var(--yel)}
-.numshow{font-size:30px;font-family:var(--mono);text-align:center;background:#0e1a12;color:var(--grn);border:2px solid #34413a;border-radius:8px;padding:6px;margin:6px 0}
-.keys{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.keys button{min-height:54px;font-size:22px;font-weight:700;border-radius:10px;border:2px solid var(--line);background:var(--panel2)}
-.ordsel{min-height:52px;background:#11161a;border:2px dashed var(--line);border-radius:10px;padding:6px;margin:6px 0}
-.ordsel div{background:var(--panel2);border-radius:8px;padding:8px 10px;margin:4px 0;font-weight:700;font-size:15px}
-@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+#scrTitle{background:transparent;pointer-events:none;align-items:flex-end;padding-bottom:max(3vh,14px)}
+#scrTitle .sheet{pointer-events:auto;text-align:center;width:min(640px,94vw)}
+#scrTitle h1{margin:4px 0 0;font:400 clamp(34px,7.4vw,70px)/1.1 "Yuji Mai",serif;color:#E9C874;letter-spacing:.06em;text-shadow:0 3px 0 #000,0 0 24px rgba(233,200,116,.35);white-space:nowrap}
+#scrTitle .sub{font:400 clamp(16px,2.4vw,22px) "Yuji Mai",serif;color:#F1E6C8;letter-spacing:.12em}
+#scrTitle .nmb{margin:14px auto 4px;display:flex;gap:8px;align-items:center;justify-content:center;font-size:15px;color:#b99d62}
+#scrTitle .nmb input{font-size:17px;padding:8px 10px;border:0;border-bottom:2px solid #C9A043;background:rgba(0,0,0,.45);color:#F1E6C8;width:12em}
+/* もどる確認 */
+#scrBack{z-index:40}
+/* 確認テスト */
+#scrTest{align-items:stretch;padding:0;background:rgba(10,6,4,.94)}
+#scrTest .paper{width:100%;height:100%;overflow:auto;padding:calc(var(--hh,58px) + 16px) max(16px,4vw) 30px}
+#scrTest .inner{max-width:880px;margin:0 auto}
+#tNo{display:inline-block;font:400 22px "Yuji Mai",serif;color:#FFF3DA;background:#8d1a1a;padding:2px 14px;box-shadow:inset 0 0 0 1px #C9A043}
+#tQ{font:700 clamp(18px,2.4vw,22px)/1.7 sans-serif;margin:14px 0;color:#F1E6C8}
+#tFig{text-align:center;margin:8px 0;overflow-x:auto}
+#tFig svg{width:min(100%,600px);height:auto;background:#fbf6ea;padding:8px;box-shadow:0 0 0 2px #C9A043}
+#tA{display:flex;flex-direction:column;gap:10px;margin-top:10px}
+#tA .fuda{justify-content:flex-start;text-align:left;width:100%;font:700 17px sans-serif;letter-spacing:.02em;min-height:54px}
+#tA .fuda.ok{background:linear-gradient(160deg,#4f8a3c,#2c5a20)}
+#tA .fuda.ng{opacity:.55}
+#tA .fuda.pickd{opacity:.35}
+.numrow{display:flex;gap:10px;align-items:center}
+#tA .numrow .fuda{width:auto;min-width:120px;justify-content:center}
+.numrow input{font-size:22px;width:7em;padding:8px 10px;border:0;border-bottom:2px solid #C9A043;background:rgba(0,0,0,.45);color:#F1E6C8}
+.ord{display:flex;flex-direction:column;gap:4px;font:700 15px sans-serif;margin:4px 0;color:#E9C874}
+#tFb{margin-top:14px;font-size:16px;line-height:1.7}
+#tFb .mk{font:400 38px "Yuji Mai",serif;margin-right:10px;color:#ff8a6a}
+#tFb .ex{display:block;background:rgba(201,160,67,.1);padding:8px 12px;margin:6px 0 10px;border-left:4px solid #C9A043}
+/* 巻物帳 */
+.scrolls{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px;margin-top:10px}
+.scrolls .maki{min-height:92px}
+.scrolls .maki.no{opacity:.5;filter:grayscale(1)}
+@media (max-width:600px){
+  #hud{padding:0 62px 0 118px;gap:8px}
+  #hud .kura small{display:none}
+  #hud .st i{font-size:10px;margin-right:2px}
+  #hud .kura{font-size:16px}
+  #hud .st{gap:8px;font-size:15px}
+  .sheet{padding:22px 16px 18px}
+}
 </style>
 </head>
 <body>
-<canvas id="fx"></canvas>
+<canvas id="cv"></canvas>
+<div id="hud" class="hidden">
+  <div class="kura" id="hKura"><small id="hNo">一の蔵</small>水の蔵</div>
+  <div class="st"><span><i>残り</i><span id="hLeft">0</span></span><span><i>連続</i><span class="cb" id="hCb">0</span></span><span id="hKkW"><i>かけら</i><span id="hKk">0</span></span></div>
+</div>
+<div id="eqs" class="hidden"></div>
+<button class="fuda hidden" id="bBack" aria-label="もどる">◀ もどる</button>
+<button class="fuda kuro" id="bMute" aria-label="音">♪</button>
 
-<div id="title" class="scr"><div class="wrap">
- <div class="hz"></div>
- <div class="small" style="font-weight:700">中2理科　化学変化と原子・分子</div>
- <div class="logo">🪙 反応式<br><span>ソート</span></div>
- <div class="subt">～化学反応式を読む～</div>
- <div class="tcoins" id="tCoins"></div>
- <div class="card" style="text-align:left;font-size:15px;line-height:1.7">
-  <b style="color:var(--yel)">工場長からの指示</b><br>設計図は<b>化学反応式</b>。<br>棚の分子コインを、式どおりの<b>種類と数</b>だけ皿へ移せ。<br>一発で余り・不足なしなら、ボーナス倍率アップ！
- </div>
- <div id="nameBox" class="card" style="text-align:left"><label style="font-weight:700;font-size:14px">なまえ（番号でもOK・空でも遊べる）</label><input id="nameIn" class="namein" maxlength="20" autocomplete="off"></div>
- <div class="tbtns">
-  <button class="btn y wide" id="bStart">▶ はじめる</button>
-  <button class="btn ghost wide hidden" id="bCont">つづきから</button>
-  <button class="btn ghost wide zk hidden" id="bBook1">📖 図鑑</button>
-  <button class="btn ghost wide" id="bMute1">🔊 音：オン</button>
- </div>
- <div class="hz" style="margin-top:16px"></div>
-</div></div>
+<div id="scrTitle" class="ov hidden">
+  <div class="sheet">
+    <div class="kicker">中2理科　化学変化と原子・分子</div>
+    <h1>反応式ズーマー</h1>
+    <div class="sub">～化学反応式を読む～</div>
+    <div class="nmb" id="nameBox">なまえ <input id="nameIn" maxlength="16" placeholder="（空でもOK）" autocomplete="off"></div>
+    <div class="btns"><button class="fuda" id="btnStart">はじめる</button><button class="fuda kin hidden" id="btnCont">つづきから</button></div>
+    <div class="btns" style="margin-top:10px"><button class="fuda kuro sm" id="btnScroll">巻物帳</button><button class="fuda kuro sm hidden" id="btnBook">📖 図鑑</button></div>
+  </div>
+</div>
 
-<div id="game" class="scr hidden"><div class="wrap">
- <div class="hud"><button class="icon" id="bHome" aria-label="タイトルへ">🏠</button><div id="fName"></div><span class="lcd" id="lcd">0</span><button class="icon" id="bMute" aria-label="音">🔊</button></div>
- <div class="hz"></div>
- <div class="order" id="order"></div>
- <div class="shelves" id="shelves"></div>
- <div class="plates" id="plates"></div>
- <div id="msg"></div>
- <div class="acts"><button class="btn y wide" id="bGo">⚙ 反応スタート</button></div>
-</div></div>
+<div id="scrStage" class="ov hidden">
+  <div class="sheet">
+    <div class="kicker" id="sgNo">一の蔵</div>
+    <h2 id="sgName">水の蔵</h2>
+    <div id="sgEq"></div>
+    <p id="sgSay"></p>
+    <div class="btns"><button class="fuda" id="sgGo">蔵をひらく</button></div>
+  </div>
+</div>
 
-<div id="test" class="scr hidden"><div class="wrap" id="tBox"></div></div>
-<div id="ov" class="ov hidden"><div class="ovc" id="ovc"></div></div>
+<div id="scrClearSt" class="ov hidden">
+  <div class="sheet" style="text-align:center">
+    <div class="kicker" id="csNo">一の蔵</div>
+    <h2 id="csT">蔵の列を すべて反応させた！</h2>
+    <div class="stats" id="csStats"></div>
+    <p id="csNote"></p>
+    <div class="btns"><button class="fuda" id="csNext">次の蔵へ</button></div>
+  </div>
+</div>
+
+<div id="scrFail" class="ov hidden">
+  <div class="sheet" style="text-align:center">
+    <div class="kicker">炉に届いた</div>
+    <h2 id="flT">あと少し！</h2>
+    <p id="flNote"></p>
+    <div class="btns"><button class="fuda" id="flRetry">もう一度</button></div>
+  </div>
+</div>
+
+<div id="scrScroll" class="ov hidden">
+  <div class="sheet" style="width:min(860px,96vw)">
+    <div class="kicker">巻物帳</div>
+    <h2>読み解いた反応式</h2>
+    <div class="scrolls" id="scBody"></div>
+    <div class="btns"><button class="fuda kuro sm" id="scClose">とじる</button></div>
+  </div>
+</div>
+
+<div id="scrClear" class="ov hidden">
+  <div class="sheet" style="text-align:center">
+    <div class="kicker">大蔵 落成</div>
+    <h2>八つの蔵を すべて開けた！</h2>
+    <div class="stats" id="clStats"></div>
+    <p>反応式の係数は、反応する分子と、できる分子の<b>数の比</b>。玉の列でそろえた組は、いつも式のとおりの数だった。</p>
+    <div class="btns"><button class="fuda" id="toTest">確認テストへ</button></div>
+    <div class="btns" style="margin-top:8px"><button class="fuda kuro sm" id="clScroll">巻物帳</button><button class="fuda kuro sm hidden" id="clBook">📖 図鑑</button></div>
+  </div>
+</div>
+
+<div id="scrBack" class="ov hidden">
+  <div class="sheet" style="width:min(460px,94vw);text-align:center">
+    <h2>もどりますか？</h2>
+    <p id="bkSub">進み具合は保存されます。</p>
+    <div class="btns"><button class="fuda kuro" id="bkNo">つづける</button><button class="fuda" id="bkGo">タイトルへ</button></div>
+  </div>
+</div>
+
+<div id="scrTest" class="ov hidden">
+  <div class="paper"><div class="inner">
+    <span id="tNo">1 / 10</span> <span style="font:700 15px sans-serif;color:#b99d62;margin-left:8px">確認テスト</span>
+    <div id="tQ"></div><div id="tFig"></div><div id="tA"></div><div id="tFb"></div>
+  </div></div>
+</div>
 
 <script>/*@SUBMIT_CARD_BEGIN*/
 /* ==========================================================
@@ -1384,342 +1458,419 @@ window.ZUKAN_CARDS={"v": 1, "grade": "chu2", "name": "中2理科図鑑", "econom
 
 /*@ZUKAN_END*/</script>
 <script>
-(function(){
-'use strict';
-const GAME_ID='hannoshiki-sort',KOMA='chu2-kagaku-16',SAVE_KEY='rika-zukan:chu2:game:'+GAME_ID+':v1';
-const TEST_ONLY=window.GAME_MODE==='test';
-const RM=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
-const $=id=>document.getElementById(id);
-const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
-const fmtT=s=>String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');
-window.Zukan&&Zukan.setup&&Zukan.setup({game:GAME_ID,koma:[KOMA]});
+var GID='hannoshiki-sort',KOMA=['chu2-kagaku-16'],SAVE='rika-zukan:chu2:game:hannoshiki-sort:v1';
+var TEST=window.GAME_MODE==='test';
+var RM=!!(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches);
+function $(id){return document.getElementById(id)}
+function clamp(v,a,b){return v<a?a:v>b?b:v}
+function rnd(a,b){return a+Math.random()*(b-a)}
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+function shuffle(a){for(var i=a.length-1;i>0;i--){var j=(Math.random()*(i+1))|0,t=a[i];a[i]=a[j];a[j]=t}return a}
 
-/* ===== 原子（色は全ゲーム共通）と分子の形 ===== */
-const EL={H:['#EAF6FF','#1c4f86'],O:['#E4572E','#fff'],C:['#3a3d46','#fff'],N:['#2549C9','#fff'],S:['#EAD23C','#4d3f00'],Fe:['#767C8A','#fff'],Cu:['#C8773C','#fff'],Mg:['#B9C6D4','#1f2a36'],Ag:['#C9CDD4','#2a2f38']};
-// [元素, x, y]（原子の直径を1とした位置）。H₂O はくの字、CO₂ は一直線
-const LAY={H2:[['H',0,0],['H',.72,0]],O2:[['O',0,0],['O',.72,0]],N2:[['N',0,0],['N',.72,0]],H2O:[['H',0,.56],['O',.5,0],['H',1,.56]],CO2:[['O',0,0],['C',.76,0],['O',1.52,0]],
- C:[['C',0,0]],Cu:[['Cu',0,0]],Mg:[['Mg',0,0]],Fe:[['Fe',0,0]],S:[['S',0,0]],Ag:[['Ag',0,0]],Ag2O:[['Ag',0,0],['O',.74,0],['Ag',1.48,0]],CuO:[['Cu',0,0],['O',.76,0]],MgO:[['Mg',0,0],['O',.76,0]],FeS:[['Fe',0,0],['S',.76,0]]};
-const NM={H2:'水素分子',O2:'酸素分子',N2:'窒素分子',H2O:'水分子',CO2:'二酸化炭素分子',C:'炭素原子',Cu:'銅原子',Mg:'マグネシウム原子',Fe:'鉄原子',S:'硫黄原子',Ag:'銀原子',Ag2O:'酸化銀（Ag₂O）',CuO:'酸化銅（CuO）',MgO:'酸化マグネシウム（MgO）',FeS:'硫化鉄（FeS）'};
-const FM={H2:'H₂',O2:'O₂',N2:'N₂',H2O:'H₂O',CO2:'CO₂',C:'C',Cu:'Cu',Mg:'Mg',Fe:'Fe',S:'S',Ag:'Ag',Ag2O:'Ag₂O',CuO:'CuO',MgO:'MgO',FeS:'FeS'};
-function atomEl(e,z,x,y){const c=EL[e];return `<span class="a" style="--c:${c[0]};--t:${c[1]};--z:${z}px;${x!=null?`left:${x}px;top:${y}px`:''}">${z>=16?e:''}</span>`}
-function mdl(k,z){const L=LAY[k];const xs=L.map(a=>a[1]),ys=L.map(a=>a[2]);const w=(Math.max(...xs)+1)*z,h=(Math.max(...ys)+1)*z;
- return `<span class="mdl" style="width:${w}px;height:${h}px">${L.map(a=>atomEl(a[0],z,a[1]*z,a[2]*z)).join('')}</span>`}
-function coinHTML(k,extra){const z=LAY[k].length>=3?12:(LAY[k].length===2?15:20);return `<div class="coin ${extra||''}" data-k="${k}">${mdl(k,z)}<span class="fm">${FM[k]}</span></div>`}
-
-/* ===== 反応（設計図） ===== */
-const RX={
- H2O:{l:{H2:2,O2:1},r:{H2O:2}},CO2:{l:{C:1,O2:1},r:{CO2:1}},CuO:{l:{Cu:2,O2:1},r:{CuO:2}},MgO:{l:{Mg:2,O2:1},r:{MgO:2}},FeS:{l:{Fe:1,S:1},r:{FeS:1}},
- Ag:{l:{Ag2O:2},r:{Ag:4,O2:1},dec:true},El:{l:{H2O:2},r:{H2:2,O2:1},dec:true}
+/* ================= 原子・分子 ================= */
+var EL={H:{c:'#EAF6FF',t:'#1c4f86'},C:{c:'#3a3d46',t:'#fff'},O:{c:'#E4572E',t:'#fff'},S:{c:'#EAD23C',t:'#4d3f00'},Fe:{c:'#767C8A',t:'#fff'},Cu:{c:'#C8773C',t:'#fff'},Mg:{c:'#B9C6D4',t:'#1f2a36'},Ag:{c:'#C9CDD4',t:'#2a2f38'}};
+var SP={KIN:{n:'金の仕切り',f:'金',a:[['C',0,0]]},
+ H2:{n:'水素分子',f:'H₂',a:[['H',0,0],['H',.84,0]]},
+ O2:{n:'酸素分子',f:'O₂',a:[['O',0,0],['O',.84,0]]},
+ H2O:{n:'水分子',f:'H₂O',a:[['H',0,.6],['O',.52,0],['H',1.04,.6]]},
+ CO2:{n:'二酸化炭素分子',f:'CO₂',a:[['O',0,0],['C',.84,0],['O',1.68,0]]},
+ C:{n:'炭素',f:'C',a:[['C',0,0]]},Fe:{n:'鉄',f:'Fe',a:[['Fe',0,0]]},S:{n:'硫黄',f:'S',a:[['S',0,0]]},
+ Cu:{n:'銅',f:'Cu',a:[['Cu',0,0]]},Mg:{n:'マグネシウム',f:'Mg',a:[['Mg',0,0]]},Ag:{n:'銀',f:'Ag',a:[['Ag',0,0]]},
+ FeS:{n:'硫化鉄',f:'FeS',a:[['Fe',0,0],['S',.84,0]]},CuO:{n:'酸化銅',f:'CuO',a:[['Cu',0,0],['O',.84,0]]},
+ MgO:{n:'酸化マグネシウム',f:'MgO',a:[['Mg',0,0],['O',.84,0]]},Ag2O:{n:'酸化銀',f:'Ag₂O',a:[['Ag',0,0],['O',.84,0],['Ag',1.68,0]]}
 };
-function eqHTML(rx,blank){const R=RX[rx];
- const side=(m,cls,bl)=>Object.keys(m).map(k=>`<span class="${cls}">${bl?'<span class="blank">□</span>':(m[k]>1?`<span class="cf">${m[k]}</span>`:'')}${FM[k].replace(/[₀-₉]/g,d=>'<sub>'+'₀₁₂₃₄₅₆₇₈₉'.indexOf(d)+'</sub>')}</span>`).join(' ＋ ');
- return `${side(R.l,'lhs')} → ${side(R.r,'rhs',blank)}`}
-/* 工場（1周）。注文 make=つくる数・use=使い切る数 */
-const FACT=[
- {name:'水の工場',orders:[{rx:'H2O',make:['H2O',2]},{rx:'H2O',make:['H2O',4]},{rx:'H2O',use:['H2',6]}],extra:{N2:2},app:'bag',
-  intro:'設計図 2H₂＋O₂→2H₂O を読んで、棚の分子コインを皿へ移そう。'},
- {name:'炭と銅の工場',orders:[{rx:'CO2',make:['CO2',2]},{rx:'CuO',make:['CuO',4]},{rx:'CuO',use:['Cu',2]}],extra:{N2:1,H2:2},app:'jar',
-  intro:'設計図が2種類。係数（大きい数字）を読みちがえないように。'},
- {name:'マグネシウム工場',orders:[{rx:'MgO',make:['MgO',2]},{rx:'MgO',use:['O2',2]},{rx:'FeS',make:['FeS',3]}],extra:{N2:1,C:1},app:'dish',
-  intro:'「酸素分子を2個使い切れ」——相手は何個いる？'},
- {name:'分解工場（銀）',orders:[{rx:'Ag',use:['Ag2O',2]},{rx:'Ag',make:['O2',2]}],extra:{Cu:3,O2:1},blank:true,app:'tube',climax:true,
-  intro:'★山場：設計図の右側（できる物質）の係数が消えている！ 出てくる数も自分で決めてから反応させよう。'},
- {name:'電気分解工場',orders:[{rx:'El',use:['H2O',2]},{rx:'El',make:['H2',4]},{rx:'H2O',make:['H2O',2]}],extra:{N2:2},blank:true,app:'elec',
-  intro:'分解と結び付く反応が同じ工場に。右側の係数も読み取って決めよう。'},
- {name:'タイムアタック工場',orders:[{rx:'H2O',make:['H2O',4]},{rx:'MgO',make:['MgO',2]},{rx:'CO2',make:['CO2',1]},{rx:'CuO',make:['CuO',2]}],extra:{N2:2},time:150,boss:true,app:'none',
-  intro:'制限時間150秒。やり直すと10秒へる。設計図を見て一発で移しきれ！'}
+function spDim(k){var mx=0,my=0;SP[k].a.forEach(function(p){mx=Math.max(mx,p[1]);my=Math.max(my,p[2])});return {w:mx+1,h:my+1}}
+/* 反応式（すべて中2で扱う簡単な式） */
+var EQ={
+ A:{r:[['H2',2],['O2',1]],p:[['H2O',2]],t:'2H₂ ＋ O₂ → 2H₂O',n:'水ができる'},
+ B:{r:[['C',1],['O2',1]],p:[['CO2',1]],t:'C ＋ O₂ → CO₂',n:'炭素が燃える'},
+ C:{r:[['Cu',2],['O2',1]],p:[['CuO',2]],t:'2Cu ＋ O₂ → 2CuO',n:'銅が酸化する'},
+ D:{r:[['Mg',2],['O2',1]],p:[['MgO',2]],t:'2Mg ＋ O₂ → 2MgO',n:'マグネシウムが燃える'},
+ E:{r:[['Fe',1],['S',1]],p:[['FeS',1]],t:'Fe ＋ S → FeS',n:'鉄と硫黄が結び付く'},
+ F:{r:[['Ag2O',2]],p:[['Ag',4],['O2',1]],t:'2Ag₂O → 4Ag ＋ O₂',n:'酸化銀の分解'},
+ G:{r:[['H2O',2]],p:[['H2',2],['O2',1]],t:'2H₂O → 2H₂ ＋ O₂',n:'水の電気分解'},
+ H:{r:[['CuO',2],['C',1]],p:[['Cu',2],['CO2',1]],t:'2CuO ＋ C → 2Cu ＋ CO₂',n:'酸化銅の還元'}
+};
+var EQORD=['A','B','C','D','E','F','G','H'];
+function eqN(e){var n=0;EQ[e].r.forEach(function(x){n+=x[1]});return n}
+function eqNeed(e){var o={};EQ[e].r.forEach(function(x){o[x[0]]=x[1]});return o}
+/* 八つの蔵 */
+var KN=['一','二','三','四','五','六','七','八'];
+var ST=[
+ {nm:'水の蔵',eq:['A'],g:9,v:.30,turn:1.05,rows:3,say:'<b>H₂ 2つ</b>と<b>O₂ 1つ</b>が となり合うと、<b>H₂O 2つ</b>に変わって消える。列が金の炉に届く前に、全部反応させよう。'},
+ {nm:'炭の蔵',eq:['A','B'],g:12,v:.33,turn:1.2,rows:3,say:'反応式が2本。<b>C 1つ＋O₂ 1つ</b>でも消える。係数（大きい数字）が組の数。'},
+ {nm:'銅の蔵',eq:['C','B'],g:13,v:.36,turn:1.3,rows:4,say:'銅は<b>2つ</b>で酸素分子<b>1つ</b>。係数の比 2：1 をそろえる。'},
+ {nm:'電気分解の蔵',eq:['G','C'],g:13,v:.38,turn:1.35,rows:4,say:'水の電気分解でできた<b>O₂は列に残る</b>。となりに Cu が2つあれば、続けて反応する＝<b>連鎖</b>！',chain:1},
+ {nm:'銀の蔵',eq:['F','D'],g:14,v:.42,turn:1.45,rows:4,say:'酸化銀2つで銀4つと酸素分子1つ。できた O₂ で、マグネシウムを燃やそう。'},
+ {nm:'鉄と硫黄の蔵',eq:['E','A','B'],g:15,v:.45,turn:1.5,rows:5,say:'反応式が3本。どの組を作るか、撃つ前に巻物を読む。'},
+ {nm:'還元の蔵',eq:['H','B','E'],g:16,v:.48,turn:1.6,rows:5,say:'<b>2CuO＋C</b>：酸化銅2つと炭素1つから、銅2つと二酸化炭素1つ。炭素は <b>O₂</b> と組んでも燃える。どちらの式に使う？'},
+ {nm:'大蔵',eq:['A','B','D','F'],g:20,v:.54,turn:1.75,rows:5,boss:1,say:'最後の蔵。溝はいちばん長く、玉は速い。4本の反応式を読み分けよう。'}
 ];
-function modelRow(rx,blank){const R=RX[rx];const side=(m,bl)=>Object.keys(m).map(k=>bl?`<span style="font-size:20px;color:#f2c230">？</span>`:`<span style="display:inline-flex;gap:3px">${Array.from({length:m[k]},()=>mdl(k,16)).join('')}</span>`).join('<span style="margin:0 5px;color:#9fc4e6">＋</span>');
- return `<div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:4px;background:#fff;border-radius:8px;padding:6px;margin-top:6px">${side(R.l)}<span style="margin:0 6px;color:#555;font-weight:700">→</span>${side(R.r,blank)}</div>`}
-function orderK(o){const R=RX[o.rx];if(o.make)return o.make[1]/R.r[o.make[0]];return o.use[1]/R.l[o.use[0]]}
-function orderNeed(o){const R=RX[o.rx],k=orderK(o),l={},r={};for(const s in R.l)l[s]=R.l[s]*k;for(const s in R.r)r[s]=R.r[s]*k;return{l,r,k}}
-function orderText(o){if(o.make)return `${NM[o.make[0]].replace(/（.*）/,'')}（${FM[o.make[0]]}）を <b>${o.make[1]}</b> 個つくれ`;return `${NM[o.use[0]].replace(/（.*）/,'')}（${FM[o.use[0]]}）を <b>${o.use[1]}</b> 個、余らせずに使い切れ`}
+var NST=ST.length;
 
-/* ===== セーブ・音 ===== */
-function fresh(){return{v:1,name:'',fac:0,started:false,t:0,score:0,stars:[],oneShot:0,orders:0,maxCombo:0,cleared:false,firstTry:{},ruleGot:false,mainDone:false}}
-let S=fresh();try{const o=JSON.parse(localStorage.getItem(SAVE_KEY));if(o&&o.v===1)S=Object.assign(fresh(),o)}catch(e){}
-function save(){try{localStorage.setItem(SAVE_KEY,JSON.stringify(S))}catch(e){}}
-let MUTE=false;try{MUTE=JSON.parse(localStorage.getItem('rika-zukan:profile:v1')||'{}').mute===true}catch(e){}
-let AC=null;function ac(){if(!AC){try{AC=new(window.AudioContext||window.webkitAudioContext)()}catch(e){}}if(AC&&AC.state==='suspended')AC.resume();return AC}
-function tone(f,d,type,vol,when,slide){if(MUTE)return;const a=ac();if(!a)return;const t=a.currentTime+(when||0);const o=a.createOscillator(),g=a.createGain();o.type=type||'sine';o.frequency.setValueAtTime(f,t);if(slide)o.frequency.exponentialRampToValueAtTime(slide,t+d);g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol||.1,t+.006);g.gain.exponentialRampToValueAtTime(.0008,t+d);o.connect(g);g.connect(a.destination);o.start(t);o.stop(t+d+.02)}
-function clink(p){tone(2200*(p||1),.05,'triangle',.07);tone(3300*(p||1),.08,'sine',.04,.01)}
-const sfx={sel:()=>clink(.8),coin:(n)=>clink(1+Math.min(n||0,8)*.06),no:()=>{tone(160,.18,'square',.05);tone(120,.2,'square',.04,.08)},
- go:()=>{tone(90,.4,'sawtooth',.06,0,220);tone(440,.2,'square',.03,.3)},
- ok:(c)=>{const b=[523,659,784,1047];b.forEach((f,i)=>tone(f*(1+Math.min(c||0,4)*.06),.18,'square',.05,i*.07));tone(1568,.4,'triangle',.05,.3)},
- clear:()=>{[392,523,659,784,1047].forEach((f,i)=>tone(f,.25,'square',.05,i*.1));tone(1568,.6,'triangle',.05,.5)},
- alarm:()=>{tone(880,.12,'square',.05);tone(660,.12,'square',.05,.14)}};
-function setMute(m){MUTE=m;try{const p=JSON.parse(localStorage.getItem('rika-zukan:profile:v1')||'{}');p.mute=m;localStorage.setItem('rika-zukan:profile:v1',JSON.stringify(p))}catch(e){}$('bMute').textContent=m?'🔇':'🔊';$('bMute1').textContent=m?'🔇 音：オフ':'🔊 音：オン'}
-function earn(n,why,x,y){try{return window.Zukan&&Zukan.earn?Zukan.earn(n,why,{koma:KOMA,x,y}):0}catch(e){return 0}}
+/* ================= 画面 ================= */
+var cv=$('cv'),cx=cv.getContext('2d'),DPR=1,W=0,H=0,PORT=false,L={hh:58};
+function layout(){DPR=Math.min(2,window.devicePixelRatio||1);W=innerWidth;H=innerHeight;cv.width=Math.round(W*DPR);cv.height=Math.round(H*DPR);cx.setTransform(DPR,0,0,DPR,0,0);
+  PORT=H>W*1.02;L.hh=PORT?clamp(H*.066,52,66):clamp(H*.068,50,62);document.documentElement.style.setProperty('--hh',L.hh+'px');
+  spC={};bgC=null;TD=null;placeEqs();if(RUN)buildPath(true)}
+function placeEqs(){var e=$('eqs');e.classList.toggle('col',!PORT);e.classList.toggle('cmp',PORT||H<700);
+  if(PORT){e.style.left='8px';e.style.right='8px';e.style.top=(L.hh+8)+'px';e.style.width='';e.style.justifyContent='center';e.style.flexWrap='wrap'}
+  else{e.style.left='14px';e.style.right='';e.style.top=(L.hh+14)+'px';e.style.width=Math.round(clamp(W*.22,210,320))+'px';e.style.justifyContent='flex-start';e.style.flexWrap='nowrap'}}
 
-/* ===== 演出 ===== */
-const fx=$('fx'),fc=fx.getContext('2d');let P=[];
-function fxSize(){const d=Math.min(2,devicePixelRatio||1);fx.width=innerWidth*d;fx.height=innerHeight*d;fc.setTransform(d,0,0,d,0,0)}fxSize();addEventListener('resize',fxSize);
-function burst(x,y,cols,n){n=RM?Math.min(6,n):n;for(let i=0;i<n;i++){const a=Math.random()*6.28,v=2+Math.random()*7;P.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v-3,c:cols[i%cols.length],t:0,s:2+Math.random()*4})}}
-function floatTxt(x,y,s,c){P.push({x,y,txt:s,t:0,c:c||'#f2c230'})}
-(function loop(){requestAnimationFrame(loop);fc.clearRect(0,0,innerWidth,innerHeight);for(let i=P.length-1;i>=0;i--){const p=P[i];p.t++;
- if(p.txt){fc.globalAlpha=Math.max(0,1-p.t/70);fc.font="700 22px 'BIZ UDPGothic',sans-serif";fc.textAlign='center';fc.lineWidth=5;fc.strokeStyle='#000';fc.strokeText(p.txt,p.x,p.y-p.t*.7);fc.fillStyle=p.c;fc.fillText(p.txt,p.x,p.y-p.t*.7);if(p.t>70)P.splice(i,1);continue}
- p.x+=p.vx;p.y+=p.vy;p.vy+=.25;fc.globalAlpha=Math.max(0,1-p.t/50);fc.fillStyle=p.c;fc.beginPath();fc.arc(p.x,p.y,p.s,0,7);fc.fill();if(p.t>50)P.splice(i,1)}fc.globalAlpha=1})();
-function ctr(el){const r=el.getBoundingClientRect();return[r.left+r.width/2,r.top+r.height/2]}
+/* ================= 玉（黒漆の蓋に原子の象嵌） ================= */
+var spC={};
+function atomBall(g,el,x,y,r){var E=EL[el],gr=g.createRadialGradient(x-r*.5,y-r*.62,0,x,y,r);gr.addColorStop(0,'rgba(255,255,255,.9)');gr.addColorStop(.16,E.c);gr.addColorStop(.85,E.c);gr.addColorStop(1,shade(E.c,-.35));
+  g.beginPath();g.arc(x,y,r,0,Math.PI*2);g.fillStyle=gr;g.fill();g.lineWidth=Math.max(.8,r*.06);g.strokeStyle='rgba(0,0,0,.45)';g.stroke();
+  g.fillStyle=E.t;g.font='800 '+(el.length>1?r*.86:r*1.02)+'px "Hiragino Sans","Noto Sans JP",sans-serif';g.textAlign='center';g.textBaseline='middle';g.fillText(el,x,y+r*.06)}
+function shade(hex,k){var n=parseInt(hex.slice(1),16),r=n>>16,g=(n>>8)&255,b=n&255,t=k>0?255:0,a=Math.abs(k);return 'rgb('+Math.round(r+(t-r)*a)+','+Math.round(g+(t-g)*a)+','+Math.round(b+(t-b)*a)+')'}
+function drawMol(g,k,x,y,span,cap){/* span＝分子の幅の上限 */var dm=spDim(k),u=Math.min(span/dm.w,span*.9/dm.h,cap||1e9),r=u*.5,ox=x-dm.w*u/2,oy=y-dm.h*u/2;
+  var ps=SP[k].a;g.strokeStyle='rgba(0,0,0,.4)';g.lineWidth=Math.max(1.5,r*.28);
+  if(ps.length>1){var pts=ps.map(function(p){return [ox+p[1]*u+r,oy+p[2]*u+r]});var pr=k==='H2O'?[[1,0],[1,2]]:pts.slice(1).map(function(_,i){return [i,i+1]});pr.forEach(function(q){g.beginPath();g.moveTo(pts[q[0]][0],pts[q[0]][1]);g.lineTo(pts[q[1]][0],pts[q[1]][1]);g.stroke()})}
+  ps.forEach(function(p){atomBall(g,p[0],ox+p[1]*u+r,oy+p[2]*u+r,r*.98)})}
+function ballSprite(k,d){var key=k+'@'+Math.round(d)+'@'+DPR;if(spC[key])return spC[key];var s=Math.ceil(d+8),c=document.createElement('canvas');c.width=c.height=s*DPR;var g=c.getContext('2d');g.scale(DPR,DPR);
+  var x=s/2,y=s/2,R=d/2;g.fillStyle='rgba(0,0,0,.55)';g.beginPath();g.arc(x+1.5,y+2.5,R,0,Math.PI*2);g.fill();
+  var gr=g.createRadialGradient(x-R*.3,y-R*.4,R*.1,x,y,R);gr.addColorStop(0,'#3a2a20');gr.addColorStop(.6,'#150d09');gr.addColorStop(1,'#050302');g.beginPath();g.arc(x,y,R,0,Math.PI*2);g.fillStyle=gr;g.fill();
+  var gg=g.createLinearGradient(x-R,y-R,x+R,y+R);gg.addColorStop(0,'#fbe6a4');gg.addColorStop(.45,'#C9A043');gg.addColorStop(1,'#6d5019');g.lineWidth=Math.max(2,R*.08);g.strokeStyle=gg;g.beginPath();g.arc(x,y,R-g.lineWidth/2,0,Math.PI*2);g.stroke();
+  g.lineWidth=1;g.strokeStyle='rgba(201,160,67,.5)';g.beginPath();g.arc(x,y,R*.8,0,Math.PI*2);g.stroke();
+  if(k==='KIN'){var kg=g.createRadialGradient(x-R*.3,y-R*.4,1,x,y,R*.78);kg.addColorStop(0,'#fff1bf');kg.addColorStop(.5,'#C9A043');kg.addColorStop(1,'#6d5019');g.fillStyle=kg;g.beginPath();g.arc(x,y,R*.78,0,Math.PI*2);g.fill();
+    g.strokeStyle='rgba(60,40,10,.7)';g.lineWidth=1.2;for(var wv=0;wv<3;wv++){g.beginPath();g.arc(x,y+R*.35,R*(.2+wv*.16),Math.PI,0);g.stroke()}}
+  else drawMol(g,k,x,y,R*1.8,R*1.2);
+  g.fillStyle='rgba(255,255,255,.13)';g.beginPath();g.ellipse(x-R*.25,y-R*.5,R*.55,R*.22,-.4,0,Math.PI*2);g.fill();
+  return spC[key]={c:c,s:s}}
+function drawBall(k,x,y,d,a){var sp=ballSprite(k,d);if(a!=null){cx.save();cx.globalAlpha=a}cx.drawImage(sp.c,x-sp.s/2,y-sp.s/2,sp.s,sp.s);if(a!=null)cx.restore()}
+var urlC={};
+function molURL(k){if(urlC[k])return urlC[k];var dm=spDim(k),u=40,c=document.createElement('canvas');c.width=Math.ceil(dm.w*u+6);c.height=Math.ceil(dm.h*u+6);drawMol(c.getContext('2d'),k,c.width/2,c.height/2,dm.w*u);return urlC[k]=c.toDataURL()}
+function molHTML(k,d){var dm=spDim(k);return '<span class="mol" style="width:'+(dm.w*d+3)+'px;height:'+(dm.h*d+3)+'px"><img alt="'+SP[k].f+'" src="'+molURL(k)+'" style="left:0;top:0;width:100%;height:100%"></span>'}
+function eqHTML(e,d,big){var E=EQ[e],side=function(a){return a.map(function(x,i){return (i?'<span class="op">＋</span>':'')+'<span class="k">'+(x[1]>1?x[1]:'')+'</span>'+molHTML(x[0],d)}).join('')};
+  return side(E.r)+'<span class="ar">→</span>'+side(E.p)}
+function readTxt(e){var E=EQ[e],f=function(a){return a.map(function(x){return SP[x[0]].f+' '+x[1]+'個'}).join(' と ')};return f(E.r)+' から '+f(E.p)}
 
-/* ===== 工場の状態 ===== */
-const CAP=6,NS=5;
-let F=null;
-function coinsFor(fac){const c={};fac.orders.forEach(o=>{const n=orderNeed(o);for(const s in n.l)c[s]=(c[s]||0)+n.l[s]});for(const s in fac.extra)c[s]=(c[s]||0)+fac.extra[s];const a=[];for(const s in c)for(let i=0;i<c[s];i++)a.push(s);return a}
-function openFactory(i){
- const fac=FACT[i];const coins=shuffle(coinsFor(fac));
- const sh=Array.from({length:NS},()=>[]);
- // 最後の棚は空けておく
- let j=0;coins.forEach(k=>{let tries=0;while(sh[j%(NS-1)].length>=CAP-1&&tries<10){j++;tries++}sh[j%(NS-1)].push(k);j++});
- F={i,fac,sh,oi:0,plates:{},prod:{},sel:null,fails:0,oneShots:0,combo:0,score:0,left:fac.time||0,over:false,orderFails:0,tut:i===0&&!S.stars[0]?1:0};
- S.fac=i;S.started=true;save();
- setupOrder();show('game');render();
- const app=fac.app&&fac.app!=='none'?APPS[fac.app]():'';
- overlay(`<span class="badge">${fac.boss?'最終工場':'工場 '+(i+1)+' / '+FACT.length}${fac.climax?'　★山場':''}</span><h2>🏭 ${esc(fac.name)}</h2>
-  ${app?`<div class="app">${app}</div>`:''}
-  <div class="bp" style="font-size:18px">${[...new Set(fac.orders.map(o=>o.rx))].map(rx=>`<div>${eqHTML(rx,fac.blank)}</div>${modelRow(rx,fac.blank)}`).join('')}<small>設計図（化学反応式）　青＝皿に入れる物　オレンジ＝できる物</small></div>
-  <p class="lead">${esc(fac.intro)}</p><div class="small">注文 ${fac.orders.length} 件${fac.time?`・制限時間 ${fac.time} 秒`:''}</div>
-  <button class="btn y wide" id="oGo" style="margin-top:10px">操業開始</button>`);
- $('oGo').onclick=()=>{sfx.sel();closeOv();if(fac.time)startClock();if(F.tut)setMsg('① 棚をタップして <b>H₂</b> のコインを選ぼう（いちばん上だけ動かせる）')};
-}
-function setupOrder(){const o=F.fac.orders[F.oi];const n=orderNeed(o);F.need=n;F.plates={};for(const s in n.l)F.plates[s]=[];F.prod={};if(F.fac.blank)for(const s in n.r)F.prod[s]=0;F.orderFails=0;F.sel=null}
-let clock=null;
-function startClock(){clearInterval(clock);clock=setInterval(()=>{if(!F||F.over||$('game').classList.contains('hidden')||!$('ov').classList.contains('hidden'))return;F.left--;renderMeta();if(F.left<=10&&F.left>0)sfx.alarm();if(F.left<=0){clearInterval(clock);failFactory('時間切れ！')}},1000)}
+/* ================= 音（琴・鼓） ================= */
+var AU={ctx:null,mute:false,
+  init:function(){if(this.ctx)return;try{this.ctx=new (window.AudioContext||window.webkitAudioContext)()}catch(e){}},
+  pluck:function(f,vol,dl,dur){if(this.mute||!this.ctx)return;var c=this.ctx,t=c.currentTime+(dl||0),o=c.createOscillator(),o2=c.createOscillator(),g=c.createGain(),lp=c.createBiquadFilter();
+    o.type='triangle';o2.type='sawtooth';o.frequency.setValueAtTime(f*1.01,t);o.frequency.exponentialRampToValueAtTime(f,t+.05);o2.frequency.value=f*2;lp.type='lowpass';lp.frequency.setValueAtTime(f*6,t);lp.frequency.exponentialRampToValueAtTime(f*1.5,t+(dur||.8));
+    var g2=c.createGain();g2.gain.value=.12;g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol,t+.004);g.gain.exponentialRampToValueAtTime(.001,t+(dur||.8));
+    o.connect(lp);o2.connect(g2);g2.connect(lp);lp.connect(g);g.connect(c.destination);o.start(t);o2.start(t);o.stop(t+(dur||.8)+.05);o2.stop(t+(dur||.8)+.05)},
+  drum:function(f,vol,dl){if(this.mute||!this.ctx)return;var c=this.ctx,t=c.currentTime+(dl||0),o=c.createOscillator(),g=c.createGain();o.type='sine';o.frequency.setValueAtTime(f,t);o.frequency.exponentialRampToValueAtTime(f*.45,t+.18);
+    g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol,t+.004);g.gain.exponentialRampToValueAtTime(.001,t+.25);o.connect(g);g.connect(c.destination);o.start(t);o.stop(t+.3)}};
+/* 都節の音階（ミ・ファ・ラ・シ・ド） */
+var MIYAKO=[329.6,349.2,440,493.9,523.3,659.3,698.5,880,987.8,1046.5,1318.5];
+var SFX={
+  shoot:function(){AU.drum(210,.25);AU.pluck(880,.03,0,.15)},
+  hit:function(){AU.pluck(440,.08,0,.35)},
+  react:function(n){var b=Math.min(4,n);for(var i=0;i<4;i++)AU.pluck(MIYAKO[b+i*2]||1318.5,.1,i*.06,1.1)},
+  swap:function(){AU.pluck(660,.05,0,.2)},
+  miss:function(){AU.pluck(196,.07,0,.4)},
+  warn:function(){AU.drum(90,.25)},
+  clear:function(){[0,2,4,5,7,9].forEach(function(j,i){AU.pluck(MIYAKO[j],.1,i*.1,1.4)})},
+  fail:function(){AU.pluck(220,.1,0,1.2);AU.pluck(207.7,.08,.15,1.2)}};
 
-/* ===== 描画 ===== */
-function render(){
- const fac=F.fac,o=fac.orders[F.oi];
- $('fName').textContent=`${fac.boss?'最終':'工場'+(F.i+1)}　${fac.name}`;
- $('lcd').textContent=(S.score+F.score)+'';
- $('order').innerHTML=`<div class="small">注文 ${F.oi+1} / ${fac.orders.length}</div><div class="ot">${orderText(o)}</div>
-  <div class="bp">${eqHTML(o.rx,fac.blank)}<small>設計図：青＝皿に入れる（反応する物質）　オレンジ＝できる物質</small></div>
-  <div class="meta"><span id="combo"></span><span id="clock"></span></div>`;
- renderMeta();
- const shv=$('shelves');shv.innerHTML='';
- F.sh.forEach((col,i)=>{const d=document.createElement('div');d.className='shelf'+(F.sel&&F.sel.t==='s'&&F.sel.i===i?' sel':'');
-  const run=topRun(col);
-  d.innerHTML=`<span class="cap">${col.length}/${CAP}</span>`+col.map((k,j)=>coinHTML(k,F.sel&&F.sel.t==='s'&&F.sel.i===i&&j>=col.length-run?'up':'')).join('');
-  d.onclick=()=>tapShelf(i);shv.appendChild(d)});
- const pl=$('plates');pl.innerHTML='';
- for(const s in F.plates){const arr=F.plates[s];const d=document.createElement('div');d.className='plate lhs'+(F.sel&&F.sel.t==='p'&&F.sel.k===s?' sel':'');
-  d.innerHTML=`<div class="ph"><span class="pf">${FM[s]}</span><span class="cnt">${arr.length}</span></div><div class="pc">${arr.map(k=>coinHTML(k)).join('')}</div><div class="small" style="font-size:11px">${esc(NM[s])}を入れる皿</div>`;
-  d.onclick=()=>tapPlate(s);pl.appendChild(d)}
- if(fac.blank){for(const s in F.prod){const d=document.createElement('div');d.className='plate rhs';
-  d.innerHTML=`<div class="ph"><span class="pf">できる ${FM[s]}</span><span class="cnt">${F.prod[s]}</span></div><div style="text-align:center;margin-top:2px">${mdl(s,14)}</div><div class="stepper"><button data-s="${s}" data-d="-1">－</button><button data-s="${s}" data-d="1">＋</button></div>`;
-  d.querySelectorAll('button').forEach(b=>b.onclick=e=>{e.stopPropagation();ac();F.prod[s]=Math.max(0,Math.min(12,F.prod[s]+ +b.dataset.d));sfx.sel();render()});pl.appendChild(d)}}
-}
-function renderMeta(){const c=$('combo'),k=$('clock');if(c)c.textContent=F.combo>=2?`一発成功 ${F.combo}連続 ×${mult()}`:(F.combo===1?'一発成功！':'');if(k)k.innerHTML=F.fac.time?`⏱ <span class="lcd" style="font-size:15px;${F.left<=15?'color:#ff5b4a':''}">${F.left}</span>`:''}
-function mult(){return Math.min(4,1+.5*(F.combo-1))}
-function topRun(col){if(!col.length)return 0;const k=col[col.length-1];let n=0;for(let i=col.length-1;i>=0&&col[i]===k;i--)n++;return n}
-function setMsg(h,col){$('msg').innerHTML=h;$('msg').style.color=col||'var(--ink)'}
+/* ================= 状態 ================= */
+var G=null,state='title',NAME=window.PLAYER_NAME||'',RUN=null;
+function fresh(){return {v:1,name:'',stage:0,scroll:{},st:{mol:0,react:0,shots:0,hitShots:0,bestCb:0,bestCh:0,fails:0,time:0},chainFound:0,done:0}}
+function saveGame(){if(!G||TEST)return;try{localStorage.setItem(SAVE,JSON.stringify(G))}catch(e){}}
+function loadGame(){try{var o=JSON.parse(localStorage.getItem(SAVE));if(o&&o.v===1&&typeof o.stage==='number')return o}catch(e){}return null}
 
-/* ===== 操作（タップ→タップ） ===== */
-function tapShelf(i){
- if(F.over)return;ac();const col=F.sh[i];
- if(!F.sel){if(!col.length){sfx.no();return}F.sel={t:'s',i};sfx.sel();if(F.tut===1){F.tut=2;setMsg('② 下の <b>H₂ の皿</b> をタップ。1回で1個ずつ入る')}render();return}
- if(F.sel.t==='s'){
-  if(F.sel.i===i){F.sel=null;render();return}
-  const src=F.sh[F.sel.i],k=src[src.length-1];const top=col[col.length-1];
-  if(col.length&&top!==k){sfx.no();setMsg('棚には、同じ種類の上か、空いた所にだけ積める','var(--red)');F.sel={t:'s',i};sfx.sel();render();return}
-  let n=Math.min(topRun(src),CAP-col.length);if(n<=0){sfx.no();setMsg('その棚はいっぱい','var(--red)');return}
-  for(let j=0;j<n;j++)col.push(src.pop());sfx.coin(n);F.sel=null;render();return}
- if(F.sel.t==='p'){const arr=F.plates[F.sel.k];if(!arr.length){F.sel=null;render();return}
-  const k=arr[arr.length-1],top=col[col.length-1];
-  if(col.length>=CAP||(col.length&&top!==k)){sfx.no();setMsg('同じ種類の上か、空いた所にだけ戻せる','var(--red)');return}
-  col.push(arr.pop());sfx.coin(0);if(!arr.length)F.sel=null;render()}
-}
-function tapPlate(s){
- if(F.over)return;ac();const arr=F.plates[s];
- if(F.sel&&F.sel.t==='s'){const src=F.sh[F.sel.i];const k=src[src.length-1];
-  if(k!==s){sfx.no();setMsg(`この皿は ${FM[s]}（${esc(NM[s])}）専用。いま選んでいるのは ${FM[k]}`,'var(--red)');return}
-  arr.push(src.pop());sfx.coin(arr.length);
-  if(!src.length||src[src.length-1]!==s)F.sel=null;
-  if(F.tut===2){F.tut=3;setMsg('③ 設計図の係数どおりに入れたら <b>⚙ 反応スタート</b>')}
-  render();return}
- if(F.sel&&F.sel.t==='p'&&F.sel.k===s){F.sel=null;render();return}
- if(arr.length){F.sel={t:'p',k:s};sfx.sel();setMsg('戻したい棚をタップ（1回で1個）');render()}
-}
-$('bGo').onclick=()=>{
- if(!F||F.over)return;ac();
- const need=F.need,bad=[];
- for(const s in need.l){const d=need.l[s]-F.plates[s].length;if(d>0)bad.push(`${FM[s]}（${NM[s]}）があと <b>${d}</b> 個足りない`);else if(d<0)bad.push(`${FM[s]}（${NM[s]}）が <b>${-d}</b> 個多い`)}
- if(F.fac.blank)for(const s in need.r){const d=need.r[s]-F.prod[s];if(d>0)bad.push(`できる ${FM[s]} は、いまの予想より <b>${d}</b> 個多いはず`);else if(d<0)bad.push(`できる ${FM[s]} は、いまの予想より <b>${-d}</b> 個少ないはず`)}
- if(bad.length){sfx.no();F.orderFails++;F.fails++;F.combo=0;if(F.fac.time){F.left=Math.max(1,F.left-10);floatTxt(innerWidth/2,120,'－10秒','#ff5b4a')}
-  setMsg('⚠ 結合しない！<br>'+bad.join('<br>'),'var(--red)');const o=$('order');o.animate&&!RM&&o.animate([{transform:'translateX(-6px)'},{transform:'translateX(6px)'},{transform:'none'}],{duration:250});renderMeta();return}
- success();
-};
-function success(){
- const o=F.fac.orders[F.oi],need=F.need,one=F.orderFails===0;
- if(one){F.combo++;F.oneShots++}else F.combo=0;
- S.maxCombo=Math.max(S.maxCombo,F.combo);S.orders++;if(one)S.oneShot++;
- const pts=Math.round(100*(one?mult():.5));F.score+=pts;
- sfx.go();setTimeout(()=>sfx.ok(F.combo),260);
- const [x,y]=ctr($('plates'));burst(x,y,['#f2c230','#EAF6FF','#E4572E','#5fd18b'],RM?6:46);floatTxt(x,y-30,'+'+pts+(one&&F.combo>1?' ×'+mult():''),one?'#f2c230':'#a9b3bb');
- // 分子の数の比
- const R=RX[o.rx];const ls=Object.keys(R.l),rs=Object.keys(R.r);
- const cnt=[...ls.map(s=>need.l[s]),...rs.map(s=>need.r[s])],base=[...ls.map(s=>R.l[s]),...rs.map(s=>R.r[s])];
- const names=[...ls,...rs].map(s=>FM[s]).join(' : ');
- const prods=rs.map(s=>`<span style="display:inline-flex;gap:4px;flex-wrap:wrap;justify-content:center">${Array.from({length:Math.min(need.r[s],8)},()=>coinHTML(s)).join('')}</span>`).join('<span style="margin:0 6px">＋</span>');
- F.oi++;const done=F.oi>=F.fac.orders.length;
- overlay(`<span class="badge">${one?'一発成功！':'成功'}</span><h2>${rs.map(s=>`${FM[s]} ×${need.r[s]}`).join('　')} 出荷！</h2>
-  <div style="display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:4px;margin:6px 0">${prods}</div>
-  <div class="bp" style="font-size:17px">${eqHTML(o.rx)}</div>
-  <div class="card" style="margin:8px 0"><div class="small">分子などの数（${names}）</div><div class="ratio">${cnt.join(' : ')}</div><div class="small">設計図の係数の比 ${base.join(' : ')} と同じ${need.k>1?`（どれも ${need.k} 倍）`:''}</div></div>
-  ${one?`<div style="color:var(--yel);font-weight:700">+${pts}　${F.combo>1?`${F.combo}連続 ×${mult()}`:''}</div>`:'<div class="small">やり直したので倍率はリセット</div>'}
-  <button class="btn y wide" id="oN" style="margin-top:10px">${done?'工場の結果へ':'つぎの注文へ'}</button>`);
- $('oN').onclick=()=>{sfx.sel();closeOv();if(done)clearFactory();else{setupOrder();render();setMsg(F.fac.time?'つぎの注文！':'つぎの注文。設計図をよく読もう')}};
-}
-function clearFactory(){
- F.over=true;clearInterval(clock);sfx.clear();
- const n=F.fac.orders.length,st=F.oneShots===n?3:F.oneShots>=n-1?2:1;
- S.stars[F.i]=Math.max(S.stars[F.i]||0,st);S.score+=F.score;
- let g=0,g2=0;if(F.oneShots===n&&!S.firstTry[F.i]){S.firstTry[F.i]=1;g=earn(10,'first-try',innerWidth/2,innerHeight/3)}
- if(F.fac.climax&&F.oneShots>=1&&!S.ruleGot){S.ruleGot=true;g2=earn(30,'rule',innerWidth/2,innerHeight/2)}
- const last=F.i===FACT.length-1;S.fac=Math.min(F.i+1,FACT.length-1);if(last)S.cleared=true;save();
- overlay(`<span class="badge">工場クリア</span><h2>🏭 ${esc(F.fac.name)}</h2><div class="stars">${[1,2,3].map(k=>`<span class="${k<=st?'':'off'}">★</span>`).join('')}</div>
-  <div class="big">${F.score}</div><div class="small">一発成功 ${F.oneShots} / ${n}${F.fac.time?`・のこり ${F.left} 秒`:''}</div>
-  ${F.fac.climax?`<div class="card" style="text-align:left;font-size:14px;line-height:1.6">右側の係数も、左側と同じように「分子などの数」を表していた。<br>2Ag₂O → 4Ag ＋ O₂：酸化銀2つから、銀原子4個と酸素分子1個。${g2?`<br>✨ かけら +${g2}`:''}</div>`:''}
-  ${g?`<div class="small">✨ 全部一発！ かけら +${g}</div>`:''}
-  <button class="btn y wide" id="oN" style="margin-top:10px">${last?'まとめへ':'つぎの工場へ'}</button>
-  <button class="btn ghost wide" id="oR" style="margin-top:8px">この工場をもう一度（★を上げる）</button>`);
- $('oN').onclick=()=>{sfx.sel();closeOv();if(last)openSummary();else openFactory(F.i+1)};
- $('oR').onclick=()=>{sfx.sel();closeOv();openFactory(F.i)};
-}
-function failFactory(why){F.over=true;sfx.no();overlay(`<h2>${esc(why)}</h2><p class="lead">注文 ${F.oi+1} / ${F.fac.orders.length} まで進んだ。<br>設計図の係数を読んで、一発で移しきろう。</p><button class="btn y wide" id="oR">もう一度</button>`);$('oR').onclick=()=>{closeOv();openFactory(F.i)}}
-function openSummary(){
- show('test');
- $('tBox').innerHTML=`<div class="card" style="text-align:center;margin-top:16px"><span class="badge">全工場クリア</span><h2>化学反応式の読み方</h2>
-  <div class="bp" style="font-size:19px">${eqHTML('H2O')}</div>
-  <div class="ratio" style="margin:8px 0">H₂ : O₂ : H₂O ＝ 2 : 1 : 2</div>
-  <p class="lead" style="text-align:left">・式の前の大きい数字（係数）＝分子などの数<br>・係数の比のとおりに反応し、どれかが多いと余る<br>・右側（できる物質）の数も式から読める</p>
-  <div class="small">一発成功 ${S.oneShot} / ${S.orders} 注文・最大 ${S.maxCombo} 連続・プレイ時間 ${fmtT(S.t)}</div>
-  <div class="tbtns"><button class="btn y wide" id="sT">📝 確認テストへ</button><button class="btn ghost wide zk hidden" id="sB">📖 図鑑</button></div></div>`;zkBtns();
- $('sT').onclick=()=>{sfx.sel();const go=()=>startTest();if(window.Zukan&&Zukan.mainClear&&!S.mainDone){S.mainDone=true;save();Zukan.mainClear({onClose:go})}else go()};
- $('sB').onclick=()=>window.Zukan&&Zukan.openBook&&Zukan.openBook();
-}
+/* ================= 溝（道） ================= */
+var PATH=null;
+function buildPath(keep){var R=RUN,S=R.S,pts=[];
+  if(!PORT){var colW=parseFloat($('eqs').style.width)||260,ax=colW+30,aw=W-ax-14,ay=L.hh+10,ah=H-ay-10;
+    var d=clamp(Math.min(aw,ah)*.068,30,52);R.d=d;var cX=ax+aw/2,cY=ay+ah/2,Rx=aw/2-d*.8,Ry=ah/2-d*.8,T=S.turn;
+    var fmin=Math.max(2.4*d/Ry,.2);while(T>.8&&Ry*(1-fmin)/T<1.3*d)T-=.05;
+    var th0=Math.PI,span=Math.PI*2*T;for(var th=0;th<=span;th+=.004){var f=1-(1-fmin)*th/span;pts.push([cX+Rx*f*Math.cos(th0+th),cY+Ry*f*Math.sin(th0+th)])}
+    R.sh={x:cX,y:cY,r:clamp(d*.95,28,46)}}
+  else{var eb=$('eqs').getBoundingClientRect().bottom||L.hh+60;var d2=clamp(W*.088,28,46);if(W>600)d2=clamp(W*.06,34,50);R.d=d2;
+    var shR=clamp(d2*.95,26,44),y0=eb+d2*.9,y1=H-shR*2-d2*1.5-14,k=S.rows+2;while(k>2&&(y1-y0)/(k-1)<2.15*d2)k--;var sp=(y1-y0)/(k-1),rt=Math.min(sp/2,d2*1.3),xL=d2*.7+rt,xR=W-d2*.7-rt;
+    pts.push([-d2*.4,y0]);for(var i=0;i<k;i++){var y=y0+i*sp,dir=i%2?-1:1,xs=dir>0?xL:xR,xe=dir>0?xR:xL;if(i===0)xs=-d2*.4;var n=Math.ceil(Math.abs(xe-xs)/3);for(var j=1;j<=n;j++)pts.push([xs+(xe-xs)*j/n,y]);
+      if(i<k-1){var cxT=xe,sgn=dir;var steps=Math.ceil(rt*Math.PI/2/3);for(j=1;j<=steps;j++){var a=j/steps*Math.PI/2;pts.push([cxT+sgn*Math.sin(a)*rt,y+rt-Math.cos(a)*rt])}
+        var yv0=y+rt,yv1=y+sp-rt;n=Math.ceil((yv1-yv0)/3);for(j=1;j<=n;j++)pts.push([cxT+sgn*rt,yv0+(yv1-yv0)*j/n]);
+        for(j=1;j<=steps;j++){a=j/steps*Math.PI/2;pts.push([cxT+sgn*Math.cos(a)*rt,y+sp-rt+Math.sin(a)*rt])}}}
+    R.sh={x:W/2,y:H-shR-14-Math.max(0,d2*.2),r:shR}}
+  var cum=[0];for(var q=1;q<pts.length;q++)cum.push(cum[q-1]+Math.hypot(pts[q][0]-pts[q-1][0],pts[q][1]-pts[q-1][1]));
+  var old=PATH;PATH={p:pts,c:cum,L:cum[cum.length-1]};
+  if(keep&&old&&R.balls){var k2=PATH.L/old.L;R.balls.forEach(function(b){b.s*=k2})}
+  bgC=null}
+function posAt(s){var P=PATH,c=P.c;if(s<=0){var a=P.p[0],b=P.p[1],l=c[1]||1;return [a[0]+(b[0]-a[0])/l*s,a[1]+(b[1]-a[1])/l*s,Math.atan2(b[1]-a[1],b[0]-a[0])]}
+  if(s>=P.L){var e=P.p[P.p.length-1],f=P.p[P.p.length-2];return [e[0],e[1],Math.atan2(e[1]-f[1],e[0]-f[0])]}
+  var lo=0,hi=c.length-1;while(hi-lo>1){var m=(lo+hi)>>1;if(c[m]<=s)lo=m;else hi=m}var t=(s-c[lo])/((c[hi]-c[lo])||1),p=P.p[lo],q=P.p[hi];return [p[0]+(q[0]-p[0])*t,p[1]+(q[1]-p[1])*t,Math.atan2(q[1]-p[1],q[0]-p[0])]}
 
-/* ===== 装置図 ===== */
-/* ===== 実験装置図（自作SVG・教材図） ===== */
-const APP=(function(){
- const W='viewBox="0 0 240 150" width="100%" style="max-width:300px;display:block;margin:0 auto" font-family="sans-serif"';
- const glass='fill="rgba(220,238,250,.55)" stroke="#6f8596" stroke-width="1.6"';
- function lab(x,y,t,a){return `<text x="${x}" y="${y}" font-size="10" font-weight="700" fill="#3a3a3a" text-anchor="${a||'middle'}">${t}</text>`}
- function burner(x,y,flame){return `<g><rect x="${x-20}" y="${y-7}" width="40" height="7" rx="3" fill="#56606b"/><rect x="${x-6}" y="${y-46}" width="12" height="40" fill="#8f99a4"/><rect x="${x-8}" y="${y-30}" width="16" height="4" rx="1" fill="#6c7580"/><rect x="${x-9}" y="${y-20}" width="18" height="4" rx="1" fill="#6c7580"/><rect x="${x-7}" y="${y-48}" width="14" height="4" fill="#737c87"/>
-  ${flame===false?'':`<path d="M${x-6},${y-49} C${x-7},${y-62} ${x},${y-76} ${x},${y-80} C${x},${y-76} ${x+7},${y-62} ${x+6},${y-49}Z" fill="#a9ccff" opacity=".75"/><path d="M${x-3},${y-49} C${x-3},${y-57} ${x},${y-64} ${x},${y-66} C${x},${y-64} ${x+3},${y-57} ${x+3},${y-49}Z" fill="#3c6fd8"/>`}</g>`}
- function stand(x,y1,y2){return `<rect x="${x-24}" y="${y2-6}" width="52" height="6" rx="2" fill="#4c4c4c"/><rect x="${x-2}" y="${y1}" width="4" height="${y2-y1-6}" fill="#6a6a6a"/>`}
- // 試験管を加熱（口を少し下げる）。gas=true で水上置換まで
- function tubeHeat(o){o=o||{};const c=o.content||'#555',c2=o.content2||c;
-  const tube=`<g transform="translate(92,58) rotate(9)"><path d="M52,-9 H-44 A9,9 0 0 0 -44,9 H52 Z" ${glass}/><path d="M-18,-7 H-44 A7,7 0 0 0 -44,7 H-18 Z" fill="${c}"/><path d="M-28,-7 h10 v14 h-10z" fill="${c2}" opacity=".9"/>${o.gas?'<rect x="50" y="-8" width="10" height="16" rx="2" fill="#9b6b43"/>':''}</g>`;
-  let s=stand(118,20,142)+`<rect x="100" y="48" width="20" height="4" fill="#6a6a6a"/>`+tube+burner(52,142);
-  if(o.gas){s+=`<path d="M150,67 L166,67 L166,124 L198,124" fill="none" stroke="#7f8e9b" stroke-width="3"/><rect x="170" y="100" width="66" height="40" rx="3" fill="rgba(120,180,230,.35)" stroke="#6f8596" stroke-width="1.6"/><rect x="171" y="106" width="64" height="33" fill="rgba(90,160,220,.35)"/><path d="M195,128 V70 a8,8 0 0 1 16,0 V128" ${glass}/><rect x="196.5" y="92" width="13" height="35" fill="rgba(90,160,220,.4)"/>`+(o.bubbles?`<circle cx="201" cy="115" r="2" fill="#fff" stroke="#6f8596" stroke-width=".6"/><circle cx="205" cy="104" r="2.4" fill="#fff" stroke="#6f8596" stroke-width=".6"/>`:'')+lab(203,62,'気体')+lab(203,148,'水上置換')}
-  s+=lab(8,14,o.label||'','start')+lab(52,148,'ガスバーナー');
-  return `<svg ${W}>${s}</svg>`}
- // 試験管をほぼ立てて加熱（鉄と硫黄など）
- function tubeUp(o){o=o||{};const c=o.content||'#8a8a60';
-  return `<svg ${W}>${stand(70,14,142)}<rect x="70" y="36" width="42" height="4" fill="#6a6a6a"/><path d="M104,20 V96 a10,10 0 0 0 20,0 V20" ${glass}/><rect x="103" y="14" width="22" height="8" rx="2" fill="#f4f1e6" stroke="#bbb"/><path d="M106,70 V96 a8,8 0 0 0 16,0 V70z" fill="${c}"/>${o.top?`<path d="M106,70 h16 v8 h-16z" fill="${o.top}"/>`:''}${burner(150,142)}<path d="M150,66 C140,70 128,72 124,74" stroke="#e98b2a" stroke-width="2" fill="none" stroke-dasharray="3 3"/>${o.wire?`<path d="M114,4 V40 q-5,4 0,8 q5,4 0,8 q-5,4 0,8" stroke="#C8773C" stroke-width="3" fill="none"/>`:''}${lab(8,12,o.label||'','start')}${lab(150,148,'ガスバーナー')}${o.note?lab(170,40,o.note,'middle'):''}</svg>`}
- // 水の電気分解（H字管型）
- function elec(){return `<svg ${W}><path d="M70,18 V112 H170 V18" fill="none" stroke="#6f8596" stroke-width="16" stroke-linejoin="round" opacity=".25"/>
-  <rect x="62" y="16" width="16" height="100" rx="6" ${glass}/><rect x="162" y="16" width="16" height="100" rx="6" ${glass}/><rect x="70" y="104" width="100" height="14" ${glass}/><rect x="113" y="28" width="14" height="80" ${glass}/><path d="M104,16 L136,16 L127,30 L113,30Z" ${glass}/>
-  <rect x="63.5" y="58" width="13" height="56" fill="rgba(90,160,220,.45)"/><rect x="163.5" y="38" width="13" height="76" fill="rgba(90,160,220,.45)"/><rect x="71" y="105" width="98" height="12" fill="rgba(90,160,220,.45)"/><rect x="114.5" y="50" width="11" height="56" fill="rgba(90,160,220,.45)"/>
-  <rect x="66" y="96" width="8" height="18" fill="#9a9a9a"/><rect x="166" y="96" width="8" height="18" fill="#9a9a9a"/>
-  <circle cx="69" cy="90" r="1.6" fill="#fff"/><circle cx="72" cy="80" r="1.6" fill="#fff"/><circle cx="169" cy="88" r="1.6" fill="#fff"/>
-  <rect x="96" y="126" width="48" height="20" rx="3" fill="#40474f"/><text x="120" y="140" font-size="9" fill="#fff" text-anchor="middle">電源装置</text>
-  <path d="M70,118 V136 H96" stroke="#2549C9" stroke-width="2" fill="none"/><path d="M170,118 V136 H144" stroke="#d33" stroke-width="2" fill="none"/>
-  ${lab(70,12,'陰極（－）')}${lab(170,12,'陽極（＋）')}${lab(40,40,'水素','middle')}${lab(40,52,'（多い）','middle')}${lab(204,32,'酸素','middle')}${lab(204,44,'（少ない）','middle')}
-  <path d="M50,44 L62,40" stroke="#555"/><path d="M190,30 L178,30" stroke="#555"/>${lab(120,122,'水（水酸化ナトリウムを少しとかす）')}</svg>`}
- // 三脚＋皿で金属を加熱
- function dish(o){o=o||{};const mg=o.mode==='mg';
-  return `<svg ${W}><path d="M88,142 L100,84 M152,142 L140,84 M120,142 L120,84" stroke="#555" stroke-width="3"/><ellipse cx="120" cy="84" rx="36" ry="5" fill="none" stroke="#555" stroke-width="3"/><rect x="82" y="78" width="76" height="4" fill="#9aa0a6"/>
-  <path d="M92,72 Q120,86 148,72 Z" fill="#c9ced4" stroke="#7d848b"/><ellipse cx="120" cy="72" rx="28" ry="4" fill="${mg?'#e9ece6':'#2b2b2b'}"/>${mg?'':'<ellipse cx="110" cy="71" rx="8" ry="2" fill="#C8773C"/>'}
-  ${burner(120,142)}
-  ${mg?`<g><circle cx="120" cy="62" r="16" fill="#fffbe6" opacity=".95"/>${[0,30,60,90,120,150,180,210,240,270,300,330].map(a=>{const r=a*Math.PI/180;return `<line x1="${120+Math.cos(r)*18}" y1="${62+Math.sin(r)*18}" x2="${120+Math.cos(r)*34}" y2="${62+Math.sin(r)*34}" stroke="#ffd84a" stroke-width="2.5"/>`}).join('')}</g>`:''}
-  ${lab(120,12,o.label||'')}${lab(190,78,'ステンレス皿','middle')}${lab(40,120,'三脚・金網','middle')}</svg>`}
- // 水素と酸素の混合気体に点火（ポリエチレン袋）
- function bag(){return `<svg ${W}><path d="M40,30 Q120,10 200,30 Q214,75 200,120 Q120,138 40,120 Q26,75 40,30Z" fill="rgba(235,245,255,.7)" stroke="#8aa0b4" stroke-width="2"/>
-  <path d="M60,40 Q70,70 58,110 M180,40 Q170,76 184,110" stroke="#d5e2ec" stroke-width="2" fill="none"/>
-  ${[[80,60],[100,90],[140,70],[160,100],[120,110],[90,112],[150,48]].map(p=>`<circle cx="${p[0]}" cy="${p[1]}" r="2.2" fill="#b7c9d8"/>`).join('')}
-  <rect x="108" y="126" width="24" height="16" rx="3" fill="#40474f"/><path d="M114,126 V90 M126,126 V90" stroke="#444" stroke-width="1.6"/><path d="M114,90 l4,-6 l-3,-2 l5,-6 M126,90 l-3,-6 l3,-2 l-4,-6" stroke="#ffb400" stroke-width="2" fill="none"/>
-  <rect x="150" y="52" width="26" height="12" rx="2" fill="#f2b6c6"/>${lab(163,48,'塩化コバルト紙')}${lab(120,146,'点火装置')}${lab(120,24,'水素と酸素（体積 2：1）')}</svg>`}
- // 炭を燃やして石灰水
- function jar(){return `<svg ${W}><path d="M84,34 V132 a6,6 0 0 0 6,6 H150 a6,6 0 0 0 6,-6 V34" ${glass}/><rect x="80" y="28" width="80" height="6" rx="2" fill="#cfd8df" stroke="#6f8596"/><rect x="86" y="112" width="68" height="24" fill="rgba(240,240,236,.95)"/>
-  <path d="M120,10 V80" stroke="#666" stroke-width="2"/><path d="M110,80 q10,8 20,0" stroke="#666" stroke-width="3" fill="none"/><ellipse cx="120" cy="76" rx="9" ry="6" fill="#2d2a28"/><ellipse cx="118" cy="74" rx="4" ry="2.5" fill="#ff7a2a"/>
-  ${lab(190,126,'石灰水','middle')}${lab(188,138,'（白くにごる）','middle')}${lab(40,76,'木炭（炭素）','middle')}${lab(40,20,'燃焼さじ','middle')}<path d="M190,120 L156,122" stroke="#555"/></svg>`}
- // ドライアイスの中でマグネシウムを燃やす
- function dryice(){return `<svg ${W}><rect x="50" y="86" width="140" height="44" rx="4" fill="#eef4f8" stroke="#9ab" stroke-width="1.5"/><rect x="50" y="46" width="140" height="36" rx="4" fill="#f4f8fb" stroke="#9ab" stroke-width="1.5"/>
-  <path d="M96,86 q24,-14 48,0" fill="#dfe8ee" stroke="#9ab"/><circle cx="120" cy="80" r="12" fill="#fffbe6"/>${[0,45,90,135,180,225,270,315].map(a=>{const r=a*Math.PI/180;return `<line x1="${120+Math.cos(r)*13}" y1="${80+Math.sin(r)*13}" x2="${120+Math.cos(r)*22}" y2="${80+Math.sin(r)*22}" stroke="#ffd84a" stroke-width="2.2"/>`}).join('')}
-  ${[62,78,160,176].map(x=>`<path d="M${x},46 q-4,-10 2,-18 q6,-8 0,-16" stroke="#dde7ee" stroke-width="3" fill="none"/>`).join('')}
-  ${lab(120,145,'ドライアイス（固体の二酸化炭素）')}${lab(120,20,'くぼみの中で、火をつけたマグネシウム')}</svg>`}
- // スチールウールと電子てんびん
- function balance(o){o=o||{};return `<svg viewBox="0 50 240 100" width="100%" style="max-width:300px;display:block;margin:0 auto" font-family="sans-serif"><rect x="40" y="108" width="160" height="30" rx="6" fill="#dfe3e6" stroke="#7d848b" stroke-width="1.5"/><rect x="58" y="116" width="54" height="16" rx="2" fill="#20282e"/><text x="108" y="128" font-size="11" fill="#7cf0a0" text-anchor="end" font-family="monospace">${o.disp||'_.__ g'}</text>
-  <rect x="120" y="100" width="72" height="8" rx="2" fill="#aab2b9"/><path d="M128,100 q28,-10 56,0Z" fill="#c9ced4" stroke="#7d848b"/>
-  <g stroke="${o.burnt?'#2f2f35':'#8d939b'}" stroke-width="1.1" fill="none">${Array.from({length:22},(_,i)=>`<path d="M${132+i*2.4},${97-(i%3)*2} q${8-(i%4)*4},-22 ${12-(i%5)*5},-10 q5,8 ${-5+(i%3)*4},14"/>`).join('')}</g>
-  ${lab(156,70,o.label||'スチールウール')}${lab(85,146,'電子てんびん')}</svg>`}
- return {tubeHeat,tubeUp,elec,dish,bag,jar,dryice,balance};
-})();
+/* ================= 背景（漆・金・螺鈿） ================= */
+var bgC=null;
+function lacquerBg(){var c=document.createElement('canvas');c.width=Math.round(W*DPR);c.height=Math.round(H*DPR);var g=c.getContext('2d');g.scale(DPR,DPR);
+  var gr=g.createRadialGradient(W*.45,H*.35,10,W*.5,H*.5,Math.max(W,H)*.8);gr.addColorStop(0,'#24170f');gr.addColorStop(.55,'#120C0A');gr.addColorStop(1,'#060302');g.fillStyle=gr;g.fillRect(0,0,W,H);
+  /* 漆の照り */
+  var sh=g.createLinearGradient(0,0,W,H);sh.addColorStop(0,'rgba(255,240,220,0)');sh.addColorStop(.32,'rgba(255,240,220,.05)');sh.addColorStop(.38,'rgba(255,240,220,0)');g.fillStyle=sh;g.fillRect(0,0,W,H);
+  /* 梨子地（金粉） */
+  var n=Math.round(W*H/260);for(var i=0;i<n;i++){var x=Math.random()*W,y=Math.random()*H,edge=Math.min(x,W-x,y,H-y)/(Math.min(W,H)*.5);if(Math.random()<edge*1.3)continue;
+    g.fillStyle='rgba('+(200+Math.random()*55|0)+','+(150+Math.random()*50|0)+',60,'+(.25+Math.random()*.5)+')';g.fillRect(x,y,Math.random()*1.8+.4,Math.random()*1.8+.4)}
+  /* 青海波（右下）・月（右上）・秋草（左下）: 金の線描き */
+  g.strokeStyle='rgba(201,160,67,.28)';g.lineWidth=1.2;var R0=Math.max(18,Math.min(W,H)*.045);
+  for(var row=0;row<7;row++)for(var col=0;col<12;col++){var cxw=W-col*R0*2+(row%2?R0:0),cyw=H-row*R0*.9+R0*.4;if(cxw<W*.55||cyw<H*.62)continue;for(var k=1;k<=3;k++){g.beginPath();g.arc(cxw,cyw,R0*k/3,Math.PI,0);g.stroke()}}
+  var mx=W-(PORT?W*.18:W*.12),my=L.hh+(PORT?H*.2:H*.16),mr=Math.min(W,H)*.09;var mg=g.createRadialGradient(mx-mr*.3,my-mr*.3,2,mx,my,mr);mg.addColorStop(0,'rgba(255,230,160,.55)');mg.addColorStop(1,'rgba(201,160,67,.28)');g.fillStyle=mg;g.beginPath();g.arc(mx,my,mr,0,Math.PI*2);g.fill();
+  g.strokeStyle='rgba(201,160,67,.3)';for(i=0;i<16;i++){var bx=W*(PORT?.02:.01)+i*9,by=H;g.beginPath();g.moveTo(bx,by);g.quadraticCurveTo(bx+30+i*3,by-H*.18,bx+60+i*6,by-H*(.2+.12*Math.sin(i)));g.stroke()}
+  /* 螺鈿の小片 */
+  for(i=0;i<22;i++){var rx=Math.random()*W,ry=Math.random()*H;var rg=g.createLinearGradient(rx,ry,rx+10,ry+8);rg.addColorStop(0,'rgba(170,255,230,.35)');rg.addColorStop(.5,'rgba(255,190,240,.35)');rg.addColorStop(1,'rgba(160,190,255,.35)');g.fillStyle=rg;g.beginPath();g.moveTo(rx,ry);g.lineTo(rx+rnd(5,12),ry+rnd(-3,3));g.lineTo(rx+rnd(3,9),ry+rnd(5,10));g.closePath();g.fill()}
+  if(RUN&&PATH&&(state!=='title')){/* 金の溝 */var d=RUN.d,P=PATH.p;function stroke(w,col){g.lineWidth=w;g.strokeStyle=col;g.lineCap='round';g.lineJoin='round';g.beginPath();g.moveTo(P[0][0],P[0][1]);for(var i=1;i<P.length;i+=2)g.lineTo(P[i][0],P[i][1]);g.lineTo(P[P.length-1][0],P[P.length-1][1]);g.stroke()}
+    stroke(d+14,'rgba(0,0,0,.6)');var gg=g.createLinearGradient(0,0,W,H);gg.addColorStop(0,'#f6dc8e');gg.addColorStop(.5,'#C9A043');gg.addColorStop(1,'#7c5b1c');stroke(d+10,gg);stroke(d+4,'#0a0605');
+    g.setLineDash([2,10]);stroke(1.5,'rgba(201,160,67,.55)');g.setLineDash([]);
+    /* 入口の金の雲 */var s0=posAt(d*.6);cloud(g,s0[0],s0[1],d)}
+  return c}
+function cloud(g,x,y,d){g.save();g.fillStyle='#120C0A';g.strokeStyle='#C9A043';g.lineWidth=2;[[0,0,1],[-.9,.2,.7],[.9,.25,.75],[-.4,-.45,.62],[.45,-.4,.6]].forEach(function(c){g.beginPath();g.arc(x+c[0]*d,y+c[1]*d,d*.55*c[2],0,Math.PI*2);g.fill();g.stroke()});
+  g.strokeStyle='rgba(201,160,67,.6)';g.lineWidth=1;g.beginPath();g.arc(x,y,d*.3,0,Math.PI*1.5);g.stroke();g.restore()}
 
-const APPS={bag:()=>APP.bag(),jar:()=>APP.jar(),dish:()=>APP.dish({mode:'mg',label:'マグネシウムを加熱'}),tube:()=>APP.tubeHeat({content:'#2a2a2a',gas:true,bubbles:true,label:'酸化銀を加熱し、気体を集める'}),elec:()=>APP.elec()};
+/* ================= 描画 ================= */
+var PT=[],FT=[],FX=[],SHK=0,FL=0,now=0;
+function draw(){cx.setTransform(DPR,0,0,DPR,0,0);if(!bgC)bgC=lacquerBg();var sx=SHK&&!RM?(Math.random()-.5)*SHK:0,sy=SHK&&!RM?(Math.random()-.5)*SHK:0;
+  cx.save();cx.translate(sx,sy);cx.drawImage(bgC,0,0,W,H);
+  if(RUN&&PATH&&state!=='title'){var R=RUN,d=R.d;drawHole();
+    /* 列 */for(var i=R.balls.length-1;i>=0;i--){var b=R.balls[i];if(b.s<-d*.4)continue;var p=posAt(b.s),x=p[0],y=p[1];
+      if(b.ins>0){var k=1-b.ins/.12;x=b.fx+(x-b.fx)*k;y=b.fy+(y-b.fy)*k}
+      var a=b.s<0?clamp(1+b.s/(d*.4),0,1):1;drawBall(b.k,x,y,d,a<1?a:null);b.x=x;b.y=y;
+      if(b.glow>0){cx.save();cx.globalAlpha=b.glow;cx.strokeStyle='#ffe9a8';cx.lineWidth=3;cx.beginPath();cx.arc(x,y,d*.56,0,Math.PI*2);cx.stroke();cx.restore()}}
+    /* 反応の光（はじける玉） */
+    FX.forEach(drawFx);
+    drawShooter();
+    R.shots.forEach(function(s){drawBall(s.k,s.x,s.y,d)})}
+  else if(state==='title')drawTitleArt();
+  PT.forEach(function(p){var k=1-p.t/p.life;cx.globalAlpha=Math.min(1,k*1.4);cx.fillStyle=p.col;if(p.m)cx.fillRect(p.x,p.y,p.s,p.s*.5);else{cx.beginPath();cx.arc(p.x,p.y,p.s*k,0,Math.PI*2);cx.fill()}});cx.globalAlpha=1;
+  FT.forEach(function(f){var k=f.t/f.life;cx.save();cx.globalAlpha=k<.75?1:1-(k-.75)/.25;cx.translate(f.x,f.y-k*(f.rise||36));var s=f.sz*(k<.1?.7+k*3:1);
+    cx.font=(f.fu?'400 ':'800 ')+s+'px '+(f.fu?'"Yuji Mai",serif':'"Hiragino Sans",sans-serif');var tw=cx.measureText(f.txt).width/2+8;if(f.x-tw<0)cx.translate(tw-f.x,0);else if(f.x+tw>W)cx.translate(W-f.x-tw,0);cx.textAlign='center';cx.textBaseline='middle';cx.lineJoin='round';cx.lineWidth=Math.max(3,s*.2);cx.strokeStyle='#120C0A';cx.strokeText(f.txt,0,0);
+    var gg=cx.createLinearGradient(0,-s/2,0,s/2);gg.addColorStop(0,f.c2||'#fff3c4');gg.addColorStop(1,f.col||'#C9A043');cx.fillStyle=gg;cx.fillText(f.txt,0,0);cx.restore()});
+  cx.restore();if(FL>0){cx.fillStyle='rgba(255,230,160,'+FL*.35+')';cx.fillRect(0,0,W,H)}}
+function drawHole(){var e=posAt(PATH.L),d=RUN.d,x=e[0],y=e[1],R=RUN,fr=R.balls.length?R.balls[0].s/PATH.L:0,dan=clamp((fr-.7)/.3,0,1);
+  cx.save();var r=d*.85;var gl=cx.createRadialGradient(x,y,2,x,y,r*2.2);gl.addColorStop(0,'rgba(255,90,40,'+(.35+dan*.5*(.6+.4*Math.sin(now*9)))+')');gl.addColorStop(1,'rgba(255,90,40,0)');cx.fillStyle=gl;cx.beginPath();cx.arc(x,y,r*2.2,0,Math.PI*2);cx.fill();
+  cx.fillStyle='#050302';cx.beginPath();cx.arc(x,y,r,0,Math.PI*2);cx.fill();var gg=cx.createLinearGradient(x-r,y-r,x+r,y+r);gg.addColorStop(0,'#fbe6a4');gg.addColorStop(1,'#7c5b1c');cx.strokeStyle=gg;cx.lineWidth=4;cx.stroke();
+  for(var i=0;i<8;i++){var a=i*Math.PI/4+now*.3;cx.beginPath();cx.moveTo(x+Math.cos(a)*r*1.1,y+Math.sin(a)*r*1.1);cx.lineTo(x+Math.cos(a)*r*1.35,y+Math.sin(a)*r*1.35);cx.stroke()}
+  cx.fillStyle='#E9C874';cx.font='400 '+Math.round(d*.5)+'px "Yuji Mai",serif';cx.textAlign='center';cx.textBaseline='middle';cx.fillText('炉',x,y+1);cx.restore()}
+function drawShooter(){var R=RUN,S=R.sh,x=S.x,y=S.y,r=S.r,a=R.aim;
+  /* ねらいの金の点線（最初に当たる玉まで） */
+  var hit=rayHit(x,y,a);var len=hit?hit.t:Math.max(W,H);cx.save();cx.strokeStyle='rgba(233,200,116,.55)';cx.lineWidth=2;cx.setLineDash([3,9]);cx.lineDashOffset=-now*40;cx.beginPath();cx.moveTo(x+Math.cos(a)*r*1.2,y+Math.sin(a)*r*1.2);cx.lineTo(x+Math.cos(a)*len,y+Math.sin(a)*len);cx.stroke();cx.setLineDash([]);
+  if(hit){cx.strokeStyle='#ffe9a8';cx.lineWidth=2.5;cx.beginPath();cx.arc(hit.b.x,hit.b.y,R.d*.58,0,Math.PI*2);cx.stroke()}cx.restore();
+  /* 台座（朱漆・金の縁・螺鈿） */
+  cx.save();cx.translate(x,y);cx.fillStyle='rgba(0,0,0,.5)';cx.beginPath();cx.arc(3,5,r,0,Math.PI*2);cx.fill();
+  var gr=cx.createRadialGradient(-r*.3,-r*.4,2,0,0,r);gr.addColorStop(0,'#e0483a');gr.addColorStop(.6,'#9d1b1b');gr.addColorStop(1,'#4d0a0a');cx.fillStyle=gr;cx.beginPath();cx.arc(0,0,r,0,Math.PI*2);cx.fill();
+  cx.strokeStyle='#C9A043';cx.lineWidth=3;cx.stroke();cx.lineWidth=1;cx.beginPath();cx.arc(0,0,r*.82,0,Math.PI*2);cx.stroke();
+  for(var i=0;i<6;i++){var aa=i*Math.PI/3+now*.2;var rg=cx.createLinearGradient(0,0,6,6);rg.addColorStop(0,'rgba(170,255,230,.7)');rg.addColorStop(1,'rgba(255,190,240,.7)');cx.fillStyle=rg;cx.save();cx.rotate(aa);cx.translate(r*.9,0);cx.rotate(.8);cx.fillRect(-2.5,-2.5,5,5);cx.restore()}
+  /* 筒（金） */
+  cx.rotate(a);var bg=cx.createLinearGradient(0,-r*.3,0,r*.3);bg.addColorStop(0,'#fbe6a4');bg.addColorStop(.5,'#C9A043');bg.addColorStop(1,'#6d5019');cx.fillStyle=bg;cx.fillRect(r*.2,-r*.34,r*1.05,r*.68);cx.strokeStyle='#3d2c10';cx.lineWidth=1.5;cx.strokeRect(r*.2,-r*.34,r*1.05,r*.68);
+  cx.restore();
+  if(R.cur)drawBall(R.cur,x+Math.cos(a)*r*1.15,y+Math.sin(a)*r*1.15,R.d*.94);
+  if(R.nxt){var nx=x,ny=y;drawBall(R.nxt,nx,ny,R.d*.62);}
+  cx.fillStyle='#E9C874';cx.font='700 11px sans-serif';cx.textAlign='center';cx.fillText('タップで入れかえ',x,y+r+13)}
+function drawFx(f){var k=f.t/f.life;if(f.kind==='mol'){var x=f.x0+(f.x1-f.x0)*k,y=f.y0+(f.y1-f.y0)*k-Math.sin(k*Math.PI)*f.arc;cx.save();cx.globalAlpha=k>.8?(1-k)/.2:1;cx.translate(x,y);cx.rotate(k*f.rot);
+    drawMol(cx,f.k,0,0,f.sz);cx.restore()}
+  else if(f.kind==='ring'){cx.save();cx.globalAlpha=1-k;cx.strokeStyle='#ffe9a8';cx.lineWidth=4*(1-k)+1;cx.beginPath();cx.arc(f.x,f.y,f.r0+f.r1*k,0,Math.PI*2);cx.stroke();cx.restore()}}
+/* タイトルの1枚絵：金の渦を分子の玉が転がる */
+var TD=null;
+function drawTitleArt(){var d=clamp(Math.min(W,H)*.075,34,64),cX=W/2,cY=PORT?H*.3:H*.36,Rx=PORT?W*.42:W*.4,Ry=PORT?H*.22:H*.3;
+  if(!TD){TD={pts:[]};for(var th=0;th<=Math.PI*2*1.6;th+=.01){var f=1-.62*th/(Math.PI*2*1.6);TD.pts.push([cX+Rx*f*Math.cos(Math.PI+th),cY+Ry*f*Math.sin(Math.PI+th)])}var c=[0];for(var i=1;i<TD.pts.length;i++)c.push(c[i-1]+Math.hypot(TD.pts[i][0]-TD.pts[i-1][0],TD.pts[i][1]-TD.pts[i-1][1]));TD.c=c;TD.L=c[c.length-1];
+    TD.k=['H2','H2','O2','C','O2','Cu','Cu','O2','Ag2O','Ag2O','Mg','Mg','O2','Fe','S','H2','O2','H2','CO2','H2O']}
+  var P=TD.pts;cx.lineCap='round';cx.lineJoin='round';function st(w,c){cx.lineWidth=w;cx.strokeStyle=c;cx.beginPath();cx.moveTo(P[0][0],P[0][1]);for(var i=1;i<P.length;i+=3)cx.lineTo(P[i][0],P[i][1]);cx.stroke()}
+  var gg=cx.createLinearGradient(0,0,W,H);gg.addColorStop(0,'#f6dc8e');gg.addColorStop(.5,'#C9A043');gg.addColorStop(1,'#7c5b1c');st(d+14,'rgba(0,0,0,.6)');st(d+10,gg);st(d+4,'#0a0605');
+  var off=(now*d*.8)%(d*2);TD.k.forEach(function(k,i){var s=off+i*d;if(s>TD.L-d)return;var lo=0,hi=TD.c.length-1;while(hi-lo>1){var m=(lo+hi)>>1;if(TD.c[m]<=s)lo=m;else hi=m}drawBall(k,P[lo][0],P[lo][1],d)});
+  var e=P[P.length-1];cx.fillStyle='#050302';cx.beginPath();cx.arc(e[0],e[1],d*.8,0,Math.PI*2);cx.fill();cx.strokeStyle='#C9A043';cx.lineWidth=3;cx.stroke()}
 
-/* ===== 共通 ===== */
-function show(id){['title','game','test'].forEach(x=>$(x).classList.toggle('hidden',x!==id));document.querySelectorAll('.scr').forEach(s=>s.scrollTop=0)}
-function overlay(h){$('ovc').innerHTML=h;$('ov').classList.remove('hidden');$('ovc').scrollTop=0}
-function closeOv(){$('ov').classList.add('hidden')}
-function zkBtns(){document.querySelectorAll('.zk').forEach(b=>b.classList.toggle('hidden',!(window.Zukan&&Zukan.openBook)))}
-setInterval(()=>{if(!$('game').classList.contains('hidden')&&document.visibilityState==='visible'&&!S.cleared){S.t++;if(S.t%5===0)save()}},1000);
+/* ================= 粒 ================= */
+function sparks(x,y,n,sp){if(RM)n=Math.min(n,6);for(var i=0;i<n;i++){var a=Math.random()*Math.PI*2,v=(sp||200)*(.3+Math.random());PT.push({x:x,y:y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,s:rnd(2,4.5),col:Math.random()<.7?'#ffd97a':'#fff6d8',t:0,life:rnd(.5,1.1),m:Math.random()<.4})}}
+function ft(x,y,txt,sz,o){o=o||{};FT.push({x:x,y:y,txt:txt,sz:sz||24,t:0,life:o.life||1.2,col:o.col,c2:o.c2,fu:o.fu,rise:o.rise})}
 
-/* ===== 確認テスト ===== */
-let T=null;
-function startTest(){if(!window.Quiz){alert('問題データが読み込まれていません');return}T={qs:Quiz.test(),i:0,ans:[],cur:null};show('test');renderTest()}
-function renderTest(){
- const q=T.qs[T.i];T.cur=q.t==='order'?[]:'';
- let h=`<div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px"><span class="badge">📝 確認テスト</span><b>第 ${T.i+1} 問 / ${T.qs.length}</b></div>
-  <div class="prog">${T.qs.map((_,i)=>`<i class="${i<T.i?'on':''}"></i>`).join('')}</div><div class="tq">${q.q}</div>${q.fig?`<div class="tfig">${q.fig}</div>`:''}`;
- if(q.t==='choice')h+=q.shown.map((c,k)=>`<button class="choice" data-k="${k}">${c}</button>`).join('');
- else if(q.t==='num')h+=`<div class="numshow"><span id="numv">　</span> <small>${esc(q.unit||'')}</small></div><div class="keys">${['7','8','9','4','5','6','1','2','3','0','.','⌫'].map(k=>`<button data-n="${k}">${k}</button>`).join('')}</div><button class="btn y wide" style="margin-top:10px" id="tOk">決定</button>`;
- else h+=`<p class="small">上から順になるように、タップして並べよう（もう一度タップで外す）</p><div class="ordsel" id="ordSel"></div>${q.shown.map((c,k)=>`<button class="choice" data-o="${k}">${c}</button>`).join('')}<button class="btn y wide" style="margin-top:8px" id="tOk" disabled>決定</button>`;
- $('tBox').innerHTML=h;
- const next=a=>{T.ans.push(a);sfx.sel();setTimeout(()=>{T.i++;if(T.i<T.qs.length)renderTest();else finishTest()},180)};
- if(q.t==='choice')document.querySelectorAll('#tBox .choice').forEach(b=>b.onclick=()=>{document.querySelectorAll('#tBox .choice').forEach(x=>x.disabled=true);b.style.borderColor='var(--yel)';next(q.shown[+b.dataset.k])});
- else if(q.t==='num'){document.querySelectorAll('[data-n]').forEach(b=>b.onclick=()=>{sfx.sel();const k=b.dataset.n;if(k==='⌫')T.cur=T.cur.slice(0,-1);else if(T.cur.length<8)T.cur+=k;$('numv').textContent=T.cur||'　'});$('tOk').onclick=()=>{if(!T.cur)return;next(T.cur)}}
- else{const upd=()=>{$('ordSel').innerHTML=T.cur.map((k,n)=>`<div data-r="${n}">${n+1}. ${q.shown[k]}</div>`).join('');
-   document.querySelectorAll('[data-o]').forEach(b=>b.style.display=T.cur.includes(+b.dataset.o)?'none':'block');
-   document.querySelectorAll('[data-r]').forEach(d=>d.onclick=()=>{T.cur.splice(+d.dataset.r);upd()});$('tOk').disabled=T.cur.length!==q.shown.length};
-  document.querySelectorAll('[data-o]').forEach(b=>b.onclick=()=>{sfx.sel();T.cur.push(+b.dataset.o);upd()});$('tOk').onclick=()=>{if(T.cur.length!==q.shown.length)return;next(T.cur.map(k=>q.shown[k]))};upd()}
-}
-function finishTest(){
- const qs=T.qs,answers=T.ans;const review=Quiz.review(qs,answers),marks=review.map(r=>r.ok),score=marks.filter(Boolean).length;
- const name=S.name||window.PLAYER_NAME||'';
- const records=TEST_ONLY?[['モード','確認テストだけ']]:[['クリアタイム',fmtT(S.t)],['一発成功',S.oneShot+' / '+S.orders+' 注文'],['最大連続',S.maxCombo+'連続'],['星',S.stars.reduce((a,b)=>a+(b||0),0)+' / 18']];
- sfx.clear();
- const rec=SubmitCard.show({gameId:GAME_ID,grade:'chu2',koma:[KOMA],unit:'中2理科　化学変化と原子・分子　第16回',game:'反応式ソート ～化学反応式を読む～'+(TEST_ONLY?'（確認テストのみ）':''),name,score,total:qs.length,marks,records,review},()=>renderResult(score,qs.length));
- T.rec=rec;if(!TEST_ONLY){S.test={score,total:qs.length};save()}renderResult(score,qs.length);
-}
-function renderResult(score,total){show('test');
- $('tBox').innerHTML=`<div class="card" style="text-align:center;margin-top:16px"><span class="badge">確認テスト</span><div class="big" style="font-size:58px">${score}<span style="font-size:22px"> / ${total}</span></div>
-  <p class="lead">${score===total?'満点！ 設計図を読む目は本物だ。':score>=Math.ceil(total*.7)?'合格ライン突破！':'解説を読んで、もう一度ためそう。'}</p>
-  <div class="tbtns"><button class="btn y wide" id="rCard">📝 提出カードを表示</button><button class="btn ghost wide" id="rRetry">もう一度テストを解く</button>
-  ${TEST_ONLY?'':'<button class="btn ghost wide zk hidden" id="rB">📖 図鑑</button><button class="btn ghost wide" id="rT">🏠 タイトルへ</button>'}</div></div>`;zkBtns();
- $('rCard').onclick=()=>{if(T&&T.rec&&SubmitCard.reopen)SubmitCard.reopen(T.rec)};$('rRetry').onclick=()=>startTest();
- if(!TEST_ONLY){$('rB').onclick=()=>window.Zukan&&Zukan.openBook&&Zukan.openBook();$('rT').onclick=()=>initTitle()}}
+/* ================= 列の組み立て ================= */
+function genChain(S){/* 反応式の左辺から1つ欠けた組を並べる。となりの組とつながって左辺がそろってしまうときだけ、金の仕切り玉をはさむ */
+  var pool=[];for(var i=0;i<S.g;i++){var e=i<S.eq.length?S.eq[i]:S.eq[(Math.random()*S.eq.length)|0],grp=[];EQ[e].r.forEach(function(x){for(var j=0;j<x[1];j++)grp.push(x[0])});
+    if(grp.length>1)grp.splice((Math.random()*grp.length)|0,1);pool.push(grp)}
+  shuffle(pool);var seq=[];
+  while(pool.length){var placed=false;for(var gi=0;gi<Math.min(3,pool.length)&&!placed;gi++){var ps=perms(pool[gi]);shuffle(ps);
+      for(var q=0;q<ps.length;q++){var t=seq.concat(ps[q]);if(!winFrom(t,seq.length)){seq=t;pool.splice(gi,1);placed=true;break}}}
+    if(!placed){seq.push('KIN');seq=seq.concat(pool.shift())}}
+  return seq}
+function perms(a){if(a.length<=1)return [a.slice()];var out=[];a.forEach(function(x,i){var r=a.slice(0,i).concat(a.slice(i+1));perms(r).forEach(function(p){out.push([x].concat(p))})});return out}
+function winFrom(arr,from){var S=RUN.S;for(var e2=Math.max(0,from);e2<arr.length;e2++)for(var q=0;q<S.eq.length;q++){var n=eqN(S.eq[q]),st=e2-n+1;if(st<0)continue;if(match(arr.slice(st,e2+1),S.eq[q]))return true}return false}
+function findAnyWindow(seq){var S=RUN.S;for(var i=0;i<seq.length;i++)for(var q=0;q<S.eq.length;q++){var e=S.eq[q],n=eqN(e);if(i+n>seq.length)continue;if(match(seq.slice(i,i+n),e))return {st:i,n:n,e:e}}return null}
+function match(arr,e){var need=eqNeed(e),c={};arr.forEach(function(k){c[k]=(c[k]||0)+1});for(var k in c)if(c[k]!==need[k])return false;for(k in need)if(c[k]!==need[k])return false;return true}
 
-/* ===== タイトル ===== */
-function initTitle(){show('title');zkBtns();$('tCoins').innerHTML=['H2','O2','H2O'].map(k=>coinHTML(k)).join('');
- $('nameIn').value=S.name||window.PLAYER_NAME||'';if(window.PLAYER_NAME)$('nameBox').classList.add('hidden');
- $('bCont').classList.toggle('hidden',!S.started);$('bCont').textContent=S.cleared?'つづきから（確認テスト・工場えらび）':`つづきから（工場 ${S.fac+1}）`}
-function takeName(){const v=$('nameIn').value.trim();S.name=v||window.PLAYER_NAME||S.name||'';save()}
-$('bStart').onclick=()=>{ac();sfx.sel();takeName();if(S.started&&S.fac>0&&!confirm('はじめから遊びますか？（星の記録は残ります）'))return;openFactory(0)};
-$('bCont').onclick=()=>{ac();sfx.sel();takeName();
- if(S.cleared){overlay(`<h2>どこから？</h2><div class="tbtns"><button class="btn y wide" id="oT">📝 確認テスト</button>${FACT.map((f,i)=>`<button class="btn ghost wide" data-f="${i}" style="font-size:15px">${i+1}. ${esc(f.name)} ${'★'.repeat(S.stars[i]||0)}</button>`).join('')}<button class="btn ghost wide" id="oC">とじる</button></div>`);
-  $('oT').onclick=()=>{closeOv();startTest()};$('oC').onclick=closeOv;document.querySelectorAll('[data-f]').forEach(b=>b.onclick=()=>{closeOv();openFactory(+b.dataset.f)})}
- else openFactory(S.fac)};
-$('bBook1').onclick=()=>window.Zukan&&Zukan.openBook&&Zukan.openBook();
-$('bMute1').onclick=()=>{setMute(!MUTE);if(!MUTE){ac();sfx.sel()}};$('bMute').onclick=()=>{setMute(!MUTE);if(!MUTE){ac();sfx.sel()}};
-$('bHome').onclick=()=>{sfx.sel();clearInterval(clock);save();initTitle()};
-document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')save()});
-setMute(MUTE);if(window.PLAYER_NAME&&!S.name)S.name=window.PLAYER_NAME;
-if(TEST_ONLY){S.name=window.PLAYER_NAME||S.name||'';startTest()}else initTitle();
-window.__HS={F:()=>F,S:()=>S,open:openFactory,test:startTest,summary:openSummary,
- fill:()=>{/* 自動テスト用: 正解どおり皿を満たす */for(const s in F.need.l)F.plates[s]=Array(F.need.l[s]).fill(s);for(const s in F.prod)F.prod[s]=F.need.r[s];render()}};
-})();
+/* ================= 蔵（1面）の進行 ================= */
+function newRun(i){var S=ST[i];RUN={i:i,S:S,balls:[],shots:[],aim:-Math.PI/2,cur:null,nxt:null,combo:0,chain:0,chainT:0,shotN:0,hitN:0,react:0,mol:0,bestCh:0,bestCb:0,t:0,phase:'intro',checks:[],fired:0,warnT:0,msgT:0,tip:0};
+  showEqs();buildPath(false);var seq=genChain(S),d=RUN.d;var maxN=Math.floor(PATH.L*1.05/d);if(seq.length>maxN)seq=seq.slice(0,maxN);
+  seq.forEach(function(k,j){RUN.balls.push({k:k,s:-j*d,ins:0,glow:0,gap:false})});
+  RUN.balls.reverse();RUN.balls.reverse();/* 0番＝先頭 */
+  RUN.cur=pickAmmo();RUN.nxt=pickAmmo();bgC=null}
+function showEqs(){var S=RUN.S,h='';S.eq.forEach(function(e){h+='<div class="maki" id="mk_'+e+'"><div class="nm">'+EQ[e].n+'</div><div class="row">'+eqHTML(e,PORT?20:24)+'</div><div class="tx">'+readTxt(e)+'</div></div>'});$('eqs').innerHTML=h;placeEqs()}
+function stageIntro(i){hideAll();state='intro';$('eqs').classList.remove('hidden');newRun(i);var S=RUN.S;$('scrStage').classList.remove('hidden');backBtn();
+  $('sgNo').textContent=KN[i]+'の蔵'+(S.boss?'（最後）':'');$('sgName').textContent=S.nm;
+  $('sgEq').innerHTML=S.eq.map(function(e){return '<div class="eqbig">'+eqHTML(e,34)+'</div><div class="read">'+readTxt(e)+'</div>'}).join('');$('sgSay').innerHTML=S.say;$('eqs').classList.remove('hidden')}
+function startStage(){AU.init();hideAll();state='play';RUN.phase='play';$('hud').classList.remove('hidden');$('eqs').classList.remove('hidden');backBtn();updHud();bgC=null;
+  if(RUN.i===0)hint('ねらって <b>はなす</b> と撃ちこむ。<br>砲台を<b>タップ</b>すると玉を入れかえ。',5)}
+function hint(html,sec){var s=html.replace(/<br>/g,'\n').replace(/<[^>]+>/g,'');var lines=s.split('\n');lines.forEach(function(l,i){ft(W/2,H*(PORT?.5:.62)+i*30,l,20,{life:sec||4,rise:6,fu:false,col:'#E9C874'})})}
+function pickAmmo(){var R=RUN,S=R.S,present={};R.balls.forEach(function(b){present[b.k]=1});
+  var cand={};S.eq.forEach(function(e){var rs=EQ[e].r.map(function(x){return x[0]});if(rs.some(function(k){return present[k]}))rs.forEach(function(k){cand[k]=1})});
+  var ks=Object.keys(cand);if(!ks.length){ks=[];S.eq.forEach(function(e){EQ[e].r.forEach(function(x){ks.push(x[0])})})}
+  if(Math.random()<.6&&R.balls.length){for(var t=0;t<4;t++){var i=(Math.random()*Math.min(R.balls.length,14))|0;var m=missingAt(i);if(m&&m.miss.length)return m.miss[0][0]}}
+  return ks[(Math.random()*ks.length)|0]}
+/* i番の玉のまわりの「反応式の左辺の分子だけが続く並び」と、足りない数 */
+function missingAt(i){var R=RUN,best=null;R.S.eq.forEach(function(e){var need=eqNeed(e);if(!need[R.balls[i].k])return;var a=i,b=i;
+    while(a>0&&need[R.balls[a-1].k]&&contig(a-1))a--;while(b<R.balls.length-1&&need[R.balls[b+1].k]&&contig(b))b++;
+    var c={};for(var j=a;j<=b;j++)c[R.balls[j].k]=(c[R.balls[j].k]||0)+1;var miss=[],tot=0;for(var k in need){var m=need[k]-(c[k]||0);if(m>0){miss.push([k,m]);tot+=m}}
+    if(!best||tot<best.tot)best={e:e,miss:miss,tot:tot,a:a,b:b}});return best}
+function contig(i){var R=RUN;return i+1<R.balls.length&&R.balls[i].s-R.balls[i+1].s<=R.d*1.06}
+/* ねらい・撃つ */
+function rayHit(x,y,a){var R=RUN,best=null,dx=Math.cos(a),dy=Math.sin(a),rr=R.d*.5;R.balls.forEach(function(b){if(b.s<0||b.x==null)return;var ox=b.x-x,oy=b.y-y,t=ox*dx+oy*dy;if(t<=0)return;var px=ox-dx*t,py=oy-dy*t,dd=px*px+py*py;if(dd<rr*rr*1.4){var tt=t-Math.sqrt(Math.max(0,rr*rr*1.4-dd));if(!best||tt<best.t)best={b:b,t:tt}}});return best}
+function shoot(){var R=RUN;if(R.phase!=='play'||!R.cur||R.cool>0)return;AU.init();var S=R.sh,a=R.aim,v=Math.max(W,H)*1.5;
+  R.shots.push({k:R.cur,x:S.x+Math.cos(a)*S.r*1.15,y:S.y+Math.sin(a)*S.r*1.15,vx:Math.cos(a)*v,vy:Math.sin(a)*v});R.cur=R.nxt;R.nxt=pickAmmo();R.cool=.22;R.shotN++;G.st.shots++;SFX.shoot()}
+function swapAmmo(){var R=RUN;var t=R.cur;R.cur=R.nxt;R.nxt=t;SFX.swap()}
+function insertShot(sh,j){var R=RUN,b=R.balls[j],p=posAt(b.s),tang=p[2],dot=(sh.x-p[0])*Math.cos(tang)+(sh.y-p[1])*Math.sin(tang),idx=dot>0?j:j+1,d=R.d;
+  var nb={k:sh.k,s:0,ins:.12,fx:sh.x,fy:sh.y,glow:0,gap:false,shot:1};R.balls.splice(idx,0,nb);
+  nb.s=idx+1<R.balls.length?R.balls[idx+1].s+d:R.balls[idx-1].s-d;for(var i=idx-1;i>=0;i--)R.balls[i].s=Math.max(R.balls[i].s,R.balls[i+1].s+d);
+  SFX.hit();R.checks.push({b:nb,t:.13,shot:1})}
+/* 反応の判定 */
+function tryReact(b,fromShot){var R=RUN,i=R.balls.indexOf(b);if(i<0)return false;
+  for(var q=0;q<R.S.eq.length;q++){var e=R.S.eq[q],n=eqN(e);for(var st=i-n+1;st<=i;st++){if(st<0||st+n>R.balls.length)continue;var ok=true;for(var j=st;j<st+n-1;j++)if(!contig(j)){ok=false;break}
+      if(!ok)continue;if(match(R.balls.slice(st,st+n).map(function(x){return x.k}),e)){doReact(st,n,e,fromShot);return true}}}
+  return false}
+function doReact(st,n,e,fromShot){var R=RUN,E=EQ[e],rem=R.balls.splice(st,n),d=R.d;
+  if(R.chainT>0&&!fromShot)R.chain++;else R.chain=1;R.chainT=1.4;if(R.chain>R.bestCh)R.bestCh=R.chain;if(R.chain>G.st.bestCh)G.st.bestCh=R.chain;
+  var mx=0,my=0;rem.forEach(function(b){mx+=b.x;my+=b.y});mx/=n;my/=n;
+  /* ほかの式の左辺になる生成物は列に残る */
+  var stay=[],fly=[];E.p.forEach(function(x){var used=R.S.eq.some(function(o){return o!==e&&EQ[o].r.some(function(y){return y[0]===x[0]})});for(var j=0;j<x[1];j++)(used?stay:fly).push(x[0])});
+  var usedProd=rem.some(function(b){return b.prod});stay.forEach(function(k,j){var nb={k:k,s:rem[Math.min(j,rem.length-1)].s,ins:0,glow:1,gap:false,prod:1};R.balls.splice(st+j,0,nb);R.checks.push({b:nb,t:.45,shot:0})});
+  [st+stay.length,st-1].forEach(function(ix){var nb2=R.balls[ix];if(nb2&&nb2.k==='KIN'){R.balls.splice(ix,1);sparks(nb2.x,nb2.y,14,200);FX.push({kind:'ring',x:nb2.x,y:nb2.y,r0:d*.3,r1:d,t:0,life:.4})}});
+  var mk=$('mk_'+e);if(mk){mk.classList.add('hot');setTimeout(function(){mk.classList.remove('hot')},700)}
+  fly.forEach(function(k,j){var tx=PORT?W*(.3+Math.random()*.4):parseFloat($('eqs').style.width||260)*.6,ty=PORT?L.hh+30:L.hh+60+R.S.eq.indexOf(e)*110;
+    FX.push({kind:'mol',k:k,x0:mx+(j-(fly.length-1)/2)*d*.7,y0:my,x1:tx,y1:ty,arc:H*.12+Math.random()*40,rot:rnd(-3,3),sz:d*.9,t:0,life:.9+j*.05})});
+  FX.push({kind:'ring',x:mx,y:my,r0:d*.4,r1:d*2.2,t:0,life:.6});sparks(mx,my,26,260);FL=Math.min(.7,.25+R.chain*.12);SHK=RM?0:4+R.chain*2;
+  ft(mx,my-d*.9,E.t,Math.round(clamp(d*.55,18,28)),{life:1.4,rise:30});
+  if(R.chain>=2){ft(mx,my-d*1.8,'連鎖×'+R.chain,Math.round(d*.9),{fu:true,col:'#ff7a4a',c2:'#ffe0b0',life:1.4});
+    if(usedProd&&!G.chainFound){G.chainFound=1;window.Zukan&&Zukan.earn&&Zukan.earn(30,'rule',{x:mx,y:my});setTimeout(function(){ft(W/2,H*.45,'できた分子が、次の反応式の左辺になった！',Math.round(clamp(W*.03,15,24)),{life:3,rise:10})},500)}
+    /* 列を少し押し戻す（連鎖のごほうび） */
+    if(R.balls.length&&R.balls[0].s>PATH.L*.25){R.push=d*1.2*(R.chain-1)}}
+  R.react++;G.st.react++;var nm=0;E.r.forEach(function(x){nm+=x[1]});R.mol+=nm;G.st.mol+=nm;G.scroll[e]=(G.scroll[e]||0)+1;
+  SFX.react(R.chain);updHud()}
+/* 1フレーム */
+function step(dt){var R=RUN,d=R.d,Lp=PATH.L;R.t+=dt;G.st.time+=dt;if(R.cool>0)R.cool-=dt;if(R.chainT>0){R.chainT-=dt;if(R.chainT<=0)R.chain=0}
+  var B=R.balls,n=B.length;
+  if(n){var front=B[0].s/Lp,intro=front<.24&&R.t<8,v=intro?d*7:d*R.S.v*(front>.86?.55:1);
+    if(R.push>0){var pd=Math.min(R.push,d*6*dt);R.push-=pd;B.forEach(function(b){b.s-=pd})}
+    B[n-1].s+=v*dt;
+    for(var i=n-2;i>=0;i--){var tgt=B[i+1].s+d;if(B[i].s<tgt)B[i].s=tgt;else if(B[i].s>tgt+.5){B[i].s=Math.max(tgt,B[i].s-d*9*dt)}
+      var closed=B[i].s-B[i+1].s<=d*1.03;if(closed&&B[i].gap){R.checks.push({b:B[i],t:.02,shot:0});R.checks.push({b:B[i+1],t:.02,shot:0})}B[i].gap=!closed}
+    B.forEach(function(b){if(b.ins>0)b.ins=Math.max(0,b.ins-dt);if(b.glow>0)b.glow=Math.max(0,b.glow-dt*1.5)});
+    if(B[0].s>=Lp-d*.2){fail();return}
+    if(front>.8){R.warnT-=dt;if(R.warnT<=0){R.warnT=.9;SFX.warn()}}}
+  /* 判定待ち */
+  var cs=R.checks;R.checks=[];cs=cs.filter(function(c){c.t-=dt;if(c.t>0)return true;var did=tryReact(c.b,c.shot);
+    if(c.shot){if(did){R.hitN++;G.st.hitShots++;R.combo++;if(R.combo>R.bestCb)R.bestCb=R.combo;if(R.combo>G.st.bestCb)G.st.bestCb=R.combo;if(R.combo>=3)ft(R.sh.x,R.sh.y-R.sh.r*1.9,R.combo+'連続',22,{fu:true,life:.9})}
+      else{if(R.combo>=2)ft(R.sh.x,R.sh.y-R.sh.r*1.9,'連続 おわり',16,{life:.8,col:'#b99d62'});R.combo=0;nearMiss(c.b)}updHud()}return false});R.checks=cs.concat(R.checks);
+  /* 飛んでいる玉 */
+  R.shots=R.shots.filter(function(s){for(var k=0;k<3;k++){s.x+=s.vx*dt/3;s.y+=s.vy*dt/3;var hit=-1,bd=d*.92;for(var i=0;i<B.length;i++){var b=B[i];if(b.s<0||b.x==null)continue;var dd=Math.hypot(b.x-s.x,b.y-s.y);if(dd<bd){bd=dd;hit=i}}
+      if(hit>=0){insertShot(s,hit);return false}}
+    if(s.x<-60||s.x>W+60||s.y<-60||s.y>H+60){R.combo=0;SFX.miss();updHud();return false}return true});
+  if(B.length&&B.every(function(b){return b.k==='KIN'})&&!R.checks.length){B.forEach(function(b){if(b.x!=null)sparks(b.x,b.y,12,180)});B.length=0}
+  if(!B.length&&!R.shots.length&&!R.checks.length&&R.phase==='play')clearStage();
+  if(R.cur&&B.length&&!B.some(function(b){return b.k===R.cur})&&!pickPool()[R.cur])R.cur=pickAmmo()}
+function pickPool(){var R=RUN,present={},cand={};R.balls.forEach(function(b){present[b.k]=1});R.S.eq.forEach(function(e){var rs=EQ[e].r.map(function(x){return x[0]});if(rs.some(function(k){return present[k]}))rs.forEach(function(k){cand[k]=1})});return cand}
+var nmT=0;
+function nearMiss(b){var R=RUN,i=R.balls.indexOf(b);if(i<0)return;var m=missingAt(i);if(!m)return;
+  if(m.tot>0&&m.tot<=2){var txt='あと '+m.miss.map(function(x){return SP[x[0]].f+(x[1]>1?'×'+x[1]:'')}).join('・');ft(b.x,b.y-R.d*.95,txt,Math.round(clamp(R.d*.52,16,24)),{life:1.3,col:'#ff9c7a',c2:'#ffe6d6'})}
+  else if(m.tot===0){/* 数は足りているのに並びが崩れている＝多すぎる */var need=eqNeed(m.e),c={};for(var j=m.a;j<=m.b;j++)c[R.balls[j].k]=(c[R.balls[j].k]||0)+1;var ex=Object.keys(c).filter(function(k){return c[k]>need[k]})[0];
+    if(ex&&c[ex]-need[ex]<=2)ft(b.x,b.y-R.d*.95,SP[ex].f+' が'+(c[ex]-need[ex])+'個多い',Math.round(clamp(R.d*.48,15,22)),{life:1.3,col:'#ff9c7a',c2:'#ffe6d6'})}}
+
+/* ================= 面の終わり ================= */
+function clearStage(){var R=RUN;R.phase='done';state='done';SFX.clear();FL=.8;sparks(W/2,H/2,60,420);
+  var rate=R.shotN?R.hitN/R.shotN:0;var i=R.i;
+  if(window.Zukan&&Zukan.earn){Zukan.earn(10,'hit',{x:W/2,y:H*.4});if(rate>=.6)Zukan.earn(10,'first-try',{x:W/2,y:H*.45})}
+  G.stage=Math.max(G.stage,i+1);saveGame();
+  setTimeout(function(){hideAll();$('scrClearSt').classList.remove('hidden');backBtn();$('csNo').textContent=KN[i]+'の蔵';$('csT').textContent=R.S.boss?'大蔵の列を すべて反応させた！':'蔵の列を すべて反応させた！';
+    $('csStats').innerHTML='<div>反応させた組<b>'+R.react+'</b></div><div>反応した分子<b>'+R.mol+'個</b></div><div>一発で反応<b>'+R.hitN+' / '+R.shotN+'</b></div><div>最大の連鎖<b>'+R.bestCh+'</b></div>';
+    $('csNote').innerHTML=(rate>=.6?'<b>撃った玉の6割以上が一発で反応！</b><br>':'')+R.S.eq.map(function(e){return EQ[e].t+'　…'+(G.scroll[e]||0)+'回'}).join('<br>');
+    $('csNext').textContent=i+1<NST?'次の蔵へ':'大蔵をあとにする'},RM?300:1300)}
+function fail(){var R=RUN;R.phase='fail';state='done';SFX.fail();SHK=RM?0:8;G.st.fails++;saveGame();var left=R.balls.length;
+  setTimeout(function(){hideAll();$('scrFail').classList.remove('hidden');backBtn();$('flT').textContent=left<=6?'あと '+left+'個だった！':'列が炉に届いた';
+    $('flNote').innerHTML='残っていた玉は <b>'+left+'個</b>。反応させた組 '+R.react+'。<br>撃つ前に巻物を読もう：<b>係数の数だけ</b>となりに並べると反応する。'},RM?200:900)}
+function nextStage(){if(G.stage>=NST){finale();return}stageIntro(G.stage)}
+function finale(){G.done=1;saveGame();if(window.Zukan&&Zukan.mainClear)Zukan.mainClear({onClose:showClear});else showClear()}
+function showClear(){hideAll();state='clear';RUN=null;$('scrClear').classList.remove('hidden');backBtn();var s=G.st;
+  $('clStats').innerHTML='<div>反応させた分子<b>'+s.mol+'個</b></div><div>一発で反応<b>'+s.hitShots+' / '+s.shots+'</b></div><div>最大の連続<b>'+s.bestCb+'</b></div><div>最大の連鎖<b>'+s.bestCh+'</b></div>';
+  $('clBook').classList.toggle('hidden',!window.Zukan)}
+function openScroll(){var g=G||loadGame()||fresh();$('scBody').innerHTML=EQORD.map(function(e){var n=g.scroll[e]||0;return '<div class="maki'+(n?'':' no')+'"><div class="nm">'+(n?EQ[e].n:'まだ読み解いていない')+'</div><div class="row">'+eqHTML(e,22)+'</div><div class="tx">'+(n?readTxt(e)+'　（'+n+'回）':'　')+'</div></div>'}).join('');$('scrScroll').classList.remove('hidden')}
+
+/* ================= 確認テスト ================= */
+var TQ=[],TA=[],TI=0;
+function startTest(){hideAll();state='test';RUN=null;$('scrTest').classList.remove('hidden');backBtn();TQ=window.Quiz?Quiz.test():[];TA=[];TI=0;showQ()}
+function showQ(){var q=TQ[TI];if(!q){finishTest();return}$('scrTest').querySelector('.paper').scrollTop=0;
+  $('tNo').textContent=(TI+1)+' / '+TQ.length;$('tQ').textContent=q.q;$('tFig').innerHTML=q.fig||'';$('tFb').innerHTML='';var A=$('tA');A.innerHTML='';
+  if(q.t==='choice'){q.shown.forEach(function(c){var b=document.createElement('button');b.className='fuda kuro';b.textContent=c;b.onclick=function(){answer(c,b)};A.appendChild(b)})}
+  else if(q.t==='num'){var row=document.createElement('div');row.className='numrow';row.innerHTML='<input id="numIn" inputmode="decimal" autocomplete="off"><span style="font:800 18px sans-serif">'+esc(q.unit||'')+'</span>';
+    var b=document.createElement('button');b.className='fuda sm';b.textContent='決定';row.appendChild(b);A.appendChild(row);b.onclick=function(){var v=$('numIn').value.trim();if(!v)return;answer(v)}}
+  else if(q.t==='order'){var sel=[],box=document.createElement('div');box.className='ord';A.appendChild(box);var btns=[];
+    q.shown.forEach(function(c){var bt=document.createElement('button');bt.className='fuda kuro';bt.textContent=c;bt.onclick=function(){if(bt.classList.contains('pickd'))return;sel.push(c);bt.classList.add('pickd');
+      var d=document.createElement('div');d.textContent=sel.length+'. '+c;box.appendChild(d);if(sel.length===q.shown.length)answer(sel.slice())};A.appendChild(bt);btns.push(bt)});
+    var rs=document.createElement('button');rs.className='fuda sm';rs.textContent='やり直す';rs.onclick=function(){sel=[];box.innerHTML='';btns.forEach(function(b){b.classList.remove('pickd')})};A.appendChild(rs)}}
+function answer(v,btn){var q=TQ[TI];if(TA[TI]!==undefined)return;TA[TI]=v;var ok=Quiz.check(q,v);AU.init();if(ok)SFX.react(2);else SFX.miss();
+  [].forEach.call($('tA').querySelectorAll('button,input'),function(b){b.disabled=true;if(q.t==='choice'&&b.textContent===q.choices[0])b.classList.add('ok')});if(btn&&!ok)btn.classList.add('ng');
+  $('tFb').innerHTML='<span class="mk">'+(ok?'○':'×')+'</span>'+(ok?'正解':'正解は「'+esc(Quiz.answer(q))+'」')+'<span class="ex">'+esc(q.ex||'')+'</span>';
+  var nx=document.createElement('button');nx.className='fuda sm';nx.textContent=TI+1<TQ.length?'つぎへ':'結果を見る';nx.onclick=function(){TI++;showQ()};$('tFb').appendChild(nx);
+  setTimeout(function(){nx.scrollIntoView({block:'nearest',behavior:'smooth'})},50)}
+function finishTest(){var qs=TQ,review=Quiz.review(qs,TA),marks=review.map(function(r){return r.ok}),score=marks.filter(Boolean).length;var g=G||loadGame(),s=g?g.st:null;
+  var recs=TEST?[['モード','確認テストだけ']]:[['開けた蔵',(g?Math.min(g.stage,NST):0)+' / '+NST],['反応させた分子',(s?s.mol:0)+'個'],['一発で反応',s?s.hitShots+' / '+s.shots:'-'],['最大の連鎖',(s?s.bestCh:0)+'']];
+  SubmitCard.show({gameId:GID,grade:'chu2',koma:KOMA,unit:'中2理科　化学変化と原子・分子　第16回',game:'反応式ズーマー ～化学反応式を読む～'+(TEST?'（確認テストのみ）':''),
+    name:(NAME||'').trim(),score:score,total:qs.length,marks:marks,records:recs,review:review},function(){if(TEST)startTest();else toTitle()})}
+
+/* ================= 画面の切りかえ ================= */
+var OVS=['scrTitle','scrStage','scrClearSt','scrFail','scrScroll','scrClear','scrBack','scrTest'];
+function hideAll(){OVS.forEach(function(id){$(id).classList.add('hidden')});$('hud').classList.add('hidden');$('eqs').classList.add('hidden')}
+var INHUB=!!window.COLLECTION_NAME||(function(){try{return window.parent!==window}catch(e){return true}})();
+function backBtn(){var b=$('bBack'),on=state!=='title'||INHUB;b.classList.toggle('hidden',!on);b.textContent=state==='title'?'◀ 一覧へ':'◀ もどる'}
+function toTitle(){hideAll();state='title';RUN=null;bgC=null;$('scrTitle').classList.remove('hidden');var sv=loadGame();$('btnCont').classList.toggle('hidden',!sv);$('btnStart').textContent=sv?'はじめから':'はじめる';
+  $('btnBook').classList.toggle('hidden',!window.Zukan);armed=false;backBtn()}
+var armed=false;
+function startGame(cont){AU.init();var sv=loadGame();if(!cont&&sv&&!armed){armed=true;$('btnStart').textContent='もう一度おすと最初から';return}
+  G=cont&&sv?sv:fresh();if(!cont||!sv)G.name=NAME;else if(!NAME)NAME=G.name||'';saveGame();if(G.done){showClear();return}stageIntro(Math.min(G.stage,NST-1))}
+function updHud(){if(!RUN)return;$('hNo').textContent=KN[RUN.i]+'の蔵';$('hKura').lastChild.nodeValue=RUN.S.nm;$('hLeft').textContent=RUN.balls.filter(function(b){return b.k!=='KIN'}).length;$('hCb').textContent=RUN.combo;
+  var z=window.Zukan&&Zukan.state?Zukan.state():null;$('hKkW').style.display=z?'':'none';if(z)$('hKk').textContent=z.kakera}
+$('bBack').onclick=function(){AU.init();if(state==='title'){try{window.parent.postMessage({type:'rika-close-game'},'*')}catch(e){}return}
+  if(RUN&&RUN.phase==='play')RUN.paused=true;
+  $('bkSub').textContent=state==='test'?'確認テストは、次はさいしょから。蔵の進み具合は保存されています。':state==='play'?'進み具合は保存されます（開けた蔵はそのまま。この蔵は次はさいしょから）。':'進み具合は保存されます。';$('scrBack').classList.remove('hidden')};
+$('bkNo').onclick=function(){$('scrBack').classList.add('hidden');if(RUN)RUN.paused=false};
+$('bkGo').onclick=function(){$('scrBack').classList.add('hidden');saveGame();toTitle()};
+
+/* ================= 入力 ================= */
+var aiming=false;
+function ptr(e){return [e.clientX,e.clientY]}
+function aimAt(p){var R=RUN;var a=Math.atan2(p[1]-R.sh.y,p[0]-R.sh.x);if(PORT)a=clamp(a,-Math.PI+.1,-.1);R.aim=a}
+cv.addEventListener('pointerdown',function(e){if(state!=='play'||!RUN||RUN.paused)return;AU.init();var p=ptr(e),S=RUN.sh;
+  if(Math.hypot(p[0]-S.x,p[1]-S.y)<S.r*1.25){swapAmmo();return}aiming=true;aimAt(p);try{cv.setPointerCapture(e.pointerId)}catch(_){}e.preventDefault()});
+addEventListener('pointermove',function(e){if(state!=='play'||!RUN)return;if(aiming||e.pointerType==='mouse')aimAt(ptr(e))});
+addEventListener('pointerup',function(e){if(!aiming)return;aiming=false;if(state==='play'&&RUN&&!RUN.paused){aimAt(ptr(e));shoot()}});
+addEventListener('pointercancel',function(){aiming=false});
+addEventListener('keydown',function(e){if(state!=='play'||!RUN)return;if(e.key==='ArrowLeft')RUN.aim-=.08;else if(e.key==='ArrowRight')RUN.aim+=.08;else if(e.key===' '){shoot();e.preventDefault()}else if(e.key==='x'||e.key==='ArrowDown')swapAmmo();else if(e.key==='Escape')$('bBack').click()});
+
+/* ================= ループ ================= */
+var last=performance.now();
+function frame(t){var dt=Math.min(.05,(t-last)/1000);last=t;now+=dt;
+  if(state==='play'&&RUN&&RUN.phase==='play'&&!RUN.paused)step(dt);
+  if(SHK>0)SHK=Math.max(0,SHK-dt*30);if(FL>0)FL=Math.max(0,FL-dt*1.6);
+  PT=PT.filter(function(p){p.t+=dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=120*dt;p.vx*=(1-2*dt);p.vy*=(1-2*dt);return p.t<p.life});
+  FT=FT.filter(function(f){f.t+=dt;return f.t<f.life});FX=FX.filter(function(f){f.t+=dt;return f.t<f.life});
+  draw();requestAnimationFrame(frame)}
+
+/* ================= 起動 ================= */
+addEventListener('resize',layout);
+$('btnStart').onclick=function(){NAME=$('nameIn').value.trim()||NAME;startGame(false)};
+$('btnCont').onclick=function(){NAME=$('nameIn').value.trim()||NAME;startGame(true)};
+$('sgGo').onclick=startStage;$('csNext').onclick=nextStage;$('flRetry').onclick=function(){stageIntro(RUN?RUN.i:G.stage)};$('toTest').onclick=startTest;
+$('btnScroll').onclick=$('clScroll').onclick=openScroll;$('scClose').onclick=function(){$('scrScroll').classList.add('hidden')};
+$('btnBook').onclick=$('clBook').onclick=function(){window.Zukan&&Zukan.openBook()};
+$('bMute').onclick=function(){AU.init();AU.mute=!AU.mute;$('bMute').classList.toggle('off',AU.mute);$('bMute').textContent=AU.mute?'×':'♪';try{localStorage.setItem('rika-zukan:chu2:game:hannoshiki-sort:mute',AU.mute?'1':'')}catch(e){}};
+try{AU.mute=localStorage.getItem('rika-zukan:chu2:game:hannoshiki-sort:mute')==='1';$('bMute').classList.toggle('off',AU.mute);$('bMute').textContent=AU.mute?'×':'♪'}catch(e){}
+if(window.PLAYER_NAME){$('nameIn').value=window.PLAYER_NAME;$('nameBox').classList.add('hidden')}
+window.Zukan&&Zukan.setup&&Zukan.setup({game:GID,koma:KOMA});
+window.Zukan&&Zukan.onChange&&Zukan.onChange(function(){updHud()});
+layout();
+if(document.fonts&&document.fonts.load){document.fonts.load('400 20px "Yuji Mai"').then(function(){bgC=null}).catch(function(){})}
+if(TEST)startTest();else toTitle();
+requestAnimationFrame(frame);
+/* 自動テスト用の読み取り口（ゲームの外からは使わない） */
+window.__HS={get G(){return G},get R(){return RUN},get state(){return state},posAt:posAt,EQ:EQ,ST:ST,get P(){return PATH},shoot:shoot,swap:swapAmmo,aimAt:aimAt};
 </script>
 </body>
 </html>
