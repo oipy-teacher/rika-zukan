@@ -1,155 +1,211 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#2E4057">
 <title>天秤の中をのぞけ ～質量が保存されるわけ～</title>
+<!--
+  ゲームID: tenbin-nozoke ／ コマID: chu2-kagaku-28（化学変化と原子・分子 第28回・確認用）
+  ねらい: 反応の前後で原子の種類と数が変わらないから、質量の総和も変わらない
+
+  【6. 別の世界】画風＝クロスステッチ刺繍（アイーダ布の目に×の糸で縫う。原子も天秤も×の目の集まり）
+   1 世界とメタファー: 刺繍の見本布（サンプラー）。天秤の両皿は刺繍枠（木の輪）。左＝反応前・右＝反応後。
+     分子をタップすると糸がほどけて原子になり、糸だまりに落ちる。原子を種類ごとの柱に積み分ける（Coin Sort型）。
+     まだ縫っていない図案は青い下絵の線、縫い終えた図案は色糸で埋まる（道のり＝見本布の図案を1つずつ）。
+   2 配色: 麻の生成り #F3EEE3 の地に、藍の糸 #2E4057・朱の糸 #E4572E。刺繍枠は木の色、下絵は青いチャコ線。
+   3 書体: 見出し M PLUS 1p（太字）
+   4 画面: 全画面canvas。PC・iPad横＝上に天秤の竿と左右の刺繍枠、下に積み場（元素ごとに「前」「後」の2本の柱）。
+     スマホ・iPad縦＝上に反応前の枠、下に反応後の枠、真ん中に積み場（前は上へ・後は下へ積む鏡うつし）。
+   5 HUD: 縫い付けたワッペン（もどる・図案名・かけら・図案帳・音）。天秤の針は縫い針。
+   6 音: オルゴール（原子が柱に収まる・音程が上がる）・糸が切れる「プツッ」・はさみ・ファンファーレ
+
+  【7. 動かす遊び】Coin Sort型の積み分け
+   分子をタップ→糸がほどけて原子が糸だまりへ。糸だまりのいちばん上の原子（同じ種類が続けば まとめて）を
+   ドラッグして元素の柱へ。まちがった柱にはのらない（はね返る・連続が切れる）。柱の重さの札の合計で天秤が傾き、
+   前と後の柱の高さが全部そろうと天秤がつりあう。「あと H 2個」「あと 16」は本当の差。
+  30分: 9枚の図案（炭素の燃焼→水→鉄と硫黄→沈殿→銅の酸化〔縫い足し〕→ふたのない容器〔山場〕→
+   マグネシウムの燃焼〔空気から〕→酸化銅の還元〔縫い足し〕→見本布の大作〔タイムアタック〕）→ 確認テスト10問 → 提出カード
+-->
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;700;800&family=DotGothic16&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=M+PLUS+1p:wght@500;700;800;900&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#0a1114;--panel:#0f1c1f;--line:#2c6e62;--ph:#6ff5c8;--ph2:#3fbf95;--amber:#ffc15a;--red:#ff6b57;--txt:#dff7ee;--dim:#8fb5aa;--ok:#5fe39a;--ng:#ff7a64;
- --f:'M PLUS Rounded 1c','Hiragino Maru Gothic ProN','Hiragino Sans','Meiryo',sans-serif;--d:'DotGothic16','Hiragino Sans','Meiryo',monospace}
+:root{--lin:#F3EEE3;--lin2:#E6DDCB;--lin3:#D8CCB3;--nv:#2E4057;--nvD:#1E2B3B;--nv2:#4A5E7A;--rd:#E4572E;--rdD:#B03F1E;--gd:#C99A3E;--gdD:#94701F;--blue:#5B8DC9;
+  --hd:"M PLUS 1p","Hiragino Kaku Gothic ProN","Hiragino Sans","Noto Sans JP",sans-serif;
+  --aida:radial-gradient(circle at 50% 50%,rgba(110,90,60,.20) 0 1px,transparent 1.6px) 0 0/7px 7px,linear-gradient(0deg,rgba(110,90,60,.05) 1px,transparent 1px) 0 0/7px 7px,linear-gradient(90deg,rgba(110,90,60,.05) 1px,transparent 1px) 0 0/7px 7px}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{margin:0;height:100%}
-body{background:var(--bg);color:var(--txt);font-family:var(--f);overflow-x:hidden;-webkit-user-select:none;user-select:none;touch-action:manipulation;
- background-image:radial-gradient(ellipse at 50% -20%,rgba(111,245,200,.12),transparent 60%),repeating-linear-gradient(0deg,rgba(255,255,255,.018) 0 1px,transparent 1px 3px)}
-button{font-family:inherit;cursor:pointer;color:inherit}
+html,body{margin:0;height:100%;overflow:hidden;background:var(--lin);overscroll-behavior:none;-webkit-user-select:none;user-select:none;
+  font-family:var(--hd);color:var(--nvD);-webkit-text-size-adjust:100%}
+#cv{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none}
 .hidden{display:none!important}
-.scr{position:fixed;inset:0;overflow-y:auto;overflow-x:hidden}
-.wrap{width:100%;max-width:520px;margin:0 auto;padding:10px 12px 30px}
-.btn{min-height:50px;border:none;border-radius:10px;padding:10px 18px;font-size:18px;font-weight:800;background:linear-gradient(#7af7cf,#35b98f);color:#06231a;box-shadow:0 4px 0 #1b6b52,0 0 14px rgba(111,245,200,.25)}
-.btn:active{transform:translateY(3px);box-shadow:0 1px 0 #1b6b52}
-.btn.ghost{background:rgba(111,245,200,.06);color:var(--txt);box-shadow:0 0 0 2px var(--line) inset}
-.btn.amber{background:linear-gradient(#ffd27f,#e39a2c);color:#2a1800;box-shadow:0 4px 0 #8a5a12}
-.btn.wide{width:100%}
-.btn:disabled{opacity:.35}
-.small{font-size:13px;color:var(--dim)}
-.mono{font-family:var(--d)}
-/* title */
-#title .wrap{text-align:center;padding-top:22px}
-.kicker{font-size:13px;font-weight:800;color:var(--amber);letter-spacing:.1em}
-.logo{font-family:var(--d);font-size:clamp(34px,10.5vw,50px);line-height:1.15;margin:8px 0 2px;color:var(--ph);text-shadow:0 0 14px rgba(111,245,200,.55)}
-.subt{font-size:16px;font-weight:800;color:#bfe9dc;margin-bottom:8px}
-.panelbox{background:var(--panel);border:2px solid var(--line);border-radius:12px;padding:10px 12px;margin:10px 0;text-align:left;font-size:15px;line-height:1.7;box-shadow:inset 0 0 20px rgba(0,0,0,.4)}
-.panelbox b{color:var(--amber)}
-.namein{width:100%;font:inherit;font-size:18px;padding:10px 12px;border-radius:10px;border:2px solid var(--line);background:#051012;color:var(--txt);margin-top:6px}
-.tbtns{display:grid;gap:10px;margin-top:12px}
-/* HUD */
-.hud{display:flex;align-items:center;gap:6px;margin-bottom:6px}
-.icon{min-width:44px;min-height:44px;border-radius:10px;border:none;background:rgba(111,245,200,.07);box-shadow:0 0 0 2px var(--line) inset;font-size:19px;padding:0}
-.hmid{flex:1;min-width:0;display:flex;gap:6px;align-items:center;justify-content:center;flex-wrap:wrap}
-.pill{background:#051012;border-radius:6px;padding:3px 9px;font-size:13px;font-weight:800;white-space:nowrap;box-shadow:0 0 0 1px var(--line) inset;font-family:var(--d)}
-.pill b{color:var(--ph);font-size:15px}
-.combo{color:var(--amber)}
-.dots{display:flex;gap:4px;justify-content:center;margin:2px 0 6px}
-.dots i{width:18px;height:6px;border-radius:2px;background:rgba(111,245,200,.14)}
-.dots i.on{background:var(--ph2)}.dots i.now{background:var(--ph);box-shadow:0 0 8px var(--ph)}
-.head{background:var(--panel);border:2px solid var(--line);border-radius:12px;padding:8px 12px}
-.head .no{font-family:var(--d);font-size:13px;color:var(--amber)}
-.head h2{margin:2px 0 0;font-size:20px;line-height:1.35}
-.head .eq{font-family:var(--d);font-size:14px;color:var(--ph);margin-top:4px;line-height:1.5}
-.tabs{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px}
-.tab{min-height:48px;border:none;border-radius:10px 10px 0 0;background:#08171a;color:var(--dim);font-weight:800;font-size:15px;box-shadow:0 0 0 2px var(--line) inset}
-.tab.on{background:#123238;color:var(--ph);box-shadow:0 0 0 2px var(--ph2) inset,0 0 12px rgba(111,245,200,.25)}
-.tab.locked{opacity:.6}
-.mon{position:relative;background:#041012;border:2px solid var(--ph2);border-radius:0 0 12px 12px;overflow:hidden;box-shadow:inset 0 0 30px rgba(0,0,0,.6)}
-.mon::after{content:'';position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(111,245,200,.05) 0 1px,transparent 1px 3px)}
-.mon svg{display:block;width:100%;height:auto;touch-action:manipulation}
-.mon.wipe{animation:wipe .45s}
-@keyframes wipe{0%{filter:brightness(2.2) contrast(.6)}100%{filter:none}}
-.tbl{width:100%;border-collapse:collapse;margin-top:8px;font-size:14px;background:var(--panel);border-radius:10px;overflow:hidden}
-.tbl th{background:#123238;color:var(--ph);padding:5px 4px;font-weight:700;font-size:12px}
-.tbl td{border-bottom:1px solid #1b3a3a;padding:4px;text-align:center;font-family:var(--d);font-size:15px}
-.tbl td.el{text-align:left;font-family:var(--f);font-weight:800}
-.tbl .dot{display:inline-block;width:14px;height:14px;border-radius:50%;vertical-align:-2px;margin-right:4px}
-.memo{color:var(--amber)}
-#ctrl{margin-top:10px}
-.qline{font-weight:800;font-size:16px;margin:4px 2px 8px;line-height:1.5}
-.numshow{font-size:30px;font-weight:800;text-align:center;background:#051012;color:var(--ph);border:2px solid var(--line);border-radius:10px;padding:6px;margin:6px 0;font-family:var(--d)}
-.keys{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-.keys button{min-height:50px;font-size:22px;font-weight:800;border-radius:10px;border:none;background:#123238;color:var(--txt);box-shadow:0 3px 0 #0a2226,0 0 0 1px var(--line) inset;font-family:var(--d)}
-.card{border-radius:12px;padding:10px 12px;margin-top:10px;font-size:15px;line-height:1.6;background:var(--panel);border:2px solid var(--line)}
-.card .hd{font-family:var(--d);font-size:22px}
-.card.ok{border-color:var(--ok)}.card.ok .hd{color:var(--ok)}
-.card.ng{border-color:var(--ng)}.card.ng .hd{color:var(--ng)}
-.card b{color:var(--amber)}
-.opts{display:grid;gap:8px}
-.opt{text-align:left;min-height:50px;border:none;border-radius:10px;padding:10px 12px;background:#123238;color:var(--txt);font-size:15px;font-weight:800;line-height:1.45;box-shadow:0 0 0 2px var(--line) inset}
-.opt.ok{box-shadow:0 0 0 3px var(--ok) inset}.opt.ng{box-shadow:0 0 0 3px var(--ng) inset;opacity:.7}
-.row2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.act{margin-top:10px}
-.chips{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:8px 0}
-.chip{min-height:46px;min-width:74px;border:none;border-radius:999px;padding:6px 14px;background:#123238;color:var(--txt);font-weight:800;font-size:16px;box-shadow:0 0 0 2px var(--line) inset}
-.chip.used{opacity:.3}
-.sent{font-size:17px;line-height:2.1;font-weight:800}
-.slot{display:inline-block;min-width:92px;min-height:36px;border-radius:8px;border:2px dashed var(--amber);color:var(--amber);text-align:center;padding:0 6px;vertical-align:middle;line-height:32px}
-.slot.cur{background:rgba(255,193,90,.15)}
-.slot.ok{border-style:solid;border-color:var(--ok);color:var(--ok)}
-.sum{width:100%;border-collapse:collapse;font-size:13px;background:var(--panel);border-radius:10px;overflow:hidden}
-.sum th{background:#123238;color:var(--ph);padding:5px 3px;font-weight:700}
-.sum td{border-bottom:1px solid #1b3a3a;padding:5px 3px;text-align:center}
-.sum td.l{text-align:left}
-.tacard{background:var(--panel);border:2px solid var(--line);border-radius:12px;padding:8px}
-.tacard svg{display:block;width:100%;height:auto}
-.tbar{height:10px;border-radius:5px;background:#123238;overflow:hidden;margin:6px 0}
-.tbar i{display:block;height:100%;background:linear-gradient(90deg,var(--ph),var(--amber))}
-/* 演出 */
-#fx{position:fixed;inset:0;pointer-events:none;z-index:60}
-.fly{position:fixed;z-index:61;font-weight:800;font-size:22px;color:var(--ph);text-shadow:0 0 8px rgba(111,245,200,.8);pointer-events:none;animation:fly 1s ease-out forwards;font-family:var(--d)}
-@keyframes fly{to{transform:translateY(-54px);opacity:0}}
-.banner{width:max-content;position:fixed;left:50%;top:36%;transform:translate(-50%,-50%);z-index:62;background:#061417;color:var(--ph);font-family:var(--d);font-size:26px;padding:14px 22px;border-radius:12px;border:2px solid var(--ph);box-shadow:0 0 30px rgba(111,245,200,.4);text-align:center;animation:bn 1.8s forwards;pointer-events:none;max-width:92vw}
-.banner small{display:block;font-family:var(--f);font-weight:800;font-size:14px;color:var(--txt);margin-top:4px}
-@keyframes bn{0%{transform:translate(-50%,-50%) scale(.6);opacity:0}12%{transform:translate(-50%,-50%) scale(1.05);opacity:1}80%{opacity:1}100%{opacity:0}}
-.flash{position:fixed;inset:0;z-index:59;pointer-events:none;background:radial-gradient(circle,rgba(111,245,200,.35),transparent 70%);animation:fl .45s forwards}
-@keyframes fl{to{opacity:0}}
-.shake{animation:shake .4s}
-@keyframes shake{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
-.ov{position:fixed;inset:0;background:rgba(0,6,8,.78);display:flex;align-items:center;justify-content:center;padding:12px;z-index:40}
-.ovc{width:100%;max-width:440px;max-height:92vh;overflow:auto;background:var(--panel);border:2px solid var(--ph2);border-radius:14px;padding:16px;text-align:center}
-.ovc h2{font-family:var(--d);margin:4px 0 8px;font-size:22px;color:var(--ph)}
-/* test */
-.tq{font-size:18px;font-weight:800;line-height:1.6;margin:8px 0 10px}
-.tfig{background:#f4fbf8;border-radius:10px;padding:6px;margin:6px 0;text-align:center}.tfig svg{max-width:100%;height:auto}
-.choice{display:block;width:100%;min-height:52px;margin:8px 0;padding:10px 14px;text-align:left;font-size:17px;font-weight:700;border-radius:10px;border:none;background:#123238;color:var(--txt);box-shadow:0 0 0 2px var(--line) inset}
-.prog{display:flex;gap:4px;margin:6px 0}.prog i{flex:1;height:6px;border-radius:3px;background:#123238}.prog i.on{background:var(--ph)}
-.ordsel{min-height:52px;border:2px dashed var(--line);border-radius:10px;padding:6px;margin:6px 0}
-.ordsel div{background:#123238;border-radius:8px;padding:8px 10px;margin:4px 0;font-weight:700;font-size:15px}
-.bigscore{font-family:var(--d);font-size:58px;color:var(--ph)}
-@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+input{-webkit-user-select:text;user-select:text}
+/* 縫い付けたワッペン（ボタン） */
+.patch{position:relative;font-family:var(--hd);font-weight:800;font-size:18px;min-height:50px;padding:8px 24px;border:0;border-radius:12px;cursor:pointer;
+  color:var(--lin);background:var(--nv);letter-spacing:.04em;box-shadow:0 4px 0 var(--nvD),0 6px 12px rgba(30,43,59,.22);transition:transform .08s}
+.patch::after{content:"";position:absolute;inset:5px;border:2px dashed rgba(243,238,227,.78);border-radius:8px;pointer-events:none}
+.patch:active{transform:translateY(3px) scale(.98);box-shadow:0 1px 0 var(--nvD)}
+.patch.rd{background:var(--rd);box-shadow:0 4px 0 var(--rdD),0 6px 12px rgba(30,43,59,.22)}
+.patch.rd:active{box-shadow:0 1px 0 var(--rdD)}
+.patch.ln{background:var(--lin);color:var(--nv);box-shadow:0 4px 0 var(--lin3),0 0 0 2px var(--nv) inset,0 6px 12px rgba(30,43,59,.16)}
+.patch.ln::after{border-color:rgba(46,64,87,.55)}
+.patch.gd{background:var(--gd);color:var(--nvD);box-shadow:0 4px 0 var(--gdD),0 6px 12px rgba(30,43,59,.2)}
+.patch.gd::after{border-color:rgba(30,43,59,.45)}
+.patch.sm{font-size:15px;min-height:44px;padding:6px 16px}
+.patch[disabled]{opacity:.45;cursor:default}
+/* もどる（いつも左上） */
+#bBack{position:fixed;z-index:40;left:calc(8px + env(safe-area-inset-left));top:calc(8px + env(safe-area-inset-top));min-height:46px;padding:4px 18px 4px 12px;font-size:17px}
+#bBack b{display:inline-block;margin-right:6px;color:var(--rd);background:var(--lin);border-radius:50%;width:24px;height:24px;line-height:24px;text-align:center;font-size:13px}
+#hudC{position:fixed;z-index:30;left:50%;top:calc(10px + env(safe-area-inset-top));transform:translateX(-50%);pointer-events:none;background:var(--lin);color:var(--nv);
+  font-weight:900;font-size:clamp(14px,.6vw + 10px,19px);padding:7px 18px;border-radius:10px;box-shadow:0 0 0 2px var(--nv),0 3px 0 var(--lin3);white-space:nowrap;max-width:44vw;overflow:hidden;text-overflow:ellipsis}
+#hudC::after{content:"";position:absolute;inset:4px;border:1.5px dashed rgba(46,64,87,.45);border-radius:7px}
+#hudC em{font-style:normal;color:var(--rd)}
+#topR{position:fixed;z-index:31;right:calc(8px + env(safe-area-inset-right));top:calc(8px + env(safe-area-inset-top));display:flex;gap:8px;align-items:center}
+#kk{font-weight:900;font-size:15px;background:var(--lin);color:var(--nv);padding:6px 10px;border-radius:9px;box-shadow:0 0 0 2px var(--nv)}
+#kk i{font-style:normal;display:inline-block;width:11px;height:13px;background:var(--rd);clip-path:polygon(50% 0,100% 35%,80% 100%,20% 100%,0 35%);margin-right:5px;vertical-align:-1px}
+.ib{width:48px;height:48px;padding:0;font-size:14px;border-radius:50%}
+.ib::after{border-radius:50%}
+.ib.off{background:var(--lin);color:var(--nv);text-decoration:line-through}
+#bBook2{width:auto;border-radius:12px;padding:0 14px;font-size:14px}
+#bBook2::after{border-radius:8px}
+/* 刺繍の帯（指示） */
+#strip{position:fixed;z-index:20;left:50%;transform:translateX(-50%);width:max-content;max-width:min(94vw,780px);pointer-events:none;background:var(--nv);color:var(--lin);
+  padding:8px 22px 9px;font-weight:800;font-size:clamp(14px,.9vw + 9px,20px);line-height:1.45;text-align:center;border-radius:10px;box-shadow:0 4px 10px rgba(30,43,59,.2)}
+#strip::after{content:"";position:absolute;inset:4px;border:1.5px dashed rgba(243,238,227,.6);border-radius:7px}
+#strip b{color:#FFC7B4}
+#strip.warn{background:var(--rd)}
+#strip.warn b{color:var(--lin);text-decoration:underline}
+/* 図案（縫い足し）の棚 */
+#patBar{position:fixed;z-index:22;display:flex;gap:8px;transform:translate(-50%,0);width:max-content}
+#patBar .patch{display:flex;align-items:center;gap:6px;padding:4px 14px 4px 8px;font-size:16px;min-height:52px}
+#patBar svg{width:40px;height:40px;background:var(--lin);border-radius:8px}
+/* 窓（刺繍の見本布の布地） */
+.ov{position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center}
+#dlg,#conf,#book{background:rgba(30,43,59,.3);padding:12px}
+.box{position:relative;width:min(94vw,640px);max-height:92vh;overflow-y:auto;background:var(--aida),var(--lin);padding:0 0 18px;border-radius:14px;
+  box-shadow:0 0 0 5px var(--nv),0 0 0 7px var(--lin),0 0 0 10px var(--rd),0 18px 30px rgba(30,43,59,.35);touch-action:pan-y}
+.box::before{content:"";position:absolute;inset:8px;border:2px dashed rgba(46,64,87,.35);border-radius:9px;pointer-events:none}
+.nh{position:relative;margin:0 0 10px;padding:18px 18px 12px;font-weight:900;font-size:clamp(24px,1.6vw + 16px,36px);color:var(--nv);text-align:center;line-height:1.2;letter-spacing:.04em}
+.nh.rd{color:var(--rd)}
+.nh small{display:block;font-size:.46em;margin-top:6px;color:var(--nv2);letter-spacing:.1em;font-weight:800}
+.bd{position:relative;padding:0 22px;font-size:clamp(15px,.4vw + 13px,18px);line-height:1.75;font-weight:700}
+.bd b{color:var(--rd)}
+.eq{display:block;text-align:center;font-size:clamp(20px,1.2vw + 14px,30px);font-weight:900;color:var(--nv);margin:4px 0 8px;letter-spacing:.03em}
+.row{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:14px;position:relative}
+.rec{display:grid;grid-template-columns:auto auto;gap:4px 18px;justify-content:center;margin:8px 0;font-weight:800}
+.rec span:nth-child(odd){color:var(--nv2)}
+.stars{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin:8px 0 10px}
+.stars div{font-weight:900;font-size:15px;padding:7px 12px;border-radius:9px;background:var(--lin2);color:#9a8c70;box-shadow:inset 0 0 0 2px #cdbf9f;animation:don .34s cubic-bezier(.3,1.8,.5,1) both}
+.stars div.on{background:var(--rd);color:var(--lin);box-shadow:inset 0 0 0 2px var(--rd),inset 0 0 0 4px var(--lin)}
+@keyframes don{0%{transform:scale(2.4) rotate(-8deg);opacity:0}60%{opacity:1}100%{transform:scale(1) rotate(0);opacity:1}}
+.take{position:relative;margin:10px 22px 0;padding:12px 16px;background:var(--nv);color:var(--lin);border-radius:10px;font-weight:700;line-height:1.75}
+.take::after{content:"";position:absolute;inset:4px;border:1.5px dashed rgba(243,238,227,.5);border-radius:7px;pointer-events:none}
+.take b{color:#FFC7B4}
+.cards{position:relative;display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;padding:0 16px}
+.card{background:#FBF8F1;border-radius:10px;padding:8px;text-align:center;box-shadow:inset 0 0 0 2px var(--nv);font-size:13px;line-height:1.45;font-weight:700}
+.card svg{width:100%;height:76px;display:block;margin:0 auto 4px}
+.card b{display:block;font-weight:900;font-size:15px;color:var(--nv)}
+.card.no{opacity:.5;box-shadow:inset 0 0 0 2px #b9ab8b}
+/* タイトル */
+#title{flex-direction:column;justify-content:flex-start;pointer-events:none}
+#logo{pointer-events:none;margin-top:calc(70px + env(safe-area-inset-top));text-align:center;position:relative;padding:16px 26px 20px;background:var(--nv);color:var(--lin);border-radius:18px;
+  box-shadow:0 0 0 4px var(--lin),0 0 0 8px var(--rd),0 14px 26px rgba(30,43,59,.3);animation:logoIn 1s cubic-bezier(.2,1.5,.45,1) both;max-width:94vw}
+#logo::after{content:"";position:absolute;inset:7px;border:2.5px dashed rgba(243,238,227,.7);border-radius:12px}
+@keyframes logoIn{0%{transform:translateY(-140%) rotate(-6deg)}60%{transform:translateY(6%) rotate(1deg)}80%{transform:translateY(-2%)}100%{transform:none}}
+#logo .kick{display:inline-block;font-weight:900;font-size:clamp(12px,.6vw + 9px,16px);letter-spacing:.16em;padding:3px 14px;background:var(--rd);color:var(--lin);border-radius:6px}
+#logo h1{margin:8px 0 2px;font-weight:900;line-height:1.1;font-size:min(12vw,8.4vh,86px);letter-spacing:.05em;text-shadow:.05em .05em 0 var(--rd)}
+#logo h1 em{font-style:normal;color:#FFC7B4;text-shadow:.05em .05em 0 var(--nvD)}
+#logo .sub{font-weight:800;font-size:clamp(15px,1.2vw + 10px,26px);letter-spacing:.08em}
+#tBox{pointer-events:auto;margin-top:auto;margin-bottom:calc(18px + env(safe-area-inset-bottom));display:flex;flex-direction:column;align-items:center;gap:12px;width:min(94vw,560px);animation:boxIn .6s .7s both}
+@keyframes boxIn{0%{opacity:0;transform:translateY(40px)}100%{opacity:1;transform:none}}
+#btnStart{font-size:clamp(24px,1.4vw + 16px,34px);min-height:66px;padding:10px 52px;animation:pulse 1.1s 1.2s ease-in-out infinite}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+#nameBox{display:flex;align-items:center;gap:10px;background:var(--lin);padding:6px 14px;border-radius:10px;box-shadow:0 0 0 2px var(--nv)}
+#nameBox label{font-weight:900;font-size:15px;color:var(--nv)}
+#nameIn{width:180px;min-height:40px;font-size:17px;border:0;border-bottom:2px dashed var(--nv);background:transparent;color:var(--nvD);padding:4px 6px;outline:none;font-family:var(--hd)}
+/* 確認テスト */
+#test{flex-direction:column;justify-content:flex-start;align-items:stretch;overflow-y:auto;touch-action:pan-y;background:var(--aida),var(--lin);padding:calc(68px + env(safe-area-inset-top)) 14px 16px}
+#test .thead{position:relative;display:flex;justify-content:space-between;align-items:center;background:var(--nv);color:var(--lin);padding:8px 18px;border-radius:10px;margin-bottom:12px;flex:none;font-weight:900;font-size:clamp(17px,1vw + 11px,24px)}
+#test .paper{flex:1 0 auto;display:flex;flex-direction:column;padding:4px}
+body.land #test .paper{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);grid-template-rows:auto 1fr auto;grid-template-areas:"q a" "f a" "f b";column-gap:30px}
+body.land #tQ{grid-area:q}body.land #tFig{grid-area:f}body.land #tA{grid-area:a;align-self:start}body.land #tFb{grid-area:b}
+#tQ{font-size:clamp(17px,.8vw + 11px,24px);font-weight:800;line-height:1.65;padding:12px 16px;background:#FBF8F1;border-radius:10px;box-shadow:inset 0 0 0 2px var(--nv);margin-bottom:10px}
+#tFig{text-align:center;margin:6px 0 12px}
+#tFig svg{max-width:100%;height:auto;background:#fff;border-radius:8px;box-shadow:0 0 0 2px var(--nv)}
+body.land #tFig svg{width:100%;max-height:52vh}
+#tA{display:flex;flex-direction:column;gap:10px}
+.tag{min-height:50px;text-align:left;font-size:clamp(15.5px,.5vw + 12px,20px);font-weight:800;line-height:1.45;padding:10px 16px;cursor:pointer;border:0;border-radius:10px;font-family:inherit;
+  background:#FBF8F1;color:var(--nvD);box-shadow:inset 0 0 0 2.5px var(--nv),0 3px 0 var(--nv)}
+.tag:active{transform:translateY(2px);box-shadow:inset 0 0 0 2.5px var(--nv),0 1px 0 var(--nv)}
+.tag.ok{background:var(--nv);color:var(--lin)}
+.tag.ng{background:var(--rd);color:var(--lin);text-decoration:line-through}
+.tag.pickd{opacity:.35}
+.numrow{display:flex;gap:8px;align-items:center}
+#numIn{flex:1;min-height:50px;font-size:22px;border:0;border-radius:10px;background:#FBF8F1;color:var(--nvD);padding:4px 12px;box-shadow:inset 0 0 0 2.5px var(--nv);font-family:var(--hd);font-weight:800}
+.ord{display:flex;flex-direction:column;gap:6px;min-height:24px;padding:6px;border-radius:10px;box-shadow:inset 0 0 0 2px var(--gd);background:#FBF8F1}
+.ord div{font-size:15px;font-weight:800;padding:6px 8px;background:var(--lin2);border-left:6px solid var(--rd);border-radius:4px}
+#tFb{margin-top:12px;font-size:clamp(15px,.4vw + 13px,19px);line-height:1.6;font-weight:800}
+#tFb .mk{font-size:1.8em;margin-right:8px;color:var(--rd);font-weight:900}
+#tFb .mk.o{color:var(--nv)}
+#tFb .ex{display:block;font-weight:700;margin-top:4px}
+/* 本編クリア */
+#clear{flex-direction:column;gap:14px;padding:76px 16px 20px;text-align:center;pointer-events:none}
+#clear>*{pointer-events:auto}
+#clear h2{position:relative;margin:0;font-weight:900;font-size:clamp(40px,7vw,96px);color:var(--lin);background:var(--rd);padding:8px 34px 14px;border-radius:16px;box-shadow:0 0 0 4px var(--lin),0 0 0 8px var(--nv)}
+#clear h2::after{content:"";position:absolute;inset:7px;border:2.5px dashed rgba(243,238,227,.7);border-radius:10px}
+#clear .take{max-width:min(92vw,720px);font-size:clamp(15px,.5vw + 12px,20px)}
+#clear .recb{background:var(--lin);padding:10px 20px;border-radius:10px;box-shadow:0 0 0 2px var(--nv);font-weight:800}
+@media (prefers-reduced-motion:reduce){#logo,#btnStart,#tBox,.stars div{animation:none!important}}
 </style>
 </head>
 <body>
-<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs id="atomDefs"></defs></svg>
-<canvas id="fx"></canvas>
+<canvas id="cv" aria-label="刺繍の見本布と天秤"></canvas>
 
-<div id="title" class="scr"><div class="wrap">
- <div class="kicker">中2理科　化学変化と原子・分子</div>
- <div class="logo">🖥️ 天秤の中を<br>のぞけ</div>
- <div class="subt">～質量が保存されるわけ～</div>
- <div id="tMon" class="mon" style="border-radius:12px;max-width:340px;margin:0 auto"></div>
- <div class="panelbox"><b>艦内モニターの使い方</b><br>🔬<b>原子画面</b>：容器の中の原子を数える（分子をタップ）。<br>⚖️<b>天秤画面</b>：予言を入れると、ロックが外れて値が見える。<br>原子の数と「重さの札」から、天秤の値を<b>予言</b>しよう。</div>
- <div id="nameBox" class="panelbox" style="padding:10px 12px"><label style="font-weight:800;font-size:14px">なまえ（番号でもOK・空でも遊べる）</label><input id="nameIn" class="namein" maxlength="20" autocomplete="off"></div>
- <div class="tbtns">
-  <button class="btn wide" id="bStart">▶ はじめる</button>
-  <button class="btn ghost wide hidden" id="bCont">つづきから</button>
-  <button class="btn ghost wide zk hidden" id="bBook1">📖 図鑑</button>
-  <button class="btn ghost wide" id="bMute1">🔊 音：オン</button>
- </div>
+<button id="bBack" class="patch hidden" aria-label="もどる"><b>◀</b>もどる</button>
+<div id="hudC" class="hidden"></div>
+<div id="topR" class="hidden"><span id="kk"><i></i><span id="kkN">0</span></span><button id="bBook2" class="patch ln">図案帳</button><button id="bSnd" class="patch ib" aria-label="音のオン・オフ">音</button></div>
+<div id="strip" class="hidden"></div>
+<div id="patBar" class="hidden"></div>
+
+<div id="title" class="ov">
+  <div id="logo">
+    <div class="kick">中2理科 化学 第28回</div>
+    <h1>天秤の中を<em>のぞけ</em></h1>
+    <div class="sub">～質量が保存されるわけ～</div>
+  </div>
+  <div id="tBox">
+    <div id="nameBox"><label for="nameIn">なまえ</label><input id="nameIn" maxlength="16" autocomplete="off" placeholder="（空でもOK）"></div>
+    <div class="row" style="margin-top:0">
+      <button id="btnStart" class="patch rd">はじめる</button>
+      <button id="btnCont" class="patch hidden">つづきから</button>
+    </div>
+    <div class="row" style="margin-top:0"><button id="btnBook" class="patch gd sm">📖 図鑑</button></div>
+  </div>
+</div>
+
+<div id="dlg" class="ov hidden"><div class="box" id="dlgBox"></div></div>
+<div id="conf" class="ov hidden"><div class="box">
+  <div class="nh">もどる？<small>進み具合は保存されます</small></div>
+  <div class="bd" id="confTx" style="text-align:center"></div>
+  <div class="row"><button class="patch" id="confNo">つづける</button><button class="patch rd" id="confGo">もどる</button></div>
+</div></div>
+<div id="book" class="ov hidden"><div class="box">
+  <div class="nh">図案帳<small>ほどいた分子のモデル</small></div>
+  <div class="cards" id="bookCards"></div>
+  <div class="row"><button class="patch" id="bookClose">とじる</button></div>
 </div></div>
 
-<div id="game" class="scr hidden"><div class="wrap">
- <div class="hud">
-  <button class="icon" id="bHome" aria-label="タイトルへ">🏠</button>
-  <div class="hmid"><span class="pill">SCORE <b id="hScore">0</b></span><span class="pill combo" id="hCombo">×0</span><span class="pill" id="hTime">0:00</span></div>
-  <button class="icon" id="bMute" aria-label="音">🔊</button>
- </div>
- <div class="dots" id="dots"></div>
- <div id="stageBox"></div>
-</div></div>
+<div id="clear" class="ov hidden">
+  <h2>見本布 完成！</h2>
+  <div class="recb" id="clRec"></div>
+  <div class="take">反応の前と後で、<b>原子の種類と数は変わらない</b>（組み合わせが変わるだけ）。<br>原子1個1個に質量があるから、<b>質量の総和も変わらない</b>＝質量保存の法則。</div>
+  <div class="row"><button id="toTest" class="patch rd">確認テストへ</button><button id="clBook" class="patch gd sm">📖 図鑑</button></div>
+</div>
 
-<div id="clear" class="scr hidden"><div class="wrap" id="clearBox"></div></div>
-<div id="test" class="scr hidden"><div class="wrap" id="testBox"></div></div>
-<div id="ov" class="ov hidden"><div class="ovc" id="ovc"></div></div>
+<div id="test" class="ov hidden">
+  <div class="thead"><span>確認テスト ─ 見本布の検め</span><span id="tNo"></span></div>
+  <div class="paper"><div id="tQ"></div><div id="tFig"></div><div id="tA"></div><div id="tFb"></div></div>
+</div>
 
 <script>/*@SUBMIT_CARD_BEGIN*/
 /* ==========================================================
@@ -1388,368 +1444,673 @@ window.ZUKAN_CARDS={"v": 1, "grade": "chu2", "name": "中2理科図鑑", "econom
 <script>
 (function(){
 'use strict';
-const GAME_ID='tenbin-nozoke',KOMA='chu2-kagaku-28';
-const SAVE_KEY='rika-zukan:chu2:game:'+GAME_ID+':v1';
-const TEST_ONLY=window.GAME_MODE==='test';
-let RM=!!(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches);
+const GID='tenbin-nozoke',KOMA='chu2-kagaku-28';
+const SAVE_KEY='rika-zukan:chu2:game:'+GID+':v1';
+const TEST=window.GAME_MODE==='test';
+let PF={};try{PF=JSON.parse(localStorage.getItem('rika-zukan:profile:v1')||'{}')||{}}catch(e){}
+const RM=!!(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches)||PF.lessMotion===true;
+const INHUB=!!window.COLLECTION_NAME||(function(){try{return window.parent!==window}catch(e){return true}})();
 const $=id=>document.getElementById(id);
 const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const clamp=(v,a,b)=>v<a?a:v>b?b:v,rnd=(a,b)=>a+Math.random()*(b-a),lerp=(a,b,t)=>a+(b-a)*t;
 const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
-const fmtT=s=>Math.floor(s/60)+':'+String(s%60).padStart(2,'0');
-const fw=v=>Number.isInteger(v)?String(v):v.toFixed(1);
-window.Zukan&&Zukan.setup&&Zukan.setup({game:GAME_ID,koma:[KOMA]});
+const fmtT=s=>{s=Math.floor(s||0);return Math.floor(s/60)+'分'+String(s%60).padStart(2,'0')+'秒'};
+const fw=v=>(Math.round(v*10)/10).toString();
+const C={lin:'#F3EEE3',lin2:'#E6DDCB',lin3:'#D8CCB3',fab:'#FAF6EE',nv:'#2E4057',nvD:'#1E2B3B',nv2:'#4A5E7A',rd:'#E4572E',rdD:'#B03F1E',gd:'#C99A3E',gdL:'#E9C979',blue:'#5B8DC9',wood:'#C9A472',woodD:'#94703C',woodL:'#E4C99A',silver:'#C9CFD8'};
+const HD='"M PLUS 1p","Hiragino Kaku Gothic ProN","Hiragino Sans",sans-serif';
+
+/* ================= 原子と分子（制作ルール5.の色） ================= */
+const EL={H:{c:'#EAF6FF',t:'#1c4f86',nm:'水素',w:1},C:{c:'#3a3d46',t:'#fff',nm:'炭素',w:12},N:{c:'#2549C9',t:'#fff',nm:'窒素',w:14},O:{c:'#E4572E',t:'#fff',nm:'酸素',w:16},
+ Na:{c:'#E9B949',t:'#3d2a00',nm:'ナトリウム',w:23},Mg:{c:'#B9C6D4',t:'#1f2a36',nm:'マグネシウム',w:24},S:{c:'#EAD23C',t:'#4d3f00',nm:'硫黄',w:32},Cl:{c:'#2FA36B',t:'#fff',nm:'塩素',w:35.5},
+ Fe:{c:'#767C8A',t:'#fff',nm:'鉄',w:56},Cu:{c:'#C8773C',t:'#fff',nm:'銅',w:64},Ba:{c:'#9B87C4',t:'#fff',nm:'バリウム',w:137}};
+// 座標は原子の直径ほどの単位（くっつき合う模型）
+const MOL={
+ C:{f:'C',nm:'炭素',a:[['C',0,0]]},
+ O2:{f:'O₂',nm:'酸素',a:[['O',-.5,0],['O',.5,0]]},
+ CO2:{f:'CO₂',nm:'二酸化炭素',a:[['O',-1,0],['C',0,0],['O',1,0]]},
+ H2:{f:'H₂',nm:'水素',a:[['H',-.5,0],['H',.5,0]]},
+ H2O:{f:'H₂O',nm:'水',a:[['H',-.72,.52],['O',0,0],['H',.72,.52]]},
+ Fe:{f:'Fe',nm:'鉄',a:[['Fe',0,0]]},
+ S:{f:'S',nm:'硫黄',a:[['S',0,0]]},
+ FeS:{f:'FeS',nm:'硫化鉄',a:[['Fe',-.5,0],['S',.5,0]]},
+ H2SO4:{f:'H₂SO₄',nm:'硫酸',a:[['H',-1.85,0],['O',-.95,0],['S',0,0],['O',.95,0],['H',1.85,0],['O',0,-.95],['O',0,.95]]},
+ BaCl2:{f:'BaCl₂',nm:'塩化バリウム',a:[['Cl',-1,0],['Ba',0,0],['Cl',1,0]]},
+ BaOH2:{f:'Ba(OH)₂',nm:'水酸化バリウム',a:[['H',-1.85,0],['O',-.95,0],['Ba',0,0],['O',.95,0],['H',1.85,0]]},
+ Na2SO4:{f:'Na₂SO₄',nm:'硫酸ナトリウム',a:[['Na',-1.95,0],['O',-.95,0],['S',0,0],['O',.95,0],['Na',1.95,0],['O',0,-.95],['O',0,.95]]},
+ BaSO4:{f:'BaSO₄',nm:'硫酸バリウム',a:[['Ba',-1.95,0],['O',-.95,0],['S',0,0],['O',.95,0],['O',0,-.95],['O',0,.95]]},
+ HCl:{f:'HCl',nm:'塩化水素',a:[['H',-.5,0],['Cl',.5,0]]},
+ NaCl:{f:'NaCl',nm:'塩化ナトリウム',a:[['Na',-.5,0],['Cl',.5,0]]},
+ NaHCO3:{f:'NaHCO₃',nm:'炭酸水素ナトリウム',a:[['Na',-1.75,.95],['O',-.85,.5],['C',0,0],['O',0,-.98],['O',.85,.5],['H',1.7,.95]]},
+ Cu:{f:'Cu',nm:'銅',a:[['Cu',0,0]]},
+ CuO:{f:'CuO',nm:'酸化銅',a:[['Cu',-.5,0],['O',.5,0]]},
+ Mg:{f:'Mg',nm:'マグネシウム',a:[['Mg',0,0]]},
+ MgO:{f:'MgO',nm:'酸化マグネシウム',a:[['Mg',-.5,0],['O',.5,0]]},
+ N2:{f:'N₂',nm:'窒素',a:[['N',-.5,0],['N',.5,0]]}
+};
+const BOOK_ORDER=['C','O2','CO2','H2','H2O','Fe','S','FeS','H2SO4','BaCl2','BaOH2','Na2SO4','BaSO4','HCl','NaCl','NaHCO3','Cu','CuO','Mg','MgO','N2'];
+
+/* 前の回（コマ26）で封印した組み合わせがあれば、沈殿の図案に使う */
+let SEALPAIR='hcl';try{const o=JSON.parse(localStorage.getItem('rika-zukan:chu2:seal:chu2-kagaku-26')||'null');if(o&&o.pair&&/^(hcl|baoh|na)$/.test(o.pair.id))SEALPAIR=o.pair.id}catch(e){}
+const PREC={hcl:{eq:'H₂SO₄ ＋ BaCl₂ → BaSO₄ ＋ 2HCl',rx:'うすい硫酸 ＋ 塩化バリウム水溶液',pre:[['H2SO4',1],['BaCl2',1]],post:[['BaSO4',1],['HCl',2]]},
+ baoh:{eq:'H₂SO₄ ＋ Ba(OH)₂ → BaSO₄ ＋ 2H₂O',rx:'うすい硫酸 ＋ 水酸化バリウム水溶液',pre:[['H2SO4',1],['BaOH2',1]],post:[['BaSO4',1],['H2O',2]]},
+ na:{eq:'Na₂SO₄ ＋ BaCl₂ → BaSO₄ ＋ 2NaCl',rx:'硫酸ナトリウム水溶液 ＋ 塩化バリウム水溶液',pre:[['Na2SO4',1],['BaCl2',1]],post:[['BaSO4',1],['NaCl',2]]}}[SEALPAIR];
+
+/* ================= 見本布の図案（道のり） ================= */
+const STAGES=[
+ {id:'c',nm:'炭素の燃焼',rx:'炭素 ＋ 酸素 → 二酸化炭素',eq:'C ＋ O₂ → CO₂',pre:[['C',1],['O2',1]],post:[['CO2',1]],tgt:45,motif:'CO2',tut:1,
+  take:'反応の前も後も <b>C 1個・O 2個</b>。原子の<b>組み合わせ</b>が変わっただけで、<b>種類と数</b>は同じ。だから天秤はつりあう。'},
+ {id:'h2o',nm:'水素の燃焼',rx:'水素 ＋ 酸素 → 水',eq:'2H₂ ＋ O₂ → 2H₂O',pre:[['H2',2],['O2',1]],post:[['H2O',2]],tgt:60,motif:'H2O',
+  take:'水素分子2個と酸素分子1個から、水分子2個。<b>H 4個・O 2個</b>は前も後も同じ。反応式の<b>係数</b>は、原子の数をそろえるための数。'},
+ {id:'fes',nm:'鉄と硫黄',rx:'鉄 ＋ 硫黄 → 硫化鉄',eq:'Fe ＋ S → FeS（3組）',pre:[['Fe',3],['S',3]],post:[['FeS',3]],tgt:55,motif:'FeS',
+  take:'鉄原子と硫黄原子が1個ずつ結び付いて硫化鉄。<b>Fe と S の数は変わらない</b>から、質量の総和も変わらない。'},
+ {id:'prec',nm:'白い沈殿',rx:PREC.rx,eq:PREC.eq,pre:PREC.pre,post:PREC.post,tgt:120,motif:'BaSO4',sealNote:1,
+  take:'沈殿（水にとけない固体）ができても、原子は<b>出入りしていない</b>。組み合わせが変わるだけなので、<b>全体の質量は変わらない</b>。'},
+ {id:'cuo',nm:'銅の酸化',rx:'銅 ＋ 酸素 → 酸化銅',eq:'2Cu ＋ O₂ → 2CuO（2倍の量）',pre:[['Cu',4],['O2',2]],post:[],pat:['CuO'],tgt:110,motif:'CuO',
+  take:'反応後の CuO は、反応前の Cu と O を<b>組み替えた</b>もの。原子は新しく生まれないので、できる CuO の数は<b>原子の数で決まる</b>（4個）。'},
+ {id:'open',nm:'ふたのない容器',rx:'炭酸水素ナトリウム ＋ 塩酸 → 塩化ナトリウム ＋ 水 ＋ 二酸化炭素',eq:'NaHCO₃ ＋ HCl → NaCl ＋ H₂O ＋ CO₂',pre:[['NaHCO3',1],['HCl',1]],post:[['NaCl',1],['H2O',1],['CO2',1]],escape:'CO2',tgt:120,motif:'NaCl',
+  take:'ふたがないと、できた二酸化炭素が<b>外へ出ていく</b>。容器の中の C と O が減った分だけ軽くなる。<b>外へ出た分も合わせれば</b>、原子の種類と数は同じ。'},
+ {id:'mg',nm:'マグネシウムの燃焼',rx:'マグネシウム ＋ 酸素 → 酸化マグネシウム',eq:'2Mg ＋ O₂ → 2MgO',pre:[['Mg',2]],post:[['MgO',2]],air:1,tgt:80,motif:'MgO',
+  take:'燃えて重くなったのは、<b>空気中の酸素原子</b>が入ってきて結び付いたから。入ってきた O も合わせれば、前と後で原子の種類と数は同じ。'},
+ {id:'red',nm:'酸化銅の還元',rx:'酸化銅 ＋ 炭素 → 銅 ＋ 二酸化炭素',eq:'2CuO ＋ C → 2Cu ＋ CO₂',pre:[['CuO',2],['C',1]],post:[],pat:['Cu','CO2'],tgt:110,motif:'Cu',
+  take:'酸化銅の O が炭素に移って CO₂ に、Cu は銅にもどる。原子の<b>組み合わせが変わるだけ</b>で、種類と数は変わらない。'},
+ {id:'boss',nm:'見本布の大作',rx:'3つの反応を 時間内に',eq:'原子の種類と数は？',boss:1,time:170,motif:'boss',
+  subs:[{eq:'4H₂ ＋ 2O₂ → 4H₂O',pre:[['H2',4],['O2',2]],post:[['H2O',4]]},
+        {eq:'2NaHCO₃ ＋ 2HCl → 2NaCl ＋ 2H₂O ＋ 2CO₂（ふたをした容器）',pre:[['NaHCO3',2],['HCl',2]],post:[['NaCl',2],['H2O',2],['CO2',2]]},
+        {eq:'2CuO ＋ C → 2Cu ＋ CO₂',pre:[['CuO',2],['C',1]],post:[['Cu',2],['CO2',1]]}],
+  take:'原子の<b>種類と数</b>が変わらないから、原子1個1個の重さの合計＝<b>質量の総和</b>も変わらない。これが<b>質量保存の法則</b>。'}
+];
 
 /* ================= 保存 ================= */
-function fresh(){return{v:1,name:'',started:false,stage:0,score:0,maxCombo:0,hits:0,tries:0,elapsed:0,log:{},first:{},ruleDone:false,sentence:'',taBest:0,taEarn:{},cleared:false,mainDone:false,sound:true}}
-let S=fresh();
-try{const o=JSON.parse(localStorage.getItem(SAVE_KEY)||'null');if(o&&o.v===1)S=Object.assign(fresh(),o)}catch(e){}
+function fresh(){return{v:1,name:'',started:false,cleared:{},stars:{},best:{},first:{},seen:{},miss:0,maxCombo:0,t:0,sorted:0,done:false,sound:PF.mute===true?false:true,bossBest:null,rules:{}}}
+function load(){try{const o=JSON.parse(localStorage.getItem(SAVE_KEY)||'null');return o&&o.v===1?Object.assign(fresh(),o):null}catch(e){return null}}
+let S=load()||fresh();
 function save(){try{localStorage.setItem(SAVE_KEY,JSON.stringify(S))}catch(e){}}
-let PF={};try{PF=JSON.parse(localStorage.getItem('rika-zukan:profile:v1')||'null')||{}}catch(e){}
-if(PF.mute===true)S.sound=false;
-if(PF.lessMotion===true)RM=true;
-let SEALPAIR='hcl';try{const o=JSON.parse(localStorage.getItem('rika-zukan:chu2:seal:chu2-kagaku-26')||'null');if(o&&o.pair&&o.pair.id)SEALPAIR=o.pair.id}catch(e){}
+function nextStage(){for(let i=0;i<STAGES.length;i++)if(!S.cleared[STAGES[i].id])return i;return -1}
+let NAME=(window.PLAYER_NAME||S.name||'').trim();
 
-/* ================= 音 ================= */
-let AC=null;
-function ac(){if(!AC){try{AC=new(window.AudioContext||window.webkitAudioContext)()}catch(e){AC=null}}if(AC&&AC.state==='suspended')AC.resume();return AC}
-function tone(f,d,type,vol,delay,slide){if(!S.sound)return;const a=ac();if(!a)return;const t=a.currentTime+(delay||0);const o=a.createOscillator(),g=a.createGain();o.type=type||'sine';o.frequency.setValueAtTime(f,t);if(slide)o.frequency.exponentialRampToValueAtTime(slide,t+d);g.gain.setValueAtTime(vol||.07,t);g.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(g);g.connect(a.destination);o.start(t);o.stop(t+d+.03)}
-function noise(d,vol,freq){if(!S.sound)return;const a=ac();if(!a)return;const n=a.sampleRate*d|0,b=a.createBuffer(1,n,a.sampleRate),c=b.getChannelData(0);for(let i=0;i<n;i++)c[i]=(Math.random()*2-1)*(1-i/n);const s=a.createBufferSource(),fl=a.createBiquadFilter(),g=a.createGain();s.buffer=b;fl.type='bandpass';fl.frequency.value=freq||1200;g.gain.value=vol||.15;s.connect(fl);fl.connect(g);g.connect(a.destination);s.start()}
-const sfx={
- tap(){tone(1200,.04,'square',.03)},
- count(n){tone(600+n*40,.05,'square',.035)},
- key(){tone(900,.03,'square',.025)},
- sw(){tone(300,.12,'sawtooth',.03,0,1200);noise(.12,.06,4000)},
- unlock(){[880,1320,1760].forEach((f,i)=>tone(f,.07,'square',.035,i*.05))},
- hit(c){const k=1+Math.min(c||0,10)*.05;[659,784,988,1319].forEach((f,i)=>tone(f*k,.14,'square',.045,i*.06))},
- miss(){tone(220,.3,'sawtooth',.04,0,110)},
- react(){noise(.9,.08,900);tone(200,.9,'sine',.05,0,600)},
- alarm(){for(let i=0;i<3;i++)tone(880,.12,'square',.04,i*.18)},
- fanfare(){[523,659,784,1047,784,1047,1319].forEach((f,i)=>tone(f,.2,'square',.05,i*.1))},
- tick(){tone(1600,.02,'square',.02)}
+/* ================= 音（オルゴールと糸） ================= */
+const AU={c:null,on:S.sound!==false,init(){if(!this.c){try{this.c=new(window.AudioContext||window.webkitAudioContext)()}catch(e){}}if(this.c&&this.c.state==='suspended')this.c.resume()}};
+function tone(f,d,type,v,dl,f2){const c=AU.c;if(!c||!AU.on)return;const t=c.currentTime+(dl||0),o=c.createOscillator(),g=c.createGain();o.type=type||'sine';o.frequency.setValueAtTime(f,t);if(f2)o.frequency.exponentialRampToValueAtTime(f2,t+d);g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(v,t+.006);g.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(g);g.connect(c.destination);o.start(t);o.stop(t+d+.05)}
+function noise(d,v,dl,ff,ft){const c=AU.c;if(!c||!AU.on)return;const t=c.currentTime+(dl||0),n=Math.floor(c.sampleRate*d),bf=c.createBuffer(1,n,c.sampleRate),a=bf.getChannelData(0);for(let i=0;i<n;i++)a[i]=(Math.random()*2-1)*(1-i/n);const s=c.createBufferSource();s.buffer=bf;const fl=c.createBiquadFilter();fl.type=ft||'lowpass';fl.frequency.value=ff||1200;const g=c.createGain();g.gain.value=v;s.connect(fl);fl.connect(g);g.connect(c.destination);s.start(t)}
+const SCALE=[523,587,659,784,880,1047,1175,1319,1568,1760,2093,2349];
+function mbox(f,v,dl){tone(f,.9,'sine',v||.09,dl);tone(f*2,.35,'sine',(v||.09)*.35,dl);tone(f*3.01,.15,'triangle',(v||.09)*.12,dl)}
+const SFX={
+ put(i){mbox(SCALE[Math.min(i,SCALE.length-1)],.1)},
+ snap(){noise(.05,.35,0,3800,'highpass');tone(1900,.04,'square',.03)},
+ snip(){noise(.03,.3,0,5200,'highpass');noise(.03,.25,.06,5200,'highpass')},
+ bad(){tone(196,.22,'sawtooth',.05,0,150);tone(155,.3,'triangle',.08,.1)},
+ pair(){[0,2,4].forEach((j,i)=>mbox(SCALE[j+3],.08,i*.07))},
+ fan(){[0,2,4,5,7,9].forEach((j,i)=>mbox(SCALE[j],.09,i*.11));tone(SCALE[4]/2,1.2,'triangle',.05,.1)},
+ creak(){tone(140,.35,'triangle',.05,0,110)},
+ tap(){tone(1200,.04,'triangle',.05)},
+ pop(){tone(700,.12,'sine',.08,0,1100)},
+ tick(){tone(1600,.03,'square',.02)},
+ drum(){tone(110,.35,'sine',.28,0,55);noise(.1,.15,0,420)},
+ air(){tone(420,.4,'sine',.05,0,760)}
 };
-function setMute(){$('bMute').textContent=S.sound?'🔊':'🔇';$('bMute1').textContent=S.sound?'🔊 音：オン':'🔇 音：オフ';try{const p=JSON.parse(localStorage.getItem('rika-zukan:profile:v1')||'{}');p.mute=!S.sound;localStorage.setItem('rika-zukan:profile:v1',JSON.stringify(p))}catch(e){}}
-$('bMute').onclick=()=>{S.sound=!S.sound;setMute();save();if(S.sound)sfx.tap()};
-$('bMute1').onclick=()=>{S.sound=!S.sound;setMute();save();if(S.sound){ac();sfx.tap()}};
 
-/* ================= 演出 ================= */
-const cv=$('fx'),cx=cv.getContext('2d');let parts=[],raf=0;
-function fitCv(){cv.width=innerWidth*devicePixelRatio;cv.height=innerHeight*devicePixelRatio}
-addEventListener('resize',fitCv);fitCv();
-function burst(x,y,cols,n,spd){if(RM)return;for(let i=0;i<(n||24);i++){const a=Math.random()*Math.PI*2,v=(spd||5)*(.4+Math.random());parts.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v-2,life:1,c:cols[i%cols.length],s:2+Math.random()*4})}if(!raf)raf=requestAnimationFrame(loop)}
-function confetti(n){if(RM)return;for(let i=0;i<n;i++)parts.push({x:Math.random()*innerWidth,y:-20-Math.random()*200,vx:(Math.random()-.5)*2,vy:2+Math.random()*3,life:1.7,c:['#6ff5c8','#ffc15a','#E4572E','#EAF6FF','#C8773C'][i%5],s:4+Math.random()*4});if(!raf)raf=requestAnimationFrame(loop)}
-function loop(){const d=devicePixelRatio;cx.clearRect(0,0,cv.width,cv.height);parts=parts.filter(p=>p.life>0);for(const p of parts){p.x+=p.vx;p.y+=p.vy;p.vy+=.16;p.life-=.02;cx.globalAlpha=Math.max(0,Math.min(1,p.life));cx.fillStyle=p.c;cx.fillRect(p.x*d,p.y*d,p.s*d,p.s*d)}cx.globalAlpha=1;raf=parts.length?requestAnimationFrame(loop):0;if(!raf)cx.clearRect(0,0,cv.width,cv.height)}
-function flyText(t,x,y,col){const e=document.createElement('div');e.className='fly';e.textContent=t;e.style.left=(x-30)+'px';e.style.top=(y-20)+'px';if(col)e.style.color=col;document.body.appendChild(e);setTimeout(()=>e.remove(),1000)}
-function banner(t,sub){const e=document.createElement('div');e.className='banner';e.innerHTML=t+(sub?'<small>'+sub+'</small>':'');document.body.appendChild(e);setTimeout(()=>e.remove(),1850)}
-function flash(){if(RM)return;const e=document.createElement('div');e.className='flash';document.body.appendChild(e);setTimeout(()=>e.remove(),450)}
-function ctr(el){const r=el.getBoundingClientRect();return[r.left+r.width/2,r.top+r.height/2]}
-function earn(n,why,el){let x=innerWidth/2,y=innerHeight/2;if(el){[x,y]=ctr(el)}try{return window.Zukan&&Zukan.earn?Zukan.earn(n,why,{koma:KOMA,x,y}):0}catch(e){return 0}}
-function wait(ms){return new Promise(r=>setTimeout(r,RM?Math.min(ms,150):ms))}
+/* ================= 画面 ================= */
+const cv=$('cv'),ctx=cv.getContext('2d');
+let W=0,H=0,DPR=1,LAND=false,HUDY=62;
+const bg=document.createElement('canvas'),bgx=bg.getContext('2d');let bgKey='';
+let FAB=null;
+function layout(){
+ W=innerWidth;H=innerHeight;DPR=Math.min(2.5,window.devicePixelRatio||1);
+ cv.width=Math.round(W*DPR);cv.height=Math.round(H*DPR);ctx.setTransform(DPR,0,0,DPR,0,0);
+ LAND=W>H*1.05;document.body.classList.toggle('land',LAND);HUDY=LAND?62:108;
+ FAB=ctx.createPattern(fabTile(),'repeat');try{FAB.setTransform(new DOMMatrix().scale(1/DPR))}catch(e){}bgKey='';SPR.clear();placeStrip();placePat()}
+function hexRgb(h){h=h.replace('#','');return[parseInt(h.slice(0,2),16),parseInt(h.slice(2,4),16),parseInt(h.slice(4,6),16)]}
+function mix(h,to,t){const a=hexRgb(h),b=to==='w'?[255,255,255]:to==='k'?[0,0,0]:hexRgb(to);return'rgb('+a.map((v,i)=>Math.round(v+(b[i]-v)*t)).join(',')+')'}
+function fabTile(){const c=document.createElement('canvas'),g=7,n=4;c.width=c.height=Math.round(g*n*DPR);const x=c.getContext('2d');x.scale(DPR,DPR);x.fillStyle=C.fab;x.fillRect(0,0,g*n,g*n);
+ for(let i=0;i<n;i++)for(let j=0;j<n;j++){x.fillStyle='rgba(120,100,70,.16)';x.fillRect(i*g-.6,j*g-.6,1.3,1.3);x.fillStyle='rgba(255,255,255,.35)';x.fillRect(i*g+1.5,j*g+1.5,g-3,g-3)}return c}
 
-/* ================= 原子（全ゲーム共通の色）と重さの札 ================= */
-const EL={H:['#EAF6FF','#1c4f86','水素'],C:['#3a3d46','#fff','炭素'],N:['#2549C9','#fff','窒素'],O:['#E4572E','#fff','酸素'],Na:['#E9B949','#3d2a00','ナトリウム'],Mg:['#B9C6D4','#1f2a36','マグネシウム'],S:['#EAD23C','#4d3f00','硫黄'],Cl:['#2FA36B','#fff','塩素'],Ca:['#EDE6D6','#4d3f22','カルシウム'],Fe:['#767C8A','#fff','鉄'],Cu:['#C8773C','#fff','銅'],Zn:['#9FB2BE','#1d2c36','亜鉛'],Ag:['#C9CDD4','#2a2f38','銀'],Ba:['#9B87C4','#fff','バリウム']};
-const WT={H:1,C:12,O:16,Na:23,Mg:24,S:32,Cl:35.5,Fe:56,Cu:64,Ba:137};
-const RAD={H:.72,C:.95,O:.95,Na:1.05,Mg:1.05,S:1,Cl:1.05,Fe:1.05,Cu:1.05,Ba:1.25};
-const ORDER=['H','C','O','Na','Mg','S','Cl','Fe','Cu','Ba'];
-function shade(hex,k){const n=parseInt(hex.slice(1),16);let r=n>>16,g=(n>>8)&255,b=n&255;const t=k>0?255:0,a=Math.abs(k);r=Math.round(r+(t-r)*a);g=Math.round(g+(t-g)*a);b=Math.round(b+(t-b)*a);return`rgb(${r},${g},${b})`}
-(function(){let h='';for(const k in EL){const c=EL[k][0];h+=`<radialGradient id="ga-${k}" cx="36%" cy="30%" r="75%"><stop offset="0" stop-color="#fff" stop-opacity=".95"/><stop offset=".22" stop-color="${shade(c,.35)}"/><stop offset=".6" stop-color="${c}"/><stop offset="1" stop-color="${shade(c,-.42)}"/></radialGradient>`}$('atomDefs').innerHTML=h})();
-function at(sym,x,y,r){const e=EL[sym];const sw=Math.max(.5,r*.08);return `<circle cx="${x}" cy="${y}" r="${r}" fill="url(#ga-${sym})" stroke="${shade(e[0],-.5)}" stroke-width="${sw}"/>${r>=4.2?`<text x="${x}" y="${y+r*.36}" font-size="${r*(sym.length>1?.82:1.02)}" font-weight="800" text-anchor="middle" fill="${e[1]}" font-family="sans-serif">${sym}</text>`:''}`}
-// 分子の形（単位：基本の半径）
-const LAY={
- C:[['C',0,0]],Fe:[['Fe',0,0]],S:[['S',0,0]],Cu:[['Cu',0,0]],Mg:[['Mg',0,0]],
- O2:[['O',-.72,0],['O',.72,0]],H2:[['H',-.52,0],['H',.52,0]],
- CO2:[['O',-1.45,0],['C',0,0],['O',1.45,0]],
- H2O:[['H',-.82,.62],['H',.82,.62],['O',0,0]],
- FeS:[['Fe',-.85,0],['S',.85,0]],CuO:[['Cu',-.82,0],['O',.8,0]],MgO:[['Mg',-.82,0],['O',.8,0]],
- HCl:[['H',-.74,0],['Cl',.6,0]],NaCl:[['Na',-.86,0],['Cl',.9,0]],
- BaCl2:[['Cl',-1.78,0],['Ba',0,0],['Cl',1.78,0]],
- H2SO4:[['H',-1.8,-1.5],['H',1.8,1.5],['O',-.95,-.95],['O',.95,-.95],['O',-.95,.95],['O',.95,.95],['S',0,0]],
- BaOH2:[['H',-2.6,-.5],['H',2.6,.5],['O',-1.62,0],['O',1.62,0],['Ba',0,0]],
- BaSO4:[['O',-.95,-.95],['O',.95,-.95],['O',-.95,.95],['O',.95,.95],['S',0,0],['Ba',-2.25,0]],
- Na2SO4:[['O',-.95,-.95],['O',.95,-.95],['O',-.95,.95],['O',.95,.95],['S',0,0],['Na',-2.15,0],['Na',2.15,0]],
- NaHCO3:[['O',0,-1.35],['O',-1.2,.72],['O',1.2,.72],['C',0,0],['H',2.05,1.25],['Na',-2.25,1.3]]
-};
-const FNAME={C:'炭素',O2:'酸素',H2:'水素',CO2:'二酸化炭素',H2O:'水',Fe:'鉄',S:'硫黄',FeS:'硫化鉄',Cu:'銅',CuO:'酸化銅',Mg:'マグネシウム',MgO:'酸化マグネシウム',HCl:'塩化水素（塩酸）',NaCl:'塩化ナトリウム',BaCl2:'塩化バリウム',H2SO4:'硫酸',BaOH2:'水酸化バリウム',BaSO4:'硫酸バリウム（沈殿）',Na2SO4:'硫酸ナトリウム',NaHCO3:'炭酸水素ナトリウム'};
-function fstr(f){return f.replace('BaOH2','Ba(OH)2').replace(/(\d+)/g,'<sub>$1</sub>')}
+/* ---------- ×の目で縫う道具 ---------- */
+const SPR=new Map();
+function atomSprite(el,r){r=Math.max(4,Math.round(r*2)/2);const key=el+'|'+r;let s=SPR.get(key);if(s)return s;
+ const e=EL[el],pad=2,sz=Math.ceil((r+pad)*2),c=document.createElement('canvas');c.width=Math.ceil(sz*DPR);c.height=Math.ceil(sz*DPR);const g=c.getContext('2d');g.scale(DPR,DPR);g.translate(sz/2,sz/2);
+ const n=r<9?5:r<14?7:r<22?9:11,cs=r*2/n;g.lineCap='round';
+ for(let i=0;i<n;i++)for(let j=0;j<n;j++){const cx=-r+(i+.5)*cs,cy=-r+(j+.5)*cs;if(cx*cx+cy*cy>r*r*1.02)continue;
+  const l=-(cx+cy)/(2*r),hl=Math.hypot(cx+r*.36,cy+r*.36)<r*.3;const col=hl?mix(e.c,'w',.55):l>0?mix(e.c,'w',l*.5):mix(e.c,'k',-l*.32);
+  const p=cs*.12,x0=cx-cs/2+p,y0=cy-cs/2+p,x1=cx+cs/2-p,y1=cy+cs/2-p;
+  g.strokeStyle=mix(e.c,'k',.35);g.globalAlpha=.35;g.lineWidth=cs*.44;g.beginPath();g.moveTo(x0+.5,y0+.7);g.lineTo(x1+.5,y1+.7);g.moveTo(x1+.5,y0+.7);g.lineTo(x0+.5,y1+.7);g.stroke();g.globalAlpha=1;
+  g.strokeStyle=col;g.lineWidth=cs*.4;g.beginPath();g.moveTo(x0,y0);g.lineTo(x1,y1);g.stroke();g.strokeStyle=mix(e.c,'w',hl?.7:.12);g.beginPath();g.moveTo(x1,y0);g.lineTo(x0,y1);g.stroke()}
+ // ふちの返し縫い
+ g.strokeStyle=mix(e.c,'k',el==='H'?.55:.4);g.lineWidth=Math.max(1,r*.07);g.setLineDash([r*.28,r*.12]);g.beginPath();g.arc(0,0,r*.98,0,Math.PI*2);g.stroke();g.setLineDash([]);
+ // 元素記号（刺繍の文字）
+ const fs=r*(el.length>1?.9:1.12);g.font='900 '+fs.toFixed(1)+'px '+HD;g.textAlign='center';g.textBaseline='middle';
+ g.lineWidth=fs*.16;g.strokeStyle=mix(e.c,'k',.3);g.globalAlpha=.55;g.strokeText(el,.6,r*.08+.8);g.globalAlpha=1;g.fillStyle=e.t;g.fillText(el,0,r*.08);
+ s={c,sz};SPR.set(key,s);return s}
+function atom(el,x,y,r,a){const s=atomSprite(el,r);if(a!=null&&a<1){ctx.globalAlpha=a}ctx.drawImage(s.c,x-s.sz/2,y-s.sz/2,s.sz,s.sz);ctx.globalAlpha=1}
+function xrow(x0,y0,x1,y1,cs,col,lw){const L=Math.hypot(x1-x0,y1-y0),n=Math.max(1,Math.round(L/cs)),dx=(x1-x0)/n,dy=(y1-y0)/n,h=cs*.36;ctx.strokeStyle=col;ctx.lineWidth=lw||cs*.32;ctx.lineCap='round';ctx.beginPath();
+ for(let i=0;i<=n;i++){const x=x0+dx*i,y=y0+dy*i;ctx.moveTo(x-h,y-h);ctx.lineTo(x+h,y+h);ctx.moveTo(x+h,y-h);ctx.lineTo(x-h,y+h)}ctx.stroke()}
+function running(x0,y0,x1,y1,col,lw,dash){ctx.save();ctx.strokeStyle=col;ctx.lineWidth=lw||2;ctx.setLineDash(dash||[7,5]);ctx.lineCap='round';ctx.beginPath();ctx.moveTo(x0,y0);ctx.lineTo(x1,y1);ctx.stroke();ctx.restore()}
+function rr(g,x,y,w,h,r){r=Math.min(r,w/2,h/2);g.beginPath();g.moveTo(x+r,y);g.arcTo(x+w,y,x+w,y+h,r);g.arcTo(x+w,y+h,x,y+h,r);g.arcTo(x,y+h,x,y,r);g.arcTo(x,y,x+w,y,r);g.closePath()}
+function text(t,x,y,sz,col,al,wt,out){ctx.font=(wt||900)+' '+(+sz).toFixed(1)+'px '+HD;ctx.textAlign=al||'center';ctx.textBaseline='middle';if(out){ctx.lineWidth=sz*.26;ctx.strokeStyle=out;ctx.lineJoin='round';ctx.strokeText(t,x,y)}ctx.fillStyle=col;ctx.fillText(t,x,y)}
+function patchBox(x,y,w,h,bgc,fg,r){ctx.fillStyle=bgc;rr(ctx,x,y,w,h,r||8);ctx.fill();ctx.save();ctx.strokeStyle=fg;ctx.lineWidth=1.5;ctx.setLineDash([5,4]);rr(ctx,x+3.5,y+3.5,w-7,h-7,Math.max(2,(r||8)-3));ctx.stroke();ctx.restore()}
 
-/* ================= 反応のデータ ================= */
-const PPT={hcl:{react:[['H2SO4',1],['BaCl2',1]],prod:[['BaSO4',1],['HCl',2]],eq:'硫酸 ＋ 塩化バリウム → 硫酸バリウム ＋ 塩化水素（塩酸）'},
- baoh:{react:[['H2SO4',1],['BaOH2',1]],prod:[['BaSO4',1],['H2O',2]],eq:'硫酸 ＋ 水酸化バリウム → 硫酸バリウム ＋ 水'},
- na:{react:[['Na2SO4',1],['BaCl2',1]],prod:[['BaSO4',1],['NaCl',2]],eq:'硫酸ナトリウム ＋ 塩化バリウム → 硫酸バリウム ＋ 塩化ナトリウム'}};
-const RX=[
- {id:'c',name:'炭素の燃焼',where:'ふたをした集気びんの中',react:[['C',1],['O2',1]],prod:[['CO2',1]],eq:'炭素 ＋ 酸素 → 二酸化炭素',lid:'closed'},
- {id:'h',name:'水素の燃焼',where:'口を閉じた袋の中で点火',react:[['H2',2],['O2',1]],prod:[['H2O',2]],eq:'水素 ＋ 酸素 → 水',lid:'closed'},
- {id:'fes',name:'鉄と硫黄の反応',where:'口を脱脂綿でふさいだ試験管（気体は出ない）',react:[['Fe',2],['S',2]],prod:[['FeS',2]],eq:'鉄 ＋ 硫黄 → 硫化鉄',lid:'closed'},
- {id:'elec',name:'水の電気分解',where:'電気分解装置（気体は管にたまる）',react:[['H2O',4]],prod:[['H2',4],['O2',2]],eq:'水 → 水素 ＋ 酸素',lid:'closed'},
- {id:'ppt',name:'沈殿ができる反応',where:'ビーカーの中（気体は出ない）',react:PPT[SEALPAIR].react,prod:PPT[SEALPAIR].prod,eq:PPT[SEALPAIR].eq,lid:'none'},
- {id:'gas',name:'気体が出る反応（ふたあり）',where:'ふたを閉めた容器の中',react:[['NaHCO3',2],['HCl',2]],prod:[['NaCl',2],['H2O',2],['CO2',2]],eq:'炭酸水素ナトリウム ＋ 塩酸 → 塩化ナトリウム ＋ 水 ＋ 二酸化炭素',lid:'closed'},
- {id:'gasO',name:'気体が出る反応（ふたが開いている！）',where:'ふたの開いた容器',react:[['NaHCO3',2],['HCl',2]],prod:[['NaCl',2],['H2O',2],['CO2',2]],out:'CO2',eq:'炭酸水素ナトリウム ＋ 塩酸 → 塩化ナトリウム ＋ 水 ＋ 二酸化炭素',lid:'open',peak:true},
- {id:'mg',name:'マグネシウムを空気中で燃やす',where:'ステンレス皿の上（空気中）',react:[['Mg',2]],air:[['O2',1]],prod:[['MgO',2]],eq:'マグネシウム ＋ 酸素 → 酸化マグネシウム',lid:'open'},
- {id:'cu',name:'閉じたフラスコで銅を加熱',where:'ピンチコックを閉じた丸底フラスコ',react:[['Cu',4],['O2',2]],prod:[['CuO',4]],eq:'銅 ＋ 酸素 → 酸化銅',lid:'closed'},
- {id:'red',name:'酸化銅の還元',where:'試験管の中（ガラス管で気体が外へ）',react:[['CuO',2],['C',1]],prod:[['Cu',2],['CO2',1]],out:'CO2',eq:'酸化銅 ＋ 炭素 → 銅 ＋ 二酸化炭素',lid:'open'}
-];
-const EQP={h:['2H₂ ＋ O₂ → ','H₂O',2],elec:['2H₂O → ','H₂ ＋ O₂',2],mg:['2Mg ＋ O₂ → ','MgO',2],cu:['2Cu ＋ O₂ → ','CuO',2],red:['2CuO ＋ C → ','Cu ＋ CO₂',2],
- ppt:{hcl:['H₂SO₄ ＋ BaCl₂ → BaSO₄ ＋ ','HCl',2],baoh:['H₂SO₄ ＋ Ba(OH)₂ → BaSO₄ ＋ ','H₂O',2],na:['Na₂SO₄ ＋ BaCl₂ → BaSO₄ ＋ ','NaCl',2]}[SEALPAIR]};
-const STAGES=RX.map(r=>({id:r.id,name:r.name,rx:r})).concat([{id:'rule',name:'表と1文'},{id:'ta',name:'タイムアタック'}]);
+/* ---------- 背景：アイーダ布とサンプラーのふち ---------- */
+function buildBg(){const key=[W,H,DPR,scene,LAND].join('|');if(key===bgKey)return;bgKey=key;
+ bg.width=Math.round(W*DPR);bg.height=Math.round(H*DPR);const g=bgx;g.setTransform(DPR,0,0,DPR,0,0);
+ g.fillStyle=C.lin;g.fillRect(0,0,W,H);const gs=7;
+ for(let x=0;x<W;x+=gs)for(let y=0;y<H;y+=gs){g.fillStyle='rgba(120,100,70,.14)';g.fillRect(x-.6,y-.6,1.3,1.3)}
+ g.fillStyle='rgba(120,100,70,.035)';for(let y=0;y<H;y+=gs)g.fillRect(0,y,W,1);for(let x=0;x<W;x+=gs)g.fillRect(x,0,1,H);
+ // サンプラーのふち（ひし形の×模様）
+ const b=Math.max(10,Math.min(W,H)*.018),cs=b/2.2;g.lineCap='round';
+ const edge=(x0,y0,x1,y1)=>{const L=Math.hypot(x1-x0,y1-y0),n=Math.floor(L/cs),ux=(x1-x0)/L,uy=(y1-y0)/L;for(let i=0;i<n;i++){const k=i%6,off=[0,1,2,1,0,-1][k];const x=x0+ux*i*cs-uy*off*cs*.9,y=y0+uy*i*cs+ux*off*cs*.9;
+  g.strokeStyle=k%3===2?C.rd:C.nv;g.globalAlpha=.55;g.lineWidth=cs*.3;const h=cs*.34;g.beginPath();g.moveTo(x-h,y-h);g.lineTo(x+h,y+h);g.moveTo(x+h,y-h);g.lineTo(x-h,y+h);g.stroke()}g.globalAlpha=1};
+ const m=b*.9;edge(m,H-m,W-m,H-m);edge(m,m+(scene==='title'?0:0),m,H-m);edge(W-m,m,W-m,H-m);
+ if(scene==='title'||scene==='clear'){edge(m,m,W-m,m)}
+ }
 
-/* ================= 原子の配置 ================= */
-let BR=10.5; // 基本の半径(px)（分子の数で変える）
-const BOX={x0:30,y0:52,x1:330,y1:222};
-function place(list,seed){ // list:[[f,n]] → [{f,cx,cy}]
- const mols=[];list.forEach(([f,n])=>{for(let i=0;i<n;i++)mols.push(f)});
- const n=mols.length,cols=n<=2?n:n<=4?2:n<=6?3:4,rows=Math.ceil(n/cols);let s=seed||1;const rnd=()=>{s=(s*9301+49297)%233280;return s/233280};
- return mols.map((f,i)=>{const c=i%cols,r=Math.floor(i/cols);const cw=(BOX.x1-BOX.x0)/cols,rh=(BOX.y1-BOX.y0)/rows;return{f,cx:BOX.x0+cw*(c+.5)+(rnd()-.5)*cw*.18,cy:BOX.y0+rh*(r+.5)+(rnd()-.5)*rh*.2}})}
-function atomsOf(m){return LAY[m.f].map(a=>({el:a[0],x:m.cx+a[1]*BR,y:m.cy+a[2]*BR}))}
-function buildRx(r){
- const nm=Math.max(...[r.react,r.prod].map(l=>l.reduce((a,x)=>a+x[1],0)));BR=nm<=3?13.5:nm<=4?12.5:nm<=6?11.5:10.5;
- const P0=place(r.react,3),P1=place(r.prod,7);
- const atoms=[];const gB=[],gA=[];
- P0.forEach((m,mi)=>{const g=[];atomsOf(m).forEach(a=>{g.push(atoms.length);atoms.push({el:a.el,x0:a.x,y0:a.y,in0:true})});gB.push({f:m.f,idx:g})});
- if(r.air){const PA=place(r.air,11);PA.forEach((m,mi)=>{atomsOf(m).forEach(a=>{atoms.push({el:a.el,x0:a.x+(mi*30-10),y0:-40-Math.random()*20,in0:false,air:true})})})}
- const used=new Set();
- P1.forEach((m,mi)=>{const out=r.out&&m.f===r.out;const g=[];
-  atomsOf(m).forEach(a=>{let k=atoms.findIndex((q,qi)=>!used.has(qi)&&q.el===a.el&&!q.air);if(k<0)k=atoms.findIndex((q,qi)=>!used.has(qi)&&q.el===a.el);used.add(k);const q=atoms[k];
-   if(out){q.x1=a.x+(mi%3-1)*40;q.y1=a.y-BOX.y1-60;q.in1=false}else{q.x1=a.x;q.y1=a.y;q.in1=true}g.push(k)});
-  if(!out)gA.push({f:m.f,idx:g});else gA.push({f:m.f,idx:g,out:true})});
- return{atoms,gB,gA:gA.filter(g=>!g.out),gOut:gA.filter(g=>g.out)}}
-function massOf(atoms,phase){return atoms.reduce((s,a)=>s+((phase===0?a.in0:a.in1)?WT[a.el]:0),0)}
-function countOf(atoms,phase){const c={};atoms.forEach(a=>{if(phase===0?a.in0:a.in1)c[a.el]=(c[a.el]||0)+1});return c}
-function elsOf(atoms){return ORDER.filter(e=>atoms.some(a=>a.el===e))}
+/* ================= 状態 ================= */
+let scene='title',G=null,STI=0,T=0,shake=0;
+const parts=[],floats=[],flyers=[];
+let drag=null;
+let flash=0,flashC=C.gdL,comboPop=0,stamp=null;const TIERS=[3,5,10,15,20];
 
-/* ================= モニター描画 ================= */
-function lidSVG(r){if(r.lid==='closed')return `<rect x="22" y="36" width="316" height="10" rx="4" fill="#2c6e62"/><text x="330" y="31" font-size="10" fill="#6ff5c8" text-anchor="end" font-family="sans-serif">ふた：閉</text>`;
- if(r.lid==='open')return `<rect x="250" y="226" width="80" height="8" rx="3" fill="#2c6e62" opacity=".6"/><text x="330" y="31" font-size="10" fill="#ff6b57" text-anchor="end" font-family="sans-serif">ふた：開</text>`;
- return `<text x="330" y="31" font-size="10" fill="#6ff5c8" text-anchor="end" font-family="sans-serif">気体は出ない</text>`}
-function frameSVG(r){return `<rect x="22" y="44" width="316" height="186" rx="10" fill="rgba(111,245,200,.04)" stroke="#3fbf95" stroke-width="2" ${r.lid==='open'?'stroke-dasharray="0"':''}/>${lidSVG(r)}<text x="30" y="31" font-size="11" fill="#8fb5aa" font-family="sans-serif">${esc(r.where)}</text>`}
-function monAtoms(G,phase){const r=G.r;const groups=phase===0?G.b.gB:G.b.gA;let s=`<svg viewBox="0 0 360 250" id="monSvg">${frameSVG(r)}`;
- groups.forEach((g,gi)=>{const on=G.cnt[phase][gi];const xs=g.idx.map(k=>phase===0?G.b.atoms[k].x0:G.b.atoms[k].x1),ys=g.idx.map(k=>phase===0?G.b.atoms[k].y0:G.b.atoms[k].y1);
-  const cxm=(Math.min(...xs)+Math.max(...xs))/2,cym=(Math.min(...ys)+Math.max(...ys))/2,rr=Math.max(22,(Math.max(...xs)-Math.min(...xs))/2+14);
-  s+=`<g data-g="${gi}" style="cursor:pointer"><ellipse cx="${cxm}" cy="${cym}" rx="${rr}" ry="${Math.max(22,(Math.max(...ys)-Math.min(...ys))/2+14)}" fill="${on?'rgba(111,245,200,.12)':'rgba(0,0,0,0)'}" stroke="${on?'#6ff5c8':'none'}" stroke-width="1.5" stroke-dasharray="4 3"/>`;
-  g.idx.forEach(k=>{const a=G.b.atoms[k];s+=at(a.el,phase===0?a.x0:a.x1,phase===0?a.y0:a.y1,BR*RAD[a.el])});
-  if(on)s+=`<text x="${cxm+rr-6}" y="${cym-rr+14}" font-size="13" fill="#6ff5c8" font-weight="800" font-family="sans-serif">✓</text>`;
-  s+=`</g>`});
- if(phase===1&&G.b.gOut.length){s+=`<text x="180" y="20" font-size="11" fill="#ff6b57" text-anchor="middle" font-family="sans-serif">▲ 外へ出ていった：${[...new Set(G.b.gOut.map(g=>FNAME[g.f]))].join('・')} ${G.b.gOut.length}個</text>`}
- if(phase===1&&G.r.air){s+=`<text x="180" y="20" font-size="11" fill="#ffc15a" text-anchor="middle" font-family="sans-serif">▼ 空気中から入ってきた酸素がある</text>`}
- return s+`</svg>`}
-function monBal(val,locked,label){return `<svg viewBox="0 0 360 250"><text x="30" y="30" font-size="11" fill="#8fb5aa" font-family="sans-serif">原子てんびん（容器の重さは差し引いてある）</text>
- <rect x="50" y="150" width="260" height="62" rx="10" fill="#1d2b2f" stroke="#3fbf95" stroke-width="2"/><rect x="72" y="162" width="160" height="38" rx="4" fill="#031a12" stroke="#2c6e62"/>
- <rect x="80" y="136" width="200" height="12" rx="5" fill="#2e4a4f" stroke="#3fbf95"/><path d="M110,136 L110,70 L250,70 L250,136" fill="rgba(111,245,200,.05)" stroke="#2c6e62" stroke-dasharray="5 4"/>
- <text x="226" y="190" font-size="26" fill="${locked?'#1f5b47':'#6ff5c8'}" text-anchor="end" font-family="ui-monospace,Menlo,monospace" font-weight="700" id="balV">${locked?'- - -':val}</text>
- <text x="272" y="190" font-size="12" fill="#8fb5aa" text-anchor="middle" font-family="sans-serif">目盛り</text>
- ${locked?`<g><rect x="96" y="84" width="168" height="40" rx="8" fill="#2a0f0c" stroke="#ff6b57"/><text x="180" y="110" font-size="15" fill="#ff6b57" text-anchor="middle" font-family="sans-serif" font-weight="800">🔒 予言を入れると開く</text></g>`:`<text x="180" y="108" font-size="13" fill="#ffc15a" text-anchor="middle" font-family="sans-serif">${label||''}</text>`}
- <text x="180" y="236" font-size="10" fill="#8fb5aa" text-anchor="middle" font-family="sans-serif">目盛り＝中の原子の「重さの札」の合計（水素原子1個を1とする）</text></svg>`}
+/* ---------- 図案（1回ぶん）を用意する ---------- */
+function elemsOf(list){const m={};list.forEach(([k,n])=>{for(let i=0;i<n;i++)MOL[k].a.forEach(a=>{m[a[0]]=(m[a[0]]||0)+1})});return m}
+function setupRound(def){
+ const st=STAGES[STI];
+ G.def=def;G.eq=def.eq||st.eq;
+ G.hoops={pre:mkHoop(def.pre||[]),post:mkHoop(def.post||[])};
+ G.piles={pre:[],post:[]};G.sky=[];G.phase='play';G.nearShown=false;G.patUsed={};
+ // 柱は反応前・反応後・図案・空に出てくる原子の種類ぜんぶ
+ const set={};Object.keys(elemsOf(def.pre||[])).forEach(e=>set[e]=1);Object.keys(elemsOf(def.post||[])).forEach(e=>set[e]=1);(st.pat||[]).forEach(k=>MOL[k].a.forEach(a=>set[a[0]]=1));if(st.air)set.O=1;
+ const order=['H','C','N','O','Na','Mg','S','Cl','Fe','Cu','Ba'];
+ G.cols=order.filter(e=>set[e]).map(e=>({el:e,pre:0,post:0,pp:0,qp:0,done:false}));
+ const need=elemsOf(def.pre||[]);if(st.air)need.O=(need.O||0)+2;const needP=st.pat?need:elemsOf(def.post||[]);
+ G.cap=Math.max(4,...Object.values(need),...Object.values(needP));
+ if(st.escape){const m=G.hoops.post.mols.find(q=>q.k===st.escape);if(m){m.leaving=0.001}}
+ if(st.air){G.sky=[{k:'N2',x:.0,vx:.018,ph:0},{k:'N2',x:.25,vx:.018,ph:2},{k:'O2',x:.5,vx:.018,ph:4,good:1},{k:'N2',x:.75,vx:.018,ph:1}]}
+ G.skyOn=!!(st.escape||st.air);
+ G.needle=0;G.needleV=0;
+ layout();placePat();refreshPat();hud();
+}
+function mkHoop(list){const mols=[];list.forEach(([k,n])=>{for(let i=0;i<n;i++)mols.push({k,id:Math.random(),ph:rnd(0,6)})});placeMols(mols);return{mols}}
+function placeMols(mols){const n=mols.length;if(!n)return;const cols=n<=1?1:n<=4?2:3,rows=Math.ceil(n/cols);mols._c=cols;mols._r=rows;
+ mols.forEach((m,i)=>{const r=Math.floor(i/cols),c=i%cols,inRow=Math.min(cols,n-r*cols);m.x=((c+.5)/inRow-.5)*1.25*(inRow/cols)*(cols===1?0:1)+(cols===1?0:0);m.y=((r+.5)/rows-.5)*(rows===1?0:1.05);if(cols>1&&inRow<cols)m.x=((c+.5)/inRow-.5)*1.25*inRow/cols})}
+function span(k){const a=MOL[k].a;let x0=9,x1=-9,y0=9,y1=-9;a.forEach(q=>{x0=Math.min(x0,q[1]);x1=Math.max(x1,q[1]);y0=Math.min(y0,q[2]);y1=Math.max(y1,q[2])});return{w:x1-x0+1,h:y1-y0+1}}
 
-/* ================= 1反応のゲーム ================= */
-let G=null,COMBO=0;
-function show(id){if(id!=='title')$('tMon').innerHTML='';['title','game','clear','test'].forEach(x=>$(x).classList.toggle('hidden',x!==id));document.querySelectorAll('.scr').forEach(s=>s.scrollTop=0)}
-function zkBtns(){document.querySelectorAll('.zk').forEach(b=>b.classList.toggle('hidden',!(window.Zukan&&Zukan.openBook)))}
-function overlay(h){$('ovc').innerHTML=h;$('ov').classList.remove('hidden')}
-function closeOv(){$('ov').classList.add('hidden')}
-function hud(){$('hScore').textContent=S.score.toLocaleString();$('hCombo').textContent='×'+COMBO;$('dots').innerHTML=STAGES.map((_,i)=>`<i class="${i<S.stage?'on':i===S.stage?'now':''}"></i>`).join('')}
-let clockIv=0;
-function startClock(){clearInterval(clockIv);clockIv=setInterval(()=>{if(document.visibilityState!=='visible')return;if($('game').classList.contains('hidden'))return;S.elapsed++;$('hTime').textContent=fmtT(S.elapsed);if(S.elapsed%10===0)save()},1000)}
-function startStage(i){if(TA&&TA.iv){clearInterval(TA.iv);TA.t=0}S.stage=i;S.started=true;save();show('game');hud();const st=STAGES[i];if(!st)return finishMain();
- if(st.id==='rule')return ruleStage();if(st.id==='ta')return taStage();playRx(st.rx)}
-function playRx(r){const b=buildRx(r);G={r,b,phase:0,cnt:[b.gB.map(()=>false),b.gA.map(()=>false)],counts:[{},{}],tab:'atom',pred:[null,null],hint:[false,false],same:false,locked:true,val:[massOf(b.atoms,0),massOf(b.atoms,1)]};
- const els=elsOf(b.atoms);G.els=els;
- $('stageBox').innerHTML=`<div class="head"><div class="no">反応 ${S.stage+1} / ${RX.length}${r.peak?'　⚠ 異常あり':''}</div><h2>${r.name}</h2><div class="eq">${r.eq}</div></div>
- <div class="tabs"><button class="tab on" id="tA">🔬 原子画面</button><button class="tab locked" id="tB">⚖️ 天秤画面</button></div>
- <div class="mon" id="mon"></div>
- <table class="tbl" id="tbl"></table><div id="ctrl"></div>`;
- $('tA').onclick=()=>switchTab('atom');$('tB').onclick=()=>switchTab('bal');
- renderMon();renderTbl();stepCount()}
-function renderMon(){const m=$('mon');if(!m)return;
- if(G.tab==='atom'){m.innerHTML=monAtoms(G,G.phase);m.querySelectorAll('[data-g]').forEach(g=>g.addEventListener('pointerdown',e=>{e.preventDefault();tapGroup(+g.dataset.g)}))}
- else m.innerHTML=monBal(fw(G.val[G.phase]),G.locked,G.phase===0?'反応前':'反応後')}
-function switchTab(t){if(t===G.tab)return;if(t==='bal'&&G.locked){sfx.miss();$('tB').classList.add('shake');setTimeout(()=>$('tB').classList.remove('shake'),400);return}
- G.tab=t;sfx.sw();$('tA').classList.toggle('on',t==='atom');$('tB').classList.toggle('on',t==='bal');const m=$('mon');m.classList.remove('wipe');void m.offsetWidth;m.classList.add('wipe');renderMon()}
-function renderTbl(){const p=G.phase;const c=G.counts;
- $('tbl').innerHTML=`<tr><th>原子</th><th>重さの札</th><th>反応前の数</th><th>反応後の数</th>${G.hint[p]?'<th>札×数</th>':''}</tr>`+G.els.map(e=>`<tr><td class="el"><span class="dot" style="background:${EL[e][0]}"></span>${e}（${EL[e][2]}）</td><td>${fw(WT[e])}</td><td>${c[0][e]!=null?c[0][e]:'-'}</td><td>${p===1&&c[1][e]!=null?c[1][e]:'-'}</td>${G.hint[p]?`<td class="memo">${c[p][e]!=null?fw(WT[e]*c[p][e]):'-'}</td>`:''}</tr>`).join('')}
-function groupsNow(){return G.phase===0?G.b.gB:G.b.gA}
-function tapGroup(gi){if(G.busy)return;const p=G.phase;if(G.cnt[p][gi]||G.counted)return;ac();G.cnt[p][gi]=true;const g=groupsNow()[gi];
- g.idx.forEach(k=>{const e=G.b.atoms[k].el;G.counts[p][e]=(G.counts[p][e]||0)+1});
- G.els.forEach(e=>{if(G.counts[p][e]==null)G.counts[p][e]=0});
- sfx.count(G.cnt[p].filter(Boolean).length);renderMon();renderTbl();
- if(G.cnt[p].every(Boolean)){G.counted=true;setTimeout(askPred,350)}}
-function stepCount(){G.counted=false;G.counts[G.phase]={};
- $('ctrl').innerHTML=`<div class="qline">${G.phase===0?'🔬 反応前：容器の中の分子（原子のまとまり）をタップして、原子を数えよう':'🔬 反応後：もう一度数える'}</div><div class="small">数えた分子には ✓ がつく。表に原子の数がたまる。</div>`}
-function askPred(){const p=G.phase;
- $('ctrl').innerHTML=`<div class="qline">🔮 ${p===0?'反応前':'反応後'}の天秤の目盛りを予言せよ<br><span class="small">重さの札 × 数 を、全部たす</span></div>
- <div class="numshow"><span id="nv">　</span></div><div class="keys">${['7','8','9','4','5','6','1','2','3','0','.','⌫'].map(k=>`<button data-n="${k}">${k}</button>`).join('')}</div>
- <div class="row2 act"><button class="btn ghost" id="bHint">📝 計算メモ</button><button class="btn" id="bOk">予言して開く</button></div>`;
- let v='';document.querySelectorAll('#ctrl [data-n]').forEach(b=>b.onclick=()=>{sfx.key();const k=b.dataset.n;if(k==='⌫')v=v.slice(0,-1);else if(v.length<7)v+=k;$('nv').textContent=v||'　'});
- $('bHint').onclick=()=>{sfx.tap();G.hint[p]=true;renderTbl();$('bHint').disabled=true};
- $('bOk').onclick=()=>{const x=parseFloat(v);if(isNaN(x))return;G.pred[p]=x;openBal()}}
-async function openBal(){const p=G.phase;G.locked=false;G.busy=true;sfx.unlock();$('tB').classList.remove('locked');switchTab('bal');
- const target=G.val[p];const el=$('balV');const t0=performance.now(),T=RM?50:900;
- await new Promise(res=>{const st=now=>{const k=Math.min(1,(now-t0)/T);if(el)el.textContent=fw(Math.round(target*k*2)/2);if(k<1){if(Math.random()<.5)sfx.tick();requestAnimationFrame(st)}else{if(el)el.textContent=fw(target);res()}};requestAnimationFrame(st)});
- G.busy=false;judge()}
-function judge(){const p=G.phase,r=G.r;const ok=Math.abs(G.pred[p]-G.val[p])<.01;const key=r.id+p;const first=!S.first[key];S.first[key]=true;S.tries++;
- const mon=$('mon');
- if(ok){COMBO++;S.maxCombo=Math.max(S.maxCombo,COMBO);S.hits++;const pts=(G.hint[p]?60:150)*Math.min(COMBO,8);S.score+=pts;sfx.hit(COMBO);flash();const[x,y]=ctr(mon);burst(x,y,['#6ff5c8','#ffc15a','#fff'],30,5);flyText('+'+pts,x,y-20);
-  if(first&&!G.hint[p])earn(15,'hit',mon);if(COMBO===4||COMBO===8)banner(`${COMBO}連続 一致！`,'原子の数から質量が読めている')}
- else{COMBO=0;sfx.miss();mon.classList.add('shake');setTimeout(()=>mon.classList.remove('shake'),400);const real=countOf(G.b.atoms,p);G.counts[p]={};G.els.forEach(e=>G.counts[p][e]=real[e]||0);renderTbl()}
- save();hud();
- const c=G.counts[p];const brk=G.els.filter(e=>(p===0?countOf(G.b.atoms,0):countOf(G.b.atoms,1))[e]).map(e=>{const n=(p===0?countOf(G.b.atoms,0):countOf(G.b.atoms,1))[e];return `${fw(WT[e])}×${n}`}).join(' ＋ ');
- let h=`<div class="card ${ok?'ok':'ng'}"><div class="hd">${ok?'一致！':'不一致'}</div>予言 <b>${fw(G.pred[p])}</b> ／ 天秤 <b>${fw(G.val[p])}</b><br><span class="small">${brk} ＝ ${fw(G.val[p])}</span>`;
- if(!ok&&p===1&&G.same&&(r.out||r.air))h+=`<br><b>数え直さずに「同じ」にしたのが落とし穴。</b>${r.out?'ふたが開いていて、原子のまとまりが<b>外へ出ていった</b>。':'空気中の<b>酸素原子が入ってきた</b>。'}`;
- h+=`</div>`;
- if(p===0){h+=`<button class="btn wide act" id="bR">⚡ 反応スタート（原子画面へ）</button>`;$('ctrl').innerHTML=h;$('bR').onclick=()=>runReaction()}
- else{S.log[r.id]={n0:Object.values(countOf(G.b.atoms,0)).reduce((a,b)=>a+b,0),n1:Object.values(countOf(G.b.atoms,1)).reduce((a,b)=>a+b,0),m0:G.val[0],m1:G.val[1],ok0:Math.abs(G.pred[0]-G.val[0])<.01,ok1:ok};save();
-  $('ctrl').innerHTML=h+rxSummary()+`<div id="eqp"></div>`;eqPanel()}}
-function eqPanel(){const r=G.r,E=EQP[r.id];const go=()=>{$('eqp').insertAdjacentHTML('beforeend',`<button class="btn wide act" id="bN">次の反応へ ▶</button>`);$('bN').onclick=()=>{sfx.tap();startStage(S.stage+1)}};
- if(!E)return go();let tried=false;
- $('eqp').innerHTML=`<div class="card"><div class="qline" style="margin:0">🧾 化学反応式の□に入る数は？<br><span class="small">左辺と右辺で、原子の種類と数がそろうように</span></div><div class="eq mono" style="font-size:20px;margin:8px 0;color:var(--ph)">${E[0]}<span class="slot" id="eqs">□</span>${E[1]}</div><div class="row2" style="grid-template-columns:repeat(4,1fr)">${[1,2,3,4].map(n=>`<button class="btn ghost" data-q="${n}">${n}</button>`).join('')}</div></div>`;
- document.querySelectorAll('#eqp [data-q]').forEach(b=>b.onclick=()=>{const n=+b.dataset.q;if(n===E[2]){document.querySelectorAll('#eqp [data-q]').forEach(x=>x.disabled=true);$('eqs').textContent=n;$('eqs').classList.add('ok');sfx.hit(1);if(!tried&&!S.first['eq'+r.id]){earn(10,'first-try',b);S.score+=200;hud()}S.first['eq'+r.id]=true;save();
-  const c0=countOf(G.b.atoms,0),c1=countOf(G.b.atoms,1);$('eqp').insertAdjacentHTML('beforeend',`<div class="card ok">左辺も右辺も ${G.els.filter(e=>c0[e]||(G.b.atoms.some(a=>a.el===e&&a.air))).map(e=>e).join('・')} の数がそろう。化学反応式は「原子の種類と数が変わらない」ことを表している。</div>`);go()}
-  else{tried=true;b.disabled=true;b.style.opacity=.35;sfx.miss()}})}
-function rxSummary(){const r=G.r,c0=countOf(G.b.atoms,0),c1=countOf(G.b.atoms,1);const same=G.val[0]===G.val[1];
- let txt;
- if(r.out)txt=`原子の<b>組み合わせ</b>が変わり、できた${FNAME[r.out]}が<b>外へ出ていった</b>。容器の中の原子が減った分だけ、目盛りが <b>${fw(G.val[0]-G.val[1])}</b> 減った。<br>出ていった分も数に入れれば、原子の種類と数は変わっていない。`;
- else if(r.air)txt=`空気中から<b>酸素原子が入ってきて</b>、マグネシウム原子と結び付いた。入ってきた分だけ、目盛りが <b>${fw(G.val[1]-G.val[0])}</b> 増えた。<br>入ってきた酸素も数に入れれば、原子の種類と数は変わっていない。`;
- else txt=`原子の<b>組み合わせ</b>は変わったが、原子の<b>種類と数は同じ</b>。だから目盛り（質量の総和）も同じ。`;
- return `<div class="card"><table class="sum"><tr><th>原子</th><th>前</th><th>後</th></tr>${G.els.map(e=>`<tr><td class="l">${e}</td><td>${c0[e]||0}</td><td>${c1[e]||0}</td></tr>`).join('')}<tr><td class="l">目盛り</td><td>${fw(G.val[0])}</td><td>${fw(G.val[1])}</td></tr></table><p style="margin:6px 0 0">${txt}</p></div>`}
-async function runReaction(){G.phase=1;G.locked=true;$('tB').classList.add('locked');G.tab='bal';switchTab('atom');G.busy=true;$('ctrl').innerHTML=`<div class="qline">⚡ 反応中……</div>`;sfx.react();
- const svg=$('monSvg');const atoms=G.b.atoms;
- // アニメーション用のレイヤー
- const t0=performance.now(),T=RM?100:2600;
- await new Promise(res=>{const st=now=>{const k=Math.min(1,(now-t0)/T);const e=k<.25?0:Math.min(1,(k-.25)/.6);const ee=e<.5?2*e*e:1-Math.pow(-2*e+2,2)/2;
-  let s=`<svg viewBox="0 0 360 250">${frameSVG(G.r)}`;
-  atoms.forEach((a,i)=>{let x=a.x0+(a.x1-a.x0)*ee,y=a.y0+(a.y1-a.y0)*ee;if(k<.25&&!RM){x+=Math.sin(now/40+i)*2;y+=Math.cos(now/37+i)*2}
-   if(a.air&&k<.25){y=a.y0+(a.y1-a.y0)*0}
-   s+=at(a.el,x,y,BR*RAD[a.el])});
-  if(k>.2&&k<.7&&!RM)s+=`<circle cx="180" cy="137" r="${(k-.2)*300}" fill="none" stroke="#ffc15a" stroke-width="3" opacity="${.7-(k-.2)}"/>`;
-  $('mon').innerHTML=s+'</svg>';if(k<1)requestAnimationFrame(st);else res()};requestAnimationFrame(st)});
- G.busy=false;renderMon();renderTbl();
- $('ctrl').innerHTML=`<div class="qline">🔬 反応後の原子は？</div><div class="opts"><button class="opt" id="bRe">🔁 反応後の原子を数え直す</button><button class="opt" id="bSame">＝ 反応前と同じ数のはず（数え直さない）</button></div>`;
- $('bRe').onclick=()=>{sfx.tap();G.same=false;stepCount()};
- $('bSame').onclick=()=>{sfx.tap();G.same=true;G.counts[1]=Object.assign({},G.counts[0]);G.cnt[1]=G.cnt[1].map(()=>true);G.counted=true;renderMon();renderTbl();askPred()}}
+/* ---------- 位置の計算（全画面・向きで組み替え） ---------- */
+function geo(){const o={},top=HUDY+(G&&G.skyOn?(LAND?106:72):0);o.top=top;o.skyY=HUDY+(LAND?68:32);
+ const n=G?G.cols.length:3,cap=G?G.cap:4;
+ if(LAND){
+  o.Rh=Math.min(W*.12,(H-top)*.17);o.piv=[W/2,top+Math.max(52,o.Rh*.4)];o.beamL=W*.25;o.drop=o.Rh*1.12;
+  const tilt=G?G.needle:0;const ex=Math.cos(tilt)*o.beamL,ey=Math.sin(tilt)*o.beamL;
+  o.end={pre:[o.piv[0]-ex,o.piv[1]-ey],post:[o.piv[0]+ex,o.piv[1]+ey]};
+  o.hoop={pre:[o.end.pre[0],o.end.pre[1]+o.drop],post:[o.end.post[0],o.end.post[1]+o.drop]};
+  o.colTop=o.piv[1]+o.drop+o.Rh+Math.sin(.12)*o.beamL+24;o.base=H-62;o.x0=W*.2;o.x1=W*.8;o.pw=(o.x1-o.x0)/n;
+  o.a=Math.min(o.pw*.4,(o.base-o.colTop)/cap,56);
+  o.pile={pre:{x:W*.085,base:o.base,top:o.colTop-10},post:{x:W*.915,base:o.base,top:o.colTop-10}};
+  o.pa=Math.min(o.a*1.05,(o.base-o.colTop+10)/10,W*.05);
+ }else{
+  o.Rh=Math.min(W*.24,(H-top)*.13);
+  o.hoop={pre:[W*.42,top+o.Rh+10],post:[W*.42,H-o.Rh-18]};
+  o.midT=o.hoop.pre[1]+o.Rh+30;o.midB=o.hoop.post[1]-o.Rh-30;o.mid=(o.midT+o.midB)/2;o.lab=30;
+  o.x0=W*.17;o.x1=W*.975;o.pw=(o.x1-o.x0)/n;
+  o.a=Math.min(o.pw*.62,((o.midB-o.midT)/2-o.lab/2-4)/cap,48);
+  o.gauge=[W*.085,o.mid];
+  o.pile={pre:{x:W*.87,base:o.hoop.pre[1]+o.Rh-2,top:o.hoop.pre[1]-o.Rh+16},post:{x:W*.87,base:o.hoop.post[1]+o.Rh-2,top:o.hoop.post[1]-o.Rh+16}};
+  o.pa=Math.min(o.a,(o.Rh*2-18)/10.2,W*.075);
+ }
+ return o}
+function colX(o,i){return o.x0+(i+.5)*o.pw}
+function slot(o,i,side,k){const cx=colX(o,i);if(LAND){return[cx+(side==='pre'?-1:1)*o.a*.6,o.base-o.a*(k+.5)*.96]}
+ return[cx,side==='pre'?o.mid-o.lab/2-4-o.a*(k+.5)*.96:o.mid+o.lab/2+4+o.a*(k+.5)*.96]}
+function pileSlot(o,side,k){const p=o.pile[side];return[p.x,p.base-o.pa*(k+.5)*.98]}
+function molAR(o,side){const h=G.hoops[side],n=h.mols.length||1,cols=h.mols._c||(n<=1?1:n<=4?2:3),rows=(h.mols._r||Math.ceil(n/cols))+(side==='post'&&STAGES[STI].pat?1:0);let w=1,hh=1;h.mols.forEach(m=>{const s=span(m.k);w=Math.max(w,s.w);hh=Math.max(hh,s.h)});
+ const cw=o.Rh*1.3/cols,ch=o.Rh*1.1/rows;return Math.min(o.Rh*.16,cw*.9/(1.72*(w-1)+2),ch*.9/(1.72*(hh-1)+2))}
+function molPos(o,side,m){const hc=o.hoop[side];const bob=RM?0:Math.sin(T*1.6+m.ph)*o.Rh*.012;let y=hc[1]+m.y*o.Rh*(side==='post'&&STAGES[STI].pat?.7:1)+bob-(side==='post'&&STAGES[STI].pat?o.Rh*.28:0);if(m.leaving){y-=m.leaving*o.Rh*2.4}return[hc[0]+m.x*o.Rh,y]}
 
-/* ================= 表と1文 ================= */
-const CHIPS=['組み合わせ','種類','数','総和','大きさ','色'];
-function ruleStage(){
- const rows=RX.filter(r=>S.log[r.id]);
- $('stageBox').innerHTML=`<div class="head"><div class="no">記録室</div><h2>原子の数と質量の総和の表</h2></div>
- <div class="card"><table class="sum"><tr><th>反応</th><th>原子の数<br>前→後</th><th>目盛り<br>前→後</th></tr>${rows.map(r=>{const L=S.log[r.id];return `<tr><td class="l">${r.name}</td><td>${L.n0}→${L.n1}</td><td>${fw(L.m0)}→${fw(L.m1)}</td></tr>`}).join('')}</table>
- <p class="small" style="margin:6px 0 0">※ふたが開いていた反応では、容器の中だけを数えている。</p></div>
- <div class="card"><div class="qline" style="margin:0">✍️ 質量が保存されるわけを1文で。空らんにチップを入れよう。</div>
- <div class="sent" id="sent"></div><div class="chips" id="chips"></div><button class="btn ghost wide" id="bClr">やり直す</button></div><div id="ctrl"></div>`;
- const ans=[['組み合わせ'],['種類','数'],['種類','数'],['総和']];let fill=[null,null,null,null];
- const draw=()=>{const sl=i=>`<span class="slot ${fill.indexOf(null)===i?'cur':''}">${fill[i]||'？'}</span>`;
-  $('sent').innerHTML=`化学変化では、原子の${sl(0)}は変わるが、原子の${sl(1)}と${sl(2)}は変わらない。原子1個1個に質量があるので、質量の${sl(3)}は変わらない。`;
-  $('chips').innerHTML=CHIPS.map(c=>`<button class="chip ${fill.includes(c)?'used':''}" data-c="${c}">${c}</button>`).join('');
-  document.querySelectorAll('#chips .chip').forEach(b=>b.onclick=()=>{const c=b.dataset.c;if(fill.includes(c))return;const i=fill.indexOf(null);if(i<0)return;sfx.tap();fill[i]=c;draw();if(!fill.includes(null))check()})};
- const check=()=>{const ok=ans[0].includes(fill[0])&&ans[3].includes(fill[3])&&fill[1]!==fill[2]&&ans[1].includes(fill[1])&&ans[2].includes(fill[2]);
-  if(ok){document.querySelectorAll('.slot').forEach(s=>s.classList.add('ok'));sfx.fanfare();confetti(110);S.sentence=`化学変化では、原子の組み合わせは変わるが、原子の${fill[1]}と${fill[2]}は変わらない。原子1個1個に質量があるので、質量の総和は変わらない。`;
-   if(!S.ruleDone){S.ruleDone=true;earn(30,'rule',$('sent'));S.score+=1000}save();hud();banner('質量が保存されるわけ','原子の種類と数が変わらないから');
-   $('ctrl').innerHTML=`<div class="card ok"><div class="hd">記録完了</div>${esc(S.sentence)}<br><span class="small">ふたが開いていると質量が変わって見えるのは、原子が<b>出ていったり入ってきたり</b>するから。</span></div><button class="btn wide act" id="bN">最後の任務：タイムアタック ▶</button>`;$('bN').onclick=()=>{sfx.tap();startStage(S.stage+1)}}
-  else{sfx.miss();$('sent').classList.add('shake');setTimeout(()=>{$('sent').classList.remove('shake');fill=[null,null,null,null];draw()},700)}};
- $('bClr').onclick=()=>{sfx.tap();fill=[null,null,null,null];draw()};draw()}
+/* ---------- 天秤 ---------- */
+function sums(){let a=0,b=0;G.cols.forEach(c=>{a+=c.pre*EL[c.el].w;b+=c.post*EL[c.el].w});return[a,b]}
+function pending(side,el){let n=0;G.hoops[side].mols.forEach(m=>{if(!m.leaving||m.leaving<1)MOL[m.k].a.forEach(a=>{if(a[0]===el)n++})});G.piles[side].forEach(p=>{if(p.el===el)n++});if(drag&&drag.kind==='run'&&drag.side===side)drag.run.forEach(p=>{if(p.el===el)n++});return n}
+function updNeedle(dt){const [a,b]=sums();const tot=Math.max(30,Math.max(a,b));const tg=clamp((b-a)/tot,-1,1)*(LAND?.12:.9);G.needleV+=((tg-G.needle)*38-G.needleV*6.5)*dt;G.needle+=G.needleV*dt}
 
-/* ================= タイムアタック ================= */
-const TAQ=[
- {rx:{id:'t1',where:'ふたを閉めた容器',react:[['Mg',4],['O2',2]],prod:[['MgO',4]],lid:'closed'},a:'same',t:'マグネシウムの燃焼（閉じた容器）'},
- {rx:{id:'t2',where:'ふたの開いた容器',react:[['NaHCO3',3],['HCl',3]],prod:[['NaCl',3],['H2O',3],['CO2',3]],out:'CO2',lid:'open'},a:'down',t:'炭酸水素ナトリウム＋塩酸（開いた容器）'},
- {rx:{id:'t3',where:'試験管（綿でふさいだ口）',react:[['Fe',3],['S',3]],prod:[['FeS',3]],lid:'closed'},a:'same',t:'鉄と硫黄'},
- {rx:{id:'t4',where:'空気中のステンレス皿',react:[['Cu',4]],air:[['O2',2]],prod:[['CuO',4]],lid:'open'},a:'up',t:'銅を空気中で加熱'},
- {rx:{id:'t5',where:'ビーカーの中',react:PPT[SEALPAIR].react,prod:PPT[SEALPAIR].prod,lid:'none'},a:'same',t:'沈殿ができる反応'},
- {rx:{id:'t6',where:'試験管（気体は外へ）',react:[['CuO',4],['C',2]],prod:[['Cu',4],['CO2',2]],out:'CO2',lid:'open'},a:'down',t:'酸化銅の還元'},
- {rx:{id:'t7',where:'口を閉じた袋',react:[['H2',4],['O2',2]],prod:[['H2O',4]],lid:'closed'},a:'same',t:'水素の燃焼（袋の中）'},
- {rx:{id:'t8',where:'空気中',react:[['C',3]],air:[['O2',3]],prod:[['CO2',3]],out:'CO2',lid:'open'},a:'down',t:'炭（炭素）を空気中で燃やす'}
-];
-let TA=null;
-function taStage(){
- $('stageBox').innerHTML=`<div class="head"><div class="no">最終任務</div><h2>タイムアタック：原子を見くらべろ</h2><div class="eq">120秒。反応の前と後の原子画面を見て、容器の中の質量が<br>「同じ」「増える」「減る」のどれかをすばやく判定せよ。</div></div><div id="taBox" class="act"></div>`;
- $('taBox').innerHTML=`<div class="card">最高記録：${S.taBest}問<br><span class="small">原子が<b>出ていく</b>か、<b>入ってくる</b>か、それだけを見る。</span></div><button class="btn wide act" id="bTA">▶ スタート</button>`;
- $('bTA').onclick=()=>{ac();sfx.tap();runTA()}}
-function miniSVG(rx,phase){const b=buildRx(rx);const atoms=b.atoms;let s=`<svg viewBox="0 -26 360 262">${frameSVG(rx)}`;
- let outside=false;atoms.forEach(a=>{let x=phase===0?a.x0:a.x1,y=phase===0?a.y0:a.y1;const o=(phase===0&&a.air)||(phase===1&&a.in1===false);if(o){y=-10;outside=true;s+=`<g opacity=".55">${at(a.el,x,y,BR*RAD[a.el]*.9)}</g>`}else s+=at(a.el,x,y,BR*RAD[a.el])});
- if(outside)s+=`<text x="8" y="-18" font-size="12" fill="${phase===0?'#ffc15a':'#ff6b57'}" font-family="sans-serif" font-weight="800">${phase===0?'空気中':'外へ出た'}</text>`;return s+'</svg>'}
-function runTA(){TA={deck:shuffle(TAQ),i:0,ok:0,combo:0,t:120,lock:false};nextTA();
- TA.iv=setInterval(()=>{if(document.visibilityState!=='visible')return;TA.t--;const b=$('taT');if(b)b.style.width=(TA.t/120*100)+'%';if(TA.t<=0){clearInterval(TA.iv);if($('taBox'))endTA()}},1000)}
-function nextTA(){if(TA.i>=TA.deck.length)TA.deck=TA.deck.concat(shuffle(TAQ));const c=TA.deck[TA.i];
- $('taBox').innerHTML=`<div class="tbar"><i id="taT" style="width:${TA.t/120*100}%"></i></div><div style="display:flex;justify-content:space-between;font-weight:800" class="mono"><span>正解 ${TA.ok}</span><span class="combo">×${TA.combo}</span></div>
- <div class="tacard"><div style="font-weight:800;margin-bottom:4px">${c.t}</div><div class="row2"><div><div class="small">反応前</div>${miniSVG(c.rx,0)}</div><div><div class="small">反応後</div>${miniSVG(c.rx,1)}</div></div><div id="taWhy" class="small" style="min-height:20px;margin-top:4px"></div></div>
- <div class="row2 act" style="grid-template-columns:1fr 1fr 1fr"><button class="btn ghost" data-a="down">減る</button><button class="btn ghost" data-a="same">同じ</button><button class="btn ghost" data-a="up">増える</button></div>`;
- document.querySelectorAll('#taBox [data-a]').forEach(b=>b.onclick=()=>{if(TA.lock)return;TA.lock=true;const ok=b.dataset.a===c.a;
-  if(ok){TA.ok++;TA.combo++;S.score+=50*Math.min(TA.combo,10);sfx.hit(TA.combo);const[x,y]=ctr(b);burst(x,y,['#6ff5c8','#fff'],12,4);
-   if(TA.combo===4||TA.combo===8){const k='c'+TA.combo;if(!S.taEarn[k]){S.taEarn[k]=true;earn(10,'first-try',b)}banner(TA.combo+'連続！')}}
-  else{TA.combo=0;sfx.miss()}
-  $('taWhy').innerHTML=(ok?'○ ':'× ')+(c.a==='same'?'出入りなし → 同じ':c.a==='down'?'原子が外へ出ていく → 減る':'空気中の酸素原子が入る → 増える');hud();
-  setTimeout(()=>{TA.lock=false;TA.i++;if(TA.t>0&&$('taBox'))nextTA()},ok?700:1500)})}
-function endTA(){const best=TA.ok>S.taBest;if(best)S.taBest=TA.ok;save();sfx.fanfare();
- $('taBox').innerHTML=`<div class="card ok"><div class="hd">任務完了</div>正解 ${TA.ok} 問${best?'（最高記録 更新！）':''}</div><button class="btn ghost wide act" id="bTA2">もう一度</button><button class="btn wide act" id="bF">本編クリアへ ▶</button>`;
- $('bTA2').onclick=()=>{sfx.tap();runTA()};$('bF').onclick=()=>{sfx.tap();finishMain()}}
+/* ================= 描く ================= */
+function draw(){ctx.setTransform(DPR,0,0,DPR,0,0);if(scene==='test')return;
+ buildBg();ctx.save();if(shake>0&&!RM)ctx.translate(rnd(-shake,shake),rnd(-shake,shake));
+ ctx.drawImage(bg,0,0,W,H);
+ if(scene==='play'&&G)drawPlay();
+ else if(scene==='map')drawMap();
+ else if(scene==='title'||scene==='clear')drawTitleArt();
+ parts.forEach(q=>{ctx.globalAlpha=clamp(q.l*1.4,0,1);const h=q.s/2;ctx.strokeStyle=q.c;ctx.lineWidth=Math.max(1.5,q.s*.32);ctx.lineCap='round';ctx.beginPath();ctx.moveTo(q.x-h,q.y-h);ctx.lineTo(q.x+h,q.y+h);ctx.moveTo(q.x+h,q.y-h);ctx.lineTo(q.x-h,q.y+h);ctx.stroke()});ctx.globalAlpha=1;
+ floats.forEach(f=>{ctx.globalAlpha=clamp(f.l*1.5,0,1);const sc=f.a<.1?.4+f.a*9:f.a<.25?1.3-(f.a-.1)*2:1;text(f.t,f.x,f.y,f.s*sc,f.c,'center',900,C.lin)});ctx.globalAlpha=1;
+ drawCombo();drawStamp();
+ ctx.restore();
+ if(flash>0){ctx.globalAlpha=Math.min(.6,flash);ctx.fillStyle=flashC;ctx.fillRect(0,0,W,H);ctx.globalAlpha=1}}
 
-/* ================= クリア ================= */
-function finishMain(){if(TA&&TA.iv)clearInterval(TA.iv);S.cleared=true;save();sfx.fanfare();confetti(140);
- const go=()=>{renderClear();show('clear')};
- if(window.Zukan&&Zukan.mainClear&&!S.mainDone){S.mainDone=true;save();setTimeout(()=>{try{Zukan.mainClear({onClose:go})}catch(e){go()}},600)}else go()}
-function renderClear(){const rows=RX.filter(r=>S.log[r.id]);
- $('clearBox').innerHTML=`<div style="text-align:center;margin-top:16px"><div class="kicker">本編クリア</div><div class="logo" style="font-size:32px">原子モニター<br>観測士</div></div>
- <div class="panelbox">クリアタイム：${fmtT(S.elapsed)}<br>予言が一致：${S.hits} / ${S.tries}<br>最大コンボ：${S.maxCombo}　タイムアタック：${S.taBest}問<br>SCORE：${S.score.toLocaleString()}</div>
- <div class="card"><table class="sum"><tr><th>反応</th><th>原子の数</th><th>目盛り</th></tr>${rows.map(r=>{const L=S.log[r.id];return `<tr><td class="l">${r.name}</td><td>${L.n0}→${L.n1}</td><td>${fw(L.m0)}→${fw(L.m1)}</td></tr>`}).join('')}</table></div>
- ${S.sentence?`<div class="card ok"><div class="hd" style="font-size:18px">見つけたわけ</div>${esc(S.sentence)}</div>`:''}
- <div class="tbtns"><button class="btn wide" id="cT">📝 確認テストへ</button><button class="btn ghost wide zk hidden" id="cB">📖 図鑑</button><button class="btn ghost wide" id="cS">反応をえらんで遊ぶ</button><button class="btn ghost wide" id="cH">🏠 タイトルへ</button></div>`;
- zkBtns();$('cT').onclick=()=>{sfx.tap();startTest()};$('cB').onclick=()=>window.Zukan&&Zukan.openBook&&Zukan.openBook();$('cS').onclick=()=>{sfx.tap();stageMenu()};$('cH').onclick=()=>{sfx.tap();initTitle()}}
-function stageMenu(){overlay(`<h2>どの反応から？</h2><div class="tbtns">${STAGES.map((s,i)=>`<button class="btn ghost wide" style="font-size:15px" data-i="${i}">${i+1}. ${s.name}</button>`).join('')}<button class="btn wide" id="oT">📝 確認テスト</button><button class="btn ghost wide" id="oX">とじる</button></div>`);
- document.querySelectorAll('#ovc [data-i]').forEach(b=>b.onclick=()=>{closeOv();startClock();startStage(+b.dataset.i)});$('oT').onclick=()=>{closeOv();startTest()};$('oX').onclick=closeOv}
+function drawHoop(o,side,label){const [x,y]=o.hoop[side],R=o.Rh;
+ // 布
+ ctx.save();ctx.beginPath();ctx.arc(x,y,R,0,Math.PI*2);ctx.fillStyle=FAB||C.fab;ctx.fill();ctx.restore();
+ // 木の輪（外と内の2重）
+ ctx.lineWidth=R*.085;ctx.strokeStyle=C.woodD;ctx.beginPath();ctx.arc(x,y,R+R*.05,0,Math.PI*2);ctx.stroke();
+ ctx.lineWidth=R*.06;ctx.strokeStyle=C.wood;ctx.beginPath();ctx.arc(x,y,R+R*.04,0,Math.PI*2);ctx.stroke();
+ ctx.lineWidth=R*.018;ctx.strokeStyle=C.woodL;ctx.beginPath();ctx.arc(x,y,R+R*.02,Math.PI*1.05,Math.PI*1.6);ctx.stroke();
+ // 留め金
+ ctx.fillStyle=C.silver;rr(ctx,x-R*.07,y-R*1.2,R*.14,R*.15,R*.03);ctx.fill();ctx.fillStyle=C.woodD;rr(ctx,x-R*.1,y-R*1.12,R*.2,R*.08,R*.03);ctx.fill();
+ // 名札
+ const tw=Math.max(78,R*.9),th=Math.max(26,R*.2);
+ if(LAND){const sd=side==='pre'?-1:1;ctx.save();ctx.translate(x+sd*R*.92,y-R*.72);ctx.rotate(sd*.35);const w2=Math.max(96,R*.95),h2=Math.max(46,R*.34);patchBox(-w2/2,-h2/2,w2,h2,side==='pre'?C.nv:C.rd,'rgba(243,238,227,.7)',9);
+  const [a,b]=sums();text(label,0,-h2*.2,h2*.3,C.lin);text('柱の重さ '+fw(side==='pre'?a:b),0,h2*.22,h2*.26,C.lin,'center',800);ctx.restore()}
+ else{ctx.save();ctx.translate(x-R*.98,y-R*.62);ctx.rotate(-.35);patchBox(-tw*.42,-th/2,tw*.84,th,side==='pre'?C.nv:C.rd,'rgba(243,238,227,.7)',8);text(label,0,1,th*.5,C.lin);ctx.restore()}
+}
+function drawPlay(){const o=geo(),st=STAGES[STI];
+ // 天秤
+ if(LAND)drawBeam(o);else drawGauge(o);
+ drawHoop(o,'pre','反応前');drawHoop(o,'post','反応後');
+ // 分子
+ ['pre','post'].forEach(side=>{const ar=molAR(o,side),u=ar*1.72;G.hoops[side].mols.forEach(m=>{const [mx,my]=molPos(o,side,m);const al=m.leaving?clamp(1-m.leaving*.5,.45,1):1;
+   const as=MOL[m.k].a.slice().sort((p,q)=>p[2]-q[2]);as.forEach(a=>atom(a[0],mx+a[1]*u,my+a[2]*u,ar,al));
+   if(m.leaving&&m.leaving>=1){const s=span(m.k);ctx.save();ctx.setLineDash([5,4]);ctx.strokeStyle=C.rd;ctx.lineWidth=2;ctx.beginPath();ctx.ellipse(mx,my,s.w*u*.62+6,s.h*u*.62+8,0,0,Math.PI*2);ctx.stroke();ctx.restore()}
+   if(G.tut&&side==='pre'&&G.tut===1&&m===G.hoops.pre.mols[0]&&!drag){const b=Math.sin(T*5)*5;ctx.fillStyle=C.rd;ctx.beginPath();ctx.moveTo(mx-10,my-ar*2.4+b-14);ctx.lineTo(mx+10,my-ar*2.4+b-14);ctx.lineTo(mx,my-ar*2.4+b);ctx.fill();text('タップ',mx,my-ar*2.4+b-26,15,C.rd,'center',900,C.lin)}
+  });
+  if(!G.hoops[side].mols.length&&!st.pat){text('（ほどき終えた）',o.hoop[side][0],o.hoop[side][1],Math.max(12,o.Rh*.12),'rgba(46,64,87,.4)','center',800)}
+  if(st.pat&&side==='post'&&!G.hoops.post.mols.length){text('↓ 図案から 縫い足す',o.hoop.post[0],o.hoop.post[1]-o.Rh*.12,Math.max(13,o.Rh*.12),C.blue,'center',900)}
+ });
+ // 空（外へ出た気体・空気）
+ if(G.skyOn)drawSky(o);
+ // 積み場
+ drawCols(o);drawPiles(o);
+ // 飛んでいる原子
+ flyers.forEach(f=>{const q=clamp(f.t/f.d,0,1),e=q<.5?2*q*q:1-Math.pow(-2*q+2,2)/2;const x=lerp(f.x0,f.x1,e),y=lerp(f.y0,f.y1,e)-Math.sin(q*Math.PI)*(f.arc||40);if(f.t>=0)atom(f.el,x,y,f.r*(1+Math.sin(q*Math.PI)*.25))});
+ // ドラッグ中
+ if(drag&&drag.kind==='run'){const wob=RM?0:Math.sin(T*22)*2;drag.run.forEach((p,i)=>atom(p.el,drag.x+wob,drag.y-i*o.pa*.9-10,o.pa/2*1.12))}
+ if(drag&&drag.kind==='sky'){const ar=Math.max(12,o.Rh*.14),u=ar*1.72;MOL[drag.m.k].a.forEach(a=>atom(a[0],drag.x+a[1]*u,drag.y+a[2]*u,ar))}
+ if(G.boss)drawTimer(o);
+ placePat();
+}
+function drawBeam(o){const [px,py]=o.piv,ang=G.needle,L=o.beamL;
+ // 支柱
+ xrow(px,py+4,px,H-40,9,'rgba(46,64,87,.18)',2);
+ // 目盛り（扇）
+ ctx.save();ctx.translate(px,py);for(let i=-6;i<=6;i++){const a=Math.PI/2+i*.09;const r0=o.Rh*.58,r1=o.Rh*(i%3===0?.72:.66);ctx.strokeStyle=i===0?C.rd:C.nv;ctx.lineWidth=i===0?3:1.6;ctx.beginPath();ctx.moveTo(Math.cos(a)*r0,Math.sin(a)*r0);ctx.lineTo(Math.cos(a)*r1,Math.sin(a)*r1);ctx.stroke()}ctx.restore();
+ // 糸（竿から枠へ）
+ ['pre','post'].forEach(s=>{const e=o.end[s],h=o.hoop[s];ctx.strokeStyle=C.nv;ctx.lineWidth=1.6;ctx.beginPath();ctx.moveTo(e[0],e[1]);ctx.lineTo(h[0]-o.Rh*.5,h[1]-o.Rh*.86);ctx.moveTo(e[0],e[1]);ctx.lineTo(h[0]+o.Rh*.5,h[1]-o.Rh*.86);ctx.moveTo(e[0],e[1]);ctx.lineTo(h[0],h[1]-o.Rh*1.2);ctx.stroke()});
+ // 竿（×の目）
+ xrow(o.end.pre[0],o.end.pre[1],o.end.post[0],o.end.post[1],9,C.nv,3);
+ xrow(o.end.pre[0],o.end.pre[1]+7,o.end.post[0],o.end.post[1]+7,9,C.rd,2);
+ // 針（縫い針）
+ drawNeedleAt(px,py,Math.PI/2+ang*2.2,o.Rh*.62);
+ ctx.fillStyle=C.gd;ctx.beginPath();ctx.arc(px,py,7,0,Math.PI*2);ctx.fill();ctx.fillStyle=C.nvD;ctx.beginPath();ctx.arc(px,py,3,0,Math.PI*2);ctx.fill();
+ // 重さ
+ const fs=Math.max(15,Math.min(24,o.Rh*.14));drawDiff(px,py+o.Rh*.95,fs)}
+function drawDiff(x,y,fs){const [a,b]=sums();const d=Math.round((b-a)*10)/10;
+ if(G.phase==='balanced'){text('つりあい',x,y,fs*1.3,C.rd,'center',900,C.lin);return}
+ if(Math.abs(d)<.01){text(a>0?'いまは つりあい':'原子を柱へ',x,y,fs,C.nv,'center',900,C.lin);return}
+ text((d>0?'反応後が':'反応前が')+' '+fw(Math.abs(d))+' 重い',x,y,fs,d>0?C.rd:C.nv,'center',900,C.lin)}
+function drawNeedleAt(x,y,ang,len){ctx.save();ctx.translate(x,y);ctx.rotate(ang);
+ // 糸
+ ctx.strokeStyle=C.rd;ctx.lineWidth=2.2;ctx.beginPath();ctx.moveTo(len*.92,0);ctx.bezierCurveTo(len*1.05,-len*.18,len*.7,-len*.25,len*.62,-len*.1+Math.sin(T*2)*3);ctx.stroke();
+ const w=Math.max(3,len*.045);ctx.fillStyle=C.silver;ctx.beginPath();ctx.moveTo(-len*.08,-w*.6);ctx.lineTo(len*.9,-w);ctx.quadraticCurveTo(len*1.02,0,len*.9,w);ctx.lineTo(-len*.08,w*.6);ctx.closePath();ctx.fill();
+ ctx.fillStyle='#8B93A0';ctx.beginPath();ctx.moveTo(len*.9,-w);ctx.lineTo(len*1.2,0);ctx.lineTo(len*.9,w);ctx.fill();
+ ctx.fillStyle='#fff';ctx.globalAlpha=.7;ctx.fillRect(0,-w*.5,len*.8,w*.28);ctx.globalAlpha=1;
+ ctx.fillStyle=C.lin;ctx.beginPath();ctx.ellipse(len*.02,0,len*.05,w*.3,0,0,Math.PI*2);ctx.fill();
+ ctx.restore()}
+function drawGauge(o){const [x,y]=o.gauge,r=Math.min(W*.075,40);
+ // 縦の竿（上の枠と下の枠をつなぐ）
+ xrow(x,o.hoop.pre[1],x,o.hoop.post[1],8,'rgba(46,64,87,.35)',2);
+ ctx.fillStyle=C.lin;ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill();ctx.strokeStyle=C.nv;ctx.lineWidth=2.5;ctx.beginPath();ctx.arc(x,y,r,-Math.PI/2,Math.PI/2);ctx.stroke();
+ for(let i=-4;i<=4;i++){const a=i*.2;ctx.strokeStyle=i===0?C.rd:C.nv;ctx.lineWidth=i===0?3:1.5;ctx.beginPath();ctx.moveTo(x+Math.cos(a)*r*.72,y+Math.sin(a)*r*.72);ctx.lineTo(x+Math.cos(a)*r*.92,y+Math.sin(a)*r*.92);ctx.stroke()}
+ drawNeedleAt(x-r*.1,y,G.needle*.9,r*.82);ctx.fillStyle=C.gd;ctx.beginPath();ctx.arc(x-r*.1,y,5,0,Math.PI*2);ctx.fill();
+ const [a,b]=sums();const fs=Math.max(12,Math.min(16,W*.036));
+ text(fw(a),x,y-r-12,fs,C.nv,'center',900,C.lin);text(fw(b),x,y+r+12,fs,C.rd,'center',900,C.lin);
+ const d=Math.round((b-a)*10)/10;if(G.phase==='balanced')text('つりあい',x,y-r-32,fs,C.rd,'center',900,C.lin);else if(Math.abs(d)>.01)text('差'+fw(Math.abs(d)),x,y+r+30,fs*.9,d>0?C.rd:C.nv,'center',900,C.lin)}
+function drawCols(o){const n=G.cols.length;
+ G.cols.forEach((c,i)=>{const cx=colX(o,i),e=EL[c.el];const done=c.done;
+  const hot=drag&&drag.kind==='run'&&Math.abs(drag.x-cx)<o.pw/2&&inColY(o,drag.y);
+  // 柱の枠（なみ縫い）
+  ctx.save();if(LAND){const h=o.a*G.cap*.96+10;const x=cx-o.a*1.25,w=o.a*2.5;
+   if(done){ctx.fillStyle='rgba(233,201,121,.35)';rr(ctx,x,o.base-h,w,h,10);ctx.fill()}if(hot){ctx.fillStyle='rgba(91,141,201,.14)';rr(ctx,x,o.base-h,w,h,10);ctx.fill()}
+   ctx.setLineDash([6,5]);ctx.strokeStyle=done?C.gd:'rgba(46,64,87,.45)';ctx.lineWidth=done?3:1.8;rr(ctx,x,o.base-h,w,h,10);ctx.stroke();ctx.setLineDash([]);
+   running(cx,o.base-h+6,cx,o.base-4,'rgba(46,64,87,.25)',1.4,[3,5]);
+   text('前',cx-o.a*.6,o.base-h-10,12,C.nv,'center',900);text('後',cx+o.a*.6,o.base-h-10,12,C.rd,'center',900);
+  }else{const hh=(o.midB-o.midT);const x=cx-o.pw*.44,w=o.pw*.88;
+   if(done){ctx.fillStyle='rgba(233,201,121,.35)';rr(ctx,x,o.midT,w,hh,10);ctx.fill()}if(hot){ctx.fillStyle='rgba(91,141,201,.14)';rr(ctx,x,o.midT,w,hh,10);ctx.fill()}
+   ctx.setLineDash([6,5]);ctx.strokeStyle=done?C.gd:'rgba(46,64,87,.4)';ctx.lineWidth=done?3:1.6;rr(ctx,x,o.midT,w,hh,10);ctx.stroke();ctx.setLineDash([])}
+  ctx.restore();
+  // 原子
+  for(let k=0;k<c.pre;k++){const [x,y]=slot(o,i,'pre',k);const pop=k===c.pre-1?c.pp:0;atom(c.el,x,y,o.a/2*(1+pop*.35))}
+  for(let k=0;k<c.post;k++){const [x,y]=slot(o,i,'post',k);const pop=k===c.post-1?c.qp:0;atom(c.el,x,y,o.a/2*(1+pop*.35))}
+  // 名札（元素・重さの札）
+  const lw=Math.min(o.pw*.9,LAND?150:o.pw*.92),lh=LAND?40:o.lab;const lx=cx-lw/2,ly=LAND?o.base+6:o.mid-lh/2;
+  patchBox(lx,ly,lw,lh,done?C.gd:C.lin,done?'rgba(30,43,59,.5)':'rgba(46,64,87,.45)',8);ctx.strokeStyle=C.nv;ctx.lineWidth=1.5;rr(ctx,lx,ly,lw,lh,8);ctx.stroke();
+  const fs=LAND?Math.min(17,lw*.14):Math.min(14,lw*.22);
+  if(LAND){text(c.el,lx+16,ly+lh/2,fs*1.25,e.c===EL.H.c?C.nv:mix(e.c,'k',.15),'center',900,C.lin);text(e.nm,lx+lw*.5,ly+lh*.34,fs*.8,C.nvD,'center',800);text('重さ '+fw(e.w),lx+lw*.5+4,ly+lh*.74,fs*.78,C.nv2,'center',800)}
+  else{text(c.el,cx,ly+lh*.36,fs*1.1,C.nvD,'center',900);text('重さ'+fw(e.w),cx,ly+lh*.78,Math.max(9,fs*.62),C.nv2,'center',800)}
+  if(done){const [x,y]=LAND?[lx+lw-12,ly+10]:[lx+lw-8,ly+6];ctx.fillStyle=C.rd;ctx.beginPath();ctx.arc(x,y,9,0,Math.PI*2);ctx.fill();text('✓',x,y+1,12,C.lin,'center',900)}
+  // あと○個（ニアミス）
+  if(G.phase==='near'||G.phase==='play'&&G.allOut){const d=c.pre-c.post;if(d){const side=d>0?'post':'pre';const k=side==='pre'?c.pre:c.post;const [x,y]=slot(o,i,side,k+Math.abs(d)/2-.5);
+    ctx.save();ctx.globalAlpha=.55+.3*Math.sin(T*5);for(let q=0;q<Math.abs(d);q++){const [sx,sy]=slot(o,i,side,k+q);ctx.setLineDash([4,4]);ctx.strokeStyle=C.rd;ctx.lineWidth=2;ctx.beginPath();ctx.arc(sx,sy,o.a*.45,0,Math.PI*2);ctx.stroke()}ctx.restore();
+    const [gx,gy]=slot(o,i,side,k+Math.abs(d)-1);text('あと'+Math.abs(d),gx,LAND||side==='pre'?gy-o.a*.85:gy+o.a*.85,Math.max(13,o.a*.4),C.rd,'center',900,C.lin)}}
+ })}
+function inColY(o,y){return LAND?y>o.colTop-40&&y<o.base+50:y>o.midT-20&&y<o.midB+20}
+function drawPiles(o){['pre','post'].forEach(side=>{const p=o.pile[side],pl=G.piles[side];const w=o.pa*1.35,top=p.base-o.pa*10*.98-6;
+  const hot=drag&&drag.kind==='sky'&&false;
+  ctx.save();ctx.fillStyle='rgba(250,246,238,.9)';rr(ctx,p.x-w/2,Math.min(top,p.top),w,p.base-Math.min(top,p.top)+6,10);ctx.fill();ctx.setLineDash([5,4]);ctx.strokeStyle=side==='pre'?C.nv:C.rd;ctx.lineWidth=2;rr(ctx,p.x-w/2,Math.min(top,p.top),w,p.base-Math.min(top,p.top)+6,10);ctx.stroke();ctx.restore();
+  text('糸だまり',p.x,LAND?p.base+16:Math.min(top,p.top)-10,Math.max(11,Math.min(14,W*.03)),side==='pre'?C.nv:C.rd,'center',900,C.lin);
+  let run=0;for(let k=pl.length-1;k>=0;k--){if(pl[k].el===pl[pl.length-1].el&&pl[k].arr)run++;else break}
+  pl.forEach((it,k)=>{if(!it.arr)return;const [x,y]=pileSlot(o,side,k);const top_=k>=pl.length-run;const bob=top_&&!drag&&!RM?Math.sin(T*6)*2:0;
+   if(top_&&!drag){ctx.strokeStyle=C.gd;ctx.lineWidth=3;ctx.beginPath();ctx.arc(x,y+bob,o.pa*.56,0,Math.PI*2);ctx.stroke()}
+   atom(it.el,x,y+bob,o.pa/2)});
+  if(G.tut===2&&side==='pre'&&pl.length&&!drag){const [x,y]=pileSlot(o,side,pl.length-1);const b=Math.sin(T*5)*6;text('← 柱へドラッグ',x-o.pa*1.2-50+b,y,15,C.rd,'center',900,C.lin)}
+  if(pl.length>=8){text('いっぱい！',p.x,Math.min(top,p.top)-12,13,C.rd,'center',900,C.lin)}
+ })}
+function drawSky(o){const y0=o.skyY;
+ ctx.save();ctx.setLineDash([3,6]);ctx.strokeStyle='rgba(91,141,201,.5)';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(W*.18,y0+(LAND?30:28));ctx.lineTo(W*.82,y0+(LAND?30:28));ctx.stroke();ctx.restore();
+ text(STAGES[STI].air?'空気':'容器の外',W*.12,y0,Math.max(12,Math.min(15,W*.032)),C.blue,'center',900,C.lin);
+ const ar=Math.max(10,Math.min(o.Rh*.13,18)),u=ar*1.72;
+ G.sky.forEach(m=>{if(drag&&drag.kind==='sky'&&drag.m===m)return;const [x,y]=skyPos(m);MOL[m.k].a.forEach(a=>atom(a[0],x+a[1]*u,y+a[2]*u,ar,m.gone?.4:1));
+  if(m.esc&&G.phase==='near'){const b=Math.sin(T*5)*4;ctx.save();ctx.strokeStyle=C.rd;ctx.lineWidth=2.5;ctx.setLineDash([5,4]);ctx.beginPath();ctx.ellipse(x,y,u*2.1+b,u*1.1+b,0,0,Math.PI*2);ctx.stroke();ctx.restore();text('外へ出た CO₂',x,y-u*1.5-8,14,C.rd,'center',900,C.lin)}
+  if(STAGES[STI].air&&G.phase==='near'&&m.k==='O2'){const b=Math.sin(T*5)*4;ctx.save();ctx.strokeStyle=C.rd;ctx.lineWidth=2.5;ctx.setLineDash([5,4]);ctx.beginPath();ctx.arc(x,y,u*1.3+b,0,Math.PI*2);ctx.stroke();ctx.restore()}
+ })}
+function skyPos(m){const o=geo();return[W*(.2+.6*((m.x%1+1)%1)),o.skyY+Math.sin(T*1.2+m.ph)*4]}
+function drawTimer(o){const left=Math.max(0,G.timeLeft);const x=W*.5,y=LAND?o.piv[1]+o.Rh*1.2:o.midT-14;const frac=left/STAGES[STI].time;
+ const w=LAND?W*.3:W*.5;ctx.fillStyle='rgba(46,64,87,.15)';rr(ctx,x-w/2,y-7,w,14,7);ctx.fill();ctx.fillStyle=frac<.25?C.rd:C.nv;rr(ctx,x-w/2,y-7,w*frac,14,7);ctx.fill();
+ xrow(x-w/2+6,y,x-w/2+Math.max(6,w*frac-6),y,8,'rgba(243,238,227,.7)',1.4);
+ text(Math.ceil(left)+'秒',x+w/2+26,y,16,frac<.25?C.rd:C.nv,'center',900,C.lin)}
+
+/* ---------- 地図：見本布の図案 ---------- */
+let mapNodes=[];
+function mapLayout(){const n=STAGES.length;mapNodes=[];const top=HUDY+(LAND?50:40),bot=H-20;
+ const cols=LAND?5:3,rows=Math.ceil(n/cols);const cw=(W-40)/cols,ch=(bot-top)/rows;const sz=Math.min(cw,ch)*.78;
+ for(let i=0;i<n;i++){const r=Math.floor(i/cols),inRow=Math.min(cols,n-r*cols),k=i%cols,c=r%2?inRow-1-k:k,xoff=(cols-inRow)*cw/2;
+  mapNodes.push({i,x:20+xoff+cw*(c+.5),y:top+ch*(r+.5),s:sz})}
+ return mapNodes}
+function drawMap(){const ns=mapLayout(),nx=nextStage();
+ // 糸の道
+ ctx.save();ctx.strokeStyle=C.rd;ctx.lineWidth=3;ctx.setLineDash([10,7]);ctx.beginPath();ns.forEach((q,i)=>i?ctx.lineTo(q.x,q.y):ctx.moveTo(q.x,q.y));ctx.stroke();ctx.restore();
+ ns.forEach(q=>{const st=STAGES[q.i],done=!!S.cleared[st.id],cur=q.i===nx,s=q.s;
+  ctx.save();ctx.fillStyle=done?'#FBF8F1':C.fab;rr(ctx,q.x-s/2,q.y-s/2,s,s,12);ctx.fill();
+  ctx.setLineDash(done?[]:[6,5]);ctx.strokeStyle=done?C.nv:C.blue;ctx.lineWidth=done?4:2;rr(ctx,q.x-s/2,q.y-s/2,s,s,12);ctx.stroke();ctx.setLineDash([]);
+  if(done){xrow(q.x-s/2+8,q.y-s/2+8,q.x+s/2-8,q.y-s/2+8,8,C.rd,2);xrow(q.x-s/2+8,q.y+s/2-8,q.x+s/2-8,q.y+s/2-8,8,C.rd,2)}
+  ctx.restore();
+  // 図案（済＝色糸で・まだ＝青い下絵）
+  drawMotif(st,q.x,q.y-s*.08,s*.62,done||cur);
+  text((q.i+1)+'. '+st.nm,q.x,q.y+s*.34,Math.max(12,Math.min(18,s*.1)),done?C.nvD:cur?C.rd:C.blue,'center',900,C.lin);
+  if(done){const n=S.stars[st.id]||0;text('★'.repeat(n)+'☆'.repeat(3-n),q.x,q.y-s*.42,Math.max(12,s*.1),C.rd,'center',900,C.lin)}
+  if(cur){const pl=.5+.5*Math.sin(T*4);ctx.save();ctx.globalAlpha=pl;ctx.strokeStyle=C.rd;ctx.lineWidth=4;ctx.setLineDash([9,6]);rr(ctx,q.x-s/2-8,q.y-s/2-8,s+16,s+16,16);ctx.stroke();ctx.restore();
+   const b=Math.sin(T*5)*5;text('▼ ここ',q.x,q.y-s/2-20+b,Math.max(13,s*.1),C.rd,'center',900,C.lin)}
+  q.r=s*.55})}
+function drawMotif(st,x,y,s,color){if(st.motif==='boss'){const ks=['H2O','CO2','Cu'];ks.forEach((k,i)=>drawMolAt(k,x+(i-1)*s*.34,y+(i===1?-s*.12:s*.08),s*.1,color));return}
+ drawMolAt(st.motif,x,y,Math.min(s*.2,s/(span(st.motif).w*1.9)),color)}
+function drawMolAt(k,x,y,ar,color){const u=ar*1.72;MOL[k].a.slice().sort((p,q)=>p[2]-q[2]).forEach(a=>{if(color)atom(a[0],x+a[1]*u,y+a[2]*u,ar);else{ctx.save();ctx.setLineDash([3,3]);ctx.strokeStyle=C.blue;ctx.lineWidth=1.6;ctx.beginPath();ctx.arc(x+a[1]*u,y+a[2]*u,ar*.95,0,Math.PI*2);ctx.stroke();ctx.restore();text(a[0],x+a[1]*u,y+a[2]*u+1,ar*.8,C.blue,'center',800)}})}
+
+/* ---------- 表紙の絵 ---------- */
+let tAtoms=[];
+function drawTitleArt(){const u=Math.min(W,H);
+ if(!tAtoms.length){const els=['H','O','C','Cu','Fe','S','Na','Cl','Mg'];for(let i=0;i<(LAND?22:14);i++){const far=Math.random()<.6;tAtoms.push({el:els[i%els.length],x:far?rnd(0,1):(Math.random()<.5?rnd(.02,.14):rnd(.86,.98)),y:rnd(0,1),r:far?rnd(.018,.03):rnd(.028,.042),vy:rnd(.01,.03),ph:rnd(0,6),far})}}
+ tAtoms.forEach(a=>{if(a.far){ctx.globalAlpha=.35;atom(a.el,a.x*W,a.y*H,a.r*u*.7);ctx.globalAlpha=1}});
+ // 大きな天秤（刺繍枠の皿）
+ const cx=W/2,cy=LAND?H*.64:H*.6,L=LAND?W*.3:W*.28,R=LAND?Math.min(W*.12,H*.17):W*.19,ang=Math.sin(T*.9)*.06;
+ const ex=Math.cos(ang)*L,ey=Math.sin(ang)*L;const P0=[cx-ex,cy-R*1.5-ey],P1=[cx+ex,cy-R*1.5+ey];
+ xrow(cx,cy-R*1.5,cx,H-30,10,'rgba(46,64,87,.25)',2.4);
+ [[P0,-1],[P1,1]].forEach(([p,sd])=>{const hx=p[0],hy=p[1]+R*1.3;ctx.strokeStyle=C.nv;ctx.lineWidth=1.8;ctx.beginPath();ctx.moveTo(p[0],p[1]);ctx.lineTo(hx-R*.5,hy-R*.86);ctx.moveTo(p[0],p[1]);ctx.lineTo(hx+R*.5,hy-R*.86);ctx.stroke();
+  ctx.beginPath();ctx.arc(hx,hy,R,0,Math.PI*2);ctx.fillStyle=FAB||C.fab;ctx.fill();ctx.lineWidth=R*.09;ctx.strokeStyle=C.woodD;ctx.beginPath();ctx.arc(hx,hy,R*1.05,0,Math.PI*2);ctx.stroke();ctx.lineWidth=R*.06;ctx.strokeStyle=C.wood;ctx.stroke();
+  const ar=R*.15,uu=ar*1.72;const ks=sd<0?[['H2',-.4,-.3],['H2',.4,-.3],['O2',0,.36]]:[['H2O',-.42,0],['H2O',.42,0]];ks.forEach(([k,dx,dy])=>{MOL[k].a.forEach(a=>atom(a[0],hx+dx*R+a[1]*uu,hy+dy*R+a[2]*uu+Math.sin(T*1.5+dx*4)*2,ar))});
+  text(sd<0?'反応前':'反応後',hx,hy+R*1.3,Math.max(14,R*.2),sd<0?C.nv:C.rd,'center',900,C.lin)});
+ xrow(P0[0],P0[1],P1[0],P1[1],10,C.nv,3.2);xrow(P0[0],P0[1]+8,P1[0],P1[1]+8,10,C.rd,2.2);
+ drawNeedleAt(cx,cy-R*1.5,-Math.PI/2+ang*1.4,R*.9);ctx.fillStyle=C.gd;ctx.beginPath();ctx.arc(cx,cy-R*1.5,8,0,Math.PI*2);ctx.fill();
+ tAtoms.forEach(a=>{if(!a.far)atom(a.el,a.x*W,a.y*H,a.r*u)})}
+
+/* ---------- 演出 ---------- */
+function burst(x,y,n,cols){if(RM)n=Math.min(n,6);for(let i=0;i<n;i++){const a=rnd(0,Math.PI*2),s=rnd(80,300);parts.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s-80,l:rnd(.5,1.1),c:cols[i%cols.length],s:rnd(5,10)})}}
+function confetti(){const n=RM?12:90;for(let i=0;i<n;i++)parts.push({x:rnd(0,W),y:rnd(-40,-5),vx:rnd(-50,50),vy:rnd(60,200),l:rnd(1.6,2.8),c:[C.rd,C.nv,C.gd,'#2FA36B'][i%4],s:rnd(7,12),fw:1})}
+function floatT(t,x,y,col,sz){floats.push({t,x,y,c:col||C.nv,s:sz||20,l:1.3,a:0})}
+function buzz(ms){try{if(!RM&&navigator.vibrate)navigator.vibrate(ms)}catch(e){}}
+function doFlash(a,c){if(RM)a*=.35;flash=Math.max(flash,a);flashC=c||C.gdL}
+function bigStamp(t,sub,col,sz){stamp={t,sub,c:col||C.rd,a:0,z:sz||1}}
+function tierOf(n){let k=0;TIERS.forEach((t,i)=>{if(n>=t)k=i+1});return k}
+function drawStamp(){if(!stamp)return;const a=stamp.a,sc=a<.18?2.4-1.4*(a/.18):1+Math.max(0,.06*Math.sin((a-.18)*20)*Math.exp(-(a-.18)*6));const al=a>1.1?Math.max(0,1-(a-1.1)/.3):1;
+ const x=W/2,y=LAND?H*.36:H*.42,fs=Math.min(W*.14,LAND?110:76)*stamp.z;ctx.save();ctx.globalAlpha=al;ctx.translate(x,y);ctx.rotate(-.07);ctx.scale(sc,sc);
+ ctx.font='900 '+fs+'px '+HD;const tw=ctx.measureText(stamp.t).width,pw=tw+fs*.8,ph=fs*1.4+(stamp.sub?fs*.42:0);
+ ctx.fillStyle=stamp.c;rr(ctx,-pw/2,-fs*.7,pw,ph,fs*.18);ctx.fill();ctx.strokeStyle=C.lin;ctx.lineWidth=Math.max(2.5,fs*.04);ctx.setLineDash([fs*.12,fs*.08]);rr(ctx,-pw/2+fs*.12,-fs*.58,pw-fs*.24,ph-fs*.24,fs*.12);ctx.stroke();ctx.setLineDash([]);
+ text(stamp.t,0,0,fs,C.lin);if(stamp.sub)text(stamp.sub,0,fs*.74,fs*.3,C.lin,'center',900);ctx.restore()}
+function drawCombo(){if(scene!=='play'||!G||G.combo<2)return;const n=G.combo,k=tierOf(n),pop=1+comboPop*.6;const o=geo();
+ const x=LAND?W*.5:W*.085,y=LAND?o.piv[1]+o.Rh*(G.boss?1.9:1.75):o.mid+Math.min(W*.075,40)+72,fs=Math.max(22,Math.min(46,W*.035))*(1+k*.12)*pop*(LAND?1:.62);
+ const col=k>=3?C.gd:k>=2?C.rd:C.nv;ctx.save();ctx.translate(x,y);
+ if(k>=2&&!RM){ctx.save();ctx.rotate(T*.6);ctx.fillStyle=k>=3?'rgba(201,154,62,.2)':'rgba(228,87,46,.14)';for(let i=0;i<12;i++){ctx.rotate(Math.PI/6);ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(fs*2.2,-fs*.2);ctx.lineTo(fs*2.2,fs*.2);ctx.fill()}ctx.restore()}
+ ctx.rotate(-.06);text(n+'',0,0,fs*1.3,col,'center',900,C.lin);text('連',fs*.9,fs*.28,fs*.55,col,'center',900,C.lin);ctx.restore()}
+
+/* ================= 遊び：ほどく・積み分ける ================= */
+function unstitch(side,m){const o=geo();const pl=G.piles[side];const as=MOL[m.k].a;
+ if(pl.length+as.length>10){SFX.bad();shake=3;strip('糸だまりが<b>いっぱい</b>。先に原子を柱へ積もう',true);buzz(30);return}
+ const ar=molAR(o,side),u=ar*1.72,[mx,my]=molPos(o,side,m);
+ G.hoops[side].mols.splice(G.hoops[side].mols.indexOf(m),1);S.seen[m.k]=1;SFX.snap();burst(mx,my,RM?4:12,[C.rd,C.lin,C.gd]);shake=Math.max(shake,2);
+ as.forEach((a,i)=>{const it={el:a[0],arr:false};pl.push(it);const k=pl.length-1;const [tx,ty]=pileSlot(o,side,k);flyers.push({el:a[0],x0:mx+a[1]*u,y0:my+a[2]*u,x1:tx,y1:ty,t:-i*.06,d:.42,r:o.pa/2,arc:50,done:()=>{it.arr=true;SFX.tick()}})});
+ if(G.tut===1){G.tut=2;strip('糸だまりの<b>いちばん上</b>の原子を、同じ種類の<b>柱</b>へドラッグ')}
+ floatT(MOL[m.k].f+' をほどいた',mx,my-ar*2.5,C.nv,Math.max(15,ar*1.2));
+ save();checkState()}
+function takeRun(side){const pl=G.piles[side];if(!pl.length)return null;const top=pl[pl.length-1];if(!top.arr)return null;const run=[];while(pl.length&&pl[pl.length-1].el===top.el&&pl[pl.length-1].arr)run.push(pl.pop());return run}
+function dropRun(x,y){const o=geo(),d=drag;drag=null;let ci=-1;for(let i=0;i<G.cols.length;i++){if(Math.abs(x-colX(o,i))<o.pw/2&&inColY(o,y)){ci=i;break}}
+ const back=()=>{const pl=G.piles[d.side];d.run.slice().reverse().forEach(p=>{p.arr=false;pl.push(p);const k=pl.length-1;const [tx,ty]=pileSlot(o,d.side,k);flyers.push({el:p.el,x0:x,y0:y,x1:tx,y1:ty,t:0,d:.25,r:o.pa/2,arc:20,done:()=>{p.arr=true}})})};
+ if(ci<0){back();return}
+ const c=G.cols[ci];
+ if(c.el!==d.run[0].el){back();G.miss++;S.miss++;comboBreak();SFX.bad();shake=5;buzz(40);strip('それは <b>'+d.run[0].el+'（'+EL[d.run[0].el].nm+'）</b>。'+c.el+' の柱には のらない',true);floatT('ちがう柱',x,y-30,C.rd,20);return}
+ // 正しい柱
+ const side=d.side,n=d.run.length;const tb=tierOf(G.combo);
+ d.run.forEach((p,j)=>{const k=c[side]+j;const [tx,ty]=slot(o,ci,side,k);flyers.push({el:p.el,x0:x,y0:y-j*o.pa*.9,x1:tx,y1:ty,t:0,d:.16+j*.03,r:o.a/2,arc:14,done:()=>{}})});
+ c[side]+=n;if(side==='pre')c.pp=1;else c.qp=1;
+ G.combo+=n;G.maxCombo=Math.max(G.maxCombo,G.combo);S.maxCombo=Math.max(S.maxCombo,G.combo);S.sorted+=n;
+ for(let j=0;j<n;j++)setTimeout(()=>SFX.put(Math.min(11,G?G.combo-n+j:0)),j*70);
+ comboPop=1;shake=Math.max(shake,RM?0:Math.min(6,1.5+G.combo*.25));buzz(10);
+ const [fx,fy]=slot(o,ci,side,c[side]-1);burst(fx,fy,RM?4:10+n*3,[EL[c.el].c,C.gd,C.lin]);floatT('+'+n+' '+c.el,fx,fy-o.a*.8,side==='pre'?C.nv:C.rd,Math.max(18,o.a*.55));
+ if(tierOf(G.combo)>tb){doFlash(.3);if(G.combo>=5)bigStamp(G.combo+'連！','積み分け名人',G.combo>=10?C.gd:C.rd,.6);SFX.pair()}
+ if(G.tut===2){G.tut=3;strip('反応前も反応後も、原子を<b>ぜんぶ</b>柱へ。天秤の針を見よう')}
+ checkPairs();checkState()}
+function comboBreak(){if(G.combo>=2){const nx=TIERS.find(t=>t>G.combo);floatT(nx&&nx-G.combo===1?'あと1つで '+nx+'連だった！':G.combo+'連で とぎれた',W/2,LAND?H*.3:H*.45,C.rd,22)}G.combo=0}
+function checkPairs(){G.cols.forEach(c=>{const was=c.done;c.done=c.pre===c.post&&c.pre>0&&pending('pre',c.el)===0&&pending('post',c.el)===0&&!skyHas(c.el);
+ if(c.done&&!was){SFX.pair();doFlash(.22);const o=geo(),i=G.cols.indexOf(c);const [x,y]=LAND?[colX(o,i),o.base-o.a*c.pre]:[colX(o,i),o.mid];burst(x,y,RM?6:26,[C.gd,C.gdL,EL[c.el].c]);floatT(c.el+' そろった！',x,y-30,C.gd,Math.max(20,o.a*.6))}})}
+function skyHas(el){return G.sky.some(m=>m.esc&&MOL[m.k].a.some(a=>a[0]===el))}
+function allOut(){return !G.hoops.pre.mols.length&&!G.hoops.post.mols.length&&!G.piles.pre.length&&!G.piles.post.length&&!flyers.length&&!(drag&&drag.kind==='run')}
+function checkState(){if(!G||G.phase==='balanced'||G.phase==='over')return;const st=STAGES[STI];
+ G.allOut=allOut();if(!G.allOut)return;
+ const eq=G.cols.every(c=>c.pre===c.post);
+ if(eq&&G.cols.some(c=>c.pre>0)){balanced();return}
+ // ずれている：ニアミス
+ const miss=G.cols.filter(c=>c.pre!==c.post).map(c=>c.el+Math.abs(c.pre-c.post)+'個');const [a,b]=sums();const d=Math.abs(b-a);
+ if(st.pat){G.phase='play';strip('あと <b>'+miss.join('・')+'</b>（重さ '+fw(d)+'）。<b>図案</b>から縫い足そう');return}
+ if(!G.nearShown){G.nearShown=true;G.phase='near';SFX.creak();shake=4;
+  if(st.escape)strip('あと <b>'+miss.join('・')+'</b>（重さ '+fw(d)+'）で つりあうのに…。足りない原子は <b>どこへ</b>？',true);
+  else if(st.air)strip('反応後のほうが <b>'+fw(d)+'</b> 重い。<b>O</b> はどこから来た？ <b>空気</b>の中から反応前の枠へ',true);
+  else strip('あと <b>'+miss.join('・')+'</b>',true)}}
+function balanced(){const st=STAGES[STI];G.phase='balanced';G.needleV+=(RM?0:2)*(Math.random()<.5?-1:1);
+ SFX.fan();doFlash(.55);shake=RM?0:10;buzz(40);bigStamp('つりあった！',G.boss?('大作 '+(G.si+1)+' / 3'):'原子の種類と数が同じ',C.rd);confetti();
+ const o=geo();G.cols.forEach((c,i)=>setTimeout(()=>{burst(colX(o,i),LAND?o.base-o.a*2:o.mid,RM?4:22,[C.gd,EL[c.el].c,C.lin]);SFX.put(4+i)},200+i*140));
+ if(G.boss){if(G.si<2){setTimeout(()=>{if(G&&G.phase==='balanced'&&scene==='play'){G.si++;const sub=st.subs[G.si];flyers.length=0;setupRound(sub);hudBoss();strip('つぎ：<b>'+sub.eq+'</b>')}},RM?600:1500)}else{G.phase='over';setTimeout(bossWin,RM?600:1600)}return}
+ setTimeout(()=>{if(G&&scene==='play')stageResult()},RM?700:1700)}
+
+/* ---------- 空の分子（外へ出た気体・空気） ---------- */
+function dropSky(x,y){const o=geo(),m=drag.m,st=STAGES[STI];let side=null;['pre','post'].forEach(s=>{const h=o.hoop[s];if(Math.hypot(x-h[0],y-h[1])<o.Rh*1.15)side=s});
+ if(!side){return}
+ if(m.k==='N2'){SFX.bad();shake=4;G.miss++;comboBreak();strip('<b>窒素</b>はマグネシウムと結び付いていない。反応後の枠に N は無い',true);return}
+ if(st.escape){if(side!=='post'){SFX.bad();strip('この CO₂ は<b>反応後</b>の容器から出ていったもの',true);return}
+  G.sky.splice(G.sky.indexOf(m),1);const mm={k:m.k,id:Math.random(),ph:0,x:0,y:0};G.hoops.post.mols.push(mm);placeMols(G.hoops.post.mols);SFX.air();doFlash(.25);
+  strip('外へ出た CO₂ も<b>合わせて</b>数えよう。タップしてほどく');if(!S.rules.open){S.rules.open=1;earn(30,'rule')}}
+ else if(st.air){if(side!=='pre'){SFX.bad();strip('反応の<b>前</b>から入ってきた酸素。<b>反応前</b>の枠へ',true);return}
+  G.sky.splice(G.sky.indexOf(m),1);G.hoops.pre.mols.push({k:'O2',id:Math.random(),ph:0,x:0,y:0});placeMols(G.hoops.pre.mols);SFX.air();doFlash(.25);
+  strip('空気中の <b>O₂</b> が マグネシウムと結び付いた。ほどいて数えよう');if(!S.rules.mg){S.rules.mg=1;earn(30,'rule')}}
+ G.phase='play';G.nearShown=false;save()}
+
+/* ---------- 図案から縫い足す ---------- */
+function stitchPat(k){if(!G||G.phase==='balanced')return;const need=elemsOf(G.def.pre),have={};G.cols.forEach(c=>have[c.el]=c.post);
+ G.hoops.post.mols.forEach(m=>MOL[m.k].a.forEach(a=>have[a[0]]=(have[a[0]]||0)+1));G.piles.post.forEach(p=>have[p.el]=(have[p.el]||0)+1);
+ const add={};MOL[k].a.forEach(a=>add[a[0]]=(add[a[0]]||0)+1);
+ const over=Object.keys(add).find(e=>(have[e]||0)+add[e]>(need[e]||0));
+ if(over){SFX.bad();shake=5;buzz(40);G.miss++;S.miss++;comboBreak();strip('反応前の <b>'+over+'</b> は '+(need[over]||0)+'個だけ。原子は<b>新しく生まれない</b>',true);floatT('糸が足りない',W/2,H*.45,C.rd,24);return}
+ if(G.hoops.post.mols.length>=6){strip('先に 縫った分子を<b>ほどこう</b>',true);return}
+ G.hoops.post.mols.push({k,id:Math.random(),ph:rnd(0,6),x:0,y:0});placeMols(G.hoops.post.mols);SFX.snip();SFX.put(3);doFlash(.15,'#fff');
+ const o=geo();burst(o.hoop.post[0],o.hoop.post[1],RM?4:16,[C.rd,C.gd,C.lin]);floatT(MOL[k].f+' を縫った',o.hoop.post[0],o.hoop.post[1]-o.Rh*.8,C.rd,20);
+ G.patUsed[k]=(G.patUsed[k]||0)+1;G.allOut=false;refreshPat()}
+function refreshPat(){const st=G?STAGES[STI]:null,bar=$('patBar');if(!st||!st.pat||scene!=='play'){bar.classList.add('hidden');return}
+ bar.innerHTML=st.pat.map(k=>'<button class="patch rd" data-k="'+k+'">'+molSvg(k,40)+'＋'+MOL[k].f+'</button>').join('');bar.classList.remove('hidden');patXY='';
+ bar.querySelectorAll('button').forEach(b=>b.onclick=()=>{AU.init();stitchPat(b.dataset.k)});placePat()}
+let patXY='';
+function placePat(){const bar=$('patBar');if(!G||bar.classList.contains('hidden'))return;const o=geo();const h=o.hoop.post;const k=Math.round(h[0])+','+Math.round(h[1]+o.Rh*.36);if(k===patXY)return;patXY=k;
+ bar.style.left=Math.round(h[0])+'px';bar.style.top=Math.round(h[1]+o.Rh*.36)+'px'}
+function molSvg(k,sz){const a=MOL[k].a,s=span(k),u=Math.min(sz/(s.w+.4),sz/(s.h+.4))*.95,r=u*.58;let x0=9,y0=9,x1=-9,y1=-9;a.forEach(q=>{x0=Math.min(x0,q[1]);x1=Math.max(x1,q[1]);y0=Math.min(y0,q[2]);y1=Math.max(y1,q[2])});
+ const cx=sz/2-(x0+x1)/2*u,cy=sz/2-(y0+y1)/2*u;
+ return'<svg viewBox="0 0 '+sz+' '+sz+'">'+a.slice().sort((p,q)=>p[2]-q[2]).map(q=>{const e=EL[q[0]],x=cx+q[1]*u,y=cy+q[2]*u;return'<circle cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="'+r.toFixed(1)+'" fill="'+e.c+'" stroke="'+mix(e.c,'k',.35)+'" stroke-width="'+(r*.1).toFixed(1)+'" stroke-dasharray="'+(r*.3).toFixed(1)+' '+(r*.12).toFixed(1)+'"/><circle cx="'+(x-r*.35).toFixed(1)+'" cy="'+(y-r*.35).toFixed(1)+'" r="'+(r*.28).toFixed(1)+'" fill="rgba(255,255,255,.45)"/><text x="'+x.toFixed(1)+'" y="'+(y+r*.36).toFixed(1)+'" text-anchor="middle" font-size="'+(r*(q[0].length>1?.9:1.1)).toFixed(1)+'" font-weight="900" fill="'+e.t+'">'+q[0]+'</text>'}).join('')+'</svg>'}
+
+/* ================= 1枚の図案の流れ ================= */
+function startStage(i){STI=i;const st=STAGES[i];scene='play';flyers.length=0;parts.length=0;
+ G={st,si:0,combo:0,maxCombo:0,miss:0,t:0,boss:!!st.boss,timeLeft:st.time||0,tut:st.tut&&!S.cleared[st.id]?1:0,phase:'intro'};
+ setupRound(st.boss?st.subs[0]:st);G.phase='intro';setUI();hud();
+ const eq=st.boss?st.subs[0].eq:st.eq;
+ dlg('<div class="nh">'+(i+1)+'. '+esc(st.nm)+'<small>見本布の図案</small></div><div class="bd" style="text-align:center">'+
+  (st.boss?'<p>3つの反応を <b>'+st.time+'秒</b> で積み分けよう。</p>':'<p>'+esc(st.rx)+'</p>')+'<span class="eq">'+esc(eq)+'</span>'+
+  (st.sealNote&&SEALPAIR?'<p style="font-size:.9em">前の回で封印した組み合わせの反応</p>':'')+
+  (st.pat?'<p>反応後の枠は まだ空。<b>図案から縫い足して</b>、反応前とつりあわせよう。</p>':'')+
+  (st.escape?'<p>この容器には <b>ふたがない</b>。</p>':'')+(st.air?'<p>マグネシウムを <b>空気中で</b> 燃やした。</p>':'')+
+  '</div><div class="row"><button class="patch rd" id="goB">縫いはじめる</button></div>');
+ $('goB').onclick=()=>{AU.init();SFX.drum();closeDlg();G.phase='play';
+  if(G.tut===1)strip('枠の中の<b>分子をタップ</b>すると、糸がほどけて原子になる');
+  else if(st.pat)strip('反応前の分子をほどいて柱へ。反応後は <b>図案</b>から縫い足す');
+  else if(st.escape)strip('ふたのない容器。反応後の枠から <b>何かが出ていく</b>…');
+  else if(st.air)strip('反応前はマグネシウムだけ。ほどいて柱へ積もう');
+  else if(st.boss)strip('<b>'+eq+'</b>');
+  else strip('分子をほどいて、原子を<b>種類ごとの柱</b>へ');
+  if(st.escape){setTimeout(()=>{if(G&&scene==='play')launchEscape()},RM?300:900)}}}
+function launchEscape(){const m=G.hoops.post.mols.find(q=>q.leaving);if(!m)return;m.leaving=.01;SFX.air();G.escaping=m}
+function hud(){const st=STAGES[STI];const h=$('hudC');if(scene!=='play'||W<640){h.classList.add('hidden');return}h.classList.remove('hidden');
+ h.innerHTML=(STI+1)+'. '+esc(st.nm)+(G&&G.boss?'　<em>'+(G.si+1)+' / 3</em>':'')}
+function hudBoss(){hud()}
+function stageResult(){const st=STAGES[STI];const first=!S.cleared[st.id];S.cleared[st.id]=1;S.started=true;
+ const time=G.t,stars=[['まちがい 0',G.miss===0],['連続 '+Math.max(5,Math.round(totalAtoms()*.6))+'以上',G.maxCombo>=Math.max(5,Math.round(totalAtoms()*.6))],['目安 '+st.tgt+'秒以内',time<=st.tgt]];
+ const sc=stars.filter(s=>s[1]).length;S.stars[st.id]=Math.max(S.stars[st.id]||0,sc);if(S.best[st.id]==null||time<S.best[st.id])S.best[st.id]=time;
+ if(G.miss===0&&!S.first[st.id]){S.first[st.id]=1;earn(10,'first-try')}
+ save();
+ let h='<div class="nh rd">つりあった！<small>'+esc(st.nm)+'</small></div><div class="bd"><span class="eq">'+esc(G.eq)+'</span>'+colTable()+
+  '<div class="stars">'+stars.map((s,i)=>'<div class="'+(s[1]?'on':'')+'" style="animation-delay:'+(.35+i*.38)+'s">★ '+s[0]+'</div>').join('')+'</div>'+
+  '<div class="rec"><span>かかった時間</span><span>'+fmtT(time)+'</span><span>最大連続</span><span>'+G.maxCombo+'</span><span>まちがい</span><span>'+G.miss+'回</span></div></div>'+
+  '<div class="take">'+st.take+'</div><div class="row"><button class="patch rd" id="rNext">'+(STI+1<STAGES.length?'次の図案へ ▶':'仕上げへ ▶')+'</button><button class="patch ln sm" id="rRe">もう一度</button><button class="patch sm" id="rMap">見本布</button></div>';
+ dlg(h);stars.forEach((s,i)=>setTimeout(()=>{if(s[1]){SFX.drum();mbox(SCALE[3+i*2],.1)}else SFX.tap()},(RM?100:350)+i*380));
+ $('rNext').onclick=()=>{SFX.tap();closeDlg();const nx=nextStage();if(nx<0)toMap();else startStage(nx)};
+ $('rRe').onclick=()=>{SFX.tap();closeDlg();startStage(STI)};$('rMap').onclick=()=>{SFX.tap();closeDlg();toMap()}}
+function totalAtoms(){let n=0;G.cols.forEach(c=>n+=c.pre+c.post);return n}
+function colTable(){return'<div style="display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin:6px 0">'+G.cols.map(c=>'<span style="display:inline-block;padding:4px 10px;border-radius:8px;background:#FBF8F1;box-shadow:inset 0 0 0 2px #2E4057;font-weight:900">'+c.el+'　前 '+c.pre+' ＝ 後 '+c.post+'</span>').join('')+'</div>'}
+function bossWin(){const st=STAGES[STI];S.cleared[st.id]=1;S.started=true;S.done=true;const used=st.time-G.timeLeft;if(S.bossBest==null||used<S.bossBest)S.bossBest=used;S.stars[st.id]=Math.max(S.stars[st.id]||0,G.miss===0?3:G.miss<3?2:1);
+ earn(100,'boss',{id:GID+'-taisaku'});save();confetti();setTimeout(confetti,500);
+ setTimeout(()=>{const fin=()=>showClear();if(window.Zukan&&Zukan.mainClear)Zukan.mainClear({onClose:fin});else fin()},RM?500:1800)}
+function bossFail(){G.phase='over';SFX.bad();dlg('<div class="nh rd">時間切れ<small>見本布の大作</small></div><div class="bd" style="text-align:center"><p>あと少し！ 糸だまりの<b>いちばん上がそろっている</b>ときは、まとめて運べる。</p></div><div class="row"><button class="patch rd" id="bRe">もう一度</button><button class="patch sm" id="bMap">見本布</button></div>');
+ $('bRe').onclick=()=>{closeDlg();startStage(STI)};$('bMap').onclick=()=>{closeDlg();toMap()}}
+function earn(n,why,opt){try{if(window.Zukan&&Zukan.earn)Zukan.earn(n,why,Object.assign({x:W/2,y:H*.4},opt||{}))}catch(e){}refreshKK()}
+
+/* ================= 毎フレーム ================= */
+function update(dt){T+=dt;
+ for(let i=parts.length-1;i>=0;i--){const q=parts[i];q.l-=dt;q.x+=q.vx*dt;q.y+=q.vy*dt;q.vy+=(q.fw?60:520)*dt;q.vx*=.985;if(q.l<=0)parts.splice(i,1)}
+ for(let i=floats.length-1;i>=0;i--){const f=floats[i];f.l-=dt;f.a+=dt;f.y-=(f.a<.12?160:40)*dt;if(f.l<=0)floats.splice(i,1)}
+ flash=Math.max(0,flash-dt*2.6);comboPop=Math.max(0,comboPop-dt*4);if(stamp){stamp.a+=dt;if(stamp.a>1.4)stamp=null}if(shake>0)shake=Math.max(0,shake-dt*22);
+ for(let i=flyers.length-1;i>=0;i--){const f=flyers[i];f.t+=dt;if(f.t>=f.d){flyers.splice(i,1);f.done&&f.done();if(scene==='play'&&G)checkState()}}
+ if(scene==='title'||scene==='clear'){tAtoms.forEach(a=>{a.y-=a.vy*dt;a.x+=Math.sin(T*.7+a.ph)*.004*dt;if(a.y<-.08){a.y=1.08;a.x=rnd(0,1)}})}
+ if(scene==='play'&&G){if(G.phase==='play'||G.phase==='near'){G.t+=dt;S.t+=dt}
+  updNeedle(dt);G.cols.forEach(c=>{c.pp=Math.max(0,c.pp-dt*4);c.qp=Math.max(0,c.qp-dt*4)});
+  G.hoops.post.mols.forEach(m=>{if(m.leaving&&m.leaving<1&&G.escaping===m){m.leaving=Math.min(1,m.leaving+dt*.55);if(m.leaving>=1){G.hoops.post.mols.splice(G.hoops.post.mols.indexOf(m),1);placeMols(G.hoops.post.mols);G.sky.push({k:m.k,x:.72,y:.5,vx:.012,ph:1,esc:1});G.escaping=null;floatT('CO₂ が 外へ出ていった',W*.7,geo().skyY+40,C.rd,20);SFX.air()}}});
+  G.sky.forEach(m=>{m.x+=m.vx*dt});
+  if(G.boss&&G.phase==='play'){G.timeLeft-=dt;if(G.timeLeft<=0){G.timeLeft=0;bossFail()}}
+ }}
+let decor=[];
+
+/* ================= 操作 ================= */
+function pt(e){return[e.clientX,e.clientY]}
+cv.addEventListener('pointerdown',e=>{AU.init();const [x,y]=pt(e);
+ if(scene==='map'){const q=mapNodes.find(q=>Math.hypot(q.x-x,q.y-y)<q.r);if(q){const st=STAGES[q.i],nx=nextStage();if(S.cleared[st.id]||q.i===nx){SFX.drum();startStage(q.i)}else{SFX.bad();strip('まだ下絵のまま。<b>'+STAGES[nx].nm+'</b>から',true)}}return}
+ if(scene!=='play'||!G||G.phase==='intro'||G.phase==='balanced'||G.phase==='over')return;
+ cv.setPointerCapture&&cv.setPointerCapture(e.pointerId);const o=geo();
+ // 糸だまり
+ for(const side of ['pre','post']){const p=o.pile[side],w=o.pa*1.35+16;const top=Math.min(p.top,p.base-o.pa*10*.98-6)-10;if(Math.abs(x-p.x)<w/2+6&&y>top&&y<p.base+26){const run=takeRun(side);if(run){drag={kind:'run',side,run,x,y};SFX.tap();return}}}
+ // 空の分子
+ if(G.skyOn){for(const m of G.sky){const [sx,sy]=skyPos(m);if(Math.hypot(x-sx,y-sy)<Math.max(34,o.Rh*.3)){drag={kind:'sky',m,x,y};SFX.tap();return}}}
+ // 分子をほどく
+ for(const side of ['pre','post']){const ar=molAR(o,side),u=ar*1.72;const ms=G.hoops[side].mols;for(let i=ms.length-1;i>=0;i--){const m=ms[i];if(m.leaving)continue;const [mx,my]=molPos(o,side,m),s=span(m.k);
+   if(Math.abs(x-mx)<s.w*u/2+12&&Math.abs(y-my)<s.h*u/2+12){unstitch(side,m);return}}}
+});
+cv.addEventListener('pointermove',e=>{if(!drag)return;const [x,y]=pt(e);drag.x=x;drag.y=y});
+function endDrag(e){if(!drag)return;const [x,y]=pt(e);const d=drag;
+ if(d.kind==='run'){dropRun(x,y)}else if(d.kind==='sky'){dropSky(x,y)}
+ drag=null;if(G)checkState()}
+cv.addEventListener('pointerup',endDrag);cv.addEventListener('pointercancel',endDrag);
+
+/* ================= DOM ================= */
+function strip(h,warn){const s=$('strip');if(!h){s.classList.add('hidden');return}s.innerHTML=h;s.classList.toggle('warn',!!warn);if(scene==='play'||scene==='map')s.classList.remove('hidden');placeStrip()}
+function placeStrip(){const s=$('strip');s.style.top=(LAND?(G&&G.skyOn&&scene==='play'?HUDY-2:HUDY):62)+'px';if(LAND&&G&&G.skyOn&&scene==='play')s.style.top=(HUDY-2)+'px'}
+function dlg(h){$('dlgBox').innerHTML=h;$('dlg').classList.remove('hidden');$('dlgBox').scrollTop=0}
+function closeDlg(){$('dlg').classList.add('hidden')}
+function refreshKK(){const z=window.Zukan&&Zukan.state?Zukan.state():null;$('kk').style.display=z&&scene!=='title'?'':'none';if(z)$('kkN').textContent=z.kakera}
+function setUI(){const inG=scene==='play'||scene==='map';$('topR').classList.toggle('hidden',!(inG||scene==='test'||scene==='clear'||scene==='title'));$('bBook2').classList.toggle('hidden',scene==='test'||scene==='title');
+ const b=$('bBack');const on=scene!=='title'||INHUB;b.classList.toggle('hidden',!on);b.innerHTML='<b>◀</b>'+(scene==='title'?'一覧へ':'もどる');
+ $('title').classList.toggle('hidden',scene!=='title');$('test').classList.toggle('hidden',scene!=='test');$('clear').classList.toggle('hidden',scene!=='clear');
+ if(!inG){$('strip').classList.add('hidden')}if(scene!=='play')$('patBar').classList.add('hidden');hud();
+ $('bSnd').classList.toggle('off',!AU.on);refreshKK()}
+$('bSnd').onclick=()=>{AU.init();AU.on=!AU.on;S.sound=AU.on;save();$('bSnd').classList.toggle('off',!AU.on);if(AU.on)SFX.pair()};
+$('bBack').onclick=()=>{AU.init();SFX.tap();
+ if(scene==='title'||(scene==='test'&&TEST)){try{window.parent.postMessage({type:'rika-close-game'},'*')}catch(e){}return}
+ $('confTx').textContent=scene==='play'?'この図案は、次はさいしょから。縫い終えた図案と★はそのまま。':scene==='test'?'確認テストは、次はさいしょから。':'タイトルにもどります。';
+ $('confGo').textContent=scene==='play'?'見本布へ':'タイトルへ';$('conf').classList.remove('hidden')};
+$('confNo').onclick=()=>{$('conf').classList.add('hidden')};
+$('confGo').onclick=()=>{$('conf').classList.add('hidden');closeDlg();if(scene==='play')toMap();else toTitle()};
+function openBook(){$('bookCards').innerHTML=BOOK_ORDER.map(k=>{const got=!!S.seen[k];return'<div class="card'+(got?'':' no')+'">'+(got?molSvg(k,76):'<svg viewBox="0 0 76 76"><text x="38" y="48" text-anchor="middle" font-size="30" fill="#b9ab8b">？</text></svg>')+'<b>'+(got?esc(MOL[k].f):'？？？')+'</b>'+(got?esc(MOL[k].nm):'まだ ほどいていない')+'</div>'}).join('');$('book').classList.remove('hidden')}
+$('bookClose').onclick=()=>{$('book').classList.add('hidden')};
+$('bBook2').onclick=()=>{AU.init();SFX.tap();openBook()};
+
+/* ================= タイトル・地図・クリア ================= */
+function toTitle(){scene='title';G=null;bgKey='';setUI();const sv=load();$('btnCont').classList.toggle('hidden',!(sv&&sv.started));$('btnStart').textContent=sv&&sv.started?'はじめから':'はじめる';armed=false;
+ $('btnBook').classList.toggle('hidden',!window.Zukan);$('nameIn').value=NAME;$('nameBox').classList.toggle('hidden',!!window.PLAYER_NAME)}
+function toMap(){scene='map';G=null;flyers.length=0;drag=null;bgKey='';setUI();const nx=nextStage();strip(nx<0?'見本布の図案を ぜんぶ縫い終えた！':'次は <b>'+STAGES[nx].nm+'</b>。赤い枠の図案をタップ')}
+let armed=false,introSnd=false;
+addEventListener('pointerdown',()=>{if(scene==='title'&&!introSnd){introSnd=true;AU.init();SFX.pair()}},true);
+$('btnStart').onclick=()=>{AU.init();const sv=load();if(sv&&sv.started&&!armed){armed=true;$('btnStart').textContent='もう一度おすと最初から';return}
+ const nm=($('nameIn').value||'').trim();S=fresh();S.sound=AU.on;S.started=true;NAME=window.PLAYER_NAME||nm;S.name=NAME;save();SFX.fan();startStage(0)};
+$('btnCont').onclick=()=>{AU.init();S=load()||fresh();AU.on=S.sound!==false;const nm=($('nameIn').value||'').trim();if(nm&&!window.PLAYER_NAME){NAME=nm;S.name=nm;save()}SFX.pair();if(S.done)showClear();else toMap()};
+$('btnBook').onclick=()=>{window.Zukan&&Zukan.openBook()};$('clBook').onclick=()=>{window.Zukan&&Zukan.openBook()};
+function showClear(){scene='clear';G=null;bgKey='';setUI();confetti();SFX.fan();
+ $('clRec').innerHTML='クリアタイム <b>'+fmtT(S.t)+'</b>　／　積み分けた原子 <b>'+S.sorted+'個</b>　／　最大連続 <b>'+S.maxCombo+'</b>'+(S.bossBest!=null?'　／　大作 <b>'+Math.round(S.bossBest)+'秒</b>':'');
+ $('clBook').classList.toggle('hidden',!window.Zukan)}
+$('toTest').onclick=()=>{AU.init();SFX.tap();startTest()};
 
 /* ================= 確認テスト ================= */
-let T=null;
-function startTest(){if(!window.Quiz){overlay('<h2>問題データが読み込まれていません</h2>');return}T={qs:Quiz.test(),i:0,ans:[],cur:null};show('test');renderTest()}
-function renderTest(){const q=T.qs[T.i];T.cur=q.t==='order'?[]:'';
- let h=`<div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px"><span class="pill">📝 確認テスト</span><b>第 ${T.i+1} 問 / ${T.qs.length}</b></div>
-  <div class="prog">${T.qs.map((_,i)=>`<i class="${i<T.i?'on':''}"></i>`).join('')}</div><div class="tq">${q.q}</div>${q.fig?`<div class="tfig">${q.fig}</div>`:''}`;
- if(q.t==='choice')h+=q.shown.map((c,k)=>`<button class="choice" data-k="${k}">${c}</button>`).join('');
- else if(q.t==='num')h+=`<div class="numshow"><span id="numv">　</span> <small>${esc(q.unit||'')}</small></div><div class="keys">${['7','8','9','4','5','6','1','2','3','0','.','⌫'].map(k=>`<button data-n="${k}">${k}</button>`).join('')}</div><button class="btn wide" style="margin-top:10px" id="tOk">決定</button>`;
- else h+=`<p class="small">上から順になるように、タップして並べよう（もう一度タップで外す）</p><div class="ordsel" id="ordSel"></div>${q.shown.map((c,k)=>`<button class="choice" data-o="${k}">${c}</button>`).join('')}<button class="btn wide" style="margin-top:8px" id="tOk" disabled>決定</button>`;
- $('testBox').innerHTML=h;
- const next=a=>{T.ans.push(a);sfx.tap();setTimeout(()=>{T.i++;if(T.i<T.qs.length)renderTest();else finishTest()},180)};
- if(q.t==='choice')document.querySelectorAll('#testBox .choice').forEach(b=>b.onclick=()=>{document.querySelectorAll('#testBox .choice').forEach(x=>x.disabled=true);b.style.boxShadow='0 0 0 3px #6ff5c8 inset';next(q.shown[+b.dataset.k])});
- else if(q.t==='num'){document.querySelectorAll('#testBox [data-n]').forEach(b=>b.onclick=()=>{sfx.key();const k=b.dataset.n;if(k==='⌫')T.cur=T.cur.slice(0,-1);else if(T.cur.length<8)T.cur+=k;$('numv').textContent=T.cur||'　'});$('tOk').onclick=()=>{if(!T.cur)return;next(T.cur)}}
- else{const upd=()=>{$('ordSel').innerHTML=T.cur.map((k,n)=>`<div data-r="${n}">${n+1}. ${q.shown[k]}</div>`).join('');
-   document.querySelectorAll('#testBox [data-o]').forEach(b=>b.style.display=T.cur.includes(+b.dataset.o)?'none':'block');
-   document.querySelectorAll('#testBox [data-r]').forEach(d=>d.onclick=()=>{T.cur.splice(+d.dataset.r);sfx.tap();upd()});$('tOk').disabled=T.cur.length!==q.shown.length};
-  document.querySelectorAll('#testBox [data-o]').forEach(b=>b.onclick=()=>{sfx.tap();T.cur.push(+b.dataset.o);upd()});$('tOk').onclick=()=>{if(T.cur.length!==q.shown.length)return;next(T.cur.map(k=>q.shown[k]))};upd()}
-}
-function finishTest(){const qs=T.qs,answers=T.ans;
- const review=Quiz.review(qs,answers),marks=review.map(r=>r.ok),score=marks.filter(Boolean).length;
- const name=S.name||window.PLAYER_NAME||'';
- const records=TEST_ONLY?[['モード','確認テストだけ']]:[['クリアタイム',fmtT(S.elapsed)],['予言の一致',S.hits+' / '+S.tries],['タイムアタック',S.taBest+'問'],['見つけたわけ',S.sentence?S.sentence.slice(0,48):'（未記入）']];
- sfx.fanfare();
- const rec=SubmitCard.show({gameId:GAME_ID,grade:'chu2',koma:[KOMA],unit:'中2理科　化学変化と原子・分子　第28回',
-  game:'天秤の中をのぞけ ～質量が保存されるわけ～'+(TEST_ONLY?'（確認テストのみ）':''),name,score,total:qs.length,marks,records,review},()=>renderResult(score,qs.length));
- T.rec=rec;renderResult(score,qs.length)}
-function renderResult(score,total){show('test');
- $('testBox').innerHTML=`<div class="panelbox" style="text-align:center;margin-top:16px"><b>確認テスト</b>
-  <div class="bigscore">${score}<span style="font-size:22px"> / ${total}</span></div>
-  <p style="font-weight:800">${score===total?'満点！ 原子の目で質量が見えている。':score>=Math.ceil(total*.7)?'合格ライン突破！':'解説を読んで、もう一度ためそう。'}</p></div>
-  <div class="tbtns"><button class="btn wide" id="rCard">📝 提出カードを表示</button><button class="btn ghost wide" id="rRetry">もう一度テストを解く</button>
-  ${TEST_ONLY?'':'<button class="btn ghost wide zk hidden" id="rBook">📖 図鑑</button><button class="btn ghost wide" id="rTitle">🏠 タイトルへ</button>'}</div>`;
- zkBtns();$('rCard').onclick=()=>{if(T&&T.rec&&SubmitCard.reopen)SubmitCard.reopen(T.rec)};$('rRetry').onclick=()=>startTest();
- if(!TEST_ONLY){$('rBook').onclick=()=>window.Zukan&&Zukan.openBook&&Zukan.openBook();$('rTitle').onclick=()=>initTitle()}}
+let TQ=[],TA=[],TI=0;
+function startTest(){scene='test';setUI();TQ=window.Quiz?Quiz.test():[];TA=[];TI=0;showQ()}
+function showQ(){const q=TQ[TI];if(!q){finishTest();return}$('test').scrollTop=0;
+ $('tNo').textContent=(TI+1)+' / '+TQ.length;$('tQ').textContent=q.q;$('tFig').innerHTML=q.fig||'';$('tFb').innerHTML='';const A=$('tA');A.innerHTML='';
+ if(q.t==='choice'){q.shown.forEach(c=>{const b=document.createElement('button');b.className='tag';b.textContent=c;b.onclick=()=>answer(c,b);A.appendChild(b)})}
+ else if(q.t==='num'){const row=document.createElement('div');row.className='numrow';row.innerHTML='<input id="numIn" inputmode="decimal" autocomplete="off"><span style="font-weight:900;font-size:18px">'+esc(q.unit||'')+'</span>';const b=document.createElement('button');b.className='patch sm';b.textContent='決定';row.appendChild(b);A.appendChild(row);b.onclick=()=>{const v=$('numIn').value.trim();if(!v)return;answer(v)}}
+ else if(q.t==='order'){let sel=[];const box=document.createElement('div');box.className='ord';A.appendChild(box);const btns=[];
+  q.shown.forEach(c=>{const bt=document.createElement('button');bt.className='tag';bt.textContent=c;bt.onclick=()=>{if(bt.classList.contains('pickd'))return;sel.push(c);bt.classList.add('pickd');const d=document.createElement('div');d.textContent=sel.length+'. '+c;box.appendChild(d);if(sel.length===q.shown.length)answer(sel.slice())};A.appendChild(bt);btns.push(bt)});
+  const rs=document.createElement('button');rs.className='patch ln sm';rs.textContent='並べ直す';rs.onclick=()=>{sel=[];box.innerHTML='';btns.forEach(b=>b.classList.remove('pickd'))};A.appendChild(rs)}}
+function answer(v,btn){const q=TQ[TI];if(TA[TI]!==undefined)return;TA[TI]=v;const ok=Quiz.check(q,v);AU.init();if(ok)SFX.pair();else SFX.bad();
+ [].forEach.call($('tA').querySelectorAll('button,input'),b=>{b.disabled=true;if(q.t==='choice'&&b.textContent===q.choices[0])b.classList.add('ok')});if(btn&&!ok)btn.classList.add('ng');
+ $('tFb').innerHTML='<span class="mk'+(ok?' o':'')+'">'+(ok?'○':'×')+'</span>'+(ok?'正解':'正解は「'+esc(Quiz.answer(q))+'」')+'<span class="ex">'+esc(q.ex||'')+'</span>';
+ const nx=document.createElement('button');nx.className='patch rd sm';nx.id='tNext';nx.style.marginTop='10px';nx.textContent=TI+1<TQ.length?'つぎへ':'結果を見る';nx.onclick=()=>{TI++;showQ()};$('tFb').appendChild(document.createElement('br'));$('tFb').appendChild(nx);
+ setTimeout(()=>nx.scrollIntoView({block:'nearest',behavior:'smooth'}),50)}
+function finishTest(){const qs=TQ,review=Quiz.review(qs,TA),marks=review.map(r=>r.ok),score=marks.filter(Boolean).length;const nm=(NAME||S.name||window.PLAYER_NAME||'').trim();
+ const nClear=STAGES.filter(s=>S.cleared[s.id]).length;
+ const recs=TEST?[['モード','確認テストだけ']]:[['クリアタイム',fmtT(S.t)],['縫い終えた図案',nClear+' / '+STAGES.length],['積み分けた原子',S.sorted+'個'],['最大連続',S.maxCombo+'']];
+ SubmitCard.show({gameId:GID,grade:'chu2',koma:[KOMA],unit:'中2理科　化学変化と原子・分子　第28回',game:'天秤の中をのぞけ ～質量が保存されるわけ～'+(TEST?'（確認テストのみ）':''),
+  name:nm,score,total:qs.length,marks,records:recs,review},()=>{if(TEST)startTest();else toTitle()})}
 
-/* ================= タイトル ================= */
-function initTitle(){show('title');zkBtns();
- const b=buildRx(RX[1]);let s=`<svg viewBox="0 0 360 250">${frameSVG(RX[1])}`;b.atoms.forEach(a=>{s+=at(a.el,a.x0,a.y0,BR*RAD[a.el])});$('tMon').innerHTML=s+`<text x="180" y="244" font-size="11" fill="#6ff5c8" text-anchor="middle" font-family="sans-serif">H×4　O×2　→　目盛り ？</text></svg>`;
- $('nameIn').value=S.name||window.PLAYER_NAME||'';if(window.PLAYER_NAME)$('nameBox').classList.add('hidden');
- $('bCont').classList.toggle('hidden',!S.started);
- $('bCont').textContent=S.cleared?'つづきから（確認テスト・反応えらび）':`つづきから（${(STAGES[Math.min(S.stage,STAGES.length-1)]||{}).name}）`}
-function takeName(){const v=$('nameIn').value.trim();S.name=v||window.PLAYER_NAME||S.name||'';save()}
-$('bStart').onclick=()=>{ac();sfx.tap();takeName();
- if(S.started&&S.stage>0){overlay(`<h2>はじめから遊ぶ？</h2><p>記録はそのまま残る。</p><div class="tbtns"><button class="btn wide" id="oY">はじめから</button><button class="btn ghost wide" id="oN">やめる</button></div>`);$('oY').onclick=()=>{closeOv();go0()};$('oN').onclick=closeOv}else go0()};
-function go0(){COMBO=0;startClock();banner('原子を数えて 質量を読め','分子をタップ → 予言 → 天秤画面');startStage(0)}
-$('bCont').onclick=()=>{ac();sfx.tap();takeName();startClock();
- if(S.cleared){overlay(`<h2>どこから遊ぶ？</h2><div class="tbtns"><button class="btn wide" id="oT">📝 確認テスト</button><button class="btn ghost wide" id="oC">クリア画面</button><button class="btn ghost wide" id="oS">反応をえらぶ</button><button class="btn ghost wide" id="oX">とじる</button></div>`);
-  $('oT').onclick=()=>{closeOv();startTest()};$('oC').onclick=()=>{closeOv();renderClear();show('clear')};$('oS').onclick=()=>{closeOv();stageMenu()};$('oX').onclick=closeOv}
- else startStage(Math.min(S.stage,STAGES.length-1))};
-$('bBook1').onclick=()=>window.Zukan&&Zukan.openBook&&Zukan.openBook();
-$('bHome').onclick=()=>{sfx.tap();if(TA&&TA.iv)clearInterval(TA.iv);save();initTitle()};
-document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')save()});
-setMute();
-if(window.PLAYER_NAME&&!S.name)S.name=window.PLAYER_NAME;
-if(TEST_ONLY){S.name=window.PLAYER_NAME||S.name||'';startTest()}else initTitle();
-window.__TN={S:()=>S,G:()=>G,start:startStage,test:startTest,finish:finishMain,TA:()=>TA};
+/* ================= ループ ================= */
+let last=performance.now();
+function loop(now){const dt=Math.min(.05,(now-last)/1000);last=now;try{update(dt);draw()}catch(err){console.error(err)}requestAnimationFrame(loop)}
+addEventListener('resize',()=>{layout();refreshPat()});
+layout();
+if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>{SPR.clear();bgKey=''});
+window.Zukan&&Zukan.setup&&Zukan.setup({game:GID,koma:[KOMA]});
+window.Zukan&&Zukan.onChange&&Zukan.onChange(refreshKK);
+if(TEST){startTest()}else toTitle();
+requestAnimationFrame(loop);
+
+/* 自動テスト用の窓口（画面には出ない） */
+window.__tn={get G(){return G},get S(){return S},get scene(){return scene},geo:()=>geo(),colX:i=>colX(geo(),i),pileSlot:(s,k)=>pileSlot(geo(),s,k),molPos:(s,m)=>molPos(geo(),s,m),skyPos:m=>skyPos(m),
+ start:i=>{S.started=true;startStage(i)},go:()=>{const b=$('goB');b&&b.click()},map:()=>toMap(),stitch:k=>stitchPat(k),
+ // 1手ずつ正しく進める（自動テスト用）
+ step:()=>{if(!G||G.phase==='intro'||G.phase==='balanced'||G.phase==='over'||flyers.length)return'wait';const o=geo();
+  for(const side of ['pre','post']){const pl=G.piles[side];if(pl.length&&pl[pl.length-1].arr){const run=takeRun(side);const ci=G.cols.findIndex(c=>c.el===run[0].el);drag={kind:'run',side,run,x:0,y:0};const x=colX(o,ci),y=LAND?o.base-20:o.mid;dropRun(x,y);drag=null;checkState();return'sort'}}
+  for(const side of ['pre','post']){const m=G.hoops[side].mols.find(q=>!q.leaving);if(m&&G.piles[side].length+MOL[m.k].a.length<=10){unstitch(side,m);return'unstitch'}}
+  const st=STAGES[STI];if(st.pat&&G.allOut){const need=elemsOf(G.def.pre),have={};G.cols.forEach(c=>have[c.el]=c.post);for(const k of st.pat){const ok=MOL[k].a.every(a=>(have[a[0]]||0)+MOL[k].a.filter(b=>b[0]===a[0]).length<=(need[a[0]]||0));if(ok){stitchPat(k);return'pat'}}}
+  if(G.phase==='near'&&G.sky.length){const m=G.sky.find(q=>q.esc||q.k==='O2');if(m){drag={kind:'sky',m,x:0,y:0};const h=o.hoop[st.escape?'post':'pre'];dropSky(h[0],h[1]);drag=null;return'sky'}}
+  return'idle'}};
 })();
 </script>
 </body>
