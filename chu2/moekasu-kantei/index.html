@@ -129,6 +129,20 @@ button{font-family:inherit;color:inherit;cursor:pointer;border:0;touch-action:ma
 #tFb .ex{display:block;border-left:6px solid var(--sumi);padding:4px 10px;margin:8px 0;font-weight:400}
 @media (max-width:980px){#path{top:62px}}
 @media (max-width:560px){#tMain{right:4vw;top:4vh}#tMain .t{font-size:min(9.5vh,17vw)}#tMain .seal{display:none}#path{top:62px}#path i{width:15px;height:17px}#path span{font-size:13px}#claim{top:92px;max-width:70vw}#claim p{font-size:14px}.hv b{font-size:21px}.hv{min-width:36px}#band{font-size:13px}#band b{font-size:16px}.big{font-size:38px}}
+/* 仕上げ（演出どぱどぱ・とっつきやすさ） */
+body.tut #band{display:none!important}
+body:has(#dlg:not(.hidden)) .gd-coach,body:has(#dlg:not(.hidden)) .gd-band{visibility:hidden}
+#hudR .gd-hbtn{align-self:center}
+.stars{display:flex;gap:16px;margin:0 0 8px}
+.stars .s{display:flex;flex-direction:column;align-items:center;gap:2px;width:72px;opacity:0;transform:scale(2.6) rotate(-24deg)}
+.stars .s svg{width:56px;height:56px}
+.stars .s small{font-size:12px;font-weight:700;white-space:nowrap}
+.stars .s.on{animation:stS .34s cubic-bezier(.2,1.6,.4,1) forwards}
+.stars .s.no.on{animation:stN .3s ease-out forwards}
+@keyframes stS{to{opacity:1;transform:rotate(-5deg)}}
+@keyframes stN{to{opacity:.35;transform:none}}
+.sumi:hover{transform:translateY(-1px)}
+@media (prefers-reduced-motion:reduce){.stars .s.on,.stars .s.no.on{animation-duration:.01ms!important}}
 @media (prefers-reduced-motion:reduce){.stampmk{animation:none}}
 </style>
 </head>
@@ -155,6 +169,7 @@ button{font-family:inherit;color:inherit;cursor:pointer;border:0;touch-action:ma
   <div id="tBtns">
    <button id="bStart" class="sumi">鍛冶場へ</button>
    <button id="bCont" class="sumi hidden">つづきから</button>
+   <button id="bHow" class="sumi pale">？ あそびかた</button>
    <button id="bTest" class="sumi pale hidden">確認テスト</button>
    <button id="bBook" class="sumi pale hidden">📖 図鑑</button>
   </div>
@@ -1456,7 +1471,14 @@ window.ZUKAN_CARDS={"v": 1, "grade": "chu2", "name": "中2理科図鑑", "econom
   function vib(ms){try{if(navigator.vibrate)navigator.vibrate(ms)}catch(e){}}
   function el(tag,cls,html){var d=document.createElement(tag);if(cls)d.className=cls;if(html!=null)d.innerHTML=html;return d}
   function rm(d){if(d&&d.parentNode)d.parentNode.removeChild(d)}
-  function inGuide(t){while(t&&t!==document){if(t.classList&&(t.classList.contains('gd-root')||t.classList.contains('gd-hbtn')))return true;t=t.parentNode}return false}
+  /* れんしゅう中の「指以外は押せない」でも、もどる・確認ダイアログ・音量などは常に押せるようにする（2026-09-28・ルール10）
+     ゲーム側で確実に通したい要素には data-gd-pass を付ける */
+  var PASS_RE=/(^|[-_\s])(back|modoru|return|home|exit|mute|sound|confirm|dialog|modal)([-_\s]|$)/i;
+  function passThru(t){var n=0;while(t&&t!==document&&n<8){n++;if(t.nodeType===1){if(t.hasAttribute('data-gd-pass')||t.tagName==='DIALOG'||t.getAttribute('role')==='dialog'||t.getAttribute('aria-modal')==='true')return true;
+      if(PASS_RE.test(String(t.id||''))||PASS_RE.test(typeof t.className==='string'?t.className:''))return true;
+      if((t.tagName==='BUTTON'||t.tagName==='A'||t.getAttribute('role')==='button')&&/^\s*[◀←＜<]?\s*(もどる|戻る|一覧へ|とじる|閉じる|はい|いいえ|やめる|キャンセル|おと|音)/.test(t.textContent||''))return true}
+      t=t.parentNode}return false}
+  function inGuide(t){if(passThru(t))return true;while(t&&t!==document){if(t.classList&&(t.classList.contains('gd-root')||t.classList.contains('gd-hbtn')))return true;t=t.parentNode}return false}
   function hexRGB(c){c=String(c||'').trim();var m;
     if((m=c.match(/^#([0-9a-f]{3})$/i)))return [0,1,2].map(function(i){return parseInt(m[1][i]+m[1][i],16)});
     if((m=c.match(/^#([0-9a-f]{6})/i)))return [0,2,4].map(function(i){return parseInt(m[1].substr(i,2),16)});
@@ -2214,7 +2236,7 @@ const RD=[
 function fresh(){return{v:2,name:'',started:false,stage:0,opened:false,sealPred:null,sealFrom:null,sealHit:null,specimens:[],score:0,combo:0,maxCombo:0,first:0,t:0,cleared:false,mainDone:false,clearShown:false}}
 let S=fresh();
 function load(){try{const o=JSON.parse(localStorage.getItem(SAVE_KEY));if(o&&o.v===2)return Object.assign(fresh(),o)}catch(e){}return null}
-function save(){try{localStorage.setItem(SAVE_KEY,JSON.stringify(S))}catch(e){}}
+function save(){if(PSV)return;try{localStorage.setItem(SAVE_KEY,JSON.stringify(S))}catch(e){}}
 function readSeal(){try{const o=JSON.parse(localStorage.getItem(SEAL_KEY)||'null');return o&&o.pred&&DIRS[o.pred]?o:null}catch(e){return null}}
 
 /* ================= 画面の組み立て ================= */
@@ -2332,6 +2354,7 @@ function startStage(){const rd=curRD();
  if(rd.k==='pair'){R.samples=[mkSample(rd.m,0,true)];R.samples[0].inKiln=true}
  else{const pool=rd.k==='boss'?shuffle(rd.pool):rd.pool[Math.random()*rd.pool.length|0].slice();R.queue=pool;nextWrap()}
  updHud();setClaim();setBand();fly('第'+rd.no+'の炉　'+rd.title,WW/2,PORT?160:120,1.3);SFX.koto(0);save();
+ if(GD&&!PSV&&!TUTON&&rd.spread)setTimeout(()=>{if(R&&R.rd===rd&&!R.spread)GD.coach([{gesture:'swipe',label:'広げる',target:()=>wP(L.kiln.x-70,L.kiln.y+30,50),to:()=>wP(L.kiln.x+90,L.kiln.y+30,50),until:()=>!R||R.spread,text:'今度はスチールウールを **左右に引っぱって広げる**（空気にふれる面が増える）',praise:'ふわっ'},{gesture:'tap',label:'ふいご',target:()=>wP(L.bell.x,L.bell.y,70),until:()=>!R||R.phase!=='burn',text:'広げたら **ふいご** で焼く。さっきより重くなる？'}],{key:'moekasu-spread'})},900);
  say(rd.k==='pair'?(rd.spread?'今度はスチールウールを<b>広げて</b>から焼く':'<b>ふいご</b>を押して、炉の'+MAT[rd.m].sh+'を焼こう'):rd.k==='boss'?'上から包みが落ちてくる！':'包みを<b>筆でなでて</b>ほどこう','');
 }
 function mkSample(m,spot,wrap){const p=spot==null?L.one:L.spots[spot];return{m,spot,x:p.x,y:p.y,tx:p.x,ty:p.y,hm:0,rub:0,shine:0,lit:0,bub:0,stick:0,crumb:0,stamp:null,wrap:!!wrap&&false,cover:0,nm:null,ruler:0,drop:0}}
@@ -2358,7 +2381,7 @@ function useTool(tool,p,s){const rd=R.rd;if(!s){s=sampleAt(p)}if(!s){return}
  if(tool==='stampOx'||tool==='stampMe'){doStamp(tool,s);return}
  const r=result(tool,s.m),m=s.m;
  // 見た目の反応
- if(tool==='hammer'){s.hm++;SHK=RM?0:7;SFX.anvil();if(MAT[m].kind==='metal'){sparks(s.x,s.y,18,HI);s.shine=Math.min(1,s.shine+.35)}else{SFX.crumble();dust(s.x,s.y,18,MAT[m].base==='mg'?'#d9d4c8':SUMI);s.crumb=Math.min(1,s.crumb+.5)}}
+ if(tool==='hammer'){s.hm++;SHK=RM?0:7;SFX.anvil();vib(15);if(MAT[m].kind==='metal'){sparks(s.x,s.y,18,HI);s.shine=Math.min(1,s.shine+.35)}else{SFX.crumble();dust(s.x,s.y,18,MAT[m].base==='mg'?'#d9d4c8':SUMI);s.crumb=Math.min(1,s.crumb+.5)}}
  if(tool==='stone'){SFX.rub();if(MAT[m].kind==='metal'){s.shine=1;SFX.shine();sparks(s.x,s.y-10,6,'#fff')}else dust(s.x,s.y,6)}
  if(tool==='tester'){s.lit=MAT[m].kind==='metal'?1:-1;s.lit>0?SFX.ding():SFX.dull()}
  if(tool==='acid'){s.bub=r==='泡が出る'?2.5:-2;r==='泡が出る'?SFX.bubble():SFX.dull()}
@@ -2371,19 +2394,19 @@ function pairRecord(tool,s,r){const rd=R.rd;R.res[tool]=R.res[tool]||{};R.res[to
  if(R.res[tool][0]==null||R.res[tool][1]==null){return}
  if(R.diff[tool]!=null)return;
  const base=MAT[rd.m].base,d=decisive(tool,base);R.diff[tool]=d;
- if(d){S.combo++;S.maxCombo=Math.max(S.maxCombo,S.combo);SFX.koto(S.combo);const g=scoreAdd(20);fly('違いあり！ ＋'+g,L.anvil.x,L.anvil.y-(PORT?200:230),1.1);inkSplat(L.cert.x,L.cert.y,10);
+ if(d){S.combo++;S.maxCombo=Math.max(S.maxCombo,S.combo);SFX.koto(S.combo);comboUp();const g=scoreAdd(20);fly('違いあり！ ＋'+g,L.anvil.x,L.anvil.y-(PORT?200:230),1.1);inkSplat(L.cert.x,L.cert.y,10);
   if(diffCount()>=3){setTimeout(()=>{say('性質の違いが3つそろった！ 刻印「酸化物」を打てる','');SFX.fanfare()},300)}}
  else trap(tool,base)}
-function trap(tool,base){R.trap++;R.firstOK=false;S.combo=0;updHud();SFX.bad();const w=tool==='ruler'?WHYNOT.ruler:(WHYNOT[tool]&&WHYNOT[tool][base])||'この検査では違いが出ない。';say(w,'bad')}
+function trap(tool,base){R.trap++;R.firstOK=false;comboBreak();S.combo=0;vib(40);updHud();SFX.bad();const w=tool==='ruler'?WHYNOT.ruler:(WHYNOT[tool]&&WHYNOT[tool][base])||'この検査では違いが出ない。';say(w,'bad')}
 function diffCount(){return Object.values(R.diff).filter(Boolean).length}
 function singleRecord(tool,s,r){const base=MAT[s.m].base;R.res[tool]=r;
- if(decisive(tool,base)){if(!R.ev[tool]){R.ev[tool]=1;S.combo++;S.maxCombo=Math.max(S.maxCombo,S.combo);SFX.koto(S.combo);scoreAdd(10)}}
+ if(decisive(tool,base)){if(!R.ev[tool]){R.ev[tool]=1;S.combo++;S.maxCombo=Math.max(S.maxCombo,S.combo);SFX.koto(S.combo);comboUp();scoreAdd(10)}}
  else if(!R.ev['x'+tool]){R.ev['x'+tool]=1;trap(tool,base)}}
 function evCount(){return Object.keys(R.ev).filter(k=>k[0]!=='x').length}
 function doStamp(tool,s){const rd=R.rd;
  if(rd.k==='pair'){if(tool!=='stampOx')return;if(diffCount()<3){R.mist++;R.firstOK=false;S.combo=0;SFX.bad();say('まだ証拠が足りない。性質の違いを<b>3つ</b>そろえてから（いま '+diffCount()+'つ）','bad');return}
-  if(MAT[s.m].kind==='metal'){R.mist++;R.firstOK=false;S.combo=0;SFX.bad();say('それは<b>元の金属</b>。刻印は、元の金属とちがう物質になった方へ。','bad');return}
-  s.stamp='酸化物';SFX.stamp();SHK=RM?0:10;inkSplat(s.x,s.y,24);sparks(s.x,s.y,20,HI);stageWin();return}
+  if(MAT[s.m].kind==='metal'){if(!TUTON){R.mist++;R.firstOK=false;comboBreak();S.combo=0}SFX.bad();say('それは<b>元の金属</b>。刻印は、元の金属とちがう物質になった方へ。','bad');return}
+  s.stamp='酸化物';SFX.stamp();SHK=RM?0:10;FLASH=Math.max(FLASH,RM?0:.25);vib([20,40,30]);inkSplat(s.x,s.y,24);sparks(s.x,s.y,30,HI);stageWin();return}
  // 包み：証拠2つ以上
  if(evCount()<2){R.mist++;R.firstOK=false;S.combo=0;SFX.bad();say('証拠が足りない。決め手になる検査を<b>2つ以上</b>（いま '+evCount()+'つ）','bad');return}
  const isOx=MAT[s.m].kind==='ox',want=tool==='stampOx';
@@ -2402,21 +2425,23 @@ function stageWin(){const rd=R.rd,first=R.firstOK&&R.trap===0&&R.mist===0;R.phas
  const ox=rd.m+'o';if(!S.specimens.includes(ox))S.specimens.push(ox);const pts=scoreAdd(60);SFX.fanfare();
  const rows=Object.keys(R.diff).map(t=>`<tr><th>${TL[t].v}</th><td>元の金属：${esc(R.res[t][0])}</td><td>燃えかす：${esc(R.res[t][1])}</td><td>${R.diff[t]?'◎':'△決め手にならず'}</td></tr>`).join('');
  S.stage++;save();updHud();
- setTimeout(()=>showOv(`<div class="stampmk">酸化物</div><h2>鑑定書　第${rd.no}の炉</h2>
+ const stG=[true,R.trap===0,first];
+  setTimeout(()=>showOv(`<div class="stampmk">酸化物</div><h2>鑑定書　第${rd.no}の炉</h2>${starsHTML(stG,['鑑定','わなに かからず','一発鑑定'])}
   <p><b style="font-family:var(--brush);font-size:24px;font-weight:400">${esc(MAT[ox].ox)}</b>（${esc(MAT[ox].nm)}）</p>
   <div class="cert"><table>${rows}</table></div>
   <p>質量：${rd.mass[0].toFixed(2)}g → <b>${rd.mass[1].toFixed(2)}g</b>（${(rd.mass[1]/rd.mass[0]).toFixed(2)}倍）　<span class="small">${esc(rd.src)}</span></p>
   <div class="eq">${esc(rd.eq)}</div>
   <p class="small">元の金属とは性質のちがう物質（酸化物）ができた。物質が酸素と結び付く変化を<b>酸化</b>、熱や光を出して激しく進む酸化を<b>燃焼</b>という。${rd.m==='fe'&&S.stage===2?'<br>丸めた 1.16g→1.34g（1.16倍）より、広げた 0.94g→1.15g（1.22倍）の方がよく酸化した。空気にふれる面が広いほど、酸素とよく結び付く。':''}</p>
   <p class="gain">腕前 +${pts}${first?'　一発鑑定！':''}${g?'　✦ かけら +'+g:''}</p>
-  <div class="row"><button class="sumi" id="oNext">${S.stage>=RD.length?'鍛冶場をしめる':'次の炉へ'}</button></div>`,()=>{$('oNext').onclick=()=>{hideOv();SFX.tap();if(S.stage>=RD.length)allClear();else startStage()}}),900)}
+  <div class="row"><button class="sumi" id="oNext">${S.stage>=RD.length?'鍛冶場をしめる':'次の炉へ'}</button></div>`,()=>{$('oNext').onclick=()=>{hideOv();SFX.tap();if(S.stage>=RD.length)allClear();else startStage()};stampStars(stG)}),900)}
 function finishStage(){const rd=R.rd;R.phase='done';const ok=R.done.filter(d=>d.ok).length,first=ok===R.done.length;if(first)S.first++;
  let g=0;if(first)g+=earn(10,'first-try');if(rd.k==='boss')g+=earn(30,'rule');const tb=rd.timer?Math.max(0,Math.round(R.timer))*3:0;const pts=scoreAdd(80+tb);SFX.fanfare();S.stage++;save();updHud();
- showOv(`<div class="stampmk">鑑定<br>済</div><h2>${esc(rd.title)}</h2>
+ const stG=[true,R.trap===0,first];
+  showOv(`<div class="stampmk">鑑定<br>済</div><h2>${esc(rd.title)}</h2>${starsHTML(stG,['鑑定','わなに かからず','ぜんぶ一発'])}
   <div class="cert"><table>${R.done.map((d,i)=>`<tr><th>包み${'一二三四五六'[i]}</th><td>${esc(MAT[d.m].kind==='ox'?MAT[d.m].ox+'（'+MAT[d.m].sh+'）':MAT[d.m].sh+'（金属）')}</td><td>${d.ok?'一発':'やり直しあり'}</td></tr>`).join('')}</table></div>
   <p class="small">金属：たたくとのびる・こすると光る・電気を通す。酸化物：くだける・光らない・電気を通さない。<br>磁石は決め手にならない（鉄の燃えかすもつく）。塩酸の泡は鉄・マグネシウムだけ（銅は泡なし）。</p>
   <p class="gain">腕前 +${pts}${tb?'（速さ +'+tb+'）':''}${g?'　✦ かけら +'+g:''}</p>
-  <div class="row"><button class="sumi" id="oNext">${S.stage>=RD.length?'鍛冶場をしめる':'次の炉へ'}</button></div>`,()=>{$('oNext').onclick=()=>{hideOv();SFX.tap();if(S.stage>=RD.length)allClear();else startStage()}})}
+  <div class="row"><button class="sumi" id="oNext">${S.stage>=RD.length?'鍛冶場をしめる':'次の炉へ'}</button></div>`,()=>{$('oNext').onclick=()=>{hideOv();SFX.tap();if(S.stage>=RD.length)allClear();else startStage()};stampStars(stG)})}
 function allClear(){S.cleared=true;S.mainDone=true;save();scene='clear';setBand();setClaim();
  const go=()=>showOv(`<h2>鍛冶場じまい</h2><p class="big">標本 ${S.specimens.length}</p>
   <p>酸化鉄・酸化マグネシウム・酸化銅――どれも、元の金属が酸素と結び付いてできた、<b>性質のちがう物質</b>。</p>
@@ -2477,7 +2502,7 @@ function setClaim(){const c=$('claim');if(scene!=='play'||!R){c.classList.add('h
 function showHud(on){['back','hudR','path'].forEach(i=>$(i).classList.toggle('hidden',!on));$('snd').style.display='flex'}
 function updHud(){$('hSp').textContent=S.specimens.length;$('hSc').textContent=S.score>=10000?(S.score/1000).toFixed(1)+'k':S.score;const z=window.Zukan&&Zukan.state?Zukan.state():null;$('hKkW').classList.toggle('hidden',!z);if(z)$('hKk').textContent=z.kakera;
  $('path').innerHTML=RD.map((r,i)=>`<i class="${i<S.stage?'on':''}${i===S.stage&&!S.cleared?' now':''}"></i>`).join('')+`<span>炉 ${Math.min(S.stage,RD.length)}/${RD.length}</span>`}
-function setBand(){const b=$('band');let t='';
+function setBand(){const b=$('band');let t='';document.body.classList.toggle('tut',!!TUTON&&!(scene==='open'&&R&&R.phase==='predict'));
  if(scene==='open'&&R){t=R.phase==='env'?'封筒の<b>赤い封</b>を、筆でなぞるように横に切る':R.phase==='predict'?'燃やした後の皿を<b>指で押し下げる・持ち上げる</b>（そのままなら「変わらない」）→ 下の札を押す':''}
  else if(scene==='play'&&R){const rd=R.rd;
   if(R.phase==='burn')t=!R.spread?'炉のスチールウールを<b>左右に引っぱって広げる</b>':'<b>ふいご</b>を押して風（酸素）を送る（'+R.pumps+'/6）';
@@ -2494,7 +2519,8 @@ function hideOv(){$('ov').classList.add('hidden')}
 let last=performance.now(),bT=0;
 function frame(ts){const dt=Math.min(.05,(ts-last)/1000);last=ts;now+=dt;update(dt);draw();requestAnimationFrame(frame)}
 function update(dt){if(msgT>0){msgT-=dt;if(msgT<=0)$('msg').className=''}
- if(scene==='play'&&R){S.t+=dt;
+ if(HELP){const want=scene==='play'||scene==='open';if(want!==helpVis){helpVis=want;want?HELP.show():HELP.hide()}}
+ if(scene==='play'&&R&&!PAUSED){S.t+=dt;
   if(R.rd.timer&&R.phase!=='done'&&R.timer>0){R.timer-=dt;bT-=dt;if(bT<=0){bT=1;setBand()}}
   for(const s of R.samples){if(s.falling){s.vy=(s.vy||0)+1500*dt;s.y+=s.vy*dt;if(s.y>=L.one.y){s.y=L.one.y;s.falling=false;SFX.anvil();dust(s.x,s.y+30,10);SHK=RM?0:6;setBand()}continue}
    s.x+=(s.tx-s.x)*Math.min(1,dt*6);s.y+=(s.ty-s.y)*Math.min(1,dt*6);if(s.lit>0)s.lit=Math.max(.001,s.lit);if(s.bub>0){s.bub-=dt;if(Math.random()<.5)PT.push({x:s.x+rnd(-24,24),y:s.y+10,vx:rnd(-10,10),vy:-rnd(40,90),t:0,life:.8,k:'bub',sz:rnd(2,5)})}
@@ -2506,7 +2532,7 @@ function update(dt){if(msgT>0){msgT-=dt;if(msgT<=0)$('msg').className=''}
 
 /* ================= 描画 ================= */
 function draw(){cx.setTransform(DPR,0,0,DPR,0,0);if(!bgC)buildBG();cx.drawImage(bgC,0,0,W,H);
- if(scene==='title'){drawTitle();return}if(scene==='test')return;
+ if(scene==='title'||scene==='intro'){drawTitle();return}if(scene==='test')return;
  const sh=SHK?rnd(-SHK,SHK):0;cx.save();cx.translate(sh,sh*.5);if(!stC)buildStatic();cx.drawImage(stC,0,0,W,H);
  cx.translate(OX,OY);cx.scale(SC,SC);drawWorld();cx.restore();
  if(FLASH>0){cx.fillStyle='rgba(255,255,255,'+(FLASH*.75)+')';cx.fillRect(0,0,W,H);const g=cx.createRadialGradient(w2s(L.kiln.x,0).x,w2s(0,L.kiln.y).y,0,w2s(L.kiln.x,0).x,w2s(0,L.kiln.y).y,Math.max(W,H)*.6);g.addColorStop(0,'rgba(245,230,99,'+FLASH*.6+')');g.addColorStop(1,'rgba(245,230,99,0)');cx.fillStyle=g;cx.fillRect(0,0,W,H)}}
@@ -2610,7 +2636,7 @@ function drawTitle(){const m=Math.min(W,H);seed=77;
  for(let i=0;i<5;i++){const t=(now*.08+i*.2)%1;wash(cx,hx+m*.1+t*m*.25,hy-m*.16-t*m*.3,m*.05*(1+t*2),m*.03*(1+t*2),.08*(1-t))}}
 
 /* ================= 画面の切り替え ================= */
-function toTitle(){scene='title';bgC=null;hideOv();['band','claim','test'].forEach(i=>$(i).classList.add('hidden'));showHud(false);$('snd').style.display='';$('title').classList.remove('hidden');
+function toTitle(){if(PSV){const s0=PSV;PSV=null;S=s0.S;if(window.Zukan&&s0.earn)Zukan.earn=s0.earn}if(GD){GD.tutorialEnd();GD.skip()}TUTON=false;document.body.classList.remove('tut');scene='title';bgC=null;hideOv();['band','claim','test'].forEach(i=>$(i).classList.add('hidden'));showHud(false);$('snd').style.display='';$('title').classList.remove('hidden');
  const sv=load();$('bCont').classList.toggle('hidden',!(sv&&sv.started&&!sv.cleared));$('bTest').classList.toggle('hidden',!(sv&&sv.cleared));$('bStart').textContent=sv&&sv.started?'はじめから':'鍛冶場へ';$('bBook').classList.toggle('hidden',!window.Zukan);
  const sl=readSeal();$('tSeal').classList.toggle('hidden',!sl);if(sl)$('tSeal').textContent='コマ17の封筒が届いています（予想：'+DIRS[sl.pred]+'）';
  $('tList').classList.toggle('hidden',!(window.parent&&window.parent!==window));armed=false}
@@ -2619,7 +2645,9 @@ function begin(cont){AU.init();SFX.tap();const v=$('nameIn').value.trim();if(v)S
  if(!cont&&sv&&sv.started&&!armed){armed=true;$('bStart').textContent='もう一度おすと最初から';return}
  $('title').classList.add('hidden');bgC=null;stC=null;
  if(cont&&sv){S=sv;if(v)S.name=v;if(S.cleared){startTest();return}scene='play';showHud(true);updHud();if(!S.opened&&S.stage===0){startOpen();return}startStage();return}
- const nm=S.name;S=fresh();S.name=nm||window.PLAYER_NAME||'';S.started=true;save();R=null;showHud(true);updHud();startOpen()}
+ const nm=S.name;S=fresh();S.name=nm||window.PLAYER_NAME||'';S.started=true;save();R=null;
+ if(GD){scene='intro';GD.intro(INTRO).then(()=>{if(scene!=='intro')return;showHud(true);updHud();startOpen();runPractice(false)});return}
+ showHud(true);updHud();startOpen()}
 function askBack(){SFX.tap();$('dlgBox').innerHTML=`<h2>表へもどる？</h2><p>進み具合は保存されます。次は「つづきから」で、いまの炉の始めから再開できます。</p><div class="row"><button class="sumi pale" id="dN">つづける</button><button class="sumi" id="dY">もどる</button></div>`;
  $('dlg').classList.remove('hidden');$('dN').onclick=()=>$('dlg').classList.add('hidden');$('dY').onclick=()=>{$('dlg').classList.add('hidden');save();drag=null;toTitle()}}
 
@@ -2641,6 +2669,68 @@ function finishTest(){const qs=TQ,review=Quiz.review(qs,TA),marks=review.map(r=>
  SubmitCard.show({gameId:GID,grade:'chu2',koma:[KOMA],unit:'中2理科　化学変化と原子・分子　第18回',game:'燃えかす鍛冶場 ～酸化でできる物質～'+(TEST?'（確認テストのみ）':''),
   name:(S.name||window.PLAYER_NAME||'').trim(),score,total:qs.length,marks,records,review},()=>{if(TEST)startTest();else toTitle()})}
 
+/* ================= 仕上げ：演出（制作ルール11） ================= */
+let helpVis=null;
+function vib(p){try{if(!RM&&navigator.vibrate)navigator.vibrate(p)}catch(e){}}
+function comboUp(){const c=S.combo;if([3,5,8,12].includes(c)){const p=L.anvil;fly(c+'連続 鑑定！',p.x,p.y-(PORT?300:320),1.9);sparks(p.x,p.y-(PORT?300:320),40,HI);inkSplat(p.x,p.y-(PORT?300:320),14);SHK=RM?0:8;GLOW=1;
+  [0,2,4,7].forEach((k,i)=>AU.t(PENTA[Math.min(7,k)]*2,.5,'triangle',.06,i*.07));vib([20,30,40])}else vib(12)}
+function comboBreak(){const c=S.combo||0;if(c<2)return;const nx=[3,5,8,12].find(t=>t>c);if(nx&&nx-c===1)setTimeout(()=>say('あと1回で <b>'+nx+'連続 鑑定</b> だった！',''),1400)}
+function starSVG(on){const p=[];for(let i=0;i<10;i++){const a=-Math.PI/2+i*Math.PI/5,r=i%2?19:46;p.push((50+Math.cos(a)*r+(i%3-1)*1.5).toFixed(1)+' '+(52+Math.sin(a)*r).toFixed(1))}
+ return '<svg viewBox="0 0 100 100" aria-hidden="true"><path d="M'+p.join('L')+'Z" fill="'+(on?HI:'none')+'" stroke="'+SUMI+'" stroke-width="'+(on?6:3)+'" stroke-linejoin="round" '+(on?'':'stroke-dasharray="4 5"')+'/></svg>'}
+function starsHTML(got,lab){return '<div class="stars">'+got.map((g,i)=>'<div class="s'+(g?'':' no')+'">'+starSVG(g)+'<small>'+lab[i]+'</small></div>').join('')+'</div>'}
+function stampStars(got){document.querySelectorAll('#ovBox .stars .s').forEach((s,i)=>setTimeout(()=>{s.classList.add('on');if(got[i]){SFX.stamp();SFX.koto(3+i*2);vib(20);SHK=RM?0:5}else SFX.tap()},RM?0:420+i*420))}
+
+/* ================= 遊び方案内（Guide・制作ルール13／仕上げ 2026-09-28） ================= */
+const GD=window.Guide||null;let HELP=null,PAUSED=false,PRACTICE=null,PSV=null,TUTON=false,PSB=false;
+const INTRO={title:'第18回　燃えかす鍛冶場',learn:'金属が酸素と結び付く（**酸化**）と、元の金属とは **性質のちがう物質**（酸化物）ができる',
+ how:'道具を **ドラッグ** で金属と燃えかすの両方へ。違いが3つそろったら **刻印** を打つ',gesture:'drag'};
+function wP(x,y,r){const q=w2s(x,y);return {x:q.x,y:q.y,r:Math.max(22,(r||40)*SC)}}
+function toolP(id){const t=toolRects().find(r=>r.id===id);if(!t)return null;const q=w2s(t.x+t.w/2,t.y+t.h*.42);return {x:q.x,y:q.y,w:t.w*SC,h:t.h*SC}}
+function sampP(i){const s=R&&R.samples[i];return s?wP(s.x,s.y,70):null}
+function nextSamp(tool){const r=R&&R.res[tool];return r&&r[0]!=null?1:0}
+function toolStep(tool,label,text,praise){return {gesture:'drag',label,target:()=>toolP(tool),to:()=>sampP(nextSamp(tool)),until:()=>!!R&&R.phase==='test'&&R.diff[tool]!=null,text,praise}}
+function tutSteps(){const st=[];
+ if(scene==='open'&&R&&R.phase==='env'){const E=envRect();st.push({gesture:'swipe',label:'封を切る',target:()=>{const E2=envRect();return wP(E2.x+E2.w*.3-120,E2.y,40)},to:()=>{const E2=envRect();return wP(E2.x+E2.w*.3+120,E2.y,40)},
+   until:()=>!R||R.phase!=='env',text:'コマ17で封印した予想が届いた。赤い封を **横になぞって** 切ろう',praise:'ザッ！'})}
+ else if(scene==='open'&&R&&R.phase==='predict'){st.push({gesture:'drag',label:'予想',target:()=>{const hl=PORT?220:300,th=R&&R.tilt||0,y0=L.cert.y+(PORT?10:-10);return wP(WW/2+hl*Math.cos(th),y0+hl*Math.sin(th)+74,70)},to:()=>{const hl=PORT?220:300,y0=L.cert.y+(PORT?10:-10);return wP(WW/2+hl,y0+74+130,50)},until:()=>!R||R.phase!=='predict'||Math.abs(R.tilt||0)>.04,
+   text:'鉄を燃やした後は重くなる？ 軽くなる？ 皿を **指で押し下げる・持ち上げる**',praise:'ぎしっ'},{gesture:'tap',label:'決める',target:'#pDone',until:()=>scene!=='open'||!R||R.phase!=='predict',text:'決めたら **これが予想**'})}
+ if(!(scene==='open'&&R&&R.phase==='predict'))st.push({gesture:'tap',label:'炉へ',target:'#oGo',until:()=>scene==='play',text:'封の中身を読んだら **炉へ**',praise:'よし！'});
+ st.push({gesture:'tap',label:'ふいご',target:()=>R&&scene==='play'?wP(L.bell.x,L.bell.y,70):null,until:()=>scene==='play'&&!!R&&R.phase!=='burn',text:'**ふいご** を何度もタップして風（酸素）を送る（6回）。天秤の目盛りに注目',praise:'ゴォッ！'},
+  {gesture:'tap',label:'金床へ',target:'#oGo',until:()=>!!R&&R.phase==='test',text:'焼けた！ 重さを確かめたら **金床へ**',praise:'カン！'},
+  toolStep('hammer','たたく','**金槌** を、左の **金属** と右の **燃えかす** の両方へドラッグ（のびる？ くだける？）','くだけた！'),
+  toolStep('stone','こする','**砥石** を両方へ運んで、上で **ごしごし** こする（光る？）','ピカッ'),
+  toolStep('tester','電気','**豆電球** を両方へ（電気を通す？）','りん！'),
+  {gesture:'drag',label:'刻印',target:()=>toolP('stampOx'),to:()=>sampP(1),until:()=>!!R&&R.phase==='done',text:'違いが3つそろった！ **刻印「酸化物」** を **燃えかす** へ打つ',praise:'ドン！'});
+ return st}
+function runPractice(sb){PSB=!!sb;PRACTICE.bandAt=PORT?'bottom':'top';return GD.tutorial(PRACTICE)}
+function enterPrac(){PSV={S,scene,earn:window.Zukan?Zukan.earn:null};if(window.Zukan)Zukan.earn=()=>0;const nm=S.name;S=fresh();S.name=nm;S.started=true;
+ hideOv();$('dlg').classList.add('hidden');['title','test'].forEach(i=>$(i).classList.add('hidden'));bgC=null;stC=null;showHud(true);updHud();startOpen()}
+function leavePrac(){const s=PSV;if(!s)return;PSV=null;if(window.Zukan&&s.earn)Zukan.earn=s.earn;S=s.S;R=null;hideOv();drag=null;
+ if(s.scene==='play'){scene='play';showHud(true);updHud();startStage()}else if(s.scene==='open'){startOpen()}else toTitle()}
+if(GD){
+ GD.setup({
+  theme:{bg:'#f7f3ea',fg:SUMI,accent:SUMI,accentText:WASHI,font:BR,bodyFont:MIN,radius:4,texture:'paper',line:SUMI,dim:'rgba(241,237,228,.62)',
+   shadow:'0 0 0 1px rgba(28,28,28,.15),0 12px 30px rgba(28,28,28,.35)',outline:WASHI,hand:'#fff',handLine:SUMI},
+  sfx:k=>{AU.init();({step:()=>SFX.koto(2),done:SFX.stamp,clear:SFX.fanfare,open:SFX.swish,close:SFX.tap,cheer:()=>SFX.koto(5),nudge:SFX.dull}[k]||SFX.tap)()},
+  muted:()=>AU.mute});
+ PRACTICE={label:'れんしゅう　─ 第一の炉',clearText:'れんしゅうクリア！',block:true,
+  start:()=>{TUTON=true;if(PSB)enterPrac();PRACTICE.steps=tutSteps();setBand()},steps:[],
+  onExit:res=>{TUTON=false;setBand();if(PSV)setTimeout(leavePrac,res.cleared?300:0)}};
+ HELP=GD.help({title:'燃えかす鍛冶場',
+  rules:['**ふいご** をタップで炉に風を送り、金属を焼く（天秤で重さが増える）',
+   '道具（金槌・砥石・豆電球…）を **ドラッグ** で **金属と燃えかすの両方** へ。砥石は上で **こする**',
+   '性質の **違いが3つ** そろったら、**刻印「酸化物」** を燃えかすへ',
+   '**磁石**・**ものさし** は決め手にならない（鉄の燃えかすも磁石につく）',
+   '包みは **筆でなでて** ほどく。決め手の証拠 **2つ** で刻印'],
+  onOpen:()=>{PAUSED=true;drag=null},onClose:()=>{PAUSED=false},replay:()=>{runPractice(true);return null},
+  mount:$('hudR'),size:44,attention:true,show:false});helpVis=false;
+ $('bHow').onclick=()=>{AU.init();const v=$('nameIn').value.trim();if(v)S.name=v;runPractice(true)};
+ /* 手ほどき中（穴の外を止める設定）でも、もどる と その確認だけは押せるように */
+ const passBack=e=>{if(!GD.active())return null;const b=e.target.closest&&e.target.closest('#back,#dlg button');if(b)e.stopImmediatePropagation();return b};
+ ['pointerdown','mousedown','touchstart'].forEach(t=>addEventListener(t,passBack,{capture:true,passive:true}));
+ addEventListener('click',e=>{const b=passBack(e);if(!b)return;e.preventDefault();b.onclick&&b.onclick(e)},true);
+}else $('bHow').classList.add('hidden');
+
 /* ================= 起動 ================= */
 $('back').onclick=()=>{if(scene==='test'){toTitle();return}askBack()};
 $('snd').onclick=()=>{AU.init();AU.mute=!AU.mute;$('snd').classList.toggle('off',AU.mute);try{localStorage.setItem(MUTE_KEY,AU.mute?'1':'')}catch(e){}};
@@ -2657,6 +2747,7 @@ if(TEST)startTest();else toTitle();
 requestAnimationFrame(frame);
 /* 自動テスト用の読み取り口（ゲームの外からは使わない） */
 window.__MK={get S(){return S},get R(){return R},get scene(){return scene},L:()=>L,w2s,
+ tgt:i=>{const f=v=>typeof v==='function'?v():v;const s=PRACTICE&&PRACTICE.steps[i];return s?{a:f(s.target),b:f(s.to)}:null},
  open(){if(R.phase==='env')openCut();else if(R.phase==='predict'){R.tilt=.15;predictDone()}},
  burn(){R.spread=1;for(let i=0;i<6;i++)pump()},
  tool(id,i){const s=R.samples[i||0];useTool(id,{x:s.x,y:s.y},s)},
