@@ -1,182 +1,144 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-<meta charset="utf-8">
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#2b1d14">
+<meta name="theme-color" content="#EDE4D3">
 <title>山小屋の5日間 ～気圧と天気～</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@600;800&family=Zen+Kaku+Gothic+New:wght@500;700;900&display=swap" rel="stylesheet">
+<!--
+  山小屋の5日間 ～気圧と天気～（中2理科 気象 コマ10 / kisho-yamagoya / chu2-kisho-10）v2
+
+  ■ 世界とメタファー: 「フェルトと布のアップリケでできた山小屋」。空も山も小屋も洗濯物も、切ったフェルトを
+    縫いつけた手芸の絵本。山小屋の前には自記気圧計があり、その記録紙は刺しゅう布、ペンは針と赤い糸。
+    時間が進むと針が気圧の線を「ひと針ずつ」縫っていく。プレイヤーは山小屋の番人の手（顔は描かない）になって、
+    洗濯かごから物干しへ洗濯物をドラッグして干し、タップで取りこむ。
+    気圧が下がり続けたら雨の前ぶれ→先回りして取りこむ。上がり始めたら回復のしるし→干す。1〜2hPaの小さな上下はいつものゆれ。
+    道のり＝5日間を1日ずつ。集める＝乾かした洗濯物の布（柄）と、5日間の気圧の記録布。
+  ■ 配色: 背景 #EDE4D3（麻布）／主 #4A6C6F（青緑のフェルト）／差し #E9A23B（からし色）。
+    補色: れんが #B5533C（赤い糸）・こげ茶 #6B4A35・オリーブ #8A9A5B・空色フェルト #9DC3CF・雲の灰 #B9BDB8。
+  ■ 書体: 見出し＝Zen Maru Gothic（900）／本文＝Klee One（手書きの教科書体）。
+  ■ 画面の組み方: 全画面canvasのアップリケの風景が主役。PC・iPad横＝左に小屋、横長の物干しの前（右下）に大きな自記気圧計、
+    左下に洗濯かごと乾いた棚。スマホ・iPad縦＝上に自記気圧計と空、下に物干し・かご・棚。
+  ■ HUD: 左上＝布のタグ「◀ もどる」（縫い目つき）。右上＝からし色のフェルトのかけら・音。上中央＝日めくりの布（何日目・時刻）。
+    Zukan.hud は使わず Zukan.state() で読む。
+  ■ 音: 木のおもちゃのような柔らかい音（三角波・木琴）、布のはためき（ノイズ）、雨音。
+  ■ 理科＝操作: 天気は気圧の変化に数時間おくれて変わる（下がり続け→約6時間後に雨／最低を過ぎて上がり始め→約1〜2時間で雨がやむ）。
+    かけらは「下がり続けを根拠に、雨の前に取りこみを終えた」「上がり始めを根拠に、まだくもりのうちに干した」
+    「小さなゆれで取りこまなかった」ときだけ。空振り・びしょぬれでは増えない。
+  ■ 数値: 気圧の記録はすべて自作の例（実在の地点の記録ではない）。安定1018〜1022hPa、1日2回の小さな上下は約±0.5hPa、
+    くずれる前は1時間に0.5〜0.8hPaずつ下がり続ける。
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Klee+One:wght@400;600&family=Zen+Maru+Gothic:wght@700;900&display=swap" rel="stylesheet">
 <style>
-:root{--wood:#2b1d14;--wood2:#3b281b;--wood3:#1c130d;--lamp:#f0b35a;--lamp2:#ffd792;--paper:#f3e6c8;--paper2:#e6d3a8;--ink:#3a2a1c;--ink2:#6b5842;--red:#a23b2a;--blue:#34507a;--pen:#2d3f86;
- --serif:'Shippori Mincho B1','Hiragino Mincho ProN','Yu Mincho',serif;--sans:'Zen Kaku Gothic New','Hiragino Sans','Yu Gothic',sans-serif}
+:root{--linen:#EDE4D3;--teal:#4A6C6F;--teal2:#3a5659;--mus:#E9A23B;--brick:#B5533C;--choco:#6B4A35;--olive:#8A9A5B;--cream:#F7F0E1;
+ --fh:'Zen Maru Gothic','Hiragino Maru Gothic ProN',sans-serif;--fb:'Klee One','Hiragino Mincho ProN','Yu Mincho',serif}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{margin:0;color:var(--paper);font-family:var(--sans);overflow-x:hidden;background:var(--wood3)}
-body{min-height:100vh;min-height:100dvh;background:radial-gradient(ellipse at 50% 12%,rgba(240,179,90,.28),transparent 55%),radial-gradient(ellipse at 50% 60%,var(--wood2),var(--wood) 60%,var(--wood3));background-attachment:fixed}
-button{font-family:inherit;touch-action:manipulation}
+html,body{margin:0;height:100%;background:var(--linen);overflow:hidden;font-family:var(--fb);font-weight:600;color:var(--choco);-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+#app{position:relative;width:100%;height:100vh;height:100dvh;overflow:hidden}
+#cv{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
+.scr{position:absolute;inset:0;pointer-events:none}
+.pe{pointer-events:auto}
 .hidden{display:none!important}
-.app{max-width:560px;margin:0 auto;padding:6px 10px 22px;position:relative}
-.screen{min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:18px 12px}
-.btn{min-height:48px;padding:10px 22px;border-radius:10px;border:2px solid #7a5a36;background:var(--paper);color:var(--ink);font-size:18px;font-weight:900;cursor:pointer;box-shadow:0 4px 0 #7a5a36,0 8px 16px rgba(0,0,0,.4);transition:transform .08s}
-.btn:active{transform:translateY(3px);box-shadow:0 1px 0 #7a5a36}
-.btn.lamp{background:linear-gradient(#ffd792,#f0b35a);border-color:#8a5a1c;box-shadow:0 4px 0 #8a5a1c,0 0 22px rgba(240,179,90,.45)}
-.btn[disabled]{opacity:.35;cursor:default;transform:none}
-.btn.small{min-height:44px;font-size:15px;padding:8px 14px}
-#mute{position:fixed;top:8px;right:8px;z-index:60;width:44px;height:44px;border-radius:50%;border:2px solid #7a5a36;background:rgba(0,0,0,.35);color:#fff;font-size:20px;cursor:pointer}
-#title h1{font-family:var(--serif);font-weight:800;font-size:clamp(32px,9.5vw,48px);margin:4px 0 0;letter-spacing:.08em;color:var(--paper);text-shadow:0 0 18px rgba(240,179,90,.5)}
-#title .sub{font-family:var(--serif);font-size:clamp(16px,4.6vw,21px);color:var(--lamp2);margin:4px 0 10px;letter-spacing:.14em}
-#title .emo{font-size:30px}
-.tbtns{display:flex;flex-direction:column;gap:12px;width:min(300px,86vw);margin-top:12px}
-.namebox{margin-top:6px;font-size:15px;color:#e8d8b8}
-.namebox input{font:inherit;font-size:17px;padding:8px 10px;border:2px solid var(--lamp);border-radius:8px;background:var(--paper);color:var(--ink);width:12em;max-width:70vw}
-.ghost{font-size:14px;color:#dcc9a4;margin-top:12px;min-height:1.2em}
-.hud{display:flex;gap:6px;align-items:center;flex-wrap:wrap;padding-right:50px;min-height:44px;font-size:14px}
-.chip{background:rgba(0,0,0,.3);border:1px solid rgba(240,179,90,.35);border-radius:20px;padding:3px 10px;white-space:nowrap}
-.chip b{font-size:16px;color:var(--lamp2)}
-.frame{border:6px solid #5a3d25;border-radius:10px;box-shadow:inset 0 0 0 2px #7a5a36,0 6px 16px rgba(0,0,0,.5);overflow:hidden;background:#1d1510;position:relative}
-#win svg{display:block;width:100%;height:auto}
-#winLbl{position:absolute;left:8px;bottom:6px;background:rgba(28,19,13,.7);color:var(--paper);padding:2px 8px;border-radius:8px;font-size:13px}
-.sheet{margin-top:8px;background:var(--paper);color:var(--ink);border-radius:8px;padding:6px 6px 4px;box-shadow:0 6px 16px rgba(0,0,0,.45),inset 0 0 30px rgba(160,120,60,.25)}
-.sheet h4{margin:0 4px 2px;font-family:var(--serif);font-size:15px;display:flex;justify-content:space-between;align-items:baseline}
-.sheet h4 small{font-family:var(--sans);font-weight:500;color:var(--ink2);font-size:12px}
-#chart svg{display:block;width:100%;height:auto}
-#recs{font-size:13px;overflow-x:auto}
-#recs table{border-collapse:collapse;margin:2px auto 0;width:100%}
-#recs td,#recs th{border:1px solid #cdb88c;padding:2px 3px;text-align:center;white-space:nowrap}
-#recs th{background:#eadbb6;font-weight:700}
-.lab{font-size:14px;color:#ecdcbc;margin:10px 0 4px;text-align:left}
-.lab b{color:var(--lamp2)}
-#reads{display:flex;flex-direction:column;gap:6px}
-.rd{min-height:46px;border-radius:10px;border:2px solid rgba(240,179,90,.35);background:rgba(0,0,0,.28);color:var(--paper);font-size:15px;line-height:1.35;cursor:pointer;padding:6px 10px;text-align:left}
-.rd.sel{background:var(--paper);color:var(--ink);border-color:var(--lamp);box-shadow:0 0 0 2px var(--lamp)}
-#slots{display:grid;grid-template-columns:repeat(6,1fr);gap:4px}
-.sl{min-height:88px;border-radius:8px;border:2px dashed rgba(243,230,200,.4);background:rgba(0,0,0,.25);color:var(--paper);cursor:pointer;padding:3px 1px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:1px;font-size:11px;position:relative}
-.sl .tm{font-size:11px;color:#dcc9a4}
-.sl .ic{font-size:22px;line-height:1.1}
-.sl .nm{font-size:10px;line-height:1.15}
-.sl.o{border:2px solid #d9a441;background:#f3e6c8;color:var(--ink)}
-.sl.i{border:2px solid #8aa1c0;background:#dfe5ee;color:#1f2d44}
-.sl.lock{opacity:.55;cursor:default}
-.sl.now{box-shadow:0 0 0 3px var(--lamp2),0 0 16px var(--lamp)}
-.sl .st{position:absolute;bottom:2px;left:0;right:0;font-size:18px}
-.sl .st.pop{animation:pop .45s cubic-bezier(.2,1.8,.4,1)}
-@keyframes pop{0%{transform:scale(2.4);opacity:0}100%{transform:scale(1);opacity:1}}
-#hand{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;justify-content:center}
-.cd{min-height:48px;min-width:74px;border-radius:8px;padding:4px 8px;cursor:pointer;font-size:13px;display:flex;align-items:center;gap:4px;border:2px solid transparent}
-.cd.o{background:#f3e6c8;color:var(--ink);border-color:#d9a441}
-.cd.i{background:#dfe5ee;color:#1f2d44;border-color:#8aa1c0}
-.cd.sel{box-shadow:0 0 0 3px var(--lamp2),0 0 14px var(--lamp);transform:translateY(-3px)}
-.cd .ic{font-size:20px}
-.legend{font-size:12px;color:#dcc9a4;text-align:left;margin-top:4px;line-height:1.5}
-#goBtn{width:100%;margin-top:10px;font-size:19px;min-height:54px}
-#msg{margin-top:8px;background:var(--paper);color:var(--ink);border-radius:10px;padding:10px 12px;font-size:15px;line-height:1.6;text-align:left;box-shadow:0 6px 14px rgba(0,0,0,.4)}
-#msg h3{margin:0 0 4px;font-family:var(--serif);font-size:19px}
-#msg .row{display:flex;justify-content:flex-end;margin-top:6px}
-.em{color:var(--red);font-weight:700}
-#fx{position:fixed;inset:0;pointer-events:none;z-index:45;overflow:hidden}
-.float{position:absolute;font-family:var(--serif);font-weight:800;color:var(--lamp2);font-size:24px;text-shadow:0 2px 0 rgba(0,0,0,.6),0 0 10px rgba(240,179,90,.8);animation:fl 1.2s ease-out forwards;white-space:nowrap;transform:translate(-50%,-50%)}
-.float.big{font-size:34px}
-@keyframes fl{0%{opacity:0;margin-top:10px}15%{opacity:1}100%{opacity:0;margin-top:-64px}}
-.ember{position:absolute;width:6px;height:6px;border-radius:50%;background:var(--lamp2);box-shadow:0 0 8px var(--lamp)}
-.ov{position:fixed;inset:0;z-index:40;background:rgba(16,10,6,.7);display:flex;align-items:center;justify-content:center;padding:14px}
-.ov .paper{background:var(--paper);color:var(--ink);border-radius:12px;max-width:440px;width:100%;padding:18px 16px 16px;text-align:center;box-shadow:0 0 40px rgba(240,179,90,.35),0 12px 30px rgba(0,0,0,.6);max-height:92vh;overflow:auto;border:3px solid #7a5a36}
-.ov h2{font-family:var(--serif);margin:4px 0 8px;font-size:25px}
-.ov .no{display:inline-block;background:var(--wood);color:var(--lamp2);padding:2px 12px;border-radius:20px;font-size:14px;letter-spacing:.1em}
-.ov p{font-size:16px;line-height:1.65;margin:8px 0;text-align:left}
-.ov svg{max-width:100%;height:auto}
-.stamp{display:inline-block;border:4px solid var(--red);color:var(--red);font-family:var(--serif);font-size:36px;padding:4px 16px;border-radius:8px;transform:rotate(-8deg);margin:8px}
-.stamp.in{animation:stamp .5s cubic-bezier(.2,1.6,.4,1)}
-@keyframes stamp{0%{transform:scale(3) rotate(-8deg);opacity:0}100%{transform:scale(1) rotate(-8deg);opacity:1}}
-table.rec{margin:8px auto;border-collapse:collapse;font-size:15px}
-table.rec td{border-bottom:1px solid #cdb88c;padding:4px 10px;text-align:left}
-.dayres{display:grid;grid-template-columns:repeat(6,1fr);gap:3px;margin:6px 0;font-size:12px}
-.dayres div{border-radius:6px;padding:3px 1px;background:#eadbb6}
-#test{justify-content:flex-start;padding-top:60px}
-#test h2{font-family:var(--serif);margin:0 0 6px}
-#tNum{color:var(--lamp2);font-weight:700;margin-bottom:6px}
-.qbox{width:100%;max-width:520px;background:var(--paper);color:var(--ink);border-radius:12px;padding:14px;text-align:left;font-size:17px;line-height:1.65}
-#tFig{text-align:center;margin:6px 0}
-#tFig svg{max-width:100%;height:auto;max-height:240px}
-.choices{display:flex;flex-direction:column;gap:8px;margin-top:10px}
-.choices button{min-height:48px;text-align:left;padding:10px 14px;border:2px solid #cdb88c;border-radius:10px;background:#fffaf0;color:var(--ink);font-size:16px;cursor:pointer}
-.choices button.sel{background:var(--wood2);color:#fff}
-.numrow{display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap}
-.numrow input{font:inherit;font-size:22px;width:6em;padding:8px;border:2px solid var(--ink);border-radius:8px;background:#fff}
-.seq{min-height:48px;border:2px dashed #cdb88c;border-radius:8px;padding:6px;margin-top:8px;display:flex;flex-direction:column;gap:4px;font-size:15px}
-.seq div{background:var(--wood2);color:#fff;border-radius:6px;padding:6px 8px}
-.fb{margin-top:10px;padding:10px;border-radius:8px;font-size:15px;line-height:1.55}
-.fb.o{background:#f7e2d4;border:2px solid var(--red)}
-.fb.x{background:#ebe3d0;border:2px solid #8a7a5a}
-.fb b.m{font-family:var(--serif);font-size:24px;margin-right:6px}
-.hint{font-size:13px;color:#6b5842;line-height:1.4}
-@media (prefers-reduced-motion:reduce){*{animation-duration:.01s!important;transition:none!important}}
-</style>
-</head>
-<body>
-<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
- <filter id="oil" x="-5%" y="-5%" width="110%" height="110%"><feTurbulence type="fractalNoise" baseFrequency=".045" numOctaves="3" seed="7" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="7"/></filter>
- <filter id="grain"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" seed="3"/><feColorMatrix values="0 0 0 0 .2  0 0 0 0 .15  0 0 0 0 .1  0 0 0 .22 0"/><feComposite in2="SourceGraphic" operator="in"/></filter>
-</defs></svg>
-<div class="app">
-<section id="title" class="screen">
-  <svg viewBox="0 0 260 170" width="260" height="170" aria-hidden="true">
-    <defs><radialGradient id="tg" cx="50%" cy="40%" r="60%"><stop offset="0" stop-color="#ffd792" stop-opacity=".55"/><stop offset="1" stop-color="#ffd792" stop-opacity="0"/></radialGradient></defs>
-    <circle cx="130" cy="88" r="78" fill="url(#tg)"/>
-    <g filter="url(#oil)"><path d="M10 130 L70 60 L100 90 L140 40 L200 110 L250 80 L250 160 L10 160Z" fill="#4a5a52"/><path d="M130 52 l10-12 10 14" fill="#e9e1cf"/>
-    <path d="M86 150 L86 112 L130 84 L174 112 L174 150Z" fill="#6b4226" stroke="#2b1d14" stroke-width="3"/><path d="M78 116 L130 80 L182 116" fill="none" stroke="#2b1d14" stroke-width="8" stroke-linecap="round"/>
-    <rect x="112" y="118" width="20" height="18" fill="#ffd792" stroke="#2b1d14" stroke-width="2"/><rect x="142" y="124" width="16" height="26" fill="#3b281b" stroke="#2b1d14" stroke-width="2"/></g>
-    <g transform="translate(18 100)"><rect x="0" y="22" width="56" height="30" rx="4" fill="#3b281b" stroke="#c9a15e" stroke-width="2"/><rect x="6" y="6" width="44" height="22" rx="3" fill="#f3e6c8" stroke="#c9a15e" stroke-width="1.5"/><path d="M8 14 Q18 12 24 16 T40 22 T50 24" fill="none" stroke="#2d3f86" stroke-width="1.6"/><line x1="50" y1="24" x2="58" y2="40" stroke="#c9a15e" stroke-width="2"/></g>
-  </svg>
-  <div class="emo">🛖</div>
-  <h1>山小屋の5日間</h1>
-  <div class="sub">～ 気圧と天気 ～</div>
-  <div class="namebox" id="nameBox">なまえ（なくてもOK）<br><input id="nameIn" maxlength="16" autocomplete="off"></div>
-  <div class="tbtns">
-    <button class="btn lamp" id="bStart">はじめる</button>
-    <button class="btn hidden" id="bCont">つづきから</button>
-    <button class="btn small hidden" id="bBook1">📖 図鑑</button>
-  </div>
-  <div class="ghost" id="ghost"></div>
-</section>
+button{font-family:var(--fh);font-weight:900;color:inherit;cursor:pointer;border:0;background:none;padding:0;touch-action:manipulation}
+button:disabled{opacity:.45;cursor:default}
+/* フェルトのボタン（縫い目つき） */
+.felt{--c:var(--teal);position:relative;display:flex;align-items:center;justify-content:center;gap:8px;min-height:54px;padding:10px 22px;border-radius:16px;font-size:20px;letter-spacing:.04em;color:#fff;
+ background-color:var(--c);background-image:radial-gradient(rgba(255,255,255,.09) 1px,transparent 1.4px),radial-gradient(rgba(0,0,0,.08) 1px,transparent 1.4px);background-size:7px 7px,9px 9px;background-position:0 0,3px 4px;
+ outline:2.5px dashed rgba(255,255,255,.75);outline-offset:-8px;box-shadow:0 4px 0 rgba(60,40,25,.35),0 6px 14px rgba(60,40,25,.25);transition:transform .08s}
+.felt:active{transform:translateY(3px);box-shadow:0 1px 0 rgba(60,40,25,.35)}
+.felt.m{--c:var(--mus);color:#4a2c00;outline-color:rgba(90,50,0,.55)}
+.felt.b{--c:var(--brick)}
+.felt.c{--c:var(--cream);color:var(--choco);outline-color:rgba(107,74,53,.5)}
+.felt.o{--c:var(--olive)}
+.felt.s{min-height:46px;font-size:16px;padding:8px 12px;white-space:nowrap;letter-spacing:0}
+.row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+.row>.felt{flex:1 1 0;min-width:0}
+/* HUD */
+.tag{position:absolute;top:calc(10px + env(safe-area-inset-top));min-height:48px;display:flex;align-items:center;gap:8px;padding:6px 16px 6px 12px;border-radius:10px 16px 16px 10px;font-family:var(--fh);font-weight:900;font-size:17px;color:var(--choco);
+ background:var(--cream);background-image:radial-gradient(rgba(107,74,53,.08) 1px,transparent 1.4px);background-size:6px 6px;outline:2px dashed rgba(107,74,53,.55);outline-offset:-6px;box-shadow:0 3px 0 rgba(60,40,25,.3)}
+.tag:active{transform:translateY(2px)}
+#bBack{left:calc(10px + env(safe-area-inset-left))}
+#bBack b{display:inline-flex;width:28px;height:28px;align-items:center;justify-content:center;border-radius:50%;background:var(--brick);color:#fff;font-size:14px;box-shadow:inset 0 0 0 2px var(--brick),inset 0 0 0 3.5px rgba(255,255,255,.7)}
+#hudR{position:absolute;top:calc(10px + env(safe-area-inset-top));right:calc(10px + env(safe-area-inset-right));display:flex;gap:8px}
+#hudR .tag{position:relative;top:0}
+#kk{background-color:var(--mus);color:#4a2c00}
+.snd{width:48px;justify-content:center;padding:0!important}
+#act{position:absolute;display:flex;gap:10px}
+#act .felt{min-height:50px;font-size:17px;padding:8px 16px}
+#bFF.on{--c:var(--brick)}
+/* 布の札（オーバーレイ） */
+.ov{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:14px;background:rgba(74,60,45,.35);pointer-events:auto}
+.cloth{position:relative;width:min(640px,100%);max-height:calc(100% - 10px);overflow:auto;padding:24px 22px 20px;border-radius:20px;color:var(--choco);background-color:var(--cream);
+ background-image:linear-gradient(90deg,rgba(107,74,53,.035) 50%,transparent 50%),linear-gradient(rgba(107,74,53,.035) 50%,transparent 50%);background-size:6px 6px;
+ outline:3px dashed rgba(181,83,60,.55);outline-offset:-10px;box-shadow:0 0 0 6px var(--teal),0 0 0 8px rgba(0,0,0,.08),0 18px 40px rgba(60,40,25,.35);animation:clin .4s cubic-bezier(.2,1.3,.4,1)}
+@keyframes clin{0%{transform:translateY(-30px) rotate(2deg);opacity:0}100%{transform:none;opacity:1}}
+.cloth h2{font-family:var(--fh);font-weight:900;font-size:26px;margin:0 0 6px;color:var(--teal)}
+.cloth p{margin:7px 0;font-size:17px;line-height:1.7}
+.cloth .lead{font-size:18.5px;color:#3d2a1d}
+.cloth .new{display:inline-block;background:var(--mus);color:#4a2c00;border-radius:8px;padding:2px 10px;font-family:var(--fh);font-weight:900;font-size:14px;outline:1.5px dashed rgba(90,50,0,.5);outline-offset:-4px}
+.days{display:flex;gap:6px;justify-content:center;margin:10px 0}
+.days i{width:46px;height:34px;border-radius:8px;background:#e2d6bf;display:flex;align-items:center;justify-content:center;font-style:normal;font-family:var(--fh);font-weight:900;font-size:13px;color:#9a876c;outline:1.5px dashed rgba(107,74,53,.35);outline-offset:-4px}
+.days i.done{background:var(--olive);color:#fff}.days i.now{background:var(--mus);color:#4a2c00}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin:10px 0}
+.stats div{background:#efe5d0;border-radius:10px;padding:6px 10px;font-size:13.5px;outline:1.5px dashed rgba(107,74,53,.3);outline-offset:-4px}
+.stats b{display:block;font-family:var(--fh);font-weight:900;font-size:24px;color:var(--teal)}
+.stats b.ng{color:var(--brick)}
+.fab{display:grid;grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:9px;margin:10px 0}
+.fab div{aspect-ratio:1;border-radius:12px;display:flex;align-items:flex-end;justify-content:center;padding:4px;font-size:12px;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.5);outline:2px dashed rgba(255,255,255,.7);outline-offset:-6px;box-shadow:0 3px 0 rgba(60,40,25,.25)}
+.fab div.lock{background:#e2d6bf!important;color:#9a876c;text-shadow:none;outline-color:rgba(107,74,53,.3)}
+canvas.rec{width:100%;height:auto;border-radius:12px;background:#f6efdf;margin:8px 0;outline:2px dashed rgba(107,74,53,.35);outline-offset:-6px}
+/* タイトル */
+#title .box{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom));width:min(520px,calc(100% - 28px));display:flex;flex-direction:column;gap:10px}
+#title.wide .box{left:auto;right:4%;bottom:6%;transform:none;width:min(400px,32vw)}
+.nameT{display:flex;align-items:center;gap:10px;padding:8px 16px;border-radius:14px;background:var(--cream);outline:2px dashed rgba(107,74,53,.5);outline-offset:-6px;box-shadow:0 3px 0 rgba(60,40,25,.25)}
+.nameT b{font-family:var(--fh);font-weight:900;font-size:15px;color:var(--teal);white-space:nowrap}
+.nameT input{flex:1;min-width:0;font:inherit;font-size:18px;border:0;border-bottom:2px dashed rgba(107,74,53,.5);background:transparent;padding:6px 2px;color:var(--choco);outline:none}
+#bList{position:absolute;top:calc(10px + env(safe-area-inset-top));left:calc(10px + env(safe-area-inset-left))}
+#toast{position:absolute;left:50%;transform:translateX(-50%);max-width:min(560px,92%);padding:10px 18px;border-radius:14px;background:var(--cream);color:var(--choco);font-size:16.5px;line-height:1.5;text-align:center;outline:2px dashed rgba(181,83,60,.6);outline-offset:-6px;box-shadow:0 6px 18px rgba(60,40,25,.3);animation:clin .3s ease-out;pointer-events:none;z-index:5}
+#pops{position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:6}
+.pop{position:absolute;transform:translate(-50%,-50%);font-family:var(--fh);font-weight:900;font-size:30px;color:#fff;white-space:nowrap;text-align:center;line-height:1.15;padding:6px 16px;border-radius:16px;background:var(--mus);outline:2px dashed rgba(255,255,255,.8);outline-offset:-6px;box-shadow:0 4px 0 rgba(60,40,25,.3);animation:popup 2.1s ease-out forwards}
+.pop small{display:block;font-family:var(--fb);font-weight:600;font-size:15px}
+.pop.t{background:var(--teal)}.pop.r{background:var(--brick)}.pop.o{background:var(--olive)}
+.pop.big{font-size:40px}
+@keyframes popup{0%{transform:translate(-50%,-50%) scale(.3) rotate(-6deg);opacity:0}14%{transform:translate(-50%,-50%) scale(1.12) rotate(2deg);opacity:1}24%{transform:translate(-50%,-50%) scale(1) rotate(-1deg)}80%{opacity:1}100%{transform:translate(-50%,-100%);opacity:0}}
+/* テスト */
+#test{display:flex;align-items:center;justify-content:center;padding:70px 12px 14px;background:var(--linen)}
+#test .cloth{width:min(760px,100%);max-height:100%}
+.tno{font-family:var(--fh);font-weight:900;font-size:15px;color:var(--brick)}
+.prog{display:flex;gap:4px;margin:8px 0 12px}.prog i{flex:1;height:10px;border-radius:5px;background:#e2d6bf}.prog i.on{background:var(--teal)}
+.tq{font-size:18.5px;line-height:1.7;color:#3d2a1d}
+.fig2{margin:10px 0;background:#fff;border-radius:12px;padding:6px;text-align:center}.fig2 svg{max-width:100%;height:auto}
+.ch{display:grid;gap:9px;margin-top:10px}
+.ch button{min-height:52px;padding:10px 16px;border-radius:14px;text-align:left;font-family:var(--fb);font-weight:600;font-size:16.5px;line-height:1.45;color:var(--choco);background:#efe5d0;outline:2px dashed rgba(107,74,53,.4);outline-offset:-6px;box-shadow:0 3px 0 rgba(60,40,25,.25)}
+.ch button:active{transform:translateY(2px)}
+.numrow{display:flex;gap:8px;align-items:center;margin-top:10px}.numrow input{flex:1;min-width:0;font:inherit;font-size:22px;padding:10px;border-radius:12px;border:2px dashed rgba(107,74,53,.5);background:#fff;color:var(--choco)}
+.ord{min-height:40px;margin:8px 0}.ord div{padding:7px 12px;border-radius:10px;background:var(--olive);color:#fff;margin:4px 0}
+.small{font-size:14px;opacity:.85}
+@media (prefers-reduced-motion:reduce){.cloth{animation:none}.pop{animation:popfade 2s forwards}@keyframes popfade{0%,80%{opacity:1}100%{opacity:0}}}
+</style></head><body>
+<div id="app">
+  <canvas id="cv"></canvas>
 
-<section id="play" class="hidden">
-  <div class="hud" id="hud">
-    <span class="chip" id="hDay">1日目</span>
-    <span class="chip">🕰 <b id="hTime">6:00</b></span>
-    <span class="chip">★ <b id="hStar">0</b></span>
+  <div id="title" class="scr">
+    <div class="box pe">
+      <button class="felt m" id="bStart">はじめる</button>
+      <button class="felt hidden" id="bCont">つづきから</button>
+      <div class="nameT" id="nameRow"><b>なまえ</b><input id="nameIn" maxlength="16" placeholder="（空でも遊べる）" autocomplete="off"></div>
+      <div class="row"><button class="felt c s" id="bSnd1">♪ 音あり</button><button class="felt c s zk" id="bBook1">📖 図鑑</button><button class="felt c s" id="bAlb1">布あつめ</button></div>
+    </div>
+    <button class="tag pe hidden" id="bList"><b style="display:inline-flex;width:26px;height:26px;align-items:center;justify-content:center;border-radius:50%;background:#B5533C;color:#fff;font-size:13px">◀</b>一覧へ</button>
   </div>
-  <div class="frame" id="win"></div>
-  <div class="sheet"><h4><span>自記気圧計の記録</span><small id="chartNote">前日18時〜いま</small></h4><div id="chart"></div><div id="recs"></div></div>
-  <div id="planBox">
-    <div id="readBox"><div class="lab">① 気圧の記録から <b>何が読める？</b></div><div id="reads"></div></div>
-    <div class="lab" id="slotLab">② 予定表に作業カードを置く（カード→時間の順にタップ）</div>
-    <div id="slots"></div>
-    <div id="hand"></div>
-    <div class="legend" id="legend"></div>
-    <button class="btn lamp" id="goBtn" disabled>時間を進める ▶</button>
-  </div>
-  <div id="msg" class="hidden"></div>
-</section>
 
-<section id="test" class="screen hidden">
-  <h2>📝 確認テスト</h2>
-  <div class="namebox hidden" id="tNameBox">なまえ <input id="tName" maxlength="16" autocomplete="off"></div>
-  <div id="tNum"></div>
-  <div class="qbox"><div id="tQ"></div><div id="tFig"></div><div id="tA"></div><div id="tFb"></div></div>
-</section>
-
-<section id="end" class="screen hidden">
-  <div class="stamp">おつかれさま</div>
-  <p style="font-size:16px;line-height:1.7">気圧が<b style="color:#ffd792">下がり続ける</b> → 天気はくずれていく<br>気圧が<b style="color:#ffd792">上がり始める</b> → 天気は回復していく<br><small>値の高い低いより「変わり方」を読む</small></p>
-  <div class="tbtns">
-    <button class="btn small hidden" id="bBook2">📖 図鑑</button>
-    <button class="btn small" id="bAgain">もう一度 5日目</button>
-    <button class="btn small" id="bTop">タイトルへ</button>
+  <div id="hud" class="scr hidden">
+    <button class="tag pe" id="bBack" aria-label="もどる"><b>◀</b>もどる</button>
+    <div id="hudR" class="pe"><div class="tag" id="kk">✦ <span id="kkN">0</span></div><button class="tag snd" id="bSnd" aria-label="音">♪</button></div>
+    <div id="act" class="pe"><button class="felt b" id="bAll">ぜんぶ取りこむ</button><button class="felt c" id="bFF">▶▶ 早送り</button></div>
   </div>
-</section>
+
+  <div id="ov" class="ov hidden"><div class="cloth" id="ovBox"></div></div>
+  <div id="test" class="scr hidden pe"><div class="cloth" id="tbox"></div></div>
+  <div id="toast" class="hidden"></div>
+  <div id="pops"></div>
 </div>
-<div id="fx"></div>
-<button id="mute" aria-label="音">🔊</button>
 
 <script>/*@SUBMIT_CARD_BEGIN*/
 /* ==========================================================
@@ -1412,295 +1374,481 @@ window.ZUKAN_CARDS={"v": 1, "grade": "chu2", "name": "中2理科図鑑", "econom
 })();
 
 /*@ZUKAN_END*/</script>
+
 <script>
-(function(){
 'use strict';
-var GID='kisho-yamagoya',KOMA='chu2-kisho-10',SKEY='rika-zukan:chu2:game:'+GID+':v1';
-var TITLE='山小屋の5日間',SUB='気圧と天気';
-function $(id){return document.getElementById(id)}
-var RM=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
-function rf(a,b){return a+Math.random()*(b-a)}
-function ri(a,b){return a+Math.floor(Math.random()*(b-a+1))}
-function pick(a){return a[Math.floor(Math.random()*a.length)]}
-function shuffle(a){a=a.slice();for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1)),t=a[i];a[i]=a[j];a[j]=t}return a}
-function fmt(t){t=Math.max(0,Math.round(t));return Math.floor(t/60)+':'+String(t%60).padStart(2,'0')}
-function r1(x){return Math.round(x*10)/10}
-function hh(h){h=((h%24)+24)%24;return h+':00'}
+const GID='kisho-yamagoya',KOMA='chu2-kisho-10',SKEY='rika-zukan:chu2:game:'+GID+':v1';
+const UNIT='中2理科　気象とその変化　第10回',GTITLE='山小屋の5日間 ～気圧と天気～';
+const TEST_ONLY=window.GAME_MODE==='test';
+const RM=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const $=s=>document.querySelector(s);
+const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const clamp=(v,a,b)=>v<a?a:v>b?b:v, lerp=(a,b,t)=>a+(b-a)*t, rnd=(a,b)=>a+Math.random()*(b-a), pick=a=>a[Math.floor(Math.random()*a.length)];
+const f1=v=>(Math.round(v*10)/10).toFixed(1);
 
-/* ---------- 作業カード ---------- */
-var OUT=[['🪓','まき割り'],['👕','洗濯'],['🥾','見回り'],['🪣','水くみ'],['🪵','屋根の点検'],['🌿','薬草つみ']];
-var IN=[['🔧','道具の手入れ'],['🥫','保存食づくり'],['📓','観測日誌'],['🧵','つくろいもの'],['🍞','パン焼き'],['🗺️','地図の整理']];
+/* ===== 5日間の空（自作の記録） T＝時刻（1日目0時＝0） ===== */
+// 気圧の大きな流れ（hPa）。これに1日2回の小さな上下（±0.5hPa）が重なる
+const KP=[[-40,1020],[34,1020],[50,1007.2],[51,1007],[58,1012],[59,1012],[79,1001],[90,1011.9],[96,1015],[99,1016],[109,1008],[124,1017]];
+function interp(K,T){if(T<=K[0][0])return K[0][1];for(let i=1;i<K.length;i++)if(T<=K[i][0]){const a=K[i-1],b=K[i];return a[1]+(b[1]-a[1])*(T-a[0])/(b[0]-a[0])}return K[K.length-1][1]}
+const base=T=>interp(KP,T);
+function pres(T){return base(T)+.5*Math.cos(2*Math.PI*(T-10)/12)+.12*Math.sin(T*2.3)+.08*Math.sin(T*5.1)}
+const slope=T=>(base(T)-base(T-2))/2;
+const RAIN=[[40.5,53],[65,80],[107,110.5]];
+const CK=[[-40,2],[36,2],[38,5],[40,8],[40.5,10],[53,9],[55,7],[57,3],[62,3],[63,5],[64.5,8],[65,10],[80,9],[82,6],[84,2],[103,2],[104,4],[106,8],[107,10],[110.5,9],[112,5],[113,3],[124,2]];
+function cloud(T){return clamp(interp(CK,T)+(interp(CK,T)<4?.8*Math.sin(T*.9):0),0,10)}
+function rainAt(T){for(const r of RAIN)if(T>=r[0]&&T<r[1])return true;return false}
+function rainIdx(T){return RAIN.findIndex(r=>T>=r[0]&&T<r[1])}
+function wind(T){const s=slope(T);return s<-.3?'南':s>.3?'北西':'西'}
+const WDIR={'南':Math.PI/2,'北西':-Math.PI*3/4,'西':Math.PI};// 風が「吹いてくる」方位
+const dryRate=T=>{if(rainAt(T))return 0;const c=cloud(T);return c<=3?1:c<=7?.65:.3};
 
-/* ---------- 気圧の読み ---------- */
-var READ={
- steady:{t:'ほぼ一定（1〜2hPaの小さな上下だけ） → 晴れが続きそう'},
- fall:{t:'下がり続けている → 天気がくずれていきそう'},
- rise:{t:'上がり始めた → 天気が回復していきそう'},
- wobble:{t:'少し下がったところがある → すぐに雨になりそう',trap:'1〜2hPaの上下は、天気が変わらなくてもいつも起きている小さなゆれ。大事なのは<b>何時間も同じ向きに動き続けているか</b>。'},
- low:{t:'値が低い（1010hPaより下） → 1日中雨が続きそう',trap:'値は低くても、<b>上がり始めた</b>ことの方が大事。低い値から上がり始めたら、天気は回復へ向かう。'},
- high:{t:'値がまだ高い（1013hPaより上） → 晴れが続きそう',trap:'値はまだ高くても、<b>下がり続けている</b>ことの方が大事。下がり続ければ、天気はくずれていく。'}
-};
+/* ===== 1日ごとの設計 ===== */
+const DAYS=[null,
+ {items:['towel','socks','shirt','towel','sheet','socks','shirt'],target:5,nm:'晴れの1日',unlock:'',
+  brief:['洗濯かごから、物干しへ<b>ドラッグ</b>して干そう（かごをタップでも干せる）。乾いたら<b>タップで取りこむ</b>。','小屋の前の<b>自記気圧計</b>は、針と赤い糸で気圧を縫っていく。1〜2hPaの小さな上下は、毎日のいつものゆれ。']},
+ {items:['sheet','towel','shirt','socks','towel','shirt','socks','towel'],target:5,nm:'下がり坂',unlock:'雲量の記録',
+  brief:['気圧が<b>何時間も下がり続けたら</b>、天気がくずれる前ぶれ。雨がふり出す<b>前に</b>取りこみを終えよう。','取りこみは1枚ずつ手間がかかる。空がくもってからでは間に合わないかも。']},
+ {items:['shirt','towel','socks','sheet','towel','shirt','socks','towel','shirt'],target:6,nm:'雨上がりと、2度目の坂',unlock:'風向の記録',
+  brief:['雨上がりの朝。気圧が<b>上がり始めていたら</b>回復のしるし。まだくもっていても干しどき。','午後は空が晴れていても<b>気圧の線</b>から目をはなすな。']},
+ {items:['towel','shirt','sheet','socks','towel','shirt','socks','towel'],target:6,nm:'低い朝',unlock:'',
+  brief:['朝の気圧はかなり<b>低い</b>。でも見るのは値の高さではなく<b>変わる向き</b>。','下がっているのか、上がり始めたのか。線の先を読もう。']},
+ {items:['socks','towel','shirt','socks','towel','socks','shirt'],target:4,nm:'針が折れた日',unlock:'3時間おきの記録だけ',
+  brief:['自記気圧計の<b>針が折れた</b>！　今日は番人が<b>3時間おき</b>に読んだ値（×）しか届かない。','点と点の変わり方から、下がり続けか・上がり始めかを見ぬこう。']}];
+const ITEM={socks:{nm:'くつ下',need:1.5,w:.62,h:.72},towel:{nm:'タオル',need:2.5,w:.78,h:1.05},shirt:{nm:'シャツ',need:3.5,w:.95,h:1.0},sheet:{nm:'シーツ',need:5,w:1.18,h:1.45}};
+const FABRIC=[{k:'gingham',nm:'青緑のギンガム',c:'#4A6C6F'},{k:'dots',nm:'からしの水玉',c:'#E9A23B'},{k:'stripe',nm:'れんがのしま',c:'#B5533C'},{k:'plaid',nm:'オリーブのチェック',c:'#8A9A5B'},{k:'plain',nm:'生成りの無地',c:'#E8DCC4'},{k:'star',nm:'夜空の星柄',c:'#3E4E6B'},{k:'check',nm:'桃色のチェック',c:'#D98C8C'},{k:'leaf',nm:'葉っぱのプリント',c:'#6F8F6A'}];
 
-/* ---------- 1日の記録をつくる（h=-6：前日18時 〜 h=18） ---------- */
-function mk(type){var P=[],wet=[0,0,0,0,0,0],i,h,base,s,rate,b,low,f,k,r,peak,read,noon=null;
-  function wob(h){return .45*Math.sin(2*Math.PI*(h+3)/12)+rf(-.15,.15)}
-  if(type==='steady'){base=rf(1018,1021);for(h=-6;h<=18;h++)P.push(base+wob(h));read='steady'}
-  else if(type==='fall'){base=rf(1021,1024);s=ri(-2,0);rate=rf(.7,.9);k=ri(3,4);for(h=-6;h<=18;h++)P.push((h<s?base:base-(h-s)*rate)+wob(h)*.5);for(i=k;i<6;i++)wet[i]=1;read='fall'}
-  else if(type==='rise'){b=ri(2,4);low=rf(1003,1006);r=ri(1,2);for(h=-6;h<=18;h++)P.push((h<b?low+(b-h)*rf(.85,.95):low+(h-b)*rf(.8,.9))+rf(-.12,.12));for(i=0;i<r;i++)wet[i]=1;read='rise'}
-  else if(type==='d3'){b=ri(-1,1);low=rf(1006,1008);f=ri(9,10);rate=rf(.55,.7);for(h=-6;h<=18;h++){var v=h<b?low+(b-h)*.9:(h<f?low+(h-b)*1.0:low+(f-b)*1.0-(h-f)*rate);P.push(v+rf(-.12,.12))}wet=[1,0,0,0,0,1];read='rise';noon='fall'}
-  // 雲量・風向（3時間ごと）
-  var hrs=[-6,-3,0,3,6,9,12,15,18],cl=[],wd=[];
-  hrs.forEach(function(h){var sl=h<6?-1:Math.min(5,Math.floor((h-6)/2)),w=sl>=0?wet[sl]:null,c,d;
-    if(type==='steady'){c=ri(1,3);d=pick(['北西','北','西'])}
-    else if(type==='fall'){var toRain=6+2*k-h;c=w?10:(toRain>12?ri(1,3):toRain>6?ri(4,6):ri(7,9));d=w||toRain<=6?'南':(toRain<=12?'南東':'東')}
-    else if(type==='rise'){var sinceB=h-b;c=(h<6+2*r)?10:(sinceB<6?ri(6,8):ri(2,4));if(h<6&&sinceB<0)c=10;d=sinceB<0?'南':(sinceB<3?'西':'北西')}
-    else{if(h<8)c=10;else if(h<f+2)c=ri(2,4);else if(h<16)c=ri(6,8);else c=10;d=h<b?'南':(h<f?'北西':(h<14?'南東':'南'))}
-    cl.push(c);wd.push(d)});
-  return {type:type,P:P.map(r1),wet:wet,read:read,noon:noon,cl:cl,wd:wd}}
-function Pat(sc,h){return sc.P[h+6]}
-
-/* ---------- 5日間 ---------- */
-var DAYS=[
- {type:'steady',reads:['steady','wobble','rise'],intro:1,
-  txt:'山小屋で5日間、留守番をまかされた。<br>毎朝、<b class="em">自記気圧計</b>の記録を読んで、外の作業と小屋の中の作業の予定を組む。<br>1日目はおだやかな晴れ。まずは記録の形を見てみよう。'},
- {type:'fall',reads:['fall','steady','high'],recs:['cl'],
-  txt:'2日目。<b class="em">雲量</b>の記録が加わる（空全体を10としたときの雲の量）。<br>今日の外の作業は<b>予定表のうち何枠かだけ</b>。雨に当たる時間に外の作業を置くと、ずぶぬれになる。<br>晴れている時間に小屋にこもるのも、もったいない。'},
- {type:'d3',reads:['rise','fall','steady'],noonReads:['fall','high','steady'],recs:['cl','wd'],
-  txt:'3日目。<b class="em">風向</b>の記録も加わる。<br>ゆうべは雨。朝の記録をよく読もう。<br>今日は<b>正午にもう一度</b>気圧計を見て、午後の予定を組み直せる。'},
- {type:'rise',reads:['rise','low','fall'],recs:['cl','wd'],
-  txt:'4日目。夜のあいだ、ずっと雨の音がしていた。<br>気圧の<b>値</b>だけでなく、<b>変わり方</b>を読もう。'},
- {type:'final',reads:null,recs:['cl','wd'],step3:1,
-  txt:'5日目（最終日）。気圧計のペンが止まってしまい、麓の観測所から<b class="em">3時間おき</b>の記録だけが届く。<br>点と点のあいだを読んで、最後の予定を組み切ろう。'}
-];
-function dayType(d){return d===4?pick(['fall','rise']):DAYS[d].type}
-function readsFor(d,sc){if(d===4)return sc.read==='fall'?['fall','high','steady']:['rise','low','fall'];return DAYS[d].reads}
-
-/* ---------- 図：自記気圧計の記録紙 ---------- */
-var LO=1000,HI=1026;
-function chartSVG(sc,upto,o){o=o||{};var W=340,H=186,L=38,R=330,T=20,B=158;
-  function X(h){return L+(R-L)*(h+6)/24}
-  function Y(p){return B-(B-T)*(p-LO)/(HI-LO)}
-  var s='<svg viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg" font-family="sans-serif">';
-  s+='<rect x="'+L+'" y="'+T+'" width="'+(R-L)+'" height="'+(B-T)+'" fill="#fbf3de"/>';
-  if(upto<18)s+='<rect x="'+X(upto)+'" y="'+T+'" width="'+(R-X(upto))+'" height="'+(B-T)+'" fill="#e8dcc0"/><text x="'+((X(upto)+R)/2)+'" y="'+(T+14)+'" font-size="11" text-anchor="middle" fill="#8a7658">これから</text>';
-  for(var p=LO;p<=HI;p+=2){var y=Y(p);s+='<line x1="'+L+'" y1="'+y+'" x2="'+R+'" y2="'+y+'" stroke="'+(p===1013?'#c48a6a':'#d8c6a0')+'" stroke-width="'+(p%4===0?.9:.5)+'"'+(p===1013?' stroke-dasharray="4 3"':'')+'/>';if(p%4===0)s+='<text x="'+(L-3)+'" y="'+(y+4)+'" font-size="10" text-anchor="end" fill="#6b5842">'+p+'</text>'}
-  s+='<text x="'+(R-2)+'" y="'+(Y(1013)-3)+'" font-size="9" text-anchor="end" fill="#a86a4a">1013</text>';
-  // 記録紙の時刻線は弧になる（ペンが弧をえがくため）
-  for(var h=-6;h<=18;h+=3){var x=X(h);s+='<path d="M'+x+' '+T+' Q'+(x-7)+' '+((T+B)/2)+' '+x+' '+B+'" fill="none" stroke="#cdb88c" stroke-width="'+(h%6===0?1:.5)+'"/>';
-    if(h%6===0)s+='<text x="'+x+'" y="'+(B+13)+'" font-size="10" text-anchor="middle" fill="#6b5842">'+(h===0?'0時':(h<0?'前日'+(h+24):h))+'</text>'}
-  s+='<text x="'+(L-3)+'" y="11" font-size="10" text-anchor="end" fill="#6b5842">hPa</text>';
-  s+='<rect x="'+L+'" y="'+T+'" width="'+(R-L)+'" height="'+(B-T)+'" fill="none" stroke="#6b5842"/>';
-  // 雨の時間（すぎた分だけ）
-  for(var i=0;i<6;i++){var h0=6+2*i;if(sc.wet[i]&&h0<upto)s+='<rect x="'+X(h0)+'" y="'+(B+18)+'" width="'+(X(Math.min(h0+2,upto))-X(h0))+'" height="7" rx="2" fill="#34507a"/>'}
-  if(S.sc&&sc.wet.some(function(w,i){return w&&6+2*i<upto}))s+='<rect x="'+(L+4)+'" y="'+(B+19)+'" width="10" height="6" rx="2" fill="#34507a"/><text x="'+(L+17)+'" y="'+(B+25)+'" font-size="10" fill="#34507a">雨が降った時間</text>';
-  if(o.step3){var pts=[];for(var hk=-6;hk<=upto;hk+=3)pts.push([X(hk),Y(Pat(sc,hk)),Pat(sc,hk)]);
-    s+='<path d="'+pts.map(function(q,j){return (j?'L':'M')+q[0].toFixed(1)+' '+q[1].toFixed(1)}).join('')+'" fill="none" stroke="#2d3f86" stroke-width="1.4" stroke-dasharray="3 3"/>';
-    pts.forEach(function(q,j){s+='<circle cx="'+q[0].toFixed(1)+'" cy="'+q[1].toFixed(1)+'" r="3.6" fill="#2d3f86"/><text x="'+q[0].toFixed(1)+'" y="'+(q[1]+(j%2?15:-7)).toFixed(1)+'" font-size="9.5" text-anchor="'+(q[0]>R-20?'end':(q[0]<L+20?'start':'middle'))+'" fill="#1f2a5c" stroke="#fbf3de" stroke-width="3" paint-order="stroke">'+q[2]+'</text>'})}
-  else{var d='';for(var k=-6;k<=upto;k++)d+=(k===-6?'M':'L')+X(k).toFixed(1)+' '+Y(Pat(sc,k)).toFixed(1);
-    s+='<path d="'+d+'" fill="none" stroke="#2d3f86" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/>';
-    var ex=X(upto),ey=Y(Pat(sc,upto));s+='<line x1="'+ex+'" y1="'+ey+'" x2="'+(ex+14)+'" y2="'+(ey-22)+'" stroke="#6b5238" stroke-width="2"/><circle cx="'+ex+'" cy="'+ey+'" r="3" fill="#2d3f86"/>';
-    s+='<text x="'+Math.min(ex+4,R-4)+'" y="'+(ey+16)+'" font-size="11" font-weight="700" text-anchor="'+(ex>R-40?'end':'start')+'" fill="#1f2a5c" stroke="#fbf3de" stroke-width="3" paint-order="stroke">'+Pat(sc,upto)+'</text>'}
-  return s+'</svg>'}
-function recsHTML(sc,upto,which){if(!which||!which.length)return '';var hrs=[-6,-3,0,3,6,9,12,15,18],h='<table><tr><th>時刻</th>';
-  hrs.forEach(function(x,i){if(x<=upto)h+='<th>'+(x<0?x+24:x)+'</th>'});h+='</tr>';
-  if(which.indexOf('cl')>=0){h+='<tr><th>雲量</th>';hrs.forEach(function(x,i){if(x<=upto)h+='<td>'+sc.cl[i]+'</td>'});h+='</tr>'}
-  if(which.indexOf('wd')>=0){h+='<tr><th>風向</th>';hrs.forEach(function(x,i){if(x<=upto)h+='<td style="font-size:11px">'+sc.wd[i]+'</td>'});h+='</tr>'}
-  return h+'</table>'}
-
-/* ---------- 図：窓の外（油絵ふう） ---------- */
-function winSVG(state,cl,hour){var W=360,H=112,night=hour<6||hour>=18,wet=state==='rain';
-  var sky=night?'#26303f':(wet?'#7d8791':(cl>=7?'#a7b0b3':'#8fb0c6')),sky2=night?'#394455':(wet?'#9aa1a6':(cl>=7?'#c3c6c0':'#d9c9a0'));
-  var s='<svg viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="sk" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="'+sky+'"/><stop offset="1" stop-color="'+sky2+'"/></linearGradient></defs>';
-  s+='<g filter="url(#oil)"><rect x="-10" y="-10" width="'+(W+20)+'" height="'+(H+20)+'" fill="url(#sk)"/>';
-  if(!wet&&!night&&cl<7)s+='<circle cx="'+(60+hour*12)+'" cy="'+(34+Math.abs(hour-12)*3)+'" r="13" fill="#f6e2a8" opacity=".95"/>';
-  var nc=Math.round(cl/2);for(var i=0;i<nc;i++){var x=(i*67+23)%W,y=12+(i*29)%34;s+='<ellipse cx="'+x+'" cy="'+y+'" rx="'+(34+i%3*10)+'" ry="'+(10+i%2*4)+'" fill="'+(wet?'#6d747a':'#eceae2')+'" opacity="'+(wet?.9:.8)+'"/>'}
-  s+='<path d="M-10 92 L40 50 L80 70 L130 30 L175 66 L220 44 L270 74 L320 48 L370 70 L370 130 L-10 130Z" fill="'+(night?'#1d2429':'#56675c')+'"/>';
-  s+='<path d="M123 36 L130 30 L138 38 L132 37Z" fill="#ede6d3"/>';
-  s+='<path d="M-10 104 Q90 88 180 100 T370 96 L370 130 L-10 130Z" fill="'+(night?'#16201a':'#3f5a3a')+'"/></g>';
-  if(wet){for(var k=0;k<46;k++){var rx=(k*53)%W,ry=(k*37)%H;s+='<line x1="'+rx+'" y1="'+ry+'" x2="'+(rx-5)+'" y2="'+(ry+16)+'" stroke="#dfe7ee" stroke-width="1.2" opacity=".55"><animate attributeName="y1" from="'+(ry-20)+'" to="'+(ry+H)+'" dur="'+(RM?'0s':'.7s')+'" repeatCount="indefinite"/><animate attributeName="y2" from="'+(ry-4)+'" to="'+(ry+H+16)+'" dur="'+(RM?'0s':'.7s')+'" repeatCount="indefinite"/></line>'}}
-  s+='<rect x="0" y="0" width="'+W+'" height="'+H+'" filter="url(#grain)" fill="#000"/>';
-  s+='<line x1="'+(W/2)+'" y1="0" x2="'+(W/2)+'" y2="'+H+'" stroke="#5a3d25" stroke-width="6"/><line x1="0" y1="'+(H/2)+'" x2="'+W+'" y2="'+(H/2)+'" stroke="#5a3d25" stroke-width="4"/>';
-  return s+'</svg>'}
-
-/* ---------- 音 ---------- */
-var Snd={c:null,muted:false,
- init:function(){if(this.c)return;try{var A=window.AudioContext||window.webkitAudioContext;if(A)this.c=new A()}catch(e){}},
- t:function(f,d,type,v,f2,dl){if(this.muted||!this.c)return;var c=this.c,t0=c.currentTime+(dl||0),o=c.createOscillator(),g=c.createGain();o.type=type||'sine';o.frequency.setValueAtTime(f,t0);if(f2)o.frequency.exponentialRampToValueAtTime(f2,t0+d);g.gain.setValueAtTime(v||.12,t0);g.gain.exponentialRampToValueAtTime(.0001,t0+d);o.connect(g);g.connect(c.destination);o.start(t0);o.stop(t0+d+.02)},
- n:function(d,v,fc,dl,hp){if(this.muted||!this.c)return;var c=this.c,t0=c.currentTime+(dl||0),len=Math.floor(c.sampleRate*d),b=c.createBuffer(1,len,c.sampleRate),x=b.getChannelData(0);for(var i=0;i<len;i++)x[i]=(Math.random()*2-1)*(1-i/len);var s=c.createBufferSource();s.buffer=b;var f=c.createBiquadFilter();f.type=hp?'highpass':'lowpass';f.frequency.value=fc||1200;var g=c.createGain();g.gain.value=v||.1;s.connect(f);f.connect(g);g.connect(c.destination);s.start(t0)},
- click:function(){this.t(700,.05,'triangle',.05)},
- place:function(){this.t(330,.08,'triangle',.08);this.n(.05,.06,900)},
- tick:function(){this.t(1500,.03,'square',.02);this.t(1100,.03,'square',.015,0,.12)},
- star:function(k){var b=440*Math.pow(1.06,Math.min(k,12)*2);this.t(b,.3,'triangle',.11);this.t(b*1.25,.3,'triangle',.09,0,.07);this.t(b*1.5,.45,'sine',.08,0,.14)},
- shelter:function(){this.t(392,.25,'sine',.09);this.t(523,.35,'sine',.08,0,.1)},
- wet:function(){this.n(.6,.14,700);this.t(200,.3,'sine',.07,140)},
- waste:function(){this.t(300,.25,'triangle',.06,260)},
- fan:function(){var s=[392,494,587,784,988];for(var i=0;i<5;i++)this.t(s[i],.45,'triangle',.1,0,i*.12)}
-};
-
-/* ---------- セーブ ---------- */
-var S;
-function fresh(){return {v:1,name:'',day:0,phase:'intro',sc:null,plan:[null,null,null,null,null,null],res:[],read:null,noonRead:null,star:0,combo:0,maxCombo:0,wetN:0,wasteN:0,readOk:0,readTot:0,retries:0,first:true,rule:{},cleared:false,elapsed:0,mainDone:0,best:(S&&S.best)||null,muted:S?S.muted:false,dayPerfect:0}}
-function load(){try{return JSON.parse(localStorage.getItem(SKEY))}catch(e){return null}}
+/* ===== セーブ ===== */
+function fresh(){return {v:2,name:'',started:false,day:1,dried:0,wet:0,hours:0,t:0,res:[],fab:{},mc:false,sound:true,kPre:0,kRec:0,kCalm:0}}
+let S;try{S=Object.assign(fresh(),JSON.parse(localStorage.getItem(SKEY))||{})}catch(e){S=fresh()}
 function save(){try{localStorage.setItem(SKEY,JSON.stringify(S))}catch(e){}}
-S=load();if(!S||S.v!==1)S=fresh();Snd.muted=!!S.muted;
 
-var SCREENS=['title','play','test','end'],cur='title';
-function show(id){SCREENS.forEach(function(s){$(s).classList.toggle('hidden',s!==id)});window.scrollTo(0,0);cur=id}
-function hasZ(){return !!window.Zukan}
-function book(){Snd.click();window.Zukan&&Zukan.openBook&&Zukan.openBook({unit:'kisho'})}
-function nameNow(){return (window.PLAYER_NAME||$('nameIn').value||S.name||'').trim()}
-var hudDone=false;
-function enterPlay(){show('play');if(!hudDone&&window.Zukan&&Zukan.hud){try{Zukan.hud($('hud'))}catch(e){}hudDone=true}}
-function startNew(){Snd.init();var b=S.best,m=S.muted;S=fresh();S.best=b;S.muted=m;S.name=nameNow();save();enterPlay();beginDay(0,true)}
-function cont(){Snd.init();if(nameNow())S.name=nameNow();enterPlay();if(S.phase==='clear'){clearScreen();return}if(S.sc)planDay(S.day,false);else beginDay(S.day,true)}
+/* ===== 音（木のおもちゃ） ===== */
+let AC=null,MG=null,rainN=null,rainG=null;
+function ac(){if(AC)return AC;try{AC=new (window.AudioContext||window.webkitAudioContext)();MG=AC.createGain();MG.gain.value=.5;MG.connect(AC.destination)}catch(e){}return AC}
+function tone(f,d,v,t0,type){if(!S.sound||!ac())return;const t=AC.currentTime+(t0||0),o=AC.createOscillator(),g=AC.createGain();o.type=type||'triangle';o.frequency.setValueAtTime(f,t);g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(v||.15,t+.008);g.gain.exponentialRampToValueAtTime(.0008,t+d);o.connect(g);g.connect(MG);o.start(t);o.stop(t+d+.05)}
+function noise(d,v,f,type){if(!S.sound||!ac())return;const n=Math.floor(AC.sampleRate*d),b=AC.createBuffer(1,n,AC.sampleRate),a=b.getChannelData(0);for(let i=0;i<n;i++)a[i]=(Math.random()*2-1)*Math.sin(Math.PI*i/n);const s=AC.createBufferSource(),fl=AC.createBiquadFilter(),g=AC.createGain();s.buffer=b;fl.type=type||'bandpass';fl.frequency.value=f||800;g.gain.value=v||.15;s.connect(fl);fl.connect(g);g.connect(MG);s.start()}
+function rainLoop(on){if(!ac())return;if(!rainN){const n=AC.sampleRate*2,b=AC.createBuffer(1,n,AC.sampleRate),a=b.getChannelData(0);for(let i=0;i<n;i++)a[i]=Math.random()*2-1;rainN=AC.createBufferSource();rainN.buffer=b;rainN.loop=true;const f=AC.createBiquadFilter();f.type='highpass';f.frequency.value=1500;rainG=AC.createGain();rainG.gain.value=0;rainN.connect(f);f.connect(rainG);rainG.connect(MG);rainN.start()}
+ rainG.gain.setTargetAtTime(on&&S.sound?.06:0,AC.currentTime,.4)}
+const sfx={
+ tap:()=>tone(660,.1,.1),
+ hang:()=>{tone(523,.12,.12);tone(784,.14,.09,.06);noise(.18,.08,1200)},
+ take:()=>{tone(392,.12,.12);tone(330,.14,.09,.05);noise(.15,.07,900)},
+ dry:()=>[659,784,988].forEach((f,i)=>tone(f,.25,.1,i*.06)),
+ wet:()=>{tone(220,.3,.12,0,'sine');tone(180,.35,.1,.1,'sine')},
+ good:()=>[523,659,784,1047,1319].forEach((f,i)=>tone(f,.4,.11,i*.08)),
+ stitch:()=>tone(1400+Math.random()*300,.03,.03,0,'square'),
+ fan:()=>[523,659,784,1047,784,1047,1319].forEach((f,i)=>tone(f,.6,.1,i*.1))};
+function setSnd(){$('#bSnd').textContent=S.sound?'♪':'×';$('#bSnd1').textContent=S.sound?'♪ 音あり':'× 音なし';if(!S.sound)rainLoop(false)}
+function toggleSnd(){S.sound=!S.sound;save();setSnd()}
 
-/* ---------- 1日の流れ ---------- */
-var D=null,hand=[],selCard=null,busy=false,upto=6,noonMode=false,cards={};
-function beginDay(d,first){S.day=d;D=DAYS[d];var t=dayType(d);S.sc=mk(t);S.plan=[null,null,null,null,null,null];S.res=[];S.read=null;S.noonRead=null;S.first=!!first;S.phase='plan';save();
-  var n=d+1;overlay('<span class="no">'+n+'日目 / 5</span><h2>'+(d===4?'最終日':n+'日目の朝')+'</h2><p>'+D.txt+'</p>','気圧計を見る',function(){planDay(d,true)})}
-function mkHand(sc){var nOut=0;for(var i=0;i<6;i++)if(!sc.wet[i])nOut++;var o=shuffle(OUT).slice(0,nOut),n=shuffle(IN).slice(0,6-nOut),h=[];
-  o.forEach(function(c,i){h.push({id:'o'+i,k:'o',ic:c[0],nm:c[1]})});n.forEach(function(c,i){h.push({id:'i'+i,k:'i',ic:c[0],nm:c[1]})});return h}
-function planDay(d,fresh1){D=DAYS[d];noonMode=false;upto=6;busy=false;selCard=null;var sc=S.sc;
-  if(fresh1||!S.cards){S.cards=mkHand(sc);S.plan=[null,null,null,null,null,null];S.read=null}
-  S.res=[];S.phase='plan';save();cards={};S.cards.forEach(function(c){cards[c.id]=c});
-  $('hDay').textContent=(d+1)+'日目';$('hTime').textContent='6:00';updHud();
-  drawScene(6);drawChart();
-  var rs=readsFor(d,sc);$('readBox').classList.remove('hidden');
-  $('reads').innerHTML=shuffle(rs).map(function(k){return '<button class="rd" data-k="'+k+'">'+READ[k].t+'</button>'}).join('');
-  [].forEach.call($('reads').children,function(b){b.onclick=function(){if(busy)return;Snd.click();S.read=b.dataset.k;[].forEach.call($('reads').children,function(x){x.classList.toggle('sel',x===b)});updGo()}});
-  var no=0,ni=0;S.cards.forEach(function(c){if(c.k==='o')no++;else ni++});
-  $('slotLab').innerHTML='② 予定表にカードを置く（カード→時間の順にタップ）<br><small>今日の外の作業 <b>'+no+'件</b>・小屋の中の作業 <b>'+ni+'件</b></small>';
-  $('legend').innerHTML=d===0?'外の作業は、雨に当たるとずぶぬれ。中の作業は、晴れている間にやると「晴れ間のむだ」。':'';
-  $('planBox').classList.remove('hidden');hideMsg();$('goBtn').textContent='時間を進める ▶';
-  drawSlots();drawHand();updGo();
-  if(d===0&&fresh1)msg('1日目の朝','上の青い線が、前日18時から今までの<b>気圧</b>。ドラムに巻いた記録紙に、ペンが気圧を書きつづける。<br>まず①で、記録から読めることを選ぼう。',null,true)}
-function drawScene(h){var sc=S.sc,i=h<6?-1:Math.min(5,Math.floor((h-6)/2)),wet=i>=0?sc.wet[i]:(sc.type==='steady'||sc.type==='fall'?0:1);var ci=Math.max(0,Math.min(8,Math.round((h+6)/3)));
-  $('win').innerHTML=winSVG(wet?'rain':'fair',sc.cl[ci],h)+'<div id="winLbl">'+(h<=6?'朝 ':'')+hh(h)+'　'+(wet?'雨':(sc.cl[ci]>=9?'くもり':'晴れ'))+'</div>'}
-function drawChart(){var d=S.day;$('chart').innerHTML=chartSVG(S.sc,upto,{step3:DAYS[d].step3});$('chartNote').textContent='前日18時〜'+hh(upto)+(DAYS[d].step3?'（3時間おき）':'');
-  $('recs').innerHTML=recsHTML(S.sc,upto,DAYS[d].recs)}
-function drawSlots(){var h='';for(var i=0;i<6;i++){var id=S.plan[i],c=id?cards[id]:null,r=S.res[i],lock=(noonMode&&i<3)||r!=null;
-  h+='<button class="sl'+(c?' '+c.k:'')+(lock?' lock':'')+'" data-i="'+i+'"><span class="tm">'+(6+2*i)+'時〜</span>'+(c?'<span class="ic">'+c.ic+'</span><span class="nm">'+c.nm+'</span>':'<span class="ic" style="opacity:.3">＋</span>')+(r?'<span class="st'+(r.pop?' pop':'')+'">'+r.m+'</span>':'')+'</button>'}
-  $('slots').innerHTML=h;
-  [].forEach.call($('slots').children,function(b){b.onclick=function(){tapSlot(+b.dataset.i)}})}
-function drawHand(){var used={};S.plan.forEach(function(id){if(id)used[id]=1});
-  $('hand').innerHTML=S.cards.filter(function(c){return !used[c.id]}).map(function(c){return '<button class="cd '+c.k+(selCard===c.id?' sel':'')+'" data-id="'+c.id+'"><span class="ic">'+c.ic+'</span>'+c.nm+'<small style="opacity:.7">'+(c.k==='o'?'（外）':'（中）')+'</small></button>'}).join('');
-  [].forEach.call($('hand').children,function(b){b.onclick=function(){if(busy)return;Snd.click();selCard=selCard===b.dataset.id?null:b.dataset.id;drawHand()}})}
-function tapSlot(i){if(busy||S.res[i]!=null||(noonMode&&i<3))return;
-  if(selCard){S.plan[i]=selCard;selCard=null;Snd.place()}
-  else if(S.plan[i]){S.plan[i]=null;Snd.click()}
-  else return;save();drawSlots();drawHand();updGo()}
-function updGo(){var full=S.plan.every(function(x){return x}),r=noonMode?S.noonRead:S.read;$('goBtn').disabled=busy||!full||!r}
-function updHud(){$('hStar').textContent=S.star}
+/* ===== canvas・布の素材 ===== */
+const cv=$('#cv');let cx=cv.getContext('2d');const CX0=cx;let W=390,H=844,DPR=1,WIDE=false;
+const mk=(w,h)=>{const c=document.createElement('canvas');c.width=w;c.height=h;return c};
+// フェルトの繊維
+const fiber=mk(180,180);(()=>{const t=fiber.getContext('2d');for(let i=0;i<1400;i++){const x=Math.random()*180,y=Math.random()*180,a=Math.random()*6.28,l=2+Math.random()*6;t.strokeStyle=Math.random()<.5?'rgba(255,255,255,.35)':'rgba(60,40,20,.28)';t.lineWidth=.5+Math.random()*.6;t.beginPath();t.moveTo(x,y);t.quadraticCurveTo(x+Math.cos(a)*l*.5+rnd(-1,1),y+Math.sin(a)*l*.5+rnd(-1,1),x+Math.cos(a)*l,y+Math.sin(a)*l);t.stroke()}})();
+let fiberPat=null;
+function fabPat(k,c){const s=24,t=mk(s,s),g=t.getContext('2d');g.fillStyle=c;g.fillRect(0,0,s,s);
+ if(k==='gingham'){g.fillStyle='rgba(255,255,255,.35)';g.fillRect(0,0,s,s/2);g.fillRect(0,0,s/2,s);g.fillStyle='rgba(255,255,255,.3)';g.fillRect(0,0,s/2,s/2)}
+ if(k==='dots'){g.fillStyle='rgba(255,255,255,.8)';g.beginPath();g.arc(6,6,3,0,7);g.arc(18,18,3,0,7);g.fill()}
+ if(k==='stripe'){g.fillStyle='rgba(255,255,255,.7)';g.fillRect(0,0,s,4);g.fillRect(0,12,s,4)}
+ if(k==='plaid'){g.fillStyle='rgba(60,40,20,.25)';g.fillRect(0,8,s,5);g.fillRect(8,0,5,s);g.fillStyle='rgba(255,255,255,.45)';g.fillRect(0,19,s,1.5);g.fillRect(19,0,1.5,s)}
+ if(k==='star'){g.fillStyle='#E9A23B';const st=(x,y,r)=>{g.beginPath();for(let i=0;i<10;i++){const q=i%2?r*.45:r;g.lineTo(x+Math.cos(i*Math.PI/5-Math.PI/2)*q,y+Math.sin(i*Math.PI/5-Math.PI/2)*q)}g.fill()};st(7,7,4);st(18,17,3)}
+ if(k==='check'){g.fillStyle='rgba(255,255,255,.4)';g.fillRect(0,0,s/2,s/2);g.fillRect(s/2,s/2,s/2,s/2)}
+ if(k==='leaf'){g.fillStyle='rgba(247,240,225,.75)';g.beginPath();g.ellipse(8,8,5,2.5,.7,0,7);g.ellipse(18,18,5,2.5,-.6,0,7);g.fill()}
+ if(k==='plain'){g.strokeStyle='rgba(107,74,53,.12)';for(let i=0;i<s;i+=3){g.beginPath();g.moveTo(i,0);g.lineTo(i,s);g.stroke()}}
+ return t}
+const PATS={};
+function pat(k){if(!PATS[k]){const f=FABRIC.find(x=>x.k===k);PATS[k]=cx.createPattern(fabPat(k,f.c),'repeat')}return PATS[k]}
+let stat=null;// 静的な風景（山・地面・小屋）
+function resize(){const r=$('#app').getBoundingClientRect();W=Math.max(300,r.width);H=Math.max(460,r.height);DPR=Math.min(3,window.devicePixelRatio||1);cv.width=Math.round(W*DPR);cv.height=Math.round(H*DPR);cx.setTransform(DPR,0,0,DPR,0,0);WIDE=W>H*1.12;$('#title').classList.toggle('wide',WIDE);fiberPat=null;for(const k in PATS)delete PATS[k];layout();buildStatic()}
+addEventListener('resize',resize);
 
-/* ---------- 時間を進める ---------- */
-function go(){if(busy)return;busy=true;updGo();Snd.init();hideMsg();$('readBox').classList.add('hidden');
-  var from=noonMode?3:0,to=S.day===2&&!noonMode?3:6;S.phase='run';save();step(from,to)}
-function step(i,to){if(i>=to){if(to===3){noon();return}dayEnd();return}
-  var sc=S.sc,c=cards[S.plan[i]],wet=sc.wet[i],h1=6+2*i;
-  // ペンが2時間分すすむ
-  var t0=h1,k=0,iv=setInterval(function(){k++;upto=Math.min(18,t0+k);drawChart();drawScene(upto-1<6?6:upto-1);$('hTime').textContent=hh(upto);Snd.tick();
-    if(k>=2){clearInterval(iv);result(i,c,wet);setTimeout(function(){step(i+1,to)},RM?250:700)}},RM?120:330);
-  S.cur=i;markNow(i)}
-function markNow(i){[].forEach.call($('slots').children,function(b,j){b.classList.toggle('now',j===i)})}
-function result(i,c,wet){var m,good=false,rect=$('slots').children[i].getBoundingClientRect(),x=rect.left+rect.width/2,y=rect.top;
-  if(c.k==='o'&&!wet){m='★';good=true;S.combo++;S.star++;S.maxCombo=Math.max(S.maxCombo,S.combo);Snd.star(S.combo);floatAt(x,y,c.nm+' 完了',S.combo>=4);embers(rect,10+S.combo*3)}
-  else if(c.k==='i'&&wet){m='☂️';good=true;S.combo++;S.maxCombo=Math.max(S.maxCombo,S.combo);Snd.shelter();floatAt(x,y,'雨やどり成功',false);embers(rect,6)}
-  else if(c.k==='o'&&wet){m='💦';S.combo=0;S.wetN++;Snd.wet();floatAt(x,y,'ずぶぬれ…',false)}
-  else{m='☁️';S.combo=0;S.wasteN++;Snd.waste();floatAt(x,y,'晴れ間のむだ',false)}
-  S.res[i]={m:m,ok:good,pop:1};save();updHud();drawSlots();markNow(i);S.res[i].pop=0}
-function noon(){noonMode=true;busy=false;upto=12;S.phase='noon';save();drawChart();drawScene(12);$('hTime').textContent='12:00';
-  var rs=DAYS[2].noonReads;$('readBox').classList.remove('hidden');$('readBox').querySelector('.lab').innerHTML='① 正午の気圧計。<b>午前とくらべて何が読める？</b>';
-  $('reads').innerHTML=shuffle(rs).map(function(k){return '<button class="rd" data-k="'+k+'">'+READ[k].t+'</button>'}).join('');
-  [].forEach.call($('reads').children,function(b){b.onclick=function(){if(busy)return;Snd.click();S.noonRead=b.dataset.k;[].forEach.call($('reads').children,function(x){x.classList.toggle('sel',x===b)});updGo()}});
-  $('slotLab').innerHTML='② <b>午後の予定を組み直す</b>（12時〜の3枠。カードをタップで外して置き直せる）';
-  msg('正午。気圧計の針が…','午前は記録どおり回復した。でも、ペンの線をよく見て。<br><b>ここ2〜3時間</b>の動きを読み、午後の3枠を組み直そう。',null,true);
-  drawSlots();drawHand();updGo();markNow(-1)}
-function dayEnd(){busy=false;markNow(-1);var sc=S.sc,allOk=S.res.every(function(r){return r&&r.ok}),rOk=S.read===sc.read,nOk=sc.noon?S.noonRead===sc.noon:true,d=S.day;
-  S.readTot+=sc.noon?2:1;S.readOk+=(rOk?1:0)+(sc.noon&&nOk?1:0);
-  var extra='',kk=0;
-  if(allOk&&rOk&&S.first){kk+=15;window.Zukan&&Zukan.earn&&Zukan.earn(15,'hit')}
-  if(sc.noon&&nOk&&S.res.slice(3).every(function(r){return r.ok})&&S.first){kk+=15;window.Zukan&&Zukan.earn&&Zukan.earn(15,'hit')}
-  if(allOk&&rOk&&sc.type==='fall'&&!S.rule.fall){S.rule.fall=1;extra+='<p class="em" style="text-align:center">★ 規則を見つけた！<br>気圧が下がり続けると、天気はくずれていく</p>';window.Zukan&&Zukan.earn&&Zukan.earn(30,'rule')}
-  if(allOk&&rOk&&sc.type==='rise'&&!S.rule.rise){S.rule.rise=1;extra+='<p class="em" style="text-align:center">★ 規則を見つけた！<br>気圧が上がり始めると、天気は回復していく</p>';window.Zukan&&Zukan.earn&&Zukan.earn(30,'rule')}
-  var readTxt='';if(!rOk&&S.read){readTxt='<p style="font-size:14px">朝の読み：<b>'+READ[S.read].t+'</b><br>'+(READ[S.read].trap||'正しくは「'+READ[sc.read].t+'」。')+'</p>'}
-  if(sc.noon&&!nOk&&S.noonRead){readTxt+='<p style="font-size:14px">正午の読み：<b>'+READ[S.noonRead].t+'</b><br>'+(READ[S.noonRead].trap||'正しくは「'+READ[sc.noon].t+'」。')+'</p>'}
-  var why=dayWhy(sc);
-  var grid='<div class="dayres">'+S.res.map(function(r,i){return '<div>'+(6+2*i)+'時<br><span style="font-size:18px">'+r.m+'</span></div>'}).join('')+'</div>';
-  save();
-  if(allOk){Snd.fan();S.dayPerfect++;
-    var last=d===4;S.day=last?4:d+1;if(last){S.cleared=true;S.phase='clear';var tt=S.elapsed;var nb=!S.best||S.retries<S.best.retries||(S.retries===S.best.retries&&tt<S.best.time);if(nb)S.best={retries:S.retries,time:tt};save()}else{S.sc=null;save()}
-    overlay('<span class="no">'+(d+1)+'日目 おわり</span><div class="stamp in">段取り上手</div>'+grid+'<p>'+why+'</p>'+readTxt+extra+(kk?'':''),last?'5日間をふりかえる':'夜が明ける ▶',function(){if(last)clearScreen(true);else beginDay(d+1,true)})}
-  else{S.retries++;save();
-    overlay('<span class="no">'+(d+1)+'日目 おわり</span><h2>'+(S.res.filter(function(r){return r.ok}).length)+' / 6 枠が成功</h2>'+grid+'<p>'+why+'</p>'+readTxt+'<p style="font-size:14px">この日を、<b>別の日の記録</b>でもう一度。</p>','もう一度（別の記録で）',function(){beginDay(d,false)})}}
-function dayWhy(sc){var p6=Pat(sc,6),pm=Pat(sc,-6);
-  if(sc.type==='steady')return '気圧は '+Math.min.apply(null,sc.P)+'〜'+Math.max.apply(null,sc.P)+'hPa で<b>ほぼ一定</b>。小さな上下はあっても、1日中晴れた。';
-  if(sc.type==='fall')return '前日18時 '+pm+'hPa → 朝6時 '+p6+'hPa と<b>下がり続けていた</b>。雲量も増えていき、'+(6+2*sc.wet.indexOf(1))+'時ごろ雨が降り出した。<b>外の作業は朝のうちに</b>。';
-  if(sc.type==='rise'){var lo=Math.min.apply(null,sc.P.slice(0,13));return '夜のうちに '+lo+'hPa まで下がり、そこから<b>上がり始めていた</b>。値はまだ低くても、雨は'+(6+2*sc.wet.indexOf(0))+'時ごろやんだ。<b>外の作業は雨がやんでから</b>。'}
-  return '朝は気圧が<b>上がり始めて</b>いて回復へ。でも正午前から<b>じわじわ下がり続け</b>、16時ごろまた雨。正午の組み直しで、外の作業を早めに回すのが正解。'}
-function clearScreen(nb){enterPlay();$('planBox').classList.add('hidden');hideMsg();
-  var done=function(){overlay('<div class="stamp in">無事に下山</div><h2>山小屋の5日間</h2>'+
-   '<table class="rec"><tr><td>クリアタイム</td><td>'+fmt(S.elapsed)+'</td></tr><tr><td>気圧の読みの的中</td><td>'+S.readOk+' / '+S.readTot+'</td></tr><tr><td>★（外の作業）</td><td>'+S.star+'</td></tr><tr><td>やり直した日</td><td>'+S.retries+'回</td></tr><tr><td>ずぶぬれ／晴れ間のむだ</td><td>'+S.wetN+'回／'+S.wasteN+'回</td></tr></table>'+
-   (hasZ()?'<button class="btn small" id="ovBook" style="margin:6px">📖 図鑑</button>':''),'📝 確認テストへ',function(){startTest()});var b=$('ovBook');if(b)b.onclick=book};
-  if(window.Zukan&&Zukan.mainClear&&!S.mainDone){S.mainDone=1;save();Zukan.mainClear({onClose:done})}else done()}
+/* ===== レイアウト ===== */
+const L={};
+function layout(){
+ if(WIDE){
+  L.ground=H*.64;
+  L.hut={x:W*.025,y:H*.2,w:W*.19,h:H*.44};
+  L.line={x0:W*.215,x1:W*.975,y:H*.2,sag:H*.035};
+  L.baro={x:W*.4,y:H*.555,w:W*.585,h:H*.43};
+  L.basket={x:W*.02,y:H*.66,w:W*.15,h:H*.2};
+  L.shelf={x:W*.19,y:H*.68,w:W*.17,h:H*.18};
+  L.act={x:W*.02,y:H*.885};
+  L.npeg=7;L.skyB=L.ground;
+ }else{
+  const top=66;
+  L.baro={x:8,y:top+4,w:W-16,h:Math.min(H*.36,W*.78)};
+  L.ground=H*.73;
+  L.line={x0:W*.04,x1:W*.96,y:L.baro.y+L.baro.h+H*.085,sag:H*.018};
+  L.hut={x:W*.68,y:L.ground-H*.055,w:W*.3,h:H*.15};
+  L.basket={x:W*.03,y:H*.755,w:W*.33,h:H*.12};
+  L.shelf={x:W*.37,y:H*.765,w:W*.28,h:H*.11};
+  L.act={x:10,y:H-66};
+  L.npeg=W>600?6:5;L.skyB=L.ground;
+ }
+ L.pegs=[];for(let i=0;i<L.npeg;i++){const x=L.line.x0+(L.line.x1-L.line.x0)*(i+.5)/L.npeg;L.pegs.push({x,y:lineY(x)})}
+ L.unit=Math.min((L.line.x1-L.line.x0)/L.npeg*.86,WIDE?H*.16:H*.085);
+ const a=$('#act');a.style.left=L.act.x+'px';a.style.top=L.act.y+'px';a.style.flexDirection='row';
+ if(!WIDE){a.style.left='';a.style.right='10px';a.style.top='';a.style.bottom='calc(10px + env(safe-area-inset-bottom))'}else{a.style.right='';a.style.bottom=''}}
+function lineY(x){const l=L.line,u=(x-l.x0)/(l.x1-l.x0)*2-1;return l.y+l.sag*(1-u*u)}
 
-/* ---------- 札・演出 ---------- */
-function overlay(html,btn,fn){var o=document.createElement('div');o.className='ov';o.innerHTML='<div class="paper">'+html+'<div style="margin-top:12px"><button class="btn lamp">'+btn+'</button></div></div>';
-  document.body.appendChild(o);o.querySelector('.paper>div:last-child .btn').onclick=function(){Snd.init();Snd.click();o.remove();fn&&fn()}}
-function msg(h,body,fn,noBtn){var w=$('msg');w.classList.remove('hidden');w.innerHTML='<h3>'+h+'</h3><div>'+body+'</div>'+(noBtn?'':'<div class="row"><button class="btn small lamp" id="mNext">つぎへ ▶</button></div>');if(!noBtn)$('mNext').onclick=function(){Snd.click();hideMsg();fn&&fn()}}
-function hideMsg(){$('msg').classList.add('hidden')}
-function floatAt(x,y,t,big){var d=document.createElement('div');d.className='float'+(big?' big':'');d.textContent=t;d.style.left=Math.max(60,Math.min(innerWidth-60,x))+'px';d.style.top=y+'px';$('fx').appendChild(d);setTimeout(function(){d.remove()},1300)}
-function embers(r,n){if(RM)n=Math.min(n,3);for(var i=0;i<n;i++){var d=document.createElement('div');d.className='ember';var x=r.left+r.width*Math.random(),y=r.top+r.height*Math.random();d.style.left=x+'px';d.style.top=y+'px';$('fx').appendChild(d);
-  var a=-Math.PI/2+(Math.random()-.5)*1.6,dist=40+Math.random()*80;if(d.animate)d.animate([{transform:'scale(1)',opacity:1},{transform:'translate('+Math.cos(a)*dist+'px,'+Math.sin(a)*dist+'px) scale(.2)',opacity:0}],{duration:800+Math.random()*400,easing:'ease-out'});setTimeout((function(e){return function(){e.remove()}})(d),1250)}}
-$('goBtn').onclick=go;
+/* ===== フェルトの描き方 ===== */
+function felt(path,col,o){o=o||{};cx.save();path();cx.shadowColor='rgba(70,45,25,.28)';cx.shadowBlur=o.sh==null?5:o.sh;cx.shadowOffsetY=o.sy==null?2.5:o.sy;cx.fillStyle=col;cx.fill();cx.shadowColor='transparent';
+ if(o.pat){cx.save();cx.clip();cx.globalAlpha=o.pa==null?1:o.pa;cx.fillStyle=o.pat;cx.fill();cx.restore()}
+ cx.lineWidth=2.2;cx.strokeStyle=col;cx.globalAlpha=.55;cx.setLineDash([1.2,1.6]);cx.stroke();cx.globalAlpha=1;cx.setLineDash([]);
+ if(o.st!==false){cx.lineWidth=o.sw||1.6;cx.strokeStyle=o.st||'rgba(255,248,235,.8)';cx.setLineDash(o.dash||[5,4]);cx.stroke();cx.setLineDash([])}
+ cx.restore()}
+function rrp(x,y,w,h,r){return ()=>{cx.beginPath();cx.moveTo(x+r,y);cx.arcTo(x+w,y,x+w,y+h,r);cx.arcTo(x+w,y+h,x,y+h,r);cx.arcTo(x,y+h,x,y,r);cx.arcTo(x,y,x+w,y,r);cx.closePath()}}
+function fh(px){return '900 '+px+'px "Zen Maru Gothic","Hiragino Maru Gothic ProN",sans-serif'}
+function fb(px){return '600 '+px+'px "Klee One","Hiragino Mincho ProN",serif'}
+function cloudPath(x,y,r){return ()=>{cx.beginPath();cx.arc(x-r*.9,y+r*.2,r*.6,Math.PI*.5,Math.PI*1.5);cx.arc(x-r*.3,y-r*.25,r*.75,Math.PI,Math.PI*1.85);cx.arc(x+r*.55,y-r*.05,r*.62,Math.PI*1.3,Math.PI*.4+Math.PI*2);cx.lineTo(x-r*.9,y+r*.8);cx.closePath()}}
+function buildStatic(){stat=mk(Math.round(W*DPR),Math.round(H*DPR));const s=stat.getContext('2d');s.setTransform(DPR,0,0,DPR,0,0);
+ cx=s;try{
+  const G=L.ground;
+  // 遠い山
+  const mt=(pts,col,snow)=>{felt(()=>{cx.beginPath();cx.moveTo(-10,G+10);pts.forEach(p=>cx.lineTo(p[0]*W,p[1]));cx.lineTo(W+10,G+10);cx.closePath()},col,{st:'rgba(255,255,255,.35)'});
+   if(snow)snow.forEach(([x,y,w])=>felt(()=>{cx.beginPath();cx.moveTo(x*W,y);cx.lineTo(x*W+w*W*.5,y+w*W*.35);cx.lineTo(x*W+w*W*.25,y+w*W*.3);cx.lineTo(x*W,y+w*W*.42);cx.lineTo(x*W-w*W*.22,y+w*W*.3);cx.lineTo(x*W-w*W*.5,y+w*W*.35);cx.closePath()},'#F7F0E1',{st:'rgba(107,74,53,.3)'}))};
+  const top=WIDE?H*.1:L.line.y-H*.06;
+  mt([[0,G-(G-top)*.45],[.18,top+(G-top)*.12],[.36,G-(G-top)*.5],[.55,top],[.78,G-(G-top)*.55],[.92,top+(G-top)*.25],[1,G-(G-top)*.4]],'#7E97A0',[[.55,top,.08],[.18,top+(G-top)*.12,.06]]);
+  mt([[0,G-(G-top)*.25],[.25,G-(G-top)*.5],[.45,G-(G-top)*.22],[.7,G-(G-top)*.42],[1,G-(G-top)*.2]],'#6F8F6A');
+  // 地面（草原）
+  felt(()=>{cx.beginPath();cx.moveTo(-10,G);for(let x=0;x<=W+20;x+=40)cx.quadraticCurveTo(x+20,G-8,x+40,G);cx.lineTo(W+10,H+10);cx.lineTo(-10,H+10);cx.closePath()},'#8A9A5B',{st:'rgba(255,255,255,.4)'});
+  // 草の刺しゅう
+  cx.strokeStyle='rgba(247,240,225,.55)';cx.lineWidth=1.5;for(let i=0;i<60;i++){const x=(i*97.3)%W,y=G+14+((i*53.1)%(H-G-10));cx.beginPath();cx.moveTo(x,y);cx.lineTo(x-3,y-8);cx.moveTo(x,y);cx.lineTo(x+3,y-8);cx.stroke()}
+  // 物干しの柱
+  const l=L.line;[[l.x0,l.y],[l.x1,l.y]].forEach(([x,y],i)=>{if(WIDE&&i===0)return;felt(rrp(x-5,y-10,10,G-y+14,4),'#6B4A35',{st:'rgba(255,255,255,.35)'})});
+  drawHut();
+ }finally{cx=CX0}
+}
+function drawHut(){const h=L.hut,x=h.x,y=h.y,w=h.w,hh=h.h;const wallY=y+hh*.38;
+ // 屋根の下の壁
+ felt(rrp(x+w*.08,wallY,w*.84,hh*.62,6),'#9C6B4A',{st:'rgba(255,240,220,.6)'});
+ // 板の縫い目
+ cx.save();cx.strokeStyle='rgba(60,35,20,.35)';cx.setLineDash([4,4]);cx.lineWidth=1.2;for(let i=1;i<6;i++){const yy=wallY+hh*.62*i/6;cx.beginPath();cx.moveTo(x+w*.1,yy);cx.lineTo(x+w*.9,yy);cx.stroke()}cx.restore();
+ // 屋根
+ felt(()=>{cx.beginPath();cx.moveTo(x-w*.04,wallY+4);cx.lineTo(x+w*.5,y);cx.lineTo(x+w*1.04,wallY+4);cx.closePath()},'#4A6C6F',{st:'rgba(255,255,255,.6)'});
+ // えんとつ
+ felt(rrp(x+w*.7,y+hh*.08,w*.1,hh*.2,3),'#B5533C');
+ // まど（灯りは動的に）
+ felt(rrp(x+w*.2,wallY+hh*.12,w*.26,hh*.2,5),'#E9A23B',{st:'rgba(107,74,53,.5)'});
+ cx.save();cx.strokeStyle='#6B4A35';cx.lineWidth=3;cx.beginPath();cx.moveTo(x+w*.33,wallY+hh*.12);cx.lineTo(x+w*.33,wallY+hh*.32);cx.moveTo(x+w*.2,wallY+hh*.22);cx.lineTo(x+w*.46,wallY+hh*.22);cx.stroke();cx.restore();
+ // とびら
+ felt(rrp(x+w*.56,wallY+hh*.24,w*.24,hh*.38,6),'#6B4A35',{st:'rgba(255,240,220,.55)'});
+ cx.fillStyle='#E9A23B';cx.beginPath();cx.arc(x+w*.6,wallY+hh*.44,3,0,7);cx.fill();
+ // 看板
+ felt(rrp(x+w*.18,wallY+hh*.4,w*.32,hh*.1,4),'#F7F0E1',{st:'rgba(107,74,53,.45)'});
+ cx.fillStyle='#6B4A35';cx.font=fh(Math.max(10,w*.07));cx.textAlign='center';cx.fillText('山小屋',x+w*.34,wallY+hh*.475)}
 
-var lastT=performance.now();
-function frame(now){var dt=Math.min(.25,(now-lastT)/1000);lastT=now;if(cur==='play'&&!document.hidden)S.elapsed+=dt;requestAnimationFrame(frame)}
+/* ===== 状態 ===== */
+let MODE='title',T=0,items=[],queue=[],line=[],busy=0,drag=null,parts=[],pointer={x:0,y:0},tNow=0,FF=false,DS=null,raining=false,lastRainIdx=-1;
+function dayStart(d){return (d-1)*24+6}
+function dayEnd(d){return (d-1)*24+18}
+function newDay(d){T=dayStart(d);const D=DAYS[d];line=new Array(L.npeg).fill(null);queue=[];busy=T;
+ items=D.items.map((k,i)=>({k,id:d*100+i,fab:FABRIC[(d*3+i*5)%FABRIC.length].k,dry:0,need:ITEM[k].need,soaked:false,state:'basket',peg:-1,readyAt:0,leaveAt:0,wetExp:0,wetRain:-1,flap:Math.random()*6}));
+ DS={d,fabs:[],dried:0,wet:0,hours:0,lastTake:null,preOK:null,rains:[],calmOK:false,recOK:false,early:null,log:[]};
+ raining=rainAt(T);lastRainIdx=rainIdx(T)}
+const basketItems=()=>items.filter(it=>it.state==='basket');
 
-/* ---------- 確認テスト ---------- */
-var T={qs:[],i:0,ans:[]};
-function startTest(){show('test');var nm=nameNow();$('tNameBox').classList.toggle('hidden',!!nm);T.qs=window.Quiz?Quiz.test():[];T.i=0;T.ans=[];
-  if(!T.qs.length){$('tQ').textContent='問題データがありません';return}renderQ()}
-function renderQ(){var q=T.qs[T.i];$('tNum').textContent='第 '+(T.i+1)+' 問 ／ '+T.qs.length;$('tQ').innerHTML=q.q;$('tFig').innerHTML=q.fig||'';$('tFb').innerHTML='';var A=$('tA');A.innerHTML='';
-  if(q.t==='choice'){var box=document.createElement('div');box.className='choices';q.shown.forEach(function(c){var b=document.createElement('button');b.textContent=c;b.onclick=function(){if(T.ans[T.i]!==undefined)return;b.classList.add('sel');answer(c)};box.appendChild(b)});A.appendChild(box)}
-  else if(q.t==='num'){A.innerHTML='<div class="numrow"><input id="numIn" inputmode="decimal" autocomplete="off"><b>'+(q.unit||'')+'</b><button class="btn small lamp" id="numGo">こたえる</button></div>';
-    $('numGo').onclick=function(){var v=$('numIn').value.trim();if(!v)return;answer(v.replace(/[０-９．－]/g,function(ch){return ch==='－'?'-':String.fromCharCode(ch.charCodeAt(0)-0xFEE0)}))}}
-  else if(q.t==='order'){var seq=[];A.innerHTML='<div class="hint">正しい順にタップ</div><div class="choices" id="oPool"></div><div class="seq" id="oSeq"></div><div class="numrow"><button class="btn small" id="oReset">やり直す</button><button class="btn small lamp" id="oGo" disabled>こたえる</button></div>';
-    var drawO=function(){var Pl=$('oPool');Pl.innerHTML='';q.shown.forEach(function(it){if(seq.indexOf(it)>=0)return;var b=document.createElement('button');b.textContent=it;b.onclick=function(){Snd.click();seq.push(it);drawO()};Pl.appendChild(b)});
-      $('oSeq').innerHTML=seq.map(function(s,i){return '<div>'+(i+1)+'. '+s+'</div>'}).join('');$('oGo').disabled=seq.length!==q.shown.length};
-    drawO();$('oReset').onclick=function(){seq=[];drawO()};$('oGo').onclick=function(){answer(seq.slice())}}}
-function answer(a){var q=T.qs[T.i];if(T.ans[T.i]!==undefined)return;T.ans[T.i]=a;var ok=window.Quiz&&Quiz.check(q,a);Snd.init();ok?Snd.star(1):Snd.waste();
-  $('tA').querySelectorAll('button,input').forEach(function(b){b.disabled=true});
-  $('tFb').innerHTML='<div class="fb '+(ok?'o':'x')+'"><b class="m">'+(ok?'○':'×')+'</b>'+(ok?'':'正解：<b>'+Quiz.answer(q)+'</b><br>')+(q.ex||'')+
-   '<div style="text-align:right;margin-top:6px"><button class="btn small lamp" id="tNext">'+(T.i+1<T.qs.length?'つぎへ ▶':'結果を見る')+'</button></div></div>';
-  $('tNext').onclick=function(){Snd.click();T.i++;if(T.i<T.qs.length)renderQ();else finishTest()};$('tNext').scrollIntoView({block:'nearest'})}
-function finishTest(){var qs=T.qs,answers=T.ans;var review=Quiz.review(qs,answers),marks=review.map(function(r){return r.ok}),score=marks.filter(Boolean).length;
-  var nm=nameNow()||$('tName').value.trim();if(nm){S.name=nm;save()}
-  var test=window.GAME_MODE==='test';
-  var recs=test?[['モード','確認テストだけ']]:[['クリアタイム',S.cleared?fmt(S.elapsed):'—'],['気圧の読みの的中',S.readOk+' / '+S.readTot],['外の作業の★',S.star+'個'],['やり直した日',S.retries+'回']];
-  SubmitCard.show({gameId:GID,grade:'chu2',koma:[KOMA],unit:'中2理科　気象とその変化　第10回',game:TITLE+' ～'+SUB+'～'+(test?'（確認テストのみ）':''),
-    name:nm,score:score,total:qs.length,marks:marks,records:recs,review:review},function(){show('end')})}
+/* ===== 操作 ===== */
+function nearestPeg(x,y){let b=-1,bd=1e9;L.pegs.forEach((p,i)=>{if(line[i])return;const d=Math.hypot(x-p.x,(y-p.y)*.6);if(d<bd){bd=d;b=i}});return bd<L.unit*1.6?b:-1}
+function itemRect(i){const it=line[i];if(!it)return null;const p=L.pegs[i],u=L.unit,I=ITEM[it.k];return {x:p.x-u*I.w/2,y:p.y,w:u*I.w,h:u*I.h}}
+function inR(x,y,r,m){m=m||0;return r&&x>=r.x-m&&x<=r.x+r.w+m&&y>=r.y-m&&y<=r.y+r.h+m}
+function hang(it,peg){if(line[peg]||it.state!=='basket')return;const at=Math.max(T,busy)+.1;busy=at;it.state='line';it.peg=peg;it.readyAt=at;line[peg]=it;sfx.hang();
+ // 回復を先読み：上がり始めて2時間以上・まだくもり（雲量5以上）・雨はやんでいる
+ if(!DS.recOK&&slope(T)>=.3&&cloud(T)>=5&&!rainAt(T)){DS.recOK=true;S.kRec++;const p=L.pegs[peg];earn(10,'predict',p.x,p.y);pop(p.x,p.y+L.unit*.6,'回復を先読み！','気圧が上がり始めた→まだくもりでも干しどき','t')}
+ burstAt(L.pegs[peg].x,L.pegs[peg].y,8,'#E9A23B')}
+function take(it){if(it.state!=='line'||it.leaveAt)return;const at=Math.max(T,busy)+.1;busy=at;it.leaveAt=at;it.takeSlope=slope(T);sfx.tap();
+ const hd=T-(DS.d-1)*24;if(DS.d===1&&it.dry<1&&hd>=12&&hd<17)DS.panic=true;
+ if(it.dry<1){const p=L.pegs[it.peg];pop(p.x,p.y+L.unit*.5,'乾くまで あと'+Math.ceil((1-it.dry)*100)+'%','','o')}}
+function takeAll(){line.forEach(it=>{if(it)take(it)});}
+cv.addEventListener('pointerdown',e=>{ac();const x=e.clientX,y=e.clientY;pointer.x=x;pointer.y=y;if(MODE!=='play')return;
+ for(let i=0;i<L.npeg;i++){const r=itemRect(i);if(inR(x,y,r,10)){drag={k:'line',i,x,y,sx:x,sy:y,moved:false};cv.setPointerCapture(e.pointerId);return}}
+ if(inR(x,y,L.basket,14)){const b=basketItems();if(!b.length){toast('かごは空っぽ。今日の洗濯物はここまで');return}drag={k:'basket',it:b[0],x,y,sx:x,sy:y,moved:false};cv.setPointerCapture(e.pointerId)}});
+cv.addEventListener('pointermove',e=>{const x=e.clientX,y=e.clientY;pointer.x=x;pointer.y=y;if(!drag)return;drag.x=x;drag.y=y;if(Math.hypot(x-drag.sx,y-drag.sy)>8)drag.moved=true});
+cv.addEventListener('pointerup',()=>{if(!drag)return;const d=drag;drag=null;if(MODE!=='play')return;
+ if(d.k==='basket'){let peg=d.moved?nearestPeg(d.x,d.y-L.unit*.3):line.findIndex(v=>!v);if(peg<0){if(!d.moved)toast('物干しがいっぱい');return}hang(d.it,peg)}
+ else{const it=line[d.i];if(!it)return;if(!d.moved||inR(d.x,d.y,L.basket,30)||inR(d.x,d.y,L.shelf,30)||d.y>L.pegs[d.i].y+L.unit*1.6)take(it)}});
+cv.addEventListener('pointercancel',()=>{drag=null});
+addEventListener('keydown',e=>{if(MODE!=='play')return;if(e.key===' '){const b=basketItems(),p=line.findIndex(v=>!v);if(b.length&&p>=0)hang(b[0],p)}else if(e.key==='a')takeAll();else if(e.key==='f')toggleFF()});
+function toggleFF(){FF=!FF;$('#bFF').classList.toggle('on',FF);$('#bFF').textContent=FF?'▶ ふつう':'▶▶ 早送り'}
 
-/* ---------- 起動 ---------- */
-function setMute(){$('mute').textContent=Snd.muted?'🔇':'🔊'}
-$('mute').onclick=function(){Snd.muted=!Snd.muted;S.muted=Snd.muted;save();setMute();Snd.init();Snd.click()};setMute();
-$('bStart').onclick=startNew;$('bCont').onclick=cont;$('bBook1').onclick=book;$('bBook2').onclick=book;
-$('bAgain').onclick=function(){Snd.init();enterPlay();S.phase='plan';beginDay(4,false)};
-$('bTop').onclick=function(){initTitle();show('title')};
-function initTitle(){var sv=load();$('bCont').classList.toggle('hidden',!(sv&&(sv.day>0||sv.sc)));
-  $('bBook1').classList.toggle('hidden',!hasZ());$('bBook2').classList.toggle('hidden',!hasZ());
-  if(window.PLAYER_NAME){$('nameBox').classList.add('hidden')}else if(S.name)$('nameIn').value=S.name;
-  $('ghost').textContent=S.best?'前回の自分：やり直し '+S.best.retries+'回・'+fmt(S.best.time):''}
-window.Zukan&&Zukan.setup&&Zukan.setup({game:GID,koma:[KOMA]});
-initTitle();
-document.addEventListener('visibilitychange',function(){if(document.hidden)save()});
-setInterval(function(){if(cur==='play')save()},10000);
-window.__game={S:function(){return S},solve:function(){var sc=S.sc,from=noonMode?3:0;var outs=S.cards.filter(function(c){return c.k==='o'}),ins=S.cards.filter(function(c){return c.k==='i'});
-   if(!noonMode){S.plan=[null,null,null,null,null,null];for(var i=0;i<6;i++){S.plan[i]=(sc.wet[i]?ins.shift():outs.shift()).id}S.read=sc.read}
-   else{var rem=S.plan.slice(3).map(function(id){return cards[id]});var o2=rem.filter(function(c){return c.k==='o'}),i2=rem.filter(function(c){return c.k==='i'});for(var j=3;j<6;j++){var c=sc.wet[j]?i2.shift():o2.shift();if(!c)c=(i2.shift()||o2.shift());S.plan[j]=c.id}S.noonRead=sc.noon}
-   drawSlots();drawHand();updGo()},wrong:function(){S.plan=S.plan.slice().reverse();S.read=S.sc.read;drawSlots();updGo()},go:go,noon:function(){return noonMode},phase:function(){return S.phase}};
-requestAnimationFrame(frame);
-if(window.GAME_MODE==='test'){startTest()}
-})();
+/* ===== 時間を進める ===== */
+const HR=14;// 1時間＝14秒
+function update(dt){if(MODE==='play'){const dg=dt/HR*(FF?3:1);step(dg)}else if(MODE==='night'){nightStep(dt)}}
+function step(dg){const d=DS.d,end=dayEnd(d);const T0=T;T=Math.min(end,T+dg);S.t+=dg*HR;
+ const R=rainAt(T),ri=rainIdx(T);
+ // 雨の始まり
+ if(R&&!raining){onRain(ri)}
+ raining=R;rainLoop(R&&MODE==='play');
+ line.forEach((it,i)=>{if(!it)return;
+  if(it.leaveAt&&T>=it.leaveAt){line[i]=null;it.peg=-1;it.leaveAt=0;DS.lastTakeSlope=it.takeSlope;if(it.dry>=1){it.state='shelf';DS.dried++;DS.fabs.push(it.fab);sfx.dry();burstAt(L.shelf.x+L.shelf.w/2,L.shelf.y,10,'#E9A23B')}else{it.state='basket';sfx.take()}DS.lastTake=T;return}
+  if(T<it.readyAt)return;
+  if(R){it.wetExp+=dg;if(it.wetExp>1/6&&it.wetRain!==ri){it.wetRain=ri;it.soaked=true;it.dry=0;it.need=Math.round(it.need*1.25*10)/10;DS.wet++;sfx.wet();const p=L.pegs[i];pop(p.x,p.y+L.unit*.7,'びしょぬれ…','乾かし直し（'+ITEM[it.k].nm+'）','r')}}
+  else{it.wetExp=0;const was=it.dry;it.dry=Math.min(1.2,it.dry+dryRate(T)*dg/it.need);DS.hours+=dg;if(was<1&&it.dry>=1){it.soaked=false;sfx.dry();const p=L.pegs[i];pop(p.x,p.y+L.unit*1.2,'乾いた！','タップで取りこもう','o')}}});
+ // 小さなゆれに動じない（1日目の午後の谷で、乾いていない洗濯物を取りこまなかった）
+ if(d===1&&T0<16&&T>=16)DS.at16=line.filter(Boolean).length;
+ if(d===1&&T0<17&&T>=17&&!DS.calmOK){if(!DS.panic&&DS.at16>=1){DS.calmOK=true;S.kCalm++;earn(10,'first-try',W/2,H*.3);pop(W/2,H*.3,'ゆれに動じない！','午後の小さな下がりは、いつものゆれ','t')}}
+ if(T>=end)endDay()}
+function onRain(ri){const out=line.filter(Boolean).filter(it=>!it.leaveAt||it.leaveAt>T+1/6);const nIn=line.filter(Boolean).length;
+ const lead=DS.lastTake!=null?T-DS.lastTake:null;const drop=slope(T-1)<-.3;
+ const rec={at:T,out:out.length,lead};DS.rains.push(rec);
+ if(out.length===0&&DS.lastTake!=null&&lead>=.3&&drop&&DS.lastTakeSlope<=-.3){S.kPre++;earn(15,'hit',W/2,H*.35);sfx.good();pop(W/2,H*.35,'先読み成功！','雨の'+hm(lead)+'前に取りこみ完了','t big');DS.preOK=true}
+ else if(out.length===0&&DS.lastTake!=null&&DS.lastTakeSlope>-.3){pop(W/2,H*.35,'雨がふり出した','取りこみは気圧が下がり始める前。晴れ間がもったいなかったかも','o')}
+ else if(out.length>0){pop(W/2,H*.35,'雨だ！','取りこみが あと'+out.length+'枚 間に合わない…','r')}
+ else pop(W/2,H*.35,'雨がふり出した','','o')}
+function hm(h){const m=Math.round(h*60);return (m>=60?Math.floor(m/60)+'時間':'')+(m%60?m%60+'分':'')}
+function endDay(){MODE='dayres';rainLoop(false);
+ // 日が暮れたら全部取りこむ
+ line.forEach((it,i)=>{if(!it)return;if(it.dry>=1){it.state='shelf';DS.dried++;DS.fabs.push(it.fab)}else it.state='basket';line[i]=null});
+ const old=S.res[DS.d];if(old){S.dried-=old.dried||0;S.wet-=old.wet||0;S.hours-=old.hours||0}
+ S.dried+=DS.dried;S.wet+=DS.wet;S.hours+=DS.hours;DS.fabs.forEach(k=>S.fab[k]=(S.fab[k]||0)+1);
+ const D=DAYS[DS.d],ok=DS.dried>=D.target&&DS.wet===0;
+ if(ok)earn(30,'rule',W/2,H/2);
+ S.res[DS.d]={dried:DS.dried,target:D.target,wet:DS.wet,hours:DS.hours,ok,pre:!!DS.preOK};
+ if(S.day===DS.d&&DS.d<5)S.day=DS.d+1;
+ save();sfx.fan();dayResult()}
+
+/* ===== 夜（早送りで気圧の線だけ縫い進む） ===== */
+let nightTo=0;
+function startNight(){MODE='night';nightTo=dayStart(DS.d+1);T=Math.max(T,dayEnd(DS.d));line=new Array(L.npeg).fill(null);ovClose()}
+function nightStep(dt){T=Math.min(nightTo,T+dt*3.2);raining=rainAt(T);if(Math.random()<.3)sfx.stitch();if(T>=nightTo){openBrief(S.day)}}
+
+/* ===== 画面 ===== */
+function show(k){['title','hud','test'].forEach(n=>$('#'+n).classList.toggle('hidden',n!==k))}
+let lastOv=null;function ov(h){$('#ovBox').innerHTML=h;$('#ov').classList.remove('hidden');$('#ovBox').scrollTop=0}
+function ovClose(){$('#ov').classList.add('hidden')}
+function daysHTML(cur){let h='<div class="days">';for(let d=1;d<=5;d++)h+='<i class="'+(d<cur?'done':d===cur?'now':'')+'">'+d+'日目</i>';return h+'</div>'}
+function openBrief(d){MODE='brief';lastOv=()=>openBrief(d);newDay(d);show('hud');$('#act').classList.add('hidden');const D=DAYS[d];
+ ov('<h2>'+d+'日目の朝　'+esc(D.nm)+'</h2>'+daysHTML(d)+(D.unlock?'<p><span class="new">NEW</span>　'+esc(D.unlock)+'</p>':'')+D.brief.map((t,i)=>'<p class="'+(i?'':'lead')+'">'+t+'</p>').join('')+'<p class="small">今日の目標：乾いた洗濯物 <b>'+D.target+'枚</b>・ぬらさない。作業は6時〜18時。</p><div class="row" style="margin-top:12px"><button class="felt m" id="bGo">作業をはじめる</button></div>');
+ $('#bGo').onclick=()=>{sfx.tap();ovClose();MODE='play';$('#act').classList.remove('hidden')}}
+function dayResult(){lastOv=dayResult;const d=DS.d,D=DAYS[d],r=S.res[d];$('#act').classList.add('hidden');$('#pops').innerHTML='';
+ let h='<h2>'+d+'日目の夕方</h2>'+daysHTML(d+1);
+ h+='<canvas class="rec" id="recCv" width="1200" height="480"></canvas>';
+ h+='<div class="stats"><div>乾いた洗濯物<b>'+r.dried+' / '+r.target+'枚</b></div><div>びしょぬれ<b class="'+(r.wet?'ng':'')+'">'+r.wet+'枚</b></div><div>干した時間（のべ）<b>'+f1(DS.hours)+'時間</b></div><div>5日間の合計<b>'+S.dried+'枚</b></div></div>';
+ h+='<p>'+dayComment(d)+'</p>';
+ h+='<div style="display:flex;flex-direction:column;gap:9px;margin-top:10px">'+(d<5?'<button class="felt m" id="bNx">夜をこして '+(d+1)+'日目へ</button>':'<button class="felt m" id="bNx">5日間おつかれさま → 確認テストへ</button>')+'<div class="row"><button class="felt c s" id="bRe">やり直す</button><button class="felt c s" id="bFab">布あつめ</button><button class="felt c s zk" id="bGa">🎁 ガチャ</button></div></div>';
+ ov(h);zkButtons();drawRecord($('#recCv'),dayStart(d)-6,dayEnd(d)+2,d);
+ $('#bNx').onclick=()=>{sfx.tap();if(d<5)startNight();else{S.cleared=true;save();mainClear()}};
+ $('#bRe').onclick=()=>{sfx.tap();openBrief(d)};$('#bFab').onclick=()=>fabOpen(dayResult);$('#bGa').onclick=openGacha}
+function dayComment(d){const r=DS.rains;
+ if(d===1)return DS.calmOK?'午後の気圧の小さな下がりに動じなかった。1hPaほどの上下は、晴れていても毎日ある。':'1日中晴れ。午後の小さな下がりは、天気がくずれる前ぶれではなく毎日あるゆれ。';
+ if(!r.length)return '雨はふらなかった。';
+ const x=r[0];if(x.out>0)return '雨がふる前に取りこみきれなかった。気圧が<b>何時間も下がり続けた</b>ところが前ぶれ。雨の数時間前に動こう。';
+ if(DS.preOK)return '下がり続ける気圧を読んで、雨の'+hm(x.lead)+'前に取りこみを終えた。天気は気圧の変化より<b>おくれて</b>くずれる。';
+ return '雨にはぬれなかった。取りこみのタイミングを気圧の下がり続けで決められると、晴れ間をもっと使える。'}
+function fabOpen(back){const n=Object.keys(S.fab).length;let h='<h2>布のコレクション　'+n+' / '+FABRIC.length+'</h2><p class="small">乾かした洗濯物の布が集まる。5日間の記録布は、そのまま気圧と天気の記録になる。</p><div class="fab">';
+ FABRIC.forEach(f=>{const c=S.fab[f.k];h+=c?'<div style="background-color:'+f.c+';background-image:url('+fabPat(f.k,f.c).toDataURL()+');background-size:36px 36px">'+esc(f.nm)+'×'+c+'</div>':'<div class="lock">？？？</div>'});
+ h+='</div><canvas class="rec" id="recAll" width="1400" height="480"></canvas><div class="row"><button class="felt" id="bFx">とじる</button></div>';ov(h);
+ const upto=Math.min(dayEnd(Math.max(1,(S.cleared?5:S.day-1)||1)),120);drawRecord($('#recAll'),-2,Math.max(18,upto),0);
+ $('#bFx').onclick=()=>{sfx.tap();back?back():ovClose()}}
+// 記録布（気圧・天気の記録）を小さなキャンバスに描く
+function drawRecord(c,t0,t1,d){if(!c)return;const g=c.getContext('2d'),w=c.width,h=c.height,pl={x:130,y:56,w:w-160,h:h-130};
+ g.fillStyle='#f6efdf';g.fillRect(0,0,w,h);const X=t=>pl.x+pl.w*(t-t0)/(t1-t0),Y=p=>pl.y+pl.h*(1-(p-1000)/24);
+ g.font='600 32px "Klee One",serif';g.textAlign='right';g.textBaseline='middle';
+ for(let p=1000;p<=1024;p+=4){g.strokeStyle='rgba(107,74,53,.18)';g.lineWidth=1.5;g.beginPath();g.moveTo(pl.x,Y(p));g.lineTo(pl.x+pl.w,Y(p));g.stroke();g.fillStyle='#6B4A35';g.fillText(p,pl.x-8,Y(p))}
+ g.textAlign='center';g.textBaseline='top';
+ for(let t=Math.ceil(t0/6)*6;t<=t1;t+=6){g.strokeStyle=((t%24)+24)%24===0?'rgba(74,108,111,.6)':'rgba(107,74,53,.15)';g.beginPath();g.moveTo(X(t),pl.y);g.lineTo(X(t),pl.y+pl.h);g.stroke();g.fillStyle='#6B4A35';const hh=((t%24)+24)%24;g.fillText(hh===0?(t<0?'前日':(Math.floor(t/24)+1)+'日目'):hh+'時',X(t),pl.y+pl.h+8)}
+ // 雨の帯
+ RAIN.forEach(([a,b])=>{const x0=X(Math.max(a,t0)),x1=X(Math.min(b,t1));if(x1>x0){g.fillStyle='rgba(74,108,111,.16)';g.fillRect(x0,pl.y,x1-x0,pl.h);g.fillStyle='#4A6C6F';g.font='900 34px "Zen Maru Gothic",sans-serif';g.fillText('雨',(x0+x1)/2,pl.y+8)}});
+ g.strokeStyle='#B5533C';g.lineWidth=6;g.lineJoin='round';g.beginPath();for(let t=t0;t<=t1;t+=.25){const x=X(t),y=Y(pres(t));t===t0?g.moveTo(x,y):g.lineTo(x,y)}g.stroke();
+ g.setLineDash([8,6]);g.strokeStyle='rgba(255,255,255,.7)';g.lineWidth=1.5;g.stroke();g.setLineDash([]);
+ g.fillStyle='#4A6C6F';g.font='900 32px "Zen Maru Gothic",sans-serif';g.textAlign='left';g.textBaseline='top';g.fillText('気圧〔hPa〕',14,8)}
+function confirmBack(){if(MODE==='title'||MODE==='pause')return;const prev=MODE;MODE='pause';
+ ov('<h2>もどる？</h2><p class="lead">進み具合は保存されます。</p><p class="small">「つづきから」は、'+S.day+'日目の朝から。</p><div style="display:flex;flex-direction:column;gap:9px;margin-top:12px"><button class="felt m" id="cRe">つづける</button><button class="felt c" id="cTi">タイトルへもどる</button></div>');
+ $('#cRe').onclick=()=>{sfx.tap();if(prev==='play'||prev==='night'){ovClose();MODE=prev}else if(lastOv)lastOv();else{ovClose();MODE=prev}};
+ $('#cTi').onclick=()=>{sfx.tap();ovClose();save();toTitle()}}
+function toast(h){const t=$('#toast');t.innerHTML=h;t.style.top=(WIDE?80:L.baro.y+L.baro.h+8)+'px';t.classList.remove('hidden');clearTimeout(toast.tm);toast.tm=setTimeout(()=>t.classList.add('hidden'),2200)}
+function pop(x,y,a,b,cls){if(cls==='o'&&$('#pops').querySelectorAll('.pop.o').length>=2)return;const d=document.createElement('div');d.className='pop '+(cls||'');d.style.left=clamp(x,130,W-130)+'px';d.style.top=clamp(y,100,H-90)+'px';d.innerHTML=esc(a)+(b?'<small>'+esc(b)+'</small>':'');$('#pops').appendChild(d);setTimeout(()=>d.remove(),2200)}
+function burstAt(x,y,n,col){if(RM)n=Math.min(n,4);for(let i=0;i<n;i++){const a=rnd(0,6.28),v=rnd(60,220);parts.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v-60,life:1,sz:rnd(4,8),c:pick([col,'#F7F0E1','#B5533C','#8A9A5B']),r:rnd(0,6)})}}
+function earn(n,why,x,y){let got=0;try{got=window.Zukan&&Zukan.earn?Zukan.earn(n,why,{x,y}):0}catch(e){}kk();return got}
+function kk(){let v=0;try{v=window.Zukan&&Zukan.state?Zukan.state().kakera||0:0}catch(e){}$('#kkN').textContent=v;$('#kk').classList.toggle('hidden',!window.Zukan)}
+function zkButtons(){const has=!!(window.Zukan&&Zukan.openBook);document.querySelectorAll('.zk').forEach(b=>b.classList.toggle('hidden',!has))}
+function openBook(){try{window.Zukan&&Zukan.openBook&&Zukan.openBook({unit:'kisho'})}catch(e){}}
+function openGacha(){try{window.Zukan&&Zukan.openGacha&&Zukan.openGacha({box:'kisho'})}catch(e){}}
+function mainClear(){S.mc=true;save();const go=()=>startTest();if(window.Zukan&&Zukan.mainClear){try{Zukan.mainClear({onClose:go})}catch(e){go()}}else go()}
+function fmtT(t){t=Math.round(t);return Math.floor(t/60)+'分'+String(t%60).padStart(2,'0')+'秒'}
+
+/* ===== 描画 ===== */
+const SKY={sun:[157,195,207],cloud:[176,182,180],rain:[150,160,165],night:[47,62,82]};
+function mix(a,b,t){return a.map((v,i)=>Math.round(lerp(v,b[i],t)))}
+function skyCol(T_){const hd=((T_%24)+24)%24;const c=cloud(T_),R=rainAt(T_);let col=R?SKY.rain:mix(SKY.sun,SKY.cloud,clamp((c-3)/6,0,1));
+ const nt=hd<5||hd>19.5?1:hd<6.5?1-(hd-5)/1.5:hd>18?(hd-18)/1.5:0;return mix(col,SKY.night,clamp(nt,0,1))}
+const CLOUDS=[];for(let i=0;i<12;i++)CLOUDS.push({x:Math.random(),y:Math.random(),s:rnd(.7,1.3)});
+const DROPS=[];for(let i=0;i<120;i++)DROPS.push({x:Math.random(),y:Math.random(),v:rnd(.7,1.2)});
+function drawSky(){const c=skyCol(T);const C=cx;C.fillStyle='rgb('+c.join(',')+')';C.fillRect(0,0,W,H);
+ const hd=((T%24)+24)%24,top=WIDE?70:L.baro.y+L.baro.h,bot=L.skyB;
+ // 太陽・月
+ if(hd>5.5&&hd<18.8&&cloud(T)<8.5){const k=(hd-6)/12,sx=lerp(W*.08,W*.92,k),sy=lerp(bot-20,top+(bot-top)*.18,Math.sin(Math.PI*clamp(k,0,1)));const r=WIDE?H*.05:W*.07;
+  felt(()=>{cx.beginPath();cx.arc(sx,sy,r,0,7)},'#F2C14E',{st:'rgba(181,83,60,.7)',dash:[4,3]});C.save();C.strokeStyle='#F2C14E';C.lineWidth=4;C.lineCap='round';for(let i=0;i<10;i++){const a=i*Math.PI/5+tNow*.2;C.beginPath();C.moveTo(sx+Math.cos(a)*r*1.3,sy+Math.sin(a)*r*1.3);C.lineTo(sx+Math.cos(a)*r*1.6,sy+Math.sin(a)*r*1.6);C.stroke()}C.restore()}
+ else if(hd>19||hd<5){const r=WIDE?H*.035:W*.05;felt(()=>{cx.beginPath();cx.arc(W*.8,top+(bot-top)*.25,r,0,7)},'#F7F0E1',{st:'rgba(107,74,53,.4)'});C.fillStyle='rgba(247,240,225,.8)';for(let i=0;i<20;i++){C.beginPath();C.arc((i*83.7)%W,top+((i*41.3)%((bot-top)*.6)),1.6,0,7);C.fill()}}
+ // 雲（雲量に比例）
+ const n=Math.round(cloud(T)*1.1),wd=WDIR[wind(T)]||Math.PI;const drift=-Math.cos(wd)*.012;
+ for(let i=0;i<n&&i<CLOUDS.length;i++){const q=CLOUDS[i];q.x=((q.x+drift*(1/60)*(FF?3:1)*(MODE==='play'||MODE==='night'?1:0))%1.2+1.2)%1.2;const x=q.x*W*1.1-W*.05,y=top+(bot-top)*(.08+q.y*.5),r=(WIDE?H*.06:W*.09)*q.s;
+  const g=rainAt(T)?'#5f676b':cloud(T)>8?'#858c8f':'#F4EFE6';felt(cloudPath(x,y,r),g,{st:g!=='#F4EFE6'?'rgba(255,255,255,.55)':'rgba(107,74,53,.35)'})}
+ // 雨（糸のステッチ）
+ if(rainAt(T)){C.save();C.strokeStyle='rgba(247,240,225,.75)';C.lineWidth=2;C.setLineDash([6,5]);for(const d of DROPS){d.y=(d.y+d.v*(1/60)*(MODE==='play'?1.6:1)*(FF?2:1))%1;const x=d.x*W,y=top+(H-top)*d.y;C.beginPath();C.moveTo(x,y);C.lineTo(x-4,y+16);C.stroke()}C.restore()}}
+function drawLine(){const l=L.line,C=cx;C.save();C.strokeStyle='#F7F0E1';C.lineWidth=3;C.beginPath();for(let x=l.x0;x<=l.x1;x+=6){const y=lineY(x);x===l.x0?C.moveTo(x,y):C.lineTo(x,y)}C.stroke();C.strokeStyle='rgba(107,74,53,.4)';C.lineWidth=1;C.setLineDash([3,3]);C.stroke();C.restore();
+ // 空いた洗濯ばさみ
+ L.pegs.forEach((p,i)=>{if(line[i])return;felt(rrp(p.x-4,p.y-8,8,16,3),'#C99A62',{st:false,sh:2});C.save();C.globalAlpha=.35+.25*Math.sin(tNow*3+i);C.strokeStyle='#F7F0E1';C.setLineDash([4,4]);C.lineWidth=2;const u=L.unit;C.strokeRect(p.x-u*.35,p.y+10,u*.7,u*.8);C.restore()})}
+function clothPath(k,x,y,w,h,flap){const f=flap,C=cx;return ()=>{C.beginPath();
+ if(k==='towel'||k==='sheet'){C.moveTo(x,y);C.lineTo(x+w,y);C.quadraticCurveTo(x+w+f*.6,y+h*.6,x+w+f,y+h);for(let i=0;i<=6;i++)C.lineTo(x+w+f-(w)*(i/6),y+h+(i%2?3:0));C.quadraticCurveTo(x+f*.6,y+h*.6,x,y)}
+ else if(k==='shirt'){const s=w*.22;C.moveTo(x+s,y);C.lineTo(x+w*.38,y);C.quadraticCurveTo(x+w*.5,y+h*.12,x+w*.62,y);C.lineTo(x+w-s,y);C.lineTo(x+w,y+h*.1);C.lineTo(x+w+f*.3,y+h*.35);C.lineTo(x+w-s*.8+f*.3,y+h*.32);C.lineTo(x+w-s*.8+f,y+h);C.lineTo(x+s*.8+f,y+h);C.lineTo(x+s*.8+f*.3,y+h*.32);C.lineTo(x+f*.3,y+h*.35);C.lineTo(x,y+h*.1);C.closePath();return}
+ else{// くつ下2つ
+  const sw=w*.42;for(const ox of [0,w*.54]){C.moveTo(x+ox,y);C.lineTo(x+ox+sw,y);C.lineTo(x+ox+sw+f*.4,y+h*.62);C.quadraticCurveTo(x+ox+sw+f*.5+sw*.7,y+h*.66,x+ox+sw+f*.5+sw*.6,y+h*.88);C.quadraticCurveTo(x+ox+sw*.5+f,y+h*1.02,x+ox+f*.4,y+h*.8);C.closePath()}return}
+ C.closePath()}}
+function drawItem(it,x,y,u,ghost){const I=ITEM[it.k],w=u*I.w,h=u*I.h,C=cx;const wnd=rainAt(T)?1.4:(cloud(T)>5?1:.6);const flap=RM?0:Math.sin(tNow*2.4+it.flap)*u*.08*wnd;
+ const col=FABRIC.find(f=>f.k===it.fab).c;
+ C.save();if(ghost)C.globalAlpha=.8;
+ const px=x-w/2;felt(clothPath(it.k,px,y,w,h,flap),col,{pat:pat(it.fab),pa:.95});
+ // ぬれ具合：濃い影
+ if(it.state==='line'&&it.dry<1){C.save();clothPath(it.k,px,y,w,h,flap)();C.clip();C.fillStyle='rgba(40,50,60,'+(.28*(1-it.dry))+')';C.fillRect(px-20,y,w+40,h+10);C.restore()}
+ if(it.soaked&&it.dry<.3){C.fillStyle='rgba(157,195,207,.95)';for(let i=0;i<3;i++){const dy=((tNow*.8+i*.33)%1)*u*.4;C.beginPath();C.ellipse(px+w*(.25+i*.25)+flap,y+h+6+dy,2.5,4,0,0,7);C.fill()}}
+ // 洗濯ばさみ
+ felt(rrp(x-5,y-9,10,18,3),'#C99A62',{st:false,sh:2});
+ if(!ghost&&it.state==='line'){// 乾き具合＝縫い進むステッチ
+  const n=8,bw=Math.min(w,u*.9),bx=x-bw/2,by=y+h+10;C.lineCap='round';for(let i=0;i<n;i++){const on=it.dry*n>i+.001;C.strokeStyle=on?'#E9A23B':'rgba(247,240,225,.55)';C.lineWidth=on?3.2:2;C.beginPath();C.moveTo(bx+bw*i/n+1,by);C.lineTo(bx+bw*(i+.7)/n,by);C.stroke()}
+  if(it.dry>=1){C.fillStyle='#fff';C.font=fh(Math.max(12,u*.18));C.textAlign='center';C.fillText('乾いた',x,by+u*.22);C.save();C.globalAlpha=.5+.5*Math.sin(tNow*5);C.strokeStyle='#E9A23B';C.lineWidth=3;C.setLineDash([6,4]);C.strokeRect(px-6,y-12,w+12,h+22);C.restore()}
+  if(it.leaveAt){C.fillStyle='#6B4A35';C.font=fh(Math.max(11,u*.15));C.textAlign='center';C.fillText('取りこみ中',x,y-14)}
+  if(T<it.readyAt){C.fillStyle='#6B4A35';C.font=fh(Math.max(11,u*.15));C.textAlign='center';C.fillText('干し中',x,y-14)}}
+ C.restore()}
+function drawMitten(){const C=cx;const t=queueTarget();if(!t)return;const s=L.unit*.32;C.save();C.translate(t.x,t.y-L.unit*.2+Math.sin(tNow*8)*3);
+ felt(()=>{C.beginPath();C.ellipse(0,0,s*.7,s,0,0,7)},'#B5533C',{st:'rgba(255,255,255,.7)'});felt(()=>{C.beginPath();C.ellipse(-s*.65,-s*.1,s*.28,s*.45,-.6,0,7)},'#B5533C',{st:false});felt(rrp(-s*.7,s*.7,s*1.4,s*.45,4),'#F7F0E1',{st:'rgba(107,74,53,.5)'});C.restore()}
+function queueTarget(){let best=null,bt=1e9;line.forEach((it,i)=>{if(!it)return;const tt=it.leaveAt||(T<it.readyAt?it.readyAt:0);if(tt&&tt<bt){bt=tt;best=L.pegs[i]}});return best}
+function drawBasket(){const b=L.basket,C=cx;
+ felt(rrp(L.basket.x-6,L.basket.y+L.basket.h*.55,L.shelf.x+L.shelf.w-L.basket.x+12,L.basket.h*.55,14),'#d9c9a8',{st:'rgba(107,74,53,.35)'});
+ const bi=basketItems();bi.slice(0,3).forEach((it,i)=>{if(drag&&drag.k==='basket'&&drag.it===it)return;drawItem(it,b.x+b.w*(.3+i*.2),b.y+b.h*.02+i*4,L.unit*.62,true)});
+ felt(()=>{C.beginPath();C.moveTo(b.x,b.y+b.h*.35);C.lineTo(b.x+b.w,b.y+b.h*.35);C.lineTo(b.x+b.w*.9,b.y+b.h);C.lineTo(b.x+b.w*.1,b.y+b.h);C.closePath()},'#C99A62',{st:'rgba(107,74,53,.6)'});
+ C.save();C.strokeStyle='rgba(107,74,53,.45)';C.lineWidth=2;for(let i=1;i<4;i++){const y=b.y+b.h*(.35+.65*i/4);C.beginPath();C.moveTo(b.x+b.w*.05*i/4+b.w*.02,y);C.lineTo(b.x+b.w*(1-.05*i/4)-b.w*.02,y);C.stroke()}C.restore();
+ C.fillStyle='#4a2c00';C.font=fh(Math.max(13,b.h*.16));C.textAlign='center';C.fillText('洗濯かご　'+bi.length+'枚',b.x+b.w/2,b.y+b.h*.72);
+ C.font=fb(Math.max(11,b.h*.11));C.fillText(bi.length?'ドラッグして干す':'空っぽ',b.x+b.w/2,b.y+b.h*.9)}
+function drawShelf(){const s=L.shelf,C=cx;const n=items.filter(i=>i.state==='shelf').length;
+ felt(rrp(s.x,s.y+s.h*.8,s.w,s.h*.14,4),'#6B4A35',{st:'rgba(255,255,255,.45)'});
+ const sh=items.filter(i=>i.state==='shelf');sh.forEach((it,i)=>{const col=FABRIC.find(f=>f.k===it.fab).c;const w=s.w*.7,hh=Math.min(s.h*.1,10),x=s.x+s.w*.15+(i%2?4:-4),y=s.y+s.h*.8-(i+1)*hh;felt(rrp(x,y,w,hh-1,3),col,{st:'rgba(255,255,255,.55)',pat:pat(it.fab),sh:1})});
+ C.fillStyle='#3d2a1d';C.font=fh(Math.max(12,s.h*.15));C.textAlign='center';C.fillText('乾いた棚　'+n+' / '+DAYS[DS.d].target,s.x+s.w/2,s.y+s.h*1.14)}
+function drawBaro(){const B=L.baro,C=cx;const d=DS?DS.d:1;
+ felt(rrp(B.x,B.y,B.w,B.h,18),'#4A6C6F',{st:'rgba(247,240,225,.75)',sw:2});
+ const pad=Math.max(10,B.w*.02),titleH=Math.max(24,B.h*.1);
+ C.fillStyle='#F7F0E1';C.font=fh(Math.max(14,Math.min(22,B.h*.075)));C.textAlign='left';C.fillText('自記気圧計',B.x+pad+4,B.y+titleH*.78);
+ // いまの値の札
+ const p=pres(T),broken=d===5&&T>=96;const lab=broken?'針が折れた（3時間おき）':'いま '+f1(p)+' hPa';C.font=fh(Math.max(13,Math.min(20,B.h*.068)));const tw=C.measureText(lab).width+22;
+ felt(rrp(B.x+B.w-pad-tw,B.y+6,tw,titleH-2,8),broken?'#B5533C':'#E9A23B',{st:'rgba(255,255,255,.7)',sh:1});C.fillStyle=broken?'#fff':'#4a2c00';C.textAlign='center';C.fillText(lab,B.x+B.w-pad-tw/2,B.y+titleH*.78);
+ const showC=d>=2,showW=d>=3,stripH=(showC?B.h*.11:0)+(showW?B.h*.09:0);
+ const paper={x:B.x+pad,y:B.y+titleH+6,w:B.w-pad*2,h:B.h-titleH-12-stripH-pad*.5};
+ // 記録紙（刺しゅう布）
+ felt(rrp(paper.x,paper.y,paper.w,paper.h,10),'#F7F0E1',{st:'rgba(107,74,53,.3)',sh:2});
+ const lab2=Math.max(40,paper.w*.07),pl={x:paper.x+lab2,y:paper.y+10,w:paper.w-lab2-12,h:paper.h-10-Math.max(24,paper.h*.13)};
+ const span=WIDE?30:24,t1=T,t0=T-span,X=t=>pl.x+pl.w*.9*(t-t0)/span,Y=q=>pl.y+pl.h*(1-(q-1000)/24);
+ C.save();C.beginPath();C.rect(paper.x,paper.y,paper.w,paper.h);C.clip();
+ // 布目
+ C.strokeStyle='rgba(107,74,53,.07)';C.lineWidth=1;for(let x=pl.x;x<pl.x+pl.w;x+=6){C.beginPath();C.moveTo(x,pl.y);C.lineTo(x,pl.y+pl.h);C.stroke()}
+ C.font=fb(Math.max(11,Math.min(15,pl.h*.07)));C.textAlign='right';C.textBaseline='middle';
+ for(let q=1000;q<=1024;q+=2){C.strokeStyle=q%4?'rgba(74,108,111,.14)':'rgba(74,108,111,.35)';C.lineWidth=q%4?1:1.4;C.beginPath();C.moveTo(pl.x,Y(q));C.lineTo(pl.x+pl.w,Y(q));C.stroke();if(q%4===0){C.fillStyle='#6B4A35';C.fillText(q,pl.x-6,Y(q))}}
+ C.textAlign='center';C.textBaseline='top';
+ for(let t=Math.ceil(t0/3)*3;t<=t1;t+=3){const hd=((t%24)+24)%24,x=X(t);C.strokeStyle=hd===0?'rgba(181,83,60,.55)':'rgba(74,108,111,'+(hd%6?.12:.28)+')';C.lineWidth=hd===0?2:1;C.beginPath();C.moveTo(x,pl.y);C.lineTo(x,pl.y+pl.h);C.stroke();
+  if(hd%6===0||(!WIDE&&false)){C.fillStyle=hd===0?'#B5533C':'#6B4A35';C.fillText(hd===0?(t<=0?(t<0?'前日':'1日目'):(Math.floor(t/24)+1)+'日目'):hd+'時',x,pl.y+pl.h+4)}}
+ C.textBaseline='alphabetic';
+ // 赤い糸の線
+ const tEnd=broken?96:t1;
+ C.lineJoin='round';C.lineCap='round';C.strokeStyle='#B5533C';C.lineWidth=Math.max(2.6,pl.h*.014);C.beginPath();let first=true;for(let t=t0;t<=tEnd+1e-6;t+=.2){const x=X(t),y=Y(pres(t));first?C.moveTo(x,y):C.lineTo(x,y);first=false}C.stroke();
+ C.strokeStyle='rgba(255,240,225,.8)';C.lineWidth=1;C.setLineDash([4,5]);C.stroke();C.setLineDash([]);
+ if(broken){// 3時間おきの読み取り（×）
+  const pts=[];for(let t=96;t<=t1+1e-6;t+=3)pts.push([X(t),Y(pres(t)),t]);C.strokeStyle='rgba(181,83,60,.6)';C.lineWidth=1.6;C.setLineDash([3,5]);C.beginPath();pts.forEach((a,i)=>i?C.lineTo(a[0],a[1]):C.moveTo(a[0],a[1]));C.stroke();C.setLineDash([]);
+  C.strokeStyle='#B5533C';C.lineWidth=3;pts.forEach(a=>{C.beginPath();C.moveTo(a[0]-6,a[1]-6);C.lineTo(a[0]+6,a[1]+6);C.moveTo(a[0]+6,a[1]-6);C.lineTo(a[0]-6,a[1]+6);C.stroke();C.fillStyle='#3d2a1d';C.font=fb(Math.max(11,pl.h*.06));C.textAlign='center';C.fillText(f1(pres(a[2])),a[0],a[1]-10)})}
+ C.restore();
+ // 針（ペン）
+ if(!broken){const x=X(t1),y=Y(p),px=paper.x+paper.w-10,py=pl.y+pl.h*.55;C.save();C.strokeStyle='#C99A62';C.lineWidth=4;C.lineCap='round';C.beginPath();C.moveTo(px,py);C.lineTo(x,y);C.stroke();C.fillStyle='#6B4A35';C.beginPath();C.arc(px,py,7,0,7);C.fill();C.fillStyle='#E9A23B';C.beginPath();C.arc(x,y,5,0,7);C.fill();C.strokeStyle='#6B4A35';C.lineWidth=1.5;C.stroke();
+  // 糸（針から垂れる）
+  C.strokeStyle='#B5533C';C.lineWidth=1.2;C.beginPath();C.moveTo(x,y);C.quadraticCurveTo(x+6,y+12+Math.sin(tNow*3)*3,x+2,y+22);C.stroke();C.restore()}
+ // 雲量・風向の記録
+ let sy=paper.y+paper.h+4;const tape=(h,label,fn)=>{felt(rrp(paper.x,sy,paper.w,h-4,6),'#e8dcc4',{st:'rgba(107,74,53,.3)',sh:1});C.fillStyle='#3d2a1d';C.font=fh(Math.max(10,Math.min(13,h*.34)));C.textAlign='left';C.fillText(label,paper.x+6,sy+h*.62);fn(sy,h-4);sy+=h};
+ if(showC)tape(B.h*.11,'雲量',(y0,h)=>{const tStep=broken?3:1;for(let t=Math.ceil(t0/tStep)*tStep;t<=t1;t+=tStep){if(broken&&t<96&&false)continue;const c=Math.round(cloud(t));const x=X(t),bh=(h-8)*c/10;C.fillStyle=rainAt(t)?'#4A6C6F':'#8A9A5B';C.fillRect(x-2.5,y0+h-4-bh,5,bh)}});
+ if(showW)tape(B.h*.09,'風向',(y0,h)=>{for(let t=Math.ceil(t0/3)*3;t<=t1;t+=3){const x=X(t);if(x<pl.x+4)continue;const w_=wind(t);C.fillStyle='#3d2a1d';C.font=fb(Math.max(10,Math.min(13,h*.42)));C.textAlign='center';C.fillText(w_,x,y0+h*.66)}})}
+function drawDayTag(){const C=cx;if(!DS)return;const d=DS.d,hd=((T%24)+24)%24,hh=Math.floor(hd),mm=Math.floor((hd-hh)*60/10)*10;
+ const lab=d+'日目　'+hh+':'+String(mm).padStart(2,'0');C.font=fh(WIDE?22:17);const tw=C.measureText(lab).width+34,x=W/2-tw/2,y=12;
+ if(!WIDE&&W<430){}
+ felt(rrp(x,y,tw,WIDE?48:40,12),'#F7F0E1',{st:'rgba(181,83,60,.6)',sh:3});C.fillStyle='#3d2a1d';C.textAlign='center';C.fillText(lab,W/2,y+(WIDE?33:28));
+ if(MODE==='play'){const k=(T-dayStart(d))/12;C.fillStyle='rgba(107,74,53,.25)';C.fillRect(x+10,y+(WIDE?40:33),tw-20,3);C.fillStyle='#E9A23B';C.fillRect(x+10,y+(WIDE?40:33),(tw-20)*clamp(k,0,1),3)}}
+function drawParts(dt){const C=cx;for(const q of parts){q.life-=dt*1.1;q.x+=q.vx*dt;q.y+=q.vy*dt;q.vy+=300*dt;q.r+=dt*4;if(q.life<=0)continue;C.save();C.globalAlpha=clamp(q.life,0,1);C.translate(q.x,q.y);C.rotate(q.r);C.fillStyle=q.c;C.beginPath();C.ellipse(0,0,q.sz,q.sz*.55,0,0,7);C.fill();C.strokeStyle='rgba(255,255,255,.7)';C.lineWidth=1;C.setLineDash([2,2]);C.stroke();C.restore()}parts=parts.filter(q=>q.life>0)}
+function drawFiber(){if(!fiberPat)fiberPat=cx.createPattern(fiber,'repeat');cx.save();cx.globalAlpha=.5;cx.fillStyle=fiberPat;cx.fillRect(0,0,W,H);cx.restore()}
+function drawScene(dt){drawSky();cx.drawImage(stat,0,0,W,H);
+ // 灯り（夜）
+ const hd=((T%24)+24)%24;if(hd>17.5||hd<6.5){const h=L.hut;cx.save();cx.globalAlpha=.35+.1*Math.sin(tNow*3);const g=cx.createRadialGradient(h.x+h.w*.33,h.y+h.h*.6,2,h.x+h.w*.33,h.y+h.h*.6,h.w*.4);g.addColorStop(0,'rgba(255,220,140,1)');g.addColorStop(1,'rgba(255,220,140,0)');cx.fillStyle=g;cx.fillRect(h.x-h.w*.2,h.y,h.w*1.1,h.h);cx.restore()}
+ // 風見（3日目から）
+ if(DS&&DS.d>=3){const h=L.hut,x=h.x+h.w*.5,y=h.y-4;cx.save();cx.strokeStyle='#6B4A35';cx.lineWidth=3;cx.beginPath();cx.moveTo(x,y);cx.lineTo(x,y-h.h*.14);cx.stroke();cx.translate(x,y-h.h*.14);cx.rotate((WDIR[wind(T)]||0)+Math.PI);const s=h.w*.14;felt(()=>{cx.beginPath();cx.moveTo(-s,0);cx.lineTo(s*.6,-s*.25);cx.lineTo(s*.6,s*.25);cx.closePath()},'#E9A23B',{st:false,sh:1});cx.restore();cx.fillStyle='#fff';cx.font=fh(12);cx.textAlign='center';cx.fillText('風 '+wind(T),x,y-h.h*.2)}
+ drawBaro();drawLine();
+ line.forEach((it,i)=>{if(it&&!(drag&&drag.k==='line'&&drag.i===i&&drag.moved))drawItem(it,L.pegs[i].x,L.pegs[i].y,L.unit)});
+ drawBasket();drawShelf();drawMitten();
+ if(drag&&drag.moved){if(drag.k==='basket'){drawItem(drag.it,drag.x,drag.y-L.unit*.5,L.unit,true);const pg=nearestPeg(drag.x,drag.y-L.unit*.3);if(pg>=0){cx.save();cx.strokeStyle='#E9A23B';cx.lineWidth=4;cx.setLineDash([6,4]);cx.beginPath();cx.arc(L.pegs[pg].x,L.pegs[pg].y,14,0,7);cx.stroke();cx.restore()}}else{const it=line[drag.i];if(it)drawItem(it,drag.x,drag.y-L.unit*.3,L.unit,true)}}
+ drawParts(dt);drawFiber();drawDayTag()}
+function drawTitle(dt){T=((tNow*.4)%12)+8+48+24;// 4日目の昼ごろの空
+ drawSky();cx.drawImage(stat,0,0,W,H);drawLine();
+ // 物干しにかかった題の布
+ const l=L.line,cxm=(l.x0+l.x1)/2,y=lineY(cxm)+6;const tw=Math.min((l.x1-l.x0)*.8,WIDE?W*.5:W*.86),th=tw*(WIDE?.27:.36);
+ const fl=RM?0:Math.sin(tNow*1.6)*6;
+ felt(()=>{cx.beginPath();cx.moveTo(cxm-tw/2,y);cx.lineTo(cxm+tw/2,y);cx.quadraticCurveTo(cxm+tw/2+fl,y+th*.5,cxm+tw/2+fl*.6,y+th);cx.lineTo(cxm-tw/2+fl*.6,y+th);cx.quadraticCurveTo(cxm-tw/2+fl,y+th*.5,cxm-tw/2,y);cx.closePath()},'#4A6C6F',{st:'rgba(247,240,225,.85)',sw:2.2,pat:pat('gingham'),pa:.18});
+ [cxm-tw*.42,cxm+tw*.42].forEach(x=>felt(rrp(x-6,y-10,12,22,3),'#C99A62',{st:false}));
+ cx.textAlign='center';cx.fillStyle='#F7F0E1';cx.font=fh(th*.3);cx.fillText('山小屋の5日間',cxm+fl*.3,y+th*.48);
+ felt(rrp(cxm-tw*.3,y+th*.6,tw*.6,th*.3,10),'#E9A23B',{st:'rgba(255,255,255,.8)',sh:2});cx.fillStyle='#4a2c00';cx.font=fh(th*.15);cx.fillText('～気圧と天気～',cxm,y+th*.8);
+ cx.fillStyle='#3d2a1d';cx.font=fb(Math.max(12,th*.09));cx.fillText('中2理科　気象とその変化　第10回',cxm,y-18);
+ // 題の上の飾り：5日間の気圧を縫った記録布
+ {const r=WIDE?{x:W*.03,y:H*.69,w:W*.5,h:H*.27}:{x:14,y:78,w:W-28,h:Math.max(120,L.line.y-120-78)};
+  felt(rrp(r.x,r.y,r.w,r.h,16),'#4A6C6F',{st:'rgba(247,240,225,.75)',sw:2});const pp={x:r.x+12,y:r.y+34,w:r.w-24,h:r.h-46};felt(rrp(pp.x,pp.y,pp.w,pp.h,10),'#F7F0E1',{st:'rgba(107,74,53,.3)',sh:1});
+  cx.fillStyle='#F7F0E1';cx.font=fh(Math.min(20,r.h*.1));cx.textAlign='left';cx.fillText('自記気圧計　5日間の記録',r.x+16,r.y+24);
+  const X=t=>pp.x+10+(pp.w-20)*(t+6)/126,Y=q=>pp.y+8+(pp.h-16)*(1-(q-999)/24);
+  RAIN.forEach(([a,b])=>{cx.fillStyle='rgba(74,108,111,.14)';cx.fillRect(X(a),pp.y+4,X(b)-X(a),pp.h-8)});
+  cx.strokeStyle='rgba(74,108,111,.25)';cx.lineWidth=1;for(let d=0;d<=5;d++){const x=X(d*24);cx.beginPath();cx.moveTo(x,pp.y+4);cx.lineTo(x,pp.y+pp.h-4);cx.stroke()}
+  const k=RM?1:clamp((tNow%9)/6,0,1),tEnd=-6+126*k;cx.strokeStyle='#B5533C';cx.lineWidth=3;cx.lineJoin='round';cx.beginPath();for(let t=-6;t<=tEnd;t+=.5){const x=X(t),y=Y(pres(t));t===-6?cx.moveTo(x,y):cx.lineTo(x,y)}cx.stroke();
+  cx.setLineDash([4,4]);cx.strokeStyle='rgba(255,255,255,.7)';cx.lineWidth=1;cx.stroke();cx.setLineDash([]);
+  cx.fillStyle='#E9A23B';cx.beginPath();cx.arc(X(tEnd),Y(pres(tEnd)),5,0,7);cx.fill()}
+ // 干された小物
+ const u=L.unit;[[.12,'towel','dots'],[.88,'shirt','stripe']].forEach(([k,t,f])=>{const x=l.x0+(l.x1-l.x0)*k;drawItem({k:t,fab:f,flap:k*9,state:'title',dry:1},x,lineY(x),u,false)});
+ drawParts(dt);drawFiber()}
+
+/* ===== ループ ===== */
+let last=performance.now(),T0=performance.now(),kkT=0;
+function loop(now){const dt=Math.min(.05,(now-last)/1000);last=now;tNow=(now-T0)/1000;cx.setTransform(DPR,0,0,DPR,0,0);
+ if(MODE==='title')drawTitle(dt);
+ else if(MODE==='test'){cx.fillStyle='#EDE4D3';cx.fillRect(0,0,W,H)}
+ else{if(MODE!=='pause')update(dt);if(DS)drawScene(dt)}
+ kkT-=dt;if(kkT<=0){kk();kkT=1.5}
+ requestAnimationFrame(loop)}
+
+/* ===== 確認テスト ===== */
+let TS=null;function playerName(){return window.PLAYER_NAME||S.name||''}
+function startTest(){if(!window.Quiz)return;MODE='test';ovClose();rainLoop(false);TS={qs:Quiz.test(),i:0,ans:[]};show('test');$('#hud').classList.remove('hidden');$('#act').classList.add('hidden');renderQ()}
+function renderQ(){const q=TS.qs[TS.i],box=$('#tbox');
+ box.innerHTML='<div class="tno">確認テスト　第'+(TS.i+1)+'問 / '+TS.qs.length+'</div><div class="prog">'+TS.qs.map((_,i)=>'<i class="'+(i<TS.i?'on':'')+'"></i>').join('')+'</div><div class="tq">'+q.q+'</div>'+(q.fig?'<div class="fig2">'+q.fig+'</div>':'')+'<div id="ta"></div>';
+ const ta=$('#ta');
+ if(q.t==='choice'){const d=document.createElement('div');d.className='ch';q.shown.forEach(c=>{const b=document.createElement('button');b.innerHTML=c;b.onclick=()=>ans(c);d.appendChild(b)});ta.appendChild(d)}
+ else if(q.t==='num'){ta.innerHTML='<div class="numrow"><input id="numIn" inputmode="decimal" autocomplete="off" placeholder="数を入力"><b>'+esc(q.unit||'')+'</b><button class="felt m s" id="numOk" style="flex:0 0 auto">決定</button></div>';$('#numOk').onclick=()=>{const v=$('#numIn').value.trim();if(v==='')return;ans(v)}}
+ else{const picked=[];ta.innerHTML='<div class="small">正しい順にタップしよう</div><div class="ord" id="ordBox"></div><div class="ch" id="ordPool"></div><div class="row" style="margin-top:10px"><button class="felt c s" id="ordRe">やり直す</button><button class="felt m s" id="ordOk" disabled>決定</button></div>';
+  const drawO=()=>{$('#ordBox').innerHTML=picked.map((t,i)=>'<div>'+(i+1)+'. '+t+'</div>').join('');const pool=$('#ordPool');pool.innerHTML='';q.shown.forEach(t=>{if(picked.includes(t))return;const b=document.createElement('button');b.innerHTML=t;b.onclick=()=>{picked.push(t);sfx.tap();drawO()};pool.appendChild(b)});$('#ordOk').disabled=picked.length!==q.shown.length};
+  drawO();$('#ordRe').onclick=()=>{picked.length=0;drawO()};$('#ordOk').onclick=()=>ans(picked.slice())}
+ $('#tbox').scrollTop=0}
+function ans(v){TS.ans.push(v);sfx.tap();TS.i++;if(TS.i<TS.qs.length)renderQ();else finishTest()}
+function finishTest(){const qs=TS.qs,review=Quiz.review(qs,TS.ans),marks=review.map(r=>r.ok),score=marks.filter(Boolean).length;sfx.fan();
+ const recs=TEST_ONLY?[['モード','確認テストだけ']]:[['クリアタイム',fmtT(S.t)],['乾かした洗濯物（5日間）',S.dried+'枚'],['びしょぬれ',S.wet+'枚'],['先読みの取りこみ／回復の先読み',S.kPre+'回／'+S.kRec+'回']];
+ TS.card=SubmitCard.show({gameId:GID,grade:'chu2',koma:[KOMA],unit:UNIT,game:GTITLE+(TEST_ONLY?'（確認テストのみ）':''),name:playerName(),score,total:qs.length,marks,records:recs,review},showTestResult);showTestResult()}
+function showTestResult(){const r=TS.card||{};$('#tbox').innerHTML='<h2>テストの結果</h2><p style="font-family:var(--fh);font-weight:900;font-size:40px;margin:6px 0;color:#4A6C6F">'+(r.score||0)+' / '+(r.total||0)+'</p><div style="display:flex;flex-direction:column;gap:9px"><button class="felt m" id="rCard">提出カードをもう一度見る</button><button class="felt" id="rAgain">↺ テストをもう一度</button>'+(TEST_ONLY?'':'<button class="felt c s" id="rTitle">タイトルへ</button>')+'<button class="felt c s zk" id="rBook">📖 図鑑</button></div>';
+ $('#rCard').onclick=()=>SubmitCard.reopen(TS.card,()=>{});$('#rAgain').onclick=()=>startTest();if($('#rTitle'))$('#rTitle').onclick=()=>toTitle();$('#rBook').onclick=openBook;zkButtons()}
+
+/* ===== タイトル ===== */
+function toTitle(){MODE='title';ovClose();rainLoop(false);show('title');DS=null;line=[];$('#bCont').classList.toggle('hidden',!S.started);zkButtons();
+ const fromList=/\/chu2\/[^/]+\/?(index\.html)?$/.test(location.pathname)||/\/chu2\/(index\.html)?(\?|#|$)/.test(document.referrer||'');$('#bList').classList.toggle('hidden',!fromList)}
+$('#bList').onclick=()=>{location.href='../'};
+$('#bStart').onclick=()=>{ac();sfx.tap();const nm=$('#nameIn').value.trim()||S.name,snd=S.sound,fab=S.fab;S=fresh();S.name=nm;S.sound=snd;S.fab=fab||{};S.started=true;save();openBrief(1)};
+$('#bCont').onclick=()=>{ac();sfx.tap();const v=$('#nameIn').value.trim();if(v)S.name=v;save();if(S.cleared){startTest();return}openBrief(S.day)};
+$('#bSnd1').onclick=toggleSnd;$('#bSnd').onclick=toggleSnd;$('#bBook1').onclick=openBook;$('#bAlb1').onclick=()=>fabOpen(null);
+$('#bBack').onclick=()=>{sfx.tap();if(MODE==='test'){if(TEST_ONLY)return;toTitle();return}confirmBack()};
+$('#bAll').onclick=()=>{if(MODE!=='play')return;takeAll()};$('#bFF').onclick=toggleFF;
+
+resize();
+try{document.fonts&&document.fonts.ready.then(()=>buildStatic())}catch(e){}
+try{window.Zukan&&Zukan.setup&&Zukan.setup({game:GID,koma:[KOMA]})}catch(e){}
+setSnd();kk();
+if(window.PLAYER_NAME){$('#nameIn').value=window.PLAYER_NAME;$('#nameRow').classList.add('hidden')}else if(S.name)$('#nameIn').value=S.name;
+window.__game={S:()=>S,DS:()=>DS,mode:()=>MODE,T:()=>T,setT:t=>{T=t},step:h=>{const n=Math.ceil(h/.05);for(let i=0;i<n&&MODE==='play';i++)step(.05)},hangAll:()=>{basketItems().forEach(it=>{const p=line.findIndex(v=>!v);if(p>=0)hang(it,p)})},takeAll,line:()=>line,take:i=>line[i]&&take(line[i]),start:()=>$('#bStart').onclick(),go:()=>$('#bGo')&&$('#bGo').onclick(),next:()=>$('#bNx')&&$('#bNx').onclick(),brief:openBrief,pres,startTest};
+if(TEST_ONLY){$('#bBack').classList.add('hidden');startTest()}else toTitle();
+requestAnimationFrame(loop);
 </script>
-</body>
-</html>
+</body></html>

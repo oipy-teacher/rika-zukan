@@ -1,193 +1,173 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>燃えかす鑑定所 ～酸化でできる物質～</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#F1EDE4">
+<title>燃えかす鍛冶場 ～酸化でできる物質～</title>
+<!--
+  ゲームID: moekasu-kantei ／ コマID: chu2-kagaku-18（化学変化と原子・分子 第18回・確認用）
+  ねらい: 金属が酸素と結び付く（酸化）と、元の金属とは性質の違う物質（酸化物）ができる
+
+  【6. 別の世界】画風＝水墨画（墨のにじみ・余白・筆）。
+   1 世界とメタファー: 山あいの鍛冶場を、墨一色の掛け軸のように描く。左に炉とふいごと天秤、中央に金床、
+     右に標本棚。山道に沿って炉が1つずつ灯っていく（道のり）。成果は「鑑定書」に筆で書かれ、刻印を打つ。
+   2 配色: 和紙 #F1EDE4 ／ 墨 #1C1C1C（濃淡とにじみ）／ 差し色は火と光だけ #F5E663。
+     マグネシウムが燃える白い光だけが、画面でいちばん明るい。銅だけ淡彩でうすく色をさす。
+   3 書体: 見出し Yuji Boku（筆文字）／ 本文 明朝
+   4 画面: 全画面canvas。横長＝金床を中央、左に炉・右に標本棚。縦長＝金床を画面下に大きく、素材は上から落ちてくる。
+   5 HUD: 左上の墨の札「← もどる」、上に山道の炉の列（灯った数）、右上に標本・腕前・かけら・風鈴（音）。
+   6 音: 金床の澄んだ金属音、ふいごの風、崩れる音、豆電球のりん、琴の爪弾き（連続成功）（WebAudio合成）
+
+  【7. 動かす遊び】鍛冶屋。ふいごを押して金属を焼き（天秤の目盛りが実測の記録どおりに増える）、
+   金属と燃えかすを金床にのせ、金槌でたたく（金属はのびる・燃えかすは砕ける）、砥石でこする（光沢）、
+   豆電球をつなぐ（電気）。性質の違いを3つそろえたときだけ「酸化物」の刻印が打てる。
+   磁石（鉄の燃えかすもつく）・ものさし（大きさ）は決め手にならず、連続がとぎれる。
+   後半は中身の分からない「包み」を筆でほどいて鑑定する（③開封）。最後は上から次々に落ちる大仕事。
+  開封: 最初に localStorage rika-zukan:chu2:seal:chu2-kagaku-17（コマ17「燃えたら重い？軽い？」）を開け、
+   公開資料の再現記録（丸めたスチールウール 1.16g→1.34g）と照らす。封筒が無ければその場で予想してから焼く。
+  深さ: 酸化は「簡単なもの」。化学反応式はマグネシウムと銅だけ。鉄は物質名の式まで（鉄＋酸素→酸化鉄）。
+-->
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@700;800&family=Zen+Kaku+Gothic+New:wght@500;700;900&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Yuji+Boku&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#16172a;--bg2:#212339;--line:#3b3e5c;--kiri:#efe0c0;--kiri2:#dcc596;--kiriD:#a9895a;--ink:#2d2216;--shu:#c8321f;--shu2:#8e1f12;--gold:#d8b25a;--txt:#f4efe3;--sub:#aaa8bd;--ok:#46b474;
- --f:'Zen Kaku Gothic New','Hiragino Sans','Meiryo',sans-serif;--min:'Shippori Mincho B1','Hiragino Mincho ProN','Yu Mincho',serif}
+:root{--washi:#F1EDE4;--sumi:#1C1C1C;--hi:#F5E663;--brush:"Yuji Boku","Hiragino Mincho ProN","Yu Mincho",serif;--min:"Hiragino Mincho ProN","Yu Mincho","Noto Serif JP",serif}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{margin:0;height:100%}
-body{background:var(--bg);color:var(--txt);font-family:var(--f);overflow-x:hidden;-webkit-user-select:none;user-select:none;touch-action:manipulation;
- background-image:radial-gradient(ellipse 70% 38% at 50% -6%,rgba(216,178,90,.22),transparent 70%),repeating-linear-gradient(90deg,rgba(0,0,0,.18) 0 18px,rgba(255,255,255,.015) 18px 36px)}
-button{font-family:inherit;cursor:pointer;color:inherit}
+html,body{margin:0;height:100%;overflow:hidden;background:var(--washi);overscroll-behavior:none;-webkit-user-select:none;user-select:none;color:var(--sumi);font-family:var(--min);-webkit-text-size-adjust:100%}
+canvas#cv{position:fixed;inset:0;display:block;touch-action:none}
 .hidden{display:none!important}
-.scr{position:fixed;inset:0;overflow-y:auto;overflow-x:hidden}
-.wrap{width:100%;max-width:520px;margin:0 auto;padding:8px 12px 28px}
-.btn{min-height:48px;border:none;border-radius:10px;padding:10px 18px;font-size:18px;font-weight:900;background:var(--bg2);color:#fff;box-shadow:0 4px 0 #0009}
-.btn:active{transform:translateY(3px);box-shadow:0 1px 0 #0009}
-.btn.shu{background:var(--shu);box-shadow:0 4px 0 var(--shu2)}
-.btn.gold{background:var(--gold);color:#2a1c00;box-shadow:0 4px 0 #8a6a1f}
-.btn.ghost{background:transparent;border:2px solid var(--line);box-shadow:none}
-.btn.wide{width:100%}
-.btn:disabled{opacity:.4}
-.small{font-size:13px;color:var(--sub)}
-.card{background:var(--bg2);border:2px solid var(--line);border-radius:12px;padding:12px 14px;margin:10px 0}
-.kiri{background:repeating-linear-gradient(90deg,rgba(140,100,50,.07) 0 2px,transparent 2px 11px),linear-gradient(90deg,#f3e6c9,#e7d4ae 45%,#f1e3c4);color:var(--ink);border:2px solid var(--kiriD);border-radius:6px;box-shadow:0 6px 0 #6d5634,0 10px 18px #0007}
-.min{font-family:var(--min)}
-.tbtns{display:grid;gap:10px;margin-top:12px}
+button{font-family:inherit;color:inherit;cursor:pointer;border:0;touch-action:manipulation;background:none}
+/* 墨の札（ボタン）：輪郭をわざとゆらす */
+.sumi{position:relative;display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:50px;padding:10px 26px;font-family:var(--brush);font-size:20px;color:var(--washi);z-index:0}
+.sumi::before{content:"";position:absolute;inset:0;z-index:-1;background:radial-gradient(ellipse at 30% 40%,#2a2a2a 0 55%,#1C1C1C 70%,rgba(28,28,28,.85) 100%);
+ clip-path:polygon(2% 12%,18% 4%,46% 9%,72% 2%,97% 8%,99% 45%,96% 88%,70% 97%,40% 92%,12% 98%,1% 80%,3% 45%);filter:drop-shadow(1px 2px 1px rgba(28,28,28,.35))}
+.sumi.pale{color:var(--sumi)}
+.sumi.pale::before{background:transparent;box-shadow:none;clip-path:none;border:3px solid var(--sumi);border-radius:46% 54% 40% 60%/60% 40% 60% 40%;inset:2px}
+.sumi.gold{color:var(--sumi)}
+.sumi.gold::before{background:radial-gradient(ellipse at 40% 40%,#fff7b0 0,#F5E663 55%,#e3cf3c 100%)}
+.sumi:active{transform:translateY(2px)}
+.sumi[disabled]{opacity:.35;pointer-events:none}
+#back{position:fixed;left:max(8px,env(safe-area-inset-left));top:max(8px,env(safe-area-inset-top));z-index:9;min-height:48px;font-size:19px;padding:8px 22px}
+#hudR{position:fixed;right:max(8px,env(safe-area-inset-right));top:max(8px,env(safe-area-inset-top));z-index:5;display:flex;gap:10px;align-items:center}
+.hv{display:flex;flex-direction:column;align-items:center;line-height:1;min-width:44px}
+.hv small{font-size:11px;font-weight:700;letter-spacing:.1em}
+.hv b{font-family:var(--brush);font-weight:400;font-size:25px}
+#snd{width:46px;height:46px;display:flex;align-items:center;justify-content:center}
+#snd svg{width:34px;height:34px}
+#snd.off .rg{display:none}
+#path{position:fixed;left:50%;top:max(10px,env(safe-area-inset-top));transform:translateX(-50%);z-index:5;display:flex;gap:6px;align-items:flex-end;pointer-events:none}
+#path i{width:20px;height:22px;display:block;background:radial-gradient(ellipse at 50% 70%,rgba(28,28,28,.25),transparent 70%);border-bottom:3px solid rgba(28,28,28,.5);border-radius:50% 50% 10% 10%}
+#path i.on{background:radial-gradient(ellipse at 50% 70%,#F5E663 0 30%,rgba(245,230,99,.4) 50%,transparent 72%);border-bottom-color:var(--sumi)}
+#path i.now{outline:2px dashed var(--sumi);outline-offset:3px}
+#path span{font-family:var(--brush);font-size:15px;margin-left:6px;white-space:nowrap}
+#claim{position:fixed;z-index:4;left:max(10px,env(safe-area-inset-left));top:92px;max-width:min(360px,46vw);padding:10px 14px 10px 16px;background:rgba(241,237,228,.9);border-left:6px solid var(--sumi);pointer-events:auto;cursor:pointer}
+#claim small{display:block;font-size:11px;letter-spacing:.2em;font-weight:700}
+#claim p{margin:3px 0 0;font-family:var(--brush);font-size:16px;line-height:1.5}
+#claim.mini p{display:none}
+#claim.mini small::after{content:"（タップで見る）";font-weight:400}
+#band{position:fixed;z-index:4;left:50%;bottom:max(6px,env(safe-area-inset-bottom));transform:translateX(-50%);max-width:min(760px,94vw);padding:8px 20px;font-weight:700;font-size:15px;line-height:1.5;text-align:center;
+ background:radial-gradient(ellipse at 50% 50%,rgba(241,237,228,.97) 60%,rgba(241,237,228,0) 100%);pointer-events:none}
+#band b{font-family:var(--brush);font-weight:400;font-size:18px;background:linear-gradient(transparent 60%,rgba(245,230,99,.9) 60%)}
+#msg{position:fixed;z-index:8;left:50%;top:22%;transform:translate(-50%,-50%);padding:12px 22px;font-weight:700;font-size:16px;line-height:1.6;max-width:min(520px,90vw);text-align:center;opacity:0;pointer-events:none;transition:opacity .25s;
+ background:radial-gradient(ellipse at 50% 50%,rgba(241,237,228,.98) 55%,rgba(241,237,228,.0) 100%)}
+#msg.on{opacity:1}
+#msg.bad{color:var(--sumi)}
+#msg.bad::before{content:"差し戻し";display:block;font-family:var(--brush);font-size:22px}
 /* タイトル */
-#title .wrap{text-align:center;padding-top:16px}
-.lamp{display:inline-block;font-size:13px;letter-spacing:.3em;color:var(--gold);border-top:1px solid var(--gold);border-bottom:1px solid var(--gold);padding:3px 12px}
-.logo{font-family:var(--min);font-weight:800;font-size:clamp(34px,11vw,52px);line-height:1.15;margin:10px 0 2px;letter-spacing:.06em;text-shadow:0 3px 0 #000}
-.logo small{display:block;font-size:.34em;color:var(--gold);letter-spacing:.2em;margin-bottom:4px}
-.subt{font-size:16px;color:var(--sub);margin-bottom:8px}
-.namein{width:100%;font:inherit;font-size:18px;padding:10px;border-radius:8px;border:2px solid var(--line);background:#0e0f1d;color:#fff;margin-top:6px}
-.box3{display:flex;justify-content:center;gap:10px;margin:12px 0}
-.box3 .kiri{width:92px;padding:6px 4px 8px;font-family:var(--min);font-weight:800;font-size:13px}
-.box3 svg{display:block;margin:0 auto}
-/* 鑑定台 */
-.hud{display:flex;align-items:center;gap:6px}
-.icon{min-width:44px;min-height:44px;border-radius:10px;border:2px solid var(--line);background:var(--bg2);font-size:20px;padding:0}
-#rName{flex:1;min-width:0;font-family:var(--min);font-weight:800;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.stat{display:grid;grid-template-columns:1fr auto;gap:4px 10px;align-items:center;margin:8px 0 4px;font-size:13px;color:var(--sub)}
-.bud{height:14px;background:#0e0f1d;border:2px solid var(--line);border-radius:8px;overflow:hidden}
-.bud div{height:100%;background:linear-gradient(90deg,var(--gold),#f0d48a);transition:width .35s}
-#money{font-weight:900;color:var(--gold);font-size:15px}
-#combo{font-weight:900;color:#ffd27a;min-height:18px}
-.client{display:flex;gap:8px;align-items:flex-start;margin:8px 0}
-.face{flex:none;width:46px;height:46px;border-radius:50%;background:#2c2f4a;border:2px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:26px}
-.bubble{flex:1;background:#fff;color:#1b1b1b;border-radius:12px;padding:7px 10px;font-size:14.5px;font-weight:700;line-height:1.55;position:relative}
-.bubble::before{content:'';position:absolute;left:-9px;top:16px;border:7px solid transparent;border-right-color:#fff}
-.bubble .who{display:block;font-size:11px;color:var(--shu);font-weight:900}
-.table{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px}
-.slot{padding:6px 6px 8px;text-align:center}
-.slot h4{margin:0 0 2px;font-family:var(--min);font-size:14px}
-.slot .tag{display:inline-block;font-size:11px;background:var(--ink);color:var(--kiri);border-radius:3px;padding:1px 6px}
-.slot.burnt .tag{background:var(--shu)}
-.slot svg{display:block;width:100%;height:auto}
-.eye{display:flex;flex-wrap:wrap;justify-content:center;gap:2px;margin:4px auto 0;width:90px}
-.eyeT{min-height:36px;margin-top:6px;border-radius:8px;border:2px solid var(--line);background:var(--bg2);font-size:14px;font-weight:700;width:100%}
-.eyeT.on{border-color:var(--gold);color:var(--gold)}
-.res{background:#fff;color:#222;border-radius:10px;padding:6px 8px 8px;margin:8px 0 4px;position:relative}.res .cl{position:absolute;right:6px;top:4px;font-size:11px;color:#888}
-.res svg{display:block;width:100%;height:auto}
-.res .rl{display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:13.5px;font-weight:700;line-height:1.45}
-.res .rl div{background:#f3efe6;border-radius:6px;padding:4px 6px}
-.verdict{font-weight:900;font-size:15px;margin-top:6px;line-height:1.5}
-.verdict.d{color:#b3261a}.verdict.n{color:#6a6255}
-.tools{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:4px}
-.tool{min-height:58px;border-radius:10px;border:2px solid var(--line);background:linear-gradient(#262946,#1d1f36);text-align:center;padding:4px 3px;font-size:12.5px;font-weight:700;line-height:1.25;display:flex;flex-direction:column;gap:1px;align-items:center;justify-content:center;box-shadow:0 3px 0 #0b0c18}
-.tool .ic{font-size:19px;flex:none;line-height:1}
-.tool .c{display:block;font-size:11px;color:var(--gold)}
-.tool.used{opacity:.38}
-.tool.hit{border-color:var(--shu)}
-.tool:disabled{cursor:default}
-.evid{margin:10px 0 0;padding:8px 10px}
-.evid h4{margin:0 0 4px;font-family:var(--min);font-size:15px;display:flex;justify-content:space-between;align-items:center}
-.evid ul{margin:0;padding-left:0;list-style:none;font-size:14px;font-weight:700;line-height:1.6}
-.evid li::before{content:'✔ ';color:var(--shu)}.evid li.none{opacity:.6}.evid li.none::before{content:''}
-.pips{display:inline-flex;gap:4px}.pips i{width:14px;height:14px;border-radius:50%;border:2px solid var(--shu);display:inline-block}.pips i.on{background:var(--shu)}
-.almost{color:var(--shu);font-weight:900;font-size:13px;margin-left:6px;animation:pulse 1s infinite}
-@keyframes pulse{50%{opacity:.4}}
-.acts{position:sticky;bottom:0;z-index:5;padding:8px 0 calc(8px + env(safe-area-inset-bottom));background:linear-gradient(transparent,var(--bg) 22%);display:grid;grid-template-columns:auto 1fr;gap:8px}
-/* 原子 */
-.atom{--c:#999;--t:#fff;width:var(--a,26px);height:var(--a,26px);border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-weight:900;font-size:calc(var(--a,26px)*.38);color:var(--t);font-family:var(--f);
- background:radial-gradient(circle at 32% 28%,rgba(255,255,255,.95) 0 8%,rgba(255,255,255,.35) 18%,transparent 42%),radial-gradient(circle at 50% 50%,transparent 55%,rgba(0,0,0,.32) 100%),var(--c);box-shadow:0 2px 5px rgba(0,0,0,.35);flex:none}
-.pair{display:inline-flex;align-items:center}.pair .atom+.atom{margin-left:calc(var(--a,26px)*-.2)}
-/* 模型づくり */
-.board{display:grid;grid-template-columns:1fr 1fr;gap:12px;justify-items:center;padding:14px;border-radius:14px;background:#0e0f1d;border:2px solid var(--line);margin:10px 0}
-.bslot{height:58px;display:flex;align-items:center;justify-content:center}
-.o2btn{min-height:64px;border-radius:12px;border:2px dashed var(--gold);background:rgba(216,178,90,.08);display:flex;align-items:center;justify-content:center;gap:10px;width:100%;font-weight:900;font-size:16px}
-.fly{animation:fly .45s cubic-bezier(.3,1.5,.5,1)}
-@keyframes fly{from{transform:translateY(60px) scale(.4);opacity:0}}
-.eqs{display:grid;gap:8px;margin:8px 0}
-.eqs button{min-height:52px;border-radius:10px;border:2px solid var(--line);background:#0e0f1d;font-size:19px;font-weight:900;letter-spacing:.02em}
-.mbar{height:12px;border-radius:6px;background:#0e0f1d;border:2px solid var(--line);overflow:hidden;margin:4px 0}.mbar div{height:100%;background:linear-gradient(90deg,#8d939b,#E4572E);width:0;transition:width .4s}
-/* 開封 */
-.env{margin:12px auto;width:230px;height:136px;background:#f3ead7;border-radius:6px;position:relative;box-shadow:0 8px 20px #0008;color:#2a1a00;display:flex;align-items:flex-end;padding:0 16px 18px;font-weight:900;font-size:17px;overflow:hidden}
-.env .flap{position:absolute;left:0;right:0;top:0;height:64px;background:linear-gradient(to bottom right,transparent 49%,#e2d4b4 50%) left/50% 100% no-repeat,linear-gradient(to bottom left,transparent 49%,#e2d4b4 50%) right/50% 100% no-repeat;transform-origin:top;transition:transform .6s}
-.env.open .flap{transform:scaleY(-1)}
-.env .pred{opacity:0;transition:opacity .5s .4s}.env.open .pred{opacity:1}
-.stamp{position:absolute;right:14px;bottom:12px;width:56px;height:56px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#ff6b61,#a3151c);color:#fff;font-family:var(--min);font-weight:800;display:flex;align-items:center;justify-content:center;font-size:15px;box-shadow:0 3px 6px #0006;transition:transform .5s,opacity .5s}
-.env.open .stamp{transform:translate(40px,-60px) rotate(40deg);opacity:0}
-.opts{display:grid;gap:8px;margin:10px 0}
-.opt{min-height:52px;border-radius:10px;border:2px solid var(--line);background:#0e0f1d;font-size:16px;font-weight:700;text-align:left;padding:8px 12px;line-height:1.45}
-.opt.sel{border-color:var(--gold);background:rgba(216,178,90,.15)}
-.lab{background:#fff;border-radius:12px;padding:8px;margin:8px 0}
-.lab svg{display:block;width:100%;height:auto}
-.big{font-family:var(--min);font-weight:800;font-size:22px;margin:8px 0;line-height:1.45}
-.lead{font-size:16px;line-height:1.7;margin:8px 0}
-.hitmark{font-family:var(--min);font-weight:800;font-size:30px;color:var(--gold);text-shadow:0 3px 0 #000;margin:6px 0}
-/* 鑑定書 */
-.cert{position:relative;padding:14px 14px 16px;margin:10px 0;text-align:left}
-.cert h3{margin:0 0 6px;font-family:var(--min);font-size:20px;text-align:center;letter-spacing:.2em}
-.cert .row{font-size:14px;font-weight:700;line-height:1.6;border-bottom:1px dashed #b89d6a;padding:3px 0}
-.cert .hanko{position:absolute;right:10px;top:8px;width:58px;height:58px;border:3px solid var(--shu);border-radius:50%;color:var(--shu);font-family:var(--min);font-weight:800;display:flex;align-items:center;justify-content:center;font-size:13px;line-height:1.1;text-align:center;transform:rotate(-12deg);animation:stampin .45s cubic-bezier(.3,1.6,.5,1)}
-@keyframes stampin{from{transform:scale(2.4) rotate(-12deg);opacity:0}}
-.price{font-family:var(--min);font-weight:800;font-size:44px;color:var(--gold);text-shadow:0 3px 0 #000;letter-spacing:.04em}
-/* 仕入れ */
-.shop button{display:flex;width:100%;min-height:62px;align-items:center;gap:10px;margin:8px 0;border-radius:10px;border:2px solid var(--line);background:#0e0f1d;text-align:left;padding:8px 10px;font-size:15px;font-weight:700;line-height:1.4}
-.shop button .ic{font-size:26px}
-.shop button .c{margin-left:auto;color:var(--gold);font-weight:900;white-space:nowrap}
-.shop button.own{opacity:.45}
-/* 演出 */
-#fx{position:fixed;inset:0;pointer-events:none;z-index:60}
-.pop{position:fixed;z-index:61;pointer-events:none;font-weight:900;font-size:20px;color:#ffd27a;text-shadow:0 2px 0 #000;animation:pop 1s forwards}
-@keyframes pop{to{transform:translateY(-50px);opacity:0}}
-.bigtel{position:fixed;left:0;right:0;top:34%;text-align:center;z-index:55;pointer-events:none}
-.bigtel span{font-family:var(--min);font-weight:800;font-size:40px;padding:6px 22px;display:inline-block;background:var(--shu);color:#fff;box-shadow:0 0 0 3px var(--gold),0 8px 20px #000a}
-.bigtel span.g{background:var(--gold);color:#2a1c00;box-shadow:0 0 0 3px #fff,0 8px 20px #000a}
-.ov{position:fixed;inset:0;background:rgba(5,5,14,.78);display:flex;align-items:center;justify-content:center;padding:12px;z-index:40}
-.ovc{width:100%;max-width:450px;max-height:92vh;overflow:auto;background:var(--bg2);border:2px solid var(--gold);border-radius:14px;padding:16px;text-align:center}
-.ovc h2{font-family:var(--min);font-weight:800;margin:6px 0 8px;font-size:23px;line-height:1.4}
-.ribbon{display:inline-block;font-family:var(--min);font-weight:800;background:var(--shu);color:#fff;padding:3px 14px;letter-spacing:.1em}
-/* テスト */
-.tq{font-size:18px;font-weight:700;line-height:1.6;margin:8px 0 10px}
-.tfig{background:#fff;border-radius:10px;padding:6px;margin:6px 0;text-align:center}.tfig svg{max-width:100%;height:auto}
-.choice{display:block;width:100%;min-height:52px;margin:8px 0;padding:10px 14px;text-align:left;font-size:17px;font-weight:700;border-radius:10px;border:2px solid var(--line);background:var(--bg2)}
-.prog{display:flex;gap:4px;margin:6px 0}.prog i{flex:1;height:6px;border-radius:3px;background:#2a2c48}.prog i.on{background:var(--gold)}
-.numshow{font-size:30px;text-align:center;background:#0e0f1d;border:2px solid var(--line);border-radius:8px;padding:6px;margin:6px 0}
-.keys{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.keys button{min-height:54px;font-size:22px;font-weight:900;border-radius:10px;border:2px solid var(--line);background:var(--bg2)}
-.ordsel{min-height:52px;background:#0e0f1d;border:2px dashed var(--line);border-radius:10px;padding:6px;margin:6px 0}
-.ordsel div{background:#2c2f4a;border-radius:8px;padding:8px 10px;margin:4px 0;font-weight:700;font-size:15px}
-@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+#title{position:fixed;inset:0;z-index:10;pointer-events:none}
+#title>*{pointer-events:auto}
+#tMain{position:absolute;right:7vw;top:6vh;writing-mode:vertical-rl;display:flex;flex-direction:column;gap:10px;pointer-events:none;max-height:70vh}
+#tMain .t{white-space:nowrap;font-family:var(--brush);font-size:min(13vh,15vw,112px);line-height:1.05;letter-spacing:.06em;color:var(--sumi);text-shadow:0 0 6px rgba(28,28,28,.25)}
+#tMain .s{white-space:nowrap;font-family:var(--brush);font-size:min(3.6vh,5vw,26px);margin-top:1.4em;letter-spacing:.2em}
+#tMain .seal{writing-mode:horizontal-tb;align-self:flex-end;width:62px;height:62px;border:3px solid var(--sumi);display:flex;align-items:center;justify-content:center;font-family:var(--brush);font-size:18px;line-height:1.05;text-align:center;background:var(--hi);transform:rotate(3deg)}
+#tBox{position:absolute;left:max(18px,env(safe-area-inset-left));bottom:max(22px,env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:12px;align-items:flex-start}
+#tBtns{display:flex;flex-wrap:wrap;gap:12px}
+#nameBox{display:flex;gap:8px;align-items:center;font-weight:700}
+#nameBox input{font-size:17px;border:0;border-bottom:2px solid var(--sumi);background:transparent;padding:6px 4px;width:12em;font-family:var(--min);outline:none}
+#tSeal{font-weight:700;font-size:14px;padding:4px 10px;background:rgba(245,230,99,.8)}
+#tList{position:absolute;left:max(14px,env(safe-area-inset-left));top:max(14px,env(safe-area-inset-top))}
+/* 重ねる紙（鑑定書・封筒・確認） */
+.ov{position:fixed;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;padding:14px;background:rgba(28,28,28,.28)}
+.paper{position:relative;background:#f7f3ea;max-width:580px;width:100%;max-height:calc(100% - 10px);overflow:auto;padding:26px 26px 22px;
+ box-shadow:0 0 0 1px rgba(28,28,28,.15),0 12px 30px rgba(28,28,28,.35);background-image:radial-gradient(ellipse at 20% 0%,rgba(28,28,28,.05),transparent 60%),radial-gradient(ellipse at 90% 100%,rgba(28,28,28,.06),transparent 55%)}
+.paper::before,.paper::after{content:"";position:absolute;left:0;right:0;height:14px;background:linear-gradient(#3a3530,#1C1C1C)}
+.paper::before{top:0}.paper::after{bottom:0}
+.paper h2{font-family:var(--brush);font-weight:400;font-size:30px;margin:6px 0 10px;line-height:1.2}
+.paper p{line-height:1.75;margin:8px 0}
+.paper .row{display:flex;gap:12px;flex-wrap:wrap;margin-top:14px}
+.big{font-family:var(--brush);font-size:48px;line-height:1.1}
+.cert{border:3px double var(--sumi);padding:10px 14px;margin:10px 0}
+.cert table{width:100%;border-collapse:collapse;font-size:15px}
+.cert td,.cert th{border-bottom:1px solid rgba(28,28,28,.25);padding:6px 4px;text-align:left;vertical-align:top}
+.cert th{font-family:var(--brush);font-weight:400;font-size:17px;white-space:nowrap}
+.eq{font-family:var(--brush);font-size:26px;text-align:center;margin:8px 0}
+.stampmk{position:absolute;right:22px;top:26px;width:86px;height:86px;border:4px solid var(--sumi);background:var(--hi);display:flex;align-items:center;justify-content:center;font-family:var(--brush);font-size:22px;line-height:1.05;text-align:center;transform:rotate(8deg);animation:stp .45s cubic-bezier(.3,1.7,.5,1)}
+@keyframes stp{0%{transform:scale(2.6) rotate(-20deg);opacity:0}100%{transform:scale(1) rotate(8deg);opacity:1}}
+.gain{font-family:var(--brush);font-size:22px}
+.small{font-size:13px}
+.env{position:relative;margin:10px auto;width:min(300px,90%);height:140px;background:#E9E2D0;border:3px solid #1A1A1A;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:20px}
+/* 確認テスト */
+#test{position:fixed;inset:0;z-index:15;overflow:auto;background:var(--washi);padding:max(74px,calc(env(safe-area-inset-top) + 66px)) 18px 40px}
+#test .wrap{max-width:760px;margin:0 auto}
+#test .hd{display:flex;align-items:baseline;gap:14px;margin-bottom:10px}
+#test .hd .no{font-family:var(--brush);font-size:56px;line-height:1}
+#test .hd b{font-family:var(--brush);font-weight:400;font-size:24px}
+#tQ{font-size:19px;font-weight:700;line-height:1.7;margin:8px 0}
+#tFig{text-align:center;margin:8px 0}
+#tFig svg{max-width:100%;height:auto;background:#fff;border:1px solid rgba(28,28,28,.3)}
+#tA{display:grid;gap:10px}
+#tA .opt{text-align:left;min-height:52px;padding:10px 16px;font-size:16px;font-weight:700;line-height:1.5;background:#f7f3ea;border:2px solid var(--sumi);border-radius:3px 12px 4px 10px/10px 4px 12px 3px}
+#tA .opt.ok{background:var(--sumi);color:var(--washi)}
+#tA .opt.ng{background:var(--hi)}
+#tA .opt.pk{opacity:.35}
+.numrow{display:flex;gap:10px;align-items:center}
+.numrow input{font-size:22px;width:8em;padding:8px;border:2px solid var(--sumi);background:#fff}
+.ordbox div{padding:6px 10px;margin:4px 0;background:var(--sumi);color:var(--washi)}
+#tFb{margin-top:14px;font-weight:700;line-height:1.7}
+#tFb .mk{font-family:var(--brush);font-size:42px;margin-right:10px;vertical-align:middle}
+#tFb .ex{display:block;border-left:6px solid var(--sumi);padding:4px 10px;margin:8px 0;font-weight:400}
+@media (max-width:980px){#path{top:62px}}
+@media (max-width:560px){#tMain{right:4vw;top:4vh}#tMain .t{font-size:min(9.5vh,17vw)}#tMain .seal{display:none}#path{top:62px}#path i{width:15px;height:17px}#path span{font-size:13px}#claim{top:92px;max-width:70vw}#claim p{font-size:14px}.hv b{font-size:21px}.hv{min-width:36px}#band{font-size:13px}#band b{font-size:16px}.big{font-size:38px}}
+@media (prefers-reduced-motion:reduce){.stampmk{animation:none}}
 </style>
 </head>
 <body>
-<canvas id="fx"></canvas>
-<div id="bigtel" class="bigtel hidden"></div>
+<canvas id="cv"></canvas>
+<button id="back" class="sumi hidden">← もどる</button>
+<div id="path" class="hidden"></div>
+<div id="hudR" class="hidden">
+ <div class="hv"><small>標本</small><b id="hSp">0</b></div>
+ <div class="hv"><small>腕前</small><b id="hSc">0</b></div>
+ <div class="hv" id="hKkW"><small>かけら</small><b id="hKk">0</b></div>
+ <button id="snd" aria-label="音"><svg viewBox="0 0 40 40"><path d="M20 4q-9 0-10 12l-2 10h24l-2-10Q29 4 20 4z" fill="none" stroke="#1C1C1C" stroke-width="2.6"/><circle cx="20" cy="30" r="3" fill="#1C1C1C"/><path class="rg" d="M20 33v5M14 37l-2 2M26 37l2 2" stroke="#1C1C1C" stroke-width="2"/></svg></button>
+</div>
+<div id="claim" class="hidden"><small>依頼人いわく</small><p id="claimT"></p></div>
+<div id="band" class="hidden"></div>
+<div id="msg"></div>
 
-<div id="title" class="scr"><div class="wrap">
- <div class="lamp">中2理科　化学変化と原子・分子</div>
- <div class="logo"><small>🏺 なんでも鑑定</small>燃えかす<br>鑑定所</div>
- <div class="subt">～酸化でできる物質～</div>
- <div class="box3" id="tBoxes"></div>
- <div class="card" style="text-align:left;font-size:15px;line-height:1.7">
-  金属を燃やした<b>燃えかす</b>は、元の金属と同じ物質？<br>限られた<b style="color:var(--gold)">検査予算</b>で、ちがいがはっきり出る検査を選び、<b>鑑定書</b>を完成させよう。<br><span class="small">ちがいの出ない検査は、予算だけ減る。</span>
+<div id="title" class="hidden">
+ <div id="tMain"><span class="t">燃えかす</span><span class="t" style="margin-top:.9em">鍛冶場</span><span class="s">～酸化でできる物質～</span><span class="seal">化学<br>十八</span></div>
+ <button id="tList" class="sumi pale hidden">一覧へ</button>
+ <div id="tBox">
+  <div id="tSeal" class="hidden"></div>
+  <div id="nameBox"><span>なまえ</span><input id="nameIn" maxlength="16" placeholder="（なくても遊べる）" autocomplete="off"></div>
+  <div id="tBtns">
+   <button id="bStart" class="sumi">鍛冶場へ</button>
+   <button id="bCont" class="sumi hidden">つづきから</button>
+   <button id="bTest" class="sumi pale hidden">確認テスト</button>
+   <button id="bBook" class="sumi pale hidden">📖 図鑑</button>
+  </div>
  </div>
- <div id="nameBox" class="card" style="text-align:left"><label style="font-weight:900;font-size:14px">なまえ（番号でもOK・空でも遊べる）</label><input id="nameIn" class="namein" maxlength="20" autocomplete="off"></div>
- <div class="tbtns">
-  <button class="btn shu wide" id="bStart">▶ 鑑定をはじめる</button>
-  <button class="btn ghost wide hidden" id="bCont">つづきから</button>
-  <button class="btn ghost wide zk hidden" id="bBook1">📖 図鑑</button>
-  <button class="btn ghost wide" id="bMute1">🔊 音：オン</button>
- </div>
+</div>
+
+<div id="ov" class="ov hidden"><div class="paper" id="ovBox"></div></div>
+<div id="dlg" class="ov hidden"><div class="paper" id="dlgBox"></div></div>
+
+<div id="test" class="hidden"><div class="wrap">
+ <div class="hd"><span class="no" id="tNo">一</span><b>確認テスト</b><span id="tOf" style="margin-left:auto;font-family:var(--brush);font-size:20px"></span></div>
+ <div id="tQ"></div><div id="tFig"></div><div id="tA"></div><div id="tFb"></div>
 </div></div>
-
-<div id="intro" class="scr hidden"><div class="wrap" id="introBox"></div></div>
-
-<div id="game" class="scr hidden"><div class="wrap">
- <div class="hud"><button class="icon" id="bHome" aria-label="タイトルへ">🏠</button><div id="rName"></div><button class="icon" id="bShop" aria-label="道具の仕入れ">🛒</button><button class="icon" id="bMute" aria-label="音">🔊</button></div>
- <div class="stat"><div class="bud"><div id="bud"></div></div><span id="budT"></span><span id="combo"></span><span id="money"></span></div>
- <div class="client"><div class="face" id="face">🧑</div><div class="bubble" id="claim"></div></div>
- <div class="small" style="margin-top:6px;font-weight:700">検査を選ぶ（両＝かかる予算）</div>
- <div class="tools" id="tools"></div>
- <div id="res"></div>
- <div class="table" id="table">
-  <div class="kiri slot"><span class="tag">燃やす前</span><h4 id="lA"></h4><div id="sA"></div><div class="eye hidden" id="eA"></div></div>
-  <div class="kiri slot burnt"><span class="tag">燃えかす</span><h4 id="lB">燃えかす</h4><div id="sB"></div><div class="eye hidden" id="eB"></div></div>
- </div>
- <button class="eyeT" id="bEye">🔍 原子の目で見る</button>
- <div class="kiri evid"><h4><span>鑑定書の下書き</span><span id="pips"></span></h4><ul id="evid"></ul></div>
- <div class="acts"><button class="btn ghost" id="bRetry" style="font-size:15px">↺</button><button class="btn shu" id="bApp" disabled>🔏 鑑定する</button></div>
-</div></div>
-
-<div id="clear" class="scr hidden"><div class="wrap" id="clearBox"></div></div>
-<div id="test" class="scr hidden"><div class="wrap" id="tBox"></div></div>
-<div id="ov" class="ov hidden"><div class="ovc" id="ovc"></div></div>
 
 <script>/*@SUBMIT_CARD_BEGIN*/
 /* ==========================================================
@@ -402,7 +382,7 @@ button{font-family:inherit;cursor:pointer;color:inherit}
   window.Quiz=Quiz;
 })();
 
-window.QUIZ={"v": 1, "grade": "chu2", "unit": "kagaku", "game": "moekasu-kantei", "koma": ["chu2-kagaku-18"], "testCount": 10, "questions": [{"id": "chu2-moekasu-kantei-q001", "koma": "chu2-kagaku-18", "t": "choice", "q": "スチールウール（細い鉄の繊維）の質量をはかってから空気中でよく燃やし、冷ましてから再びはかった。燃やした後の質量は、燃やす前とくらべてどうなるか。", "choices": ["大きくなる", "小さくなる", "変わらない", "はじめは小さくなり、冷めると元にもどる"], "ex": "鉄が空気中の酸素と結び付くので、結び付いた酸素の分だけ質量が大きくなる。", "fig": "\u003csvg viewBox=\"0 0 300 96\" width=\"300\">\u003crect x=\"10\" y=\"40\" width=\"120\" height=\"34\" rx=\"6\" fill=\"#dfe3e6\" stroke=\"#7d848b\"/>\u003crect x=\"22\" y=\"48\" width=\"70\" height=\"18\" rx=\"2\" fill=\"#20282e\"/>\u003ctext x=\"88\" y=\"62\" font-size=\"13\" fill=\"#7cf0a0\" text-anchor=\"end\" font-family=\"monospace\">1.16 g\u003c/text>\u003crect x=\"96\" y=\"32\" width=\"30\" height=\"6\" fill=\"#aab2b9\"/>\u003ctext x=\"70\" y=\"90\" font-size=\"11\" font-weight=\"700\" fill=\"#333\" text-anchor=\"middle\" font-family=\"sans-serif\">燃やす前\u003c/text>\u003ctext x=\"150\" y=\"60\" font-size=\"20\" fill=\"#c8321f\" text-anchor=\"middle\">→\u003c/text>\u003cg transform=\"translate(160,0)\">\u003crect x=\"10\" y=\"40\" width=\"120\" height=\"34\" rx=\"6\" fill=\"#dfe3e6\" stroke=\"#7d848b\"/>\u003crect x=\"22\" y=\"48\" width=\"70\" height=\"18\" rx=\"2\" fill=\"#20282e\"/>\u003ctext x=\"88\" y=\"62\" font-size=\"13\" fill=\"#7cf0a0\" text-anchor=\"end\" font-family=\"monospace\">1.34 g\u003c/text>\u003crect x=\"96\" y=\"32\" width=\"30\" height=\"6\" fill=\"#aab2b9\"/>\u003ctext x=\"70\" y=\"90\" font-size=\"11\" font-weight=\"700\" fill=\"#333\" text-anchor=\"middle\" font-family=\"sans-serif\">燃やした後\u003c/text>\u003c/g>\u003c/svg>", "kind": "judge", "level": 1}, {"id": "chu2-moekasu-kantei-q002", "koma": "chu2-kagaku-18", "t": "choice", "q": "スチールウールを燃やしてできた黒い物質が、鉄とは別の物質だといえる結果はどれか。", "choices": ["電流が流れにくく、うすい塩酸に入れても気体が出ない", "電流がよく流れ、うすい塩酸に入れると気体が出る", "黒いが、大きさはほとんど変わらない", "冷めると、温度が室温にもどる"], "ex": "電流が流れる・塩酸で水素が出るのは鉄（金属）の性質。それがなくなったので別の物質（酸化鉄）。", "fig": "\u003csvg viewBox=\"0 0 280 110\" width=\"280\">\u003cpath d=\"M20,30 H140 V90 H100 M60,90 H20 V30\" stroke=\"#333\" stroke-width=\"2\" fill=\"none\"/>\u003cline x1=\"14\" y1=\"54\" x2=\"26\" y2=\"54\" stroke=\"#333\" stroke-width=\"3\"/>\u003cline x1=\"10\" y1=\"60\" x2=\"30\" y2=\"60\" stroke=\"#333\" stroke-width=\"1.6\"/>\u003crect x=\"12\" y=\"55\" width=\"16\" height=\"4\" fill=\"#fff\"/>\u003ccircle cx=\"80\" cy=\"30\" r=\"10\" fill=\"#f4f4f4\" stroke=\"#333\" stroke-width=\"1.6\"/>\u003cpath d=\"M73,23 L87,37 M87,23 L73,37\" stroke=\"#333\" stroke-width=\"1.4\"/>\u003crect x=\"60\" y=\"82\" width=\"40\" height=\"16\" rx=\"3\" fill=\"#2b2c31\"/>\u003ctext x=\"80\" y=\"108\" font-size=\"10\" font-weight=\"700\" fill=\"#333\" text-anchor=\"middle\" font-family=\"sans-serif\">燃えかす\u003c/text>\u003cpath d=\"M200,10 V80 a10,10 0 0 0 20,0 V10\" fill=\"rgba(220,238,250,.55)\" stroke=\"#6f8596\" stroke-width=\"1.6\"/>\u003crect x=\"201.5\" y=\"44\" width=\"17\" height=\"36\" fill=\"rgba(170,215,240,.55)\"/>\u003cellipse cx=\"210\" cy=\"86\" rx=\"6\" ry=\"3\" fill=\"#2b2c31\"/>\u003ctext x=\"245\" y=\"60\" font-size=\"10\" font-weight=\"700\" fill=\"#333\" font-family=\"sans-serif\">うすい\u003c/text>\u003ctext x=\"245\" y=\"72\" font-size=\"10\" font-weight=\"700\" fill=\"#333\" font-family=\"sans-serif\">塩酸\u003c/text>\u003c/svg>", "kind": "judge", "level": 2}, {"id": "chu2-moekasu-kantei-q003", "koma": "chu2-kagaku-18", "t": "choice", "q": "燃えかすが元の金属と同じ物質かどうかを調べるとき、決め手にならない検査はどれか。", "choices": ["大きさをものさしではかる", "電流が流れるか調べる", "光沢や色を見くらべる", "質量を燃やす前とくらべる"], "ex": "大きさは丸め方や燃やし方で変わる。物質の性質を調べないと、同じ物質かどうかは決められない。", "kind": "method", "level": 2, "fig": null}, {"id": "chu2-moekasu-kantei-q004", "koma": "chu2-kagaku-18", "t": "choice", "q": "物質が酸素と結び付く化学変化を何というか。", "choices": ["酸化", "還元", "分解", "状態変化"], "ex": "酸素と結び付く化学変化が酸化。", "kind": "term", "level": 1, "fig": null}, {"id": "chu2-moekasu-kantei-q005", "koma": "chu2-kagaku-18", "t": "choice", "q": "酸化のうち、物質が熱や光を出しながら激しく酸素と結び付く変化を特に何というか。", "choices": ["燃焼", "蒸発", "沸騰", "分解"], "ex": "熱や光を出しながら激しく進む酸化が燃焼。", "kind": "term", "level": 1, "fig": null}, {"id": "chu2-moekasu-kantei-q006", "koma": "chu2-kagaku-18", "t": "choice", "q": "酸化によってできた物質を、まとめて何というか。", "choices": ["酸化物", "単体", "混合物", "分子"], "ex": "酸素と結び付いてできた物質を酸化物という（酸化鉄・酸化銅・酸化マグネシウムなど）。", "kind": "term", "level": 1, "fig": null}, {"id": "chu2-moekasu-kantei-q007", "koma": "chu2-kagaku-18", "t": "choice", "q": "マグネシウムリボンを空気中で燃やした。できる物質はどれか。", "choices": ["白色の酸化マグネシウム", "黒色の酸化マグネシウム", "黒色の炭（炭素）", "銀白色のマグネシウムのまま"], "ex": "マグネシウムは強い光を出して燃え、白い酸化マグネシウムになる。鉄や銅の酸化物は黒い。", "fig": "\u003csvg viewBox=\"0 0 260 90\" width=\"260\">\u003cellipse cx=\"70\" cy=\"70\" rx=\"46\" ry=\"10\" fill=\"#d9dde2\" stroke=\"#8a9199\"/>\u003cpath d=\"M40,64 C55,40 80,62 102,40\" stroke=\"#aeb9c6\" stroke-width=\"8\" fill=\"none\" stroke-linecap=\"round\"/>\u003ccircle cx=\"102\" cy=\"40\" r=\"12\" fill=\"#fffbe6\"/>\u003cpath d=\"M102,20 v-8 M118,40 h8 M114,28 l6,-6 M90,28 l-6,-6\" stroke=\"#f5b800\" stroke-width=\"2.5\"/>\u003ctext x=\"70\" y=\"88\" font-size=\"11\" font-weight=\"700\" fill=\"#333\" text-anchor=\"middle\" font-family=\"sans-serif\">マグネシウムリボン\u003c/text>\u003ctext x=\"150\" y=\"50\" font-size=\"20\" fill=\"#c8321f\">→\u003c/text>\u003cellipse cx=\"210\" cy=\"70\" rx=\"40\" ry=\"9\" fill=\"#d9dde2\" stroke=\"#8a9199\"/>\u003ctext x=\"210\" y=\"50\" font-size=\"28\" text-anchor=\"middle\">？\u003c/text>\u003c/svg>", "kind": "judge", "level": 1}, {"id": "chu2-moekasu-kantei-q008", "koma": "chu2-kagaku-18", "t": "num", "q": "マグネシウムの粉0.60gを空気中で完全に燃やすと、1.00gの酸化マグネシウムができた。マグネシウムと結び付いた酸素は何gか。", "ans": 0.4, "unit": "g", "tol": 0.001, "ex": "増えた分が結び付いた酸素。1.00－0.60＝0.40g。", "fig": "\u003csvg viewBox=\"0 0 300 96\" width=\"300\">\u003crect x=\"10\" y=\"40\" width=\"120\" height=\"34\" rx=\"6\" fill=\"#dfe3e6\" stroke=\"#7d848b\"/>\u003crect x=\"22\" y=\"48\" width=\"70\" height=\"18\" rx=\"2\" fill=\"#20282e\"/>\u003ctext x=\"88\" y=\"62\" font-size=\"13\" fill=\"#7cf0a0\" text-anchor=\"end\" font-family=\"monospace\">0.60 g\u003c/text>\u003crect x=\"96\" y=\"32\" width=\"30\" height=\"6\" fill=\"#aab2b9\"/>\u003ctext x=\"70\" y=\"90\" font-size=\"11\" font-weight=\"700\" fill=\"#333\" text-anchor=\"middle\" font-family=\"sans-serif\">燃やす前\u003c/text>\u003ctext x=\"150\" y=\"60\" font-size=\"20\" fill=\"#c8321f\" text-anchor=\"middle\">→\u003c/text>\u003cg transform=\"translate(160,0)\">\u003crect x=\"10\" y=\"40\" width=\"120\" height=\"34\" rx=\"6\" fill=\"#dfe3e6\" stroke=\"#7d848b\"/>\u003crect x=\"22\" y=\"48\" width=\"70\" height=\"18\" rx=\"2\" fill=\"#20282e\"/>\u003ctext x=\"88\" y=\"62\" font-size=\"13\" fill=\"#7cf0a0\" text-anchor=\"end\" font-family=\"monospace\">1.00 g\u003c/text>\u003crect x=\"96\" y=\"32\" width=\"30\" height=\"6\" fill=\"#aab2b9\"/>\u003ctext x=\"70\" y=\"90\" font-size=\"11\" font-weight=\"700\" fill=\"#333\" text-anchor=\"middle\" font-family=\"sans-serif\">燃やした後\u003c/text>\u003c/g>\u003c/svg>", "kind": "calc", "level": 2}, {"id": "chu2-moekasu-kantei-q009", "koma": "chu2-kagaku-18", "t": "num", "q": "スチールウール1.16gを燃やしたら、冷ました後の質量は1.34gだった。鉄と結び付いた酸素は何gと考えられるか。", "ans": 0.18, "unit": "g", "tol": 0.001, "ex": "1.34－1.16＝0.18g。増えた分が、結び付いた酸素の質量。", "fig": "\u003csvg viewBox=\"0 0 300 96\" width=\"300\">\u003crect x=\"10\" y=\"40\" width=\"120\" height=\"34\" rx=\"6\" fill=\"#dfe3e6\" stroke=\"#7d848b\"/>\u003crect x=\"22\" y=\"48\" width=\"70\" height=\"18\" rx=\"2\" fill=\"#20282e\"/>\u003ctext x=\"88\" y=\"62\" font-size=\"13\" fill=\"#7cf0a0\" text-anchor=\"end\" font-family=\"monospace\">1.16 g\u003c/text>\u003crect x=\"96\" y=\"32\" width=\"30\" height=\"6\" fill=\"#aab2b9\"/>\u003ctext x=\"70\" y=\"90\" font-size=\"11\" font-weight=\"700\" fill=\"#333\" text-anchor=\"middle\" font-family=\"sans-serif\">燃やす前\u003c/text>\u003ctext x=\"150\" y=\"60\" font-size=\"20\" fill=\"#c8321f\" text-anchor=\"middle\">→\u003c/text>\u003cg transform=\"translate(160,0)\">\u003crect x=\"10\" y=\"40\" width=\"120\" height=\"34\" rx=\"6\" fill=\"#dfe3e6\" stroke=\"#7d848b\"/>\u003crect x=\"22\" y=\"48\" width=\"70\" height=\"18\" rx=\"2\" fill=\"#20282e\"/>\u003ctext x=\"88\" y=\"62\" font-size=\"13\" fill=\"#7cf0a0\" text-anchor=\"end\" font-family=\"monospace\">1.34 g\u003c/text>\u003crect x=\"96\" y=\"32\" width=\"30\" height=\"6\" fill=\"#aab2b9\"/>\u003ctext x=\"70\" y=\"90\" font-size=\"11\" font-weight=\"700\" fill=\"#333\" text-anchor=\"middle\" font-family=\"sans-serif\">燃やした後\u003c/text>\u003c/g>\u003c/svg>", "kind": "calc", "level": 2}, {"id": "chu2-moekasu-kantei-q010", "koma": "chu2-kagaku-18", "t": "choice", "q": "マグネシウムが燃えて酸化マグネシウムができる変化を表す化学反応式はどれか。", "choices": ["2Mg ＋ O₂ → 2MgO", "Mg ＋ O₂ → MgO₂", "Mg ＋ O → MgO", "2MgO → 2Mg ＋ O₂"], "ex": "酸素は分子O₂で反応し、Mg原子とO原子が1対1で結び付く。左右の原子の数をそろえると2Mg＋O₂→2MgO。", "kind": "judge", "level": 2, "fig": null}, {"id": "chu2-moekasu-kantei-q011", "koma": "chu2-kagaku-18", "t": "choice", "q": "図は、銅を加熱したときの変化を原子のモデルで表そうとしたもの。？に入るモデルはどれか。", "choices": ["銅原子と酸素原子が1個ずつ結び付いたもの2つ", "銅原子1個に酸素原子2個が結び付いたもの1つ", "銅原子2個だけ（酸素はどこかへ消える）", "酸素原子2個だけ（銅はどこかへ消える）"], "ex": "2Cu＋O₂→2CuO。反応の前後で原子の種類と数は変わらず、Cu原子とO原子が1対1で結び付く。", "fig": "\u003csvg viewBox=\"0 0 300 70\" width=\"300\">\u003ccircle cx=\"20\" cy=\"35\" r=\"13\" fill=\"#C8773C\" stroke=\"#0003\"/>\u003ccircle cx=\"16\" cy=\"31\" r=\"3.5\" fill=\"#fff\" opacity=\".55\"/>\u003ctext x=\"20\" y=\"39.5\" font-size=\"12\" font-weight=\"700\" fill=\"#fff\" text-anchor=\"middle\" font-family=\"sans-serif\">Cu\u003c/text>\u003ccircle cx=\"50\" cy=\"35\" r=\"13\" fill=\"#C8773C\" stroke=\"#0003\"/>\u003ccircle cx=\"46\" cy=\"31\" r=\"3.5\" fill=\"#fff\" opacity=\".55\"/>\u003ctext x=\"50\" y=\"39.5\" font-size=\"12\" font-weight=\"700\" fill=\"#fff\" text-anchor=\"middle\" font-family=\"sans-serif\">Cu\u003c/text>\u003ctext x=\"72\" y=\"41\" font-size=\"18\" text-anchor=\"middle\">＋\u003c/text>\u003ccircle cx=\"96\" cy=\"35\" r=\"13\" fill=\"#E4572E\" stroke=\"#0003\"/>\u003ccircle cx=\"92\" cy=\"31\" r=\"3.5\" fill=\"#fff\" opacity=\".55\"/>\u003ctext x=\"96\" y=\"39.5\" font-size=\"12\" font-weight=\"700\" fill=\"#fff\" text-anchor=\"middle\" font-family=\"sans-serif\">O\u003c/text>\u003ccircle cx=\"118\" cy=\"35\" r=\"13\" fill=\"#E4572E\" stroke=\"#0003\"/>\u003ccircle cx=\"114\" cy=\"31\" r=\"3.5\" fill=\"#fff\" opacity=\".55\"/>\u003ctext x=\"118\" y=\"39.5\" font-size=\"12\" font-weight=\"700\" fill=\"#fff\" text-anchor=\"middle\" font-family=\"sans-serif\">O\u003c/text>\u003ctext x=\"146\" y=\"41\" font-size=\"18\" text-anchor=\"middle\">→\u003c/text>\u003crect x=\"166\" y=\"10\" width=\"120\" height=\"50\" rx=\"6\" fill=\"#fff\" stroke=\"#333\" stroke-dasharray=\"4 3\"/>\u003ctext x=\"226\" y=\"41\" font-size=\"18\" font-weight=\"700\" fill=\"#333\" text-anchor=\"middle\">？\u003c/text>\u003c/svg>", "kind": "graph", "level": 2}, {"id": "chu2-moekasu-kantei-q012", "koma": "chu2-kagaku-18", "t": "choice", "q": "銅の粉を加熱すると黒い物質ができた。この黒い物質を薬さじでこするとどうなるか。", "choices": ["こすっても光沢が出ない", "赤っぽい色に光る", "銀色に光る", "白い粉になる"], "ex": "黒い物質は酸化銅。金属の銅とちがい、こすっても金属光沢は出ない。", "kind": "judge", "level": 1, "fig": null}, {"id": "chu2-moekasu-kantei-q013", "koma": "chu2-kagaku-18", "t": "choice", "q": "スチールウールを燃やすとき、火がついたところにガラス管で息をふきかけた。その理由として正しいものはどれか。", "choices": ["酸素を送りこんで、中までよく燃やすため", "二酸化炭素を送りこんで燃やすため", "火を弱めて、やけどを防ぐため", "燃えかすを冷やして、軽くするため"], "ex": "息（空気）には酸素がふくまれる。酸素を送りこむと、鉄が酸素とよく結び付く。", "kind": "method", "level": 1, "fig": null}, {"id": "chu2-moekasu-kantei-q014", "koma": "chu2-kagaku-18", "t": "choice", "q": "木を燃やすと灰は軽くなるのに、スチールウールを燃やすと重くなる。このちがいの理由として正しいものはどれか。", "choices": ["木は燃えてできた二酸化炭素や水が空気中へ出ていくが、鉄は酸素と結び付いた物質がそのまま残るから", "鉄は熱でふくらんで大きくなるから", "木には質量がないから", "スチールウールには炭素が多くふくまれるから"], "ex": "どちらも酸素と結び付くが、木はできた気体が出ていく。鉄は結び付いた酸素の分が固体に残る。", "kind": "judge", "level": 3, "fig": null}, {"id": "chu2-moekasu-kantei-q015", "koma": "chu2-kagaku-18", "t": "choice", "q": "銅を空気中で加熱したときの変化を、物質名で表したものはどれか。", "choices": ["銅 ＋ 酸素 → 酸化銅", "酸化銅 → 銅 ＋ 酸素", "銅 → 酸化銅 ＋ 酸素", "銅 ＋ 二酸化炭素 → 酸化銅"], "ex": "空気中の酸素と結び付くので、銅＋酸素→酸化銅（2Cu＋O₂→2CuO）。", "kind": "judge", "level": 1, "fig": null}]};
+window.QUIZ={"v": 1, "grade": "chu2", "unit": "kagaku", "game": "moekasu-kantei", "koma": ["chu2-kagaku-18"], "testCount": 10, "questions": [{"id": "chu2-moekasu-kantei-q001", "koma": "chu2-kagaku-18", "t": "choice", "q": "スチールウール（細い鉄の繊維）の質量をはかってから空気中でよく燃やし、冷ましてから再びはかった。燃やした後の質量は、燃やす前とくらべてどうなるか。", "choices": ["大きくなる", "小さくなる", "変わらない", "はじめは小さくなり、冷めると元にもどる"], "ex": "鉄が空気中の酸素と結び付くので、結び付いた酸素の分だけ質量が大きくなる。", "fig": "\u003csvg viewBox=\"0 0 300 96\" width=\"300\">\u003crect x=\"10\" y=\"40\" width=\"120\" height=\"34\" rx=\"6\" fill=\"#dfe3e6\" stroke=\"#7d848b\"/>\u003crect x=\"22\" y=\"48\" width=\"70\" height=\"18\" rx=\"2\" fill=\"#20282e\"/>\u003ctext x=\"88\" y=\"62\" font-size=\"13\" fill=\"#7cf0a0\" text-anchor=\"end\" font-family=\"monospace\">1.16 g\u003c/text>\u003crect x=\"96\" y=\"32\" width=\"30\" height=\"6\" fill=\"#aab2b9\"/>\u003ctext x=\"70\" y=\"90\" font-size=\"11\" font-weight=\"700\" fill=\"#333\" text-anchor=\"middle\" font-family=\"sans-serif\">燃やす前\u003c/text>\u003ctext x=\"150\" y=\"60\" font-size=\"20\" fill=\"#c8321f\" text-anchor=\"middle\">→\u003c/text>\u003cg transform=\"translate(160,0)\">\u003crect x=\"10\" y=\"40\" width=\"120\" height=\"34\" rx=\"6\" fill=\"#dfe3e6\" stroke=\"#7d848b\"/>\u003crect x=\"22\" y=\"48\" width=\"70\" height=\"18\" rx=\"2\" fill=\"#20282e\"/>\u003ctext x=\"88\" y=\"62\" font-size=\"13\" fill=\"#7cf0a0\" text-anchor=\"end\" font-family=\"monospace\">1.34 g\u003c/text>\u003crect x=\"96\" y=\"32\" width=\"30\" height=\"6\" fill=\"#aab2b9\"/>\u003ctext x=\"70\" y=\"90\" font-size=\"11\" font-weight=\"700\" fill=\"#333\" text-anchor=\"middle\" font-family=\"sans-serif\">燃やした後\u003c/text>\u003c/g>\u003c/svg>", "kind": "judge", "level": 1}, {"id": "chu2-moekasu-kantei-q002", "koma": "chu2-kagaku-18", "t": "choice", "q": "スチールウールを燃やしてできた黒い物質が、鉄とは別の物質だといえる結果はどれか。", "choices": ["電流が流れにくく、うすい塩酸に入れても気体が出ない", "電流がよく流れ、うすい塩酸に入れると気体が出る", "黒いが、大きさはほとんど変わらない", "冷めると、温度が室温にもどる"], "ex": "電流が流れる・塩酸で水素が出るのは鉄（金属）の性質。それがなくなったので別の物質（酸化鉄）。", "fig": "\u003csvg viewBox=\"0 0 280 110\" width=\"280\">\u003cpath d=\"M20,30 H140 V90 H100 M60,90 H20 V30\" stroke=\"#333\" stroke-width=\"2\" fill=\"none\"/>\u003cline x1=\"14\" y1=\"54\" x2=\"26\" y2=\"54\" stroke=\"#333\" stroke-width=\"3\"/>\u003cline x1=\"10\" y1=\"60\" x2=\"30\" y2=\"60\" stroke=\"#333\" stroke-width=\"1.6\"/>\u003crect x=\"12\" y=\"55\" width=\"16\" height=\"4\" fill=\"#fff\"/>\u003ccircle cx=\"80\" cy=\"30\" r=\"10\" fill=\"#f4f4f4\" stroke=\"#333\" stroke-width=\"1.6\"/>\u003cpath d=\"M73,23 L87,37 M87,23 L73,37\" stroke=\"#333\" stroke-width=\"1.4\"/>\u003crect x=\"60\" y=\"82\" width=\"40\" height=\"16\" rx=\"3\" fill=\"#2b2c31\"/>\u003ctext x=\"80\" y=\"108\" font-size=\"10\" font-weight=\"700\" fill=\"#333\" text-anchor=\"middle\" font-family=\"sans-serif\">燃えかす\u003c/text>\u003cpath d=\"M200,10 V80 a10,10 0 0 0 20,0 V10\" fill=\"rgba(220,238,250,.55)\" stroke=\"#6f8596\" stroke-width=\"1.6\"/>\u003crect x=\"201.5\" y=\"44\" width=\"17\" height=\"36\" fill=\"rgba(170,215,240,.55)\"/>\u003cellipse cx=\"210\" cy=\"86\" rx=\"6\" ry=\"3\" fill=\"#2b2c31\"/>\u003ctext x=\"245\" y=\"60\" font-size=\"10\" font-weight=\"700\" fill=\"#333\" font-family=\"sans-serif\">うすい\u003c/text>\u003ctext x=\"245\" y=\"72\" font-size=\"10\" font-weight=\"700\" fill=\"#333\" font-family=\"sans-serif\">塩酸\u003c/text>\u003c/svg>", "kind": "judge", "level": 2}, {"id": "chu2-moekasu-kantei-q003", "koma": "chu2-kagaku-18", "t": "choice", "q": "燃えかすが元の金属と同じ物質かどうかを調べるとき、決め手にならない検査はどれか。", "choices": ["大きさをものさしではかる", "電流が流れるか調べる", "光沢や色を見くらべる", "質量を燃やす前とくらべる"], "ex": "大きさは丸め方や燃やし方で変わる。物質の性質を調べないと、同じ物質かどうかは決められない。", "kind": "method", "level": 2, "fig": null}, {"id": "chu2-moekasu-kantei-q004", "koma": "chu2-kagaku-18", "t": "choice", "q": "物質が酸素と結び付く化学変化を何というか。", "choices": ["酸化", "還元", "分解", "状態変化"], "ex": "酸素と結び付く化学変化が酸化。", "kind": "term", "level": 1, "fig": null}, {"id": "chu2-moekasu-kantei-q005", "koma": "chu2-kagaku-18", "t": "choice", "q": "酸化のうち、物質が熱や光を出しながら激しく酸素と結び付く変化を特に何というか。", "choices": ["燃焼", "蒸発", "沸騰", "分解"], "ex": "熱や光を出しながら激しく進む酸化が燃焼。", "kind": "term", "level": 1, "fig": null, "retired": true}, {"id": "chu2-moekasu-kantei-q006", "koma": "chu2-kagaku-18", "t": "choice", "q": "酸化によってできた物質を、まとめて何というか。", "choices": ["酸化物", "単体", "混合物", "分子"], "ex": "酸素と結び付いてできた物質を酸化物という（酸化鉄・酸化銅・酸化マグネシウムなど）。", "kind": "term", "level": 1, "fig": null}, {"id": "chu2-moekasu-kantei-q007", "koma": "chu2-kagaku-18", "t": "choice", "q": "マグネシウムリボンを空気中で燃やした。できる物質はどれか。", "choices": ["白色の酸化マグネシウム", "黒色の酸化マグネシウム", "黒色の炭（炭素）", "銀白色のマグネシウムのまま"], "ex": "マグネシウムは強い光を出して燃え、白い酸化マグネシウムになる。鉄や銅の酸化物は黒い。", "fig": "\u003csvg viewBox=\"0 0 260 90\" width=\"260\">\u003cellipse cx=\"70\" cy=\"70\" rx=\"46\" ry=\"10\" fill=\"#d9dde2\" stroke=\"#8a9199\"/>\u003cpath d=\"M40,64 C55,40 80,62 102,40\" stroke=\"#aeb9c6\" stroke-width=\"8\" fill=\"none\" stroke-linecap=\"round\"/>\u003ccircle cx=\"102\" cy=\"40\" r=\"12\" fill=\"#fffbe6\"/>\u003cpath d=\"M102,20 v-8 M118,40 h8 M114,28 l6,-6 M90,28 l-6,-6\" stroke=\"#f5b800\" stroke-width=\"2.5\"/>\u003ctext x=\"70\" y=\"88\" font-size=\"11\" font-weight=\"700\" fill=\"#333\" text-anchor=\"middle\" font-family=\"sans-serif\">マグネシウムリボン\u003c/text>\u003ctext x=\"150\" y=\"50\" font-size=\"20\" fill=\"#c8321f\">→\u003c/text>\u003cellipse cx=\"210\" cy=\"70\" rx=\"40\" ry=\"9\" fill=\"#d9dde2\" stroke=\"#8a9199\"/>\u003ctext x=\"210\" y=\"50\" font-size=\"28\" text-anchor=\"middle\">？\u003c/text>\u003c/svg>", "kind": "judge", "level": 1}, {"id": "chu2-moekasu-kantei-q008", "koma": "chu2-kagaku-18", "t": "num", "q": "マグネシウムの粉0.60gを空気中で完全に燃やすと、1.00gの酸化マグネシウムができた。マグネシウムと結び付いた酸素は何gか。", "ans": 0.4, "unit": "g", "tol": 0.001, "ex": "増えた分が結び付いた酸素。1.00－0.60＝0.40g。", "fig": "\u003csvg viewBox=\"0 0 300 96\" width=\"300\">\u003crect x=\"10\" y=\"40\" width=\"120\" height=\"34\" rx=\"6\" fill=\"#dfe3e6\" stroke=\"#7d848b\"/>\u003crect x=\"22\" y=\"48\" width=\"70\" height=\"18\" rx=\"2\" fill=\"#20282e\"/>\u003ctext x=\"88\" y=\"62\" font-size=\"13\" fill=\"#7cf0a0\" text-anchor=\"end\" font-family=\"monospace\">0.60 g\u003c/text>\u003crect x=\"96\" y=\"32\" width=\"30\" height=\"6\" fill=\"#aab2b9\"/>\u003ctext x=\"70\" y=\"90\" font-size=\"11\" font-weight=\"700\" fill=\"#333\" text-anchor=\"middle\" font-family=\"sans-serif\">燃やす前\u003c/text>\u003ctext x=\"150\" y=\"60\" font-size=\"20\" fill=\"#c8321f\" text-anchor=\"middle\">→\u003c/text>\u003cg transform=\"translate(160,0)\">\u003crect x=\"10\" y=\"40\" width=\"120\" height=\"34\" rx=\"6\" fill=\"#dfe3e6\" stroke=\"#7d848b\"/>\u003crect x=\"22\" y=\"48\" width=\"70\" height=\"18\" rx=\"2\" fill=\"#20282e\"/>\u003ctext x=\"88\" y=\"62\" font-size=\"13\" fill=\"#7cf0a0\" text-anchor=\"end\" font-family=\"monospace\">1.00 g\u003c/text>\u003crect x=\"96\" y=\"32\" width=\"30\" height=\"6\" fill=\"#aab2b9\"/>\u003ctext x=\"70\" y=\"90\" font-size=\"11\" font-weight=\"700\" fill=\"#333\" text-anchor=\"middle\" font-family=\"sans-serif\">燃やした後\u003c/text>\u003c/g>\u003c/svg>", "kind": "calc", "level": 2}, {"id": "chu2-moekasu-kantei-q009", "koma": "chu2-kagaku-18", "t": "num", "q": "スチールウール1.16gを燃やしたら、冷ました後の質量は1.34gだった。鉄と結び付いた酸素は何gと考えられるか。", "ans": 0.18, "unit": "g", "tol": 0.001, "ex": "1.34－1.16＝0.18g。増えた分が、結び付いた酸素の質量。", "fig": "\u003csvg viewBox=\"0 0 300 96\" width=\"300\">\u003crect x=\"10\" y=\"40\" width=\"120\" height=\"34\" rx=\"6\" fill=\"#dfe3e6\" stroke=\"#7d848b\"/>\u003crect x=\"22\" y=\"48\" width=\"70\" height=\"18\" rx=\"2\" fill=\"#20282e\"/>\u003ctext x=\"88\" y=\"62\" font-size=\"13\" fill=\"#7cf0a0\" text-anchor=\"end\" font-family=\"monospace\">1.16 g\u003c/text>\u003crect x=\"96\" y=\"32\" width=\"30\" height=\"6\" fill=\"#aab2b9\"/>\u003ctext x=\"70\" y=\"90\" font-size=\"11\" font-weight=\"700\" fill=\"#333\" text-anchor=\"middle\" font-family=\"sans-serif\">燃やす前\u003c/text>\u003ctext x=\"150\" y=\"60\" font-size=\"20\" fill=\"#c8321f\" text-anchor=\"middle\">→\u003c/text>\u003cg transform=\"translate(160,0)\">\u003crect x=\"10\" y=\"40\" width=\"120\" height=\"34\" rx=\"6\" fill=\"#dfe3e6\" stroke=\"#7d848b\"/>\u003crect x=\"22\" y=\"48\" width=\"70\" height=\"18\" rx=\"2\" fill=\"#20282e\"/>\u003ctext x=\"88\" y=\"62\" font-size=\"13\" fill=\"#7cf0a0\" text-anchor=\"end\" font-family=\"monospace\">1.34 g\u003c/text>\u003crect x=\"96\" y=\"32\" width=\"30\" height=\"6\" fill=\"#aab2b9\"/>\u003ctext x=\"70\" y=\"90\" font-size=\"11\" font-weight=\"700\" fill=\"#333\" text-anchor=\"middle\" font-family=\"sans-serif\">燃やした後\u003c/text>\u003c/g>\u003c/svg>", "kind": "calc", "level": 2}, {"id": "chu2-moekasu-kantei-q010", "koma": "chu2-kagaku-18", "t": "choice", "q": "マグネシウムが燃えて酸化マグネシウムができる変化を表す化学反応式はどれか。", "choices": ["2Mg ＋ O₂ → 2MgO", "Mg ＋ O₂ → MgO₂", "Mg ＋ O → MgO", "2MgO → 2Mg ＋ O₂"], "ex": "酸素は分子O₂で反応し、Mg原子とO原子が1対1で結び付く。左右の原子の数をそろえると2Mg＋O₂→2MgO。", "kind": "judge", "level": 2, "fig": null}, {"id": "chu2-moekasu-kantei-q011", "koma": "chu2-kagaku-18", "t": "choice", "q": "図は、銅を加熱したときの変化を原子のモデルで表そうとしたもの。？に入るモデルはどれか。", "choices": ["銅原子と酸素原子が1個ずつ結び付いたもの2つ", "銅原子1個に酸素原子2個が結び付いたもの1つ", "銅原子2個だけ（酸素はどこかへ消える）", "酸素原子2個だけ（銅はどこかへ消える）"], "ex": "2Cu＋O₂→2CuO。反応の前後で原子の種類と数は変わらず、Cu原子とO原子が1対1で結び付く。", "fig": "\u003csvg viewBox=\"0 0 300 70\" width=\"300\">\u003ccircle cx=\"20\" cy=\"35\" r=\"13\" fill=\"#C8773C\" stroke=\"#0003\"/>\u003ccircle cx=\"16\" cy=\"31\" r=\"3.5\" fill=\"#fff\" opacity=\".55\"/>\u003ctext x=\"20\" y=\"39.5\" font-size=\"12\" font-weight=\"700\" fill=\"#fff\" text-anchor=\"middle\" font-family=\"sans-serif\">Cu\u003c/text>\u003ccircle cx=\"50\" cy=\"35\" r=\"13\" fill=\"#C8773C\" stroke=\"#0003\"/>\u003ccircle cx=\"46\" cy=\"31\" r=\"3.5\" fill=\"#fff\" opacity=\".55\"/>\u003ctext x=\"50\" y=\"39.5\" font-size=\"12\" font-weight=\"700\" fill=\"#fff\" text-anchor=\"middle\" font-family=\"sans-serif\">Cu\u003c/text>\u003ctext x=\"72\" y=\"41\" font-size=\"18\" text-anchor=\"middle\">＋\u003c/text>\u003ccircle cx=\"96\" cy=\"35\" r=\"13\" fill=\"#E4572E\" stroke=\"#0003\"/>\u003ccircle cx=\"92\" cy=\"31\" r=\"3.5\" fill=\"#fff\" opacity=\".55\"/>\u003ctext x=\"96\" y=\"39.5\" font-size=\"12\" font-weight=\"700\" fill=\"#fff\" text-anchor=\"middle\" font-family=\"sans-serif\">O\u003c/text>\u003ccircle cx=\"118\" cy=\"35\" r=\"13\" fill=\"#E4572E\" stroke=\"#0003\"/>\u003ccircle cx=\"114\" cy=\"31\" r=\"3.5\" fill=\"#fff\" opacity=\".55\"/>\u003ctext x=\"118\" y=\"39.5\" font-size=\"12\" font-weight=\"700\" fill=\"#fff\" text-anchor=\"middle\" font-family=\"sans-serif\">O\u003c/text>\u003ctext x=\"146\" y=\"41\" font-size=\"18\" text-anchor=\"middle\">→\u003c/text>\u003crect x=\"166\" y=\"10\" width=\"120\" height=\"50\" rx=\"6\" fill=\"#fff\" stroke=\"#333\" stroke-dasharray=\"4 3\"/>\u003ctext x=\"226\" y=\"41\" font-size=\"18\" font-weight=\"700\" fill=\"#333\" text-anchor=\"middle\">？\u003c/text>\u003c/svg>", "kind": "graph", "level": 2}, {"id": "chu2-moekasu-kantei-q012", "koma": "chu2-kagaku-18", "t": "choice", "q": "銅の粉を加熱すると黒い物質ができた。この黒い物質を薬さじでこするとどうなるか。", "choices": ["こすっても光沢が出ない", "赤っぽい色に光る", "銀色に光る", "白い粉になる"], "ex": "黒い物質は酸化銅。金属の銅とちがい、こすっても金属光沢は出ない。", "kind": "judge", "level": 1, "fig": null}, {"id": "chu2-moekasu-kantei-q013", "koma": "chu2-kagaku-18", "t": "choice", "q": "スチールウールを燃やすとき、火がついたところにガラス管で息をふきかけた。その理由として正しいものはどれか。", "choices": ["酸素を送りこんで、中までよく燃やすため", "二酸化炭素を送りこんで燃やすため", "火を弱めて、やけどを防ぐため", "燃えかすを冷やして、軽くするため"], "ex": "息（空気）には酸素がふくまれる。酸素を送りこむと、鉄が酸素とよく結び付く。", "kind": "method", "level": 1, "fig": null}, {"id": "chu2-moekasu-kantei-q014", "koma": "chu2-kagaku-18", "t": "choice", "q": "木を燃やすと灰は軽くなるのに、スチールウールを燃やすと重くなる。このちがいの理由として正しいものはどれか。", "choices": ["木は燃えてできた二酸化炭素や水が空気中へ出ていくが、鉄は酸素と結び付いた物質がそのまま残るから", "鉄は熱でふくらんで大きくなるから", "木には質量がないから", "スチールウールには炭素が多くふくまれるから"], "ex": "どちらも酸素と結び付くが、木はできた気体が出ていく。鉄は結び付いた酸素の分が固体に残る。", "kind": "judge", "level": 3, "fig": null}, {"id": "chu2-moekasu-kantei-q015", "koma": "chu2-kagaku-18", "t": "choice", "q": "銅を空気中で加熱したときの変化を、物質名で表したものはどれか。", "choices": ["銅 ＋ 酸素 → 酸化銅", "酸化銅 → 銅 ＋ 酸素", "銅 → 酸化銅 ＋ 酸素", "銅 ＋ 二酸化炭素 → 酸化銅"], "ex": "空気中の酸素と結び付くので、銅＋酸素→酸化銅（2Cu＋O₂→2CuO）。", "kind": "judge", "level": 1, "fig": null}, {"id": "chu2-moekasu-kantei-q016", "koma": "chu2-kagaku-18", "t": "choice", "q": "スチールウールを燃やしてできた黒い物質に磁石を近づけると、引きつけられた。このことについて正しいものはどれか。", "choices": ["磁石につくかどうかでは、鉄のままかどうかは決められない", "磁石についたので、燃やしても鉄のままである", "磁石についたので、すすがついただけである", "磁石についたので、酸素とは結び付いていない"], "ex": "鉄の燃えかす（黒い酸化鉄）も磁石につき、燃え残りの鉄もまじる。電流の流れやすさ・塩酸との反応・光沢などで比べる。", "kind": "method", "level": 2, "fig": null}]};
 /*@QUIZ_END*/</script>
 <script>/*@ZUKAN_BEGIN*/
 window.ZUKAN_UPDATES={"v": 1, "updates": []};
@@ -1424,507 +1404,513 @@ window.ZUKAN_CARDS={"v": 1, "grade": "chu2", "name": "中2理科図鑑", "econom
 
 /*@ZUKAN_END*/</script>
 <script>
-(function(){
-'use strict';
-const GAME_ID='moekasu-kantei',KOMA='chu2-kagaku-18',PREV_KOMA='chu2-kagaku-17';
-const SAVE_KEY='rika-zukan:chu2:game:'+GAME_ID+':v1',SEAL_KEY='rika-zukan:chu2:seal:'+PREV_KOMA;
-const TEST_ONLY=window.GAME_MODE==='test';
-const RM=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+(()=>{'use strict';
+const GID='moekasu-kantei',KOMA='chu2-kagaku-18',SAVE_KEY='rika-zukan:chu2:game:'+GID+':v1',SEAL_KEY='rika-zukan:chu2:seal:chu2-kagaku-17',MUTE_KEY='rika-zukan:chu2:game:'+GID+':mute';
+const TEST=window.GAME_MODE==='test';
+const RM=!!(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches);
 const $=id=>document.getElementById(id);
-const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
-const fmtT=s=>String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');
-const wait=ms=>new Promise(r=>setTimeout(r,RM?Math.min(ms,200):ms));
-window.Zukan&&Zukan.setup&&Zukan.setup({game:GAME_ID,koma:[KOMA]});
+const WASHI='#F1EDE4',SUMI='#1C1C1C',HI='#F5E663',BR='"Yuji Boku","Hiragino Mincho ProN","Yu Mincho",serif',MIN='"Hiragino Mincho ProN","Yu Mincho",serif';
+const cv=$('cv'),cx=cv.getContext('2d');
+const clamp=(v,a,b)=>v<a?a:v>b?b:v,rnd=(a,b)=>a+Math.random()*(b-a),esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]]}return a}
+let seed=1;const srnd=()=>{seed=(seed*16807)%2147483647;return(seed-1)/2147483646};
+const DIRS={heavy:'重くなる',light:'軽くなる',same:'変わらない'};
 
-/* ===== 原子（色は全ゲーム共通） ===== */
-const EL={H:['#EAF6FF','#1c4f86'],C:['#3a3d46','#fff'],O:['#E4572E','#fff'],Mg:['#B9C6D4','#1f2a36'],Fe:['#767C8A','#fff'],Cu:['#C8773C','#fff'],S:['#EAD23C','#4d3f00']};
-function atom(s,a){const e=EL[s]||['#999','#fff'];return `<span class="atom" style="--c:${e[0]};--t:${e[1]};--a:${a||26}px">${s}</span>`}
-function pair(m,a){return `<span class="pair" style="--a:${a||26}px">${atom(m,a)}${atom('O',a)}</span>`}
+/* ================= 物質と性質（教科書で普通に扱う範囲） ================= */
+const MAT={
+ fe:{nm:'スチールウール（鉄）',sh:'鉄',kind:'metal',base:'fe'},
+ feo:{nm:'スチールウールの燃えかす',sh:'鉄の燃えかす',kind:'ox',base:'fe',ox:'酸化鉄'},
+ mg:{nm:'マグネシウム',sh:'マグネシウム',kind:'metal',base:'mg'},
+ mgo:{nm:'マグネシウムの燃えかす',sh:'白い粉',kind:'ox',base:'mg',ox:'酸化マグネシウム'},
+ cu:{nm:'銅',sh:'銅',kind:'metal',base:'cu'},
+ cuo:{nm:'銅を加熱してできた黒い物質',sh:'黒い粉',kind:'ox',base:'cu',ox:'酸化銅'}};
+const TL={
+ hammer:{nm:'金槌',v:'たたく'},stone:{nm:'砥石',v:'こする'},tester:{nm:'豆電球',v:'電気'},acid:{nm:'うすい塩酸',v:'塩酸'},
+ magnet:{nm:'磁石',v:'磁石'},ruler:{nm:'ものさし',v:'大きさ'},stampOx:{nm:'刻印「酸化物」',v:'刻印'},stampMe:{nm:'刻印「金属」',v:'刻印'}};
+function result(tool,m){const k=MAT[m].kind,b=MAT[m].base;
+ if(tool==='hammer')return k==='metal'?'のびる':'くだける';
+ if(tool==='stone')return k==='metal'?'光る':'光らない';
+ if(tool==='tester')return k==='metal'?'点く':'点かない';
+ if(tool==='acid')return b==='cu'?'泡なし':k==='metal'?'泡が出る':'泡なし';
+ if(tool==='magnet')return b==='fe'?'つく':'つかない';
+ if(tool==='ruler')return'約3cm';return''}
+function decisive(tool,base){if(tool==='hammer'||tool==='stone'||tool==='tester')return true;if(tool==='acid')return base!=='cu';return false}
+const WHYNOT={magnet:{fe:'鉄の燃えかす（黒い酸化鉄）も磁石につく。燃え残りの鉄もまじる。磁石では決められない。',mg:'マグネシウムも燃えかすも、どちらも磁石につかない。違いが出ない。',cu:'銅も黒い物質も、どちらも磁石につかない。違いが出ない。'},
+ ruler:'大きさは、丸め方や燃やし方で変わる。物質の性質ではないので決め手にならない。',
+ acid:{cu:'銅も、黒い物質も、うすい塩酸に入れても泡は出ない。銅では決め手にならない。'}};
 
-/* ===== 金属と燃えかす ===== */
-const MET={
- fe:{sym:'Fe',nm:'鉄（スチールウール）',short:'鉄',ox:'酸化鉄',oxc:'黒',face:'🧑‍🔧'},
- mg:{sym:'Mg',nm:'マグネシウムリボン',short:'マグネシウム',ox:'酸化マグネシウム',oxc:'白',face:'🧑‍🎓'},
- cu:{sym:'Cu',nm:'銅の粉',short:'銅',ox:'酸化銅',oxc:'黒',face:'👩‍🔬'}
-};
-/* 検査道具 */
-const TOOL={
- look:{n:'光沢・色を見る',ic:'👁️',cost:10},
- touch:{n:'指でもむ',ic:'🤏',cost:10},
- size:{n:'大きさをはかる',ic:'📏',cost:10},
- magnet:{n:'磁石を近づける',ic:'🧲',cost:10},
- elec:{n:'電流を流す',ic:'💡',cost:20,price:120,d:'豆電球と電池で、電流が流れるか調べる'},
- loupe:{n:'形をくわしく見る',ic:'🔎',cost:10,price:80,d:'ルーペで、形や筋のようすを細かく見る'},
- temp:{n:'温度をはかる',ic:'🌡️',cost:10,price:80,d:'温度計で、それぞれの温度をはかる'},
- acid:{n:'うすい塩酸に入れる',ic:'🧪',cost:20,price:120,d:'保護眼鏡をつけ、うすい塩酸に入れて気体が出るか調べる'},
- mass:{n:'質量をはかる',ic:'⚖️',cost:20,price:120,d:'電子てんびんで、燃やす前と後の質量をくらべる'}
-};
-const START_TOOLS=['look','touch','size','magnet'];
-const SHOPS=[['elec','loupe','temp'],['acid','mass','loupe','temp','elec'],['acid','mass','elec','loupe','temp']];
-/* 検査結果（出典は _素材.md） d=ちがいがはっきり出る */
-const RES={
- fe:{
-  look:{d:1,a:'すじが銀色に光る（金属光沢）',b:'黒くて、光沢がない'},
-  touch:{d:1,a:'ふわっと弾力がある',b:'もむと、ぼろぼろくずれる'},
-  size:{d:0,a:'直径 約4 cm',b:'直径 約3.5 cm',w:'大きさは丸め方や燃やし方で変わる。物質のちがいの証拠にはならない。'},
-  magnet:{d:0,a:'引きつけられる',b:'引きつけられる',w:'燃え残りの鉄や、黒い酸化鉄も磁石につく。磁石では決め手にならない。'},
-  elec:{d:1,a:'豆電球がつく',b:'ほとんどつかない（電流が流れにくい）'},
-  acid:{d:1,a:'泡（水素）が出る',b:'泡が出ない'},
-  mass:{d:1,a:'1.16 g',b:'1.34 g（＋0.18 g）'},
-  loupe:{d:0,a:'細い繊維がからみ合う',b:'繊維の形がほぼ残る',w:'形が残っていても、物質が同じとはかぎらない。'},
-  temp:{d:0,a:'室温',b:'室温（冷めたあと）',w:'冷めればどちらも室温。物質のちがいは分からない。'}},
- mg:{
-  look:{d:1,a:'銀白色で光る（金属光沢）',b:'白い粉。光沢がない'},
-  touch:{d:1,a:'曲げてもしなやか',b:'もろくて、粉にくずれる'},
-  size:{d:0,a:'長さ 10 cm のリボン',b:'形がくずれて測れない',w:'形がくずれるのは燃やし方しだい。大きさは物質のちがいの証拠にならない。'},
-  magnet:{d:0,a:'引きつけられない',b:'引きつけられない',w:'どちらも磁石につかない。ちがいが出ない。'},
-  elec:{d:1,a:'豆電球がつく',b:'つかない（電流が流れない）'},
-  acid:{d:1,a:'さかんに泡（水素）が出る',b:'泡は出ない'},
-  mass:{d:1,a:'0.60 g',b:'1.00 g（＋0.40 g）'},
-  loupe:{d:0,a:'平らなリボン',b:'白い粉のかたまり',w:'形のちがいは燃やし方でも生まれる。性質を調べないと決め手にならない。'},
-  temp:{d:0,a:'室温',b:'室温（冷めたあと）',w:'冷めればどちらも室温。物質のちがいは分からない。'}},
- cu:{
-  look:{d:1,a:'赤っぽい茶色（こすると光る）',b:'黒色。こすっても光らない'},
-  touch:{d:0,a:'さらさらの粉',b:'さらさらの粉',w:'どちらも粉。手ざわりでは区別しにくい。'},
-  size:{d:0,a:'粉',b:'粉',w:'どちらも粉。大きさでは区別できない。'},
-  magnet:{d:0,a:'引きつけられない',b:'引きつけられない',w:'どちらも磁石につかない。ちがいが出ない。'},
-  elec:{d:1,a:'豆電球がつく',b:'つかない（電流が流れない）'},
-  acid:{d:0,a:'泡は出ない',b:'泡は出ない',w:'銅はうすい塩酸と反応しない。泡では区別できない（鉄やマグネシウムとはちがう）。'},
-  mass:{d:1,a:'0.80 g',b:'1.00 g（＋0.20 g）'},
-  loupe:{d:0,a:'細かい粒',b:'細かい粒',w:'粒の形は同じに見える。形では決め手にならない。'},
-  temp:{d:0,a:'室温',b:'室温（冷めたあと）',w:'冷めればどちらも室温。物質のちがいは分からない。'}}
-};
-const ROUNDS=[
- {m:'fe',name:'第一品',who:'工作クラブの部長',claim:'理科室でスチールウールを燃やした残りです。黒くなったけど、中身は鉄のままですよね？',budget:60},
- {m:'mg',name:'第二品',who:'写真部の先輩',claim:'まぶしい光を出して燃えたマグネシウムリボンの残りです。白い粉になりました。',budget:60},
- {m:'cu',name:'第三品',who:'科学部の部員',claim:'銅の粉をステンレス皿で加熱したら、黒くなりました。これも銅ですよね？',budget:60},
- {m:'fe',name:'第四品（大一番）',who:'がんこな依頼人',claim:'黒いのは表面に<b>すす</b>がついただけ！<b>磁石</b>にもつく。だから鉄のままだ！',budget:70,face:'😤',
-  reject:{look:'「黒いのは、すすのせいだと言っただろう！」',touch:'「すすがついて、もろく見えるだけだ！」'}},
- {m:'mg',name:'第五品',who:'早とちりの依頼人',claim:'燃えたら軽くなるに決まってる。白い粉は、マグネシウムが減った<b>燃え残り</b>だよ。',budget:50,face:'😮',need:['mass'],needWhy:'「でも、燃えて軽くなったんだろう？ はかってもいないのに！」'},
- {boss:true,name:'最終鑑定（一発勝負）',items:['cu','fe','mg'],budget:40,who:'鑑定所の所長',claim:'予算は1品40両。やり直しなし。見た目だけの鑑定書は通さんぞ。<b>金属の性質（電流・塩酸）か質量</b>の証拠を必ず入れること。',face:'🧓',need:['elec','acid','mass'],needWhy:'所長「見た目や手ざわりだけでは、鑑定書にはできん。電流・塩酸・質量のどれかを入れなさい」'}
+/* ================= 炉（8つ） ================= */
+const RD=[
+ {k:'pair',m:'fe',no:'一',title:'丸めたスチールウール',mass:[1.16,1.34],tools:['hammer','stone','tester'],eq:'鉄 ＋ 酸素 → 酸化鉄',
+  claim:'焼けて黒くなっても、中身は鉄のまま…とは言い切れまい？ 性質を三つ比べておくれ。',src:'丸めたスチールウール（公開資料の再現記録）'},
+ {k:'pair',m:'fe',no:'二',title:'広げたスチールウール',mass:[0.94,1.15],spread:true,tools:['hammer','stone','tester','magnet','ruler'],eq:'鉄 ＋ 酸素 → 酸化鉄',
+  claim:'黒いのは、すすがついただけ。磁石につくんだから、鉄のままだろう？',src:'広げたスチールウール（公開資料の再現記録）'},
+ {k:'pair',m:'mg',no:'三',title:'マグネシウムリボン',mass:[0.60,1.00],tools:['hammer','stone','tester','magnet','ruler'],eq:'2Mg ＋ O₂ → 2MgO',
+  claim:'まぶしく燃えたね。残った白い粉は、ただの灰じゃないのかい？',src:'マグネシウム 0.60g（教科書でよく使う値・質量の比 3：2）'},
+ {k:'pair',m:'mg',no:'四',title:'マグネシウムと塩酸',mass:[0.30,0.50],tools:['hammer','stone','tester','acid','magnet'],eq:'2Mg ＋ O₂ → 2MgO',
+  claim:'白い粉は、マグネシウムの粉がこぼれただけさ。塩酸に入れれば分かるだろう？',src:'マグネシウム 0.30g（質量の比 3：2）'},
+ {k:'pair',m:'cu',no:'五',title:'銅の粉',mass:[0.80,1.00],tools:['hammer','stone','tester','acid','magnet','ruler'],eq:'2Cu ＋ O₂ → 2CuO',
+  claim:'黒いのは焦げだよ。こすれば、また銅の色にもどるさ。',src:'銅 0.80g（教科書でよく使う値・質量の比 4：1）'},
+ {k:'wrap',n:3,no:'六',title:'包みの鑑定（一）',pool:[['fe','mgo','mg'],['feo','mg','mgo'],['mgo','fe','feo']],tools:['hammer','stone','tester','acid','magnet','stampOx','stampMe'],
+  claim:'蔵から包みが出てきた。中身は金属か、燃えかすか。ほどいて確かめておくれ。'},
+ {k:'wrap',n:4,no:'七',title:'包みの鑑定（二）',pool:[['feo','cu','mgo','fe'],['cuo','fe','feo','mg'],['mg','cuo','feo','cu']],tools:['hammer','stone','tester','acid','magnet','ruler','stampOx','stampMe'],
+  claim:'今度は銅もまじっている。塩酸と磁石には気をつけな。'},
+ {k:'boss',n:6,no:'八',title:'大仕事・蔵ざらえ',timer:150,pool:['fe','feo','mg','mgo','cu','cuo'],tools:['hammer','stone','tester','acid','magnet','stampOx','stampMe'],
+  claim:'上の蔵から、包みが次々に落ちてくる！ 手早く、でも証拠は二つ以上で。'}
 ];
 
-/* ===== 図（自作SVG） ===== */
-const G={
- lab:(x,y,t,a,s)=>`<text x="${x}" y="${y}" font-size="${s||10}" font-weight="700" fill="#333" text-anchor="${a||'middle'}" font-family="sans-serif">${t}</text>`,
- dish:(cx,cy,w)=>`<ellipse cx="${cx}" cy="${cy}" rx="${w}" ry="${w*.22}" fill="#d9dde2" stroke="#8a9199" stroke-width="1.2"/><ellipse cx="${cx}" cy="${cy-1.5}" rx="${w*.82}" ry="${w*.15}" fill="#eef0f3"/>`
-};
-// 試料の絵（0..110 × 0..64）
-function sample(m,burnt,ox,oy,s){s=s||1;let g='';
- const T=(x,y)=>`${ox+x*s},${oy+y*s}`;
- if(m==='fe'){const col=burnt?'#2b2c31':'#9aa3ad',hi=burnt?'#46474d':'#e9eef3';
-  g+=G.dish(ox+55*s,oy+54*s,40*s);
-  for(let i=0;i<16;i++){const x=22+i*4.2,y=40-(i%4)*5;g+=`<path d="M${T(x,y)} q${(8-(i%5)*4)*s},${-14*s} ${(14-(i%3)*7)*s},${-6*s} q${5*s},${8*s} ${(-3+(i%4)*3)*s},${12*s}" stroke="${col}" stroke-width="${(burnt?1.9:1.3)*s}" fill="none"/>`}
-  for(let i=0;i<6;i++){const x=28+i*9,y=30-(i%3)*6;g+=`<path d="M${T(x,y)} q${6*s},${-5*s} ${10*s},${-1*s}" stroke="${hi}" stroke-width="${1*s}" fill="none"/>`}
-  if(burnt)for(let i=0;i<5;i++)g+=`<circle cx="${ox+(34+i*10)*s}" cy="${oy+(50-(i%2)*3)*s}" r="${2*s}" fill="#222"/>`;
- }else if(m==='mg'){
-  g+=G.dish(ox+55*s,oy+54*s,40*s);
-  if(!burnt)g+=`<path d="M${T(20,44)} C${T(40,20)} ${T(70,52)} ${T(92,26)}" stroke="#aeb9c6" stroke-width="${8*s}" fill="none" stroke-linecap="round"/><path d="M${T(20,42)} C${T(40,18)} ${T(70,50)} ${T(92,24)}" stroke="#eef3f8" stroke-width="${2.2*s}" fill="none" stroke-linecap="round"/>`;
-  else g+=`<path d="M${T(22,52)} Q${T(30,30)} ${T(45,34)} Q${T(55,22)} ${T(66,32)} Q${T(82,28)} ${T(90,52)} Z" fill="#f7f7f2" stroke="#c9c9bf" stroke-width="${1*s}"/><path d="M${T(36,44)} q${6*s},${-4*s} ${12*s},0 M${T(58,40)} q${6*s},${-4*s} ${12*s},0" stroke="#dcdcd2" stroke-width="${1.2*s}" fill="none"/>`;
- }else{
-  g+=G.dish(ox+55*s,oy+54*s,40*s);
-  const c=burnt?'#262626':'#b86a3c',c2=burnt?'#3a3a3a':'#d98b57';
-  g+=`<path d="M${T(24,53)} Q${T(38,30)} ${T(55,30)} Q${T(74,30)} ${T(86,53)} Z" fill="${c}"/>`;
-  for(let i=0;i<14;i++)g+=`<circle cx="${ox+(32+(i*7)%50)*s}" cy="${oy+(44-(i%4)*3)*s}" r="${1.1*s}" fill="${c2}"/>`;
- }
- return g}
-function sampleSVG(m,burnt){return `<svg viewBox="0 0 110 64">${sample(m,burnt,0,0,1)}${!burnt&&m!=='cu'?`<path d="M88,10 l3,-6 M92,14 l6,-2 M84,8 l-1,-6" stroke="#fff" stroke-width="1.6" stroke-linecap="round" opacity=".9"/>`:''}</svg>`}
-// 検査の図：左＝燃やす前、右＝燃えかす
-function testFig(tool,m){
- const r=RES[m][tool];const W='viewBox="0 0 260 128" style="max-height:34vh"';let s='';
- const side=(x0,burnt)=>{let g='';const v=burnt?r.b:r.a;
-  if(tool==='look'||tool==='loupe'){g+=sample(m,burnt,x0+4,24,1.05);if(tool==='loupe')g+=`<circle cx="${x0+86}" cy="${40}" r="22" fill="rgba(210,235,255,.25)" stroke="#555" stroke-width="3"/><path d="M${x0+101},56 l14,14" stroke="#6b4b2a" stroke-width="6" stroke-linecap="round"/>`;
-   else if(!burnt&&m!=='cu')g+=`<path d="M${x0+88},26 l4,-8 M${x0+94},30 l8,-3 M${x0+82},22 l-1,-8" stroke="#f5b800" stroke-width="2" stroke-linecap="round"/>`;
-   else if(!burnt&&m==='cu')g+=`<path d="M${x0+38},56 l20,0" stroke="#f0a060" stroke-width="3"/><path d="M${x0+30},64 l12,-18" stroke="#777" stroke-width="3"/>${G.lab(x0+60,110,'薬さじでこする')}`;}
-  else if(tool==='touch'){
-   g+=sample(m,burnt,x0+6,34,.95);
-   g+=`<ellipse cx="${x0+36}" cy="34" rx="16" ry="9" fill="#f2c9a4" stroke="#b98b62"/><ellipse cx="${x0+84}" cy="34" rx="16" ry="9" fill="#f2c9a4" stroke="#b98b62"/>`;
-   if(burnt&&m!=='cu')for(let i=0;i<9;i++)g+=`<rect x="${x0+34+i*7}" y="${94+(i%3)*4}" width="3.5" height="3.5" fill="${m==='mg'?'#dcdcd0':'#2b2c31'}" transform="rotate(${i*23} ${x0+36+i*7} ${96})"/>`;
-   if(!burnt&&m!=='cu')g+=`<path d="M${x0+50},20 q10,-10 20,0" stroke="#3a7" stroke-width="2" fill="none" marker-end="url(#ar)"/>`;}
-  else if(tool==='size'){g+=sample(m,burnt,x0+4,20,1.05);g+=`<rect x="${x0+10}" y="92" width="100" height="12" fill="#f6e7b0" stroke="#9c8a4c"/>`;for(let i=0;i<=10;i++)g+=`<line x1="${x0+10+i*10}" y1="92" x2="${x0+10+i*10}" y2="${i%5?97:100}" stroke="#6b5a24"/>`;}
-  else if(tool==='magnet'){const up=/^引きつけられる/.test(v);
-   g+=`<path d="M${x0+40},8 v22 a20,20 0 0 0 40,0 v-22" stroke="#555" stroke-width="0" fill="none"/><path d="M${x0+40},6 v24 a20,20 0 0 0 40,0 v-24 h-11 v24 a9,9 0 0 1 -18,0 v-24 z" fill="#c9ccd1" stroke="#666"/><rect x="${x0+40}" y="6" width="11" height="10" fill="#d33"/><rect x="${x0+69}" y="6" width="11" height="10" fill="#2549C9"/>`;
-   g+=up?sample(m,burnt,x0+5,6,1.0).replace(/<ellipse[^>]*>/g,''):sample(m,burnt,x0+5,42,1.0);if(up)g+=G.dish(x0+60,102,38);}
-  else if(tool==='elec'){const on=/^豆電球がつく/.test(v);
-   g+=`<path d="M${x0+14},34 H${x0+106} V92 H${x0+78} M${x0+42},92 H${x0+14} V34" stroke="#333" stroke-width="2" fill="none"/>`;
-   g+=`<line x1="${x0+8}" y1="56" x2="${x0+20}" y2="56" stroke="#333" stroke-width="3"/><line x1="${x0+4}" y1="62" x2="${x0+24}" y2="62" stroke="#333" stroke-width="1.6"/><rect x="${x0+6}" y="57" width="16" height="4" fill="#fff"/>${G.lab(x0+28,50,'＋','start',9)}`;
-   g+=`${on?`<circle cx="${x0+60}" cy="30" r="20" fill="#ffe66b" opacity=".6"/>`:''}<circle cx="${x0+60}" cy="30" r="10" fill="${on?'#fff6b0':'#f4f4f4'}" stroke="#333" stroke-width="1.6"/><path d="M${x0+53},23 L${x0+67},37 M${x0+67},23 L${x0+53},37" stroke="#333" stroke-width="1.4"/>`;
-   g+=`<rect x="${x0+42}" y="84" width="36" height="16" rx="3" fill="${m==='fe'?(burnt?'#2b2c31':'#9aa3ad'):m==='mg'?(burnt?'#f3f3ee':'#c5cfd9'):(burnt?'#262626':'#b86a3c')}" stroke="#666"/><path d="M${x0+38},88 l6,4 l-6,4 M${x0+82},88 l-6,4 l6,4" stroke="#b33" stroke-width="2" fill="none"/>`;}
-  else if(tool==='acid'){const gas=/泡（水素）/.test(v);
-   g+=`<path d="M${x0+48},8 V92 a12,12 0 0 0 24,0 V8" fill="rgba(220,238,250,.55)" stroke="#6f8596" stroke-width="1.6"/><rect x="${x0+49.5}" y="46" width="21" height="46" fill="rgba(170,215,240,.55)"/><path d="M${x0+49.5},92 a10.5,10.5 0 0 0 21,0z" fill="rgba(170,215,240,.55)"/>`;
-   g+=`<ellipse cx="${x0+60}" cy="98" rx="8" ry="4" fill="${m==='fe'?(burnt?'#2b2c31':'#9aa3ad'):m==='mg'?(burnt?'#f3f3ee':'#c5cfd9'):(burnt?'#262626':'#b86a3c')}"/>`;
-   if(gas)[[56,84,2.4],[63,74,2],[58,64,2.6],[64,56,1.8],[55,50,2]].forEach(p=>g+=`<circle cx="${x0+p[0]}" cy="${p[1]}" r="${p[2]}" fill="#fff" stroke="#6f8596" stroke-width=".8"/>`);
-   g+=G.lab(x0+92,60,'うすい','middle',9)+G.lab(x0+92,71,'塩酸','middle',9);}
-  else if(tool==='mass'){g+=sample(m,burnt,x0+30,6,.6);g+=`<rect x="${x0+10}" y="52" width="100" height="40" rx="6" fill="#dfe3e6" stroke="#7d848b" stroke-width="1.5"/><rect x="${x0+20}" y="62" width="62" height="20" rx="2" fill="#20282e"/><text x="${x0+78}" y="77" font-size="13" fill="#7cf0a0" text-anchor="end" font-family="monospace">${v.split('（')[0]}</text><rect x="${x0+32}" y="42" width="56" height="8" rx="2" fill="#aab2b9"/>`;}
-  else if(tool==='temp'){g+=sample(m,burnt,x0+4,40,.9);g+=`<rect x="${x0+86}" y="8" width="8" height="70" rx="4" fill="#fff" stroke="#666"/><circle cx="${x0+90}" cy="80" r="7" fill="#d33"/><rect x="${x0+88}" y="50" width="4" height="28" fill="#d33"/>`;}
-  g+=G.lab(x0+60,122,burnt?'燃えかす':'燃やす前',undefined,11);
-  return g};
- s+=`<defs><marker id="ar" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6z" fill="#3a7"/></marker></defs>`;
- s+=`<rect x="1" y="1" width="124" height="126" rx="8" fill="#fbf8f1" stroke="#e1d7c2"/><rect x="135" y="1" width="124" height="126" rx="8" fill="#fbf8f1" stroke="#e1d7c2"/>`;
- s+=side(3,false)+side(137,true);
- return `<svg ${W}>${s}</svg>`}
-// 原子の目（模式図・割合は簡略）
-function eyeHTML(m,burnt){const sym=MET[m].sym;let h='';
- if(!burnt){for(let i=0;i<9;i++)h+=atom(sym,26)}
- else{for(let i=0;i<9;i++)h+=((i%2===0)?atom(sym,26):atom('O',26))}
- return h}
-// 再現記録：スチールウールの燃焼と電子てんびん
-function balanceSVG(disp,burnt,flame){
- return `<svg viewBox="0 30 240 116"><rect x="40" y="108" width="160" height="30" rx="6" fill="#dfe3e6" stroke="#7d848b" stroke-width="1.5"/><rect x="56" y="115" width="66" height="18" rx="2" fill="#20282e"/><text x="118" y="129" font-size="13" fill="#7cf0a0" text-anchor="end" font-family="monospace">${disp}</text>
-  <rect x="128" y="100" width="64" height="8" rx="2" fill="#aab2b9"/><rect x="126" y="96" width="68" height="4" fill="#e9e9e9" stroke="#bbb" stroke-width=".6"/>
-  <g stroke="${burnt?'#2b2c31':'#8d939b'}" stroke-width="${burnt?1.6:1.1}" fill="none">${Array.from({length:20},(_,i)=>`<path d="M${136+i*2.4},${94-(i%3)*2} q${8-(i%4)*4},-22 ${12-(i%5)*5},-10 q5,8 ${-5+(i%3)*4},14"/>`).join('')}</g>
-  ${flame?[[146,70],[156,62],[166,74],[172,66],[152,80]].map(p=>`<circle cx="${p[0]}" cy="${p[1]}" r="2.6" fill="#ff5a1f"/><circle cx="${p[0]}" cy="${p[1]}" r="5" fill="#ffb338" opacity=".35"/>`).join(''):''}
-  <text x="160" y="46" font-size="10" font-weight="700" fill="#333" text-anchor="middle" font-family="sans-serif">${burnt?'燃やした後（冷ましてから）':'スチールウール'}</text>
-  <text x="89" y="146" font-size="10" font-weight="700" fill="#333" text-anchor="middle" font-family="sans-serif">電子てんびん</text></svg>`}
-
-/* ===== セーブ・音 ===== */
-function fresh(){return{v:1,name:'',started:false,ph:'intro',round:0,money:0,tools:START_TOOLS.slice(),certs:{fe:[],mg:[],cu:[]},t:0,first:0,firstDone:{},combo:0,maxCombo:0,seal:null,sealHit:null,didLab:null,labData:null,why:false,cleared:false,mainDone:false,ruleGot:false,model:{},test:null}}
-let S=fresh();try{const o=JSON.parse(localStorage.getItem(SAVE_KEY));if(o&&o.v===1)S=Object.assign(fresh(),o)}catch(e){}
+/* ================= セーブ ================= */
+function fresh(){return{v:2,name:'',started:false,stage:0,opened:false,sealPred:null,sealFrom:null,sealHit:null,specimens:[],score:0,combo:0,maxCombo:0,first:0,t:0,cleared:false,mainDone:false,clearShown:false}}
+let S=fresh();
+function load(){try{const o=JSON.parse(localStorage.getItem(SAVE_KEY));if(o&&o.v===2)return Object.assign(fresh(),o)}catch(e){}return null}
 function save(){try{localStorage.setItem(SAVE_KEY,JSON.stringify(S))}catch(e){}}
-let MUTE=false;try{MUTE=JSON.parse(localStorage.getItem('rika-zukan:profile:v1')||'{}').mute===true}catch(e){}
-let AC=null;function ac(){if(!AC){try{AC=new(window.AudioContext||window.webkitAudioContext)()}catch(e){}}if(AC&&AC.state==='suspended')AC.resume();return AC}
-function tone(f,d,type,vol,when,slide){if(MUTE)return;const a=ac();if(!a)return;const t=a.currentTime+(when||0);const o=a.createOscillator(),g=a.createGain();o.type=type||'sine';o.frequency.setValueAtTime(f,t);if(slide)o.frequency.exponentialRampToValueAtTime(slide,t+d);g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol||.1,t+.008);g.gain.exponentialRampToValueAtTime(.0008,t+d);o.connect(g);g.connect(a.destination);o.start(t);o.stop(t+d+.02)}
-function noise(d,vol,hp){if(MUTE)return;const a=ac();if(!a)return;const n=Math.floor(a.sampleRate*d),b=a.createBuffer(1,n,a.sampleRate),x=b.getChannelData(0);for(let i=0;i<n;i++)x[i]=(Math.random()*2-1)*Math.pow(1-i/n,2);const s=a.createBufferSource(),g=a.createGain();s.buffer=b;g.gain.value=vol||.1;if(hp){const f=a.createBiquadFilter();f.type='highpass';f.frequency.value=hp;s.connect(f);f.connect(g)}else s.connect(g);g.connect(a.destination);s.start()}
-const sfx={tap:()=>tone(880,.05,'triangle',.06),
- hit:(c)=>{[660,880,1175].forEach((f,i)=>tone(f*(1+Math.min(c,5)*.04),.16,'square',.045,i*.05));tone(1760,.35,'triangle',.04,.16)},
- none:()=>{tone(300,.12,'triangle',.07);tone(260,.16,'triangle',.06,.09)},
- bad:()=>{tone(260,.25,'sawtooth',.05,0,120)},
- gong:()=>{tone(196,1.6,'sine',.22);tone(392,1.2,'sine',.08);tone(588,.9,'sine',.04);noise(.2,.05,2000)},
- stamp:()=>{tone(120,.18,'sine',.25,0,60);noise(.12,.12)},
- coin:()=>{tone(1318,.07,'square',.04);tone(1760,.12,'square',.04,.06)},
- jingle:()=>{[523,659,784,1047].forEach((f,i)=>tone(f,.18,'triangle',.07,i*.09));tone(1318,.5,'triangle',.06,.36)},
- tear:()=>{noise(.35,.14,1500)}};
-function setMute(m){MUTE=m;try{const p=JSON.parse(localStorage.getItem('rika-zukan:profile:v1')||'{}');p.mute=m;localStorage.setItem('rika-zukan:profile:v1',JSON.stringify(p))}catch(e){}$('bMute').textContent=m?'🔇':'🔊';$('bMute1').textContent=m?'🔇 音：オフ':'🔊 音：オン'}
-function earn(n,why,x,y){try{return window.Zukan&&Zukan.earn?Zukan.earn(n,why,{koma:KOMA,x,y})||0:0}catch(e){return 0}}
-
-/* ===== 演出 ===== */
-const fx=$('fx'),fc=fx.getContext('2d');let P=[];
-function fxSize(){const d=Math.min(2,devicePixelRatio||1);fx.width=innerWidth*d;fx.height=innerHeight*d;fc.setTransform(d,0,0,d,0,0)}fxSize();addEventListener('resize',fxSize);
-function confetti(n){n=RM?8:n;for(let i=0;i<n;i++)P.push({x:Math.random()*innerWidth,y:-10-Math.random()*80,vx:(Math.random()-.5)*2,vy:2+Math.random()*3,c:['#d8b25a','#c8321f','#fff','#f0d48a'][i%4],t:0,s:4+Math.random()*5,r:Math.random()*6})}
-function sparks(x,y,n,col){n=RM?4:n;for(let i=0;i<n;i++){const a=Math.random()*6.28,v=2+Math.random()*4;P.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v-2,c:col||'#ffd27a',t:0,s:3+Math.random()*3,r:0,g:.15})}}
-(function loop(){requestAnimationFrame(loop);fc.clearRect(0,0,innerWidth,innerHeight);for(let i=P.length-1;i>=0;i--){const p=P[i];p.t++;p.x+=p.vx;p.y+=p.vy;if(p.g)p.vy+=p.g;p.r+=.1;fc.save();fc.translate(p.x,p.y);fc.rotate(p.r);fc.fillStyle=p.c;fc.fillRect(-p.s/2,-p.s/4,p.s,p.s/2);fc.restore();if(p.t>150||p.y>innerHeight+20)P.splice(i,1)}})();
-function pop(txt,x,y,col){const d=document.createElement('div');d.className='pop';d.textContent=txt;d.style.left=(x-30)+'px';d.style.top=(y-10)+'px';if(col)d.style.color=col;document.body.appendChild(d);setTimeout(()=>d.remove(),1000)}
-let telT=0;function bigTel(txt,cls){const b=$('bigtel');b.innerHTML=`<span class="${cls||''}">${txt}</span>`;b.classList.remove('hidden');clearTimeout(telT);telT=setTimeout(()=>b.classList.add('hidden'),RM?800:1200)}
-function show(id){['title','intro','game','clear','test'].forEach(x=>$(x).classList.toggle('hidden',x!==id));document.querySelectorAll('.scr').forEach(s=>s.scrollTop=0)}
-function overlay(h){$('ovc').innerHTML=h;$('ov').classList.remove('hidden');$('ovc').scrollTop=0}
-function closeOv(){$('ov').classList.add('hidden')}
-function zkBtns(){document.querySelectorAll('.zk').forEach(b=>b.classList.toggle('hidden',!(window.Zukan&&Zukan.openBook)))}
-function rollNum(el,to,ms){const t0=performance.now();const f=()=>{const k=Math.min(1,(performance.now()-t0)/(RM?1:ms));el.textContent=Math.round(to*(1-Math.pow(1-k,3))).toLocaleString();if(k<1)requestAnimationFrame(f)};f()}
-
-/* ===== 序章：封印を開ける ===== */
-const DIRS={heavy:'重くなる',light:'軽くなる',same:'変わらない'};
 function readSeal(){try{const o=JSON.parse(localStorage.getItem(SEAL_KEY)||'null');return o&&o.pred&&DIRS[o.pred]?o:null}catch(e){return null}}
-function intro(){
- S.ph='intro';S.started=true;save();show('intro');
- const seal=readSeal();
- if(seal){
-  S.seal={pred:seal.pred,from:'seal',reasons:seal.reasons||[],consistent:!!seal.consistent,gut:seal.gut||null};save();
-  $('introBox').innerHTML=`<div style="text-align:center;margin-top:10px"><span class="ribbon">開封の儀</span></div>
-   <p class="big" style="text-align:center">「燃えたら重い？軽い？討論会」で<br>封印した予想が届いています。</p>
-   <div class="env" id="env"><div class="flap"></div><div class="pred">予想：${esc(DIRS[seal.pred])}</div><div class="stamp">封</div></div>
-   <div id="rs" class="card hidden" style="font-size:14px;line-height:1.6;text-align:left"><b>添えた根拠</b><br>${(seal.reasons||[]).map(t=>'・'+esc(t)).join('<br>')||'（なし）'}</div>
-   <button class="btn shu wide" id="bOpen">✂️ 封を切る</button>`;
-  $('bOpen').onclick=()=>{ac();sfx.tear();$('env').classList.add('open');$('rs').classList.remove('hidden');$('bOpen').textContent='実験の結果とくらべる ▶';$('bOpen').onclick=()=>{sfx.tap();labAsk()}};
- }else{
-  $('introBox').innerHTML=`<div style="text-align:center;margin-top:10px"><span class="ribbon">開封の儀</span></div>
-   <p class="big" style="text-align:center">この端末に、封印した予想が<br>見つかりません。</p>
-   <p class="lead" style="text-align:center">結果を見る前に、<b>いまここで予想</b>しよう。</p>
-   <div class="lab">${balanceSVG('1.16 g',false,false)}</div>
-   <p class="big" style="font-size:19px">スチールウール（細い鉄の繊維）を燃やしたら、燃やす前とくらべて質量は？</p>
-   <div class="opts">${Object.keys(DIRS).map(k=>`<button class="opt" data-d="${k}">${DIRS[k]}</button>`).join('')}</div>`;
-  document.querySelectorAll('[data-d]').forEach(b=>b.onclick=()=>{ac();sfx.stamp();S.seal={pred:b.dataset.d,from:'now',reasons:[],consistent:false};save();labAsk()});
- }
-}
-function labAsk(){
- $('introBox').innerHTML=`<p class="big" style="margin-top:14px">学校で、スチールウールを燃やして質量をはかる実験はもうやった？</p>
-  <div class="opts"><button class="opt" data-v="1">やった（班の結果を入れる）</button><button class="opt" data-v="0">まだ／数値を覚えていない（再現記録で見る）</button></div>`;
- document.querySelectorAll('[data-v]').forEach(b=>b.onclick=()=>{sfx.tap();S.didLab=b.dataset.v==='1';save();if(S.didLab)labInput();else replay()});
-}
-function numPad(label,cb){
- let v='';
- $('introBox').innerHTML=`<p class="big" style="margin-top:14px">${label}</p><div class="numshow"><span id="nv">　</span> <small>g</small></div>
-  <div class="keys">${['7','8','9','4','5','6','1','2','3','0','.','⌫'].map(k=>`<button data-n="${k}">${k}</button>`).join('')}</div>
-  <div class="tbtns"><button class="btn shu wide" id="nOk">決定</button><button class="btn ghost wide" id="nSkip">覚えていない → 再現記録で見る</button></div>`;
- document.querySelectorAll('[data-n]').forEach(b=>b.onclick=()=>{sfx.tap();const k=b.dataset.n;if(k==='⌫')v=v.slice(0,-1);else if(v.length<6)v+=k;$('nv').textContent=v||'　'});
- $('nOk').onclick=()=>{const x=parseFloat(v);if(!(x>0&&x<100))return;cb(x)};$('nSkip').onclick=()=>{sfx.tap();S.didLab=false;replay()};
-}
-function labInput(){numPad('班の結果：燃やす<b>前</b>のスチールウールの質量は？',a=>numPad('燃やした<b>後</b>（冷ましてから）の質量は？',b=>{S.labData={a,b};save();labShow()}))}
-function labShow(){const {a,b}=S.labData,d=Math.round((b-a)*100)/100;
- $('introBox').innerHTML=`<p class="big" style="margin-top:14px">班の結果</p><div class="lab">${balanceSVG(a.toFixed(2)+' g',false,false)}${balanceSVG(b.toFixed(2)+' g',true,false)}</div>
-  <p class="lead" style="text-align:center;font-size:20px"><b>${a.toFixed(2)} g → ${b.toFixed(2)} g</b>（${d>0?'＋':''}${d.toFixed(2)} g）</p>
-  ${d>0?'':`<div class="card" style="font-size:14px;line-height:1.6">増えていない…？ 燃えている途中で<b>燃えかすが皿の外へ落ちた</b>り、はかる前にこぼれたりすると、こうなることがある。<br>ほかの班の記録（再現記録）でも確かめよう。</div>`}
-  <button class="btn shu wide" id="go">${d>0?'予想と照らし合わせる ▶':'再現記録を見る ▶'}</button>`;
- $('go').onclick=()=>{sfx.tap();if(d>0)judge();else replay()}}
-async function replay(){
- $('introBox').innerHTML=`<p class="big" style="margin-top:14px">再現記録：スチールウールの燃焼</p><div class="lab" id="rep">${balanceSVG('1.16 g',false,false)}</div><p class="lead" id="repT">丸めたスチールウールの質量をはかり…</p>`;
- await wait(1300);$('rep').innerHTML=balanceSVG('- - -',false,true);$('repT').textContent='火をつけ、息をふきかけてよく燃やす。赤い火の粉が広がる。';sfx.tear();
- await wait(1700);$('rep').innerHTML=balanceSVG('1.34 g',true,false);$('repT').innerHTML='冷めてから、もう一度はかると……<br><b style="font-size:20px">1.16 g → 1.34 g（＋0.18 g）</b>';sfx.gong();
- await wait(900);$('introBox').insertAdjacentHTML('beforeend',`<p class="small">公開されている実験報告の値をもとにした再現。同じように、どの班でも燃やした後のほうが重くなる。</p><button class="btn shu wide" id="go">予想と照らし合わせる ▶</button>`);
- $('go').onclick=()=>{sfx.tap();judge()}}
-function judge(){
- const p=S.seal.pred;let g=0;
- if(p==='heavy'){if(S.sealHit==null){g=earn(15,'hit',innerWidth/2,innerHeight/3)}S.sealHit=true;save();confetti(90);sfx.jingle();bigTel('大当たり！','g')}
- else{if(S.sealHit==null)S.sealHit=false;save();sfx.none()}
- $('introBox').innerHTML=`<div style="text-align:center;margin-top:12px"><div class="hitmark">${p==='heavy'?'◎ 予想的中':'予想とのズレ'}</div>
-  <p class="lead">予想：<b>${DIRS[p]}</b>　→　結果：<b style="color:var(--gold)">重くなった</b></p>
-  ${p==='heavy'?(S.seal.consistent?'<p class="small">討論会で選んだ根拠の筋も通っていた。</p>':''):'<p class="small">ズレた所こそ、いちばん記憶に残る発見。なぜ重くなったのか、考えよう。</p>'}${g?`<p class="small">✨ かけら +${g}</p>`:''}</div>
-  <p class="big" style="font-size:19px">では、なぜ重くなった？</p>
-  <div class="opts" id="why">${shuffle([['o','空気中の酸素が結び付いて、その分が加わったから'],['f','火（ほのお）の重さが加わったから'],['s','表面にすすがついたから'],['h','熱くなった物は重くなるから']]).map(o=>`<button class="opt" data-w="${o[0]}">${o[1]}</button>`).join('')}</div><div id="wMsg" style="min-height:40px;font-weight:700;line-height:1.5"></div>`;
- const bad={f:'熱や光は物質ではないので、質量をもたない。',s:'スチールウールには炭素がふくまれないので、すすはできない（燃やしても石灰水はにごらない）。',h:'温度が変わっても質量は変わらない。しかも冷ましてからはかっている。'};
- document.querySelectorAll('[data-w]').forEach(b=>b.onclick=()=>{
-  if(b.dataset.w==='o'){sfx.hit(1);S.why=true;save();b.classList.add('sel');
-   $('introBox').insertAdjacentHTML('beforeend',`<div class="card" style="text-align:center"><div style="display:flex;justify-content:center;align-items:center;gap:6px;flex-wrap:wrap">${atom('Fe',30)}${atom('Fe',30)}<b>＋</b><span class="pair">${atom('O',30)}${atom('O',30)}</span><b>→</b>${pair('Fe',30)}${pair('Fe',30)}</div><p class="small">（模式図。原子の数の割合はここでは扱わない）</p><p class="lead">鉄が空気中の<b>酸素と結び付いた</b>。結び付いた酸素の分だけ、質量が増えた。<br>では、燃えかすは<b>まだ鉄</b>なのか？ ――鑑定の出番だ。</p><button class="btn shu wide" id="gGo">鑑定所へ ▶</button></div>`);
-   document.querySelectorAll('[data-w]').forEach(x=>x.disabled=true);
-   $('gGo').onclick=()=>{sfx.tap();S.ph='round';S.round=0;save();startRound(0)}}
-  else{sfx.bad();b.disabled=true;b.style.opacity=.45;$('wMsg').innerHTML=`<span style="color:#ff9d8f">${esc(bad[b.dataset.w])}</span>`}});
-}
 
-/* ===== 鑑定（本編） ===== */
-let R=null;
-function curItem(){const rd=ROUNDS[R.ri];return rd.boss?rd.items[R.bi]:rd.m}
-function mult(){return 1+.25*Math.min(S.combo,4)}
-function startRound(ri,bi){
- S.round=ri;S.ph='round';save();const rd=ROUNDS[ri];
- R={ri,bi:bi||0,budget:rd.budget,used:[],dec:[],eye:false,tries:0,last:null};
- show('game');
- const m=curItem();
- $('rName').textContent=rd.boss?`${rd.name}　${R.bi+1}/3`:`${rd.name}　${MET[m].nm}`;
- $('face').textContent=rd.face||MET[m].face;
- $('claim').innerHTML=`<span class="who">${esc(rd.who)}</span>${rd.boss?`${R.bi===0?rd.claim:'つぎの品。1品40両、やり直しなし。'}<br><b>品：${MET[m].nm}の燃えかす</b>`:rd.claim}`;
- $('lA').textContent=MET[m].nm;$('sA').innerHTML=sampleSVG(m,false);$('sB').innerHTML=sampleSVG(m,true);
- $('eA').innerHTML=eyeHTML(m,false);$('eB').innerHTML=eyeHTML(m,true);setEye(false);
- $('res').innerHTML=ri===0&&!S.firstDone.r0?`<div class="card" style="font-size:15px;line-height:1.6">👉 まずは <b>「👁️ 光沢・色を見る」</b> をタップ。<br><span class="small">ちがいがはっきり出る検査を2つ見つけたら、鑑定できる。</span></div>`:'';
- $('bRetry').classList.toggle('hidden',!!rd.boss);
- renderTools();renderEvid();hud();
- if(!RM){const c=$('claim');c.animate&&c.animate([{transform:'scale(.92)',opacity:0},{transform:'none',opacity:1}],{duration:260})}
- if(ri===3&&R.bi===0&&!bi){bigTel('大一番','');sfx.gong()}
- if(rd.boss&&!bi){bigTel('一発勝負','');sfx.gong()}
+/* ================= 画面の組み立て ================= */
+let W,H,DPR,PORT,WW,WH,SC,OX,OY,L={},bgC=null,stC=null;
+function layout(){DPR=Math.min(2,window.devicePixelRatio||1);W=innerWidth;H=innerHeight;cv.width=Math.round(W*DPR);cv.height=Math.round(H*DPR);cv.style.width=W+'px';cv.style.height=H+'px';
+ PORT=H>W*1.05;const top=PORT?(W<560?120:100):64,bot=PORT?(W<560?96:70):48,ah=H-top-bot;
+ if(PORT){WW=600;WH=Math.round(clamp(600*ah/W,900,1300))}else{WH=820;WW=Math.round(clamp(820*W/ah,1200,1700))}
+ SC=Math.min(W/WW,ah/WH);OX=(W-WW*SC)/2;OY=top+(ah-WH*SC)/2;
+ if(PORT){const ay=WH-250;
+  L={anvil:{x:300,y:ay,w:470},spots:[{x:178,y:ay-44},{x:422,y:ay-44}],one:{x:300,y:ay-50},
+   kiln:{x:150,y:270},bell:{x:62,y:330},scale:{x:150,y:400},shelf:{x:462,y:250,w:240,h:260},
+   cert:{x:300,y:ay-250,w:560,h:150},rack:{x0:8,x1:592,y0:WH-120,y1:WH-8},drop:ay-470}}
+ else{const cxm=WW/2,ay=WH-230;
+  L={anvil:{x:cxm,y:ay,w:560},spots:[{x:cxm-150,y:ay-48},{x:cxm+150,y:ay-48}],one:{x:cxm,y:ay-54},
+   kiln:{x:cxm-470,y:ay-150},bell:{x:cxm-590,y:ay-40},scale:{x:cxm-420,y:ay+30},shelf:{x:cxm+500,y:ay-190,w:280,h:330},
+   cert:{x:cxm,y:ay-300,w:640,h:160},rack:{x0:cxm-400,x1:cxm+400,y0:WH-112,y1:WH-8},drop:ay-520}}
+ bgC=null;stC=null;
 }
-function setEye(on){R&&(R.eye=on);$('eA').classList.toggle('hidden',!on);$('eB').classList.toggle('hidden',!on);$('bEye').classList.toggle('on',on);$('bEye').textContent=on?'🔍 原子の目をとじる':'🔍 原子の目で見る（模式図）';$('table').classList.toggle('hidden',!on&&!!(R&&R.used.length))}
-$('bEye').onclick=()=>{sfx.tap();setEye(!R.eye)};
-function hud(){const rd=ROUNDS[R.ri];
- $('bud').style.width=(R.budget/rd.budget*100)+'%';$('budT').textContent=`検査予算 ${R.budget} / ${rd.budget} 両`;
- $('money').textContent=`鑑定額の蓄え ${S.money.toLocaleString()} 両`;
- $('combo').textContent=S.combo>=2?`🔥 ${S.combo}連続で決め手 ×${mult()}`:'';
-}
-function renderTools(){
- const m=curItem();const h=$('tools');h.innerHTML='';
- S.tools.forEach(k=>{const t=TOOL[k];const used=R.used.includes(k);const b=document.createElement('button');
-  b.className='tool'+(used?' used':'')+(used&&R.dec.includes(k)?' hit':'');b.disabled=used;
-  b.innerHTML=`<span class="ic">${t.ic}</span><span>${t.n}<span class="c">${used?(R.dec.includes(k)?'決め手！':'ちがいなし'):'予算 '+t.cost+' 両'}</span></span>`;
-  b.onclick=e=>doTest(k,e);h.appendChild(b)});
-}
-function renderEvid(){const m=curItem();const n=R.dec.length;
- $('pips').innerHTML=`<span class="pips">${[0,1].map(i=>`<i class="${i<n?'on':''}"></i>`).join('')}</span>${n===1?'<span class="almost">あと1つ！</span>':''}`;
- $('evid').innerHTML=R.dec.length?R.dec.map(k=>`<li>${esc(TOOL[k].n)}：${esc(RES[m][k].a)} → ${esc(RES[m][k].b)}</li>`).join(''):'<li class="none">（まだ決め手なし）</li>';
- $('bApp').disabled=n<2;
-}
-function doTest(k,e){
- const rd=ROUNDS[R.ri],m=curItem(),t=TOOL[k];
- if(R.used.includes(k))return;
- if(t.cost>R.budget){sfx.bad();pop('予算が足りない',innerWidth/2,innerHeight/2,'#ff9d8f');return}
- ac();R.budget-=t.cost;R.used.push(k);
- const r=RES[m][k];let dec=!!r.d,why=r.w||'';
- if(dec&&rd.reject&&rd.reject[k]){dec=false;why=`依頼人${rd.reject[k]}<br>――見た目や手ざわりでは、この依頼人は納得しない。金属の<b>性質</b>か<b>質量</b>で示そう。`}
- const x=e&&e.clientX?e.clientX:innerWidth/2,y=e&&e.clientY?e.clientY:innerHeight/2;
- if(dec){R.dec.push(k);S.combo++;S.maxCombo=Math.max(S.maxCombo,S.combo);sfx.hit(S.combo);sparks(x,y,26);pop('ちがいあり！',x,y);if(R.dec.length===2)bigTel('決め手 2つ！','g')}
- else{S.combo=0;sfx.none();pop('−'+t.cost+' 両',x,y,'#c9c4d8')}
- if(R.ri===0)S.firstDone.r0=1;
- save();
- $('res').innerHTML=`<div class="res">${testFig(k,m)}<div class="rl"><div>燃やす前：${esc(r.a)}</div><div>燃えかす：${esc(r.b)}</div></div>
-  <div class="verdict ${dec?'d':'n'}" style="margin-top:4px">${dec?'◆ はっきりちがう → 鑑定書に書ける':'◇ 決め手にならない'}${why?`<div style="font-weight:700;color:#6a6255;font-size:13.5px">${why}</div>`:''}</div></div>`;
- if(!RM){const el=$('res').firstChild;el.animate&&el.animate([{transform:'translateY(12px)',opacity:0},{transform:'none',opacity:1}],{duration:240})}
- setEye(false);renderTools();renderEvid();hud();
- // 予算切れ
- const left=S.tools.filter(q=>!R.used.includes(q)&&TOOL[q].cost<=R.budget);
- if(R.dec.length<2&&!left.length)setTimeout(()=>outOfBudget(),700);
-}
-function outOfBudget(){const rd=ROUNDS[R.ri],m=curItem();
- let good=Object.keys(RES[m]).filter(k=>RES[m][k].d&&!(rd.reject&&rd.reject[k]));
- const pool=rd.need?good.filter(k=>rd.need.includes(k)):good;
- const missing=pool.filter(k=>!S.tools.includes(k));let lent='';
- if(missing.length&&pool.filter(k=>S.tools.includes(k)).length<(rd.need?1:2)&&missing.every(k=>S.money<TOOL[k].price)){const k=missing.sort((x,y)=>TOOL[x].price-TOOL[y].price)[0];S.tools.push(k);save();lent=`<p class="lead">蓄えが足りないので、所長が <b>${TOOL[k].ic} ${TOOL[k].n}</b> を貸してくれた！</p>`}
- overlay(`<span class="ribbon">予算切れ</span><h2>決め手が足りなかった…</h2><p class="lead">この品で、はっきりちがいが出る検査は<br><b>${good.map(k=>TOOL[k].ic+' '+TOOL[k].n).join('<br>')}</b></p>
-  ${lent}${good.some(k=>!S.tools.includes(k))?'<p class="small">持っていない道具がある。🛒で仕入れてから、やり直そう。</p>':''}
-  <div class="tbtns"><button class="btn shu wide" id="oR">↺ この品をやり直す</button>${good.some(k=>!S.tools.includes(k))?'<button class="btn ghost wide" id="oS">🛒 道具を仕入れる</button>':''}</div>`);
- $('oR').onclick=()=>{sfx.tap();closeOv();startRound(R.ri,ROUNDS[R.ri].boss?0:undefined)};
- if($('oS'))$('oS').onclick=()=>{closeOv();openShop(null)};
-}
-$('bRetry').onclick=()=>{sfx.tap();if(ROUNDS[R.ri].boss)return;overlay(`<h2>この品をやり直す？</h2><p class="small">予算は元にもどる。</p><div class="tbtns"><button class="btn shu wide" id="y">やり直す</button><button class="btn ghost wide" id="n">つづける</button></div>`);$('y').onclick=()=>{closeOv();startRound(R.ri)};$('n').onclick=closeOv};
-$('bApp').onclick=()=>{
- const rd=ROUNDS[R.ri],m=curItem();
- if(rd.need&&!R.dec.some(k=>rd.need.includes(k))){sfx.bad();$('claim').innerHTML=`<span class="who">${esc(rd.who)}</span>${rd.needWhy}`;
-  if(!RM)$('claim').animate&&$('claim').animate([{transform:'translateX(-8px)'},{transform:'translateX(8px)'},{transform:'none'}],{duration:260});
-  const left=S.tools.filter(q=>!R.used.includes(q)&&TOOL[q].cost<=R.budget&&rd.need.includes(q));if(!left.length)setTimeout(outOfBudget,600);return}
- sfx.tap();
- const o=MET[m];
- const opts=shuffle([['ox',`酸素と結び付いてできた、別の物質「${o.ox}」`],['same',`元の${o.short}と同じ物質（${o.short}のまま）`],['soot',`表面にすすがついただけの${o.short}`],['other',m==='fe'?'鉄と硫黄が結び付いた「硫化鉄」':m==='mg'?'マグネシウムが減って残った燃え残り':'銅に炭がまざった物']]);
- overlay(`<span class="ribbon">鑑定</span><h2>${esc(o.nm)}の燃えかすの正体は？</h2><div class="kiri" style="padding:8px 10px;text-align:left;font-size:14px;line-height:1.6">${R.dec.map(k=>'✔ '+esc(TOOL[k].n)+'：'+esc(RES[m][k].a)+' → '+esc(RES[m][k].b)).join('<br>')}</div>
-  <div class="opts">${opts.map(x=>`<button class="opt" data-a="${x[0]}">${x[1]}</button>`).join('')}</div><div id="aMsg" style="min-height:30px;font-weight:700;line-height:1.5"></div>`);
- document.querySelectorAll('[data-a]').forEach(b=>b.onclick=()=>{
-  const a=b.dataset.a;
-  if(a==='ox'){appraised(m)}
-  else{R.tries++;sfx.bad();b.disabled=true;b.style.opacity=.4;
-   $('aMsg').innerHTML=`<span style="color:#ff9d8f">${a==='same'?'差し戻し！ 決め手の検査で、元の金属の性質がなくなっている。同じ物質なら性質も同じはず。':a==='soot'?(m==='fe'?'スチールウールには炭素がない。すすでは、電流や塩酸の結果の変化も説明できない。':'加熱しただけで、すすのもとになる物は入っていない。'):m==='fe'?'硫黄は加えていない。空気中で燃やしたので、結び付いた相手は酸素。':m==='mg'?'減ったのなら軽くなるはず。性質も変わっている。':'炭は入れていない。空気中で加熱したので、結び付いた相手は酸素。'}</span>`}});
+const w2s=(x,y)=>({x:OX+x*SC,y:OY+y*SC}),s2w=(x,y)=>({x:(x-OX)/SC,y:(y-OY)/SC});
+
+/* ---- 墨の筆 ---- */
+function brush(g,pts,w,a,dry){const n=pts.length;if(n<2)return;const Lp=[],Rp=[];
+ for(let i=0;i<n;i++){const p=pts[i],q=pts[Math.min(i+1,n-1)],o=pts[Math.max(i-1,0)];let dx=q[0]-o[0],dy=q[1]-o[1];const l=Math.hypot(dx,dy)||1;const nx=-dy/l,ny=dx/l,t=i/(n-1);
+  const prof=t<.12?.55+t/.12*.45:1-Math.pow(Math.max(0,(t-.55)/.45),1.6)*.8;const ww=w*.5*prof*(.85+srnd()*.3);Lp.push([p[0]+nx*ww,p[1]+ny*ww]);Rp.push([p[0]-nx*ww,p[1]-ny*ww])}
+ g.save();g.shadowColor='rgba(28,28,28,'+(a*.45)+')';g.shadowBlur=Math.max(2,w*.55);g.fillStyle='rgba(28,28,28,'+a+')';g.beginPath();g.moveTo(Lp[0][0],Lp[0][1]);
+ for(let i=1;i<n;i++)g.lineTo(Lp[i][0],Lp[i][1]);for(let i=n-1;i>=0;i--)g.lineTo(Rp[i][0],Rp[i][1]);g.closePath();g.fill();g.shadowBlur=0;
+ if(dry&&w>4){g.strokeStyle='rgba(241,237,228,.6)';g.lineWidth=Math.max(.8,w*.07);for(let k=0;k<3;k++){const off=(srnd()-.5)*.7,st=Math.floor(n*(.45+srnd()*.2));g.beginPath();for(let i=st;i<n;i++){const L0=Lp[i],R0=Rp[i];const x=(L0[0]+R0[0])/2+(L0[0]-R0[0])*off,y=(L0[1]+R0[1])/2+(L0[1]-R0[1])*off;i===st?g.moveTo(x,y):g.lineTo(x,y)}g.stroke()}}
+ g.restore()}
+function wash(g,x,y,rx,ry,a){const gr=g.createRadialGradient(x,y,0,x,y,Math.max(rx,ry));gr.addColorStop(0,'rgba(28,28,28,'+a+')');gr.addColorStop(.6,'rgba(28,28,28,'+a*.45+')');gr.addColorStop(1,'rgba(28,28,28,0)');g.save();g.translate(x,y);g.scale(rx/Math.max(rx,ry),ry/Math.max(rx,ry));g.translate(-x,-y);g.fillStyle=gr;g.beginPath();g.arc(x,y,Math.max(rx,ry),0,7);g.fill();g.restore()}
+function line(x0,y0,x1,y1,k,j){const p=[];for(let i=0;i<=k;i++){const t=i/k;p.push([x0+(x1-x0)*t+(srnd()-.5)*j,y0+(y1-y0)*t+(srnd()-.5)*j])}return p}
+function mountain(g,x,y,w,h,a){seed=Math.round(x*7+y*3)+11;const pts=[];const n=22;for(let i=0;i<=n;i++){const t=i/n;const pk=Math.pow(Math.sin(t*Math.PI),.8);pts.push([x-w/2+w*t,y-pk*h*(.72+.28*srnd())-(i%3===1?srnd()*h*.12:0)])}
+ const gr=g.createLinearGradient(0,y-h,0,y+h*.25);gr.addColorStop(0,'rgba(28,28,28,'+a+')');gr.addColorStop(.55,'rgba(28,28,28,'+a*.35+')');gr.addColorStop(1,'rgba(28,28,28,0)');
+ g.save();g.shadowColor='rgba(28,28,28,'+a+')';g.shadowBlur=18;g.fillStyle=gr;g.beginPath();g.moveTo(pts[0][0],pts[0][1]);for(const p of pts)g.lineTo(p[0],p[1]);g.lineTo(x+w/2,y+h*.25);g.lineTo(x-w/2,y+h*.25);g.closePath();g.fill();g.restore();
+ for(let i=2;i<n-1;i+=3){const p=pts[i];if(srnd()<.5)brush(g,[[p[0],p[1]+4],[p[0]-h*.05,p[1]+h*.1],[p[0]-h*.12,p[1]+h*.18]],Math.max(1.5,h*.022),a*.9,true)}
+ brush(g,pts,Math.max(3,h*.05),Math.min(.9,a*2.6),true)}
+/* ---- 背景（紙・遠山・霧：画面いっぱい） ---- */
+function buildBG(){const c=document.createElement('canvas');c.width=Math.round(W*DPR);c.height=Math.round(H*DPR);const g=c.getContext('2d');g.scale(DPR,DPR);
+ g.fillStyle=WASHI;g.fillRect(0,0,W,H);seed=7;
+ for(let i=0;i<1400;i++){g.strokeStyle='rgba(120,100,70,'+(srnd()*.08)+')';g.lineWidth=.6;const x=srnd()*W,y=srnd()*H,a=srnd()*6,l=4+srnd()*14;g.beginPath();g.moveTo(x,y);g.lineTo(x+Math.cos(a)*l,y+Math.sin(a)*l);g.stroke()}
+ for(let i=0;i<14;i++)wash(g,srnd()*W,srnd()*H,40+srnd()*140,30+srnd()*90,.018);
+ const tt=scene==='title',m=Math.min(W,H);
+ // 遠山（右上に大きく、余白を残す）
+ mountain(g,W*.78,H*(tt?.46:.26),W*.7,H*(tt?.32:.18),tt?.16:.09);mountain(g,W*.35,H*(tt?.5:.24),W*.55,H*(tt?.2:.12),tt?.1:.06);
+ if(tt){mountain(g,W*.2,H*.78,W*.6,H*.26,.2);mountain(g,W*.7,H*.86,W*.5,H*.2,.14)}
+ // 松の枝（左上）
+ seed=31;const bx=0,by=PORT?H*.1:H*.12;brush(g,line(bx-10,by,W*.26,by+m*.05,10,6),m*.022,.85,true);
+ for(let i=0;i<5;i++){const x=W*.04+i*W*.045,y=by+m*.01+i*m*.009;for(let k=0;k<7;k++){const a=-1.9+k*.28;brush(g,line(x,y,x+Math.cos(a)*m*.045,y+Math.sin(a)*m*.045,3,1),2.2,.7,false)}}
+ // 落款風の四角（黄）
+ if(!tt){g.fillStyle='rgba(245,230,99,.9)';g.fillRect(W-50,H-58,30,30);g.strokeStyle=SUMI;g.lineWidth=2;g.strokeRect(W-50,H-58,30,30);g.fillStyle=SUMI;g.font='16px '+BR;g.textAlign='center';g.textBaseline='middle';g.fillText('鍛',W-35,H-43)}
+ bgC=c}
+/* ---- 動かない道具立て（金床・炉・棚）を先に描いておく ---- */
+function buildStatic(){const c=document.createElement('canvas');c.width=Math.round(W*DPR);c.height=Math.round(H*DPR);const g=c.getContext('2d');g.scale(DPR,DPR);g.translate(OX,OY);g.scale(SC,SC);
+ const A=L.anvil;seed=101;
+ // 金床（黒く太い筆で）
+ wash(g,A.x,A.y+70,A.w*.6,40,.22);
+ g.fillStyle='rgba(28,28,28,.92)';g.beginPath();g.moveTo(A.x-A.w/2,A.y);g.quadraticCurveTo(A.x-A.w/2-60,A.y+8,A.x-A.w/2-110,A.y-8);g.lineTo(A.x-A.w/2-40,A.y+30);g.lineTo(A.x+A.w/2,A.y+34);g.lineTo(A.x+A.w/2+10,A.y);g.closePath();g.fill();
+ g.beginPath();g.moveTo(A.x-A.w*.3,A.y+30);g.lineTo(A.x+A.w*.3,A.y+30);g.lineTo(A.x+A.w*.22,A.y+80);g.lineTo(A.x+A.w*.34,A.y+118);g.lineTo(A.x-A.w*.34,A.y+118);g.lineTo(A.x-A.w*.22,A.y+80);g.closePath();g.fill();
+ brush(g,line(A.x-A.w/2-100,A.y-4,A.x+A.w/2+14,A.y-2,14,2),9,.9,true);brush(g,line(A.x-A.w*.4,A.y+122,A.x+A.w*.4,A.y+124,10,3),10,.8,true);
+ g.strokeStyle='rgba(241,237,228,.35)';g.lineWidth=3;g.beginPath();g.moveTo(A.x-A.w*.4,A.y+8);g.lineTo(A.x+A.w*.4,A.y+10);g.stroke();
+ // 炉（土の窯）
+ const K=L.kiln;wash(g,K.x,K.y+10,120,100,.18);brush(g,[[K.x-90,K.y+80],[K.x-100,K.y],[K.x-70,K.y-70],[K.x,K.y-96],[K.x+70,K.y-70],[K.x+100,K.y],[K.x+90,K.y+80]],12,.85,true);
+ brush(g,line(K.x-110,K.y+84,K.x+110,K.y+84,8,2),10,.9,false);
+ g.fillStyle='rgba(28,28,28,.85)';g.beginPath();g.ellipse(K.x,K.y+30,44,36,0,Math.PI,0);g.lineTo(K.x+44,K.y+66);g.lineTo(K.x-44,K.y+66);g.fill();
+ brush(g,[[K.x-10,K.y-96],[K.x-14,K.y-150],[K.x+14,K.y-150],[K.x+10,K.y-96]],8,.7,true);
+ txtG(g,'炉',K.x+80,K.y-110,26,SUMI);
+ // ふいご
+ const B=L.bell;brush(g,[[B.x-40,B.y+30],[B.x-44,B.y-20],[B.x+30,B.y-26],[B.x+40,B.y+28],[B.x-40,B.y+30]],6,.8,true);brush(g,line(B.x+40,B.y+2,K.x-60,K.y+50,6,2),5,.6,false);txtG(g,'ふいご',B.x,B.y+58,17,SUMI);
+ // 天秤（電子てんびん）
+ const T=L.scale;g.strokeStyle=SUMI;g.lineWidth=3;g.fillStyle='rgba(241,237,228,.8)';g.fillRect(T.x-70,T.y-14,140,46);brush(g,[[T.x-72,T.y-16],[T.x+72,T.y-18],[T.x+74,T.y+34],[T.x-70,T.y+34],[T.x-72,T.y-16]],4,.85,false);
+ // 標本棚
+ const H0=L.shelf;for(let i=0;i<3;i++)brush(g,line(H0.x-H0.w/2,H0.y-H0.h/2+i*H0.h/2.4+H0.h*.3,H0.x+H0.w/2,H0.y-H0.h/2+i*H0.h/2.4+H0.h*.3,8,2),7,.8,true);
+ brush(g,line(H0.x-H0.w/2,H0.y-H0.h/2,H0.x-H0.w/2,H0.y+H0.h/2+20,6,2),6,.8,false);brush(g,line(H0.x+H0.w/2,H0.y-H0.h/2,H0.x+H0.w/2,H0.y+H0.h/2+20,6,2),6,.8,false);
+ txtG(g,'標本棚',H0.x,H0.y-H0.h/2-22,22,SUMI);
+ // 道具掛け
+ const R0=L.rack;brush(g,line(R0.x0,R0.y0+8,R0.x1,R0.y0+4,16,3),9,.85,true);
+ stC=c}
+function txtG(g,t,x,y,sz,col,al){g.font=sz+'px '+BR;g.fillStyle=col;g.textAlign=al||'center';g.textBaseline='middle';g.fillText(t,x,y)}
+
+/* ================= 音（金床・ふいご・琴） ================= */
+const AU={c:null,mute:false,init(){if(this.c)return;try{this.c=new(window.AudioContext||window.webkitAudioContext)()}catch(e){}},
+ t(f,d,type,v,dl,f2){if(this.mute||!this.c)return;const c=this.c,t=c.currentTime+(dl||0),o=c.createOscillator(),g=c.createGain();o.type=type||'sine';o.frequency.setValueAtTime(f,t);if(f2)o.frequency.exponentialRampToValueAtTime(f2,t+d);g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(v||.1,t+.005);g.gain.exponentialRampToValueAtTime(.0006,t+d);o.connect(g);g.connect(c.destination);o.start(t);o.stop(t+d+.03)},
+ n(d,v,ff,dl,q,type){if(this.mute||!this.c)return;const c=this.c,t=c.currentTime+(dl||0),b=c.createBuffer(1,Math.max(1,c.sampleRate*d|0),c.sampleRate),a=b.getChannelData(0);for(let i=0;i<a.length;i++)a[i]=Math.random()*2-1;const s=c.createBufferSource();s.buffer=b;const f=c.createBiquadFilter();f.type=type||'bandpass';f.frequency.value=ff||1000;f.Q.value=q||1;const g=c.createGain();g.gain.setValueAtTime(v||.1,t);g.gain.exponentialRampToValueAtTime(.001,t+d);s.connect(f);f.connect(g);g.connect(c.destination);s.start(t)}};
+const PENTA=[587,659,784,880,988,1175,1319,1568];
+const SFX={
+ tap(){AU.t(880,.08,'triangle',.05)},
+ anvil(){[[620,.9,.14],[1360,.6,.08],[2230,.4,.05],[3150,.25,.03]].forEach(p=>AU.t(p[0],p[1],'sine',p[2]));AU.n(.04,.25,3000,0,1)},
+ crumble(){for(let i=0;i<5;i++)AU.n(.08,.12,500+i*120,i*.05,2,'lowpass')},
+ rub(){AU.n(.12,.06,2400,0,3)},
+ shine(){AU.t(2637,.5,'sine',.05);AU.t(3520,.4,'sine',.03,.06)},
+ ding(){AU.t(1320,.7,'sine',.09);AU.t(1980,.5,'sine',.04)},
+ dull(){AU.t(180,.15,'triangle',.06)},
+ bubble(){for(let i=0;i<6;i++)AU.t(500+i*90,.06,'sine',.05,i*.07,900+i*90)},
+ clack(){AU.t(300,.08,'square',.05);AU.n(.05,.12,1500)},
+ bellow(){AU.n(.45,.14,380,0,.8,'lowpass')},
+ fire(){AU.n(.3,.1,900,0,.6);for(let i=0;i<4;i++)AU.n(.03,.12,4000,.05+i*.06,2,'highpass')},
+ flash(){AU.n(.8,.2,5000,0,.5,'highpass');AU.t(1800,.8,'sine',.06,0,3600)},
+ bad(){AU.t(220,.25,'triangle',.1);AU.t(233,.25,'triangle',.08)},
+ koto(n){const f=PENTA[Math.min(PENTA.length-1,n)];AU.t(f,.9,'triangle',.1);AU.t(f*2,.4,'sine',.03)},
+ stamp(){AU.t(90,.3,'sine',.35,0,50);AU.n(.1,.2,400,0,1)},
+ swish(){AU.n(.35,.12,3000,0,.7,'highpass')},
+ fanfare(){[0,2,4,7].forEach((k,i)=>SFX.koto(k));[0,2,4,5,7].forEach((k,i)=>AU.t(PENTA[k],.6,'triangle',.07,.12*i))}
 };
-function appraised(m){
- const rd=ROUNDS[R.ri];const first=R.tries===0;
- const key=R.ri+(rd.boss?'-'+R.bi:'');
- let g=0;if(first&&!S.firstDone[key]){S.firstDone[key]=1;S.first++;g=earn(10,'first-try',innerWidth/2,innerHeight/3)}
- const base=30+25*R.dec.length+R.budget;const price=Math.round(base*mult()*(first?1.2:1)/10)*10;
- S.money+=price;
- const c=S.certs[m]||[];R.dec.forEach(k=>{if(!c.includes(k))c.push(k)});S.certs[m]=c;save();
- closeOv();sfx.stamp();
- overlay(`<div class="kiri cert"><h3>鑑　定　書</h3><div class="hanko">鑑定<br>済</div>
-  <div class="row">品：${esc(MET[m].nm)}の燃えかす</div>
-  ${R.dec.map(k=>`<div class="row">✔ ${esc(TOOL[k].n)}：${esc(RES[m][k].a)} → <b>${esc(RES[m][k].b)}</b></div>`).join('')}
-  <div class="row" style="font-size:16px">正体：<b>${esc(MET[m].ox)}</b>（酸素と結び付いてできた酸化物）</div></div>
-  <div class="small">鑑定額</div><div class="price"><span id="pr">0</span> 両</div>
-  <div class="small">決め手 ${R.dec.length}つ×残り予算${R.budget}両${S.combo>=2?`×連続 ${mult()}`:''}${first?'×一発鑑定 1.2':''}</div>${g?`<p class="small">✨ かけら +${g}</p>`:''}
-  <button class="btn shu wide" id="aN" style="margin-top:10px">つぎへ</button>`);
- setTimeout(()=>{sfx.gong();rollNum($('pr'),price,1200);confetti(first?90:40)},300);
- $('aN').onclick=()=>{sfx.tap();closeOv();afterAppraise(m)};
-}
-function afterAppraise(m){
- const rd=ROUNDS[R.ri];
- if(R.ri<=2&&!S.model[m])return modelStep(m,()=>endRound());
- if(R.ri===3&&!S.ruleGot){S.ruleGot=true;const g=earn(30,'rule',innerWidth/2,innerHeight/3);save();
-  overlay(`<span class="ribbon">発見</span><h2>金属の性質が、なくなった</h2>
-   <div class="card" style="text-align:left;font-size:15px;line-height:1.7">・電流が流れにくい<br>・うすい塩酸に入れても泡（水素）が出ない<br>・結び付いた酸素の分だけ重い<br>→ 燃えかすは<b>鉄ではない、別の物質</b>。すすでも鉄のままでもない。</div>
-   <p class="lead">物質が酸素と結び付く化学変化を<b style="color:var(--gold)">酸化</b>、できた物質を<b style="color:var(--gold)">酸化物</b>という。熱や光を出しながら激しく進む酸化が<b>燃焼</b>。</p>${g?`<p class="small">✨ かけら +${g}</p>`:''}<button class="btn shu wide" id="oN">つぎへ</button>`);
-  confetti(100);sfx.jingle();$('oN').onclick=()=>{closeOv();endRound()};return}
- endRound();
-}
-function endRound(){
- const rd=ROUNDS[R.ri];
- if(rd.boss&&R.bi<2){startRound(R.ri,R.bi+1);return}
- if(rd.boss){return mainClear()}
- const nr=R.ri+1;S.round=nr;save();
- if(R.ri<=2)openShop(nr);else startRound(nr);
-}
 
-/* ===== 模型づくり（原子のモデルで説明する） ===== */
-function modelStep(m,done){
- const sym=MET[m].sym;
- if(m==='fe'){
-  const eqs=shuffle(['鉄 ＋ 酸素 → 酸化鉄','鉄 → 酸化鉄 ＋ 酸素','鉄 ＋ 炭素 → 酸化鉄','酸化鉄 → 鉄 ＋ 酸素']);
-  overlay(`<span class="ribbon">原子の目</span><h2>燃えかすの中では何が起きた？</h2>
-   <div class="board" style="grid-template-columns:repeat(3,1fr)" id="bd">${Array.from({length:6},()=>`<div class="bslot">${atom('Fe',34)}</div>`).join('')}</div>
-   <p class="small">鉄原子のあいだに、空気中の酸素が入りこんで結び付く（模式図。原子の数の割合はここでは扱わない）</p>
-   <p class="lead">この変化を、物質名の式で表すと？</p><div class="eqs">${eqs.map(q=>`<button data-q="${q}" style="font-size:17px">${q}</button>`).join('')}</div><div id="mMsg" style="min-height:24px;font-weight:700"></div>`);
-  setTimeout(()=>{document.querySelectorAll('#bd .bslot').forEach((d,i)=>{setTimeout(()=>{d.innerHTML=`<span class="fly">${pair('Fe',34)}</span>`;sfx.coin()},i*180)})},500);
-  let miss=0;document.querySelectorAll('[data-q]').forEach(b=>b.onclick=()=>{if(b.dataset.q==='鉄 ＋ 酸素 → 酸化鉄'){if(!miss)earn(10,'first-try',innerWidth/2,innerHeight/2);S.model[m]=1;save();sfx.hit(2);confetti(40);
-   $('mMsg').innerHTML=`<span style="color:var(--gold)">正解！ 鉄が酸素と結び付いて、酸化鉄になった。</span>`;setTimeout(()=>{closeOv();done()},RM?600:1500)}
-   else{miss++;sfx.bad();b.disabled=true;b.style.opacity=.4;$('mMsg').innerHTML='<span style="color:#ff9d8f">矢印の左が反応前、右が反応後。空気中で燃やしたとき、鉄と結び付いたのは？</span>'}});
-  return}
- let n=0;const N=4;let miss=0;
- const eqs=shuffle([`2${sym} ＋ O₂ → 2${sym}O`,`${sym} ＋ O₂ → ${sym}O₂`,`${sym} ＋ O → ${sym}O`,`2${sym}O → 2${sym} ＋ O₂`]);
- const draw=()=>{
-  overlay(`<span class="ribbon">原子の目</span><h2>${MET[m].short}原子すべてを、酸素と結び付けよう</h2>
-   <div class="board" id="bd">${Array.from({length:N},(_,i)=>`<div class="bslot">${i<n?`<span class="${i>=n-2?'fly':''}">${pair(sym,34)}</span>`:atom(sym,34)}</div>`).join('')}</div>
-   <div class="small" style="text-align:left">質量（結び付いた酸素の分だけ増える）</div><div class="mbar"><div id="mb" style="width:${60+n*10}%"></div></div>
-   ${n<N?`<button class="o2btn" id="o2">${`<span class="pair" style="--a:30px">${atom('O',30)}${atom('O',30)}</span>`} 酸素分子 O₂ を送りこむ</button><p class="small">空気中の酸素は、原子2個が結び付いた分子 O₂ でいる。</p>`:
-   `<button class="o2btn" id="o2" style="opacity:.55">${`<span class="pair" style="--a:30px">${atom('O',30)}${atom('O',30)}</span>`} もう1つ送りこむ？</button><p class="lead">酸素分子 <b>${n/2}</b> 個で、${MET[m].short}原子 <b>${N}</b> 個がすべて結び付いた。<br>この変化を化学反応式で表すと？（4個→2個に読みかえた式）</p>
-   <div class="eqs">${eqs.map(q=>`<button data-q="${q}">${q}</button>`).join('')}</div>`}<div id="mMsg" style="min-height:24px;font-weight:700;line-height:1.5"></div>`);
-  $('o2').onclick=()=>{if(n>=N){sfx.bad();$('mMsg').innerHTML='<span style="color:#ff9d8f">結び付く相手の原子が、もう残っていない。酸素は余るだけ。</span>';return}n+=2;sfx.coin();sfx.hit(1);draw()};
-  document.querySelectorAll('[data-q]').forEach(b=>b.onclick=()=>{
-   if(b.dataset.q===eqs.find(q=>q.startsWith('2'+sym+' '))){if(!miss)earn(10,'first-try',innerWidth/2,innerHeight/2);S.model[m]=1;save();sfx.hit(3);confetti(50);
-    $('mMsg').innerHTML=`<span style="color:var(--gold)">正解！ ${MET[m].short}原子2個に、酸素分子1個（酸素原子2個）が結び付いて、${MET[m].ox}が2個ぶんできる。</span>`;
-    document.querySelectorAll('[data-q]').forEach(x=>x.disabled=true);setTimeout(()=>{closeOv();done()},RM?700:1800)}
-   else{miss++;sfx.bad();b.disabled=true;b.style.opacity=.4;const q=b.dataset.q;
-    $('mMsg').innerHTML=`<span style="color:#ff9d8f">${q.includes('O₂ →')&&!q.startsWith('2')?(q.includes(sym+'O₂')?'できる物質は1対1で結び付いた '+sym+'O。O₂のままくっつくのではない。':'左右で原子の数がそろっていない。'):q.includes(' ＋ O →')?'酸素は原子1個ではなく、分子 O₂ として反応する。':'これは逆向き。燃えかすから酸素がはなれる反応になっている。'}</span>`}});
- };
- draw();
-}
+/* ================= 進行 ================= */
+let scene='title',R=null,PT=[],FT=[],SHK=0,FLASH=0,now=0,drag=null,msgT=0,GLOW=0;
+function curRD(){return RD[S.stage]}
+function say(t,kind){const m=$('msg');m.innerHTML=t;m.className='on'+(kind==='bad'?' bad':'');msgT=kind==='bad'?3.4:2.6}
+function fly(t,x,y,sz,col){const near=FT.filter(f=>Math.abs(f.x-x)<120&&Math.abs(f.y-y)<60&&f.t<.9).length;FT.push({t:0,life:1.5,txt:t,x,y:y-near*34,sz:sz||1,col:col||SUMI})}
+function sparks(x,y,n,col){if(RM)n=Math.min(n,6);for(let i=0;i<n;i++){const a=rnd(0,6.28),v=rnd(120,520);PT.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v-160,t:0,life:rnd(.25,.7),k:'sp',col:col||HI,sz:rnd(1.5,3.5)})}}
+function inkSplat(x,y,n){if(RM)n=Math.min(n,5);for(let i=0;i<n;i++){const a=rnd(0,6.28),v=rnd(60,260);PT.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v-60,t:0,life:rnd(.5,1),k:'ink',sz:rnd(3,11)})}}
+function dust(x,y,n,col){if(RM)n=Math.min(n,6);for(let i=0;i<n;i++)PT.push({x:x+rnd(-20,20),y,vx:rnd(-140,140),vy:rnd(-200,-40),t:0,life:rnd(.6,1.2),k:'dust',col:col||SUMI,sz:rnd(1.5,4)})}
 
-/* ===== 仕入れ（アップグレード投資） ===== */
-function openShop(next){
- const pool=next==null?Object.keys(TOOL).filter(k=>TOOL[k].price):SHOPS[Math.min(next-1,2)];
- const draw=(msg)=>{
-  const items=pool.filter((k,i,a)=>a.indexOf(k)===i);
-  overlay(`<span class="ribbon">道具の仕入れ</span><h2>蓄え ${S.money.toLocaleString()} 両</h2>
-   <p class="small">どの道具に投資する？ ちがいがはっきり出る検査の道具ほど、鑑定が有利になる。<br>（ちがいの出ない道具を買うと、蓄えが減るだけ）</p>
-   <div class="shop">${items.map(k=>{const t=TOOL[k],own=S.tools.includes(k);return `<button data-k="${k}" class="${own?'own':''}" ${own?'disabled':''}><span class="ic">${t.ic}</span><span>${t.n}<br><span class="small">${t.d}</span></span><span class="c">${own?'所持':t.price+' 両'}</span></button>`}).join('')}</div>
-   <div id="shMsg" style="min-height:22px;font-weight:700">${msg||''}</div>
-   <button class="btn shu wide" id="shGo">${next==null?'とじる':'つぎの品へ ▶'}</button>`);
-  document.querySelectorAll('.shop [data-k]').forEach(b=>b.onclick=()=>{const k=b.dataset.k,t=TOOL[k];
-   if(S.money<t.price){sfx.bad();draw('<span style="color:#ff9d8f">蓄えが足りない</span>');return}
-   S.money-=t.price;S.tools.push(k);save();sfx.coin();draw(`${t.ic} ${t.n} を仕入れた`)});
-  $('shGo').onclick=()=>{sfx.tap();closeOv();if(next!=null)startRound(next);else{renderTools();hud()}};
- };
- draw();
+function startStage(){const rd=curRD();
+ R={rd,phase:rd.k==='pair'?'burn':'wrap',samples:[],res:{},diff:{},trap:0,mist:0,pumps:0,spread:rd.spread?0:1,grams:rd.mass?rd.mass[0]:0,cur:0,queue:[],done:[],timer:rd.timer||0,ev:{},firstOK:true};
+ if(rd.k==='pair'){R.samples=[mkSample(rd.m,0,true)];R.samples[0].inKiln=true}
+ else{const pool=rd.k==='boss'?shuffle(rd.pool):rd.pool[Math.random()*rd.pool.length|0].slice();R.queue=pool;nextWrap()}
+ updHud();setClaim();setBand();fly('第'+rd.no+'の炉　'+rd.title,WW/2,PORT?160:120,1.3);SFX.koto(0);save();
+ say(rd.k==='pair'?(rd.spread?'今度はスチールウールを<b>広げて</b>から焼く':'<b>ふいご</b>を押して、炉の'+MAT[rd.m].sh+'を焼こう'):rd.k==='boss'?'上から包みが落ちてくる！':'包みを<b>筆でなでて</b>ほどこう','');
 }
-$('bShop').onclick=()=>{sfx.tap();openShop(null)};
+function mkSample(m,spot,wrap){const p=spot==null?L.one:L.spots[spot];return{m,spot,x:p.x,y:p.y,tx:p.x,ty:p.y,hm:0,rub:0,shine:0,lit:0,bub:0,stick:0,crumb:0,stamp:null,wrap:!!wrap&&false,cover:0,nm:null,ruler:0,drop:0}}
+function nextWrap(){R.ev={};R.res={};const m=R.queue.shift();if(!m){finishStage();return}
+ const s=mkSample(m,null);s.cover=1;s.hidden=true;if(PORT||R.rd.k==='boss'){s.y=L.drop;s.vy=0;s.falling=true}R.samples=[s];R.phase='wrap';setBand();}
+function sampleAt(p){let best=null,bd=1e9;for(const s of R.samples){if(s.inKiln)continue;const d=Math.hypot(s.x-p.x,s.y-p.y);if(d<90&&d<bd){bd=d;best=s}}return best}
 
-/* ===== 本編クリア ===== */
-function mainClear(){
- S.cleared=true;S.ph='clear';save();show('clear');sfx.jingle();confetti(120);
- const certs=['fe','mg','cu'].map(m=>{const c=S.certs[m]||[];return `<div class="kiri cert"><h3 style="font-size:17px">鑑定書　${esc(MET[m].short)}</h3><div class="hanko">鑑定<br>済</div>
-  <div class="row">正体：<b>${esc(MET[m].ox)}</b>（${MET[m].oxc}色）</div>${c.map(k=>`<div class="row">✔ ${esc(TOOL[k].n)}：${esc(RES[m][k].a)} → ${esc(RES[m][k].b)}</div>`).join('')}</div>`}).join('');
- $('clearBox').innerHTML=`<div style="text-align:center;margin-top:10px"><span class="ribbon">鑑定完了</span><div class="logo" style="font-size:34px">3つの燃えかす<br>すべて鑑定</div><div class="price" style="font-size:34px">${S.money.toLocaleString()} 両</div><p class="small">一発鑑定 ${S.first} 回・最高連続 ${S.maxCombo}・時間 ${fmtT(S.t)}</p></div>
-  ${certs}
-  <div class="card" style="font-size:15px;line-height:1.7"><b>まとめ</b><br>金属を燃やすと、空気中の<b>酸素と結び付いて</b>、元の金属とは性質のちがう<b>酸化物</b>ができる（酸化）。結び付いた酸素の分だけ、質量が増える。<br>2Mg ＋ O₂ → 2MgO　／　2Cu ＋ O₂ → 2CuO　／　鉄 ＋ 酸素 → 酸化鉄</div>
-  <div class="tbtns"><button class="btn shu wide" id="cT">📝 確認テストへ</button><button class="btn ghost wide zk hidden" id="cB">📖 図鑑</button><button class="btn ghost wide" id="cH">🏠 タイトルへ</button></div>`;zkBtns();
- $('cT').onclick=()=>{sfx.tap();const go=()=>startTest();if(window.Zukan&&Zukan.mainClear&&!S.mainDone){S.mainDone=true;save();Zukan.mainClear({onClose:go})}else go()};
- $('cB').onclick=()=>window.Zukan&&Zukan.openBook&&Zukan.openBook();
- $('cH').onclick=()=>initTitle();
-}
-setInterval(()=>{if(!$('game').classList.contains('hidden')&&document.visibilityState==='visible'&&!S.cleared){S.t++;if(S.t%5===0)save()}},1000);
+/* ---- 焼く（ふいご）---- */
+function pump(){if(R.phase!=='burn')return;const rd=R.rd;if(!R.spread){say('先に、スチールウールを<b>左右に引っぱって広げよう</b>','');return}
+ R.pumps++;SFX.bellow();const K=L.kiln;GLOW=1;
+ if(rd.m==='mg'){FLASH=Math.min(1,FLASH+.55);SFX.flash();sparks(K.x,K.y+20,26,'#ffffff')}else{SFX.fire();sparks(K.x,K.y+20,rd.m==='fe'?22:8,HI)}
+ const t=Math.min(1,R.pumps/6);R.grams=rd.mass[0]+(rd.mass[1]-rd.mass[0])*t;
+ if(R.pumps>=6){R.phase='burnt';const d=(rd.mass[1]-rd.mass[0]).toFixed(2);
+  setTimeout(()=>{fly(rd.mass[0].toFixed(2)+'g → '+rd.mass[1].toFixed(2)+'g',L.anvil.x,L.anvil.y-160,1.2);fly('＋'+d+'g＝結び付いた酸素',L.anvil.x,L.anvil.y-110,.9);SFX.koto(3);
+   if(S.stage===0&&!S.opened)openVerdict();else toAnvil()},500)}
+ setBand()}
+function toAnvil(){const rd=R.rd;R.phase='test';R.samples=[mkSample(rd.m,0),mkSample(rd.m+'o',1)];
+ R.samples.forEach((s,i)=>{const K=L.kiln;if(i===1){s.x=K.x;s.y=K.y+30}else{s.x=L.rack.x0;s.y=L.anvil.y-200}});setBand();say('左に<b>元の金属</b>、右に<b>燃えかす</b>。道具で性質を比べよう','')}
 
-/* ===== 確認テスト ===== */
-let T=null;
-function startTest(){if(!window.Quiz){alert('問題データが読み込まれていません');return}T={qs:Quiz.test(),i:0,ans:[],cur:null};show('test');renderTest()}
-function renderTest(){
- const q=T.qs[T.i];T.cur=q.t==='order'?[]:'';
- let h=`<div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px"><span class="ribbon" style="font-size:14px">📝 確認テスト</span><b>第 ${T.i+1} 問 / ${T.qs.length}</b></div>
-  <div class="prog">${T.qs.map((_,i)=>`<i class="${i<T.i?'on':''}"></i>`).join('')}</div><div class="tq">${q.q}</div>${q.fig?`<div class="tfig">${q.fig}</div>`:''}`;
- if(q.t==='choice')h+=q.shown.map((c,k)=>`<button class="choice" data-k="${k}">${c}</button>`).join('');
- else if(q.t==='num')h+=`<div class="numshow"><span id="numv">　</span> <small>${esc(q.unit||'')}</small></div><div class="keys">${['7','8','9','4','5','6','1','2','3','0','.','⌫'].map(k=>`<button data-n="${k}">${k}</button>`).join('')}</div><button class="btn shu wide" style="margin-top:10px" id="tOk">決定</button>`;
- else h+=`<p class="small">上から順になるように、タップして並べよう（もう一度タップで外す）</p><div class="ordsel" id="ordSel"></div>${q.shown.map((c,k)=>`<button class="choice" data-o="${k}">${c}</button>`).join('')}<button class="btn shu wide" style="margin-top:8px" id="tOk" disabled>決定</button>`;
- $('tBox').innerHTML=h;
- const next=a=>{T.ans.push(a);sfx.tap();setTimeout(()=>{T.i++;if(T.i<T.qs.length)renderTest();else finishTest()},180)};
- if(q.t==='choice')document.querySelectorAll('#tBox .choice').forEach(b=>b.onclick=()=>{document.querySelectorAll('#tBox .choice').forEach(x=>x.disabled=true);b.style.borderColor='var(--gold)';next(q.shown[+b.dataset.k])});
- else if(q.t==='num'){document.querySelectorAll('[data-n]').forEach(b=>b.onclick=()=>{sfx.tap();const k=b.dataset.n;if(k==='⌫')T.cur=T.cur.slice(0,-1);else if(T.cur.length<8)T.cur+=k;$('numv').textContent=T.cur||'　'});$('tOk').onclick=()=>{if(!T.cur)return;next(T.cur)}}
- else{const upd=()=>{$('ordSel').innerHTML=T.cur.map((k,n)=>`<div data-r="${n}">${n+1}. ${q.shown[k]}</div>`).join('');
-   document.querySelectorAll('[data-o]').forEach(b=>b.style.display=T.cur.includes(+b.dataset.o)?'none':'block');
-   document.querySelectorAll('[data-r]').forEach(d=>d.onclick=()=>{T.cur.splice(+d.dataset.r);upd()});$('tOk').disabled=T.cur.length!==q.shown.length};
-  document.querySelectorAll('[data-o]').forEach(b=>b.onclick=()=>{sfx.tap();T.cur.push(+b.dataset.o);upd()});$('tOk').onclick=()=>{if(T.cur.length!==q.shown.length)return;next(T.cur.map(k=>q.shown[k]))};upd()}
-}
-function finishTest(){
- const qs=T.qs,answers=T.ans;const review=Quiz.review(qs,answers),marks=review.map(r=>r.ok),score=marks.filter(Boolean).length;
- const name=S.name||window.PLAYER_NAME||'';
- const sealTxt=S.seal?(DIRS[S.seal.pred]+(S.seal.from==='now'?'（その場で予想）':'')+(S.sealHit?' → 的中':S.sealHit===false?' → ズレ':'')):'―';
- const records=TEST_ONLY?[['モード','確認テストだけ']]:[['クリアタイム',fmtT(S.t)],['鑑定額',S.money.toLocaleString()+' 両'],['一発鑑定',S.first+' / 8'],['封印した予想',sealTxt]];
- sfx.jingle();
- const rec=SubmitCard.show({gameId:GAME_ID,grade:'chu2',koma:[KOMA],unit:'中2理科　化学変化と原子・分子　第18回',game:'燃えかす鑑定所 ～酸化でできる物質～'+(TEST_ONLY?'（確認テストのみ）':''),name,score,total:qs.length,marks,records,review},()=>renderResult(score,qs.length));
- T.rec=rec;if(!TEST_ONLY){S.test={score,total:qs.length};save()}renderResult(score,qs.length);
-}
-function renderResult(score,total){show('test');
- $('tBox').innerHTML=`<div class="card" style="text-align:center;margin-top:16px"><span class="ribbon">確認テスト</span><div class="price" style="font-size:58px">${score}<span style="font-size:22px"> / ${total}</span></div>
-  <p class="lead">${score===total?'満点！ 一流の鑑定士だ。':score>=Math.ceil(total*.7)?'合格ライン突破！':'解説を読んで、もう一度ためそう。'}</p>
-  <div class="tbtns"><button class="btn shu wide" id="rCard">📝 提出カードを表示</button><button class="btn ghost wide" id="rRetry">もう一度テストを解く</button>
-  ${TEST_ONLY?'':'<button class="btn ghost wide zk hidden" id="rB">📖 図鑑</button><button class="btn ghost wide" id="rT">🏠 タイトルへ</button>'}</div></div>`;zkBtns();
- $('rCard').onclick=()=>{if(T&&T.rec&&SubmitCard.reopen)SubmitCard.reopen(T.rec)};$('rRetry').onclick=()=>startTest();
- if(!TEST_ONLY){$('rB').onclick=()=>window.Zukan&&Zukan.openBook&&Zukan.openBook();$('rT').onclick=()=>initTitle()}}
+/* ---- 道具を使う ---- */
+function useTool(tool,p,s){const rd=R.rd;if(!s){s=sampleAt(p)}if(!s){return}
+ if(s.falling){say('落ちてくるのを待って。','');return}
+ if(s.cover>0){say('先に包みを<b>筆でなでるように</b>ほどこう。','');return}
+ if(tool==='stampOx'||tool==='stampMe'){doStamp(tool,s);return}
+ const r=result(tool,s.m),m=s.m;
+ // 見た目の反応
+ if(tool==='hammer'){s.hm++;SHK=RM?0:7;SFX.anvil();if(MAT[m].kind==='metal'){sparks(s.x,s.y,18,HI);s.shine=Math.min(1,s.shine+.35)}else{SFX.crumble();dust(s.x,s.y,18,MAT[m].base==='mg'?'#d9d4c8':SUMI);s.crumb=Math.min(1,s.crumb+.5)}}
+ if(tool==='stone'){SFX.rub();if(MAT[m].kind==='metal'){s.shine=1;SFX.shine();sparks(s.x,s.y-10,6,'#fff')}else dust(s.x,s.y,6)}
+ if(tool==='tester'){s.lit=MAT[m].kind==='metal'?1:-1;s.lit>0?SFX.ding():SFX.dull()}
+ if(tool==='acid'){s.bub=r==='泡が出る'?2.5:-2;r==='泡が出る'?SFX.bubble():SFX.dull()}
+ if(tool==='magnet'){s.stick=r==='つく'?1.2:-1;SFX.clack()}
+ if(tool==='ruler'){s.ruler=2;SFX.tap()}
+ fly(TL[tool].v+'：'+r,s.x,s.y-80,.9);
+ if(rd.k==='pair')pairRecord(tool,s,r);else singleRecord(tool,s,r);
+ setBand()}
+function pairRecord(tool,s,r){const rd=R.rd;R.res[tool]=R.res[tool]||{};R.res[tool][s.spot]=r;
+ if(R.res[tool][0]==null||R.res[tool][1]==null){return}
+ if(R.diff[tool]!=null)return;
+ const base=MAT[rd.m].base,d=decisive(tool,base);R.diff[tool]=d;
+ if(d){S.combo++;S.maxCombo=Math.max(S.maxCombo,S.combo);SFX.koto(S.combo);const g=scoreAdd(20);fly('違いあり！ ＋'+g,L.anvil.x,L.anvil.y-(PORT?200:230),1.1);inkSplat(L.cert.x,L.cert.y,10);
+  if(diffCount()>=3){setTimeout(()=>{say('性質の違いが3つそろった！ 刻印「酸化物」を打てる','');SFX.fanfare()},300)}}
+ else trap(tool,base)}
+function trap(tool,base){R.trap++;R.firstOK=false;S.combo=0;updHud();SFX.bad();const w=tool==='ruler'?WHYNOT.ruler:(WHYNOT[tool]&&WHYNOT[tool][base])||'この検査では違いが出ない。';say(w,'bad')}
+function diffCount(){return Object.values(R.diff).filter(Boolean).length}
+function singleRecord(tool,s,r){const base=MAT[s.m].base;R.res[tool]=r;
+ if(decisive(tool,base)){if(!R.ev[tool]){R.ev[tool]=1;S.combo++;S.maxCombo=Math.max(S.maxCombo,S.combo);SFX.koto(S.combo);scoreAdd(10)}}
+ else if(!R.ev['x'+tool]){R.ev['x'+tool]=1;trap(tool,base)}}
+function evCount(){return Object.keys(R.ev).filter(k=>k[0]!=='x').length}
+function doStamp(tool,s){const rd=R.rd;
+ if(rd.k==='pair'){if(tool!=='stampOx')return;if(diffCount()<3){R.mist++;R.firstOK=false;S.combo=0;SFX.bad();say('まだ証拠が足りない。性質の違いを<b>3つ</b>そろえてから（いま '+diffCount()+'つ）','bad');return}
+  if(MAT[s.m].kind==='metal'){R.mist++;R.firstOK=false;S.combo=0;SFX.bad();say('それは<b>元の金属</b>。刻印は、元の金属とちがう物質になった方へ。','bad');return}
+  s.stamp='酸化物';SFX.stamp();SHK=RM?0:10;inkSplat(s.x,s.y,24);sparks(s.x,s.y,20,HI);stageWin();return}
+ // 包み：証拠2つ以上
+ if(evCount()<2){R.mist++;R.firstOK=false;S.combo=0;SFX.bad();say('証拠が足りない。決め手になる検査を<b>2つ以上</b>（いま '+evCount()+'つ）','bad');return}
+ const isOx=MAT[s.m].kind==='ox',want=tool==='stampOx';
+ if(isOx!==want){R.mist++;R.firstOK=false;S.combo=0;SFX.bad();say(want?'差し戻し：これは電気を通し、たたくとのびる<b>金属</b>だ。':'差し戻し：これは光らず、くだける<b>酸化物</b>だ。','bad');return}
+ s.stamp=want?'酸化物':'金属';s.hidden=false;SFX.stamp();SHK=RM?0:9;inkSplat(s.x,s.y,20);sparks(s.x,s.y,16,HI);
+ const g=scoreAdd(rd.k==='boss'?30:25);fly(MAT[s.m].kind==='ox'?MAT[s.m].ox+'！ ＋'+g:MAT[s.m].sh+'（金属） ＋'+g,s.x,s.y-110,1.1);
+ if(isOx&&!S.specimens.includes(s.m))S.specimens.push(s.m);R.done.push({m:s.m,ok:R.firstOK});
+ updHud();save();
+ setTimeout(()=>{if(!R)return;s.tx=L.shelf.x;s.ty=L.shelf.y;s.leaving=true;setTimeout(()=>{R.firstOK=true;nextWrap()},450)},650)}
+function scoreAdd(n){const v=Math.round(n*Math.max(1,S.combo));S.score+=v;updHud();return v}
+function earn(n,why){if(!window.Zukan||!Zukan.earn)return 0;const p=w2s(WW/2,WH*.4);try{return Zukan.earn(n,why,{x:p.x,y:p.y})||0}catch(e){return 0}}
 
-/* ===== タイトル ===== */
-function initTitle(){show('title');zkBtns();$('nameIn').value=S.name||window.PLAYER_NAME||'';if(window.PLAYER_NAME)$('nameBox').classList.add('hidden');
- $('tBoxes').innerHTML=['fe','mg','cu'].map(m=>`<div class="kiri">${sampleSVG(m,true)}${MET[m].short}の<br>燃えかす</div>`).join('');
- $('bCont').classList.toggle('hidden',!S.started);$('bCont').textContent=S.cleared?'つづきから（確認テスト・鑑定書）':S.ph==='intro'?'つづきから（開封の儀）':`つづきから（${ROUNDS[S.round].name}）`}
-function takeName(){const v=$('nameIn').value.trim();S.name=v||window.PLAYER_NAME||S.name||'';save()}
-$('bStart').onclick=()=>{ac();sfx.tap();takeName();if(S.started&&!confirm('はじめから鑑定しますか？（蓄えと道具も最初にもどります）'))return;const nm=S.name,sh=S.sealHit,fd=S.firstDone,md=S.mainDone,rg=S.ruleGot,mo=S.model;S=fresh();S.name=nm;S.sealHit=sh;S.firstDone=fd;S.mainDone=md;S.ruleGot=rg;S.model={};save();intro()};
-$('bCont').onclick=()=>{ac();sfx.tap();takeName();
- if(S.cleared){overlay(`<h2>どこから？</h2><div class="tbtns"><button class="btn shu wide" id="oT">📝 確認テスト</button><button class="btn ghost wide" id="oC">📜 鑑定書を見る</button><button class="btn ghost wide" id="oX">とじる</button></div>`);
-  $('oT').onclick=()=>{closeOv();startTest()};$('oC').onclick=()=>{closeOv();mainClear()};$('oX').onclick=closeOv}
- else if(S.ph==='intro')intro();else startRound(Math.min(S.round,ROUNDS.length-1))};
-$('bBook1').onclick=()=>window.Zukan&&Zukan.openBook&&Zukan.openBook();
-$('bMute1').onclick=()=>{setMute(!MUTE);if(!MUTE){ac();sfx.tap()}};$('bMute').onclick=()=>{setMute(!MUTE);if(!MUTE){ac();sfx.tap()}};
-$('bHome').onclick=()=>{sfx.tap();save();initTitle()};
-document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')save()});
-setMute(MUTE);if(window.PLAYER_NAME&&!S.name)S.name=window.PLAYER_NAME;
-if(TEST_ONLY){S.name=window.PLAYER_NAME||S.name||'';startTest()}else initTitle();
-window.__MK={S:()=>S,R:()=>R,start:startRound,test:startTest,intro,clear:mainClear,shop:openShop,doTest,model:modelStep};
+/* ---- 炉ひとつ終わり ---- */
+function stageWin(){const rd=R.rd,first=R.firstOK&&R.trap===0&&R.mist===0;R.phase='done';if(first){S.first++;}
+ let g=0;if(first)g+=earn(10,'first-try');if(S.stage===0||S.stage===2)g+=earn(30,'rule');
+ const ox=rd.m+'o';if(!S.specimens.includes(ox))S.specimens.push(ox);const pts=scoreAdd(60);SFX.fanfare();
+ const rows=Object.keys(R.diff).map(t=>`<tr><th>${TL[t].v}</th><td>元の金属：${esc(R.res[t][0])}</td><td>燃えかす：${esc(R.res[t][1])}</td><td>${R.diff[t]?'◎':'△決め手にならず'}</td></tr>`).join('');
+ S.stage++;save();updHud();
+ setTimeout(()=>showOv(`<div class="stampmk">酸化物</div><h2>鑑定書　第${rd.no}の炉</h2>
+  <p><b style="font-family:var(--brush);font-size:24px;font-weight:400">${esc(MAT[ox].ox)}</b>（${esc(MAT[ox].nm)}）</p>
+  <div class="cert"><table>${rows}</table></div>
+  <p>質量：${rd.mass[0].toFixed(2)}g → <b>${rd.mass[1].toFixed(2)}g</b>（${(rd.mass[1]/rd.mass[0]).toFixed(2)}倍）　<span class="small">${esc(rd.src)}</span></p>
+  <div class="eq">${esc(rd.eq)}</div>
+  <p class="small">元の金属とは性質のちがう物質（酸化物）ができた。物質が酸素と結び付く変化を<b>酸化</b>、熱や光を出して激しく進む酸化を<b>燃焼</b>という。${rd.m==='fe'&&S.stage===2?'<br>丸めた 1.16g→1.34g（1.16倍）より、広げた 0.94g→1.15g（1.22倍）の方がよく酸化した。空気にふれる面が広いほど、酸素とよく結び付く。':''}</p>
+  <p class="gain">腕前 +${pts}${first?'　一発鑑定！':''}${g?'　✦ かけら +'+g:''}</p>
+  <div class="row"><button class="sumi" id="oNext">${S.stage>=RD.length?'鍛冶場をしめる':'次の炉へ'}</button></div>`,()=>{$('oNext').onclick=()=>{hideOv();SFX.tap();if(S.stage>=RD.length)allClear();else startStage()}}),900)}
+function finishStage(){const rd=R.rd;R.phase='done';const ok=R.done.filter(d=>d.ok).length,first=ok===R.done.length;if(first)S.first++;
+ let g=0;if(first)g+=earn(10,'first-try');if(rd.k==='boss')g+=earn(30,'rule');const tb=rd.timer?Math.max(0,Math.round(R.timer))*3:0;const pts=scoreAdd(80+tb);SFX.fanfare();S.stage++;save();updHud();
+ showOv(`<div class="stampmk">鑑定<br>済</div><h2>${esc(rd.title)}</h2>
+  <div class="cert"><table>${R.done.map((d,i)=>`<tr><th>包み${'一二三四五六'[i]}</th><td>${esc(MAT[d.m].kind==='ox'?MAT[d.m].ox+'（'+MAT[d.m].sh+'）':MAT[d.m].sh+'（金属）')}</td><td>${d.ok?'一発':'やり直しあり'}</td></tr>`).join('')}</table></div>
+  <p class="small">金属：たたくとのびる・こすると光る・電気を通す。酸化物：くだける・光らない・電気を通さない。<br>磁石は決め手にならない（鉄の燃えかすもつく）。塩酸の泡は鉄・マグネシウムだけ（銅は泡なし）。</p>
+  <p class="gain">腕前 +${pts}${tb?'（速さ +'+tb+'）':''}${g?'　✦ かけら +'+g:''}</p>
+  <div class="row"><button class="sumi" id="oNext">${S.stage>=RD.length?'鍛冶場をしめる':'次の炉へ'}</button></div>`,()=>{$('oNext').onclick=()=>{hideOv();SFX.tap();if(S.stage>=RD.length)allClear();else startStage()}})}
+function allClear(){S.cleared=true;S.mainDone=true;save();scene='clear';setBand();setClaim();
+ const go=()=>showOv(`<h2>鍛冶場じまい</h2><p class="big">標本 ${S.specimens.length}</p>
+  <p>酸化鉄・酸化マグネシウム・酸化銅――どれも、元の金属が酸素と結び付いてできた、<b>性質のちがう物質</b>。</p>
+  <p class="small">封印の予想：${S.sealPred?DIRS[S.sealPred]+(S.sealFrom==='now'?'（その場で予想）':''):'―'}　→　${S.sealHit?'的中':'ズレ（ズレた所こそ発見）'}</p>
+  <div class="row"><button class="sumi" id="oT">確認テストへ</button><button class="sumi pale" id="oB">📖 図鑑</button></div>`,()=>{$('oB').classList.toggle('hidden',!window.Zukan);$('oB').onclick=()=>window.Zukan&&Zukan.openBook();$('oT').onclick=()=>{hideOv();startTest()}});
+ if(window.Zukan&&Zukan.mainClear&&!S.clearShown){S.clearShown=true;save();Zukan.mainClear({onClose:go})}else go()}
+
+/* ================= 開封（コマ17の封筒） ================= */
+function startOpen(){scene='open';R={rd:RD[0],phase:'env',samples:[],cut:0,pumps:0,spread:1,grams:1.16,res:{},diff:{},trap:0,mist:0,ev:{},firstOK:true};
+ const sl=readSeal();R.seal=sl;showHud(true);setBand();setClaim();
+ if(sl)say('コマ17で封印した予想が届いている。<b>封を筆でなぞって切ろう</b>','');else{R.phase='predict';R.tilt=0;say('封筒が見つからない。いま予想しよう。<b>天秤の皿を指で傾けて</b>','')}setBand()}
+function envRect(){return PORT?{x:300,y:430,w:360,h:210}:{x:WW/2,y:WH/2-40,w:440,h:250}}
+function openCut(){const sl=R.seal;SFX.swish();inkSplat(envRect().x+envRect().w*.3,envRect().y,30);R.phase='read';
+ S.sealPred=sl.pred;S.sealFrom='seal';save();
+ showOv(`<h2>封を切った</h2><div class="env">予想：${esc(DIRS[sl.pred])}</div>
+  <p><b>添えた根拠</b><br>${(sl.reasons||[]).map(t=>'・'+esc(t)).join('<br>')||'（なし）'}</p>
+  <p class="small">討論会での直感：${sl.gut?DIRS[sl.gut]:'―'}　／　根拠の筋：${sl.consistent?'つながっていた':'実験のあとで見直そう'}</p>
+  <p>では、実際に焼いて量ってみよう。<br><span class="small">公開資料の再現記録：丸めたスチールウール</span></p>
+  <div class="row"><button class="sumi" id="oGo">炉へ</button></div>`,()=>{$('oGo').onclick=()=>{hideOv();toBurn()}})}
+function toBurn(){scene='play';startStage();R.fromOpen=true}
+function predictDone(){const t=R.tilt||0;const d=Math.abs(t)<.04?'same':t>0?'heavy':'light';S.sealPred=d;S.sealFrom='now';save();SFX.stamp();say('予想「燃やした後は'+DIRS[d]+'」を記録した。焼いて確かめよう','');setTimeout(toBurn,700)}
+function openVerdict(){const hit=S.sealPred==='heavy';S.opened=true;if(S.sealHit==null){S.sealHit=hit;if(hit)earn(15,'hit')}save();
+ if(hit){SFX.fanfare();sparks(L.scale.x,L.scale.y,40,HI)}else SFX.dull();
+ const sl=readSeal();
+ showOv(`<h2>${hit?'大当たり':'予想とずれた'}</h2><p class="big">${hit?'重くなった':'重くなった！'}</p>
+  <p>燃やす前 <b>1.16g</b> → 燃やした後 <b>1.34g</b>（増えた分 0.18g）<br><span class="small">公開資料の再現記録（丸めたスチールウール）</span></p>
+  <p>あなたの予想：<b>${esc(DIRS[S.sealPred])}</b>${S.sealFrom==='now'?'（その場で予想）':''}</p>
+  <p>${hit?(sl&&sl.consistent?'根拠の筋も通っていた。鉄は空気中の<b>酸素と結び付いた</b>。結び付いた酸素の分だけ重くなる。':'鉄は空気中の<b>酸素と結び付いた</b>。結び付いた酸素の分だけ重くなる。'):'紙やろうそくとちがい、鉄には炭素がないので、燃えても気体は出ていかない。空気中の<b>酸素と結び付いて</b>、その分だけ重くなった。ズレた所こそ、いちばん記憶に残る発見。'}</p>
+  <p class="small">では、この黒い燃えかすは、まだ鉄なのか？ 金床で確かめよう。</p>
+  <div class="row"><button class="sumi" id="oGo">金床へ</button></div>`,()=>{$('oGo').onclick=()=>{hideOv();toAnvil()}})}
+
+/* ================= 入力 ================= */
+cv.addEventListener('pointerdown',onDown);addEventListener('pointermove',onMove);addEventListener('pointerup',onUp);addEventListener('pointercancel',onUp);
+function toolRects(){const tl=R&&R.rd&&(scene==='play')&&R.phase!=='burn'&&R.phase!=='burnt'?R.rd.tools.concat(R.rd.k==='pair'?['stampOx']:[]):[];const R0=L.rack,n=tl.length,w=Math.min(PORT?100:118,(R0.x1-R0.x0)/Math.max(1,n)),x0=(R0.x0+R0.x1)/2-w*n/2;return tl.map((id,i)=>({id,x:x0+w*i,y:R0.y0,w,h:R0.y1-R0.y0}))}
+function toolAt(p){for(const r of toolRects())if(p.x>r.x&&p.x<r.x+r.w&&p.y>r.y-10&&p.y<r.y+r.h)return r;return null}
+function stampReady(){if(!R)return false;if(R.rd.k==='pair')return R.phase==='test'&&diffCount()>=3;return evCount()>=2}
+function onDown(e){AU.init();const p=s2w(e.clientX,e.clientY);if(!R)return;
+ if(scene==='open'){if(R.phase==='env'){drag={k:'cut',pts:[p]};return}if(R.phase==='predict'){drag={k:'tilt',p};return}return}
+ if(scene!=='play'||R.phase==='done')return;
+ if(R.phase==='burn'){const B=L.bell;if(Math.hypot(p.x-B.x,p.y-B.y)<90||Math.hypot(p.x-L.kiln.x,p.y-L.kiln.y)<110){if(!R.spread){drag={k:'spread',x0:p.x};return}pump();return}
+  if(!R.spread&&Math.hypot(p.x-L.kiln.x,p.y-L.kiln.y)<160){drag={k:'spread',x0:p.x};return}return}
+ const t=toolAt(p);if(t){if((t.id==='stampOx'||t.id==='stampMe')&&!stampReady()){say(R.rd.k==='pair'?'刻印は、性質の違いが<b>3つ</b>そろってから（いま '+diffCount()+'つ）':'刻印は、決め手になる証拠が<b>2つ</b>そろってから（いま '+evCount()+'つ）','');SFX.tap();return}
+  drag={k:'tool',id:t.id,x:p.x,y:p.y,rubOn:null,rubD:0,lx:p.x,ly:p.y};SFX.tap();return}
+ const s=sampleAt(p);if(s&&s.cover>0){drag={k:'unwrap',s,lx:p.x,ly:p.y,d:0};return}
+ if(s){fly(s.hidden?'中身は？':MAT[s.m].nm,s.x,s.y-90,.8);SFX.tap()}}
+function onMove(e){if(!drag)return;const p=s2w(e.clientX,e.clientY);
+ if(drag.k==='cut'){drag.pts.push(p);const E=envRect(),sx=E.x+E.w*.3;const crossed=drag.pts.some(q=>q.x<sx-40)&&drag.pts.some(q=>q.x>sx+40)&&drag.pts.some(q=>Math.abs(q.y-E.y)<70);if(crossed&&R.phase==='env'){drag=null;openCut()}return}
+ if(drag.k==='tilt'){const A=L.anvil;R.tilt=clamp((p.y-drag.p.y)/180*(p.x>WW/2?1:-1),-.25,.25);return}
+ if(drag.k==='spread'){if(Math.abs(p.x-drag.x0)>90){R.spread=1;SFX.swish();say('広げた！ 空気にふれる面が増えた。<b>ふいご</b>を押して焼こう','');drag=null;setBand()}return}
+ if(drag.k==='unwrap'){drag.d+=Math.hypot(p.x-drag.lx,p.y-drag.ly);drag.lx=p.x;drag.ly=p.y;const s=drag.s;s.cover=Math.max(0,1-drag.d/260);if(Math.random()<.2)SFX.swish();if(s.cover<=0){drag=null;SFX.koto(2);inkSplat(s.x,s.y,14);R.phase='test1';say('包みがほどけた。金属か、燃えかすか？','');setBand()}return}
+ if(drag.k==='tool'){drag.x=p.x;drag.y=p.y;if(drag.id==='stone'){const s=sampleAt(p);if(s&&!s.cover&&!s.falling){drag.rubD+=Math.hypot(p.x-drag.lx,p.y-drag.ly);drag.rubOn=s;if(Math.random()<.25)SFX.rub();if(drag.rubD>220){useTool('stone',p,s);drag.rubD=-1e9}}drag.lx=p.x;drag.ly=p.y}}}
+function onUp(e){if(!drag)return;const d=drag;drag=null;
+ if(d.k==='tilt'){return}
+ if(d.k==='tool'){const p={x:d.x,y:d.y};if(d.id==='stone'){if(d.rubD>=0&&sampleAt(p))say('砥石は、金属の上で<b>何度もこする</b>','');return}useTool(d.id,p);}}
+
+/* ================= 表示の補助 ================= */
+function setClaim(){const c=$('claim');if(scene!=='play'||!R){c.classList.add('hidden');return}$('claimT').textContent=R.rd.claim;c.classList.remove('hidden','mini');clearTimeout(setClaim.to);setClaim.to=setTimeout(()=>c.classList.add('mini'),7000)}
+function showHud(on){['back','hudR','path'].forEach(i=>$(i).classList.toggle('hidden',!on));$('snd').style.display='flex'}
+function updHud(){$('hSp').textContent=S.specimens.length;$('hSc').textContent=S.score>=10000?(S.score/1000).toFixed(1)+'k':S.score;const z=window.Zukan&&Zukan.state?Zukan.state():null;$('hKkW').classList.toggle('hidden',!z);if(z)$('hKk').textContent=z.kakera;
+ $('path').innerHTML=RD.map((r,i)=>`<i class="${i<S.stage?'on':''}${i===S.stage&&!S.cleared?' now':''}"></i>`).join('')+`<span>炉 ${Math.min(S.stage,RD.length)}/${RD.length}</span>`}
+function setBand(){const b=$('band');let t='';
+ if(scene==='open'&&R){t=R.phase==='env'?'封筒の<b>赤い封</b>を、筆でなぞるように横に切る':R.phase==='predict'?'燃やした後の皿を<b>指で押し下げる・持ち上げる</b>（そのままなら「変わらない」）→ 下の札を押す':''}
+ else if(scene==='play'&&R){const rd=R.rd;
+  if(R.phase==='burn')t=!R.spread?'炉のスチールウールを<b>左右に引っぱって広げる</b>':'<b>ふいご</b>を押して風（酸素）を送る（'+R.pumps+'/6）';
+  else if(R.phase==='test')t=diffCount()>=3?'<b>刻印「酸化物」</b>を、燃えかすの方へ打つ':'道具を<b>金属と燃えかすの両方</b>に使って比べる（違い '+diffCount()+'/3）';
+  else if(R.phase==='wrap')t=R.samples[0]&&R.samples[0].falling?'包みが落ちてくる…':'包みを<b>筆でなでるように</b>こすってほどく';
+  else if(R.phase==='test1')t=evCount()>=2?'<b>刻印</b>「酸化物」か「金属」を打つ（証拠 '+evCount()+'）':'決め手になる検査を<b>2つ以上</b>（証拠 '+evCount()+'/2）';
+  if(rd.timer&&R.phase!=='done')t+='　残り '+Math.max(0,Math.ceil(R.timer))+'秒'}
+ b.innerHTML=t;b.classList.toggle('hidden',!t);
+ if(scene==='open'&&R&&R.phase==='predict'){b.innerHTML+=' <button class="sumi gold" id="pDone" style="pointer-events:auto;min-height:44px;font-size:17px;padding:6px 18px;margin-left:6px">これが予想</button>';$('pDone').onclick=predictDone}}
+function showOv(html,bind){$('ovBox').innerHTML=html;$('ov').classList.remove('hidden');$('ovBox').scrollTop=0;bind&&bind()}
+function hideOv(){$('ov').classList.add('hidden')}
+
+/* ================= 更新 ================= */
+let last=performance.now(),bT=0;
+function frame(ts){const dt=Math.min(.05,(ts-last)/1000);last=ts;now+=dt;update(dt);draw();requestAnimationFrame(frame)}
+function update(dt){if(msgT>0){msgT-=dt;if(msgT<=0)$('msg').className=''}
+ if(scene==='play'&&R){S.t+=dt;
+  if(R.rd.timer&&R.phase!=='done'&&R.timer>0){R.timer-=dt;bT-=dt;if(bT<=0){bT=1;setBand()}}
+  for(const s of R.samples){if(s.falling){s.vy=(s.vy||0)+1500*dt;s.y+=s.vy*dt;if(s.y>=L.one.y){s.y=L.one.y;s.falling=false;SFX.anvil();dust(s.x,s.y+30,10);SHK=RM?0:6;setBand()}continue}
+   s.x+=(s.tx-s.x)*Math.min(1,dt*6);s.y+=(s.ty-s.y)*Math.min(1,dt*6);if(s.lit>0)s.lit=Math.max(.001,s.lit);if(s.bub>0){s.bub-=dt;if(Math.random()<.5)PT.push({x:s.x+rnd(-24,24),y:s.y+10,vx:rnd(-10,10),vy:-rnd(40,90),t:0,life:.8,k:'bub',sz:rnd(2,5)})}
+   if(s.stick>0)s.stick=Math.max(0,s.stick-dt);if(s.ruler>0)s.ruler=Math.max(0,s.ruler-dt)}
+  if(R.phase==='burn'||R.phase==='burnt'){const K=L.kiln;if(Math.random()<.3)PT.push({x:K.x+rnd(-26,26),y:K.y+40,vx:rnd(-10,10),vy:-rnd(30,60),t:0,life:.8,k:'fl',sz:rnd(4,9)})}
+ }
+ if(GLOW>0)GLOW=Math.max(0,GLOW-dt*1.2);if(FLASH>0)FLASH=Math.max(0,FLASH-dt*.9);if(SHK>0)SHK=Math.max(0,SHK-dt*30);
+ PT=PT.filter(p=>{p.t+=dt;p.x+=p.vx*dt;p.y+=p.vy*dt;if(p.k==='sp'||p.k==='ink'||p.k==='dust')p.vy+=700*dt;return p.t<p.life});FT=FT.filter(f=>{f.t+=dt;return f.t<f.life})}
+
+/* ================= 描画 ================= */
+function draw(){cx.setTransform(DPR,0,0,DPR,0,0);if(!bgC)buildBG();cx.drawImage(bgC,0,0,W,H);
+ if(scene==='title'){drawTitle();return}if(scene==='test')return;
+ const sh=SHK?rnd(-SHK,SHK):0;cx.save();cx.translate(sh,sh*.5);if(!stC)buildStatic();cx.drawImage(stC,0,0,W,H);
+ cx.translate(OX,OY);cx.scale(SC,SC);drawWorld();cx.restore();
+ if(FLASH>0){cx.fillStyle='rgba(255,255,255,'+(FLASH*.75)+')';cx.fillRect(0,0,W,H);const g=cx.createRadialGradient(w2s(L.kiln.x,0).x,w2s(0,L.kiln.y).y,0,w2s(L.kiln.x,0).x,w2s(0,L.kiln.y).y,Math.max(W,H)*.6);g.addColorStop(0,'rgba(245,230,99,'+FLASH*.6+')');g.addColorStop(1,'rgba(245,230,99,0)');cx.fillStyle=g;cx.fillRect(0,0,W,H)}}
+function T(t,x,y,sz,col,al,font){cx.font=sz+'px '+(font||BR);cx.fillStyle=col||SUMI;cx.textAlign=al||'center';cx.textBaseline='middle';cx.fillText(t,x,y)}
+function drawWorld(){
+ // 炉の火
+ const K=L.kiln,burning=R&&(R.phase==='burn'||R.phase==='burnt'),gl=.35+GLOW*.65;
+ if(burning||scene==='open'){const g=cx.createRadialGradient(K.x,K.y+34,4,K.x,K.y+34,90+GLOW*40);g.addColorStop(0,'rgba(245,230,99,'+gl+')');g.addColorStop(1,'rgba(245,230,99,0)');cx.fillStyle=g;cx.beginPath();cx.arc(K.x,K.y+34,140,0,7);cx.fill()}
+ // 天秤の目盛り（実測の再現記録）
+ const Tn=L.scale;T(R&&R.rd&&R.rd.k==='pair'&&scene!=='clear'?(R.grams||0).toFixed(2)+' g':'―',Tn.x,Tn.y+10,30,SUMI,'center',MIN);T('てんびん',Tn.x,Tn.y+54,16);
+ if(R&&(scene==='play')&&R.phase==='burn'||R&&R.phase==='burnt')drawKilnSample();
+ // 標本棚の瓶
+ drawShelf();
+ // 開封
+ if(scene==='open')drawOpen();
+ // 鑑定書（比べ表）
+ if(scene==='play'&&R&&(R.phase==='test'||R.phase==='test1'||R.phase==='wrap'))drawCert();
+ // 試料
+ if(R)for(const s of R.samples)if(!s.inKiln)drawSample(s);
+ // 道具掛け
+ if(scene==='play')drawRack();
+ if(drag&&drag.k==='tool')drawTool(drag.id,drag.x,drag.y,1.25,true);
+ // 粒
+ for(const p of PT){const a=1-p.t/p.life;if(p.k==='sp'){cx.strokeStyle=p.col===HI?'rgba(245,230,99,'+a+')':'rgba(255,255,255,'+a+')';cx.lineWidth=p.sz;cx.beginPath();cx.moveTo(p.x,p.y);cx.lineTo(p.x-p.vx*.03,p.y-p.vy*.03);cx.stroke()}
+  else if(p.k==='ink'){cx.fillStyle='rgba(28,28,28,'+a*.8+')';cx.beginPath();cx.arc(p.x,p.y,p.sz*(1+p.t),0,7);cx.fill()}
+  else if(p.k==='dust'){cx.fillStyle=p.col===SUMI?'rgba(28,28,28,'+a+')':'rgba(200,194,180,'+a+')';cx.fillRect(p.x,p.y,p.sz,p.sz)}
+  else if(p.k==='bub'){cx.strokeStyle='rgba(28,28,28,'+a+')';cx.lineWidth=1.5;cx.beginPath();cx.arc(p.x,p.y,p.sz,0,7);cx.stroke()}
+  else if(p.k==='fl'){cx.fillStyle='rgba(245,230,99,'+a*.8+')';cx.beginPath();cx.arc(p.x,p.y,p.sz*(1-p.t),0,7);cx.fill()}}
+ for(const f of FT){const a=f.t<.12?f.t/.12:1-Math.max(0,(f.t-.9)/.6);cx.globalAlpha=clamp(a,0,1);const sz=Math.round((PORT?26:30)*f.sz);cx.save();cx.shadowColor='rgba(241,237,228,1)';cx.shadowBlur=8;T(f.txt,f.x,f.y-f.t*40,sz,f.col);cx.restore()}cx.globalAlpha=1}
+function drawKilnSample(){const K=L.kiln,rd=R.rd,t=Math.min(1,R.pumps/6),x=K.x,y=K.y+36;
+ if(rd.m==='fe'){const w=R.spread?1.6:1;drawWool(x,y,w,t)}else if(rd.m==='mg'){drawRibbon(x,y,t)}else drawCuPowder(x,y,t);
+ if(!R.spread){cx.strokeStyle=SUMI;cx.lineWidth=3;cx.setLineDash([8,8]);cx.beginPath();cx.moveTo(x-110,y-60);cx.lineTo(x-60,y-60);cx.moveTo(x+60,y-60);cx.lineTo(x+110,y-60);cx.stroke();cx.setLineDash([]);T('← 広げる →',x,y-60,20)}
+ if(R.phase==='burn'){const B=L.bell,p=.5+.5*Math.sin(now*6);cx.strokeStyle='rgba(28,28,28,'+(.3+p*.5)+')';cx.lineWidth=3;cx.beginPath();cx.ellipse(B.x,B.y,70+p*6,50+p*4,0,0,7);cx.stroke();T('押す',B.x,B.y-64,20)}}
+function drawWool(x,y,w,burn,shine,crumb){seed=7;cx.save();cx.lineWidth=1.3;for(let i=0;i<30;i++){const a=srnd()*6.28,r=18+srnd()*16;const dark=burn>srnd();cx.strokeStyle=dark?'rgba(28,28,28,.9)':'rgba(110,112,120,.95)';cx.beginPath();cx.ellipse(x+(srnd()-.5)*14*w,y+(srnd()-.5)*8,r*w*(1-(crumb||0)*.5),r*.55*(1-(crumb||0)*.3),a,0,4.4);cx.stroke()}
+ if(shine){cx.strokeStyle='rgba(255,255,255,'+shine+')';cx.lineWidth=3;cx.beginPath();cx.moveTo(x-20*w,y-6);cx.lineTo(x+18*w,y-12);cx.stroke()}cx.restore()}
+function drawRibbon(x,y,burn){cx.save();cx.strokeStyle=burn<1?'#8d939b':'#e8e4da';cx.lineWidth=7;cx.beginPath();for(let i=0;i<=24;i++){const t=i/24;cx.lineTo(x-60+t*120,y+Math.sin(t*9)*10)}cx.stroke();
+ if(burn>0&&burn<1){const g=cx.createRadialGradient(x,y,0,x,y,70);g.addColorStop(0,'rgba(255,255,255,.95)');g.addColorStop(.4,'rgba(245,230,99,.6)');g.addColorStop(1,'rgba(245,230,99,0)');cx.fillStyle=g;cx.beginPath();cx.arc(x,y,70,0,7);cx.fill()}
+ if(burn>=1){cx.fillStyle='#f4f2ec';cx.strokeStyle=SUMI;cx.lineWidth=1.5;cx.beginPath();cx.ellipse(x,y+6,46,14,0,0,7);cx.fill();cx.stroke()}cx.restore()}
+function drawCuPowder(x,y,burn){cx.save();seed=3;for(let i=0;i<70;i++){const dx=(srnd()-.5)*90,dy=(srnd()-.5)*20;cx.fillStyle=burn>srnd()?'rgba(28,28,28,.95)':'rgba(190,120,70,.85)';cx.fillRect(x+dx,y+dy,3,3)}cx.restore()}
+function drawSample(s){const m=s.m,M=MAT[m];let x=s.x,y=s.y;if(s.stick>0)y-=Math.sin(Math.min(1,s.stick)*Math.PI)*30;cx.save();const SS=PORT?1.25:1.45;cx.translate(x,y);cx.scale(SS,SS);cx.translate(-x,-y);
+ if(s.hidden&&s.cover>0){// 包み（風呂敷）
+  seed=5;cx.fillStyle='rgba(28,28,28,'+(.15+.6*s.cover)+')';cx.beginPath();cx.ellipse(x,y,60,44,0,0,7);cx.fill();brush(cx,[[x-58,y+10],[x-40,y-38],[x,y-48],[x+40,y-38],[x+58,y+10]],6,.8*s.cover+.1,true);
+  brush(cx,[[x-18,y-50],[x,y-70],[x+18,y-50]],6,.9,false);T('？',x,y,34,'#f1ede4');cx.restore();return}
+ const sc=1-(s.crumb||0)*.25;
+ if(m==='fe')drawWool(x,y,1.3*(1+s.hm*.12),0,s.shine,0);
+ else if(m==='feo'){seed=9;for(let i=0;i<28;i++){cx.strokeStyle='rgba(28,28,28,.95)';cx.lineWidth=1.6;cx.beginPath();cx.ellipse(x+(srnd()-.5)*16,y+(srnd()-.5)*8,(20+srnd()*14)*sc,(10+srnd()*6)*sc,srnd()*6,0,4)}cx.stroke();wash(cx,x,y,40*sc,22*sc,.4);if(s.crumb>0){cx.fillStyle=SUMI;for(let i=0;i<30*s.crumb;i++)cx.fillRect(x+rnd(-50,50),y+22+rnd(-3,3),2.5,2.5)}}
+ else if(m==='mg'){const fl=Math.min(1,s.hm*.4);cx.strokeStyle='#8d939b';cx.lineWidth=7+fl*6;cx.beginPath();for(let i=0;i<=20;i++){const t=i/20;cx.lineTo(x-54-fl*12+t*(108+fl*24),y+Math.sin(t*8)*9*(1-fl))}cx.stroke();if(s.shine){cx.strokeStyle='rgba(255,255,255,'+s.shine+')';cx.lineWidth=3;cx.beginPath();cx.moveTo(x-40,y-4);cx.lineTo(x+40,y-2);cx.stroke()}}
+ else if(m==='mgo'){cx.fillStyle='#f7f5ef';cx.strokeStyle='rgba(28,28,28,.8)';cx.lineWidth=2;cx.beginPath();cx.ellipse(x,y+8,48*(1+(s.crumb||0)*.4),18*sc,0,0,7);cx.fill();cx.stroke();seed=4;for(let i=0;i<12;i++){cx.fillStyle='rgba(28,28,28,.25)';cx.fillRect(x+(srnd()-.5)*70,y+4+srnd()*8,2,2)}}
+ else if(m==='cu'){const fl=Math.min(1,s.hm*.35);cx.fillStyle='rgba(196,122,68,.85)';cx.strokeStyle=SUMI;cx.lineWidth=2.5;cx.beginPath();cx.ellipse(x,y+6,(46+fl*16),(16-fl*5),0,0,7);cx.fill();cx.stroke();if(s.shine){cx.strokeStyle='rgba(255,236,210,'+s.shine+')';cx.lineWidth=4;cx.beginPath();cx.moveTo(x-30,y+2);cx.lineTo(x+30,y);cx.stroke()}}
+ else if(m==='cuo'){wash(cx,x,y+8,52*(1+(s.crumb||0)*.3),18,.85);seed=6;for(let i=0;i<40;i++){cx.fillStyle=SUMI;cx.fillRect(x+(srnd()-.5)*90,y+(srnd()-.5)*18+8,2.5,2.5)}}
+ // 豆電球
+ if(s.lit){const bx=x,by=y-72;if(s.lit>0){const g=cx.createRadialGradient(bx,by,0,bx,by,60);g.addColorStop(0,'rgba(245,230,99,.95)');g.addColorStop(1,'rgba(245,230,99,0)');cx.fillStyle=g;cx.beginPath();cx.arc(bx,by,60,0,7);cx.fill()}
+  cx.strokeStyle=SUMI;cx.lineWidth=2.5;cx.beginPath();cx.arc(bx,by,13,0,7);cx.stroke();cx.beginPath();cx.moveTo(bx-18,by+34);cx.quadraticCurveTo(bx-30,by+10,bx-8,by+10);cx.moveTo(bx+18,by+34);cx.quadraticCurveTo(bx+30,by+10,bx+8,by+10);cx.stroke();cx.fillStyle=s.lit>0?HI:'rgba(28,28,28,.15)';cx.beginPath();cx.arc(bx,by,11,0,7);cx.fill()}
+ if(s.stick>0){cx.strokeStyle=SUMI;cx.lineWidth=8;cx.beginPath();cx.arc(x,y-58,20,Math.PI,0);cx.stroke();T('磁石',x,y-92,16)}
+ if(s.ruler>0){cx.strokeStyle=SUMI;cx.lineWidth=2;cx.strokeRect(x-60,y+30,120,12);for(let i=0;i<=12;i++){cx.beginPath();cx.moveTo(x-60+i*10,y+30);cx.lineTo(x-60+i*10,y+(i%5?36:42));cx.stroke()}}
+ if(s.stamp){cx.save();cx.translate(x+34,y-30);cx.rotate(.14);cx.fillStyle=HI;cx.fillRect(-28,-28,56,56);cx.strokeStyle=SUMI;cx.lineWidth=3;cx.strokeRect(-28,-28,56,56);T(s.stamp==='酸化物'?'酸化':'金属',0,-8,18);T(s.stamp==='酸化物'?'物':'',0,12,18);cx.restore()}
+ // 名札
+ const ly=L.anvil.y+20;cx.restore();cx.save();if(R.rd.k==='pair'&&R.phase==='test')T(s.spot===0?'元の金属':'燃えかす',x,ly,22,WASHI);else if(!s.hidden&&s.stamp)T(M.kind==='ox'?M.ox:M.sh,x,ly,20,WASHI);else if(!s.cover&&!s.falling)T('包みの中身',x,ly,20,WASHI);
+ cx.restore()}
+function drawCert(){const C=L.cert;const x0=C.x-C.w/2,y0=C.y-C.h/2;cx.save();cx.fillStyle='rgba(247,243,234,.88)';cx.fillRect(x0,y0,C.w,C.h);brush(cx,[[x0,y0],[x0+C.w,y0+2]],5,.8,true);brush(cx,[[x0,y0+C.h],[x0+C.w,y0+C.h-2]],5,.8,true);
+ if(R.rd.k==='pair'){const tl=['hammer','stone','tester','acid','magnet','ruler'].filter(t=>R.rd.tools.includes(t));const cw=C.w/tl.length;T('鑑定の記録　違い '+diffCount()+' / 3',C.x,y0+22,PORT?20:22);
+  tl.forEach((t,i)=>{const x=x0+cw*i+cw/2,r=R.res[t]||{},d=R.diff[t];T(TL[t].v,x,y0+54,PORT?17:19);T(r[0]||'・',x,y0+84,PORT?14:15,SUMI,'center',MIN);T(r[1]||'・',x,y0+108,PORT?14:15,SUMI,'center',MIN);
+   if(d===true){cx.strokeStyle=SUMI;cx.lineWidth=3;cx.beginPath();cx.arc(x,y0+96,Math.min(34,cw*.42),0,6.1);cx.stroke()}if(d===false)T('△',x,y0+134,16)})}
+ else{const tl=['hammer','stone','tester','acid','magnet','ruler'].filter(t=>R.rd.tools.includes(t));const cw=C.w/tl.length;T('包みの鑑定　証拠 '+evCount()+' / 2'+(R.rd.k==='boss'?'　のこり '+(R.queue.length+1)+'包み':''),C.x,y0+22,PORT?19:22);
+  tl.forEach((t,i)=>{const x=x0+cw*i+cw/2;T(TL[t].v,x,y0+58,PORT?17:19);T(R.res[t]||'・',x,y0+94,PORT?14:15,SUMI,'center',MIN);if(R.ev[t]){cx.strokeStyle=SUMI;cx.lineWidth=3;cx.beginPath();cx.arc(x,y0+84,Math.min(32,cw*.42),0,6.1);cx.stroke()}if(R.ev['x'+t])T('△',x,y0+126,16)})}
+ cx.restore()}
+function drawRack(){for(const r of toolRects()){const en=!(r.id.startsWith('stamp')&&!stampReady());cx.globalAlpha=en?1:.35;drawTool(r.id,r.x+r.w/2,r.y+r.h*.42,1,false);T(TL[r.id].nm.replace('刻印','').replace(/[「」]/g,''),r.x+r.w/2,r.y+r.h-14,PORT?14:16);
+  if(r.id.startsWith('stamp')&&en){const p=.5+.5*Math.sin(now*5);cx.strokeStyle='rgba(245,230,99,'+(.5+p*.5)+')';cx.lineWidth=5;cx.strokeRect(r.x+6,r.y+4,r.w-12,r.h-10)}cx.globalAlpha=1}}
+function drawTool(id,x,y,s,held){cx.save();cx.translate(x,y);cx.scale(s,s);if(held){cx.shadowColor='rgba(28,28,28,.35)';cx.shadowBlur=10;cx.shadowOffsetY=8}
+ cx.strokeStyle=SUMI;cx.fillStyle=SUMI;cx.lineCap='round';
+ if(id==='hammer'){cx.lineWidth=7;cx.beginPath();cx.moveTo(-18,24);cx.lineTo(10,-8);cx.stroke();cx.save();cx.translate(12,-12);cx.rotate(-.8);cx.fillRect(-20,-9,40,18);cx.restore()}
+ else if(id==='stone'){cx.fillStyle='rgba(120,116,108,.9)';cx.beginPath();cx.ellipse(0,4,30,14,-.15,0,7);cx.fill();cx.lineWidth=2;cx.stroke()}
+ else if(id==='tester'){cx.lineWidth=2.5;cx.strokeRect(-26,-2,22,26);cx.fillRect(-20,-6,10,4);cx.beginPath();cx.arc(16,-8,10,0,7);cx.stroke();cx.fillStyle=HI;cx.beginPath();cx.arc(16,-8,7,0,7);cx.fill();cx.beginPath();cx.moveTo(-4,10);cx.quadraticCurveTo(10,20,16,2);cx.stroke()}
+ else if(id==='acid'){cx.lineWidth=2.5;cx.beginPath();cx.moveTo(-6,-26);cx.lineTo(-6,10);cx.lineTo(0,22);cx.lineTo(6,10);cx.lineTo(6,-26);cx.stroke();cx.fillRect(-9,-32,18,10);cx.fillStyle='rgba(28,28,28,.2)';cx.fillRect(-5,-4,10,14)}
+ else if(id==='magnet'){cx.lineWidth=9;cx.beginPath();cx.arc(0,0,18,Math.PI,0);cx.lineTo(18,20);cx.moveTo(-18,0);cx.lineTo(-18,20);cx.stroke()}
+ else if(id==='ruler'){cx.lineWidth=2;cx.strokeRect(-36,-6,72,12);for(let i=0;i<=8;i++){cx.beginPath();cx.moveTo(-36+i*9,-6);cx.lineTo(-36+i*9,-6+(i%4?4:8));cx.stroke()}}
+ else if(id==='stampOx'||id==='stampMe'){cx.fillStyle='rgba(28,28,28,.9)';cx.fillRect(-8,-34,16,22);cx.fillStyle=id==='stampOx'?HI:'#d8d2c2';cx.fillRect(-24,-12,48,34);cx.lineWidth=2.5;cx.strokeRect(-24,-12,48,34);T(id==='stampOx'?'酸化':'金属',0,-2,16);if(id==='stampOx')T('物',0,14,14)}
+ cx.restore()}
+function drawShelf(){const H0=L.shelf;const list=S.specimens.filter(m=>MAT[m].kind==='ox');const uniq=[...new Set(list)];
+ ['feo','mgo','cuo'].forEach((m,i)=>{const x=H0.x-H0.w/2+H0.w*(i+.5)/3,y=H0.y-H0.h/2+H0.h*.3-4;const has=uniq.includes(m);
+  cx.strokeStyle='rgba(28,28,28,'+(has?.9:.3)+')';cx.lineWidth=2.5;cx.beginPath();cx.moveTo(x-18,y-50);cx.lineTo(x-18,y-6);cx.quadraticCurveTo(x,y+4,x+18,y-6);cx.lineTo(x+18,y-50);cx.stroke();cx.fillStyle=has?(m==='mgo'?'#f7f5ef':SUMI):'rgba(28,28,28,.06)';cx.fillRect(x-15,y-30,30,22);
+  T(has?MAT[m].ox.replace('酸化',''):'？',x,y+18,PORT?14:16,has?SUMI:'rgba(28,28,28,.4)')});
+ T('酸化物 '+uniq.length+'/3',H0.x,H0.y+H0.h*.2,PORT?17:19)}
+function drawOpen(){const E=envRect();if(R.phase==='predict'){const A={x:WW/2,y:L.cert.y+(PORT?10:-10)},hl=PORT?220:300,th=R.tilt||0;cx.fillStyle='rgba(241,237,228,.94)';cx.fillRect(A.x-hl-90,A.y-120,2*hl+180,300);cx.save();cx.translate(A.x,A.y);
+  cx.fillStyle=SUMI;cx.beginPath();cx.moveTo(0,0);cx.lineTo(40,120);cx.lineTo(-40,120);cx.fill();cx.rotate(th);brush(cx,line(-hl,0,hl,0,10,2),10,.9,true);cx.restore();
+  [-1,1].forEach(sd=>{const ex=A.x+sd*hl*Math.cos(th),ey=A.y+sd*hl*Math.sin(th);cx.strokeStyle=SUMI;cx.lineWidth=2;cx.beginPath();cx.moveTo(ex,ey);cx.lineTo(ex-60,ey+90);cx.moveTo(ex,ey);cx.lineTo(ex+60,ey+90);cx.stroke();brush(cx,line(ex-70,ey+92,ex+70,ey+92,6,1),6,.9,false);
+   T(sd<0?'燃やす前':'燃やした後',ex,ey+124,22);if(sd>0)drawWool(ex,ey+74,1,.8);else drawWool(ex,ey+74,1,0)});
+  const d=Math.abs(th)<.04?'same':th>0?'heavy':'light';T('予想：燃やした後は '+DIRS[d],A.x,A.y-80,30);return}
+ if(R.phase==='env'||R.phase==='read'){cx.save();cx.translate(E.x,E.y);cx.rotate(-.04);cx.fillStyle='#E9E2D0';cx.fillRect(-E.w/2,-E.h/2,E.w,E.h);cx.strokeStyle='#1A1A1A';cx.lineWidth=4;cx.strokeRect(-E.w/2,-E.h/2,E.w,E.h);
+  cx.beginPath();cx.moveTo(-E.w/2,-E.h/2);cx.lineTo(0,E.h*.08);cx.lineTo(E.w/2,-E.h/2);cx.stroke();
+  cx.fillStyle='#B3001B';cx.beginPath();cx.arc(-E.w*.2,0,E.h*.2,0,7);cx.fill();T('封',-E.w*.2,2,E.h*.2,'#fff','center','"RocknRoll One",sans-serif');
+  T('コマ17 予想 在中',E.w*.18,E.h*.3,20,'#1A1A1A','center',MIN);
+  if(R.phase==='env'){const p=.5+.5*Math.sin(now*4);cx.strokeStyle='rgba(28,28,28,'+(.25+.5*p)+')';cx.lineWidth=4;cx.setLineDash([10,10]);cx.beginPath();cx.moveTo(-E.w*.2-110,0);cx.lineTo(-E.w*.2+110,0);cx.stroke();cx.setLineDash([]);T('筆でなぞって切る →',-E.w*.2,-E.h*.3,20)}
+  cx.restore();if(drag&&drag.k==='cut'&&drag.pts.length>1)brush(cx,drag.pts.map(p=>[p.x,p.y]),10,.85,false)}}
+function drawTitle(){const m=Math.min(W,H);seed=77;
+ // 山あいの鍛冶小屋と灯る炉
+ const hx=W*(PORT?.3:.24),hy=H*(PORT?.62:.66);brush(cx,[[hx-m*.2,hy],[hx,hy-m*.14],[hx+m*.22,hy]],m*.02,.9,true);brush(cx,line(hx-m*.16,hy,hx-m*.16,hy+m*.14,4,3),m*.012,.8,true);brush(cx,line(hx+m*.18,hy,hx+m*.18,hy+m*.14,4,3),m*.012,.8,true);
+ const g=cx.createRadialGradient(hx,hy+m*.09,2,hx,hy+m*.09,m*.14*(1+.08*Math.sin(now*3)));g.addColorStop(0,'rgba(245,230,99,.95)');g.addColorStop(1,'rgba(245,230,99,0)');cx.fillStyle=g;cx.beginPath();cx.arc(hx,hy+m*.09,m*.16,0,7);cx.fill();
+ for(let i=0;i<3;i++){const t=(now*.6+i*.33)%1;cx.fillStyle='rgba(245,230,99,'+(1-t)+')';cx.fillRect(hx+Math.sin(i*2+now)*m*.03,hy+m*.06-t*m*.2,3,3)}
+ // 煙（墨のにじみ）
+ for(let i=0;i<5;i++){const t=(now*.08+i*.2)%1;wash(cx,hx+m*.1+t*m*.25,hy-m*.16-t*m*.3,m*.05*(1+t*2),m*.03*(1+t*2),.08*(1-t))}}
+
+/* ================= 画面の切り替え ================= */
+function toTitle(){scene='title';bgC=null;hideOv();['band','claim','test'].forEach(i=>$(i).classList.add('hidden'));showHud(false);$('snd').style.display='';$('title').classList.remove('hidden');
+ const sv=load();$('bCont').classList.toggle('hidden',!(sv&&sv.started&&!sv.cleared));$('bTest').classList.toggle('hidden',!(sv&&sv.cleared));$('bStart').textContent=sv&&sv.started?'はじめから':'鍛冶場へ';$('bBook').classList.toggle('hidden',!window.Zukan);
+ const sl=readSeal();$('tSeal').classList.toggle('hidden',!sl);if(sl)$('tSeal').textContent='コマ17の封筒が届いています（予想：'+DIRS[sl.pred]+'）';
+ $('tList').classList.toggle('hidden',!(window.parent&&window.parent!==window));armed=false}
+let armed=false;
+function begin(cont){AU.init();SFX.tap();const v=$('nameIn').value.trim();if(v)S.name=v;const sv=load();
+ if(!cont&&sv&&sv.started&&!armed){armed=true;$('bStart').textContent='もう一度おすと最初から';return}
+ $('title').classList.add('hidden');bgC=null;stC=null;
+ if(cont&&sv){S=sv;if(v)S.name=v;if(S.cleared){startTest();return}scene='play';showHud(true);updHud();if(!S.opened&&S.stage===0){startOpen();return}startStage();return}
+ const nm=S.name;S=fresh();S.name=nm||window.PLAYER_NAME||'';S.started=true;save();R=null;showHud(true);updHud();startOpen()}
+function askBack(){SFX.tap();$('dlgBox').innerHTML=`<h2>表へもどる？</h2><p>進み具合は保存されます。次は「つづきから」で、いまの炉の始めから再開できます。</p><div class="row"><button class="sumi pale" id="dN">つづける</button><button class="sumi" id="dY">もどる</button></div>`;
+ $('dlg').classList.remove('hidden');$('dN').onclick=()=>$('dlg').classList.add('hidden');$('dY').onclick=()=>{$('dlg').classList.add('hidden');save();drag=null;toTitle()}}
+
+/* ================= 確認テスト ================= */
+let TQ=[],TA=[],TI=0;const KAN='一二三四五六七八九十';
+function startTest(){scene='test';hideOv();['band','claim','title'].forEach(i=>$(i).classList.add('hidden'));showHud(false);$('back').classList.toggle('hidden',TEST);$('test').classList.remove('hidden');TQ=window.Quiz?Quiz.test():[];TA=[];TI=0;showQ()}
+function showQ(){const q=TQ[TI];if(!q){finishTest();return}$('test').scrollTop=0;$('tNo').textContent=TI<10?KAN[TI]:String(TI+1);$('tOf').textContent=(TI+1)+' / '+TQ.length;$('tQ').textContent=q.q;$('tFig').innerHTML=q.fig||'';$('tFb').innerHTML='';const A=$('tA');A.innerHTML='';
+ if(q.t==='choice')q.shown.forEach(c=>{const b=document.createElement('button');b.className='opt';b.textContent=c;b.onclick=()=>answer(c,b);A.appendChild(b)});
+ else if(q.t==='num'){const r=document.createElement('div');r.className='numrow';r.innerHTML='<input id="numIn" inputmode="decimal" autocomplete="off"><b>'+esc(q.unit||'')+'</b>';const b=document.createElement('button');b.className='sumi';b.textContent='決定';b.onclick=()=>{const v=$('numIn').value.trim();if(v)answer(v)};r.appendChild(b);A.appendChild(r)}
+ else if(q.t==='order'){const sel=[],box=document.createElement('div');box.className='ordbox';const bs=[];q.shown.forEach(c=>{const b=document.createElement('button');b.className='opt';b.textContent=c;b.onclick=()=>{if(b.classList.contains('pk'))return;sel.push(c);b.classList.add('pk');const d=document.createElement('div');d.textContent=sel.length+'. '+c;box.appendChild(d);if(sel.length===q.shown.length)answer(sel.slice())};A.appendChild(b);bs.push(b)});A.appendChild(box);const rs=document.createElement('button');rs.className='sumi pale';rs.textContent='やり直す';rs.onclick=()=>{sel.length=0;box.innerHTML='';bs.forEach(b=>b.classList.remove('pk'))};A.appendChild(rs)}}
+function answer(v,btn){const q=TQ[TI];if(TA[TI]!==undefined)return;TA[TI]=v;const ok=Quiz.check(q,v);AU.init();ok?SFX.koto(4):SFX.bad();
+ $('tA').querySelectorAll('button,input').forEach(b=>{b.disabled=true;if(q.t==='choice'&&b.textContent===q.choices[0])b.classList.add('ok')});if(btn&&!ok)btn.classList.add('ng');
+ $('tFb').innerHTML='<span class="mk">'+(ok?'〇':'✕')+'</span>'+(ok?'正解':'正解は「'+esc(Quiz.answer(q))+'」')+'<span class="ex">'+esc(q.ex||'')+'</span>';
+ const nx=document.createElement('button');nx.className='sumi';nx.textContent=TI+1<TQ.length?'つぎへ':'結果を見る';nx.onclick=()=>{TI++;showQ()};$('tFb').appendChild(nx);setTimeout(()=>nx.scrollIntoView({block:'nearest',behavior:'smooth'}),60)}
+function fmtT(s){s=Math.round(s||0);return Math.floor(s/60)+'分'+String(s%60).padStart(2,'0')+'秒'}
+function finishTest(){const qs=TQ,review=Quiz.review(qs,TA),marks=review.map(r=>r.ok),score=marks.filter(Boolean).length;const sv=load()||S;
+ const sealTxt=sv.sealPred?DIRS[sv.sealPred]+(sv.sealFrom==='now'?'（その場で予想）':'')+(sv.sealHit?' → 的中':sv.sealHit===false?' → ズレ':''):'―';
+ const records=TEST?[['モード','確認テストだけ']]:[['クリアタイム',fmtT(sv.t)],['酸化物の標本',[...new Set((sv.specimens||[]).filter(m=>MAT[m]&&MAT[m].kind==='ox'))].length+' / 3 種'],['一発鑑定',(sv.first||0)+' / 8 の炉'],['封印した予想',sealTxt]];
+ SubmitCard.show({gameId:GID,grade:'chu2',koma:[KOMA],unit:'中2理科　化学変化と原子・分子　第18回',game:'燃えかす鍛冶場 ～酸化でできる物質～'+(TEST?'（確認テストのみ）':''),
+  name:(S.name||window.PLAYER_NAME||'').trim(),score,total:qs.length,marks,records,review},()=>{if(TEST)startTest();else toTitle()})}
+
+/* ================= 起動 ================= */
+$('back').onclick=()=>{if(scene==='test'){toTitle();return}askBack()};
+$('snd').onclick=()=>{AU.init();AU.mute=!AU.mute;$('snd').classList.toggle('off',AU.mute);try{localStorage.setItem(MUTE_KEY,AU.mute?'1':'')}catch(e){}};
+try{AU.mute=localStorage.getItem(MUTE_KEY)==='1';$('snd').classList.toggle('off',AU.mute)}catch(e){}
+$('claim').onclick=()=>{const c=$('claim');c.classList.toggle('mini')};
+$('bStart').onclick=()=>begin(false);$('bCont').onclick=()=>begin(true);$('bTest').onclick=()=>{AU.init();startTest()};$('bBook').onclick=()=>window.Zukan&&Zukan.openBook();
+$('tList').onclick=()=>{try{window.parent.postMessage({type:'rika-close-game'},'*')}catch(e){}};
+if(window.PLAYER_NAME){$('nameIn').value=window.PLAYER_NAME;$('nameBox').classList.add('hidden')}
+window.Zukan&&Zukan.setup&&Zukan.setup({game:GID,koma:[KOMA]});window.Zukan&&Zukan.onChange&&Zukan.onChange(()=>updHud());
+addEventListener('resize',layout);layout();
+if(document.fonts&&document.fonts.load)document.fonts.load('20px "Yuji Boku"').then(()=>{bgC=null;stC=null}).catch(()=>{});
+{const sv=load();if(sv)S=sv}
+if(TEST)startTest();else toTitle();
+requestAnimationFrame(frame);
+/* 自動テスト用の読み取り口（ゲームの外からは使わない） */
+window.__MK={get S(){return S},get R(){return R},get scene(){return scene},L:()=>L,w2s,
+ open(){if(R.phase==='env')openCut();else if(R.phase==='predict'){R.tilt=.15;predictDone()}},
+ burn(){R.spread=1;for(let i=0;i<6;i++)pump()},
+ tool(id,i){const s=R.samples[i||0];useTool(id,{x:s.x,y:s.y},s)},
+ unwrap(){const s=R.samples[0];s.falling=false;s.y=L.one.y;s.cover=0;R.phase='test1';setBand()},
+ solveSingle(){const s=R.samples[0];if(s.cover){this.unwrap()}useTool('tester',{x:s.x,y:s.y},s);useTool('hammer',{x:s.x,y:s.y},s);useTool(MAT[s.m].kind==='ox'?'stampOx':'stampMe',{x:s.x,y:s.y},s)}};
 })();
 </script>
 </body>

@@ -1,200 +1,153 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-<meta charset="utf-8">
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#174a37">
+<meta name="theme-color" content="#151B2E">
 <title>空もようパック ～天気と1日の気温～</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Kaisei+Opti:wght@700&family=Zen+Maru+Gothic:wght@500;700;900&display=swap" rel="stylesheet">
+<!--
+  空もようパック ～天気と1日の気温～（中2理科 気象 コマ9 / kisho-soramoyo / chu2-kisho-09）v2
+
+  ■ 世界とメタファー: 「ホロ箔トレカのパック開封」。机の上ではなく、夜のショーケースの中。
+    1日ぶんの気象観測の記録が、銀のホロ箔パックに封入されている。パックの窓のギザギザ（ミシン目）を
+    指で左から右へ破ると、その下のカードに0時からの気温グラフ（のちに湿度の点線も）が少しずつ現れる。
+    開ききる前に、天気シール（日本式の天気記号：晴れ＝○に縦線／くもり＝◎／雨＝●）をパックに貼って宣言する。
+    早く正しく言い当てるほど箔がランクアップ（銀→ホロ→レインボー→ゴールド）し、光があふれる。
+    道のり＝3日パック→5日パック…→1週間ボックス→月末ボックス（箱がだんだん大きくなる）。
+    集める＝季節×天気の「空もようカード」をバインダーにうめる。
+  ■ 配色: 背景 #151B2E（夜のショーケース）／主 #E3E8F0（銀の箔）／差し #FFB000（金の箔・気温の線）。
+    湿度の点線は淡い青 #9CCBFF。ホロの虹は彩度をおさえ、銀と金が主役。
+  ■ 書体: 見出し＝Mochiy Pop One（トレカのロゴ・描き文字の勢い）／本文＝Zen Kaku Gothic New／数字＝Russo One。
+  ■ 画面の組み方: 全画面canvasが主役。PC・iPad横＝パックを横に並べ、いま破るパックだけ大きく持ち上がる。
+    スマホ・iPad縦＝1枚のパックを画面いっぱいに置き、残りのパックは上に小さく並ぶ。天気シールは下のトレー。
+  ■ HUD: 左上＝銀箔のタブ「◀ もどる」。右上＝金の箔のかけら・音。上中央＝ボックス名・残りパック・きらめき点・連続的中（canvasの箔の帯）。
+    Zukan.hud は使わず Zukan.state() で読む。
+  ■ 音: シンセのきらきら（ベル＋グリッサンド）、箔を破るカサカサ（ノイズ）、シールを貼る「ぺたっ」。
+  ■ 理科＝操作: 天気は変化の幅（最高−最低）で決まる（晴れ7〜14℃／くもり3〜5℃／雨0.6〜2℃）。
+    季節で高さを変え（冬の晴れは低いが幅大、夏の雨は高いが幅小）、目盛りの違うカード、湿度の線
+    （晴れの日は気温と逆向き、雨の日は90%以上のまま）、途中で天気が変わる日（午前・午後に別々のシール）を順に解禁。
+    シールは朝6時ぶん破るまで貼れず、最後のひと破りは宣言してからでないとできない。外すと連続的中が0に戻る。
+  ■ 数値: 飽和水蒸気量は kisho-suijoki-block の表（20℃=17.3、30℃=30.4）。湿度＝水蒸気量÷飽和水蒸気量。
+    データはすべて自作の例（実在の日・地点の記録ではない）。
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Mochiy+Pop+One&family=Russo+One&family=Zen+Kaku+Gothic+New:wght@500;700;900&display=swap" rel="stylesheet">
 <style>
-:root{--felt:#1d5b43;--felt2:#154533;--felt3:#0f3527;--cream:#fbf6e9;--cream2:#efe5cc;--ink:#1f2420;--ink2:#56605a;--gold:#d8a93b;--gold2:#f3d27a;--red:#c8412f;--blue:#2c5d8f;--navy:#1d2c4c;
- --serif:'Kaisei Opti','Hiragino Mincho ProN','Yu Mincho',serif;--round:'Zen Maru Gothic','Hiragino Maru Gothic ProN','Hiragino Sans','Yu Gothic',sans-serif}
+:root{--bg:#151B2E;--bg2:#1d2540;--bg3:#0e1322;--sil:#E3E8F0;--sil2:#aab4c6;--gold:#FFB000;--gold2:#ffd66b;--hum:#9CCBFF;--ng:#ff6b5a;
+ --fh:'Mochiy Pop One','Hiragino Maru Gothic ProN','Yu Gothic',sans-serif;--fb:'Zen Kaku Gothic New','Hiragino Sans','Yu Gothic',sans-serif;--fn:'Russo One','Mochiy Pop One',sans-serif}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{margin:0;color:var(--cream);font-family:var(--round);overflow-x:hidden;background:var(--felt3)}
-body{min-height:100vh;min-height:100dvh;background:
- radial-gradient(ellipse at 50% 35%,rgba(255,255,255,.07),transparent 60%),
- repeating-radial-gradient(circle at 30% 20%,rgba(0,0,0,.035) 0 1px,transparent 1px 3px),
- radial-gradient(ellipse at 50% 50%,var(--felt) 0%,var(--felt2) 70%,var(--felt3) 100%);background-attachment:fixed}
-button{font-family:inherit;touch-action:manipulation}
+html,body{margin:0;height:100%;background:var(--bg);overflow:hidden;font-family:var(--fb);color:var(--sil);-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+#app{position:relative;width:100%;height:100vh;height:100dvh;overflow:hidden;background:var(--bg)}
+#cv{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
+.scr{position:absolute;inset:0;pointer-events:none}
+.pe{pointer-events:auto}
 .hidden{display:none!important}
-.app{max-width:560px;margin:0 auto;padding:6px 10px 20px;position:relative}
-.screen{min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:18px 12px}
-.btn{min-height:48px;padding:10px 22px;border-radius:12px;border:0;background:var(--cream);color:var(--ink);font-size:18px;font-weight:900;cursor:pointer;box-shadow:0 4px 0 #b9ac8a,0 6px 14px rgba(0,0,0,.35);transition:transform .08s}
-.btn:active{transform:translateY(3px);box-shadow:0 1px 0 #b9ac8a}
-.btn.gold{background:linear-gradient(#f6d77e,#d8a93b);color:#3b2a00;box-shadow:0 4px 0 #8f6a15,0 6px 14px rgba(0,0,0,.35)}
-.btn.gold:active{box-shadow:0 1px 0 #8f6a15}
-.btn[disabled]{opacity:.35;cursor:default;transform:none}
-.btn.small{min-height:44px;font-size:15px;padding:8px 14px}
-#mute{position:fixed;top:8px;right:8px;z-index:60;width:44px;height:44px;border-radius:50%;border:2px solid rgba(255,255,255,.5);background:rgba(0,0,0,.3);color:#fff;font-size:20px;cursor:pointer}
+button{font-family:var(--fh);color:inherit;cursor:pointer;border:0;background:none;padding:0;touch-action:manipulation}
+button:disabled{opacity:.4;cursor:default}
+@property --a{syntax:'<angle>';initial-value:0deg;inherits:false}
+@keyframes spin{to{--a:360deg}}
+/* 箔の縁のボタン（トレカの角） */
+.foil{--f:#1c2544;position:relative;display:flex;align-items:center;justify-content:center;gap:8px;min-height:54px;padding:10px 22px;font-size:20px;letter-spacing:.04em;color:#fff;border-radius:9px;border:3px solid transparent;
+ background:linear-gradient(var(--f),var(--f)) padding-box,conic-gradient(from var(--a),#FFB000,#fff4c8,#9fd8ff,#ffd0ea,#c9ffe0,#FFB000) border-box;animation:spin 5s linear infinite;box-shadow:0 5px 0 #06080f,0 0 18px rgba(255,176,0,.18);transition:transform .08s,box-shadow .08s;text-shadow:0 2px 0 rgba(0,0,0,.35)}
+.foil:active{transform:translateY(4px);box-shadow:0 1px 0 #06080f}
+.foil.gold{--f:#FFB000;color:#241600;text-shadow:0 1px 0 rgba(255,255,255,.5)}
+.foil.sil{--f:#E3E8F0;color:#151B2E;text-shadow:none}
+.foil.s{min-height:46px;font-size:16px;padding:8px 10px;white-space:nowrap;letter-spacing:0}
+@media (max-width:420px){.foil.s{font-size:14px}}
+.row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+.row>.foil{flex:1 1 0;min-width:0}
+/* HUD: トレカのタブ */
+.tab{position:absolute;top:calc(10px + env(safe-area-inset-top));min-height:48px;display:flex;align-items:center;gap:6px;padding:6px 14px 6px 10px;border-radius:8px;font-family:var(--fh);font-size:17px;color:#151B2E;
+ background:linear-gradient(115deg,#aeb8c9 0%,#f4f7fb 30%,#c8d0dc 52%,#ffffff 64%,#b3bdcd 100%);border:2px solid #fff;box-shadow:0 4px 0 #06080f,inset 0 0 0 1px rgba(21,27,46,.25)}
+.tab:active{transform:translateY(3px);box-shadow:0 1px 0 #06080f}
+#bBack{left:calc(10px + env(safe-area-inset-left))}
+#bBack b{display:inline-flex;width:28px;height:28px;align-items:center;justify-content:center;background:#151B2E;color:#FFB000;border-radius:5px;font-size:15px}
+#hudR{position:absolute;top:calc(10px + env(safe-area-inset-top));right:calc(10px + env(safe-area-inset-right));display:flex;gap:8px}
+#hudR .tab{position:relative;top:0}
+#kk{background:linear-gradient(115deg,#c98600,#ffe39a 35%,#FFB000 60%,#fff1c2 75%,#d99100);font-family:var(--fn);font-size:18px;border-color:#ffe7a6}
+#kk i{font-style:normal;font-family:var(--fh);font-size:14px}
+.snd{width:48px;justify-content:center;padding:0}
+/* オーバーレイの札（ホロの厚紙） */
+.ov{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:14px;background:rgba(6,9,18,.62);pointer-events:auto}
+.card{position:relative;width:min(620px,100%);max-height:calc(100% - 10px);overflow:auto;padding:22px 20px 18px;border-radius:16px;color:var(--sil);
+ background:radial-gradient(120% 80% at 20% 0%,rgba(255,176,0,.12),transparent 60%),linear-gradient(160deg,#222c4d,#141a2e 70%);border:3px solid transparent;
+ background-clip:padding-box;box-shadow:0 0 0 3px #151B2E,0 0 0 6px rgba(227,232,240,.55),0 18px 50px rgba(0,0,0,.6);animation:cardin .45s cubic-bezier(.2,1.4,.4,1)}
+.card:before{content:"";position:absolute;inset:0;border-radius:13px;pointer-events:none;background:repeating-linear-gradient(115deg,rgba(255,176,0,.0) 0 22px,rgba(255,220,150,.07) 22px 26px,rgba(160,210,255,.07) 26px 30px,rgba(255,176,0,0) 30px 52px);mix-blend-mode:screen}
+@keyframes cardin{0%{transform:translateY(40px) rotate(-3deg) scale(.9);opacity:0}100%{transform:none;opacity:1}}
+.card h2{font-family:var(--fh);font-weight:400;font-size:26px;margin:0 0 8px;color:#fff;letter-spacing:.03em;background:linear-gradient(90deg,#FFB000,#fff2c7,#FFB000);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.card p{margin:6px 0;font-size:16.5px;line-height:1.65}
+.card .lead{font-size:18px;font-weight:700;color:#fff}
+.path{display:flex;align-items:flex-end;gap:6px;justify-content:center;margin:10px 0 12px;flex-wrap:nowrap}
+.path i{display:block;border-radius:4px;border:2px solid rgba(227,232,240,.5);background:#27304f;flex:0 0 auto}
+.path i.done{background:linear-gradient(135deg,#aeb8c9,#fff,#c3cbd8);border-color:#fff}
+.path i.now{background:linear-gradient(135deg,#c98600,#ffe39a,#FFB000);border-color:#fff3c4;box-shadow:0 0 12px #FFB000}
+.minis{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:10px;margin:12px 0}
+.mini{position:relative;aspect-ratio:5/7;border-radius:8px;padding:6px;display:flex;flex-direction:column;align-items:center;justify-content:space-between;text-align:center;font-size:12px;line-height:1.25;color:#151B2E;background:linear-gradient(150deg,#b9c2d0,#f3f6fa 45%,#c4ccd9);border:2px solid #fff;overflow:hidden;animation:flip .6s both}
+.mini b{font-family:var(--fh);font-weight:400;font-size:13px}
+.mini .sym{font-size:0;width:44px;height:44px}
+.mini.t2{background:linear-gradient(150deg,#b9c2d0,#f3f6fa 45%,#c4ccd9)}
+.mini.t2:after,.mini.t3:after,.mini.t4:after{content:"";position:absolute;inset:0;pointer-events:none;mix-blend-mode:soft-light;opacity:.6;background:repeating-linear-gradient(120deg,#ffcfe9 0 10px,#fff1b8 10px 20px,#c7ffe6 20px 30px,#bfe1ff 30px 40px);animation:sheen 3s linear infinite;background-size:200% 200%}
+.mini.t3:after{opacity:.95}.mini.t3{box-shadow:0 0 0 2px #FFB000,0 0 14px rgba(255,176,0,.5)}
+.mini.t4{background:linear-gradient(150deg,#c98600,#ffe39a 40%,#FFB000 70%,#fff1c2);border-color:#fff3c4}
+.mini.ng{filter:grayscale(1) brightness(.6)}
+.mini.lock{background:#232b47;border:2px dashed rgba(227,232,240,.35);color:rgba(227,232,240,.6)}
+.mini .rk{font-family:var(--fn);font-size:11px;background:#151B2E;color:#FFB000;border-radius:3px;padding:1px 5px}
+@keyframes sheen{to{background-position:200% 0}}
+@keyframes flip{0%{transform:rotateY(90deg) scale(.8);opacity:0}100%{transform:none;opacity:1}}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin:10px 0}
+.stats div{background:#10162a;border:1.5px solid rgba(227,232,240,.35);border-radius:8px;padding:6px 10px;font-size:13px}
+.stats b{display:block;font-family:var(--fn);font-weight:400;font-size:22px;color:#FFB000}
 /* タイトル */
-#title h1{font-family:var(--serif);font-size:clamp(34px,10vw,50px);margin:4px 0 0;letter-spacing:.08em;color:var(--cream);text-shadow:0 3px 0 rgba(0,0,0,.35)}
-#title .sub{font-family:var(--serif);font-size:clamp(16px,4.6vw,21px);color:var(--gold2);margin:4px 0 12px;letter-spacing:.14em}
-#title .emo{font-size:30px}
-.tbtns{display:flex;flex-direction:column;gap:12px;width:min(300px,86vw);margin-top:12px}
-.namebox{margin-top:6px;font-size:15px;color:#d9e6dd}
-.namebox input{font:inherit;font-size:17px;padding:8px 10px;border:2px solid var(--gold);border-radius:8px;background:var(--cream);color:var(--ink);width:12em;max-width:70vw}
-.ghost{font-size:14px;color:#cfe0d4;margin-top:12px;min-height:1.2em}
-/* HUD */
-.hud{display:flex;gap:6px;align-items:center;flex-wrap:wrap;padding-right:50px;min-height:44px;font-size:14px}
-.chip{background:rgba(0,0,0,.28);border:1px solid rgba(255,255,255,.25);border-radius:20px;padding:3px 10px;white-space:nowrap}
-.chip b{font-size:16px;color:var(--gold2)}
-#hCombo{font-family:var(--serif);color:var(--gold2);font-size:18px;min-width:3em;text-shadow:0 0 8px rgba(243,210,122,.6)}
-#hCombo.pop{animation:pop .35s}
-@keyframes pop{40%{transform:scale(1.5)}}
-/* パックの5枠 */
-#slots{display:flex;gap:6px;justify-content:center;margin:4px 0 6px}
-.slot{width:34px;height:46px;border-radius:5px;border:2px dashed rgba(255,255,255,.3);display:flex;align-items:center;justify-content:center;font-size:18px;background:rgba(0,0,0,.12)}
-.slot.now{border:2px solid var(--gold2);box-shadow:0 0 10px rgba(243,210,122,.6)}
-.slot.ok{border:2px solid var(--gold);background:var(--cream)}
-.slot.ng{border:2px solid rgba(255,255,255,.35);background:rgba(0,0,0,.35)}
-/* カード */
-#stage{perspective:1200px;display:flex;justify-content:center;position:relative}
-.card{position:relative;width:min(100%,420px);aspect-ratio:320/238;transform-style:preserve-3d;transition:transform .7s cubic-bezier(.3,1.4,.5,1)}
-.card.flip{transform:rotateY(180deg)}
-.face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;border-radius:14px;overflow:hidden;background:var(--cream);color:var(--ink);box-shadow:0 8px 20px rgba(0,0,0,.4)}
-.face.back{transform:rotateY(180deg)}
-.card.g1 .face.back{box-shadow:0 0 0 3px var(--gold),0 0 18px rgba(243,210,122,.7)}
-.card.g2 .face.back{box-shadow:0 0 0 4px var(--gold2),0 0 30px rgba(243,210,122,.95),0 0 60px rgba(243,210,122,.5)}
-.card.g3 .face.back{box-shadow:0 0 0 5px #fff4c9,0 0 36px #ffe07a,0 0 80px rgba(255,224,122,.8)}
-.fhead{display:flex;justify-content:space-between;align-items:center;padding:6px 10px 0;font-size:14px;font-weight:700;color:var(--ink2)}
-.fhead b{font-family:var(--serif);color:var(--ink);font-size:16px}
-.face svg.gr{display:block;width:100%;height:auto}
-.cback{background:repeating-linear-gradient(45deg,#233a63 0 8px,#1d2c4c 8px 16px);border:6px solid var(--cream);display:flex;align-items:center;justify-content:center}
-.res{position:absolute;top:6px;right:8px;display:flex;align-items:center;gap:6px;background:rgba(251,246,233,.94);border-radius:10px;padding:2px 8px;font-family:var(--serif);font-size:20px}
-.holo{position:absolute;inset:0;pointer-events:none;background:linear-gradient(115deg,transparent 30%,rgba(255,240,180,.55) 45%,rgba(255,255,255,.7) 50%,rgba(255,240,180,.55) 55%,transparent 70%);background-size:250% 100%;animation:holo 1.6s ease-in-out infinite;mix-blend-mode:screen}
-@keyframes holo{0%{background-position:120% 0}100%{background-position:-120% 0}}
-#fx{position:fixed;inset:0;pointer-events:none;z-index:45;overflow:hidden}
-.float{position:absolute;font-family:var(--serif);font-weight:700;color:var(--gold2);font-size:26px;text-shadow:0 2px 0 rgba(0,0,0,.5),0 0 10px rgba(243,210,122,.8);animation:fl 1.2s ease-out forwards;white-space:nowrap;transform:translate(-50%,-50%)}
-.float.big{font-size:38px}
-@keyframes fl{0%{opacity:0;margin-top:10px}15%{opacity:1}100%{opacity:0;margin-top:-70px}}
-.spark{position:absolute;width:8px;height:8px;border-radius:50%;background:var(--gold2);box-shadow:0 0 8px var(--gold2)}
-/* 予言 */
-.lab{font-size:14px;color:#d6e4da;margin:8px 0 4px;text-align:left}
-.lab b{color:var(--gold2)}
-#wBtns{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
-.wb{flex:1 1 0;min-width:62px;min-height:56px;border-radius:10px;border:2px solid rgba(255,255,255,.35);background:rgba(0,0,0,.22);color:var(--cream);font-size:14px;font-weight:700;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:4px}
-.wb.sel{background:var(--cream);color:var(--ink);border-color:var(--gold);box-shadow:0 0 0 2px var(--gold)}
-.wb svg{display:block}
-#rBtns{display:grid;grid-template-columns:1fr 1fr;gap:6px}
-.rb{min-height:46px;border-radius:10px;border:2px solid rgba(255,255,255,.3);background:rgba(0,0,0,.22);color:var(--cream);font-size:14px;line-height:1.3;cursor:pointer;padding:5px 8px;text-align:left}
-.rb.sel{background:var(--cream);color:var(--ink);border-color:var(--gold);box-shadow:0 0 0 2px var(--gold)}
-#flipBtn{width:100%;margin-top:10px;font-size:20px;min-height:56px}
-#why{margin-top:8px;background:var(--cream);color:var(--ink);border-radius:12px;padding:10px 12px;font-size:15px;line-height:1.6;text-align:left;box-shadow:0 6px 14px rgba(0,0,0,.3)}
-#why h3{margin:0 0 4px;font-family:var(--serif);font-size:20px}
-#why h3.o{color:var(--red)}
-#why .row{display:flex;justify-content:flex-end;margin-top:6px}
-.em{color:var(--red);font-weight:700}
-/* 重ね札 */
-.ov{position:fixed;inset:0;z-index:40;background:rgba(5,20,14,.62);display:flex;align-items:center;justify-content:center;padding:14px}
-.ov .paper{background:var(--cream);color:var(--ink);border-radius:16px;max-width:440px;width:100%;padding:18px 16px 16px;text-align:center;box-shadow:0 12px 30px rgba(0,0,0,.5);max-height:92vh;overflow:auto;border:3px solid var(--gold)}
-.ov h2{font-family:var(--serif);margin:4px 0 8px;font-size:25px}
-.ov .no{display:inline-block;background:var(--felt2);color:var(--gold2);padding:2px 12px;border-radius:20px;font-size:14px;letter-spacing:.1em}
-.ov p{font-size:16px;line-height:1.65;margin:8px 0;text-align:left}
-.ov svg{max-width:100%;height:auto}
-.stamp{display:inline-block;border:4px solid var(--red);color:var(--red);font-family:var(--serif);font-size:38px;padding:4px 16px;border-radius:8px;transform:rotate(-8deg);margin:8px}
-.stamp.in{animation:stamp .5s cubic-bezier(.2,1.6,.4,1)}
-@keyframes stamp{0%{transform:scale(3) rotate(-8deg);opacity:0}100%{transform:scale(1) rotate(-8deg);opacity:1}}
-table.rec{margin:8px auto;border-collapse:collapse;font-size:15px}
-table.rec td{border-bottom:1px solid #cbbf9f;padding:4px 10px;text-align:left}
-.album{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin:8px 0}
-.album div{aspect-ratio:3/4;border-radius:5px;border:1.5px solid #bfb390;display:flex;align-items:center;justify-content:center;font-size:10px;line-height:1.15;padding:2px;background:#e9dfc4;color:#8a7f64}
-.album div.got{background:#fff;border-color:var(--gold);color:var(--ink);font-weight:700}
-/* パック */
-#pack{width:200px;height:270px;margin:0 auto;border-radius:14px;position:relative;cursor:pointer;background:linear-gradient(160deg,#e9c46a,#b8862b 55%,#e9c46a);box-shadow:0 12px 26px rgba(0,0,0,.5);overflow:hidden;touch-action:none}
-#pack .top{position:absolute;left:0;right:0;top:0;height:46px;background:repeating-linear-gradient(90deg,#c59a3a 0 6px,#b3882c 6px 12px);transition:transform .45s ease-in}
-#pack.torn .top{transform:translate(120px,-80px) rotate(28deg)}
-#pack .lbl{position:absolute;inset:60px 16px 16px;border-radius:10px;background:var(--navy);color:var(--gold2);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;font-family:var(--serif)}
-#pack .lbl b{font-size:22px}
-#pack .tip{position:absolute;bottom:-30px;left:0;right:0;color:#fff;font-size:14px}
-.tearhint{margin-top:34px;color:#d6e4da;font-size:15px}
+#title .box{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(18px + env(safe-area-inset-bottom));width:min(520px,calc(100% - 28px));display:flex;flex-direction:column;gap:10px}
+#title.wide .box{left:auto;right:5%;transform:none;bottom:auto;top:50%;transform:translateY(-10%);width:min(420px,34vw)}
+.sign{display:flex;align-items:center;gap:10px;padding:8px 14px;border-radius:9px;background:#0e1322;border:2px solid rgba(227,232,240,.5)}
+.sign b{font-family:var(--fh);font-weight:400;font-size:15px;color:#FFB000;white-space:nowrap}
+.sign input{flex:1;min-width:0;font:inherit;font-size:18px;border:0;border-bottom:2px dashed rgba(227,232,240,.6);background:transparent;padding:6px 2px;color:#fff;outline:none}
+#bList{position:absolute;top:calc(10px + env(safe-area-inset-top));left:calc(10px + env(safe-area-inset-left))}
+/* トースト・ポップ */
+#toast{position:absolute;left:50%;transform:translateX(-50%);top:calc(78px + env(safe-area-inset-top));max-width:min(560px,92%);padding:10px 16px;border-radius:10px;background:#0e1322;border:2px solid #FFB000;color:#fff;font-size:16px;line-height:1.5;text-align:center;box-shadow:0 8px 24px rgba(0,0,0,.5);animation:cardin .3s ease-out;pointer-events:none;z-index:5}
+#pops{position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:6}
+.pop{position:absolute;transform:translate(-50%,-50%);font-family:var(--fh);font-size:34px;color:#FFB000;white-space:nowrap;text-align:center;line-height:1.1;
+ text-shadow:0 0 1px #151B2E,2px 2px 0 #151B2E,-2px 2px 0 #151B2E,2px -2px 0 #151B2E,-2px -2px 0 #151B2E,0 0 20px rgba(255,176,0,.8);animation:popup 1.9s ease-out forwards}
+.pop small{display:block;font-size:17px;color:#fff}
+.pop.big{font-size:52px}.pop.ng{color:#ff9d8f;text-shadow:2px 2px 0 #151B2E,-2px 2px 0 #151B2E,2px -2px 0 #151B2E,-2px -2px 0 #151B2E}
+@keyframes popup{0%{transform:translate(-50%,-50%) scale(.3);opacity:0}14%{transform:translate(-50%,-50%) scale(1.18);opacity:1}24%{transform:translate(-50%,-50%) scale(1)}80%{opacity:1}100%{transform:translate(-50%,-110%);opacity:0}}
 /* テスト */
-#test{justify-content:flex-start;padding-top:60px}
-#test h2{font-family:var(--serif);margin:0 0 6px}
-#tNum{color:var(--gold2);font-weight:700;margin-bottom:6px}
-.qbox{width:100%;max-width:520px;background:var(--cream);color:var(--ink);border-radius:12px;padding:14px;text-align:left;font-size:17px;line-height:1.65}
-#tFig{text-align:center;margin:6px 0}
-#tFig svg{max-width:100%;height:auto;max-height:240px}
-.choices{display:flex;flex-direction:column;gap:8px;margin-top:10px}
-.choices button{min-height:48px;text-align:left;padding:10px 14px;border:2px solid #bfb390;border-radius:10px;background:#fff;color:var(--ink);font-size:16px;cursor:pointer}
-.choices button.sel{background:var(--felt2);color:#fff}
-.numrow{display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap}
-.numrow input{font:inherit;font-size:22px;width:6em;padding:8px;border:2px solid var(--ink);border-radius:8px;background:#fff}
-.seq{min-height:48px;border:2px dashed #bfb390;border-radius:8px;padding:6px;margin-top:8px;display:flex;flex-direction:column;gap:4px;font-size:15px}
-.seq div{background:var(--felt2);color:#fff;border-radius:6px;padding:6px 8px}
-.fb{margin-top:10px;padding:10px;border-radius:8px;font-size:15px;line-height:1.55}
-.fb.o{background:#fbe6d9;border:2px solid var(--red)}
-.fb.x{background:#ebe6d8;border:2px solid #8a8570}
-.fb b.m{font-family:var(--serif);font-size:24px;margin-right:6px}
-.hint{font-size:13px;color:#555;line-height:1.4}
-@media (prefers-reduced-motion:reduce){*{animation-duration:.01s!important;transition:none!important}}
-</style>
-</head>
-<body>
-<div class="app">
-<!-- タイトル -->
-<section id="title" class="screen">
-  <svg viewBox="0 0 260 150" width="260" height="150" aria-hidden="true">
-    <g transform="translate(64 20) rotate(-14)"><rect width="84" height="116" rx="8" fill="#1d2c4c" stroke="#fbf6e9" stroke-width="4"/><path d="M8 8h68v100H8z" fill="none" stroke="#d8a93b" stroke-width="1.5" stroke-dasharray="4 3"/></g>
-    <g transform="translate(88 14) rotate(-3)"><rect width="84" height="116" rx="8" fill="#fbf6e9" stroke="#d8a93b" stroke-width="2"/><path d="M10 84 Q24 90 34 70 Q44 36 56 34 Q66 36 74 66" fill="none" stroke="#c8412f" stroke-width="3" stroke-linecap="round"/><line x1="10" y1="98" x2="76" y2="98" stroke="#56605a"/><text x="42" y="22" font-size="11" text-anchor="middle" fill="#56605a">気温</text></g>
-    <g transform="translate(118 18) rotate(12)"><rect width="84" height="116" rx="8" fill="#fbf6e9" stroke="#d8a93b" stroke-width="2"/><circle cx="42" cy="58" r="22" fill="#fbf6e9" stroke="#1f2420" stroke-width="3"/><line x1="42" y1="36" x2="42" y2="80" stroke="#1f2420" stroke-width="3"/></g>
-  </svg>
-  <div class="emo">🌤️</div>
-  <h1>空もようパック</h1>
-  <div class="sub">～ 天気と1日の気温 ～</div>
-  <div class="namebox" id="nameBox">なまえ（なくてもOK）<br><input id="nameIn" maxlength="16" autocomplete="off"></div>
-  <div class="tbtns">
-    <button class="btn gold" id="bStart">はじめる</button>
-    <button class="btn hidden" id="bCont">つづきから</button>
-    <button class="btn small hidden" id="bBook1">📖 図鑑</button>
-  </div>
-  <div class="ghost" id="ghost"></div>
-</section>
+#test{display:flex;align-items:center;justify-content:center;padding:70px 12px 14px;background:radial-gradient(90% 70% at 50% 20%,#233059,#151B2E 70%)}
+#test .card{width:min(760px,100%);max-height:100%}
+.tno{font-family:var(--fh);font-size:15px;color:#FFB000}
+.prog{display:flex;gap:4px;margin:8px 0 12px}.prog i{flex:1;height:9px;border-radius:3px;background:#2a3456}.prog i.on{background:linear-gradient(90deg,#c98600,#FFB000,#ffe39a)}
+.tq{font-size:18px;line-height:1.65;font-weight:700;color:#fff}
+.fig2{margin:10px 0;background:#fff;border-radius:8px;padding:6px;text-align:center;color:#151B2E}.fig2 svg{max-width:100%;height:auto}
+.ch{display:grid;gap:9px;margin-top:10px}
+.ch button{min-height:52px;padding:10px 14px;border-radius:9px;text-align:left;font-family:var(--fb);font-weight:700;font-size:16px;line-height:1.45;color:#151B2E;background:linear-gradient(150deg,#b9c2d0,#f3f6fa 45%,#c4ccd9);border:2px solid #fff;box-shadow:0 4px 0 #06080f}
+.ch button:active{transform:translateY(3px);box-shadow:0 1px 0 #06080f}
+.numrow{display:flex;gap:8px;align-items:center;margin-top:10px}.numrow input{flex:1;min-width:0;font:inherit;font-size:22px;padding:10px;border-radius:8px;border:2px solid rgba(227,232,240,.6);background:#0e1322;color:#fff}
+.ord{min-height:40px;margin:8px 0}.ord div{padding:7px 10px;border-radius:7px;background:#FFB000;color:#241600;font-weight:700;margin:4px 0}
+.small{font-size:13px;opacity:.85}
+@media (prefers-reduced-motion:reduce){.foil{animation:none}.card{animation:none}.mini{animation:none}.mini:after{animation:none!important}.pop{animation:popfade 1.9s forwards}@keyframes popfade{0%,80%{opacity:1}100%{opacity:0}}}
+</style></head><body>
+<div id="app">
+  <canvas id="cv"></canvas>
 
-<!-- 本編 -->
-<section id="play" class="hidden">
-  <div class="hud" id="hud">
-    <span class="chip" id="hPack">導入</span>
-    <span class="chip">点 <b id="hScore">0</b></span>
-    <span class="chip">🃏 <b id="hAlbum">0</b>/14</span>
-    <span id="hCombo"></span>
-    <span class="chip hidden" id="hTime">⏱ 0:00</span>
-  </div>
-  <div id="slots"></div>
-  <div id="packArea" class="hidden"></div>
-  <div id="table">
-    <div id="stage"></div>
-    <div id="predict">
-      <div class="lab">① 裏の天気を<b>予言</b></div>
-      <div id="wBtns"></div>
-      <div id="rBox"><div class="lab">② その<b>根拠</b>を1つ</div><div id="rBtns"></div></div>
-      <button class="btn gold" id="flipBtn" disabled>めくる</button>
+  <div id="title" class="scr">
+    <div class="box pe">
+      <button class="foil gold" id="bStart">はじめる</button>
+      <button class="foil hidden" id="bCont">つづきから</button>
+      <div class="sign" id="nameRow"><b>サイン</b><input id="nameIn" maxlength="16" placeholder="なまえ（空でも遊べる）" autocomplete="off"></div>
+      <div class="row"><button class="foil s" id="bSnd1">🔊 音あり</button><button class="foil s zk" id="bBook1">📖 図鑑</button><button class="foil s" id="bAlb1">バインダー</button></div>
     </div>
-    <div id="why" class="hidden"></div>
+    <button class="tab pe hidden" id="bList"><b style="display:inline-flex;width:26px;height:26px;align-items:center;justify-content:center;background:#151B2E;color:#FFB000;border-radius:5px;font-size:14px">◀</b>一覧へ</button>
   </div>
-</section>
 
-<!-- 確認テスト -->
-<section id="test" class="screen hidden">
-  <h2>📝 確認テスト</h2>
-  <div class="namebox hidden" id="tNameBox">なまえ <input id="tName" maxlength="16" autocomplete="off"></div>
-  <div id="tNum"></div>
-  <div class="qbox"><div id="tQ"></div><div id="tFig"></div><div id="tA"></div><div id="tFb"></div></div>
-</section>
-
-<!-- おわり -->
-<section id="end" class="screen hidden">
-  <div class="stamp">おつかれさま</div>
-  <p style="font-size:16px;line-height:1.7">天気は、気温の<b style="color:#f3d27a">高さ</b>ではなく<br>1日の変化の<b style="color:#f3d27a">幅</b>で見分ける。<br>晴れ＝大きい　くもり・雨＝小さい</p>
-  <div class="tbtns">
-    <button class="btn small hidden" id="bBook2">📖 図鑑</button>
-    <button class="btn small" id="bAgain">もう一度 最終パック</button>
-    <button class="btn small" id="bTop">タイトルへ</button>
+  <div id="hud" class="scr hidden">
+    <button class="tab pe" id="bBack" aria-label="もどる"><b>◀</b>もどる</button>
+    <div id="hudR" class="pe"><div class="tab" id="kk"><i>✦</i><span id="kkN">0</span></div><button class="tab snd" id="bSnd" aria-label="音">🔊</button></div>
   </div>
-</section>
+
+  <div id="ov" class="ov hidden"><div class="card" id="ovBox"></div></div>
+  <div id="test" class="scr hidden pe"><div class="card" id="tbox"></div></div>
+  <div id="toast" class="hidden"></div>
+  <div id="pops"></div>
 </div>
-<div id="fx"></div>
-<button id="mute" aria-label="音">🔊</button>
 
 <script>/*@SUBMIT_CARD_BEGIN*/
 /* ==========================================================
@@ -1430,331 +1383,516 @@ window.ZUKAN_CARDS={"v": 1, "grade": "chu2", "name": "中2理科図鑑", "econom
 })();
 
 /*@ZUKAN_END*/</script>
+
 <script>
-(function(){
 'use strict';
-var GID='kisho-soramoyo',KOMA='chu2-kisho-09',SKEY='rika-zukan:chu2:game:'+GID+':v1';
-var TITLE='空もようパック',SUB='天気と1日の気温';
-function $(id){return document.getElementById(id)}
-var RM=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
-function rf(a,b){return a+Math.random()*(b-a)}
-function ri(a,b){return a+Math.floor(Math.random()*(b-a+1))}
-function pick(a){return a[Math.floor(Math.random()*a.length)]}
-function shuffle(a){a=a.slice();for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1)),t=a[i];a[i]=a[j];a[j]=t}return a}
-function fmt(t){t=Math.max(0,Math.round(t));return Math.floor(t/60)+':'+String(t%60).padStart(2,'0')}
-function r1(x){return Math.round(x*10)/10}
+const GID='kisho-soramoyo',KOMA='chu2-kisho-09',SKEY='rika-zukan:chu2:game:'+GID+':v1';
+const UNIT='中2理科　気象とその変化　第9回',GTITLE='空もようパック ～天気と1日の気温～';
+const TEST_ONLY=window.GAME_MODE==='test';
+const RM=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const $=s=>document.querySelector(s);
+const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const clamp=(v,a,b)=>v<a?a:v>b?b:v, lerp=(a,b,t)=>a+(b-a)*t, rnd=(a,b)=>a+Math.random()*(b-a), pick=a=>a[Math.floor(Math.random()*a.length)];
+const f1=v=>(Math.round(v*10)/10).toFixed(1);
 
-/* ---------- 飽和水蒸気量（g/m³）: 湿度の線を「水蒸気量÷飽和水蒸気量」で計算するため ---------- */
-var SAT={'-5':3.4,'-4':3.7,'-3':3.9,'-2':4.2,'-1':4.5,0:4.8,1:5.2,2:5.6,3:5.9,4:6.4,5:6.8,6:7.3,7:7.8,8:8.3,9:8.8,10:9.4,11:10.0,12:10.7,13:11.4,14:12.1,15:12.8,16:13.6,17:14.5,18:15.4,19:16.3,20:17.3,21:18.3,22:19.4,23:20.6,24:21.8,25:23.1,26:24.4,27:25.8,28:27.2,29:28.8,30:30.4,31:32.1,32:33.8,33:35.7,34:37.6,35:39.6};
-function sat(t){t=Math.max(-5,Math.min(35,t));var a=Math.floor(t),b=Math.min(35,a+1),f=t-a;return SAT[a]+(SAT[b]-SAT[a])*f}
+/* ===== 理科のデータ ===== */
+// 飽和水蒸気量 g/m³（0〜30℃は kisho-suijoki-block の表。範囲外は同じ系列で外挿）
+const SATT={'-5':3.4,'-4':3.7,'-3':3.9,'-2':4.2,'-1':4.5,0:4.8,1:5.2,2:5.6,3:5.9,4:6.4,5:6.8,6:7.3,7:7.8,8:8.3,9:8.8,10:9.4,11:10.0,12:10.7,13:11.4,14:12.1,15:12.8,16:13.6,17:14.5,18:15.4,19:16.3,20:17.3,21:18.3,22:19.4,23:20.6,24:21.8,25:23.1,26:24.4,27:25.8,28:27.2,29:28.8,30:30.4,31:32.1,32:33.8,33:35.7,34:37.6,35:39.6};
+function sat(t){t=clamp(t,-5,35);const a=Math.floor(t),b=Math.min(35,a+1),fa=SATT[a],fb=SATT[b];return fa+(fb-fa)*(t-a)}
+const WN={sun:'晴れ',cloud:'くもり',rain:'雨'};
+const SEASON={spring:{m:4,nm:'春',tag:'#ffc9dc'},summer:{m:8,nm:'夏',tag:'#ffd66b'},autumn:{m:10,nm:'秋',tag:'#ffb27a'},winter:{m:1,nm:'冬',tag:'#bfe1ff'}};
+const PLACES=['内陸の町','海辺の町','山のふもと','盆地の町','川ぞいの町','丘の上の町'];
+// 季節ごとの目安（最低・幅）。晴れ7〜14℃／くもり3〜5℃／雨0.6〜2℃
+const PARAM={
+ spring:{sun:[[6,10],[9,13]],cloud:[[11,14],[3,4.6]],rain:[[10,13],[.7,1.8]]},
+ summer:{sun:[[23,26],[7,10]],cloud:[[25,27],[3,4.5]],rain:[[24,26],[.7,1.8]]},
+ autumn:{sun:[[10,14],[8,12]],cloud:[[14,17],[3,4.5]],rain:[[13,16],[.7,1.8]]},
+ winter:{sun:[[-3,0],[9,12]],cloud:[[2,5],[3,4.2]],rain:[[3,5],[.6,1.5]]}};
+function prof(h,hmin,hmax,night){
+ if(h<=hmin)return night*(1-Math.pow(h/hmin,1.1));
+ if(h<=hmax)return (1-Math.cos(Math.PI*(h-hmin)/(hmax-hmin)))/2;
+ const k=(h-hmax)/(24-hmax);return 1-(1-night)*(1-Math.exp(-2.4*k))/(1-Math.exp(-2.4))}
+const NPT=49; // 0.5時間ごと
+function genDay(sp){
+ const s=sp.season,P=PARAM[s],T=[],H=[];let truth,kind;
+ const nz=a=>rnd(-a,a);
+ if(!sp.split){
+  const w=sp.w,[bm,rr]=P[w];const base=sp.base!=null?sp.base:rnd(bm[0],bm[1]),R=sp.R!=null?sp.R:rnd(rr[0],rr[1]);
+  let v;
+  if(w==='sun'){v=sat(base)*rnd(.9,.95)}else if(w==='cloud'){v=sat(base)*rnd(.86,.9)}
+  for(let i=0;i<NPT;i++){const h=i/2;let t;
+   if(w==='sun')t=base+R*prof(h,5.5,14,.3)+nz(.12);
+   else if(w==='cloud')t=base+R*prof(h,6,13,.38)+nz(.15);
+   else t=base+R*prof(h,7,13.5,.45)+nz(.1);
+   T.push(t);
+   let hu=w==='rain'?clamp(94.5+2.5*Math.sin(h/3.3+base)+nz(.7),88,99):clamp(v*(1+nz(.012))/sat(t)*100,18,99);H.push(hu)}
+  truth=[w];kind=s+'-'+w;
+ }else{
+  const [a,b]=sp.split,sw=sp.sw||12.5;
+  if(a==='sun'){ // 晴れのち雨／晴れのちくもり
+   const base=rnd(P.sun[0][0],P.sun[0][1]),R=rnd(P.sun[1][0],P.sun[1][1]),v=sat(base)*.92;let tsw=null;
+   for(let i=0;i<NPT;i++){const h=i/2;let t,hu;
+    if(h<sw){t=base+R*prof(h,5.5,14,.3)+nz(.12);hu=clamp(v/sat(t)*100,18,99)}
+    else{if(tsw==null)tsw=T[i-1];const k=1-Math.exp(-(h-sw)/.8);const drop=b==='rain'?1.6:.6;t=tsw-drop*k+(b==='rain'?-.25*(h-sw)/12:-.9*(h-sw)/12)+nz(.1);
+     hu=b==='rain'?lerp(H[i-1]||60,rnd(93,98),.55):clamp(lerp(H[i-1]||60,78,.35)+nz(1.5),30,90)}
+    T.push(t);H.push(hu)}
+  }else{ // 雨のち晴れ
+   const base=rnd(P[a][0][0],P[a][0][1]),R2=rnd(8,9.5);let rain0=null;const v0=sat(base+.5)*.93;
+   for(let i=0;i<NPT;i++){const h=i/2;let t,hu;
+    if(h<sw){t=base+.5*prof(h,6,12,.4)+nz(.1);hu=clamp(95+2*Math.sin(h/2.7)+nz(.6),89,99)}
+    else{if(rain0==null)rain0=T[i-1];const x=(h-sw)/(15-sw);t=h<=15?rain0+R2*(1-Math.cos(Math.PI*clamp(x,0,1)))/2:rain0+R2*(1-(1-.35)*(1-Math.exp(-2.2*(h-15)/9))/(1-Math.exp(-2.2)))+nz(.1);
+     t+=nz(.1);hu=clamp(v0/sat(t)*100,25,97)}
+    T.push(t);H.push(hu)}
+  }
+  truth=[a,b];kind=a+'-'+b;
+ }
+ const mn=Math.min(...T),mx=Math.max(...T);
+ return {T:T.map(x=>Math.round(x*10)/10),H:H.map(x=>Math.round(x)),truth,kind,season:s,split:!!sp.split,sw:sp.sw||12.5,
+  place:sp.place||pick(PLACES),date:SEASON[s].m+'月'+(1+Math.floor(Math.random()*28))+'日',min:mn,max:mx,range:mx-mn}}
+function halfRange(d,a,b){let mn=1e9,mx=-1e9,imn=0,imx=0;for(let i=a*2;i<=b*2;i++){if(d.T[i]<mn){mn=d.T[i];imn=i}if(d.T[i]>mx){mx=d.T[i];imx=i}}return {mn,mx,r:mx-mn,imn:imn/2,imx:imx/2}}
 
-/* ---------- 天気（日本式天気記号） ---------- */
-var WX={sun:{n:'晴れ'},cloud:{n:'くもり'},rain:{n:'雨'},s2r:{n:'晴れのち雨'},r2s:{n:'雨のち晴れ'}};
-function sym1(k,s){s=s||30;var c=s/2,r=s*.36,w=Math.max(2,s*.07),h='';
-  if(k==='sun')h='<circle cx="'+c+'" cy="'+c+'" r="'+r+'" fill="#fff" stroke="#1f2420" stroke-width="'+w+'"/><line x1="'+c+'" y1="'+(c-r)+'" x2="'+c+'" y2="'+(c+r)+'" stroke="#1f2420" stroke-width="'+w+'"/>';
-  else if(k==='cloud')h='<circle cx="'+c+'" cy="'+c+'" r="'+r+'" fill="#fff" stroke="#1f2420" stroke-width="'+w+'"/><circle cx="'+c+'" cy="'+c+'" r="'+(r*.52)+'" fill="none" stroke="#1f2420" stroke-width="'+w+'"/>';
-  else h='<circle cx="'+c+'" cy="'+c+'" r="'+r+'" fill="#1f2420" stroke="#1f2420" stroke-width="'+w+'"/>';
-  return '<svg viewBox="0 0 '+s+' '+s+'" width="'+s+'" height="'+s+'" aria-hidden="true">'+h+'</svg>'}
-function sym(k,s){if(k==='s2r')return sym1('sun',s)+'<small style="font-size:11px">のち</small>'+sym1('rain',s);if(k==='r2s')return sym1('rain',s)+'<small style="font-size:11px">のち</small>'+sym1('sun',s);return sym1(k,s)}
+/* ===== ボックス（ラウンド）の設計 ===== */
+// sc: 目盛り（[下,上]＝固定／'auto'＝カードごとに変わる）、hum: 湿度の線、split: 午前・午後のシール
+const BOXES=[
+ {nm:'3日パック',sub:'はじめての開封',sc:[0,30],hum:0,list:[{season:'spring',w:'sun'},{season:'spring',w:'rain'},{season:'spring',w:'cloud'}],
+  brief:['パックの窓のギザギザを、<b>指で左から右へ</b>破ろう。0時からの気温の線が出てくる。','開ききる前に、下のトレーの<b>天気シール</b>をパックに貼って宣言！　早く当てるほど箔がランクアップ。']},
+ {nm:'5日パック',sub:'幅を見きわめろ',sc:[0,30],hum:0,list:[{season:'spring',w:'cloud'},{season:'spring',w:'sun'},{season:'spring',w:'rain'},{season:'spring',w:'sun',R:7.2,place:'海辺の町'},{season:'spring',w:'cloud'}],
+  brief:['見るのは<b>1日の気温の変化の幅</b>（最高−最低）。','3連続で当てると<b>連続的中×2</b>、5連続で×3。外すと0にもどる。']},
+ {nm:'四季パック',sub:'高さにだまされるな',sc:[-5,35],hum:0,list:[{season:'winter',w:'sun'},{season:'summer',w:'rain'},{season:'autumn',w:'cloud'},{season:'summer',w:'sun'},{season:'winter',w:'cloud'}],
+  brief:['季節がばらばらのパック。<b>冬の晴れ</b>は気温が低い、<b>夏の雨</b>は気温が高い。','天気を決めるのは高さではなく<b>幅</b>。']},
+ {nm:'湿度パック',sub:'点線が解禁',sc:[-5,35],hum:1,list:[{season:'autumn',w:'sun'},{season:'spring',w:'rain'},{season:'summer',w:'sun'},{season:'autumn',w:'cloud'},{season:'winter',w:'rain'}],
+  brief:['カードに<b>湿度の点線</b>（右の目盛り％）が増えた。','晴れの日は湿度が<b>気温と逆向き</b>に動く。雨の日は<b>90%以上のまま</b>。']},
+ {nm:'ズームパック',sub:'目盛りがちがう',sc:'auto',hum:1,list:[{season:'summer',w:'rain'},{season:'spring',w:'sun'},{season:'autumn',w:'cloud'},{season:'winter',w:'sun'},{season:'autumn',w:'rain'}],
+  brief:['カードごとに<b>目盛りの間かく</b>がちがう！　山が大きく見えても、幅は小さいかも。','左の<b>目盛りの数字</b>で最高と最低を読もう。']},
+ {nm:'天気が変わる日',sc:[-5,35],hum:1,split:1,sub:'午前と午後',list:[{season:'spring',split:['sun','rain'],sw:12.5},{season:'summer',w:'sun'},{season:'autumn',split:['rain','sun'],sw:11},{season:'spring',w:'rain'},{season:'winter',split:['sun','rain'],sw:13}],
+  brief:['シールの台紙が<b>午前・午後</b>の2つに分かれた。','途中で気温の上がり方と湿度が急に変わったら、そこで<b>天気が変わった</b>しるし。']},
+ {nm:'1週間ボックス',sc:'auto',hum:1,split:1,sub:'7日ぶんを一気に',list:'week',
+  brief:['7日ぶんの大きな箱。目盛りも季節もいろいろ。','ここまでの見方を全部つかおう。']},
+ {nm:'月末ボックス',sc:'auto',hum:1,split:1,ta:150,sub:'タイムアタック',list:'final',
+  brief:['<b>2分30秒</b>で5パック。初めて見るカードばかり。','<b>5枚中4枚以上</b>当てたら、本編クリア！']}];
+const BOXW=[3,5,5,5,5,5,7,5];
+function makeList(bi){const B=BOXES[bi];
+ if(Array.isArray(B.list))return B.list.slice().sort(()=>Math.random()-.5);
+ const ss=['spring','summer','autumn','winter'],ws=['sun','cloud','rain'];let L=[];
+ if(B.list==='week'){for(let i=0;i<5;i++)L.push({season:pick(ss),w:ws[i%3]});L.push({season:pick(ss),w:pick(ws)});L.push({season:pick(['spring','autumn']),split:pick([['sun','rain'],['rain','sun']]),sw:rnd(11,13)});}
+ else{L=[{season:pick(ss),w:'sun'},{season:pick(ss),w:'cloud'},{season:pick(ss),w:'rain'},{season:pick(ss),w:pick(ws)},{season:pick(['spring','autumn','winter']),split:pick([['sun','rain'],['rain','sun']]),sw:rnd(11.5,13)}]}
+ return L.sort(()=>Math.random()-.5)}
+// バインダー（集める）
+const ALBUM=[['spring-sun','春の晴れ'],['spring-cloud','春のくもり'],['spring-rain','春の雨'],['summer-sun','夏の晴れ'],['summer-cloud','夏のくもり'],['summer-rain','夏の雨'],['autumn-sun','秋の晴れ'],['autumn-cloud','秋のくもり'],['autumn-rain','秋の雨'],['winter-sun','冬の晴れ'],['winter-cloud','冬のくもり'],['winter-rain','冬の雨'],['sun-rain','晴れのち雨'],['rain-sun','雨のち晴れ']];
+const TIERN=['','シルバー','ホロ','レインボー','ゴールド'];
 
-/* ---------- 根拠カード ---------- */
-var RS={
- big:{t:'1日の変化の幅が大きい',ok:['sun']},
- small:{t:'変化の幅が小さい（数℃）',ok:['cloud']},
- flat:{t:'ほとんど変化しない（ほぼ平ら）',ok:['rain']},
- high:{t:'気温が高い',ok:[],trap:'気温の<b>高さ</b>は季節で決まる。夏の雨の日も高いし、冬の晴れの日は低い。見るのは<b class="em">変化の幅</b>。'},
- low:{t:'気温が低い',ok:[],trap:'気温の<b>低さ</b>は季節で決まる。冬の晴れの日も低い。見るのは<b class="em">変化の幅</b>。'},
- hinv:{t:'湿度が気温と逆向きに大きく動く',ok:['sun']},
- hhi:{t:'湿度がずっと90％以上',ok:['rain']},
- s2r:{t:'途中から変化が止まり、湿度が上がった',ok:['s2r']},
- r2s:{t:'途中から大きく上がり、湿度が下がった',ok:['r2s']}
-};
-
-/* ---------- 8つのパック ---------- */
-var SEA={spring:{n:'4月',lo:[8,12]},summer:{n:'8月',lo:[23,26]},autumn:{n:'10月',lo:[12,16]},winter:{n:'1月',lo:[-3,2]}};
-var PACKS=[
- {name:'晴れと雨',w:['sun','rain'],r:['big','flat','high','low'],deal:[['sun','spring'],['rain','spring'],['sun','autumn'],['rain','autumn'],['sun','spring']],scale:'fixed',
-  txt:'5枚とも「晴れ」か「雨」。<br>めくる前に、<b class="em">天気</b>と<b class="em">根拠</b>を1つずつ決める。<br>天気も根拠も合っていたら大当たり。続けて当てると光が強くなる。'},
- {name:'くもりが入る',w:['sun','cloud','rain'],r:['big','small','flat','high','low'],deal:[['cloud','spring'],['sun','spring'],['rain','autumn'],['cloud','autumn'],['sun','autumn']],scale:'fixed',
-  txt:'<b class="em">くもり</b>が入る。<br>くもりの日も日光が地面に届きにくく、夜は雲が熱を逃がしにくい。だから変化の幅は<b>小さめ（数℃）</b>。<br>雨の日は、それよりさらに平ら。'},
- {name:'季節がちがう',w:['sun','cloud','rain'],r:['big','small','flat','high','low'],deal:[['sun','winter'],['rain','summer'],['sun','summer'],['cloud','winter'],['rain','winter']],scale:'fixed',rule:'season',
-  txt:'<b class="em">1月と8月</b>の日がまざる。<br>1月の晴れは気温が低いまま、8月の雨は高いまま。<br>高さにだまされず、<b>何を見れば天気が分かるか</b>をつかもう。'},
- {name:'湿度の線',w:['sun','cloud','rain'],r:['big','small','flat','hinv','hhi','high'],deal:[['sun','spring'],['rain','summer'],['cloud','autumn'],['sun','winter'],['rain','spring']],scale:'fixed',hum:1,
-  txt:'青い点線の<b class="em">湿度</b>が加わる（目盛りは右）。<br>晴れの日は、気温が上がると湿度が下がる＝<b>逆向き</b>に動く。<br>雨の日は、湿度が高いまま。'},
- {name:'目盛りが変わる',w:['sun','cloud','rain'],r:['big','small','flat','hinv','hhi','high'],deal:[['rain','summer'],['sun','spring'],['cloud','winter'],['rain','autumn'],['sun','autumn']],scale:'auto',hum:1,rule:'scale',
-  txt:'グラフの<b class="em">目盛りの取り方</b>がカードごとにちがう。<br>山が大きく見えても、数字を読むと2℃しかない…ということがある。<br>最高と最低を<b>数字で</b>読んで、幅を出そう。'},
- {name:'空が変わる日（山場）',w:['sun','cloud','rain','s2r','r2s'],r:['big','small','flat','hhi','s2r','r2s'],deal:[['s2r','spring'],['sun','autumn'],['r2s','spring'],['rain','summer'],['s2r','autumn']],scale:'fixed',hum:1,
-  txt:'<b class="em">途中で天気が変わる日</b>がまざる。<br>グラフの<b>前半と後半</b>を分けて見よう。<br>雨が降り出すと、気温の変化が止まり、湿度がはね上がる。'},
- {name:'記号で予言',w:['sun','cloud','rain','s2r','r2s'],r:['big','small','flat','hhi','s2r','r2s'],deal:[['sun','winter'],['r2s','autumn'],['cloud','summer'],['rain','winter'],['s2r','summer']],scale:'auto',hum:1,symOnly:1,
-  txt:'予言のボタンが<b class="em">天気記号だけ</b>になる。<br>○に縦線＝晴れ　◎＝くもり　●＝雨<br>目盛りもカードごとにちがう。これまでの全部を使おう。'},
- {name:'最終パック（タイムアタック）',w:['sun','cloud','rain','s2r','r2s'],r:['big','small','flat','hhi','s2r','r2s'],deal:'mix',scale:'hidden',hum:1,final:1,
-  txt:'目盛りの<b class="em">数字が消えた</b>5枚。<br>気温は<b>1ます＝2℃</b>、湿度は1ます＝20％。ますを数えて幅を読む。<br><b>4枚以上</b>を根拠つきで当てればクリア。タイムも記録（前回の自分と勝負）。'}
-];
-
-/* ---------- 1日の気温・湿度のデータをつくる ---------- */
-function shape(h,A){ // 最低5.5時・最高14時の山（0〜1）
-  var x=h<5.5?h+24:h;
-  if(x<=14)return (1-Math.cos(Math.PI*(x-5.5)/8.5))/2;
-  return 1-(1-Math.cos(Math.PI*(x-14)/15.5))/2;}
-function genDay(kind,sea){var S0=SEA[sea],lo=rf(S0.lo[0],S0.lo[1]),T=[],H=[],i,A,v,sw;
-  if(kind==='sun'){A=sea==='winter'?rf(10,14):(sea==='summer'?rf(8,10):rf(9,13));v=sat(lo)*rf(.86,.95);
-    for(i=0;i<=24;i++){T.push(r1(lo+A*shape(i)+rf(-.15,.15)))}}
-  else if(kind==='cloud'){lo+=2;A=rf(3,4.5);v=sat(lo)*rf(.78,.86);
-    for(i=0;i<=24;i++){T.push(r1(lo+A*shape(i)+rf(-.25,.25)))}}
-  else if(kind==='rain'){lo+=3;A=rf(.6,1.6);
-    for(i=0;i<=24;i++){T.push(r1(lo+A*shape(i)*.8+rf(-.3,.3)))}}
-  else if(kind==='s2r'){A=rf(8,11);sw=ri(11,13);v=sat(lo)*rf(.8,.9);var tsw=lo+A*shape(sw),lvl=tsw-rf(2.5,4);
-    for(i=0;i<=24;i++){var t;if(i<=sw)t=lo+A*shape(i);else if(i<=sw+2)t=tsw+(lvl-tsw)*(i-sw)/2;else t=lvl-(i-sw-2)*rf(.02,.09);T.push(r1(t+rf(-.15,.15)))}}
-  else if(kind==='r2s'){lo+=2;sw=ri(9,11);var lv=lo+rf(.5,1.2),pk=lv+rf(6,9);
-    for(i=0;i<=24;i++){var u;if(i<=sw)u=lv+rf(-.25,.25);else if(i<=14)u=lv+(pk-lv)*(1-Math.cos(Math.PI*(i-sw)/(14-sw)))/2;else u=pk-(pk-(lo-1.5))*(1-Math.cos(Math.PI*Math.min(1,(i-14)/15.5)))/2;T.push(r1(u))}}
-  // 湿度
-  for(i=0;i<=24;i++){var hh;
-    if(kind==='sun'||kind==='cloud')hh=v/sat(T[i])*100;
-    else if(kind==='rain')hh=rf(91,99);
-    else if(kind==='s2r')hh=i<=sw?v/sat(T[i])*100:Math.min(99,(v/sat(T[sw])*100)+(i-sw)*22+rf(-2,2));
-    else hh=i<=sw?rf(92,99):sat(lv)*.97/sat(T[i])*100;
-    H.push(Math.round(Math.max(20,Math.min(100,hh))))}
-  var mx=Math.max.apply(null,T),mn=Math.min.apply(null,T);
-  return {k:kind,sea:sea,T:T,H:H,mx:mx,mn:mn,sw:sw||0}}
-function seaName(s){return SEA[s].n}
-function albumKey(c){if(c.k==='s2r'||c.k==='r2s')return c.k;return c.k+'-'+c.sea}
-var ALBUM=[['sun-spring','4月の晴れ'],['sun-summer','8月の晴れ'],['sun-autumn','10月の晴れ'],['sun-winter','1月の晴れ'],['cloud-spring','4月のくもり'],['cloud-autumn','10月のくもり'],['cloud-summer','8月のくもり'],['cloud-winter','1月のくもり'],['rain-spring','4月の雨'],['rain-summer','8月の雨'],['rain-autumn','10月の雨'],['rain-winter','1月の雨'],['s2r','晴れのち雨'],['r2s','雨のち晴れ']];
-function albumCount(){var n=0;ALBUM.forEach(function(a){if(S.album[a[0]])n++});return n}
-function albumName(k){for(var i=0;i<ALBUM.length;i++)if(ALBUM[i][0]===k)return ALBUM[i][1];return ''}
-
-/* ---------- グラフ（主役の図） ---------- */
-function graphSVG(c,o){o=o||{};var W=320,Hh=204,L=34,R=o.hum?286:306,Tp=24,B=174,sc=o.scale||'fixed',lo,hi,st;
-  if(sc==='fixed'){lo=-5;hi=35;st=5}
-  else if(sc==='hidden'){lo=Math.floor((c.mn-3)/2)*2;hi=lo+36;st=2;if(hi<c.mx+2){hi=Math.ceil((c.mx+3)/2)*2;lo=hi-36}}
-  else{var span=c.mx-c.mn;st=span<4?1:(span<9?2:(span<16?4:5));lo=Math.floor((c.mn-st*.6)/st)*st;hi=Math.ceil((c.mx+st*.6)/st)*st;if(hi-lo<st*4)hi=lo+st*4}
-  function X(h){return L+(R-L)*h/24}
-  function Y(t){return B-(B-Tp)*(t-lo)/(hi-lo)}
-  function YH(p){return B-(B-Tp)*p/100}
-  var s='<svg class="gr" viewBox="0 0 '+W+' '+Hh+'" xmlns="http://www.w3.org/2000/svg" font-family="sans-serif">';
-  s+='<rect x="'+L+'" y="'+Tp+'" width="'+(R-L)+'" height="'+(B-Tp)+'" fill="#fffdf6"/>';
-  var t;for(t=lo;t<=hi+1e-6;t+=st){var y=Y(t),major=sc==='hidden'?((t-lo)%10===0):true;
-    s+='<line x1="'+L+'" y1="'+y.toFixed(1)+'" x2="'+R+'" y2="'+y.toFixed(1)+'" stroke="'+(t===0&&sc!=='hidden'?'#9aa39c':'#dcd6c3')+'" stroke-width="'+(t===0&&sc!=='hidden'?1.2:.8)+'"/>';
-    if(sc!=='hidden'&&(sc!=='fixed'||t%10===0))s+='<text x="'+(L-4)+'" y="'+(y+4).toFixed(1)+'" font-size="11" text-anchor="end" fill="#c8412f">'+t+'</text>'}
-  if(o.hum&&sc!=='hidden'){for(var p=0;p<=100;p+=20)s+='<text x="'+(R+4)+'" y="'+(YH(p)+4).toFixed(1)+'" font-size="10" fill="#2c5d8f">'+p+'</text>'}
-  if(o.hum&&sc==='hidden'){for(var q=0;q<=100;q+=20)s+='<line x1="'+(R-4)+'" y1="'+YH(q)+'" x2="'+R+'" y2="'+YH(q)+'" stroke="#2c5d8f"/>'}
-  for(var h=0;h<=24;h+=3){var x=X(h);s+='<line x1="'+x.toFixed(1)+'" y1="'+Tp+'" x2="'+x.toFixed(1)+'" y2="'+B+'" stroke="#e8e2cf" stroke-width=".8"/>';if(h%6===0)s+='<text x="'+x.toFixed(1)+'" y="'+(B+14)+'" font-size="11" text-anchor="middle" fill="#56605a">'+h+'</text>'}
-  s+='<text x="'+(R)+'" y="'+(B+27)+'" font-size="10" text-anchor="end" fill="#56605a">時</text>';
-  s+='<text x="4" y="10" font-size="10" fill="#c8412f">'+(sc==='hidden'?'気温 1ます2℃':'気温℃')+'</text>';
-  if(o.hum)s+='<text x="'+(W-4)+'" y="10" font-size="10" text-anchor="end" fill="#2c5d8f">'+(sc==='hidden'?'湿度 1ます20%':'湿度%')+'</text>';
-  s+='<rect x="'+L+'" y="'+Tp+'" width="'+(R-L)+'" height="'+(B-Tp)+'" fill="none" stroke="#56605a" stroke-width="1.2"/>';
-  if(o.hum){var hp='';c.H.forEach(function(v,i){hp+=(i?'L':'M')+X(i).toFixed(1)+' '+YH(v).toFixed(1)});s+='<path d="'+hp+'" fill="none" stroke="#2c5d8f" stroke-width="2.2" stroke-dasharray="5 4" stroke-linejoin="round"/>'}
-  var tp='';c.T.forEach(function(v,i){tp+=(i?'L':'M')+X(i).toFixed(1)+' '+Y(v).toFixed(1)});
-  s+='<path d="'+tp+'" fill="none" stroke="#c8412f" stroke-width="2.8" stroke-linejoin="round" stroke-linecap="round"/>';
-  for(var k=0;k<=24;k+=3)s+='<circle cx="'+X(k).toFixed(1)+'" cy="'+Y(c.T[k]).toFixed(1)+'" r="2.4" fill="#c8412f"/>';
-  if(o.ann){var imx=c.T.indexOf(c.mx),imn=c.T.indexOf(c.mn),bx=Math.min(R-8,Math.max(X(imx),X(imn))+14);
-    s+='<line x1="'+X(imx)+'" y1="'+Y(c.mx)+'" x2="'+bx+'" y2="'+Y(c.mx)+'" stroke="#1f2420" stroke-dasharray="2 2"/><line x1="'+X(imn)+'" y1="'+Y(c.mn)+'" x2="'+bx+'" y2="'+Y(c.mn)+'" stroke="#1f2420" stroke-dasharray="2 2"/>';
-    s+='<path d="M'+bx+' '+Y(c.mx)+'V'+Y(c.mn)+'" stroke="#1f2420" stroke-width="2"/><path d="M'+(bx-4)+' '+(Y(c.mx)+6)+'L'+bx+' '+Y(c.mx)+'L'+(bx+4)+' '+(Y(c.mx)+6)+'M'+(bx-4)+' '+(Y(c.mn)-6)+'L'+bx+' '+Y(c.mn)+'L'+(bx+4)+' '+(Y(c.mn)-6)+'" fill="none" stroke="#1f2420" stroke-width="2"/>';
-    var small=(Y(c.mn)-Y(c.mx))<24,ly=small?(Y(c.mx)>Tp+40?Y(c.mx)-12:Y(c.mn)+22):Math.max(Tp+16,Math.min(B-6,(Y(c.mx)+Y(c.mn))/2+5)),lx=bx>R-70?bx-6:bx+6;
-    s+='<text x="'+lx+'" y="'+ly+'" font-size="14" font-weight="700" text-anchor="'+(bx>R-70?'end':'start')+'" fill="#1f2420" stroke="#fffdf6" stroke-width="4" paint-order="stroke">幅 '+r1(c.mx-c.mn)+'℃</text>';
-    if(c.sw&&(c.k==='s2r'||c.k==='r2s')){s+='<line x1="'+X(c.sw)+'" y1="'+Tp+'" x2="'+X(c.sw)+'" y2="'+B+'" stroke="#1d2c4c" stroke-width="1.5" stroke-dasharray="6 3"/><text x="'+(X(c.sw)+3)+'" y="'+(Tp+12)+'" font-size="11" fill="#1d2c4c">ここで天気が変わった</text>'}}
-  return s+'</svg>'}
-
-/* ---------- 音 ---------- */
-var Snd={c:null,muted:false,
- init:function(){if(this.c)return;try{var A=window.AudioContext||window.webkitAudioContext;if(A)this.c=new A()}catch(e){}},
- t:function(f,d,type,v,f2,dl){if(this.muted||!this.c)return;var c=this.c,t0=c.currentTime+(dl||0),o=c.createOscillator(),g=c.createGain();o.type=type||'sine';o.frequency.setValueAtTime(f,t0);if(f2)o.frequency.exponentialRampToValueAtTime(f2,t0+d);g.gain.setValueAtTime(v||.12,t0);g.gain.exponentialRampToValueAtTime(.0001,t0+d);o.connect(g);g.connect(c.destination);o.start(t0);o.stop(t0+d+.02)},
- n:function(d,v,fc,dl,hp){if(this.muted||!this.c)return;var c=this.c,t0=c.currentTime+(dl||0),len=Math.floor(c.sampleRate*d),b=c.createBuffer(1,len,c.sampleRate),x=b.getChannelData(0);for(var i=0;i<len;i++)x[i]=(Math.random()*2-1)*(1-i/len);var s=c.createBufferSource();s.buffer=b;var f=c.createBiquadFilter();f.type=hp?'highpass':'lowpass';f.frequency.value=fc||1200;var g=c.createGain();g.gain.value=v||.1;s.connect(f);f.connect(g);g.connect(c.destination);s.start(t0)},
- click:function(){this.t(880,.04,'square',.03)},
- tear:function(){this.n(.35,.18,3000,0,true);this.n(.2,.12,1500,.15,true)},
- deal:function(i){this.n(.06,.08,2500,i*.09,true)},
- flip:function(){this.n(.12,.12,1800,0,true);this.t(300,.15,'triangle',.06,600)},
- hit:function(k){var b=523*Math.pow(1.06,Math.min(k,10)*2);this.t(b,.3,'triangle',.12);this.t(b*1.26,.3,'triangle',.1,0,.08);this.t(b*1.5,.4,'sine',.1,0,.16);if(k>=3)this.t(b*2,.5,'sine',.08,0,.26)},
- half:function(){this.t(440,.2,'triangle',.08);this.t(392,.25,'triangle',.07,0,.12)},
- miss:function(){this.t(220,.3,'sine',.08,160)},
- fan:function(){var s=[523,659,784,1047,1319];for(var i=0;i<5;i++)this.t(s[i],.4,'triangle',.1,0,i*.11)}
-};
-
-/* ---------- セーブ ---------- */
-var S;
-function fresh(){return {v:1,name:'',stage:'intro',pack:0,idx:0,cards:[],res:[],score:0,combo:0,maxCombo:0,hits:0,tot:0,album:{},rule:{},elapsed:0,finalStart:0,packHits:0,cleared:false,mainDone:0,best:(S&&S.best)||null,muted:S?S.muted:false,finalHits:0,finalTime:0}}
-function load(){try{return JSON.parse(localStorage.getItem(SKEY))}catch(e){return null}}
+/* ===== セーブ ===== */
+function fresh(){return {v:2,name:'',started:false,box:0,packs:null,pi:0,score:0,combo:0,maxCombo:0,hits:0,tries:0,early:0,t:0,album:{},mc:false,sound:true,taLeft:null,boxRes:[]}}
+let S;try{S=Object.assign(fresh(),JSON.parse(localStorage.getItem(SKEY))||{})}catch(e){S=fresh()}
 function save(){try{localStorage.setItem(SKEY,JSON.stringify(S))}catch(e){}}
-S=load();if(!S||S.v!==1)S=fresh();Snd.muted=!!S.muted;
 
-/* ---------- 画面 ---------- */
-var SCREENS=['title','play','test','end'],cur='title';
-function show(id){SCREENS.forEach(function(s){$(s).classList.toggle('hidden',s!==id)});window.scrollTo(0,0);cur=id}
-function hasZ(){return !!window.Zukan}
-function book(){Snd.click();window.Zukan&&Zukan.openBook&&Zukan.openBook({unit:'kisho'})}
-function nameNow(){return (window.PLAYER_NAME||$('nameIn').value||S.name||'').trim()}
-function setupZ(){window.Zukan&&Zukan.setup&&Zukan.setup({game:GID,koma:[KOMA]})}
-var hudDone=false;
-function enterPlay(){show('play');if(!hudDone&&window.Zukan&&Zukan.hud){try{Zukan.hud($('hud'))}catch(e){}hudDone=true}}
+/* ===== 音（シンセのきらきら） ===== */
+let AC=null,MG=null;
+function ac(){if(AC)return AC;try{AC=new (window.AudioContext||window.webkitAudioContext)();MG=AC.createGain();MG.gain.value=.5;MG.connect(AC.destination)}catch(e){}return AC}
+function tone(f,d,v,t0,type,glide){if(!S.sound||!ac())return;const t=AC.currentTime+(t0||0),o=AC.createOscillator(),g=AC.createGain();o.type=type||'sine';o.frequency.setValueAtTime(f,t);if(glide)o.frequency.exponentialRampToValueAtTime(glide,t+d);g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(v||.15,t+.01);g.gain.exponentialRampToValueAtTime(.0008,t+d);o.connect(g);g.connect(MG);o.start(t);o.stop(t+d+.05)}
+function noise(d,v,hp){if(!S.sound||!ac())return;const n=Math.floor(AC.sampleRate*d),b=AC.createBuffer(1,n,AC.sampleRate),a=b.getChannelData(0);for(let i=0;i<n;i++)a[i]=(Math.random()*2-1)*Math.pow(1-i/n,2);const s=AC.createBufferSource(),f=AC.createBiquadFilter(),g=AC.createGain();s.buffer=b;f.type='highpass';f.frequency.value=hp||2500;g.gain.value=v||.2;s.connect(f);f.connect(g);g.connect(MG);s.start()}
+const sfx={
+ tap:()=>tone(880,.08,.08,0,'triangle'),
+ tear:()=>{noise(.07,.16,rnd(1800,4200));tone(rnd(2400,3600),.03,.02,0,'square')},
+ peta:()=>{tone(180,.14,.22,0,'sine',90);noise(.05,.08,600)},
+ no:()=>tone(150,.3,.14,0,'sawtooth',90),
+ hit:t=>{const base=[523,659,784,1047];base.forEach((f,i)=>tone(f*(t>2?1.5:1),.5,.1,i*.06,'triangle'));for(let i=0;i<(t*4);i++)tone(1800+Math.random()*2400,.25,.04,.2+i*.04,'sine')},
+ gold:()=>{for(let i=0;i<14;i++)tone(700+i*140,.35,.07,i*.035,'triangle');tone(1568,1.2,.08,.55,'sine');tone(2093,1.2,.06,.6,'sine')},
+ fan:()=>[523,659,784,1047,784,1047,1319].forEach((f,i)=>tone(f,.6,.1,i*.1,'triangle'))};
+function setSnd(){$('#bSnd').textContent=S.sound?'🔊':'🔇';$('#bSnd1').textContent=S.sound?'🔊 音あり':'🔇 音なし'}
+function toggleSnd(){S.sound=!S.sound;save();setSnd()}
 
-function startNew(){Snd.init();var b=S.best,m=S.muted;S=fresh();S.best=b;S.muted=m;S.name=nameNow();save();enterPlay();beginIntro()}
-function cont(){Snd.init();if(nameNow())S.name=nameNow();enterPlay();
-  if(S.stage==='intro')beginIntro();else if(S.stage==='clear')clearScreen();else if(S.cards&&S.cards.length===5&&S.idx<5)resumePack();else beginPack(S.pack)}
+/* ===== canvas ===== */
+const cv=$('#cv'),cx=cv.getContext('2d');let W=390,H=844,DPR=1,WIDE=false;
+function resize(){const r=$('#app').getBoundingClientRect();W=Math.max(300,r.width);H=Math.max(460,r.height);DPR=Math.min(3,window.devicePixelRatio||1);cv.width=Math.round(W*DPR);cv.height=Math.round(H*DPR);cx.setTransform(DPR,0,0,DPR,0,0);WIDE=W>H*1.12;$('#title').classList.toggle('wide',WIDE);layout()}
+addEventListener('resize',resize);
+// 箔のエンボス模様（ひし形と星）
+const emb=document.createElement('canvas');emb.width=emb.height=40;(()=>{const t=emb.getContext('2d');
+ const dia=(x,y,s)=>{t.beginPath();t.moveTo(x,y-s);t.lineTo(x+s,y);t.lineTo(x,y+s);t.lineTo(x-s,y);t.closePath()};
+ t.lineWidth=1.2;t.strokeStyle='rgba(255,255,255,.55)';dia(19.5,19.5,9);t.stroke();t.strokeStyle='rgba(20,28,50,.22)';dia(20.5,20.5,9);t.stroke();
+ t.fillStyle='rgba(255,255,255,.35)';t.beginPath();t.arc(0,0,1.6,0,7);t.arc(40,0,1.6,0,7);t.arc(0,40,1.6,0,7);t.arc(40,40,1.6,0,7);t.fill()})();
+let embPat=null;
+// 星空（ショーケースの奥）
+const STARS=[];for(let i=0;i<120;i++)STARS.push({x:Math.random(),y:Math.random(),r:Math.random()*1.4+.3,p:Math.random()*6});
 
-/* ---------- 本編の状態 ---------- */
-var P=null,selW=null,selR=null,busy=false,card=null,intro=false,autoT=0;
-function updHud(){$('hScore').textContent=S.score;$('hAlbum').textContent=albumCount();
-  $('hPack').textContent=S.stage==='intro'?'導入':'パック '+(S.pack+1)+'/8';
-  var c=$('hCombo');c.textContent=S.combo>1?S.combo+'連続 ×'+mult(S.combo).toFixed(1):''}
-function mult(c){return Math.min(1+(c-1)*.5,4)}
-function drawSlots(){var h='';for(var i=0;i<5;i++){var r=S.res[i],cls='slot'+(i===S.idx&&S.stage!=='intro'&&r==null?' now':'')+(r===1?' ok':(r===0?' ng':''));
-  h+='<div class="'+cls+'">'+(r===1&&S.cards[i]?sym1(S.cards[i].k==='s2r'?'sun':S.cards[i].k==='r2s'?'rain':S.cards[i].k,22):(r===0?'<span style="font-size:14px;color:#cfd">×</span>':''))+'</div>'}
-  $('slots').innerHTML=S.stage==='intro'?'':h}
+/* ===== 状態 ===== */
+let MODE='title',B=null,pointer={x:0,y:0},T0=performance.now(),tNow=0;
+let packs=[],PI=0,drag=null,parts=[],flash=0,shake=0,hint=0,rays=[];
+const L={};// レイアウト
+function layout(){
+ L.hud=WIDE?78:70;L.tray=WIDE?136:126;
+ L.area={x:WIDE?24:10,y:L.hud+(WIDE?6:40),w:W-(WIDE?48:20),h:H-L.hud-L.tray-(WIDE?14:46)};
+ const sr=WIDE?Math.min(46,W*.032):Math.min(40,W*.1),n=3,gap=WIDE?sr*1.1:Math.min(sr*.9,(W-40-6*sr)/4);
+ const tw=n*2*sr+(n-1)*gap,x0=W/2-tw/2+sr,y=H-L.tray/2-8;
+ L.seals=['sun','cloud','rain'].map((w,i)=>({w,x:x0+i*(2*sr+gap),y,r:sr}));
+ packRects(true)}
+function packRects(snap){
+ const A=L.area,n=packs.length;if(!n)return;
+ if(WIDE){const gap=14,aw=Math.min(A.w*.5,A.h*1.08,760),ow=n>1?Math.min(210,(A.w-aw-gap*(n-1))/(n-1)):0;const tot=aw+ow*(n-1)+gap*(n-1);let x=A.x+(A.w-tot)/2;
+  packs.forEach((p,i)=>{const act=i===PI,w=act?aw:ow,h=act?A.h:A.h*.7;p.tg={x,y:A.y+(A.h-h)/2+(act?0:-6),w,h};x+=w+gap})}
+ else{packs.forEach((p,i)=>{if(i===PI)p.tg={x:A.x,y:A.y,w:A.w,h:A.h};else{const d=i-PI;p.tg={x:A.x+A.w/2+d*A.w*1.08-A.w/2,y:A.y+30,w:A.w,h:A.h}}})}
+ packs.forEach(p=>{if(snap||!p.r)p.r={...p.tg}})}
 
-/* 導入：1枚だけ、根拠なしで予言→めくる */
-function beginIntro(){intro=true;S.stage='intro';save();P={name:'導入',w:['sun','rain'],r:[],scale:'fixed'};
-  card=genDay('sun','spring');S.cards=[card];S.idx=0;S.res=[];updHud();drawSlots();
-  showCard(card);setPredict();
-  whyMsg('1枚目','これは<b>4月のある日</b>の1日の気温のグラフ。<br>裏には、この日の<b>天気</b>が書いてある。<br>晴れか雨か、予言してから「めくる」。',null,true);}
-function introDone(ok){var c=card;
-  whyMsg(ok?'当たり！':'はずれ…','この日は<b>晴れ</b>。最高 '+c.mx+'℃、最低 '+c.mn+'℃ で、<b class="em">幅 '+r1(c.mx-c.mn)+'℃</b>。<br>晴れの日は、昼に日光で地面があたたまり、夜は熱が逃げて冷えこむ。だから<b>1日の変化の幅が大きい</b>。<br>ここからは<b>根拠</b>もいっしょに予言する。',function(){intro=false;S.stage='pack';S.pack=0;save();beginPack(0)},false,ok);}
+/* ===== ボックスの開始 ===== */
+function startBox(bi,resume){B=BOXES[bi];S.box=bi;
+ if(!resume||!S.packs){S.packs=makeList(bi).map(sp=>({d:genDay(sp),rev:0,cap:0,slots:null,done:false,ok:null,tier:0}));S.pi=0;S.taLeft=B.ta||null;save()}
+ packs=S.packs;packs.forEach(p=>{p.slots=p.slots||mkSlots(p)});PI=S.pi;MODE='play';show('hud');packRects(true);kk();
+ if(!resume||S.pi===0)openBrief();else MODE='play'}
+function mkSlots(p){return (B.split?[{a:0,b:12},{a:12,b:24}]:[{a:0,b:24}]).map(s=>({...s,w:null,at:null}))}
+function cur(){return packs[PI]}
+function truthAt(p,i){const t=p.d.truth;return t[Math.min(i,t.length-1)]}
+function scaleOf(p){if(B.sc!=='auto')return {lo:B.sc[0],hi:B.sc[1],st:5};
+ const d=p.d,span=d.max-d.min;const steps=[.2,.5,1,2,5];let st=5;for(const s of steps){if((span+2*s)/s<=8){st=s;break}}
+ let lo=Math.floor((d.min-st*.6)/st)*st,hi=Math.ceil((d.max+st*.6)/st)*st;if((hi-lo)/st<4)hi=lo+4*st;return {lo,hi,st}}
 
-function beginPack(p){S.stage='pack';S.pack=p;S.idx=0;S.res=[];S.packHits=0;P=PACKS[p];
-  var deal=P.deal==='mix'?shuffle([['sun',pick(['winter','spring'])],['cloud',pick(['summer','autumn'])],['rain',pick(['spring','winter'])],[pick(['s2r','r2s']),pick(['spring','autumn'])],[pick(['sun','cloud','rain']),'summer']]):shuffle(P.deal);
-  S.cards=deal.map(function(d){return genDay(d[0],d[1])});
-  if(P.final){S.finalStart=S.elapsed;$('hTime').classList.remove('hidden')}else $('hTime').classList.add('hidden');
-  save();updHud();drawSlots();$('table').classList.add('hidden');
-  var gh='';if(P.final&&S.best)gh='<p style="text-align:center;color:#56605a">前回の自分：'+S.best.hits+'/5・'+fmt(S.best.time)+'</p>';
-  overlay('<span class="no">パック '+(p+1)+' / 8</span><h2>'+P.name+'</h2><p>'+P.txt+'</p>'+gh,'パックをあける',function(){openPack()});}
-function resumePack(){P=PACKS[S.pack];if(S.res[S.idx]!=null){if(S.idx>=4){updHud();drawSlots();endPack();return}S.idx++}if(P.final)$('hTime').classList.remove('hidden');updHud();drawSlots();$('table').classList.remove('hidden');$('packArea').classList.add('hidden');playCard(S.idx)}
-function openPack(){var a=$('packArea');a.classList.remove('hidden');$('table').classList.add('hidden');
-  a.innerHTML='<div style="padding-top:30px"><div id="pack"><div class="top"></div><div class="lbl"><span style="font-size:30px">🌤️</span><b>空もようパック</b><span style="font-size:13px">No.'+(S.pack+1)+'　5枚入り</span></div></div><div class="tearhint">パックをタップして開けよう</div></div>';
-  var pk=$('pack'),done=false;pk.addEventListener('pointerdown',function(){if(done)return;done=true;Snd.init();Snd.tear();pk.classList.add('torn');
-    sparks(pk.getBoundingClientRect(),18);
-    setTimeout(function(){for(var i=0;i<5;i++)Snd.deal(i);a.classList.add('hidden');$('table').classList.remove('hidden');playCard(0)},RM?50:520)})}
-function playCard(i){S.idx=i;card=S.cards[i];save();drawSlots();updHud();showCard(card);setPredict();hideWhy()}
-function showCard(c){var o={scale:P.scale,hum:P.hum};
-  $('stage').innerHTML='<div class="card" id="cd"><div class="face front"><div class="fhead"><span><b>'+(intro?'4月':seaName(c.sea))+'</b>のある日</span><span>'+(P.hum?'<span style="color:#c8412f">━ 気温</span>　<span style="color:#2c5d8f">┅ 湿度</span>':'<span style="color:#c8412f">━ 気温</span>')+'</span></div>'+graphSVG(c,o)+'</div><div class="face back" id="cBack"></div></div>';
-  if(!RM){var cd=$('cd');cd.animate&&cd.animate([{transform:'translateY(-40px) rotate(-4deg)',opacity:0},{transform:'none',opacity:1}],{duration:320,easing:'cubic-bezier(.2,1.3,.5,1)'})}}
-function setPredict(){selW=null;selR=null;busy=false;$('predict').classList.remove('hidden');
-  $('wBtns').innerHTML=P.w.map(function(k){return '<button class="wb" data-w="'+k+'">'+'<span style="display:flex;align-items:center;gap:1px;white-space:nowrap">'+sym(k,(k==='s2r'||k==='r2s')?19:26)+'</span>'+(P.symOnly?'':'<span style="white-space:nowrap;font-size:'+(WX[k].n.length>3?12:14)+'px">'+WX[k].n+'</span>')+'</button>'}).join('');
-  $('rBox').classList.toggle('hidden',intro);
-  $('rBtns').innerHTML=shuffle(P.r).map(function(k){return '<button class="rb" data-r="'+k+'">'+RS[k].t+'</button>'}).join('');
-  [].forEach.call($('wBtns').children,function(b){b.onclick=function(){if(busy)return;Snd.click();selW=b.dataset.w;[].forEach.call($('wBtns').children,function(x){x.classList.toggle('sel',x===b)});updFlip()}});
-  [].forEach.call($('rBtns').children,function(b){b.onclick=function(){if(busy)return;Snd.click();selR=b.dataset.r;[].forEach.call($('rBtns').children,function(x){x.classList.toggle('sel',x===b)});updFlip()}});
-  updFlip()}
-function updFlip(){$('flipBtn').disabled=busy||!selW||(!intro&&!selR)}
+/* ===== 操作 ===== */
+function packGeo(p){const r=p.r,ct=Math.max(8,r.w*.018),pad=Math.max(12,r.w*.045);
+ const hh=Math.max(34,r.h*.085),gy=r.y+ct*2.4+hh+26,gh=r.h*(WIDE?.54:.53);
+ const g={x:r.x+pad,y:gy,w:r.w-2*pad,h:gh};
+ const hum=B&&B.hum,lab=Math.max(46,Math.min(56,r.w*.09));
+ const pl={x:g.x+lab,y:g.y+12,w:g.w-lab-(hum?lab:14),h:g.h-12-26};
+ const sz={x:g.x,y:g.y+g.h+14,w:g.w,h:r.y+r.h-ct-10-(g.y+g.h+14)};
+ return {ct,pad,hh,g,pl,sz}}
+function slotRects(p){const G=packGeo(p),sz=G.sz,n=p.slots.length;
+ return p.slots.map((s,i)=>{if(n===1)return {x:sz.x+sz.w*.15,y:sz.y,w:sz.w*.7,h:sz.h};const x0=G.pl.x+G.pl.w*s.a/24,x1=G.pl.x+G.pl.w*s.b/24;return {x:x0+4,y:sz.y,w:x1-x0-8,h:sz.h}})}
+function inR(x,y,r,m){m=m||0;return x>=r.x-m&&x<=r.x+r.w+m&&y>=r.y-m&&y<=r.y+r.h+m}
+cv.addEventListener('pointerdown',e=>{ac();const x=e.clientX,y=e.clientY;pointer.x=x;pointer.y=y;
+ if(MODE==='title'){return}
+ if(MODE!=='play')return;const p=cur();if(!p)return;
+ if(p.done){if(tNow-p.doneAt>.6)nextPack();return}
+ for(const s of L.seals){if(Math.hypot(x-s.x,y-s.y)<s.r+10){drag={k:'seal',w:s.w,x,y,sx:x,sy:y,moved:false};cv.setPointerCapture(e.pointerId);return}}
+ if(inR(x,y,p.r)){drag={k:'tear',lx:x};cv.setPointerCapture(e.pointerId)}
+ else if(WIDE){packs.forEach((q,i)=>{if(i!==PI&&inR(x,y,q.r)&&!q.done)toast('いまのパックを開けてから次へ')})}});
+cv.addEventListener('pointermove',e=>{const x=e.clientX,y=e.clientY;pointer.x=x;pointer.y=y;if(!drag)return;
+ if(drag.k==='tear'){const p=cur(),G=packGeo(p);const dx=x-drag.lx;drag.lx=x;if(dx>0)tearBy(dx/G.pl.w*24)}
+ else{drag.x=x;drag.y=y;if(Math.hypot(x-drag.sx,y-drag.sy)>8)drag.moved=true}});
+function endDrag(e){if(!drag)return;const d=drag;drag=null;if(d.k!=='seal')return;const p=cur();if(!p||p.done)return;
+ const rs=slotRects(p);let idx=-1;
+ if(d.moved){rs.forEach((r,i)=>{if(inR(d.x,d.y,r,22))idx=i});if(idx<0&&p.slots.length===1&&inR(d.x,d.y,p.r))idx=0;if(idx<0)return}
+ else{idx=p.slots.findIndex(s=>!s.w);if(idx<0)return}
+ placeSeal(idx,d.w)}
+cv.addEventListener('pointerup',endDrag);cv.addEventListener('pointercancel',()=>{drag=null});
+addEventListener('keydown',e=>{if(MODE!=='play')return;const p=cur();if(!p)return;if(e.key==='ArrowRight'){tearBy(1)}else if('123'.includes(e.key)){const i=p.slots.findIndex(s=>!s.w);if(i>=0)placeSeal(i,['sun','cloud','rain'][+e.key-1])}else if((e.key===' '||e.key==='Enter')&&p.done)nextPack()});
+let tearAcc=0;
+function tearBy(dh){const p=cur();if(!p||p.done)return;const all=p.slots.every(s=>s.w);const cap=all?24:23;
+ if(p.rev>=cap-.001){if(!all&&!p.capMsg){p.capMsg=1;toast('最後のひと破りは、シールを貼ってから！')}return}
+ const was=p.rev;p.rev=Math.min(cap,p.rev+dh);tearAcc+=p.rev-was;
+ if(tearAcc>.45){tearAcc=0;sfx.tear();const G=packGeo(p),x=G.pl.x+G.pl.w*p.rev/24;for(let i=0;i<3;i++)parts.push({x,y:G.g.y+rnd(0,G.g.h),vx:rnd(-40,90),vy:rnd(-160,-30),life:1,sz:rnd(3,7),h:rnd(0,360),rot:rnd(0,6),k:'flake'})}
+ if(hint<1)hint=1;
+ if(p.rev>=24&&all)judge(p)}
+function placeSeal(i,w){const p=cur();if(!p||p.done||!WN[w])return;const s=p.slots[i];if(!s||s.w)return;const need=s.a+(s.b-s.a)*.25;
+ if(p.rev<need-.001){sfx.no();toast('まだ貼れない。<b>'+need+'時</b>まで破って、線を見てから！');return}
+ s.w=w;s.at=p.rev;sfx.peta();const rs=slotRects(p)[i];burst(rs.x+rs.w/2,rs.y+rs.h/2,10,'#FFB000');
+ const fr=(p.rev-s.a)/(s.b-s.a);s.tier=fr<=.5?3:fr<=.75?2:1;
+ pop(rs.x+rs.w/2,rs.y-10,s.tier===3?'早読み！':s.tier===2?'よみ':'', '宣言：'+WN[w]);
+ S.pi=PI;save();
+ if(p.slots.every(q=>q.w)){hint=2;if(p.rev>=24)judge(p)}}
+function judge(p){if(p.done)return;p.done=true;p.doneAt=tNow;S.tries++;
+ const ok=p.slots.map((s,i)=>s.w===truthAt(p,i));p.ok=ok.every(Boolean);
+ const tier=Math.min(...p.slots.map(s=>s.tier));
+ const G=packGeo(p),cxp=p.r.x+p.r.w/2,cyp=G.g.y+G.g.h/2;
+ if(p.ok){S.combo++;S.hits++;S.maxCombo=Math.max(S.maxCombo,S.combo);if(tier>=3)S.early++;
+  const mult=S.combo>=5?3:S.combo>=3?2:1;const pts=100*p.slots.length*tier*mult;S.score+=pts;
+  p.tier=Math.min(4,tier+(S.combo>=3?1:0)+(p.d.split&&tier>=2?1:0));
+  const k=p.d.split?p.d.kind:p.d.kind;if(!S.album[k]||S.album[k]<p.tier)S.album[k]=p.tier;
+  flash=p.tier>=3?1:.6;shake=p.tier>=4?.5:0;rays=[];const nr=RM?0:10+p.tier*8;for(let i=0;i<nr;i++)rays.push({a:i/nr*6.283+rnd(-.1,.1),l:rnd(.6,1),h:pick([40,45,32,150,200,350,45])});
+  burst(cxp,cyp,RM?10:30+p.tier*18,p.tier>=4?'#FFB000':null);
+  p.tier>=4?sfx.gold():sfx.hit(p.tier);
+  const why=p.d.split?'午前と午後を読み切った':'幅 '+f1(p.d.range)+'℃ → '+WN[p.d.truth[0]];
+  pop(cxp,cyp,(p.tier>=4?'ゴールド！':p.tier===3?'レインボー！':p.tier===2?'ホロ！':'的中！'),why+(mult>1?'　×'+mult:''),'big');
+  if(tier>=2)earn(tier>=3?15:10,'hit',cxp,cyp);
+  if(S.combo===5||S.combo===10)earn(10,'first-try',cxp,cyp-40);
+ }else{S.combo=0;p.tier=0;sfx.no();shake=.25;pop(cxp,cyp,'はずれ…',p.d.truth.map(w=>WN[w]).join('のち')+'だった','ng')}
+ S.pi=PI;save()}
+function nextPack(){const p=cur();if(!p||!p.done)return;sfx.tap();$('#pops').innerHTML='';
+ if(PI<packs.length-1){PI++;S.pi=PI;save();packRects(false);hint=Math.min(hint,1)}else endBox()}
+function endBox(ta){MODE='boxres';const n=packs.length,ok=packs.filter(p=>p.ok).length;
+ const need=B.ta?4:0;const pass=B.ta?ok>=need:true;
+ if(!B.ta&&ok===n)earn(30,'rule',W/2,H/2);
+ S.boxRes[S.box]=Math.max(S.boxRes[S.box]||0,ok);
+ const res={bi:S.box,ok,n,pass,ta:!!B.ta,timeout:!!ta};
+ const list=packs.map(p=>p);
+ if(pass){if(S.box<BOXES.length-1){S.box++;S.packs=null;S.pi=0}else{S.packs=null;S.pi=0;S.box=BOXES.length-1;S.cleared=true}}
+ else{S.packs=null;S.pi=0}
+ save();sfx.fan();boxResult(res,list)}
 
-/* ---------- めくる ---------- */
-function doFlip(){if(busy||!selW||(!intro&&!selR))return;busy=true;updFlip();Snd.init();Snd.flip();
-  var c=card,wOk=selW===c.k,rOk=intro?true:(RS[selR].ok.indexOf(c.k)>=0),ok=wOk&&rOk;
-  // 光の強さ＝連続的中
-  var nc=ok?S.combo+1:0,g=ok?(nc>=5?3:nc>=3?2:1):0;
-  var back=$('cBack');back.innerHTML='<div class="fhead"><span><b>'+(intro?'4月':seaName(c.sea))+'</b>のある日</span><span></span></div>'+graphSVG(c,{scale:P.scale==='hidden'?'fixed':P.scale,hum:P.hum,ann:1})+'<div class="res">'+sym(c.k,28)+'<span>'+WX[c.k].n+'</span></div>'+(ok&&nc>=3?'<div class="holo"></div>':'');
-  var cd=$('cd');if(g)cd.classList.add('g'+g);cd.classList.add('flip');
-  $('predict').classList.add('hidden');
-  setTimeout(function(){judge(c,wOk,rOk,ok)},RM?60:650)}
-function judge(c,wOk,rOk,ok){var rect=$('cd').getBoundingClientRect(),cx=rect.left+rect.width/2,cy=rect.top+rect.height*.4,rng=r1(c.mx-c.mn);
-  if(intro){if(ok){Snd.hit(1);sparks(rect,20);floatAt(cx,cy,'的中！',true)}else Snd.miss();introDone(ok);return}
-  S.tot++;var why,head;
-  if(ok){S.combo++;S.hits++;S.packHits++;S.maxCombo=Math.max(S.maxCombo,S.combo);var pts=Math.round(100*mult(S.combo));S.score+=pts;S.res[S.idx]=1;
-    var ak=albumKey(c),isNew=!S.album[ak];S.album[ak]=1;
-    Snd.hit(S.combo);sparks(rect,RM?6:(12+S.combo*6));floatAt(cx,cy,'+'+pts,S.combo>=3);if(S.combo>=2)floatAt(cx,cy-46,S.combo+'連続！',S.combo>=5);
-    var hc=$('hCombo');hc.classList.remove('pop');void hc.offsetWidth;hc.classList.add('pop');
-    window.Zukan&&Zukan.earn&&Zukan.earn(isNew?10:2,'hit',{x:cx,y:cy+30});
-    head='大当たり！'+(isNew?'　🃏 新しい空「'+albumName(ak)+'」':'');
-    why=explain(c,true);}
-  else{S.combo=0;S.res[S.idx]=0;var mine='<div style="font-size:13px;color:#56605a;margin-bottom:4px">あなたの予言：'+WX[selW].n+'／根拠「'+RS[selR].t+'」</div>';
-    if(wOk&&!rOk){Snd.half();head='天気は当たり。でも根拠が…';why=mine+(RS[selR].trap||('「'+RS[selR].t+'」は、'+WX[c.k].n+'の決め手にならない。'))+'<br>'+explain(c,false)}
-    else{Snd.miss();head='はずれ';var ww=wrongWhy(c);why=mine+(ww?ww+'<br>':'')+explain(c,false)}}
-  save();updHud();drawSlots();
-  var last=S.idx>=4;
-  whyMsg(head,why,function(){if(last)endPack();else playCard(S.idx+1)},false,ok);
-  if(ok&&!last){autoT=setTimeout(function(){if(!$('why').classList.contains('hidden')&&card===c){hideWhy();playCard(S.idx+1)}},RM?3200:2800)}}
-function explain(c,ok){var rng=r1(c.mx-c.mn),s='最高 <b>'+c.mx+'℃</b>・最低 <b>'+c.mn+'℃</b> → 幅 <b class="em">'+rng+'℃</b>。';
-  if(c.k==='sun')s+='晴れの日は変化の幅が大きい。'+(P.hum?'湿度は気温と<b>逆向き</b>に動いた。':'');
-  else if(c.k==='cloud')s+='くもりの日は幅が小さめ（数℃）。';
-  else if(c.k==='rain')s+='雨の日はほとんど変化しない。'+(P.hum?'湿度は90％以上のまま。':'');
-  else if(c.k==='s2r')s+=c.sw+'時ごろ雨が降り出し、気温の変化が止まって湿度が上がった。';
-  else s+=c.sw+'時ごろ雨がやんで晴れ、気温がぐんと上がり湿度が下がった。';
-  return s}
-function wrongWhy(c){var rng=r1(c.mx-c.mn);
-  if(P.scale!=='fixed'&&(c.k==='rain'||c.k==='cloud')&&(selW==='sun'))return '山が大きく<b>見えた</b>だけ。目盛りの数字を読むと、幅は <b class="em">'+rng+'℃</b> しかない。';
-  if(P.scale!=='fixed'&&c.k==='sun'&&selW!=='sun')return '山が小さく<b>見えた</b>だけ。目盛りの数字を読むと、幅は <b class="em">'+rng+'℃</b> もある。';
-  if(c.k==='sun'&&(c.sea==='winter'))return '気温は低くても、幅は <b class="em">'+rng+'℃</b> と大きい。1月の<b>晴れ</b>の日。';
-  if((c.k==='rain'||c.k==='cloud')&&c.sea==='summer')return '気温は高くても、幅は <b class="em">'+rng+'℃</b> と小さい。';
-  if(c.k==='s2r'||c.k==='r2s')return 'グラフの<b>前半と後半</b>で形がちがう。途中で天気が変わった日。';
-  if(c.k==='cloud'&&selW==='rain')return '雨ならもっと平ら'+(P.hum?'で、湿度は90％以上のまま':'')+'。数℃は動いているので<b>くもり</b>。';
-  if(c.k==='rain'&&selW==='cloud')return 'くもりより、さらに平ら'+(P.hum?'で、湿度もずっと高い':'')+'。';
-  if(c.k==='sun')return '幅が <b class="em">'+rng+'℃</b> と大きい。'+WX[selW].n+'の日なら、こんなに動かない。';
-  if(c.k==='rain')return 'ほとんど平ら（幅 <b class="em">'+rng+'℃</b>）。'+(selW==='sun'?'晴れなら昼に大きく上がる。':'');
-  return '幅は <b class="em">'+rng+'℃</b>。';}
-function endPack(){$('hTime').classList.add('hidden');var h=S.packHits,extra='';
-  if(P.final){var t=S.elapsed-S.finalStart;
-    if(h>=4){S.cleared=true;var nb=!S.best||h>S.best.hits||(h===S.best.hits&&t<S.best.time);if(nb)S.best={hits:h,time:t};S.finalHits=h;S.finalTime=t;S.stage='clear';save();Snd.fan();clearScreen(nb);return}
-    save();overlay('<span class="no">最終パック</span><h2>'+h+' / 5 的中</h2><p>クリアまで、あと <b class="em">'+(4-h)+'枚</b>。<br>数字が無くても、ますを数えれば幅は読める（気温1ます＝2℃）。新しいパックでもう一度。</p>','新しい最終パック',function(){beginPack(7)});return}
-  if(P.rule==='season'&&h>=4&&!S.rule.season){S.rule.season=1;extra='<p class="em" style="text-align:center">★ 規則を見つけた！<br>天気は、気温の高さでなく<br>1日の変化の幅で見分ける</p>';window.Zukan&&Zukan.earn&&Zukan.earn(30,'rule')}
-  if(P.rule==='scale'&&h>=4&&!S.rule.scale){S.rule.scale=1;extra='<p class="em" style="text-align:center">★ 規則を見つけた！<br>見た目の山の大きさではなく<br>目盛りの数字で幅を読む</p>';window.Zukan&&Zukan.earn&&Zukan.earn(30,'rule')}
-  if(extra)Snd.fan();
-  var np=S.pack+1;S.pack=np;S.idx=0;S.cards=[];S.res=[];save();
-  overlay('<span class="no">パック '+np+' おわり</span><h2>'+h+' / 5 的中</h2>'+extra+albumHTML()+'<p style="text-align:center">最大 '+S.maxCombo+'連続　／　合計 '+S.score+' 点</p>','つぎのパックへ',function(){beginPack(np)});}
-function albumHTML(){return '<div style="font-size:14px;color:#56605a">空もようアルバム '+albumCount()+'/14（当てた空だけ集まる）</div><div class="album">'+ALBUM.map(function(a){return '<div class="'+(S.album[a[0]]?'got':'')+'">'+(S.album[a[0]]?a[1]:'？')+'</div>'}).join('')+'</div>'}
-function clearScreen(nb){enterPlay();$('table').classList.add('hidden');
-  var done=function(){overlay('<div class="stamp in">完封</div><h2>空もよう名人</h2><p style="text-align:center">最終パック <b class="em">'+S.finalHits+'/5</b> 的中'+(nb?'（自己ベスト！）':'')+'</p>'+
-   '<table class="rec"><tr><td>クリアタイム</td><td>'+fmt(S.elapsed)+'</td></tr><tr><td>最終パックのタイム</td><td>'+fmt(S.finalTime)+'</td></tr><tr><td>最大連続</td><td>'+S.maxCombo+'連続</td></tr><tr><td>アルバム</td><td>'+albumCount()+'/14</td></tr></table>'+
-   (hasZ()?'<button class="btn small" id="ovBook" style="margin:6px">📖 図鑑</button>':''),'📝 確認テストへ',function(){startTest()});
-   var b=$('ovBook');if(b)b.onclick=book;};
-  if(window.Zukan&&Zukan.mainClear&&!S.mainDone){S.mainDone=1;save();Zukan.mainClear({onClose:done})}else done();}
+/* ===== 画面 ===== */
+function show(k){['title','hud','test'].forEach(n=>$('#'+n).classList.toggle('hidden',n!==k&&!(k==='play'&&n==='hud')));}
+let lastOv=null;function ov(html){$('#ovBox').innerHTML=html;$('#ov').classList.remove('hidden');$('#ovBox').scrollTop=0}
+function ovClose(){$('#ov').classList.add('hidden')}
+function pathHTML(bi){return '<div class="path">'+BOXW.map((n,i)=>{const s=12+n*4.2;return '<i class="'+(i<bi?'done':i===bi?'now':'')+'" style="width:'+s+'px;height:'+(s*1.25)+'px" title="'+BOXES[i].nm+'"></i>'}).join('')+'</div>'}
+function openBrief(){MODE='brief';lastOv=openBrief;const bi=S.box;
+ ov('<h2>BOX '+(bi+1)+'／8　'+esc(B.nm)+'</h2><div class="small" style="color:#FFB000;font-family:var(--fh)">'+esc(B.sub)+'</div>'+pathHTML(bi)+B.brief.map((t,i)=>'<p class="'+(i?'':'lead')+'">'+t+'</p>').join('')+'<div class="row" style="margin-top:14px"><button class="foil gold" id="bGo">開封スタート！</button></div>');
+ $('#bGo').onclick=()=>{sfx.tap();ovClose();MODE='play';if(B.ta)S.taLeft=S.taLeft||B.ta}}
+function symSVG(w,sz){sz=sz||40;const r=sz*.38,c=sz/2;let in_='';
+ if(w==='sun')in_='<line x1="'+c+'" y1="'+(c-r)+'" x2="'+c+'" y2="'+(c+r)+'" stroke="#151B2E" stroke-width="'+sz*.07+'"/>';
+ if(w==='cloud')in_='<circle cx="'+c+'" cy="'+c+'" r="'+r*.5+'" fill="none" stroke="#151B2E" stroke-width="'+sz*.07+'"/>';
+ return '<svg class="sym" viewBox="0 0 '+sz+' '+sz+'" width="'+sz+'" height="'+sz+'"><circle cx="'+c+'" cy="'+c+'" r="'+r+'" fill="'+(w==='rain'?'#151B2E':'none')+'" stroke="#151B2E" stroke-width="'+sz*.07+'"/>'+in_+'</svg>'}
+function miniHTML(p,i){const d=p.d,t=p.ok?p.tier:0;const nm=d.split?d.truth.map(w=>WN[w]).join('のち'):SEASON[d.season].nm+'の'+WN[d.truth[0]];
+ return '<div class="mini t'+t+(p.ok?'':' ng')+'" style="animation-delay:'+(i*.18)+'s"><b>'+esc(nm)+'</b><div style="display:flex;gap:2px">'+d.truth.map(w=>symSVG(w,38)).join('')+'</div><div>'+esc(d.date)+'<br>幅 '+f1(d.range)+'℃</div><span class="rk">'+(p.ok?TIERN[t]:'はずれ')+'</span></div>'}
+function boxResult(res,list){MODE='boxres';$('#pops').innerHTML='';lastOv=()=>boxResult(res,list);const bi=res.bi,Bx=BOXES[bi];
+ let h='<h2>'+esc(Bx.nm)+'　開封結果</h2>'+pathHTML(res.pass?Math.min(8,bi+1):bi)+'<div class="minis">'+list.map(miniHTML).join('')+'</div>';
+ h+='<div class="stats"><div>的中<b>'+res.ok+' / '+res.n+'</b></div><div>きらめき<b>'+S.score.toLocaleString()+'</b></div><div>最大連続<b>'+S.maxCombo+'</b></div><div>バインダー<b>'+Object.keys(S.album).length+' / '+ALBUM.length+'</b></div></div>';
+ if(res.ta){h+=res.pass?'<p class="lead">月末ボックス '+res.ok+'／5枚的中！　本編クリア！</p>':'<p class="lead">'+(res.timeout?'時間切れ。':'')+'4枚以上で本編クリア。もう一度、新しい5パックで！</p><p>ヒント：目盛りの数字で最高と最低を読み、幅を出す。湿度が90%以上で平らなら雨。</p>'}
+ else if(res.ok<res.n)h+='<p>はずれたカードは、<b>幅</b>（最高−最低）を見直そう。晴れ7℃以上、くもり3〜5℃、雨2℃以下が目安。</p>';
+ h+='<div style="display:flex;flex-direction:column;gap:9px;margin-top:12px">';
+ if(res.ta&&res.pass)h+='<button class="foil gold" id="bNx">本編クリア → 確認テストへ</button>';
+ else if(res.ta)h+='<button class="foil gold" id="bNx">もう一度 月末ボックス</button>';
+ else h+='<button class="foil gold" id="bNx">次のボックス：'+esc(BOXES[S.box].nm)+'</button>';
+ h+='<div class="row"><button class="foil s" id="bAl">バインダー</button><button class="foil s zk" id="bGa">🎁 ガチャ</button><button class="foil s zk" id="bBk">📖 図鑑</button></div></div>';
+ ov(h);zkButtons();
+ $('#bNx').onclick=()=>{sfx.tap();ovClose();if(res.ta&&res.pass)mainClear();else startBox(S.box,false)};
+ $('#bAl').onclick=()=>albumOpen(()=>boxResult(res,list));$('#bGa').onclick=openGacha;$('#bBk').onclick=openBook}
+function albumOpen(back){const n=Object.keys(S.album).length;
+ let h='<h2>空もようバインダー　'+n+' / '+ALBUM.length+'</h2><p class="small">季節と天気の組み合わせを集めよう。箔のランクは、いちばん良かったもの。</p><div class="minis">';
+ ALBUM.forEach(([k,nm],i)=>{const t=S.album[k];const ws=k.split('-');const sy=ws[0]==='sun'||ws[0]==='rain'?[ws[0],ws[1]]:[ws[1]];
+  h+=t?'<div class="mini t'+t+'" style="animation-delay:'+(i*.04)+'s"><b>'+nm+'</b><div style="display:flex">'+sy.map(w=>symSVG(w,36)).join('')+'</div><span class="rk">'+TIERN[t]+'</span></div>':'<div class="mini lock" style="animation-delay:'+(i*.04)+'s"><b>？？？</b><div style="font-size:22px">✦</div><span>'+nm+'</span></div>'});
+ h+='</div><div class="row"><button class="foil" id="bAx">とじる</button></div>';ov(h);$('#bAx').onclick=()=>{sfx.tap();if(back)back();else ovClose()}}
+function confirmBack(){if(MODE==='title'||MODE==='pause')return;const prev=MODE;MODE='pause';
+ ov('<h2>もどる？</h2><p class="lead">ここまでの進み具合は保存されます。</p><p class="small">「つづきから」で、このパックの続きから遊べます。</p><div style="display:flex;flex-direction:column;gap:9px;margin-top:12px"><button class="foil gold" id="cRe">つづける</button><button class="foil" id="cTi">タイトルへもどる</button></div>');
+ $('#cRe').onclick=()=>{sfx.tap();if(prev!=='play'&&lastOv){lastOv()}else{ovClose();MODE='play'}};
+ $('#cTi').onclick=()=>{sfx.tap();ovClose();save();toTitle()}}
+function toast(h){const t=$('#toast');t.innerHTML=h;t.classList.remove('hidden');clearTimeout(toast.tm);toast.tm=setTimeout(()=>t.classList.add('hidden'),2200)}
+function pop(x,y,a,b,cls){const d=document.createElement('div');d.className='pop '+(cls||'');d.style.left=clamp(x,110,W-110)+'px';d.style.top=clamp(y,90,H-80)+'px';d.innerHTML=esc(a)+(b?'<small>'+esc(b)+'</small>':'');$('#pops').appendChild(d);setTimeout(()=>d.remove(),2000)}
+function burst(x,y,n,col){for(let i=0;i<n;i++){const a=rnd(0,6.283),v=rnd(80,420);parts.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v-80,life:1,sz:rnd(3,8),h:col?45:pick([45,40,150,200,350,30]),rot:rnd(0,6),k:Math.random()<.45?'star':'flake',gold:!!col})}}
+function earn(n,why,x,y){let got=0;try{got=window.Zukan&&Zukan.earn?Zukan.earn(n,why,{x,y}):0}catch(e){}kk();return got}
+function kk(){let v=0;try{v=window.Zukan&&Zukan.state?Zukan.state().kakera||0:0}catch(e){}$('#kkN').textContent=v;$('#kk').classList.toggle('hidden',!window.Zukan)}
+function zkButtons(){const has=!!(window.Zukan&&Zukan.openBook);document.querySelectorAll('.zk').forEach(b=>b.classList.toggle('hidden',!has))}
+function openBook(){try{window.Zukan&&Zukan.openBook&&Zukan.openBook({unit:'kisho'})}catch(e){}}
+function openGacha(){try{window.Zukan&&Zukan.openGacha&&Zukan.openGacha({box:'kisho'})}catch(e){}}
+function mainClear(){S.mc=true;save();const go=()=>startTest();if(window.Zukan&&Zukan.mainClear){try{Zukan.mainClear({onClose:go})}catch(e){go()}}else go()}
+function fmtT(t){t=Math.round(t);return Math.floor(t/60)+'分'+String(t%60).padStart(2,'0')+'秒'}
 
-/* ---------- 札・演出 ---------- */
-function overlay(html,btn,fn){var o=document.createElement('div');o.className='ov';o.innerHTML='<div class="paper">'+html+'<div style="margin-top:12px"><button class="btn gold">'+btn+'</button></div></div>';
-  document.body.appendChild(o);o.querySelector('.paper>div:last-child .btn').onclick=function(){Snd.init();Snd.click();o.remove();fn&&fn()}}
-function whyMsg(h,body,fn,noBtn,good){clearTimeout(autoT);var w=$('why');w.classList.remove('hidden');
-  w.innerHTML='<h3 class="'+(good?'o':'')+'">'+h+'</h3><div>'+body+'</div>'+(noBtn?'':'<div class="row"><button class="btn small gold" id="wNext">つぎへ ▶</button></div>');
-  if(!noBtn)$('wNext').onclick=function(){Snd.click();hideWhy();fn&&fn()};}
-function hideWhy(){clearTimeout(autoT);$('why').classList.add('hidden')}
-function floatAt(x,y,t,big){var d=document.createElement('div');d.className='float'+(big?' big':'');d.textContent=t;d.style.left=x+'px';d.style.top=y+'px';$('fx').appendChild(d);setTimeout(function(){d.remove()},1300)}
-function sparks(r,n){if(RM)n=Math.min(n,4);for(var i=0;i<n;i++){var d=document.createElement('div');d.className='spark';var x=r.left+r.width*Math.random(),y=r.top+r.height*Math.random();d.style.left=x+'px';d.style.top=y+'px';$('fx').appendChild(d);
-  var a=Math.random()*6.28,dist=40+Math.random()*90;if(d.animate)d.animate([{transform:'scale(1)',opacity:1},{transform:'translate('+Math.cos(a)*dist+'px,'+Math.sin(a)*dist+'px) scale(.2)',opacity:0}],{duration:700+Math.random()*400,easing:'ease-out'});setTimeout((function(e){return function(){e.remove()}})(d),1150)}}
-$('flipBtn').onclick=doFlip;
+/* ===== 描画 ===== */
+function holoGrad(x,y,w,h,a,shift){const g=cx.createLinearGradient(x,y,x+w,y+h);const hs=[45,22,150,195,45,352,95];hs.forEach((hu,i)=>g.addColorStop(i/6,'hsla('+((hu+Math.sin(shift*6.283)*40+360)%360)+',72%,74%,'+a+')'));return g}
+function silver(x,y,w,h){const g=cx.createLinearGradient(x,y,x+w*.6,y+h);g.addColorStop(0,'#9aa5b8');g.addColorStop(.25,'#eef2f8');g.addColorStop(.45,'#b9c2d1');g.addColorStop(.62,'#ffffff');g.addColorStop(.8,'#c2cad8');g.addColorStop(1,'#8d98ac');return g}
+function zigzag(x0,x1,y,dir,t){cx.lineTo(x0,y);const n=Math.max(4,Math.round((x1-x0)/t));const s=(x1-x0)/n;for(let i=0;i<n;i++){cx.lineTo(x0+s*(i+.5),y+dir*t*.7);cx.lineTo(x0+s*(i+1),y)}}
+function rr(x,y,w,h,r){cx.beginPath();cx.moveTo(x+r,y);cx.arcTo(x+w,y,x+w,y+h,r);cx.arcTo(x+w,y+h,x,y+h,r);cx.arcTo(x,y+h,x,y,r);cx.arcTo(x,y,x+w,y,r);cx.closePath()}
+function fh(px){return px+'px "Mochiy Pop One","Hiragino Maru Gothic ProN",sans-serif'}
+function fb(px,wt){return (wt||700)+' '+px+'px "Zen Kaku Gothic New","Hiragino Sans",sans-serif'}
+function fnm(px){return px+'px "Russo One","Mochiy Pop One",sans-serif'}
+function drawBG(){const g=cx.createRadialGradient(W/2,H*.35,10,W/2,H*.4,Math.max(W,H)*.8);g.addColorStop(0,'#26305a');g.addColorStop(.55,'#151B2E');g.addColorStop(1,'#0b0f1c');cx.fillStyle=g;cx.fillRect(0,0,W,H);
+ for(const s of STARS){const a=.25+.35*Math.sin(tNow*1.3+s.p);cx.fillStyle='rgba(227,232,240,'+a+')';cx.beginPath();cx.arc(s.x*W,s.y*H,s.r,0,7);cx.fill()}
+ // ショーケースの光
+ cx.save();cx.globalAlpha=.08;const lg=cx.createLinearGradient(0,0,W,0);lg.addColorStop(0,'rgba(255,176,0,0)');lg.addColorStop(.5,'rgba(255,220,150,1)');lg.addColorStop(1,'rgba(255,176,0,0)');cx.fillStyle=lg;cx.beginPath();cx.moveTo(W*.3,0);cx.lineTo(W*.7,0);cx.lineTo(W*.95,H);cx.lineTo(W*.05,H);cx.fill();cx.restore()}
+function sheen(){return (pointer.x/W)*.6+tNow*.04}
+function drawPackBody(r,p,act){const ct=Math.max(8,r.w*.018);
+ cx.save();cx.beginPath();cx.moveTo(r.x,r.y+ct);zigzag(r.x,r.x+r.w,r.y+ct,-1,ct*1.1);cx.lineTo(r.x+r.w,r.y+r.h-ct);zigzag(r.x+r.w,r.x,r.y+r.h-ct,1,ct*1.1);cx.closePath();
+ cx.shadowColor='rgba(0,0,0,.55)';cx.shadowBlur=act?30:14;cx.shadowOffsetY=act?14:6;cx.fillStyle=silver(r.x,r.y,r.w,r.h);cx.fill();cx.shadowColor='transparent';
+ cx.clip();
+ // ホロの虹と光の帯
+ cx.globalCompositeOperation='overlay';cx.fillStyle=holoGrad(r.x,r.y,r.w,r.h,act?.85:.55,sheen());cx.fillRect(r.x,r.y,r.w,r.h);
+ cx.globalCompositeOperation='source-over';
+ if(!embPat)embPat=cx.createPattern(emb,'repeat');cx.globalAlpha=.9;cx.fillStyle=embPat;cx.fillRect(r.x,r.y,r.w,r.h);cx.globalAlpha=1;
+ const sx=r.x+((sheen()*1.6)%1.6-.3)*r.w;const sg=cx.createLinearGradient(sx-r.w*.2,r.y,sx+r.w*.2,r.y+r.h*.3);sg.addColorStop(0,'rgba(255,255,255,0)');sg.addColorStop(.5,'rgba(255,255,255,.55)');sg.addColorStop(1,'rgba(255,255,255,0)');cx.fillStyle=sg;cx.fillRect(r.x,r.y,r.w,r.h);
+ // 圧着の帯
+ cx.fillStyle='rgba(21,27,46,.12)';cx.fillRect(r.x,r.y,r.w,ct*2.4);cx.fillRect(r.x,r.y+r.h-ct*2.4,r.w,ct*2.4);
+ cx.strokeStyle='rgba(21,27,46,.15)';cx.lineWidth=1;for(let x=r.x+4;x<r.x+r.w;x+=5){cx.beginPath();cx.moveTo(x,r.y+2);cx.lineTo(x,r.y+ct*2.2);cx.moveTo(x,r.y+r.h-ct*2.2);cx.lineTo(x,r.y+r.h-2);cx.stroke()}
+ cx.restore();return ct}
+function drawSmallPack(p,i){const r=p.r,ct=drawPackBody(r,p,false);
+ cx.save();cx.textAlign='center';cx.fillStyle='#151B2E';
+ cx.font=fh(Math.max(12,Math.min(18,r.w*.1)));cx.fillText('DAY '+(i+1),r.x+r.w/2,r.y+ct*2.4+22);
+ cx.font=fb(Math.max(11,Math.min(14,r.w*.075)));cx.fillText(p.d.date,r.x+r.w/2,r.y+ct*2.4+42);
+ const cy=r.y+r.h*.55,rad=Math.min(r.w*.26,40);
+ if(p.done){p.d.truth.forEach((w,k)=>{const n=p.d.truth.length;drawSym(w,r.x+r.w/2+(k-(n-1)/2)*rad*1.6,cy,rad*.62,'#151B2E')});
+  cx.font=fh(Math.max(12,Math.min(17,r.w*.09)));cx.fillStyle=p.ok?'#8a5a00':'#8a2a1c';cx.fillText(p.ok?TIERN[p.tier]:'はずれ',r.x+r.w/2,r.y+r.h*.78);
+  cx.font=fb(13);cx.fillStyle='#151B2E';cx.fillText('幅 '+f1(p.d.range)+'℃',r.x+r.w/2,r.y+r.h*.86);
+  if(p.ok&&p.tier>=2){cx.globalCompositeOperation='overlay';cx.fillStyle=holoGrad(r.x,r.y,r.w,r.h,.9,sheen()+.3);cx.fillRect(r.x,r.y,r.w,r.h);cx.globalCompositeOperation='source-over'}
+  if(!p.ok){cx.fillStyle='rgba(21,27,46,.35)';cx.fillRect(r.x,r.y,r.w,r.h)}}
+ else{cx.font=fh(rad*1.3);cx.fillStyle='rgba(21,27,46,.55)';cx.fillText('？',r.x+r.w/2,cy+rad*.45)}
+ cx.restore()}
+function drawSym(w,x,y,r,col){cx.save();cx.strokeStyle=col;cx.lineWidth=Math.max(2,r*.16);cx.beginPath();cx.arc(x,y,r,0,7);if(w==='rain'){cx.fillStyle=col;cx.fill()}cx.stroke();
+ if(w==='sun'){cx.beginPath();cx.moveTo(x,y-r);cx.lineTo(x,y+r);cx.stroke()}
+ if(w==='cloud'){cx.beginPath();cx.arc(x,y,r*.5,0,7);cx.stroke()}cx.restore()}
+function drawActive(p,i){const r=p.r,ct=drawPackBody(r,p,true),G=packGeo(p),g=G.g,pl=G.pl;
+ // 見出し
+ cx.save();cx.fillStyle='#151B2E';cx.textBaseline='alphabetic';
+ const hy=r.y+ct*2.4+G.hh*.55;cx.font=fh(clamp(r.w*.045,15,26));cx.textAlign='left';cx.fillText('DAY '+(i+1),g.x,hy);
+ cx.textAlign='right';cx.font=fb(clamp(r.w*.034,13,19));cx.fillText(p.d.date+'　'+p.d.place,g.x+g.w,hy);
+ if(r.w>560){cx.textAlign='center';cx.font=fh(clamp(r.w*.028,11,15));const sn=SEASON[p.d.season];
+ cx.fillStyle='#151B2E';cx.globalAlpha=.8;cx.fillText('空もようパック・'+sn.nm+'の日',r.x+r.w/2,hy);cx.globalAlpha=1}cx.restore();
+ // カード（下地）
+ cx.save();rr(g.x,g.y,g.w,g.h,8);cx.fillStyle='#0f1528';cx.fill();cx.clip();
+ drawGraph(p,G,p.done?24:p.rev);
+ // 包み（まだ破っていない部分）
+ const tx=pl.x+pl.w*p.rev/24;
+ if(p.rev<24){cx.beginPath();cx.moveTo(tx,g.y-4);const n=Math.max(6,Math.round(g.h/12));for(let k=0;k<=n;k++){cx.lineTo(tx+((k%2)?7:-2)+Math.sin(k*1.7)*2,g.y+g.h*k/n)}const wr=pl.x+pl.w+3;cx.lineTo(wr,g.y+g.h+4);cx.lineTo(wr,g.y-4);cx.closePath();
+  cx.save();cx.clip();cx.fillStyle=silver(g.x,g.y,g.w,g.h);cx.fillRect(g.x,g.y,g.w,g.h);cx.globalCompositeOperation='overlay';cx.fillStyle=holoGrad(g.x,g.y,g.w,g.h,.9,sheen()+.15);cx.fillRect(g.x,g.y,g.w,g.h);cx.globalCompositeOperation='source-over';cx.fillStyle=embPat;cx.fillRect(g.x,g.y,g.w,g.h);
+  // 包みの印刷
+  cx.fillStyle='rgba(21,27,46,.8)';cx.textAlign='center';const mx=(Math.max(tx,g.x+g.w*.3)+wr)/2;
+  if(p.rev<.2){cx.font=fh(clamp(g.w*.07,20,40));cx.fillText('？',mx,g.y+g.h*.46);cx.font=fb(clamp(g.w*.034,13,18));cx.fillText('どんな空もようの1日？',mx,g.y+g.h*.62)}
+  cx.restore();
+  // 破り口のかげ
+  cx.strokeStyle='rgba(255,255,255,.9)';cx.lineWidth=2;cx.stroke();cx.strokeStyle='rgba(21,27,46,.35)';cx.lineWidth=5;cx.globalAlpha=.4;cx.stroke();cx.globalAlpha=1}
+ cx.restore();
+ // カードの枠
+ cx.save();rr(g.x,g.y,g.w,g.h,8);cx.lineWidth=3;cx.strokeStyle='#FFB000';cx.stroke();cx.restore();
+ // ミシン目（ギザギザ）
+ cx.save();const sy=g.y-11;cx.strokeStyle='rgba(21,27,46,.6)';cx.lineWidth=2;cx.setLineDash([5,4]);cx.beginPath();cx.moveTo(Math.max(tx,g.x),sy);zigzag(Math.max(tx,g.x),g.x+g.w,sy,-1,7);cx.stroke();cx.setLineDash([]);
+ if(p.rev>0){// めくれた帯
+  cx.fillStyle=silver(g.x,sy-20,tx-g.x,20);cx.beginPath();cx.moveTo(g.x,sy);for(let x=g.x;x<=tx;x+=6){const k=(tx-x)/(g.w);cx.lineTo(x,sy-6-Math.min(26,k*60))}cx.lineTo(tx,sy);cx.closePath();cx.fill();cx.strokeStyle='rgba(21,27,46,.4)';cx.lineWidth=1;cx.stroke()}
+ if(p.rev<.5&&!p.done){const hx=g.x+g.w*.08+((tNow*.7)%1)*g.w*.3;cx.font=fh(clamp(g.w*.04,15,22));cx.fillStyle='#151B2E';cx.textAlign='left';cx.fillText('✂ ここから右へ破る →',g.x,sy-12);
+  if(!RM){cx.globalAlpha=.9;drawFinger(hx,g.y+g.h*.35)}}
+ cx.restore();
+ // 破っている先端の時刻
+ if(!p.done&&p.rev>0&&p.rev<24){cx.save();cx.font=fnm(14);cx.fillStyle='#FFB000';cx.textAlign='center';const hh=Math.floor(p.rev),mm=p.rev%1>=.5?'30':'00';rr(tx-28,g.y+g.h+2,56,20,5);cx.fillStyle='#151B2E';cx.fill();cx.fillStyle='#FFB000';cx.fillText(hh+':'+mm,tx,g.y+g.h+17);cx.restore()}
+ // シール台紙
+ const rs=slotRects(p);p.slots.forEach((s,k)=>{const q=rs[k];cx.save();rr(q.x,q.y,q.w,q.h,10);cx.fillStyle='rgba(21,27,46,.12)';cx.fill();cx.setLineDash([7,5]);cx.lineWidth=2.5;cx.strokeStyle=s.w?'rgba(21,27,46,.0)':'rgba(21,27,46,.55)';cx.stroke();cx.setLineDash([]);
+  const cxq=q.x+q.w/2,cyq=q.y+q.h/2,sr=Math.min(q.h*.36,q.w*.22,44);
+  if(s.w){drawSeal(s.w,cxq-(q.w>200?q.w*.18:0),cyq,sr,1,s.tier);if(q.w>200){cx.fillStyle='#151B2E';cx.font=fh(clamp(sr*.6,14,24));cx.textAlign='left';cx.fillText(WN[s.w],cxq-q.w*.18+sr*1.3,cyq-2);cx.font=fb(13);cx.fillText('（'+['','ふつう','よみ','早読み'][s.tier]+'）',cxq-q.w*.18+sr*1.3,cyq+18)}}
+  else{cx.fillStyle='rgba(21,27,46,.7)';cx.textAlign='center';cx.font=fh(clamp(q.h*.16,12,19));cx.fillText(p.slots.length>1?(k?'午後（12〜24時）':'午前（0〜12時）'):'天気シールをここへ',cxq,cyq-4);
+   const need=s.a+(s.b-s.a)*.25;cx.font=fb(12);cx.fillText(p.rev<need?need+'時まで破ると貼れる':'↓ 下のシールをドラッグ',cxq,cyq+16)}
+  if(p.done){const ok=s.w===truthAt(p,k);const lab=ok?'的中':'×'+WN[truthAt(p,k)];cx.font=fh(clamp(q.h*.2,13,20));const tw=cx.measureText(lab).width+14;const bx=q.x+q.w-tw-6,by=q.y+6;rr(bx,by,tw,28,6);cx.fillStyle=ok?'#FFB000':'#c0392b';cx.fill();cx.fillStyle=ok?'#151B2E':'#fff';cx.textAlign='center';cx.fillText(lab,bx+tw/2,by+20)}
+  cx.restore()});
+ if(p.done)drawVerdict(p,G)}
+function drawFinger(x,y){cx.save();cx.translate(x,y);cx.fillStyle='rgba(255,255,255,.95)';cx.strokeStyle='#151B2E';cx.lineWidth=2.5;cx.beginPath();cx.ellipse(0,0,13,17,-.3,0,7);cx.fill();cx.stroke();cx.fillStyle='rgba(255,176,0,.9)';cx.beginPath();cx.arc(0,-6,5,0,7);cx.fill();cx.restore()}
+function drawGraph(p,G,rev){const d=p.d,pl=G.pl,g=G.g,sc=scaleOf(p);
+ const X=h=>pl.x+pl.w*h/24,Y=t=>pl.y+pl.h*(1-(t-sc.lo)/(sc.hi-sc.lo)),YH=u=>pl.y+pl.h*(1-u/100);
+ // 下地のホロ（うすく）
+ cx.fillStyle='#10172c';cx.fillRect(g.x,g.y,g.w,g.h);
+ cx.save();cx.globalAlpha=.12;cx.globalCompositeOperation='screen';cx.fillStyle=holoGrad(g.x,g.y,g.w,g.h,1,sheen()*.5);cx.fillRect(g.x,g.y,g.w,g.h);cx.restore();
+ // 目盛り
+ cx.lineWidth=1;cx.font=fnm(clamp(pl.h*.055,10,14));cx.textAlign='right';cx.textBaseline='middle';
+ const dec=sc.st<1?1:0;
+ for(let t=sc.lo;t<=sc.hi+1e-6;t+=sc.st){const y=Y(t);cx.strokeStyle=Math.abs(t)<1e-6?'rgba(227,232,240,.5)':'rgba(227,232,240,.16)';cx.beginPath();cx.moveTo(pl.x,y);cx.lineTo(pl.x+pl.w,y);cx.stroke();cx.fillStyle='#E3E8F0';cx.fillText(t.toFixed(dec),pl.x-5,y)}
+ cx.save();cx.translate(g.x+9,pl.y+pl.h/2);cx.rotate(-Math.PI/2);cx.textAlign='center';cx.font=fb(11);cx.fillStyle='#FFB000';cx.fillText('気温〔℃〕',0,0);cx.restore();
+ if(B.hum){cx.textAlign='left';for(let u=0;u<=100;u+=20){cx.fillStyle='#9CCBFF';cx.fillText(u,pl.x+pl.w+5,YH(u))}cx.save();cx.translate(g.x+g.w-8,pl.y+pl.h/2);cx.rotate(Math.PI/2);cx.textAlign='center';cx.font=fb(11);cx.fillStyle='#9CCBFF';cx.fillText('湿度〔%〕',0,0);cx.restore()}
+ cx.textAlign='center';cx.textBaseline='top';for(let h=0;h<=24;h+=3){const x=X(h);cx.strokeStyle='rgba(227,232,240,'+(h%6?'.1':'.2')+')';cx.beginPath();cx.moveTo(x,pl.y);cx.lineTo(x,pl.y+pl.h);cx.stroke();cx.fillStyle='#E3E8F0';cx.fillText(h,x,pl.y+pl.h+5)}
+ cx.font=fb(11);cx.textAlign='right';cx.fillStyle='rgba(227,232,240,.7)';cx.fillText('時',pl.x+pl.w,pl.y+pl.h+15);
+ if(p.d.split&&B.split){cx.strokeStyle='rgba(255,176,0,.35)';cx.setLineDash([3,4]);cx.beginPath();cx.moveTo(X(12),pl.y);cx.lineTo(X(12),pl.y+pl.h);cx.stroke();cx.setLineDash([])}
+ cx.textBaseline='alphabetic';
+ const n=Math.floor(rev*2),fr=rev*2-n;
+ const pts=(arr,Yf)=>{const o=[];for(let i=0;i<=Math.min(n,NPT-1);i++)o.push([X(i/2),Yf(arr[i])]);if(n<NPT-1&&fr>0)o.push([X(rev),Yf(lerp(arr[n],arr[n+1],fr))]);return o};
+ if(B.hum){const q=pts(d.H,YH);cx.save();cx.strokeStyle='#9CCBFF';cx.lineWidth=2.5;cx.setLineDash([6,5]);cx.beginPath();q.forEach((a,k)=>k?cx.lineTo(a[0],a[1]):cx.moveTo(a[0],a[1]));cx.stroke();cx.restore()}
+ const q=pts(d.T,Y);
+ cx.save();cx.lineJoin='round';cx.lineCap='round';cx.strokeStyle='rgba(255,176,0,.35)';cx.lineWidth=9;cx.beginPath();q.forEach((a,k)=>k?cx.lineTo(a[0],a[1]):cx.moveTo(a[0],a[1]));cx.stroke();
+ cx.strokeStyle='#FFB000';cx.lineWidth=3.5;cx.stroke();cx.fillStyle='#FFB000';for(let i=0;i<=Math.min(n,NPT-1);i+=2){cx.beginPath();cx.arc(X(i/2),Y(d.T[i]),2.6,0,7);cx.fill()}
+ if(q.length&&rev<24){const a=q[q.length-1];const gl=cx.createRadialGradient(a[0],a[1],0,a[0],a[1],18);gl.addColorStop(0,'rgba(255,240,190,1)');gl.addColorStop(1,'rgba(255,176,0,0)');cx.fillStyle=gl;cx.beginPath();cx.arc(a[0],a[1],18,0,7);cx.fill()}
+ cx.restore()}
+function drawVerdict(p,G){const d=p.d,pl=G.pl,sc=scaleOf(p),X=h=>pl.x+pl.w*h/24,Y=t=>pl.y+pl.h*(1-(t-sc.lo)/(sc.hi-sc.lo));
+ const k=clamp((tNow-p.doneAt)/.6,0,1);
+ const rngs=d.split?[[0,12],[12,24]]:[[0,24]];
+ cx.save();rngs.forEach(([a,b])=>{const hr=halfRange(d,a,b);const bx=d.split?X(a===0?11:23):X(23)+Math.min(14,pl.w*.02);const y0=Y(hr.mn),y1=lerp(y0,Y(hr.mx),k);
+  cx.strokeStyle='#fff';cx.lineWidth=2;cx.setLineDash([4,3]);cx.beginPath();cx.moveTo(X(hr.imn),Y(hr.mn));cx.lineTo(bx,Y(hr.mn));cx.moveTo(X(hr.imx),Y(hr.mx));cx.lineTo(bx,Y(hr.mx));cx.globalAlpha=k*.8;cx.stroke();cx.setLineDash([]);cx.globalAlpha=1;
+  cx.strokeStyle='#FFB000';cx.lineWidth=4;cx.beginPath();cx.moveTo(bx-6,y0);cx.lineTo(bx,y0);cx.lineTo(bx,y1);cx.lineTo(bx-6,y1);cx.stroke();
+  if(k>=1){const lab='幅 '+f1(hr.r)+'℃';cx.font=fh(clamp(pl.w*.035,13,20));const tw=cx.measureText(lab).width+14;let lx=bx-tw-10,ly=(y0+y1)/2-13;rr(lx,ly,tw,26,6);cx.fillStyle='#FFB000';cx.fill();cx.fillStyle='#151B2E';cx.textAlign='center';cx.fillText(lab,lx+tw/2,ly+19)}});
+ // 湿度の向き
+ if(B.hum&&k>=1&&!d.split&&d.truth[0]==='sun'){cx.font=fb(clamp(pl.w*.028,12,15));cx.fillStyle='#9CCBFF';cx.textAlign='left';cx.fillText('気温↑のとき湿度↓（逆向き）',pl.x+6,pl.y+16)}
+ if(B.hum&&k>=1&&!d.split&&d.truth[0]==='rain'){cx.font=fb(clamp(pl.w*.028,12,15));cx.fillStyle='#9CCBFF';cx.textAlign='left';cx.fillText('湿度は90%以上のまま',pl.x+6,pl.y+16)}
+ cx.restore();
+ // 光の帯
+ if(p.ok&&rays.length){const r=p.r,cxp=r.x+r.w/2,cyp=G.g.y+G.g.h/2,t=clamp((tNow-p.doneAt)/1.4,0,1);if(t<1){cx.save();cx.globalCompositeOperation='screen';rays.forEach(a=>{const L2=Math.max(W,H)*a.l*(.3+t);cx.fillStyle='hsla('+a.h+',90%,75%,'+(.35*(1-t))+')';cx.beginPath();cx.moveTo(cxp,cyp);cx.lineTo(cxp+Math.cos(a.a-.05)*L2,cyp+Math.sin(a.a-.05)*L2);cx.lineTo(cxp+Math.cos(a.a+.05)*L2,cyp+Math.sin(a.a+.05)*L2);cx.fill()});cx.restore()}}
+ // 箔のランク
+ if(p.ok&&p.tier>=2){const r=p.r;cx.save();cx.beginPath();rr(G.g.x,G.g.y,G.g.w,G.g.h,8);cx.clip();cx.globalCompositeOperation='screen';cx.fillStyle=holoGrad(r.x,r.y,r.w,r.h,p.tier>=3?.13:.08,sheen()*2);cx.fillRect(G.g.x,G.g.y,G.g.w,G.g.h);
+  const sx=G.g.x+((tNow*.45)%1.4-.2)*G.g.w;const sg=cx.createLinearGradient(sx-60,G.g.y,sx+60,G.g.y+G.g.h*.4);sg.addColorStop(0,'rgba(255,240,200,0)');sg.addColorStop(.5,'rgba(255,240,200,'+(p.tier>=3?.28:.16)+')');sg.addColorStop(1,'rgba(255,240,200,0)');cx.fillStyle=sg;cx.fillRect(G.g.x,G.g.y,G.g.w,G.g.h);
+  if(p.tier>=4){cx.globalCompositeOperation='source-over';for(let i=0;i<14;i++){const a=(i*137.5)%360,xx=G.g.x+((i*0.618+tNow*.05)%1)*G.g.w,yy=G.g.y+((i*0.37)%1)*G.g.h,sz=3+2*Math.sin(tNow*3+i);cx.fillStyle='rgba(255,214,107,'+(.5+.4*Math.sin(tNow*4+i))+')';cx.beginPath();for(let k=0;k<8;k++){const q=k%2?sz*.35:sz*1.6;cx.lineTo(xx+Math.cos(k*Math.PI/4)*q,yy+Math.sin(k*Math.PI/4)*q)}cx.fill()}}
+  cx.restore();cx.save();rr(G.g.x-3,G.g.y-3,G.g.w+6,G.g.h+6,10);cx.lineWidth=p.tier>=4?7:5;const bg=cx.createLinearGradient(G.g.x,G.g.y,G.g.x+G.g.w,G.g.y+G.g.h);bg.addColorStop(0,'#c98600');bg.addColorStop(((tNow*.3)%1),'#fff4c8');bg.addColorStop(1,'#FFB000');cx.strokeStyle=bg;cx.stroke();cx.restore()}
+ // つぎへ
+ if(tNow-p.doneAt>.8){const r=p.r;cx.save();cx.font=fh(clamp(r.w*.035,14,19));cx.textAlign='center';const lab=PI<packs.length-1?'タップで次のパックへ ▶':'タップでボックスの結果へ ▶';const tw=cx.measureText(lab).width+30;const y=r.y+r.h+ (WIDE?-4:6);
+  cx.globalAlpha=.75+.25*Math.sin(tNow*4);rr(r.x+r.w/2-tw/2,y-24,tw,34,8);cx.fillStyle='#FFB000';cx.fill();cx.fillStyle='#151B2E';cx.fillText(lab,r.x+r.w/2,y-1);cx.restore()}}
+function drawSeal(w,x,y,r,a,tier){cx.save();cx.globalAlpha=a==null?1:a;
+ cx.shadowColor='rgba(0,0,0,.45)';cx.shadowBlur=10;cx.shadowOffsetY=4;cx.beginPath();cx.arc(x,y,r,0,7);cx.fillStyle=silver(x-r,y-r,2*r,2*r);cx.fill();cx.shadowColor='transparent';
+ cx.save();cx.clip();cx.globalCompositeOperation='overlay';cx.fillStyle=holoGrad(x-r,y-r,2*r,2*r,.9,sheen()+x/W);cx.fillRect(x-r,y-r,2*r,2*r);cx.restore();
+ cx.lineWidth=Math.max(3,r*.12);cx.strokeStyle=tier>=3?'#FFB000':'#ffffff';cx.beginPath();cx.arc(x,y,r-cx.lineWidth/2,0,7);cx.stroke();
+ drawSym(w,x,y,r*.52,'#151B2E');cx.restore()}
+function drawTray(){const p=cur();cx.save();
+ const y0=H-L.tray;const g=cx.createLinearGradient(0,y0,0,H);g.addColorStop(0,'rgba(8,11,22,0)');g.addColorStop(.3,'rgba(8,11,22,.7)');g.addColorStop(1,'rgba(8,11,22,.95)');cx.fillStyle=g;cx.fillRect(0,y0,W,L.tray);
+ const can=p&&!p.done&&p.slots.some(s=>!s.w&&p.rev>=s.a+(s.b-s.a)*.25);
+ L.seals.forEach(s=>{const lift=drag&&drag.k==='seal'&&drag.w===s.w;const pul=can&&!RM?1+.04*Math.sin(tNow*5+s.x):1;
+  drawSeal(s.w,s.x,s.y-6,s.r*pul,lift?.35:(can?1:.55),0);cx.fillStyle=can?'#fff':'rgba(227,232,240,.55)';cx.font=fh(clamp(s.r*.42,13,19));cx.textAlign='center';cx.fillText(WN[s.w],s.x,s.y+s.r+12)});
+ cx.restore();
+ if(drag&&drag.k==='seal'&&drag.moved)drawSeal(drag.w,drag.x,drag.y-20,L.seals[0].r*1.1,1,0)}
+function drawHUDc(){// 上中央: ボックス名・残り・きらめき・連続
+ const p=cur();cx.save();const mid=W/2;const top=12;
+ const lab='BOX'+(S.box+1)+'　'+B.nm;cx.font=fh(WIDE?20:15);const tw=cx.measureText(lab).width;
+ if(WIDE){cx.textAlign='center';cx.fillStyle='#E3E8F0';cx.fillText(lab,mid,top+22);
+  cx.font=fnm(15);cx.fillStyle='#FFB000';cx.fillText('きらめき '+S.score.toLocaleString(),mid,top+44);
+ }else{cx.textAlign='center';cx.fillStyle='#E3E8F0';cx.font=fh(W<380?11:13);cx.fillText('BOX'+(S.box+1)+'/8',mid,top+22);cx.font=fb(12);cx.fillText(B.nm,mid,top+40)}
+ // 連続的中の箔ステッカー
+ if(S.combo>0){const m=S.combo>=5?3:S.combo>=3?2:1;const t='連続 '+S.combo+(m>1?'  ×'+m:'');cx.font=fh(WIDE?17:13);const w2=cx.measureText(t).width+20;const x=WIDE?mid+tw/2+30:W-w2-12,y=WIDE?top+6:top+58;
+  if(!WIDE&&B.ta){}else{rr(x,y,w2,WIDE?30:24,6);cx.fillStyle=m>1?'#FFB000':'#E3E8F0';cx.fill();}cx.fillStyle='#151B2E';cx.textAlign='left';cx.fillText(t,x+10,y+(WIDE?21:17))}
+ // 小さなパックの列（スマホ）
+ if(!WIDE){const n=packs.length,sw=16,gap=5;let x=12;const y=top+60;packs.forEach((q,i)=>{rr(x,y,sw,22,3);cx.fillStyle=q.done?(q.ok?'#FFB000':'#5a6380'):i===PI?'#fff':'#8d98ac';cx.fill();x+=sw+gap})}
+ if(!WIDE){cx.font=fnm(13);cx.fillStyle='#FFB000';cx.textAlign='left';cx.fillText('きらめき '+S.score.toLocaleString(),12+packs.length*21+6,top+77)}
+ // タイムアタック
+ if(B.ta&&S.taLeft!=null){const t=Math.max(0,S.taLeft);const bw=WIDE?Math.min(420,W*.3):W-24,bx=W/2-bw/2,by=WIDE?top+52:top+88;rr(bx,by,bw,8,4);cx.fillStyle='#2a3456';cx.fill();rr(bx,by,Math.max(0,bw*t/B.ta),8,4);cx.fillStyle=t<30?'#ff6b5a':'#FFB000';cx.fill();cx.font=fnm(WIDE?15:14);cx.fillStyle=t<30?'#ff9d8f':'#fff';cx.textAlign=WIDE?'left':'right';cx.fillText('のこり '+fmtT(t),WIDE?bx+bw+10:W-12,WIDE?by+9:top+77)}
+ cx.restore()}
+function drawParts(dt){cx.save();for(const q of parts){q.life-=dt*.9;q.x+=q.vx*dt;q.y+=q.vy*dt;q.vy+=380*dt;q.vx*=.99;q.rot+=dt*6;if(q.life<=0)continue;cx.globalAlpha=clamp(q.life,0,1);cx.translate(q.x,q.y);cx.rotate(q.rot);
+ if(q.k==='star'){cx.fillStyle=q.gold?'#FFB000':'hsl('+q.h+',90%,78%)';cx.beginPath();for(let i=0;i<8;i++){const rr2=i%2?q.sz*.4:q.sz;cx.lineTo(Math.cos(i*Math.PI/4)*rr2,Math.sin(i*Math.PI/4)*rr2)}cx.fill()}
+ else{cx.fillStyle=q.gold?'#ffd66b':'hsl('+q.h+',70%,'+(70+Math.sin(q.rot)*20)+'%)';cx.fillRect(-q.sz/2,-q.sz/3,q.sz,q.sz*.66)}
+ cx.setTransform(DPR,0,0,DPR,0,0)}cx.restore();parts=parts.filter(q=>q.life>0)}
+function drawTitle(){drawBG();const bh=$('#title .box').offsetHeight||240;const s=WIDE?Math.min(W*.36,H*.78):Math.min(W*.92,H-bh-110);const px=WIDE?W*.34:W/2,py=WIDE?H*.52:(60+H-bh-30)/2;
+ // まわりに浮かぶカード
+ const kinds=['sun','cloud','rain','sun','rain','cloud'];kinds.forEach((w,i)=>{const a=i/6*6.283+tNow*.15,R=s*.78;const x=px+Math.cos(a)*R*(WIDE?1.05:.62),y=py+Math.sin(a)*R*.55;const cw=s*.2,ch=cw*1.4;
+  cx.save();cx.translate(x,y);cx.rotate(Math.sin(a)*.3);rr(-cw/2,-ch/2,cw,ch,6);cx.fillStyle=silver(-cw/2,-ch/2,cw,ch);cx.fill();cx.clip();cx.globalCompositeOperation='overlay';cx.fillStyle=holoGrad(-cw/2,-ch/2,cw,ch,.9,sheen()+i*.2);cx.fillRect(-cw/2,-ch/2,cw,ch);cx.globalCompositeOperation='source-over';drawSym(w,0,-ch*.08,cw*.24,'#151B2E');cx.restore()});
+ // 大きなパック
+ cx.save();cx.translate(px,py);cx.rotate(-.06+Math.sin(tNow*.8)*.015);const r={x:-s*.36,y:-s*.5,w:s*.72,h:s};drawPackBody(r,null,true);
+ cx.textAlign='center';cx.fillStyle='#151B2E';cx.font=fh(s*.042);cx.fillText('中2理科　気象とその変化　第9回',0,r.y+s*.1);
+ // ロゴ（金箔の描き文字）
+ const lg=cx.createLinearGradient(-s*.3,0,s*.3,0);lg.addColorStop(0,'#c98600');lg.addColorStop(.35,'#ffe39a');lg.addColorStop(.5,'#FFB000');lg.addColorStop(.7,'#fff1c2');lg.addColorStop(1,'#c98600');
+ cx.font=fh(s*.1);cx.lineJoin='round';cx.lineWidth=s*.022;cx.strokeStyle='#151B2E';cx.strokeText('空もよう',0,-s*.2);cx.fillStyle=lg;cx.fillText('空もよう',0,-s*.2);
+ cx.font=fh(s*.13);cx.strokeText('パック',0,-s*.05);cx.fillStyle=lg;cx.fillText('パック',0,-s*.05);
+ cx.font=fh(s*.042);cx.fillStyle='#151B2E';cx.fillText('～天気と1日の気温～',0,s*.03);
+ // 窓の中のミニグラフ
+ const gx=-s*.26,gy=s*.08,gw=s*.52,gh=s*.24;rr(gx,gy,gw,gh,6);cx.fillStyle='#10172c';cx.fill();cx.strokeStyle='#FFB000';cx.lineWidth=2;cx.stroke();
+ cx.strokeStyle='#FFB000';cx.lineWidth=s*.008;cx.beginPath();for(let i=0;i<=48;i++){const h=i/2,v=prof(h,5.5,14,.3);const x=gx+gw*.06+gw*.88*h/24,y=gy+gh*.85-gh*.7*v;i?cx.lineTo(x,y):cx.moveTo(x,y)}cx.stroke();
+ cx.strokeStyle='#9CCBFF';cx.setLineDash([5,4]);cx.beginPath();for(let i=0;i<=48;i++){const h=i/2,v=prof(h,5.5,14,.3);const x=gx+gw*.06+gw*.88*h/24,y=gy+gh*.15+gh*.6*v;i?cx.lineTo(x,y):cx.moveTo(x,y)}cx.stroke();cx.setLineDash([]);
+ ['sun','cloud','rain'].forEach((w,i)=>drawSym(w,(i-1)*s*.13,s*.42,s*.04,'#151B2E'));
+ cx.restore()}
+function drawPlay(dt){drawBG();
+ const sh=shake>0&&!RM;if(shake>0)shake=Math.max(0,shake-dt);if(sh){cx.save();cx.translate(rnd(-8,8)*shake,rnd(-8,8)*shake)}
+ packs.forEach(p=>{const t=p.tg;if(!t)return;const k=1-Math.pow(.001,dt);p.r.x=lerp(p.r.x,t.x,k);p.r.y=lerp(p.r.y,t.y,k);p.r.w=lerp(p.r.w,t.w,k);p.r.h=lerp(p.r.h,t.h,k)});
+ packs.forEach((p,i)=>{if(i===PI)return;if(!WIDE&&Math.abs(p.r.x-p.tg.x)<2&&p.tg.x!==L.area.x)return;if(WIDE)drawSmallPack(p,i);else if(Math.abs(p.r.x-L.area.x)<W)drawActiveLite(p,i)});
+ const p=cur();if(p)drawActive(p,PI);
+ if(flash>0){cx.fillStyle='rgba(255,240,200,'+(flash*.35)+')';cx.fillRect(0,0,W,H);flash=Math.max(0,flash-dt*1.6)}
+ drawParts(dt);
+ if(sh)cx.restore();
+ drawHUDc();drawTray()}
+function drawActiveLite(p,i){drawPackBody(p.r,p,false)}
+/* ===== ループ ===== */
+let last=performance.now();
+function loop(now){const dt=Math.min(.05,(now-last)/1000);last=now;tNow=(now-T0)/1000;
+ cx.setTransform(DPR,0,0,DPR,0,0);
+ if(MODE==='title'){drawTitle();drawParts(dt)}
+ else if(MODE==='test'){drawBG()}
+ else{if(MODE==='play'){S.t+=dt;if(B.ta&&S.taLeft!=null){S.taLeft-=dt;if(S.taLeft<=0){S.taLeft=0;packs.forEach(q=>{if(!q.done){q.done=true;q.ok=false;q.doneAt=tNow}});endBox(true)}}}
+  if(B)drawPlay(dt)}
+ requestAnimationFrame(loop)}
 
-/* ---------- 時計 ---------- */
-var lastT=performance.now();
-function frame(now){var dt=Math.min(.25,(now-lastT)/1000);lastT=now;
-  if(cur==='play'&&!document.hidden){S.elapsed+=dt;if(S.stage==='pack'&&PACKS[S.pack]&&PACKS[S.pack].final)$('hTime').textContent='⏱ '+fmt(S.elapsed-S.finalStart)}
-  requestAnimationFrame(frame)}
+/* ===== 確認テスト ===== */
+let TS=null;function playerName(){return window.PLAYER_NAME||S.name||''}
+function startTest(){if(!window.Quiz)return;MODE='test';ovClose();TS={qs:Quiz.test(),i:0,ans:[]};show('test');$('#hud').classList.remove('hidden');renderQ()}
+function renderQ(){const q=TS.qs[TS.i],box=$('#tbox');
+ box.innerHTML='<div class="tno">✦ 確認テスト　第'+(TS.i+1)+'問 / '+TS.qs.length+'</div><div class="prog">'+TS.qs.map((_,i)=>'<i class="'+(i<TS.i?'on':'')+'"></i>').join('')+'</div><div class="tq">'+q.q+'</div>'+(q.fig?'<div class="fig2">'+q.fig+'</div>':'')+'<div id="ta"></div>';
+ const ta=$('#ta');
+ if(q.t==='choice'){const d=document.createElement('div');d.className='ch';q.shown.forEach(c=>{const b=document.createElement('button');b.innerHTML=c;b.onclick=()=>ans(c);d.appendChild(b)});ta.appendChild(d)}
+ else if(q.t==='num'){ta.innerHTML='<div class="numrow"><input id="numIn" inputmode="decimal" autocomplete="off" placeholder="数を入力"><b>'+esc(q.unit||'')+'</b><button class="foil gold s" id="numOk" style="flex:0 0 auto">決定</button></div>';$('#numOk').onclick=()=>{const v=$('#numIn').value.trim();if(v==='')return;ans(v)}}
+ else{const picked=[];ta.innerHTML='<div class="small">正しい順にタップしよう</div><div class="ord" id="ordBox"></div><div class="ch" id="ordPool"></div><div class="row" style="margin-top:10px"><button class="foil s" id="ordRe">やり直す</button><button class="foil gold s" id="ordOk" disabled>決定</button></div>';
+  const drawO=()=>{$('#ordBox').innerHTML=picked.map((t,i)=>'<div>'+(i+1)+'. '+t+'</div>').join('');const pool=$('#ordPool');pool.innerHTML='';q.shown.forEach(t=>{if(picked.includes(t))return;const b=document.createElement('button');b.innerHTML=t;b.onclick=()=>{picked.push(t);sfx.tap();drawO()};pool.appendChild(b)});$('#ordOk').disabled=picked.length!==q.shown.length};
+  drawO();$('#ordRe').onclick=()=>{picked.length=0;drawO()};$('#ordOk').onclick=()=>ans(picked.slice())}
+ $('#tbox').scrollTop=0}
+function ans(v){TS.ans.push(v);sfx.tap();TS.i++;if(TS.i<TS.qs.length)renderQ();else finishTest()}
+function finishTest(){const qs=TS.qs,review=Quiz.review(qs,TS.ans),marks=review.map(r=>r.ok),score=marks.filter(Boolean).length;sfx.fan();
+ const recs=TEST_ONLY?[['モード','確認テストだけ']]:[['クリアタイム',fmtT(S.t)],['的中',S.hits+' / '+S.tries+'パック'],['早読み（朝〜昼で宣言して的中）',S.early+'回'],['最大連続的中',S.maxCombo+'連続']];
+ TS.card=SubmitCard.show({gameId:GID,grade:'chu2',koma:[KOMA],unit:UNIT,game:GTITLE+(TEST_ONLY?'（確認テストのみ）':''),name:playerName(),score,total:qs.length,marks,records:recs,review},showTestResult);showTestResult()}
+function showTestResult(){const r=TS.card||{};$('#tbox').innerHTML='<h2>テストの結果</h2><p style="font-family:var(--fn);font-size:40px;margin:6px 0;color:#FFB000">'+(r.score||0)+' / '+(r.total||0)+'</p><div style="display:flex;flex-direction:column;gap:9px"><button class="foil gold" id="rCard">提出カードをもう一度見る</button><button class="foil" id="rAgain">↺ テストをもう一度</button>'+(TEST_ONLY?'':'<button class="foil s" id="rTitle">タイトルへ</button>')+'<button class="foil s zk" id="rBook">📖 図鑑</button></div>';
+ $('#rCard').onclick=()=>SubmitCard.reopen(TS.card,()=>{});$('#rAgain').onclick=()=>startTest();if($('#rTitle'))$('#rTitle').onclick=()=>toTitle();$('#rBook').onclick=openBook;zkButtons()}
 
-/* ---------- 確認テスト ---------- */
-var T={qs:[],i:0,ans:[]};
-function startTest(){show('test');var nm=nameNow();$('tNameBox').classList.toggle('hidden',!!nm);T.qs=window.Quiz?Quiz.test():[];T.i=0;T.ans=[];
-  if(!T.qs.length){$('tQ').textContent='問題データがありません';return}renderQ()}
-function renderQ(){var q=T.qs[T.i];$('tNum').textContent='第 '+(T.i+1)+' 問 ／ '+T.qs.length;$('tQ').innerHTML=q.q;$('tFig').innerHTML=q.fig||'';$('tFb').innerHTML='';var A=$('tA');A.innerHTML='';
-  if(q.t==='choice'){var box=document.createElement('div');box.className='choices';q.shown.forEach(function(c){var b=document.createElement('button');b.textContent=c;b.onclick=function(){if(T.ans[T.i]!==undefined)return;b.classList.add('sel');answer(c)};box.appendChild(b)});A.appendChild(box)}
-  else if(q.t==='num'){A.innerHTML='<div class="numrow"><input id="numIn" inputmode="decimal" autocomplete="off"><b>'+(q.unit||'')+'</b><button class="btn small gold" id="numGo">こたえる</button></div>';
-    $('numGo').onclick=function(){var v=$('numIn').value.trim();if(!v)return;answer(v.replace(/[０-９．－]/g,function(ch){return ch==='－'?'-':String.fromCharCode(ch.charCodeAt(0)-0xFEE0)}))}}
-  else if(q.t==='order'){var seq=[];A.innerHTML='<div class="hint">正しい順にタップ</div><div class="choices" id="oPool"></div><div class="seq" id="oSeq"></div><div class="numrow"><button class="btn small" id="oReset">やり直す</button><button class="btn small gold" id="oGo" disabled>こたえる</button></div>';
-    var drawO=function(){var Pl=$('oPool');Pl.innerHTML='';q.shown.forEach(function(it){if(seq.indexOf(it)>=0)return;var b=document.createElement('button');b.textContent=it;b.onclick=function(){Snd.click();seq.push(it);drawO()};Pl.appendChild(b)});
-      $('oSeq').innerHTML=seq.map(function(s,i){return '<div>'+(i+1)+'. '+s+'</div>'}).join('');$('oGo').disabled=seq.length!==q.shown.length};
-    drawO();$('oReset').onclick=function(){seq=[];drawO()};$('oGo').onclick=function(){answer(seq.slice())}}}
-function answer(a){var q=T.qs[T.i];if(T.ans[T.i]!==undefined)return;T.ans[T.i]=a;var ok=window.Quiz&&Quiz.check(q,a);Snd.init();ok?Snd.hit(1):Snd.miss();
-  $('tA').querySelectorAll('button,input').forEach(function(b){b.disabled=true});
-  $('tFb').innerHTML='<div class="fb '+(ok?'o':'x')+'"><b class="m">'+(ok?'○':'×')+'</b>'+(ok?'':'正解：<b>'+Quiz.answer(q)+'</b><br>')+(q.ex||'')+
-   '<div style="text-align:right;margin-top:6px"><button class="btn small gold" id="tNext">'+(T.i+1<T.qs.length?'つぎへ ▶':'結果を見る')+'</button></div></div>';
-  $('tNext').onclick=function(){Snd.click();T.i++;if(T.i<T.qs.length)renderQ();else finishTest()};$('tNext').scrollIntoView({block:'nearest'})}
-function finishTest(){var qs=T.qs,answers=T.ans;var review=Quiz.review(qs,answers),marks=review.map(function(r){return r.ok}),score=marks.filter(Boolean).length;
-  var nm=nameNow()||$('tName').value.trim();if(nm){S.name=nm;save()}
-  var test=window.GAME_MODE==='test';
-  var recs=test?[['モード','確認テストだけ']]:[['クリアタイム',S.cleared?fmt(S.elapsed):'—'],['最終パック',S.cleared?S.finalHits+'/5 的中・'+fmt(S.finalTime):'—'],['最大連続',S.maxCombo+'連続'],['空もようアルバム',albumCount()+'/14']];
-  SubmitCard.show({gameId:GID,grade:'chu2',koma:[KOMA],unit:'中2理科　気象とその変化　第9回',game:TITLE+' ～'+SUB+'～'+(test?'（確認テストのみ）':''),
-    name:nm,score:score,total:qs.length,marks:marks,records:recs,review:review},function(){show('end')});}
+/* ===== タイトル ===== */
+function toTitle(){MODE='title';ovClose();show('title');$('#bCont').classList.toggle('hidden',!S.started);zkButtons();
+ const fromList=/\/chu2\/[^/]+\/?(index\.html)?$/.test(location.pathname)||/\/chu2\/(index\.html)?(\?|#|$)/.test(document.referrer||'');$('#bList').classList.toggle('hidden',!fromList)}
+$('#bList').onclick=()=>{location.href='../'};
+$('#bStart').onclick=()=>{ac();sfx.tap();const nm=$('#nameIn').value.trim()||S.name,snd=S.sound,alb=S.album;S=fresh();S.name=nm;S.sound=snd;S.album=alb||{};S.started=true;save();B=BOXES[0];startBox(0,false)};
+$('#bCont').onclick=()=>{ac();sfx.tap();const v=$('#nameIn').value.trim();if(v)S.name=v;save();if(S.cleared&&!S.packs){startTest();return}B=BOXES[S.box];startBox(S.box,!!S.packs)};
+$('#bSnd1').onclick=toggleSnd;$('#bSnd').onclick=toggleSnd;$('#bBook1').onclick=openBook;$('#bAlb1').onclick=()=>albumOpen(null);
+$('#bBack').onclick=()=>{sfx.tap();if(MODE==='test'){if(TEST_ONLY)return;toTitle();return}confirmBack()};
 
-/* ---------- 起動 ---------- */
-function setMute(){$('mute').textContent=Snd.muted?'🔇':'🔊'}
-$('mute').onclick=function(){Snd.muted=!Snd.muted;S.muted=Snd.muted;save();setMute();Snd.init();Snd.click()};setMute();
-$('bStart').onclick=startNew;$('bCont').onclick=cont;$('bBook1').onclick=book;$('bBook2').onclick=book;
-$('bAgain').onclick=function(){Snd.init();enterPlay();$('table').classList.remove('hidden');beginPack(7)};
-$('bTop').onclick=function(){initTitle();show('title')};
-function initTitle(){var sv=load();$('bCont').classList.toggle('hidden',!(sv&&(sv.stage!=='intro'||sv.pack>0)));
-  $('bBook1').classList.toggle('hidden',!hasZ());$('bBook2').classList.toggle('hidden',!hasZ());
-  if(window.PLAYER_NAME){$('nameBox').classList.add('hidden')}else if(S.name)$('nameIn').value=S.name;
-  $('ghost').textContent=S.best?'前回の自分：最終パック '+S.best.hits+'/5・'+fmt(S.best.time):''}
-setupZ();
-initTitle();
-document.addEventListener('visibilitychange',function(){if(document.hidden)save()});
-setInterval(function(){if(cur==='play')save()},10000);
-window.__game={S:function(){return S},card:function(){return card},P:function(){return P},pick:function(w,r){selW=w;selR=r;updFlip()},flip:doFlip,answerFor:function(c){c=c||card;var ok=Object.keys(RS).filter(function(k){return RS[k].ok.indexOf(c.k)>=0&&P.r.indexOf(k)>=0});return {w:c.k,r:ok[0]}},genDay:genDay,graphSVG:graphSVG};
-requestAnimationFrame(frame);
-if(window.GAME_MODE==='test'){startTest()}
-})();
+resize();
+try{window.Zukan&&Zukan.setup&&Zukan.setup({game:GID,koma:[KOMA]})}catch(e){}
+setSnd();kk();
+if(window.PLAYER_NAME){$('#nameIn').value=window.PLAYER_NAME;$('#nameRow').classList.add('hidden')}else if(S.name)$('#nameIn').value=S.name;
+window.__game={S:()=>S,mode:()=>MODE,packs:()=>packs,PI:()=>PI,tearTo:h=>{const p=cur();tearBy(h-p.rev)},seal:(i,w)=>placeSeal(i,w),truth:()=>cur().slots.map((_,i)=>truthAt(cur(),i)),next:nextPack,start:()=>$('#bStart').onclick(),go:()=>$('#bGo')&&$('#bGo').onclick(),box:i=>{B=BOXES[i];S.box=i;S.packs=null;startBox(i,false)},startTest};
+if(TEST_ONLY){$('#bBack').classList.add('hidden');startTest()}else toTitle();
+requestAnimationFrame(loop);
 </script>
-</body>
-</html>
+</body></html>
