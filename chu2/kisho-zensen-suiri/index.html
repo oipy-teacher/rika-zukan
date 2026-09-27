@@ -158,7 +158,7 @@ button:disabled{opacity:.4;cursor:default}
       <label class="namerow" id="nameRow"><b>なまえ</b><input id="nameIn" maxlength="16" placeholder="（空でも遊べる）" autocomplete="off"></label>
       <button class="vb red big" id="bStart">▶ はじめる</button>
       <button class="vb hidden" id="bCont">⏯ つづきから</button>
-      <div class="row"><button class="vb s zk" id="bBook1">📖 図鑑</button></div>
+      <div class="row"><button class="vb s" id="bHow">📼 あそびかた</button><button class="vb s zk" id="bBook1">📖 図鑑</button></div>
     </div>
   </div>
 
@@ -182,8 +182,8 @@ button:disabled{opacity:.4;cursor:default}
   </div>
 
   <div id="test" class="scr hidden"><div class="panel" id="tbox"></div></div>
-  <button id="bBack" class="osd pe hidden">◀ もどる</button>
-  <button id="bSnd" class="osd pe">♪ 音 ON</button>
+  <button id="bBack" class="osd pe hidden" data-gd-pass>◀ もどる</button>
+  <button id="bSnd" class="osd pe" data-gd-pass>♪ 音 ON</button>
   <div id="ov" class="scr hidden pe"><div class="panel" id="ovBox"></div></div>
   <div id="pops"></div>
 </div>
@@ -2185,6 +2185,7 @@ window.ZUKAN_CARDS={"v": 1, "grade": "chu2", "name": "中2理科図鑑", "econom
 /*@ZUKAN_END*/</script>
 <script>
 'use strict';
+/* zs-finish-2026-09-28 */
 const GID='kisho-zensen-suiri',KOMA='chu2-kisho-20',SKEY='rika-zukan:chu2:game:'+GID+':v1',SEAL19='rika-zukan:chu2:seal:chu2-kisho-19';
 const UNIT='中2理科　気象とその変化　第20回',GTITLE='前線通過の瞬間をさがせ ～寒冷前線～';
 const TEST_ONLY=window.GAME_MODE==='test';
@@ -2414,12 +2415,13 @@ function osdText(t,x,y,size,align,col,font){cx.font=(font==='m'?size+'px '+"VT32
 let MODE='title',R=null,SL=null,hold=0,shakeA=0,flashA=0,flashC='255,255,255',PARTS=[],comboFx=0,titleT=0,lastTick=-1;
 const TT={base:22,amp:3.6,days:1,pre:200,seed:5,ev:[{k:'c',d:0,h:17.3,drop:6,amt:1.2,th:1}]},TD=gen(TT);
 
-function startTape(ti){const spec=TAPES[ti];const towns=spec.towns.map(tw=>Object.assign({},tw,{D:gen(tw,spec)}));
- R={ti,spec,towns,ch:0,T:36,vT:0,found:new Set(),wrong:[],pins:{},pinRes:{},ejectFails:0,miss:0,freeze:null,wear:0,busy:false,firstAll:true,diffs:[],skipped:0};
+function startTape(ti,tut){const spec=TAPES[ti];const towns=spec.towns.map(tw=>Object.assign({},tw,{D:gen(tw,spec)}));
+ R={ti,spec,towns,tut:!!tut,ch:0,T:36,vT:0,found:new Set(),wrong:[],pins:{},pinRes:{},ejectFails:0,miss:0,freeze:null,wear:0,busy:false,firstAll:true,diffs:[],skipped:0};
  const c=S.cur;if(c&&c.ti===ti){R.T=c.T||36;(c.found||[]).forEach(k=>R.found.add(k));R.wrong=c.wrong||[];R.pins=c.pins||{};R.pinRes=c.pinRes||{};R.ejectFails=c.ejectFails||0;R.diffs=c.diffs||[];R.firstAll=c.firstAll!==false}
  S.cur={ti,T:R.T,found:[...R.found],wrong:R.wrong,pins:R.pins,pinRes:R.pinRes,ejectFails:R.ejectFails,diffs:R.diffs,firstAll:R.firstAll};save();
  MODE='tape';showUI();layout();buildChs();sfx.clunk();
  const n=spec.towns.reduce((a,w)=>a+w.ev.filter(e=>e.k==='c').length,0);
+ if(tut){ovClose();return}
  ovOpen('<div class="bars">'+BARS.map(c=>'<i style="background:'+c+'"></i>').join('')+'</div><h2>TAPE '+String(ti+1).padStart(2,'0')+'　'+esc(spec.nm)+'</h2><p>'+spec.brief+'</p>'+
   (spec.auto?'<p class="small">このテープの寒冷前線：<b>'+n+'本</b></p>':'<p class="small">寒冷前線が何本あるかは、わからない。</p>')+
   '<div class="lamps"><span>① 短く強い雨</span><span>② 気温の急な低下</span>'+(spec.lanes.includes('wind')?'<span>③ 南寄り→北寄りの風</span>':'')+'</div><div class="row"><button class="vb red big" id="goT">▶ 再生</button></div>',()=>{});
@@ -2453,16 +2455,17 @@ addEventListener('keydown',e=>{if(MODE!=='tape'||!R||!$('#ov').classList.contain
  else if(e.key==='ArrowRight'){R.T=clamp(R.T+(e.shiftKey?6:1),0,R.towns[R.ch].D.N-1);e.preventDefault()}else if(e.key===' '||e.key==='Enter'){doStop();e.preventDefault()}});
 
 /* ===== 判定 ===== */
-function doStop(){if(!R||R.busy)return;const t=Math.round(R.T);R.T=t;R.vT=0;hold=0;sfx.clunk();shake(3);
+function doStop(){if(!R||R.busy)return;const t=Math.round(R.T);R.T=t;R.vT=0;hold=0;sfx.clunk();shake(3);vib(10);
  const k=R.ch,tw=R.towns[k],D=tw.D;
  if(tw.pin&&R.pins[k]==null){if(!townDone(0)){telop('まず <b>CH1 '+esc(R.towns[0].nm)+'</b> の通過を見つけよう。そこから計算する。',4);sfx.bad();return}
   R.pins[k]=t;sfx.pin();vib(20);burst(phX(),L.G.y+20,[RED,'#fff'],18,4);pop(phX(),L.G.y+L.G.h*.4,'📍 予想ピン',dayOf(t)+'日目 '+hhmm(t),'');telop('予想ピンを立てた。記録が映った！ 本当の通過で「■ ここだ」。',4);saveCur();return}
  let best=null;for(const e of D.ev)if(e.k==='c'){const d=t-e.i;if(!best||Math.abs(d)<Math.abs(best.d))best={e,d}}
+ if(R.tut&&!(best&&Math.abs(best.d)<=3)){const d=best?best.d:0;sfx.bad();vib(15);telop('れんしゅう中：'+(Math.abs(d)<=24?'あと少し '+(d<0?'<b>先</b>（左へこする）':'<b>もどる</b>（右へこする）'):'<b>強い雨</b>の棒をさがそう')+lampHTML(lamps(D,t),R.spec.lanes),4);if(GD)GD.cheer(Math.abs(d)<=24?(d<0?'もう少し先！ ◀ こする':'行きすぎ！ こする ▶'):'強い雨をさがそう',{x:phX(),y:L.G.y-34,size:.7,color:YEL,sound:false});return}
  if(best&&Math.abs(best.d)<=3){if(R.found.has(k+':'+best.e.k0)){telop('この前線は、もう記録した。ほかをさがそう。',2.5);return}return success(best.e,best.d,t)}
  const Lm=lamps(D,t),sh=D.ev.find(e=>e.k==='s'&&Math.abs(t-e.i)<=3),lr=D.ev.find(e=>e.k==='L'&&t>=e.i-3&&t<=e.i1+3);
  fail(t,Lm,sh,lr,best)}
 function lampHTML(L3,lanes){const nm=['短く強い雨','気温の急な低下','南→北寄りの風'];return '<div class="lamps">'+L3.map((v,i)=>i===2&&lanes&&!lanes.includes('wind')?'':'<span class="'+(v?'y':'n')+'">'+(v?'✔ ':'✖ ')+nm[i]+'</span>').join('')+'</div>'}
-function success(e,d,t){const k=R.ch,tw=R.towns[k],key=k+':'+e.k0;R.found.add(key);const first=R.miss===0;R.miss=0;if(!first)R.firstAll=false;
+function success(e,d,t){const k=R.ch,tw=R.towns[k],key=k+':'+e.k0;if(R.tut&&GD){R.tut=false;setTimeout(()=>GD.tutorialClear(),1300)}R.found.add(key);const first=R.miss===0;R.miss=0;if(!first)R.firstAll=false;
  S.combo++;S.bestCombo=Math.max(S.bestCombo,S.combo);S.hits++;S.tries++;S.gaps.push(Math.abs(d)*10);R.diffs.push(Math.abs(d)*10);
  const just=Math.abs(d)<=1,mult=1+.5*(S.combo-1),pts=Math.round((100+(just?50:0))*mult);S.score+=pts;
  const hour=(e.i%144)/6,night=hour<5||hour>=19,big=e.dT>=6.3;
@@ -2517,7 +2520,7 @@ function tapeClear(){R.busy=true;const sp=R.spec,wr=R.wrong.length,avg=R.diffs.l
   $('#goS').onclick=()=>{sfx.tap();ovClose();R=null;if(last&&!S.sealDone)startSeal();else toShelf()}},RM?200:900)}
 
 /* ===== 棚（道のり） ===== */
-function toShelf(){MODE='shelf';R=null;SL=null;showUI();layout();const n=S.ti;
+function toShelf(){tutStop();MODE='shelf';R=null;SL=null;showUI();layout();const n=S.ti;
  $('#bNext').innerHTML=n<TAPES.length?'▶ TAPE '+String(n+1).padStart(2,'0')+' を再生'+(S.cur&&S.cur.ti===n?'<small>（つづきから）</small>':''):(S.sealDone?'▶ 確認テストへ':'▶ 最後のテープ（封印）へ')}
 $('#bNext').onclick=()=>{ac();sfx.tap();const n=S.ti;if(n<TAPES.length)startTape(n);else if(!S.sealDone)startSeal();else startTest()};
 function shelfRects(){const n=TAPES.length,cols=LAND?10:5,rows=Math.ceil(n/cols),top=LAND?H*.2:H*.17,bot=H-(LAND?140:210),gw=Math.min(W-30,cols*(LAND?120:130)),cw=gw/cols,rh=Math.min((bot-top)/rows,LAND?340:420),out=[];
@@ -2699,7 +2702,7 @@ function drawFX(dt){for(let i=PARTS.length-1;i>=0;i--){const p=PARTS[i];p.life-=
 function pop(x,y,t,sub,cls){const d=document.createElement('div');d.className='pop '+(cls||'');d.style.left=clamp(x,90,W-90)+'px';d.style.top=y+'px';d.innerHTML=esc(t)+(sub?'<small>'+esc(sub)+'</small>':'');$('#pops').appendChild(d);setTimeout(()=>d.remove(),1800)}
 let telT=0;function telop(h,sec){const t=$('#telop');t.innerHTML=h;t.classList.remove('hidden');t.style.animation='none';void t.offsetWidth;t.style.animation='';telT=sec||0}
 function ovOpen(h,cb){$('#ovBox').innerHTML=h;$('#ov').classList.remove('hidden');$('#ovBox').scrollTop=0}
-function ovClose(){$('#ov').classList.add('hidden')}
+function ovClose(){$('#ov').classList.add('hidden');$('#ov').style.zIndex=''}
 
 /* ===== UI の切りかえ・もどる ===== */
 function showUI(){const Ti=MODE==='title',Tp=MODE==='tape',Sh=MODE==='shelf',Te=MODE==='test',Se=MODE==='seal';$('#deck').classList.toggle('sealm',Se);
@@ -2708,10 +2711,10 @@ function showUI(){const Ti=MODE==='title',Tp=MODE==='tape',Sh=MODE==='shelf',Te=
  if(Tp){$('#bStop').textContent='■ ここだ';$('#bEject').innerHTML='⏏ 解読<br>おわり';$('#bEject').disabled=!!(R&&R.spec.auto);$('#bRew').classList.remove('hidden');$('#bFf').classList.remove('hidden')}
  if(Se){$('#bRew').classList.add('hidden');$('#bFf').classList.add('hidden')}
  const bb=$('#bBack'),on=Tp||Sh||Se||(Te&&!TEST_ONLY)||(Ti&&INHUB)||(Te&&TEST_ONLY&&INHUB);bb.classList.toggle('hidden',!on);bb.textContent=(Ti||(Te&&TEST_ONLY))?'◀ 一覧へ':'◀ もどる';
- $('#bSnd').classList.toggle('hidden',Te);zkButtons()}
+ $('#bSnd').classList.toggle('hidden',Te);if(HELP){if(Tp||Sh||Se){HELP.update({offset:{x:($('#bSnd').offsetWidth||96)+8}});HELP.show()}else HELP.hide()}zkButtons()}
 $('#bBack').onclick=()=>{ac();sfx.tap();if(MODE==='title'||(MODE==='test'&&TEST_ONLY)){try{window.parent.postMessage({type:'rika-close-game'},'*')}catch(e){}return}
  const sub=MODE==='tape'?'進み具合は保存されます（見つけた前線はそのまま。テープ棚にもどります）。':MODE==='seal'?'進み具合は保存されます。封印は、あとで開けられます。':MODE==='shelf'?'進み具合は保存されます。タイトルにもどります。':'確認テストは、次はさいしょから。進み具合は保存されています。';
- ovOpen('<h2>もどりますか？</h2><p>'+sub+'</p><div class="row"><button class="vb" id="bkNo">つづける</button><button class="vb red" id="bkGo">'+(MODE==='shelf'?'タイトルへ':'テープ棚へ')+'</button></div>',()=>{});
+ $('#ov').style.zIndex='2147482640';ovOpen('<h2>もどりますか？</h2><p>'+sub+'</p><div class="row"><button class="vb" id="bkNo">つづける</button><button class="vb red" id="bkGo">'+(MODE==='shelf'?'タイトルへ':'テープ棚へ')+'</button></div>',()=>{});
  $('#bkNo').onclick=()=>{sfx.tap();ovClose()};$('#bkGo').onclick=()=>{sfx.tap();ovClose();if(MODE==='tape')saveCur();if(MODE==='shelf')toTitle();else toShelf()}};
 $('#bSnd').onclick=()=>{ac();S.sound=!S.sound;save();setSnd();sfx.tap()};
 function zkButtons(){const has=!!(window.Zukan&&Zukan.openBook);document.querySelectorAll('.zk').forEach(b=>b.classList.toggle('hidden',!has))}
@@ -2748,15 +2751,15 @@ function showTestResult(){const r=TS.card||{};$('#tbox').innerHTML='<h2>テス�
  $('#rCard').onclick=()=>SubmitCard.reopen(TS.card,()=>{});$('#rAgain').onclick=()=>startTest();if($('#rTitle'))$('#rTitle').onclick=()=>toTitle();$('#rBook').onclick=openBook;zkButtons()}
 
 /* ===== タイトルへ ===== */
-function toTitle(){MODE='title';R=null;SL=null;ovClose();showUI();$('#bCont').classList.toggle('hidden',!S.started)}
+function toTitle(){tutStop();MODE='title';R=null;SL=null;ovClose();showUI();$('#bCont').classList.toggle('hidden',!S.started)}
 $('#bStart').onclick=()=>{ac();sfx.clunk();const nm=$('#nameIn').value.trim()||S.name,snd=S.sound;
- const go=()=>{S=fresh();S.name=nm;S.sound=snd;S.started=true;save();startTape(0)};
+ const go=()=>{S=fresh();S.name=nm;S.sound=snd;S.started=true;save();if(GD)startWithGuide();else startTape(0)};
  if(S.started&&(S.ti>0||S.cur)){ovOpen('<h2>はじめから？</h2><p>いまの進み具合（テープ'+S.ti+'本まで）は消えます。</p><div class="row"><button class="vb" id="nN">やめる</button><button class="vb red" id="nY">はじめから</button></div>',()=>{});$('#nN').onclick=()=>{sfx.tap();ovClose()};$('#nY').onclick=()=>{ovClose();go()}}else go()};
 $('#bCont').onclick=()=>{ac();sfx.tap();const v=$('#nameIn').value.trim();if(v)S.name=v;save();toShelf()};
 
 /* ===== ループ ===== */
 let last=performance.now(),secT=0;
-function loop(now){const dt=Math.min(.05,(now-last)/1000);last=now;const t=now/1000;
+function loop(now){const dt=HP?0:Math.min(.05,(now-last)/1000);last=now;const t=now/1000;
  nzT-=dt;if(nzT<=0){refreshNoise();nzT=RM?.3:.06}flashV=Math.max(0,flashV-dt*3.5);if(telT>0){telT-=dt;if(telT<=0)$('#telop').classList.add('hidden')}
  if(MODE==='tape'&&R){const pm=R.towns[R.ch].pin&&R.pins[R.ch]==null,bs=$('#bStop'),lb=pm?'📍 予想ピン':'■ ここだ';if(bs.textContent!==lb)bs.textContent=lb;if(hold){holdT+=dt;R.vT=hold*Math.min(80,8+holdT*40)}else if(!drag){R.vT*=Math.exp(-dt*2.6);if(Math.abs(R.vT)<.3)R.vT=0}
   if(!drag)R.T=clamp(R.T+R.vT*dt,0,R.towns[R.ch].D.N-1);if(R.chFx>0)R.chFx-=dt;const hr=Math.floor(R.T/6);if(hr!==lastTick){lastTick=hr;if(Math.abs(R.vT)<30||hr%3===0)sfx.tick()}
@@ -2772,7 +2775,43 @@ addEventListener('resize',()=>{resize()});resize();
 try{window.Zukan&&Zukan.setup&&Zukan.setup({game:GID,koma:[KOMA]})}catch(e){}
 setSnd();
 if(window.PLAYER_NAME){$('#nameIn').value=window.PLAYER_NAME;$('#nameRow').classList.add('hidden')}else if(S.name)$('#nameIn').value=S.name;
-window.__zs={S:()=>S,R:()=>R,SL:()=>SL,startTape,toShelf,startSeal,startTest,doStop,doEject,mode:()=>MODE,setT:t=>{R.T=t},setCh:c=>{R.ch=c;buildChs()},sealAction,sealX:x=>{SL.xf=x;checkPass()},sealDraw:pts=>{SL.pts=pts},tapeClear:()=>tapeClear(),
+
+/* ===== 遊び方案内（Guide・制作ルール13／仕上げ 2026-09-28 zs-finish-2026-09-28） ===== */
+var GD=window.Guide||null,HELP=null,PRACTICE=null,HP=false;
+function tutOn(){return MODE==='tape'&&R&&R.tut}
+function tutStop(){if(GD&&R&&R.tut){R.tut=false;GD.tutorialEnd()}}
+function tutFront(){const D=R.towns[R.ch].D,e=D.ev.find(e=>e.k==='c');return e?e.i:0}
+if(GD&&!TEST_ONLY){
+ GD.setup({
+  theme:{bg:'#101012',fg:'#EDEDED',accent:'#FF3D3D',accentText:'#fff',font:"'Noto Sans JP','Hiragino Kaku Gothic ProN',sans-serif",bodyFont:"'Noto Sans JP','Hiragino Kaku Gothic ProN',sans-serif",radius:0,
+   texture:'scan',line:'#EDEDED',dim:'rgba(0,0,0,.62)',shadow:'6px 6px 0 #FF3D3D',outline:'#000',hand:'#fff',handLine:'#111'},
+  sfx:k=>{ac();({step:()=>sfx.tick(),done:()=>sfx.pin(),clear:()=>sfx.fan(),open:()=>sfx.clunk(),close:()=>sfx.tap(),cheer:()=>sfx.pin(),nudge:()=>sfx.tap()}[k]||sfx.tap)()},
+  muted:()=>!S.sound});
+ const gy=()=>L.G.y+(L.G.h-L.ax)*.5,dd=()=>LAND?170:100;
+ PRACTICE={label:'れんしゅう',clearText:'れんしゅうクリア！',clearOn:'manual',
+  start:()=>{ovClose();startTape(0,true)},
+  steps:[
+   {gesture:'swipe',label:'時間を動かす',target:()=>({x:phX()+dd(),y:gy(),r:34}),to:()=>({x:phX()-dd(),y:gy(),r:30}),area:()=>({x:W/2,y:L.G.y+L.G.h/2,w:W-8,h:L.G.h}),
+    until:()=>tutOn()&&Math.abs(R.T-tutFront())<=14,text:'グラフを **左へこする** と時間が進む（右へこするともどる）。**強い雨** の棒が来るまで進めよう',praise:'強い雨だ！',wait:700},
+   {gesture:'tap',label:'ここだ',target:'#bStop',area:()=>({x:W/2,y:(L.G.y+H)/2,w:W-8,h:H-L.G.y}),until:()=>!R||!R.tut||R.found.size>0,
+    text:'**強い雨** と **気温の急な低下** が重なる瞬間を、赤い線（再生ヘッド）に合わせて「**■ ここだ**」',praise:false}
+  ],
+  onExit:res=>{if(!res.cleared&&R&&R.tut){R.tut=false}}};
+ HELP=GD.help({title:'前線通過の瞬間をさがせ',
+  rules:['グラフやビデオを **左右にこする** と時間が動く（◀◀ ▶▶ の長おしでも）',
+   '**短く強い雨・気温の急な低下・南寄り→北寄りの風** の3つが **同時に** 起きた時刻で「■ ここだ」',
+   '雨だけ（にわか雨）や、弱い雨が長く続くだけ は **わな**。3つがそろうかで決める',
+   '全部見つけたら「⏏ 解読おわり」。前線が来ていないテープもある',
+   '町が2つ以上のテープでは、前線は **西から東へ** 進む。距離÷速さ で通過時刻を予想して「📍 予想ピン」'],
+  onOpen:()=>{HP=true},onClose:()=>{HP=false;last=performance.now()},
+  replay:'tutorial',size:44,offset:{x:104},show:false,attention:true});
+ GD.tutorialButton('#bHow',()=>{ac();sfx.tap();const nm=$('#nameIn').value.trim();if(nm)S.name=nm;if(!S.started)S.started=true;save();GD.tutorial(PRACTICE)});
+}else{$('#bHow').classList.add('hidden')}
+function startWithGuide(){$('#title').classList.add('hidden');$('#bBack').classList.add('hidden');
+ GD.intro({title:'第20回　前線通過の瞬間をさがせ',
+  learn:'寒冷前線が通ると、**短く強い雨**・**気温の急な低下**・**南寄り→北寄りの風** が **同時に** 起きる',
+  how:'グラフを **左右にこすって** 時間を動かし、そろった瞬間に「**■ ここだ**」',gesture:'swipe'}).then(()=>GD.tutorial(PRACTICE))}
+window.__zs={S:()=>S,R:()=>R,SL:()=>SL,startTape,toShelf,startSeal,startTest,doStop,doEject,mode:()=>MODE,L:()=>L,phX:()=>phX(),shelfRects:()=>shelfRects(),setT:t=>{R.T=t},setCh:c=>{R.ch=c;buildChs()},sealAction,sealX:x=>{SL.xf=x;checkPass()},sealDraw:pts=>{SL.pts=pts},tapeClear:()=>tapeClear(),
  fronts:()=>R.towns.map(tw=>tw.D.ev.filter(e=>e.k==='c').map(e=>e.i)),showers:()=>R.towns.map(tw=>tw.D.ev.filter(e=>e.k!=='c').map(e=>e.i)),lamps:(t)=>lamps(R.towns[R.ch].D,t),gen};
 if(TEST_ONLY)startTest();else toTitle();
 requestAnimationFrame(loop);
