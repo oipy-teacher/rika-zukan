@@ -169,7 +169,14 @@ h1.tt .t2{font-size:clamp(40px,11vw,92px);margin-top:.05em}
   #scrEnd .pnl{max-width:900px;display:grid;grid-template-columns:1fr 1fr;gap:10px 36px;align-items:center;padding:30px 34px}
   .big{font-size:110px}
 }
-@media (prefers-reduced-motion:reduce){.plate:active{transform:none}#toast{transition:none}}
+/* 仕上げ 2026-09-28（kk7-finish-2026-09-28）: ★の刻印・紙吹雪（真鍮の歯車と札） */
+.stars span.st{opacity:0;transform:scale(2.6) rotate(-12deg)}
+.stars span.st.in{opacity:1;transform:none;transition:transform .34s cubic-bezier(.2,1.9,.4,1),opacity .08s}
+.stars span.st.on.in{box-shadow:0 0 14px rgba(95,211,196,.7)}
+.kkcf{position:fixed;top:-18px;z-index:45;pointer-events:none;width:var(--w);height:var(--h);background:var(--c);border-radius:var(--br,1px);animation:kkcf var(--t) cubic-bezier(.3,.2,.6,1) var(--d) forwards}
+@keyframes kkcf{to{transform:translate(var(--dx),108vh) rotate(var(--r))}}
+#bMute:active{transform:translateY(2px) scale(.95)}
+@media (prefers-reduced-motion:reduce){.plate:active{transform:none}#toast{transition:none}.kkcf{display:none}.stars span.st{opacity:1;transform:none}}
 </style>
 </head>
 <body>
@@ -185,6 +192,7 @@ h1.tt .t2{font-size:clamp(40px,11vw,92px);margin-top:.05em}
   <div class="tbtns">
     <div class="entry pe" id="nmRow"><label for="nameIn">鑑定士</label><input id="nameIn" maxlength="16" placeholder="なまえ（なくてもOK）" autocomplete="off"></div>
     <button class="plate" id="bStart">🔐 金庫へ降りる</button>
+    <button class="plate dk sm" id="bHow">🔰 あそびかた（れんしゅう金庫）</button>
     <div class="row"><button class="plate dk sm" id="bCont">つづきから</button><button class="plate dk sm" id="bBook1">📖 図鑑</button></div>
   </div>
 </div>
@@ -2287,8 +2295,12 @@ var SFX={
   near:function(){tone(440,.2,'triangle',.1);tone(415,.3,'triangle',.1,.2)},
   rule:function(){bell(659,0,.1);bell(988,.15,.09);bell(1319,.3,.08)},
   nope:function(){tone(180,.18,'triangle',.12,0,140)},
-  lift:function(){noise(1.2,.08,200,0,1);tone(70,1.2,'sawtooth',.04,0,50)}
+  lift:function(){noise(1.2,.08,200,0,1);tone(70,1.2,'sawtooth',.04,0,50)},
+  stamp:function(i){tone(120,.26,'sine',.28,0,50);noise(.1,.2,600,0,1);bell([784,988,1319][i%3],.03,.07)},
+  fan:function(){[523,659,784,1047,988,1047].forEach(function(f,i){bell(f,i*.12,.07)})},
+  tier:function(n){[659,784,988,1319,1568].slice(0,2+Math.min(3,n)).forEach(function(f,i){bell(f,i*.07,.07)})}
 };
+function buzz(p){try{if(navigator.vibrate)navigator.vibrate(p)}catch(e){}}
 
 /* ---------------- 金庫の階 ---------------- */
 var ALL=['E','V1','V2','I','I1','I2'];
@@ -2306,6 +2318,8 @@ var FL=[
  {n:'ぜんぶ入り',k:3,pts:ALL,bud:2,mix:1,tip:'ふたご・ミリアンペア・ラベル、何でも出る。'},
  {n:'5連金庫',k:5,pts:ALL,bud:2,mix:1,time:170,fin:1,tip:'最下層。<b>'+'170秒</b>で5つの金庫を開けろ。'}
 ];
+var PF={n:'れんしゅう金庫',k:1,pts:['V1'],bud:1,lab:'E',prac:1};
+var TIERS=[3,5,8],PDONE=false;
 function R2(v){return Math.round(v*100)/100}
 function genSafe(f,type,twin,mA,lab){var E,R1,R2v,v,tries=0;
   do{tries++;E=rnd([3,4.5,6,9]);R1=rnd([5,10,15,20,30]);R2v=twin?R1:rnd([5,10,15,20,30]);if(!twin&&R2v===R1)continue;
@@ -2351,7 +2365,7 @@ function layout(){var top=64;
   if(LM==='P'){R.listen.x=Math.min(W-R.listen.r-8,d.x+d.r*.86);R.listen.y=d.y+d.r*.78}
   var cc=R.cmp,sw=Math.min(cc.w*.3,160);R.slots=[{x:cc.x+8,y:cc.y+cc.h*.2,w:sw,h:cc.h*.6},{x:cc.x+cc.w-8-sw,y:cc.y+cc.h*.2,w:sw,h:cc.h*.6}];
   var ct=R.ctrl;R.sw={x:ct.x,y:ct.y,w:ct.w*.5,h:ct.h};R.handle={x:ct.x+ct.w*.54,y:ct.y,w:ct.w*.3,h:ct.h};R.reset={x:ct.x+ct.w*.86,y:ct.y+ct.h*.15,w:ct.w*.14,h:ct.h*.7};
-  R.hud={x:132,y:12,w:Math.min(W-132-66,LM==='L'?560:260),h:44}}
+  R.hud={x:132,y:12,w:Math.min(W-132-66-(LM==='P'?52:0),LM==='L'?560:260),h:44}}
 function placePanel(){var p=$('sfP');if(!p)return;var w=Math.min(W-28,520);p.style.width=w+'px';
   if(LM==='L'&&R.panel){p.style.left=(R.panel.x+(R.panel.w-w)/2)+'px';p.style.top=Math.max(70,R.panel.y+(R.panel.h-p.offsetHeight)/2)+'px'}
   else{p.style.left=((W-w)/2)+'px';p.style.top=Math.max(64,H-p.offsetHeight-16)+'px'}}
@@ -2515,7 +2529,7 @@ function drawCtrl(g){var s=R.sw,hd=R.handle,rs=R.reset;ironBox(s.x,s.y,s.w,s.h);
   /* やりなおし */
   c.fillStyle='#2A241E';rr(rs.x,rs.y,rs.w,rs.h,4);c.fill();c.strokeStyle=K.brd;rr(rs.x,rs.y,rs.w,rs.h,4);c.stroke();txt('↺',rs.x+rs.w/2,rs.y+rs.h*.4,Math.min(24,rs.w*.5),K.br2,'center');txt('替える',rs.x+rs.w/2,rs.y+rs.h*.78,Math.min(11,rs.w*.2),'#8A7A60','center')}
 function drawHUD(g){var h=R.hud;plateBox(h.x,h.y,h.w,h.h,true);var f=g.f;
-  var s1='B'+(g.fi+1)+'　'+f.n,s2='金庫 '+Math.min(g.si+1,g.safes.length)+'/'+g.safes.length+'　×'+g.combo+(KAK!=null&&Zk()?'　◆'+KAK:'');
+  var s1=f.prac?'PRACTICE　'+f.n:'B'+(g.fi+1)+'　'+f.n,s2='金庫 '+Math.min(g.si+1,g.safes.length)+'/'+g.safes.length+'　×'+g.combo+(KAK!=null&&Zk()?'　◆'+KAK:'');
   if(f.time){var left=Math.max(0,f.time-g.ft);s2='残り '+Math.ceil(left)+'秒　'+s2}
   if(LM==='L'){txt(s1,h.x+16,h.y+h.h/2+1,17,K.br2,'left');txt(s2,h.x+h.w-16,h.y+h.h/2+1,15,f.time&&f.time-g.ft<30?'#F08A6C':K.tq,'right',null,'rgba(95,211,196,.6)')}
   else{txt(s1,h.x+12,h.y+14,13,K.br2,'left');txt(s2,h.x+12,h.y+32,12,f.time&&f.time-g.ft<30?'#F08A6C':K.tq,'left')}}
@@ -2530,32 +2544,38 @@ function setupSafe(){var g=G;g.S=g.safes[g.si];g.dialA=0;g.dialV=0;g.sel=0;g.tok
   if(g.S.lab){g.tokens.push({pt:g.S.lab==='E'?'LE':'LI',v:g.S.lab==='E'?g.S.vals.E:g.S.vals.I,pop:0})}
   if(g.f.tut)g.tut=g.tut==null?0:g.tut}
 function selPt(){var k=((Math.round(-G.dialA/(Math.PI/3))%6)+6)%6;return k}
-function listen(){var g=G;if(g.state!=='play'||g.snapping)return;var pt=ALL[g.sel];if(g.f.pts.indexOf(pt)<0){SFX.nope();toast('この目盛りは ふさがれている','bad');return}
+function listen(){var g=G;if(g.state!=='play'||g.snapping)return;buzz(10);var pt=ALL[g.sel];if(g.f.pts.indexOf(pt)<0){SFX.nope();toast('この目盛りは ふさがれている','bad');return}
   if(g.used>=g.bud){SFX.nope();toast('もう聴けない。札をくらべて開けるか、↺で金庫を替えよう','bad');return}
   if(g.tokens.some(function(t){return t.pt===pt})){SFX.nope();toast('そこはもう聴いた。ほかの目盛りへ','bad');return}
   g.used++;g.listens++;SV.listens++;g.press=.25;var v=g.S.vals[pt],k=kindOf(pt);g.read={k:k,pt:pt,v:v};g.nv[k]=0;SFX.beat(v);setTimeout(SFX.clink,380);
   g.tokens.push({pt:pt,v:v,pop:1});if(g.f.tut&&g.tut===1)g.tut=2}
 function placeTok(tk,slot){var g=G;if(g.state!=='play')return;if(g.slots[0]===tk||g.slots[1]===tk){return}
   if(slot==null)slot=g.slots[0]?(g.slots[1]?1:1):0;g.slots[slot]=tk;SFX.place();if(g.f.tut&&g.tut===2&&g.slots[0]&&g.slots[1])g.tut=3}
-function setDecl(t){var g=G;if(g.state!=='play')return;g.decl=t;SFX.sw();if(g.f.tut&&g.tut===3)g.tut=4}
+function setDecl(t){var g=G;if(g.state!=='play')return;if(g.prac&&t!==g.S.type){SFX.nope();buzz([10,40,10]);toast('天秤は <b>＝</b>。①の電圧 ＝ 電源の電圧 → どの部分にも電源と同じ電圧なのは？','bad',2600);return}g.decl=t;SFX.sw();buzz(8);if(g.f.tut&&g.tut===3)g.tut=4}
 function pullHandle(){var g=G;if(g.state!=='play')return;
   if(!g.tokens.some(function(t){return t.pt!=='LE'&&t.pt!=='LI'})){SFX.nope();toast('1回も聴かずには開けられない。ダイヤルを回して「聴く」','bad');return}
   if(!g.slots[0]||!g.slots[1]){SFX.nope();toast('天秤に札を<b>2枚</b>のせよう','bad');return}
   var pi=pairInfo(g.S,g.slots[0],g.slots[1]);if(pi.mix){SFX.nope();toast('電圧(V)と電流(A)は くらべられない。同じ量の札どうしに','bad');return}
   if(!g.decl){SFX.nope();toast('つなぎ方のスイッチ（直列／並列）を合わせよう','bad');return}
-  g.state='pull';g.hpull=0;var ok=[true,!!pi.dec,g.decl===g.S.type];g.res={ok:ok,pi:pi};g.pullT=0;SFX.clunk();if(g.f.tut)g.tut=5}
+  g.state='pull';g.hpull=0;buzz(14);var ok=[true,!!pi.dec,g.decl===g.S.type];g.res={ok:ok,pi:pi};g.pullT=0;SFX.clunk();if(g.f.tut)g.tut=5}
 function afterPull(){var g=G,ok=g.res.ok,pi=g.res.pi,n=ok.filter(Boolean).length;
+  if(n===3&&g.prac){g.state='opening';g.openT=0;SFX.open();burst(g,R.door.x,R.door.y,K.tq,44);g.flash=.55;g.shake=.3;buzz([20,40,30]);
+    if(window.Guide)Guide.cheer('ひらいた！',{x:R.door.x,y:R.door.y-R.door.r*.3,size:1.2,sound:false});return}
   if(n===3){g.state='opening';g.openT=0;SFX.open();burst(g,R.door.x,R.door.y,K.tq,30);var first=g.safeFails===0;
+    burst(g,R.door.x,R.door.y,K.br2,24);g.flash=.5;g.shake=.28;buzz([20,40,30]);
     SV.opens++;if(first){g.combo++;g.firsts++;SV.firsts++;g.maxCombo=Math.max(g.maxCombo,g.combo);SV.maxCombo=Math.max(SV.maxCombo,g.combo)}
+    if(window.Guide){var tier=first?TIERS.indexOf(g.combo):-1;Guide.cheer(first?(g.combo>1?'一発！ ×'+g.combo:'一発で ひらいた！'):'ひらいた！',{x:R.door.x,y:R.door.y-R.door.r*.3,size:1.1+Math.max(0,tier)*.15,sound:false});
+      if(tier>=0)setTimeout(function(){SFX.tier(tier);Guide.cheer('連続 ×'+g.combo+'！',{x:R.door.x,y:R.door.y+R.door.r*.2,size:1.2+tier*.15,sound:false})},500)}
     SV.album.push({f:g.fi,t:g.S.type,w:g.S.twin?1:0,m:g.S.mA?1:0,v:g.S.vals});if(SV.album.length>60)SV.album.shift();save();
     var key=g.fi+'-'+g.si;if(first&&!SV.ft[key]){SV.ft[key]=1;save();setTimeout(function(){earn(Math.min(10,3+g.combo*2),'first-try')},900)}
     if(first&&(pi.a.pt.charAt(0)==='I'||pi.a.pt==='LI')&&!SV.rule.i){SV.rule.i=1;save();setTimeout(function(){earn(30,'rule');ruleToast('規則を使えた！ 直列は<b>電流がどこも同じ</b>、並列は<b>枝に分かれる</b>')},1600)}
     else if(first&&g.S.twin&&!SV.rule.t){SV.rule.t=1;save();setTimeout(function(){earn(30,'rule');ruleToast('ふたごを見ぬいた！ ①＝②では決まらない。<b>電源や全体</b>とくらべるのが決め手')},1600)}
-  }else{g.state='alarm';g.alarm=1.6;g.fails++;g.safeFails++;SV.fails++;save();g.combo=0;g.shake=.5;
+  }else{var lost=g.combo;g.state='alarm';g.alarm=1.6;g.fails++;g.safeFails++;SV.fails++;save();g.combo=0;g.shake=.5;buzz([30,60,30]);
+    var nt=TIERS.filter(function(t){return t>lost})[0];if(lost>=2&&nt&&nt-lost===1&&window.Guide)setTimeout(function(){Guide.cheer('あと1回で ×'+nt+' だった！',{x:R.door.x,y:R.door.y+R.door.r*.35,size:.8,sound:false})},700);
     if(n===2){SFX.near();toast('<b>あと1本！</b> '+(ok[1]?'決め手はOK。つなぎ方がちがう：'+esc(pi.why):'つなぎ方は合っている。でも決め手が弱い：'+esc(pi.why)),'bad',4200)}
     else{SFX.alarm();toast('かんぬきが止まった。'+(pi.dec?'決め手は「'+esc(pi.why)+'」':esc(pi.why)),'bad',4200)}
     setTimeout(function(){if(G===g&&g.state==='alarm'){g.state='play';g.bolt=[0,0,0];g.hpull=0}},1700)}}
-function afterOpen(){var g=G,S=g.S,pi=g.res.pi;showPanel('OPENED','金庫の中は '+(S.type==='S'?'直列':'並列')+' 回路'+(g.safeFails?'':'　<span style="color:#5FD3C4">一発！ ×'+g.combo+'</span>'),'決め手：'+esc(pi.why)+(S.twin?'<br><span style="color:#8A7A60">（中の2つの抵抗は同じ大きさだった）</span>':''),null,
+function afterOpen(){var g=G,S=g.S,pi=g.res.pi;if(g.prac){setTimeout(function(){if(G===g&&window.Guide)Guide.tutorialClear()},250);return}showPanel('OPENED','金庫の中は '+(S.type==='S'?'直列':'並列')+' 回路'+(g.safeFails?'':'　<span style="color:#5FD3C4">一発！ ×'+g.combo+'</span>'),'決め手：'+esc(pi.why)+(S.twin?'<br><span style="color:#8A7A60">（中の2つの抵抗は同じ大きさだった）</span>':''),null,
   [{t:g.si+1<g.safes.length?'つぎの金庫へ':'この階をおえる',cls:'tq',fn:function(){hidePanel();nextSafe()}}])}
 function nextSafe(){var g=G;g.si++;if(g.si>=g.safes.length)return floorClear();setupSafe();g.state='play'}
 function floorClear(){var g=G,fi=g.fi,st=[1,g.fails===0?1:0,g.listens<=g.minNeed?1:0],old=SV.stars[fi]||[0,0,0];SV.stars[fi]=[1,old[1]||st[1],old[2]||st[2]];SV.unl=Math.max(SV.unl,Math.min(FL.length,fi+2));
@@ -2563,10 +2583,16 @@ function floorClear(){var g=G,fi=g.fi,st=[1,g.fails===0?1:0,g.listens<=g.minNeed
   g.state='floor';var lab=['全部開けた','一発で開けた','聴診を節約'];
   showPanel('B'+(fi+1)+'　CLEAR',fin?'最下層の金庫を全部開けた！':'この階の金庫を全部開けた','タイム <b>'+fmtJ(g.ft)+'</b>　一発で開いた '+g.firsts+'/'+g.safes.length+'　聴いた回数 '+g.listens+'（最少 '+g.minNeed+'）',st.map(function(v,i){return'<span class="'+(v?'on':'')+'">'+(v?'★ ':'☆ ')+lab[i]+'</span>'}).join(''),
     fin?[{t:'📋 鑑定試験へ',cls:'tq',fn:function(){hidePanel();toTest(firstDone)}},{t:'地下金庫へ',cls:'dk',fn:function(){hidePanel();setScene('map')}}]:
-    [{t:'地下金庫へ',cls:'dk',fn:function(){hidePanel();setScene('map')}},{t:'下の階へ ▼',cls:'',fn:function(){hidePanel();elevator(fi+1)}}])}
+    [{t:'地下金庫へ',cls:'dk',fn:function(){hidePanel();setScene('map')}},{t:'下の階へ ▼',cls:'',fn:function(){hidePanel();elevator(fi+1)}}]);
+  SFX.fan();var sp=[].slice.call($('sfStars').children);sp.forEach(function(e,i){e.classList.add('st');setTimeout(function(){e.classList.add('in');if(st[i]){SFX.stamp(i);buzz(18)}else tone(200,.12,'triangle',.06)},RM?0:500+i*420)});
+  setTimeout(function(){if(G===g)confetti()},RM?0:500+3*420)}
+function confetti(){if(RM)return;var cols=['#B8863B','#E8C27A','#5FD3C4','#9FF0E5','#EFE3C4','#A4452C'];for(var i=0;i<60;i++){var d=document.createElement('div');d.className='kkcf';var q=d.style;q.left=(Math.random()*100).toFixed(1)+'vw';
+  var gearish=i%5===0;q.setProperty('--w',(gearish?12:6+Math.random()*7|0)+'px');q.setProperty('--h',(gearish?12:10+Math.random()*10|0)+'px');q.setProperty('--br',gearish?'50%':'1px');q.setProperty('--c',cols[i%6]);
+  q.setProperty('--dx',((Math.random()-.5)*180|0)+'px');q.setProperty('--r',((Math.random()-.5)*900|0)+'deg');q.setProperty('--t',(1.7+Math.random()*1.2).toFixed(2)+'s');q.setProperty('--d',(Math.random()*.4).toFixed(2)+'s');
+  document.body.appendChild(d);(function(n){setTimeout(function(){if(n.parentNode)n.parentNode.removeChild(n)},3600)})(d)}}
 function elevator(fi){G={elev:1,t:0,to:fi,fi:fi-1,f:FL[fi-1]};SFX.lift();scene='safe'}
 function floorFail(){var g=G;g.state='floor';SFX.alarm();showPanel('TIME UP','時間切れ… あと '+(g.safes.length-g.si)+' 金庫','最下層は170秒で5つ。聴く場所を先に決めると速い。',null,[{t:'地下金庫へ',cls:'dk',fn:function(){hidePanel();setScene('map')}},{t:'もう一度',cls:'',fn:function(){hidePanel();startFloor(g.fi)}}])}
-function resetSafe(){var g=G;if(g.state!=='play')return;var f=g.f,S=g.S;g.safes[g.si]=genSafe(f,rnd(['S','P']),S.twin,S.mA,S.lab);g.combo=0;g.fails++;g.safeFails++;setupSafe();SFX.steam();toast('金庫を替えた（連続はリセット）','bad',1800)}
+function resetSafe(){var g=G;if(g.state!=='play'||g.prac)return;var f=g.f,S=g.S;g.safes[g.si]=genSafe(f,rnd(['S','P']),S.twin,S.mA,S.lab);g.combo=0;g.fails++;g.safeFails++;setupSafe();SFX.steam();toast('金庫を替えた（連続はリセット）','bad',1800)}
 function toTest(first){var z=Zk();if(first&&z&&z.mainClear&&!TEST){try{z.mainClear({onClose:startTest});return}catch(e){}}startTest()}
 
 /* ---------------- 演出 ---------------- */
@@ -2596,9 +2622,10 @@ function drawSafe(dt){if(!BGC)buildBG();var g=G;c.drawImage(BGC,0,0,W,H);
   /* 火花・蒸気 */
   g.fx=g.fx.filter(function(f){f.l-=dt;if(f.l<=0)return false;f.x+=f.vx*dt;f.y+=f.vy*dt;if(f.st){c.fillStyle='rgba(239,227,196,'+(f.l/f.m*.25)+')';c.beginPath();c.arc(f.x,f.y,f.r*(2-f.l/f.m),0,7);c.fill()}
     else{f.vx*=.95;f.vy=f.vy*.95+140*dt;c.fillStyle=f.col;c.globalAlpha=clamp(f.l/f.m,0,1);c.beginPath();c.arc(f.x,f.y,2.6,0,7);c.fill();c.globalAlpha=1}return true});
-  if(DRAG){drawToken(DRAG.tk,DRAG.x-DRAG.w*.3,DRAG.y-DRAG.h/2,DRAG.w,DRAG.h,.9)}
+  if(g.flash>0){g.flash-=dt;if(!RM){c.fillStyle='rgba(159,240,229,'+(g.flash*.7)+')';c.fillRect(0,0,W,H)}}
+  if(DRAG){var wob=RM?0:Math.sin(T*40)*.05;c.save();c.translate(DRAG.x,DRAG.y);c.rotate(wob);c.translate(-DRAG.x,-DRAG.y);drawToken(DRAG.tk,DRAG.x-DRAG.w*.3,DRAG.y-DRAG.h/2,DRAG.w,DRAG.h,.9);c.restore()}
   drawTut(g)}
-function drawTut(g){if(!g.f.tut||g.si>0||g.tut==null||g.tut>4||panelOpen())return;var s=g.tut,x,y,msg;
+function drawTut(g){if(PDONE||!g.f.tut||g.si>0||g.tut==null||g.tut>4||panelOpen())return;var s=g.tut,x,y,msg;
   if(s===0){x=R.dial.x;y=R.dial.y-R.dial.r-40;msg='ダイヤルを回して「①の電圧」を上の▼に合わせよう';if(ALL[g.sel]==='V1'&&!g.snapping){g.tut=1}}
   else if(s===1){x=R.listen.x-40;y=R.listen.y-R.listen.r-44;msg='「聴く」を押して測ろう'}
   else if(s===2){x=R.cmp.x+R.cmp.w/2;y=R.cmp.y-14;msg='札を2枚、天秤へ（タップかドラッグ）'}
@@ -2641,7 +2668,7 @@ cv.addEventListener('pointerdown',function(e){if(scene!=='safe'||!G||G.elev||pan
   if(inR(R.reset,x,y)){resetSafe();return}});
 cv.addEventListener('pointermove',function(e){if(!PD||!G)return;var x=e.clientX,y=e.clientY,g=G;
   if(PD.t==='dial'){var D=R.dial,a=Math.atan2(y-D.y,x-D.x),da=a-PD.a0;if(da>Math.PI)da-=Math.PI*2;if(da<-Math.PI)da+=Math.PI*2;PD.a0=a;g.dialA+=da;
-    var step=Math.PI/3,prev=Math.round(-PD.last/step),now=Math.round(-g.dialA/step);if(prev!==now){SFX.tick();g.sel=selPt()}PD.last=g.dialA}
+    var step=Math.PI/3,prev=Math.round(-PD.last/step),now=Math.round(-g.dialA/step);if(prev!==now){SFX.tick();buzz(6);g.sel=selPt()}PD.last=g.dialA}
   else if(PD.t==='tok'){if(!DRAG&&Math.hypot(x-PD.x0,y-PD.y0)>8)DRAG={tk:PD.tk,w:PD.w,h:PD.h};if(DRAG){DRAG.x=x;DRAG.y=y}}
   else if(PD.t==='hd'){if(g.state==='play'&&g.slots[0]&&g.slots[1]&&g.decl)g.hpull=clamp((y-PD.y0)/(R.handle.h*.6),0,1)}});
 function up(e){if(!PD||!G){PD=null;DRAG=null;return}var x=e.clientX,y=e.clientY,g=G;
@@ -2662,15 +2689,17 @@ if(INHUB)document.body.classList.add('inhub');
 function setScene(s){scene=s;$('scrBack').classList.add('hidden');
   if(s!=='safe')G=null;
   if(s==='title')showScr('scrTitle');else if(s==='map'){refreshK();buildMap();showScr('scrMap')}else if(s==='safe')showScr();else if(s==='album'){buildAlbum();showScr('scrAlbum')}else if(s==='test')showScr('scrTest');else if(s==='end')showScr('scrEnd');
-  var b=$('bBack');b.classList.toggle('hidden',s==='title'&&!INHUB||s==='end');b.textContent=s==='title'?'◀ 一覧へ':'◀ もどる';$('bMute').classList.toggle('hidden',s!=='safe');$('bMute').textContent=muted?'🔇':'🔊'}
+  var b=$('bBack');b.classList.toggle('hidden',s==='title'&&!INHUB);b.textContent=s==='title'?'◀ 一覧へ':'◀ もどる';
+  if(HELP){if(s==='title'||s==='test'||s==='end')HELP.hide();else HELP.show()}$('bMute').classList.toggle('hidden',s!=='safe');$('bMute').textContent=muted?'🔇':'🔊'}
 var backFrom=null;
 $('bBack').onclick=function(){ac();if(scene==='title'){try{window.parent.postMessage({type:'rika-close-game'},'*')}catch(e){}return}
+  if(scene==='safe'&&G&&G.prac){if(window.Guide)Guide.tutorialEnd();setScene('title');return}
   backFrom=scene;if(G)G.paused=true;
   $('bkT').textContent=scene==='safe'?'エレベーターで地上へ？':'もどりますか？';
   $('bkSub').textContent=scene==='safe'?'進み具合は保存されます（開けた階・★・アルバムはそのまま。この階は次にはじめから）。':scene==='test'?'鑑定試験は次はさいしょから。金庫の進み具合は保存されています。':scene==='map'?'進み具合は保存されます。タイトルにもどります。':'地下金庫の一覧にもどります。';
   $('bkGo').textContent=scene==='map'?'タイトルへ':'地下金庫へ';$('scrBack').classList.remove('hidden')};
 $('bkNo').onclick=function(){$('scrBack').classList.add('hidden');if(G)G.paused=false};
-$('bkGo').onclick=function(){$('scrBack').classList.add('hidden');hidePanel();if(backFrom==='map')setScene('title');else setScene('map')};
+$('bkGo').onclick=function(){$('scrBack').classList.add('hidden');hidePanel();if(backFrom==='map'||TEST&&(backFrom==='end'||backFrom==='test'))setScene('title');else setScene('map')};
 $('bMute').onclick=function(){muted=!muted;try{localStorage.setItem(SKEY+':mute',muted?'1':'0')}catch(e){}$('bMute').textContent=muted?'🔇':'🔊'};
 function buildMap(){var box=$('mList');box.innerHTML='';var tot=0;
   FL.forEach(function(f,i){var st=SV.stars[i]||[0,0,0],n=st.filter(Boolean).length;tot+=n;var b=document.createElement('button');b.className='floor'+(i===SV.unl-1&&!st[0]?' now':'')+(f.fin?' fin':'');b.disabled=i>=SV.unl;
@@ -2723,7 +2752,34 @@ function finishTest(){var qs=TQ,answers=TA,review=window.Quiz?Quiz.review(qs,ans
   refreshK()}
 $('eCard').onclick=function(){if(CARD&&window.SubmitCard)SubmitCard.reopen(CARD)};
 $('eMap').onclick=function(){setScene(TEST?'title':'map')};
-$('bStart').onclick=function(){ac();SV.name=$('nameIn').value.trim()||SV.name;save();if(SV.stars[0]&&SV.stars[0][0])setScene('map');else startFloor(0)};
+function startPractice(){ac();hidePanel();G={fi:0,f:PF,prac:1,safes:[genSafe(PF,'P',false,false,'E')],si:0,combo:0,maxCombo:0,fails:0,used:0,listens:0,minNeed:1,ft:0,firsts:0,fx:[],shake:0,tilt:0};setupSafe();setScene('safe')}
+function dialPt(k,rr){var D=R.dial,a=k/6*Math.PI*2-Math.PI/2+(G?G.dialA:0);return{x:D.x+Math.cos(a)*D.r*(rr||.66),y:D.y+Math.sin(a)*D.r*(rr||.66),r:Math.max(24,D.r*.2)}}
+function freeTok(){var g=G;if(!g)return null;var t=null;TOKR.forEach(function(q){if(!t&&g.slots[0]!==q.tk&&g.slots[1]!==q.tk&&(q.tk.pt==='LE'||!TOKR.some(function(z){return z.tk.pt==='LE'&&g.slots[0]!==z.tk&&g.slots[1]!==z.tk})))t=q});
+  return t?{x:t.x+t.w/2,y:t.y+t.h/2,w:t.w+8,h:t.h+8}:{x:R.tray.x+R.tray.w/2,y:R.tray.y+R.tray.h/2,w:60,h:40}}
+function freeSlot(){var i=G&&G.slots[0]?1:0,q=R.slots[i];return{x:q.x+q.w/2,y:q.y+q.h/2,w:q.w,h:q.h}}
+function nSlots(){return G?(G.slots[0]?1:0)+(G.slots[1]?1:0):0}
+var PRACTICE={start:startPractice,label:'れんしゅう中',clearOn:'manual',clearText:'れんしゅうクリア！',
+  steps:[
+    {gesture:'draw',label:'回す',target:function(){return dialPt(1)},area:function(){return{x:R.dial.x,y:R.dial.y,r:R.dial.r*1.05}},
+      path:function(){var D=R.dial,a0=-Math.PI/6+(G?G.dialA:0),a1=-Math.PI/2,P=[];for(var k=0;k<=16;k++){var a=a0+(a1-a0)*k/16;P.push({x:D.x+Math.cos(a)*D.r*.66,y:D.y+Math.sin(a)*D.r*.66})}return P},
+      until:function(){return !!(G&&G.prac&&G.sel===1&&!G.snapping)},praise:'カチリ！',text:'ダイヤルを回して **①の電圧** を 上の ▼ に合わせよう'},
+    {gesture:'tap',target:function(){var L=R.listen;return{x:L.x,y:L.y,r:L.r*1.1}},until:function(){return !!(G&&G.tokens.some(function(t){return t.pt==='V1'}))},praise:'聴こえた！',
+      text:'**聴く** をタップ。電圧計の針が振れて、測った値の札が出る'},
+    {gesture:'drag',target:freeTok,to:freeSlot,until:function(){return nSlots()>=1},text:'扉のラベルの札（**電源の電圧**）を 天秤へ ドラッグ'},
+    {gesture:'drag',target:freeTok,to:freeSlot,until:function(){return nSlots()>=2},praise:'つりあった！',text:'聴いた札（**①の電圧**）も 天秤へ。2枚を くらべる'},
+    {gesture:'tap',target:function(){var q=R.sw;return{x:q.x+q.w*.75,y:q.y+q.h*.58,w:q.w*.46,h:q.h*.7}},area:function(){var a=R.cmp,b=R.sw;return{x:a.x+a.w/2,y:(a.y+b.y+b.h)/2,w:a.w+8,h:b.y+b.h-a.y+8}},until:function(){return !!(G&&G.decl==='P')},
+      text:'天秤は **＝**。①の電圧 ＝ 電源の電圧 → **並列**（どの部分にも電源と同じ電圧）。「並列」をタップ'},
+    {gesture:'drag',target:function(){var h=R.handle;return{x:h.x+h.w/2,y:h.y+28,r:Math.max(24,h.w*.3)}},to:function(){var h=R.handle;return{x:h.x+h.w/2,y:h.y+h.h-18,r:Math.max(24,h.w*.3)}},
+      until:function(){return !!(G&&(G.state==='opening'||G.state==='opened'))},praise:'ガチャン！',text:'ハンドルを **下へ引いて** 扉を開けよう'}
+  ],
+  onExit:function(res){if(res&&(res.stopped||res.replaced))return;PDONE=true;if(SV.stars[0]&&SV.stars[0][0])setScene('map');else startFloor(0)}};
+var INTRO={title:'第7回 黒い金庫の中身',learn:'電流・電圧の **測り方の規則** で、中の回路が **直列か並列か** 見ぬける',
+  how:'ダイヤルを **回して** 聴く → 札を天秤で **くらべる** → つなぎ方を決めてハンドルを引く',gesture:'drag'};
+var busy=false;
+$('bStart').onclick=function(){if(busy)return;ac();SV.name=$('nameIn').value.trim()||SV.name;save();var first=!(SV.stars[0]&&SV.stars[0][0]);
+  var go=function(){busy=false;if(!first)setScene('map');else if(window.Guide)Guide.tutorial(PRACTICE);else startFloor(0)};
+  if(window.Guide){busy=true;Guide.intro(INTRO).then(go)}else go()};
+if(window.Guide)Guide.tutorialButton('#bHow',function(){ac();Guide.tutorial(PRACTICE)});else $('bHow').classList.add('hidden');
 $('bCont').onclick=function(){ac();SV.name=$('nameIn').value.trim()||SV.name;save();setScene('map')};
 
 /* ---------------- ループ ---------------- */
@@ -2740,10 +2796,21 @@ function update(g,dt){if(g.elev||g.paused)return;
 function frame(now){var dt=Math.min(.05,(now-last)/1000);last=now;T+=dt;c.setTransform(DPR,0,0,DPR,0,0);
   if(scene==='safe'&&G){update(G,dt);drawSafe(dt)}else if(scene==='title')drawTitle();else drawMapBg();
   requestAnimationFrame(frame)}
-document.addEventListener('visibilitychange',function(){if(document.hidden&&scene==='safe'&&G&&!G.elev&&!G.paused){$('bBack').onclick()}});
+document.addEventListener('visibilitychange',function(){if(document.hidden&&scene==='safe'&&G&&!G.elev&&!G.paused&&!G.prac){$('bBack').onclick()}});
 window.addEventListener('resize',function(){resize();if(scene==='map')buildMap()});
-mkGrain();
-function mkGrain(){}
+var HELP=null;
+if(window.Guide){
+  Guide.setup({theme:{bg:'#241E19',fg:'#EFE3C4',accent:'#5FD3C4',accentText:'#0E2522',font:FH,bodyFont:FH,radius:5,texture:'grain',line:'#B8863B',
+      dim:'rgba(8,6,5,.62)',shadow:'0 0 0 3px #1B1713, 0 0 0 5px rgba(184,134,59,.55), 0 14px 30px rgba(0,0,0,.6)',outline:'#1E1A16',hand:'#E8C27A',handLine:'#2A1D0C'},
+    sfx:function(k){if(k==='step')bell(1047,0,.06);else if(k==='done')SFX.rule();else if(k==='clear')SFX.fan();else if(k==='open'||k==='close')SFX.sw();else if(k==='cheer')SFX.clink();else if(k==='nudge')SFX.tick()},
+    muted:function(){return muted}});
+  HELP=Guide.help({title:INTRO.title,learn:INTRO.learn,how:INTRO.how,size:44,offset:{x:56,y:0},show:false,attention:true,replay:'tutorial',
+    rules:['**直列**：電流は **どこも同じ**／①＋②の電圧 ＝ 電源の電圧','**並列**：どの部分にも **電源と同じ電圧**／①＋②の電流 ＝ 全体の電流',
+      '決め手は「①と **電源（全体）**」をくらべること。「①＝②」だけでは決まらない（同じ抵抗なら どちらでも等しい）',
+      '電圧は電圧どうし、電流は電流どうしで くらべる。聴ける回数は ランプの数だけ'],
+    onOpen:function(){if(scene==='safe'&&G&&!G.paused){G.paused=true;G.hp=1}},
+    onClose:function(){if(G&&G.hp){G.hp=0;G.paused=false}}});
+}
 resize();
 if(document.fonts&&document.fonts.ready)document.fonts.ready.then(function(){BGC=null;TBG=null});
 window.Zukan&&Zukan.setup&&Zukan.setup({game:GID,koma:[KOMA]});
@@ -2753,7 +2820,7 @@ if(!(SV.unl>1||SV.stars[0]))$('bCont').classList.add('hidden');
 if(TEST)startTest();else setScene('title');
 requestAnimationFrame(frame);
 /* テスト用の窓口（自動操作の確かめに使う。遊びには影響しない） */
-window.__KK={G:function(){return G},floor:startFloor,scene:function(){return scene},SV:function(){return SV},hide:hidePanel,
+window.__KK={G:function(){return G},lay:function(){return{R:R,TOKR:TOKR}},floor:startFloor,scene:function(){return scene},SV:function(){return SV},hide:hidePanel,
   turn:function(pt){var k=ALL.indexOf(pt);G.dialA=-k*Math.PI/3;G.sel=k;G.snapTo=null;G.snapping=false},listen:listen,place:function(i,s){placeTok(G.tokens[i],s)},decl:setDecl,pull:pullHandle,pair:pairInfo,gen:floorSafes};
 })();
 </script>

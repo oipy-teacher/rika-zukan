@@ -140,7 +140,13 @@ input{font:inherit}
 #scrEnd .big small{font-size:28px}
 #mapBtns{position:absolute;z-index:4;display:flex;gap:10px;flex-wrap:wrap}
 #mapBtns>*{flex:1 1 120px}
-@media (prefers-reduced-motion:reduce){.tt .a{animation:none}.nb:active{transform:none}}
+/* 仕上げ 2026-09-28（hb-finish-2026-09-28）: ★がネオンで1つずつ点灯・紙吹雪 */
+.stars div.st{opacity:.15;transform:scale(1.6)}
+.stars div.st.in{opacity:1;transform:none;transition:transform .32s cubic-bezier(.2,1.9,.4,1),opacity .1s}
+.hbcf{position:fixed;top:-18px;z-index:45;pointer-events:none;width:var(--w);height:var(--h);background:var(--c);border-radius:2px;box-shadow:0 0 8px var(--c);animation:hbcf var(--t) cubic-bezier(.3,.2,.6,1) var(--d) forwards}
+@keyframes hbcf{to{transform:translate(var(--dx),108vh) rotate(var(--r))}}
+#bBack:active,#bMute:active{transform:scale(.94);filter:brightness(1.3)}
+@media (prefers-reduced-motion:reduce){.tt .a{animation:none}.nb:active{transform:none}.hbcf{display:none}.stars div.st{opacity:1;transform:none}}
 </style>
 </head>
 <body>
@@ -156,6 +162,7 @@ input{font:inherit}
   <div class="tbtn">
     <div class="nm" id="nmRow"><label for="nameIn">なまえ</label><input id="nameIn" maxlength="16" placeholder="（なくてもOK）" autocomplete="off"></div>
     <button class="nb" id="bStart">はじめる</button>
+    <button class="nb w sm" id="bHow">🤸 あそびかた（れんしゅう）</button>
     <div class="row"><button class="nb r sm" id="bCont">つづきから</button><button class="nb w sm" id="bBook1">📖 図鑑</button></div>
   </div>
 </div>
@@ -2258,6 +2265,8 @@ var ST=[
   intro:'電熱線は3本とも未知。2Vで1回ずつ測って、<b>170秒で8つ</b>の足場へ。電源は8Vまで。',
   lesson:'傾きのちがう3本の直線。どれも原点を通る＝どれも電圧と電流は比例。'}
 ];
+var PS={tag:'れんしゅう',n:'比例で一発',prac:1,tr:[{w:'A',k:.05}],step:1,vmax:12,imax:.6,ti:.05,tl:.1,meas:[2],tg:[.30,.20],par:999,nmax:12};
+var TIERS=[3,5,8],PDONE=false;
 var WC={A:RED,B:YEL,C:ORG,D:RED,E:WHT,S:ORG,F:YEL,G:RED,H:YEL,P:RED,Q:YEL,R:WHT};
 /* 検算: どの足場もちょうど届く台があるか */
 ST.forEach(function(S,si){S.nmax=Math.round(S.vmax/S.step);S.tg.forEach(function(t){if(!solveFor(S,t))try{console.warn('足場に届かない',si,t)}catch(e){}})});
@@ -2287,8 +2296,11 @@ var SFX={
  clear:function(){[0,4,7,12,16,19,24].forEach(function(s,i){tone(330*Math.pow(2,s/12),.5,'sawtooth',.04,i*.08,0,3000)})},
  ok:function(){tone(660,.1,'square',.04,0,0,2000);tone(990,.2,'square',.035,.08,0,2000)},
  bad:function(){tone(180,.3,'sawtooth',.05,0,110,900)},
- tap:function(){tone(520,.06,'triangle',.05)}
+ tap:function(){tone(520,.06,'triangle',.05)},
+ stamp:function(i){tone(90,.3,'sine',.14,0,50);[0,4,7].forEach(function(s,k){tone(523*Math.pow(2,(s+i*5)/12),.25,'sawtooth',.035,.02+k*.03,0,2600)})},
+ tier:function(n){[0,4,7,12,16,19].slice(0,3+Math.min(3,n)).forEach(function(s,i){tone(523*Math.pow(2,s/12),.3,'square',.035,i*.05,0,3000)})}
 };
+function buzz(p){try{if(navigator.vibrate)navigator.vibrate(p)}catch(e){}}
 
 /* ---------------- 絵の道具（ネオン管） ---------------- */
 function glow(col,b){c.shadowColor=col;c.shadowBlur=RM?b*.5:b}
@@ -2376,16 +2388,20 @@ function buildStatic(){stL.width=Math.ceil(W*DPR);stL.height=Math.ceil(H*DPR);va
   c=keep}
 
 /* ---------------- ゲームの状態 ---------------- */
-function startStage(si){var S=ST[si];ac();
+function startStage(si,prac){var S=prac?PS:ST[si];ac();
   G={si:si,S:S,phase:'intro',tr:0,n:0,drag:null,memo:S.tr.map(function(){return null}),ti:0,tried:false,first:0,combo:0,maxc:0,jumps:0,
      dots:[],ball:null,ghost:null,ghostDone:{},time:0,left:S.limit||0,fever:S.fever||0,near:null,reads:[],hint:null,clearT:0,lineA:0,paused:true,flash:0,recoil:0,idle:0,dialT:0,sayT:0,say:null,warnT:0};
   if(S.given)S.given.forEach(function(g,i){G.memo[i]={v:g[0],i:g[1],given:true};G.dots.push({v:g[0],i:g[1],w:i,a:1})});
   FXP=[];FXT=[];scene='run';layout();buildStatic();buildTabs();hideAll();posCtrl();backBtn();
+  if(prac){G.prac=1;begin();return}
   $('iFl').textContent=S.tag+(S.boss?'　BOSS':'');$('iT').textContent=S.n;$('iP').innerHTML=S.intro;$('scrIntro').classList.remove('hidden')}
 function begin(){if(!G)return;$('scrIntro').classList.add('hidden');G.paused=false;var nx=G.memo.indexOf(null);if(nx>=0){G.phase='measure';G.tr=nx}else{G.phase='aim';maybeGhost()}markTabs()}
 $('iGo').onclick=function(){ac();SFX.ok();begin()};
-function nudge(d){if(!G||G.paused||G.ball||!(G.phase==='aim'||G.phase==='measure'))return;var n=Math.max(0,Math.min(G.S.nmax,G.n+d));if(n!==G.n){G.n=n;SFX.tick(n)}G.idle=0}
+function nudge(d){if(!G||G.paused||G.ball||!(G.phase==='aim'||G.phase==='measure'))return;var n=Math.max(0,Math.min(G.S.nmax,G.n+d));if(n!==G.n){G.n=n;SFX.tick(n);buzz(5)}G.idle=0}
 function release(){if(!G||G.paused||G.ball||!(G.phase==='aim'||G.phase==='measure'))return;var S=G.S,n=G.n;G.n=0;G.drag=null;if(n<=0)return;G.idle=0;
+  if(S.prac&&G.phase==='aim'&&Math.abs(curOf(S,G.tr,n)-S.tg[G.ti])>1e-6){var m=G.memo[0],k=m?S.tg[G.ti]/m.i:0,need=m?r2(m.v*k):0;SFX.bad();buzz([10,40,10]);
+    if(window.Guide)Guide.cheer(m?'→ '+fmtV(S,need)+' まで引こう':'もう少し',{x:LAND?LY.playR/2:W/2,y:H*.22,size:.62,sound:false,dur:2200});return}
+  buzz(12);
   var V=r2(n*S.step),I=curOf(S,G.tr,n),h=I/S.imax*LY.span,tu=.4+.36*Math.sqrt(Math.max(0,h)/LY.span),g=2*h/(tu*tu);
   G.ball={tr:G.tr,V:V,I:I,z:0,vz:g*tu,g:g,st:'up',h:h,mode:G.phase,perch:0,trail:[],sink:n/S.nmax};G.recoil=1;G.jumps++;G.phase='jump';SFX.boing(n/S.nmax);
   spark(colX(G.tr),LY.y0,WC[S.tr[G.tr].w],10,160)}
@@ -2398,11 +2414,12 @@ function apex(b){var S=G.S,x=colX(b.tr),y=LY.y0-b.h;G.dots.push({v:b.V,i:b.I,w:b
   if(Math.abs(b.I-tg)<1e-6){b.st='perch';b.perch=.6;var first=!G.tried;G.flash=1;
     var m=G.memo[b.tr],ratio=m?b.V/m.v:0,rs='';if(m&&Math.abs(ratio-1)>1e-6){var rn=Math.round(ratio*2)/2;if(Math.abs(rn-ratio)<1e-6)rs=(S.spring?'力':'電圧')+'×'+rn+' → '+(S.spring?'のび':'電流')+'×'+rn}
     if(first){G.first++;G.combo++;G.maxc=Math.max(G.maxc,G.combo);earnK(Math.min(10,4+G.combo),'first-try',x,y)}else G.combo=0;
-    SFX.hit(G.combo);spark(x,y,YEL,26,300);spark(x,y,RED,14,240);
+    SFX.hit(G.combo);spark(x,y,YEL,26,300);spark(x,y,RED,14,240);G.shake=.28+Math.min(G.combo,8)*.03;buzz([15,30,20]);
+    var tier=first?TIERS.indexOf(G.combo):-1;if(tier>=0){setTimeout(function(){if(!G)return;SFX.tier(tier);spark(x,y,WHT,30,380);if(window.Guide)Guide.cheer('COMBO ×'+G.combo+'！',{x:LAND?LY.playR*.55:W*.3,y:LY.yTop+90*U,size:1.2+tier*.2,sound:false})},350)}
     ftext(first?'ピタッ！':'とどいた',x+(LAND?0:10),y-70*U,(first?40:28)*U,first?YEL:WHT,1.3,rs||(fmtV(S,b.V)+' → '+fmtI(S,b.I)));
     if(G.combo>=2)ftext('COMBO ×'+G.combo,LAND?LY.playR*.55:W*.3,LY.yTop+40*U,30*U,RED,1.1);
     G.ti++;G.tried=false;G.near=null;G.hint=null;G.fever=S.fever||0}
-  else{b.st='fall';G.tried=true;if(G.combo>=2)ftext('COMBO リセット',W*.3,LY.yTop+40*U,18*U,'rgba(255,244,232,.7)',1);G.combo=0;var d=r2(tg-b.I);
+  else{b.st='fall';G.tried=true;var lost=G.combo,nt=TIERS.filter(function(t){return t>lost})[0];if(lost>=2&&nt&&nt-lost===1)ftext('あと1回で ×'+nt+' だった！',W*.3,LY.yTop+40*U,20*U,ORG,1.6);else if(G.combo>=2)ftext('COMBO リセット',W*.3,LY.yTop+40*U,18*U,'rgba(255,244,232,.7)',1);G.combo=0;buzz([10,40,10]);var d=r2(tg-b.I);
     G.near={x:x,y1:y,y2:hy(tg),txt:d>0?'あと '+fmtI(S,d)+' 足りない':fmtI(S,-d)+' 行きすぎ',life:3.2,up:d>0};SFX.miss();G.hint=hintText();}}
 function hintText(){var S=G.S,ms=[];G.memo.forEach(function(m,t){if(m&&!S.dial)ms.push(wname(S,t)+'：'+fmtV(S,m.v)+'で'+fmtI(S,m.i)+' → 1'+(S.spring?'N':'V')+'あたり '+fmtI(S,r2(m.i/m.v)))});
   if(S.dial)return 'ヒント：針の読み（1.5Vのとき）を2倍・3倍…と考える';if(S.tr.length>1)return 'ヒント：電源は'+S.vmax+'Vまで。'+ms.join('／');return 'ヒント：'+ms.join('')}
@@ -2412,7 +2429,7 @@ function land(){var b=G.ball;G.ball=null;G.recoil=.7;spark(colX(b.tr),LY.y0,WC[G
 function maybeGhost(){var S=G.S;if(S.ghost&&S.ghost[G.ti]!=null&&!G.ghostDone[G.ti]){G.ghostDone[G.ti]=1;var t=S.ghostTr||0,gv=S.ghost[G.ti],n=Math.round(gv/S.step),I=curOf(S,t,n),m=G.memo[t];
   var say=G.ti===0||S.boss?(fmtV(S,m.v)+'で'+fmtI(S,m.i)+'だった。'+fmtI(S,S.tg[G.ti])+'は'+Math.round(S.tg[G.ti]/m.i)+'倍の高さ。でも電流は「大きくなるけど'+Math.round(S.tg[G.ti]/m.i)+'倍にはならない」はず…だから多めに'+fmtV(S,gv)+'！'):('今度も「'+Math.round(S.tg[G.ti]/m.i)+'倍にはならない」はず。多めに'+fmtV(S,gv)+'だ！');
   var h=I/S.imax*LY.span,tu=.4+.36*Math.sqrt(h/LY.span),g=2*h/(tu*tu);G.ghost={tr:t,V:gv,I:I,z:0,vz:g*tu,g:g,h:h,st:'wait',t:0};G.say=say;G.sayT=0;G.phase='ghost';if(S.tr.length>1){G.tr=t;markTabs()}}}
-function clearStage(){var S=G.S;G.phase='clear';G.clearT=0;SFX.clear();
+function clearStage(){var S=G.S;if(S.prac){G.phase='done';var g0=G;setTimeout(function(){if(G===g0&&window.Guide)Guide.tutorialClear()},350);return}G.phase='clear';G.clearT=0;SFX.clear();
   var st=[true,G.first===S.tg.length,S.boss?G.left>=40:G.time<=S.par],o=SV.stars[G.si]||[false,false,false];SV.stars[G.si]=o.map(function(v,i){return v||st[i]});G.starsNow=st;
   var bst=SV.best[G.si];if(!bst||G.first>bst.first||(G.first===bst.first&&G.time<bst.t))SV.best[G.si]={first:G.first,n:S.tg.length,t:G.time,maxc:G.maxc};
   SV.unl=Math.max(SV.unl,Math.min(ST.length-1,G.si+1));S.tr.forEach(function(tr){SV.neon[G.si]=1});SV.maxc=Math.max(SV.maxc,G.maxc);SV.play+=G.time*1000;
@@ -2422,7 +2439,13 @@ function showClear(){var S=G.S,st=G.starsNow;$('scrClear').classList.remove('hid
   $('cL').innerHTML=S.lesson;var L=['全部の足場へ',S.boss?'全部一発':'全部一発で',S.boss?'40秒以上のこす':S.par+'秒以内'];
   $('cStars').innerHTML=st.map(function(v,i){return'<div class="'+(v?'on':'')+'"><i>★</i>'+L[i]+'</div>'}).join('');
   $('cRec').innerHTML='<span>タイム<b>'+fmtT(G.time)+'</b></span><span>一発で届いた<b>'+G.first+' / '+S.tg.length+'</b></span><span>最大コンボ<b>'+G.maxc+'</b></span>';
-  $('cNext').textContent=S.boss?'📝 確認テストへ':'次のフロアへ ▲';}
+  $('cNext').textContent=S.boss?'📝 確認テストへ':'次のフロアへ ▲';
+  var sp=[].slice.call($('cStars').children),g0=G;sp.forEach(function(e,i){e.classList.add('st');setTimeout(function(){if(G!==g0)return;e.classList.add('in');if(st[i]){SFX.stamp(i);buzz(18)}else tone(200,.12,'triangle',.05)},RM?0:350+i*400)});
+  setTimeout(function(){if(G===g0)confetti()},RM?0:350+3*400)}
+function confetti(){if(RM)return;var cols=[RED,YEL,WHT,ORG];for(var i=0;i<58;i++){var d=document.createElement('div');d.className='hbcf';var q=d.style;q.left=(Math.random()*100).toFixed(1)+'vw';
+  q.setProperty('--w',(3+Math.random()*4|0)+'px');q.setProperty('--h',(12+Math.random()*16|0)+'px');q.setProperty('--c',cols[i%4]);
+  q.setProperty('--dx',((Math.random()-.5)*180|0)+'px');q.setProperty('--r',((Math.random()-.5)*900|0)+'deg');q.setProperty('--t',(1.7+Math.random()*1.2).toFixed(2)+'s');q.setProperty('--d',(Math.random()*.4).toFixed(2)+'s');
+  document.body.appendChild(d);(function(n){setTimeout(function(){if(n.parentNode)n.parentNode.removeChild(n)},3600)})(d)}}
 $('cNext').onclick=function(){ac();$('scrClear').classList.add('hidden');if(G.S.boss)toTest();else startStage(Math.min(ST.length-1,G.si+1))};
 $('cAgain').onclick=function(){$('scrClear').classList.add('hidden');startStage(G.si)};
 $('cMap').onclick=function(){$('scrClear').classList.add('hidden');G=null;setScene('map')};
@@ -2462,7 +2485,7 @@ function drawTramp(x,y,w,sink,col,legH,label,active){var hw=w/2,dip=sink;
     c.save();c.font='900 '+12*U+'px '+BF;var tw=c.measureText(label).width;c.restore();var sx=x+tw/2+10;tubePath(function(){c.rect(sx,py-5,22,10)},col,1.4,active?.9:.5);tube([[sx-6,py],[sx,py]],col,1.2,.6);tube([[sx+22,py],[sx+28,py]],col,1.2,.6)}}
 function ballAt(x,y,r,col,alpha){c.save();c.globalAlpha=alpha==null?1:alpha;tubePath(function(){c.arc(x,y,r,0,6.283)},col,3.4,alpha);
   tube([[x+r*.15,y-r*.62],[x-r*.28,y+r*.05],[x+r*.22,y+r*.02],[x-r*.12,y+r*.62]],RED,2.2,alpha);c.restore()}
-function drawRun(){var S=G.S;c.drawImage(stL,0,0,W,H);
+function drawRun(){var S=G.S;c.save();if(G.shake>0&&!RM){G.shake=Math.max(0,G.shake-.016);c.translate((Math.random()-.5)*16*G.shake,(Math.random()-.5)*16*G.shake)}c.drawImage(stL,0,0,W,H);
   /* 足場（とどいた足場はのこる＝階段になる） */
   for(var j=0;j<G.ti;j++){var yy=hy(S.tg[j]);tube([[LY.scaleX+4,yy],[LY.playR-8,yy]],RED,2.6,.55);ptext(fmtI(S,S.tg[j]),LY.scaleX+8,yy-9*U,11*U,'rgba(255,200,196,.8)','left',900)}
   if(G.ti<S.tg.length&&G.phase!=='clear'){var ty=hy(S.tg[G.ti]),bl=G.phase==='measure'?.3:(RM?1:.75+.25*Math.sin(T*6)),x1=LY.scaleX+4,x2=LY.playR-8;
@@ -2493,11 +2516,11 @@ function drawRun(){var S=G.S;c.drawImage(stL,0,0,W,H);
     c.font=(17*U)+'px '+HF;var tw2=c.measureText(nr.txt).width+18,tx=Math.max(LY.scaleX+6,Math.min(xx-tw2/2,LY.playR-tw2)),tyy=(nr.y1+nr.y2)/2;c.fillStyle='rgba(30,0,0,.88)';c.beginPath();rr(tx,tyy-16*U,tw2,32*U,10);c.fill();tubePath(function(){rr(tx,tyy-16*U,tw2,32*U,10)},RED,2,a2);ntext(nr.txt,tx+tw2/2,tyy,17*U,'#FFE6E4');c.restore()}
   drawGraph();drawMemo();drawVM();drawHUD();
   if(G.drag&&G.n>0){var dx=Math.min(G.drag.x+60*U,W-70*U),dy=G.drag.y;c.fillStyle='rgba(0,0,0,.8)';c.beginPath();rr(dx-48*U,dy-24*U,96*U,48*U,12);c.fill();tubePath(function(){rr(dx-48*U,dy-24*U,96*U,48*U,12)},YEL,2.4);ntext(fmtV(S,r2(G.n*S.step)),dx,dy,24*U,YEL)}
-  if(!G.ball&&!G.drag&&G.n===0&&(G.phase==='aim'||G.phase==='measure')&&G.idle>1.8&&G.jumps<4){var hx=colX(G.tr),hy0=LY.y0-LY.span*.18,off=RM?0:((T*1.2)%1)*50;ntext('↓',hx,hy0+off,34*U,WHT);ptext('下へ引いて押しこむ',hx,hy0-30*U,14*U,'rgba(255,244,232,.9)','center',900)}
+  if(!G.ball&&!G.drag&&G.n===0&&(G.phase==='aim'||G.phase==='measure')&&G.idle>1.8&&G.jumps<4&&!G.S.prac&&!(PDONE&&G.si===0)){var hx=colX(G.tr),hy0=LY.y0-LY.span*.18,off=RM?0:((T*1.2)%1)*50;ntext('↓',hx,hy0+off,34*U,WHT);ptext('下へ引いて押しこむ',hx,hy0-30*U,14*U,'rgba(255,244,232,.9)','center',900)}
   if(G.phase==='measure'&&!G.ball){var mv=G.S.meas&&G.S.meas[G.tr];ntext('まず測る：'+(G.S.tr.length>1?wname(S,G.tr)+'を':'')+fmtV(S,mv)+'で跳ぶ',(LY.scaleX+LY.playR)/2,LY.top+12*U,(LAND?20:15)*U,YEL)}
   if(S.dial&&G.dialT>0){var dcx=LAND?(LY.scaleX+LY.playR)/2:W*.5,dcy=LAND?H*.42:H*.4,dr=Math.min(W,H)*(LAND?.19:.3);drawAmmeter(dcx,dcy,dr,G.memo[0]?G.memo[0].i:0,Math.min(1,G.dialT))}
-  if(G.flash>0&&!RM){c.fillStyle='rgba(255,228,94,'+(G.flash*.12)+')';c.fillRect(0,0,W,H)}
-  if(G.phase==='clear')drawClearLine()}
+  if(G.flash>0&&!RM){c.fillStyle='rgba(255,228,94,'+(G.flash*.22)+')';c.fillRect(0,0,W,H)}
+  if(G.phase==='clear')drawClearLine();c.restore()}
 function drawSay(s){var gx=colX(G.ghost?G.ghost.tr:0),w=Math.min(LAND?420:W*.9,LY.playR-LY.scaleX+ (LAND?0:W*.3)),x=LAND?Math.max(LY.scaleX+10,Math.min(gx-w/2,LY.playR-w)):W*.05,y=LY.top+34*U;
   c.font='900 '+(15*U)+'px '+BF;var ls=wrapT(s,w-28),h=ls.length*22*U+22;c.fillStyle='rgba(8,8,8,.92)';c.beginPath();rr(x,y,w,h,14);c.fill();c.save();c.setLineDash([6,5]);tubePath(function(){rr(x,y,w,h,14)},WHT,2,.8);c.restore();
   ptext('ゴーストのつぶやき',x+14,y-12*U,12*U,'rgba(255,244,232,.85)','left',900);ls.forEach(function(l,i){ptext(l,x+14,y+18*U+i*22*U,15*U,'#fff','left',900)})}
@@ -2521,11 +2544,11 @@ function drawVM(){var S=G.S,d=LY.dial;if(!d)return;var n=(G.ball?Math.round(G.ba
   tube([[d.cx,d.cy],[d.cx+Math.cos(a)*(d.R-12),d.cy+Math.sin(a)*(d.R-12)]],RED,3.2);c.save();glow(RED,10);c.fillStyle=RED;c.beginPath();c.arc(d.cx,d.cy,5,0,6.283);c.fill();c.restore();
   ntext(fmtV(S,r2(n*S.step)),d.cx,d.cy+d.R*.36,Math.min(34*U,d.R*.46),YEL);
   if(!S.spring){tubePath(function(){c.arc(d.cx,d.cy-d.R*.42,d.R*.14,0,6.283)},WHT,1.4,.7);ntext('V',d.cx,d.cy-d.R*.42,d.R*.16,WHT)}}
-function drawHUD(){var S=G.S,cx=W/2;if(!LAND){var tl0=S.tag+' '+S.n,fz0=17*U,room0=W-128-62;c.font=fz0+'px '+HF;while(c.measureText(tl0).width>room0&&fz0>10){fz0-=.5;c.font=fz0+'px '+HF}ntext(tl0,128,33,fz0,RED,'left')}
+function drawHUD(){var S=G.S,cx=W/2;if(!LAND){var tl0=S.tag+' '+S.n,fz0=17*U,room0=W-128-62-52;c.font=fz0+'px '+HF;while(c.measureText(tl0).width>room0&&fz0>10){fz0-=.5;c.font=fz0+'px '+HF}ntext(tl0,128,33,fz0,RED,'left')}
   var y=LAND?30:76,items=[];
   if(S.limit)items.push(['のこり',fmtT(G.left),G.left<30?RED:YEL]);
   items.push(['足場',Math.min(G.ti,S.tg.length)+'/'+S.tg.length,YEL]);items.push(['COMBO','×'+G.combo,G.combo>=2?RED:WHT]);if(Zk())items.push(['かけら',String(K),WHT]);
-  if(LAND){var x=W-70;for(var i=items.length-1;i>=0;i--){var it=items[i];c.font=(18*U)+'px '+HF;var w=c.measureText(it[1]).width;ntext(it[1],x-w/2,y,18*U,it[2]);ptext(it[0],x-w-8,y,11*U,'rgba(255,244,232,.7)','right',900);c.font='900 '+(11*U)+'px '+BF;x-=w+c.measureText(it[0]).width+30}
+  if(LAND){var x=W-70-52;for(var i=items.length-1;i>=0;i--){var it=items[i];c.font=(18*U)+'px '+HF;var w=c.measureText(it[1]).width;ntext(it[1],x-w/2,y,18*U,it[2]);ptext(it[0],x-w-8,y,11*U,'rgba(255,244,232,.7)','right',900);c.font='900 '+(11*U)+'px '+BF;x-=w+c.measureText(it[0]).width+30}
     var tl=S.tag+' '+S.n,fz=22*U,room=x-150;c.font=fz+'px '+HF;while(c.measureText(tl).width>room&&fz>12){fz-=1;c.font=fz+'px '+HF}ntext(tl,150,y,fz,RED,'left')}
   else{var n=items.length,cw=(W-16)/n;items.forEach(function(it,i){var xx=8+cw*i+cw/2;ptext(it[0],xx,y-10*U,10*U,'rgba(255,244,232,.7)','center',900);ntext(it[1],xx,y+8*U,17*U,it[2])})}}
 function drawFx(){FXP.forEach(function(p){var a=1-p.t/p.life;c.globalAlpha=a;c.strokeStyle=p.col;c.lineWidth=2;c.beginPath();c.moveTo(p.x,p.y);c.lineTo(p.x-p.vx*.03,p.y-p.vy*.03);c.stroke()});c.globalAlpha=1;
@@ -2573,13 +2596,15 @@ function drawTitle(dt){c.drawImage(bgL,0,0,W,H);var ax,ay,aw,ah;if(LAND){ax=W*.5
 var OVS=['scrTitle','scrMap','scrIntro','scrClear','scrFail','scrTest','scrEnd','scrBack'];
 function hideAll(){OVS.forEach(function(id){$(id).classList.add('hidden')})}
 var INHUB=!!window.COLLECTION_NAME||(function(){try{return window.parent!==window}catch(e){return true}})();
-function backBtn(){var b=$('bBack'),on=scene==='run'||scene==='map'||scene==='test'||scene==='end'||(scene==='title'&&INHUB);b.classList.toggle('hidden',!on);b.textContent=scene==='title'?'◀ 一覧へ':'◀ もどる'}
+function backBtn(){var b=$('bBack'),on=scene==='run'||scene==='map'||scene==='test'||scene==='end'||(scene==='title'&&INHUB);b.classList.toggle('hidden',!on);b.textContent=scene==='title'?'◀ 一覧へ':'◀ もどる';
+  if(HELP){if(scene==='run'||scene==='map')HELP.show();else HELP.hide()}}
 function setScene(s){scene=s;hideAll();if(s==='title'){$('scrTitle').classList.remove('hidden');$('bCont').classList.toggle('hidden',!(SV.unl>0||SV.stars[0]))}
   else if(s==='map'){refreshK();$('scrMap').classList.remove('hidden');$('bToTest').classList.toggle('hidden',!SV.done);posMapBtns()}
   else if(s==='test')$('scrTest').classList.remove('hidden');else if(s==='end')$('scrEnd').classList.remove('hidden');
   backBtn();posCtrl();$('bMute').textContent=muted?'🔇':'🔊'}
 var backFrom=null,wasPaused=false;
 $('bBack').onclick=function(){ac();if(scene==='title'){try{window.parent.postMessage({type:'rika-close-game'},'*')}catch(e){}return}
+  if(scene==='run'&&G&&G.S.prac){if(window.Guide)Guide.tutorialEnd();G=null;setScene('title');return}
   backFrom=scene;wasPaused=!!(G&&G.paused);if(G)G.paused=true;
   $('bkSub').textContent=scene==='test'?'確認テストは、次はさいしょから。ジムの進み具合は保存されています。':scene==='map'||scene==='end'?'進み具合は保存されています。タイトルにもどります。':'進み具合は保存されます（クリアしたフロアと★はそのまま。このフロアは次にはじめから）。';
   $('bkGo').textContent=scene==='run'||scene==='test'?'館内図へ':'タイトルへ';$('scrBack').classList.remove('hidden')};
@@ -2592,7 +2617,25 @@ $('bGacha').onclick=function(){var z=Zk();if(z&&z.openGacha)z.openGacha()};
 if(!Zk())['bBook1','bBook2','bGacha','eBook'].forEach(function(id){$(id).classList.add('hidden')});
 $('bToTest').onclick=function(){startTest()};
 function getName(){return(window.PLAYER_NAME||$('nameIn').value||SV.name||'').trim()}
-$('bStart').onclick=function(){ac();SFX.ok();SV.name=$('nameIn').value.trim()||SV.name;save();if(SV.unl===0&&!SV.stars[0])startStage(0);else setScene('map')};
+function pullPt(n){var x=colX(0),y=LY.y0-LY.span*.32;return{x:x,y:y+n*LY.pxStep,r:Math.max(26,30*U)}}
+var PRACTICE={start:function(){ac();startStage(0,true)},label:'れんしゅう中',clearOn:'manual',clearText:'れんしゅうクリア！',
+  steps:[
+    {gesture:'drag',target:function(){return pullPt(0)},to:function(){return pullPt(2)},until:function(){return !!(G&&G.S.prac&&G.memo[0])},praise:'測定！',
+      text:'まず測る。トランポリンの上を **下へ引いて 2V** → はなすと跳ぶ（押しこむ深さ＝**電圧**、跳ぶ高さ＝**電流**）'},
+    {gesture:'drag',target:function(){return pullPt(0)},to:function(){return pullPt(6)},until:function(){return !!(G&&G.S.prac&&G.ti>=1)},praise:'ピタッ！',
+      text:'足場は **0.30A**。2Vで0.10A だったから **3倍**。電圧も3倍の **6V** まで引いて はなそう'},
+    {gesture:'tap',target:'#bDn',until:function(){return !!(G&&G.S.prac&&(G.n>=4||G.ti>=2))},praise:false,
+      text:'ボタンでもできる。足場 **0.20A** は2倍 → **▼押しこむ** を 4回 タップして **4V**'},
+    {gesture:'tap',target:'#bJump',until:function(){return !!(G&&G.S.prac&&G.ti>=2)},praise:'ピタッ！',text:'**跳ぶ！** をタップ'}
+  ],
+  onExit:function(res){if(res&&(res.stopped||res.replaced))return;PDONE=true;if(SV.unl===0&&!SV.stars[0])startStage(0);else setScene('map')}};
+var INTRO={title:'第8回 ひれいトランポリン',learn:'電熱線の電流は **電圧に比例** する（電圧2倍 → 電流も **ちょうど2倍**）',
+  how:'**下へ引いて** 押しこむ＝電圧。1回測って、比例で決めた電圧で足場へ **一発で** 跳ぶ',gesture:'drag'};
+var busy=false;
+$('bStart').onclick=function(){if(busy)return;ac();SFX.ok();SV.name=$('nameIn').value.trim()||SV.name;save();var first=SV.unl===0&&!SV.stars[0];
+  var go=function(){busy=false;if(!first)setScene('map');else if(window.Guide)Guide.tutorial(PRACTICE);else startStage(0)};
+  if(window.Guide){busy=true;Guide.intro(INTRO).then(go)}else go()};
+if(window.Guide)Guide.tutorialButton('#bHow',function(){ac();SFX.ok();Guide.tutorial(PRACTICE)});else $('bHow').classList.add('hidden');
 $('bCont').onclick=function(){ac();SFX.ok();SV.name=$('nameIn').value.trim()||SV.name;save();setScene('map')};
 function toTest(){var z=Zk();if(z&&z.mainClear&&!TEST){try{z.mainClear({onClose:startTest});return}catch(e){}}startTest()}
 
@@ -2605,7 +2648,7 @@ cv.addEventListener('pointerdown',function(e){ac();var x=e.clientX,y=e.clientY;
   if(G.ball||!(G.phase==='aim'||G.phase==='measure'))return;if(!inPlay(x,y))return;
   if(LAND&&G.S.tr.length>1){var best=0,bd=1e9;for(var t=0;t<G.S.tr.length;t++){var d=Math.abs(x-LY.cols[t]);if(d<bd){bd=d;best=t}}if(!(G.phase==='measure'&&G.memo[best]))selTr(best)}
   G.drag={y0:y,x:x,y:y,id:e.pointerId};G.n=0;G.idle=0;try{cv.setPointerCapture(e.pointerId)}catch(er){}});
-cv.addEventListener('pointermove',function(e){if(!G||!G.drag)return;G.drag.x=e.clientX;G.drag.y=e.clientY;var n=Math.max(0,Math.min(G.S.nmax,Math.round((e.clientY-G.drag.y0)/LY.pxStep)));if(n!==G.n){G.n=n;SFX.tick(n)}});
+cv.addEventListener('pointermove',function(e){if(!G||!G.drag)return;G.drag.x=e.clientX;G.drag.y=e.clientY;var n=Math.max(0,Math.min(G.S.nmax,Math.round((e.clientY-G.drag.y0)/LY.pxStep)));if(n!==G.n){G.n=n;SFX.tick(n);buzz(4)}});
 function up(e){if(!G||!G.drag)return;G.drag=null;if(G.n>0)release()}
 cv.addEventListener('pointerup',up);cv.addEventListener('pointercancel',function(){if(G){G.drag=null;G.n=0}});
 document.addEventListener('keydown',function(e){if(scene!=='run'||!G)return;var k=e.key;
@@ -2655,9 +2698,21 @@ function frame(now){var dt=Math.min(.05,(now-last)/1000);last=now;T+=dt;c.setTra
   else c.drawImage(bgL,0,0,W,H);
   requestAnimationFrame(frame)}
 window.addEventListener('resize',resize);
-document.addEventListener('visibilitychange',function(){if(document.hidden&&scene==='run'&&G&&!G.paused&&G.phase!=='clear'){G.paused=true;backFrom='run';wasPaused=false;$('bkSub').textContent='一時停止中。進み具合は保存されます。';$('bkGo').textContent='館内図へ';$('scrBack').classList.remove('hidden')}});
+document.addEventListener('visibilitychange',function(){if(document.hidden&&scene==='run'&&G&&!G.paused&&G.phase!=='clear'&&!G.S.prac){G.paused=true;backFrom='run';wasPaused=false;$('bkSub').textContent='一時停止中。進み具合は保存されます。';$('bkGo').textContent='館内図へ';$('scrBack').classList.remove('hidden')}});
 
 /* ---------------- はじまり ---------------- */
+var HELP=null;
+if(window.Guide){
+  Guide.setup({theme:{bg:'#0E0606',fg:'#FFF4E8',accent:'#FFE45E',accentText:'#1A1200',font:HF,bodyFont:BF,radius:16,texture:'none',line:'#FF3C38',
+      dim:'rgba(0,0,0,.66)',shadow:'0 0 6px #FF3C38, 0 0 26px rgba(255,60,56,.5), inset 0 0 20px rgba(255,60,56,.2)',outline:'#0A0A0A',hand:'#FFF4E8',handLine:'#FF3C38'},
+    sfx:function(k){ac();if(k==='step')SFX.ok();else if(k==='done')SFX.hit(3);else if(k==='clear')SFX.clear();else if(k==='open'||k==='close')SFX.tap();else if(k==='cheer')SFX.meas();else if(k==='nudge')SFX.tick(2)},
+    muted:function(){return muted}});
+  HELP=Guide.help({title:INTRO.title,learn:INTRO.learn,how:INTRO.how,size:44,offset:{x:54,y:0},show:false,attention:true,replay:'tutorial',
+    rules:['トランポリンを **下へ引く** ほど 電圧が大きい。はなすと跳ぶ（▼▲と「跳ぶ！」ボタンでもOK）','跳んだ高さ＝**電流**。跳ぶたびにグラフに点がつく',
+      '1回測ったら **比例** で決める：電流を3倍にしたければ 電圧も **3倍**','外すと コンボはリセット。「あと◯A足りない」を見て直そう'],
+    onOpen:function(){if(scene==='run'&&G&&!G.paused){G.paused=true;G.hp=1}},
+    onClose:function(){if(G&&G.hp){G.hp=0;G.paused=false}}});
+}
 resize();
 window.Zukan&&Zukan.setup&&Zukan.setup({game:GID,koma:[KOMA]});
 refreshK();
@@ -2665,7 +2720,7 @@ if(window.PLAYER_NAME){$('nameIn').value=window.PLAYER_NAME;$('nmRow').classList
 if(TEST)startTest();else setScene('title');
 requestAnimationFrame(frame);
 /* 自動操作の確かめ用の窓口（遊びには影響しない） */
-window.__HB={G:function(){return G},start:startStage,begin:begin,scene:function(){return scene},SV:function(){return SV},
+window.__HB={G:function(){return G},lay:function(){return LY},start:startStage,begin:begin,scene:function(){return scene},SV:function(){return SV},
   solve:function(){if(!G)return null;if(G.phase==='measure')return{tr:G.tr,n:Math.round(G.S.meas[G.tr]/G.S.step)};if(G.phase==='aim')return solveFor(G.S,G.S.tg[G.ti]);return null},
   set:function(tr,n){if(!G)return;G.tr=tr;G.n=n;markTabs()},jump:release,test:startTest};
 })();

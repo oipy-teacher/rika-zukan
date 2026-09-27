@@ -157,7 +157,12 @@ button{font-family:var(--fk);cursor:pointer;touch-action:manipulation}
 .endp{width:min(620px,100%);padding:26px;text-align:center}
 #eScore{font:500 64px var(--fk);color:#E26D5A}
 #eScore small{font-size:24px;color:#5A2E24}
-@media (prefers-reduced-motion:reduce){.clay,#gCap .h,#gIn{transition:none}}
+/* 仕上げ 2026-09-28（ts-finish-2026-09-28）: ★のぷにっと押し・粘土の紙吹雪 */
+.stars i.st{display:inline-block;transform:scale(0) rotate(-30deg)}
+.stars i.st.in{transform:none;transition:transform .34s cubic-bezier(.2,1.9,.4,1)}
+.tscf{position:fixed;top:-18px;z-index:45;pointer-events:none;width:var(--w);height:var(--w);border-radius:50%;background:radial-gradient(circle at 32% 30%,#fff 0,var(--c) 45%,rgba(0,0,0,.18) 100%);animation:tscf var(--t) cubic-bezier(.3,.2,.6,1) var(--d) forwards}
+@keyframes tscf{to{transform:translate(var(--dx),108vh) scale(.8,1.1)}}
+@media (prefers-reduced-motion:reduce){.clay,#gCap .h,#gIn{transition:none}.tscf{display:none}.stars i.st{transform:none}}
 </style>
 </head>
 <body>
@@ -168,7 +173,7 @@ button{font-family:var(--fk);cursor:pointer;touch-action:manipulation}
   <div id="ttl"><span class="a">抵抗キャッチャー</span><span class="s">～電気抵抗～</span><span class="k">札の「電圧÷電流」で見ぬいて、注文のΩをつかめ</span></div>
   <div id="nmRow" class="pe"><label for="nameIn">なまえ</label><input id="nameIn" maxlength="16" placeholder="（空でもOK）" autocomplete="off"></div>
   <div class="tBtns"><button id="bStart" class="clay">はじめる</button><button id="bCont" class="clay b">つづきから</button></div>
-  <div class="tSub"><button id="bBook1" class="clay w sm">📖 図鑑</button><button id="bGacha1" class="clay y sm">ガチャ</button></div>
+  <div class="tSub"><button id="bHow" class="clay g sm">🕹️ あそびかた</button><button id="bBook1" class="clay w sm">📖 図鑑</button><button id="bGacha1" class="clay y sm">ガチャ</button></div>
 </div>
 
 <div id="scrMap" class="scr hidden">
@@ -2227,8 +2232,11 @@ var SFX={
  drop:function(){thud()},
  roll:function(){for(var i=0;i<8;i++)tone(600+i*60,.05,'triangle',.04,null,i*.06)},
  rare:function(r){var base=[523,587,659,784];for(var i=0;i<=r+2;i++)tone(base[i%4]*(1+Math.floor(i/4)),.3,'sine',.07,null,i*.08);if(r>=3)tone(3136,.8,'sine',.04,null,.45)},
- clear:function(){[392,523,659,784,1047,1319].forEach(function(f,i){tone(f,.35,'triangle',.08,null,i*.09)})}
+ clear:function(){[392,523,659,784,1047,1319].forEach(function(f,i){tone(f,.35,'triangle',.08,null,i*.09)})},
+ stamp:function(i){tone(300,.18,'sine',.14,140);tone([784,988,1319][i%3],.25,'triangle',.07,null,.05)},
+ tier:function(n){[523,659,784,1047,1319,1568].slice(0,3+Math.min(3,n)).forEach(function(f,i){tone(f,.26,'triangle',.08,null,i*.06)})}
 };
+function buzz(p){try{if(navigator.vibrate)navigator.vibrate(p)}catch(e){}}
 
 /* ---------------- 画面（dpr対応） ---------------- */
 var cv=$('cv'),c=cv.getContext('2d'),W=390,H=844,DPR=1,LAND=false,TOPH=66,MR=[];
@@ -2236,7 +2244,7 @@ var BG=document.createElement('canvas'),bg=BG.getContext('2d'),NOISE=null;
 function mkNoise(){var n=document.createElement('canvas');n.width=n.height=96;var x=n.getContext('2d');for(var i=0;i<900;i++){var w=Math.random()<.5;x.fillStyle=w?'rgba(255,255,255,.10)':'rgba(90,30,20,.07)';x.fillRect(Math.random()*96,Math.random()*96,1+Math.random()*1.4,1+Math.random()*1.4)}NOISE=n}
 function resize(){var r=$('stage').getBoundingClientRect();W=Math.max(300,r.width||innerWidth);H=Math.max(300,r.height||innerHeight);DPR=Math.min(3,window.devicePixelRatio||1);
   cv.width=Math.round(W*DPR);cv.height=Math.round(H*DPR);BG.width=cv.width;BG.height=cv.height;
-  LAND=W/H>1.12;layout();layoutDom();paintBG()}
+  LAND=W/H>1.12;layout();layoutDom();paintBG();if(PRACTICE)PRACTICE.bandAt=LAND?'bottom':'top'}
 function layout(){TOPH=LAND?74:136;MR=[];
   if(LAND){var gap=Math.max(16,W*.025),ch=H-TOPH-12,cw=Math.min((W-gap*3)/2,ch*.82),x0=(W-cw*2-gap)/2;for(var i=0;i<2;i++)MR.push(mkRect(x0+i*(cw+gap),TOPH,cw,ch))}
   else{var cw2=Math.min(W-14,(H-TOPH-10)*.74),r=mkRect((W-cw2)/2,TOPH,cw2,H-TOPH-8);MR=[r,r]}}
@@ -2397,8 +2405,14 @@ function dealOrder(){var o=G.orders[G.oi];G.firstFlag=true;
     m.ps=olds.concat(o.mach[mi])}
   tone(880,.1,'triangle',.05);tone(1175,.12,'triangle',.05,null,.08)}
 FL.forEach(function(F){F.chuteU0=function(){return .17}});
+var PFL={n:'れんしゅう台',easy:1,h:'',k:1,pc:3,R:[5],ty:['ohm'],prac:1,chuteU0:function(){return .17}};
+var TIERS=[3,5],PDONE=false;
+function pracTarget(){var o=curOrder();if(!o)return null;for(var mi=0;mi<2;mi++){var p=G.m[mi].ps.filter(function(q){return q.id===o.tid})[0];if(p)return{mi:mi,p:p}}return null}
 function curOrder(){return G&&G.orders[G.oi]}
 function grab(mi){if(!G||G.state!=='play'||G.paused)return;var m=G.m[mi];if(m.st!=='idle')return;
+  if(G.F.prac){var tg=pracTarget(),R0=MR[mi],tol=.32*slotW(R0,G.F.pc)/R0.gl.w,near=null,bd=1e9;m.ps.forEach(function(q){if(q.st!=='stand')return;var d=Math.abs(q.u-m.u);if(d<bd){bd=d;near=q}});
+    if(!tg||tg.mi!==mi||!near||near!==tg.p||bd>tol){SFX.bad();buzz([10,40,10]);pop(mi,near&&bd<tol*2.5?('その札は '+fmt(near.V)+'÷'+fmt(near.I)+'＝'+fmt(near.R)+'Ω'):'注文の線の 真上へ',BLUE,gx(R0,m.u));return}}
+  buzz(12);
   if(G.coins<=0){pop(mi,'クレジットがない',BLUE);return}
   G.coins--;m.st='down';m.t=0;SFX.coin();SFX.grab();G.act=mi}
 function update(dt){if(!G)return;G.t+=dt;
@@ -2432,17 +2446,19 @@ function headSize(R){return Math.max(26,Math.min(54,R.gl.w*.11))}
 function cableTop(R){return R.gl.y+16}
 function prizeGeom(R,pc){var sw=slotW(R,pc),tw=Math.min(sw*.95,150),th=Math.min(tw*.66,R.gl.h*.16),cs=Math.min(sw*.7,tw*.78,R.gl.h*.2);return{sw:sw,tw:tw,th:th,cs:cs,top:R.floorY-th-cs*1.05}}
 function clawPos(m,R){var hs=headSize(R),g=prizeGeom(R,G?G.F.pc:3);var L0=hs*.9,L1=g.top-cableTop(R)-hs*.35;var L=L0+(L1-L0)*m.dep;var x=gx(R,m.u);return{x:x+Math.sin(m.ang)*L,y:cableTop(R)+Math.cos(m.ang)*L,L:L,cx:x}}
-function decideHit(m,mi){var R=MR[mi],P=clawPos(m,R),g=prizeGeom(R,G.F.pc),best=null,bd=1e9;
+function decideHit(m,mi){var R=MR[mi],P=clawPos(m,R),g=prizeGeom(R,G.F.pc),best=null,bd=1e9;if(G.F.prac)P={x:gx(R,m.u)};
   m.ps.forEach(function(p){if(p.st!=='stand')return;var d=gx(R,p.u)-P.x;if(Math.abs(d)<Math.abs(bd)){bd=d;best=p}});
   var tol=g.sw*.3;m.nearMsg=null;m.held=null;
   if(best&&Math.abs(bd)<tol){m.held=best;best.st='grab'}
   else{G.miss++;if(best&&Math.abs(bd)<g.sw*.85){var mm=Math.max(1,Math.round((Math.abs(bd)-tol)/g.sw*60));m.nearMsg='あと '+mm+'mm '+(bd>0?'右 ▶':'◀ 左');m.nearX=P.x}else{m.nearMsg='からぶり';m.nearX=P.x}}}
 function judge(p,mi){var o=curOrder(),R=MR[mi],ok=p.id===o.tid,x=R.gl.x+R.gl.w*.12,y=R.floorY-R.gl.h*.3;
   G.fx.push({k:'flip',p:p,ok:ok,x:x,y:y,t:0,life:ok?1.5:2.6,mi:mi});
-  if(ok){G.combo++;G.maxCombo=Math.max(G.maxCombo,G.combo);SFX.ok();confetti(x,y+40,mi);
+  if(ok&&G.F.prac){G.combo++;SFX.ok();confetti(x,y+40,mi);confetti(x,y+40,mi);G.shake=.35;G.okfl=.5;buzz([20,40,30]);if(window.Guide)Guide.cheer('ヨシ！ '+fmt(p.R)+'Ω',{x:x+60,y:y-60,size:1.2,sound:false});G.pracOK=1;G.state='done';var gp=G;setTimeout(function(){if(G===gp&&window.Guide)Guide.tutorialClear()},1500);return}
+  if(ok){G.combo++;G.maxCombo=Math.max(G.maxCombo,G.combo);SFX.ok();confetti(x,y+40,mi);confetti(x,y+40,mi);G.shake=.3;G.okfl=.45;buzz([20,40,30]);
+    if(window.Guide){var tier=TIERS.indexOf(G.combo);Guide.cheer(G.combo>1?'ヨシ！ ×'+G.combo:'ヨシ！',{x:x+60,y:y-60,size:1.1+Math.max(0,tier)*.2,sound:false});if(tier>=0)setTimeout(function(){SFX.tier(tier)},250)}
     if(G.firstFlag){G.first++;var z=Zk();if(z&&z.earn)z.earn(5,'first-try',{x:x,y:y})}
     G.state='wait';G.wait=RM?1.2:1.4;setTimeout(function(){gachaSpec(p)},650)}
-  else{G.combo=0;G.firstFlag=false;G.wrong++;SFX.bad();var w=o.type==='most'?(o.dir==='hard'?'もっと抵抗が大きい線がある':'もっと抵抗が小さい線がある'):(o.type==='same'?'「'+fmt(o.ref.V)+'÷'+fmt(o.ref.I)+'＝'+fmt(o.R)+'Ω」の線をさがそう':'注文は '+fmt(o.R)+'Ω');pop(mi,w,BLUE,x+80)}}
+  else{var lost=G.combo,nt=TIERS.filter(function(t){return t>lost})[0];if(lost>=2&&nt&&nt-lost===1&&window.Guide)setTimeout(function(){Guide.cheer('あと1回で ×'+nt+' だった！',{x:x+60,y:y-40,size:.8,sound:false})},500);G.combo=0;G.firstFlag=false;G.wrong++;SFX.bad();buzz([10,40,10]);var w=o.type==='most'?(o.dir==='hard'?'もっと抵抗が大きい線がある':'もっと抵抗が小さい線がある'):(o.type==='same'?'「'+fmt(o.ref.V)+'÷'+fmt(o.ref.I)+'＝'+fmt(o.R)+'Ω」の線をさがそう':'注文は '+fmt(o.R)+'Ω');pop(mi,w,BLUE,x+80)}}
 function pop(mi,t,col,x){var R=MR[LAND?mi:view()];G.msg.push({t:0,s:t,col:col,x:x||R.gl.x+R.gl.w/2,y:R.gl.y+R.gl.h*.34,mi:mi});if(G.msg.length>3)G.msg.shift()}
 function confetti(x,y,mi){if(RM)return;for(var i=0;i<22;i++){var a=Math.random()*Math.PI*2,s=180+Math.random()*320;G.fx.push({k:'bit',x:x,y:y,vx:Math.cos(a)*s,vy:Math.sin(a)*s-280,t:0,life:1+Math.random()*.5,col:rnd(PCOL),r:3+Math.random()*5,mi:mi})}}
 
@@ -2480,7 +2496,9 @@ function draw(){c.setTransform(DPR,0,0,DPR,0,0);c.clearRect(0,0,W,H);c.drawImage
   if(scene==='title'){drawTitleCab();return}
   if(scene!=='play'||!G)return;
   if(!LAND&&G.view!==bgView){paintBG()}
-  var list=LAND?[0,1]:[G.view];list.forEach(function(mi){drawMach(mi)});
+  c.save();if(G.shake>0&&!RM){G.shake=Math.max(0,G.shake-.016);c.translate((Math.random()-.5)*16*G.shake,(Math.random()-.5)*16*G.shake)}
+  var list=LAND?[0,1]:[G.view];list.forEach(function(mi){drawMach(mi)});c.restore();
+  if(G.okfl>0&&!RM){G.okfl=Math.max(0,G.okfl-.02);c.fillStyle='rgba(255,226,122,'+(G.okfl*.35)+')';c.fillRect(0,0,W,H)}
   drawTicket();
   G.fx.forEach(function(f){if(f.k==='bit'&&(f.mi<0||LAND||f.mi===G.view)){c.globalAlpha=Math.max(0,1-f.t/f.life);ball(c,f.x,f.y,f.r,col3(f.col),{noShadow:1});c.globalAlpha=1}});
   G.fx.forEach(function(f){if(f.k==='flip'&&(LAND||f.mi===G.view))drawFlip(f)});
@@ -2492,7 +2510,7 @@ function drawMach(mi){var R=MR[mi],m=G.m[mi],C=MC[mi],F=G.F;
   var lamps=10,on=Math.floor(T*6)%3;for(var i=0;i<lamps;i++){var lx=R.mq.x+18+i*(R.mq.w-36)/(lamps-1),ly=R.mq.y+8;ball(c,lx,ly,4.5,{c:(i%3===on)?'#FFE27A':'#FFF6EC',l:'#fff',d:'#D9B3A0'},{noShadow:1})}
   var fs=Math.max(15,Math.min(24,R.mq.h*.36)),cy=R.mq.y+R.mq.h*.58;
   ctext(c,(mi+1)+'ごうき',R.mq.x+20,cy,fs,C.d,{a:'left'});
-  var info=(G.fi+1)+'F '+F.n;var right='';
+  var info=F.prac?F.n:(G.fi+1)+'F '+F.n;var right='';
   if(!LAND||mi===1){var z=Zk(),kk=z&&z.state?z.state().kakera:null;right='連続ヨシ×'+G.combo+(kk!=null?'　かけら '+kk:'')}
   if(F.boss)right=(LAND&&mi===0?'':right+'　')+'のこり '+Math.ceil(G.left)+'秒';
   if(LAND){ctext(c,mi===0?info:right,R.mq.x+R.mq.w-20,cy,Math.max(14,fs*.8),INK,{a:'right',max:R.mq.w*.62})}
@@ -2598,7 +2616,12 @@ function clearFloor(){var g=G,fi=g.fi,st=[1,g.wrong===0?1:0,g.miss===0?1:0];G.st
   $('cStars').innerHTML=st.map(function(v){return'<i class="'+(v?'on':'')+'">★</i>'}).join('');
   $('cRec').innerHTML='<span>一発で見ぬいた <b>'+g.first+' / '+g.orders.length+'</b></span><span>最大連続ヨシ <b>'+g.maxCombo+'</b></span><span>タイム <b>'+fmtT(g.t)+'</b></span>';
   $('cNext').textContent=g.F.boss?'確認テストへ':'上の階へ';
-  setTimeout(function(){if(G===g&&scene==='play')showOv('ovClear')},RM?300:900)}
+  setTimeout(function(){if(G===g&&scene==='play'){showOv('ovClear');var sp=[].slice.call($('cStars').children);sp.forEach(function(e,i){e.classList.add('st');setTimeout(function(){if(G!==g)return;e.classList.add('in');if(st[i]){SFX.stamp(i);buzz(18)}else tone(200,.12,'triangle',.05)},RM?0:350+i*400)});
+    setTimeout(function(){if(G===g)bigConfetti()},RM?0:350+3*400)}},RM?300:900)}
+function bigConfetti(){if(RM)return;for(var i=0;i<56;i++){var d=document.createElement('div');d.className='tscf';var q=d.style;q.left=(Math.random()*100).toFixed(1)+'vw';
+  q.setProperty('--w',(8+Math.random()*10|0)+'px');q.setProperty('--c',PCOL[i%PCOL.length]);
+  q.setProperty('--dx',((Math.random()-.5)*180|0)+'px');q.setProperty('--t',(1.7+Math.random()*1.2).toFixed(2)+'s');q.setProperty('--d',(Math.random()*.4).toFixed(2)+'s');
+  document.body.appendChild(d);(function(n){setTimeout(function(){if(n.parentNode)n.parentNode.removeChild(n)},3600)})(d)}}
 function failFloor(why){if(!G||G.state==='fail'||G.state==='clear')return;G.state='fail';SV.ms+=Math.round(G.t*1000);save();SFX.bad();
   $('xTitle').textContent=why;$('xSub').innerHTML='注文 '+G.oi+' / '+G.orders.length+' 件までできた。<br>まちがった線を運ぶと、クレジットが1回分むだになる。札は全部割り算してから。';var gg=G;setTimeout(function(){if(G===gg&&scene==='play')showOv('ovFail')},500)}
 function fmtT(s){s=Math.round(s);return Math.floor(s/60)+'分'+('0'+s%60).slice(-2)+'秒'}
@@ -2615,10 +2638,12 @@ function showOv(id){$(id).classList.remove('hidden')}
 function hideOv(id){$(id).classList.add('hidden')}
 function hideAllOv(){OVS.forEach(hideOv);closeGacha()}
 var INHUB=!!window.COLLECTION_NAME||(function(){try{return window.parent!==window}catch(e){return true}})();
-function backBtn(){var b=$('bBack'),on=scene==='play'||scene==='map'||scene==='test'||scene==='end'||(scene==='title'&&INHUB);b.classList.toggle('hidden',!on);b.innerHTML='<b>◀</b>'+(scene==='title'?'一覧へ':'もどる')}
+function backBtn(){var b=$('bBack'),on=scene==='play'||scene==='map'||scene==='test'||scene==='end'||(scene==='title'&&INHUB);b.classList.toggle('hidden',!on);b.innerHTML='<b>◀</b>'+(scene==='title'?'一覧へ':'もどる');
+  if(HELP){if(scene==='play'||scene==='map')HELP.show();else HELP.hide()}}
 var backFrom=null;
 $('bBack').onclick=function(){ac();
   if(scene==='title'){try{window.parent.postMessage({type:'rika-close-game'},'*')}catch(e){}return}
+  if(scene==='play'&&G&&G.F.prac){if(window.Guide)Guide.tutorialEnd();G=null;setScene('title');return}
   backFrom=scene;if(G)G.paused=true;
   $('bkSub').textContent=scene==='test'?'確認テストは、次はさいしょから。館内の進み具合は保存されています。':scene==='play'?'進み具合は保存されます（クリアした階と★はそのまま。この階は次にはじめから）。':'進み具合は保存されます。';
   $('bkGo').textContent=scene==='play'||scene==='test'||scene==='end'?'館内マップへ':'タイトルへ';showOv('ovBack')};
@@ -2630,7 +2655,7 @@ function setScene(s){scene=s;hideAllOv();
 function layoutDom(){$('scrTitle').classList.toggle('land',LAND);$('scrMap').classList.toggle('port',!LAND);$('tWrap').classList.toggle('port',W<860)}
 $('pGo').onclick=function(){hideOv('ovPause');if(G)G.paused=false};
 $('bMute').onclick=function(){muted=!muted;try{localStorage.setItem(SKEY+':mute',muted?'1':'0')}catch(e){}$('bMute').textContent=muted?'🔇':'🔊';if(!muted)tone(880,.1,'triangle',.06)};
-document.addEventListener('visibilitychange',function(){if(document.hidden&&scene==='play'&&G&&G.state==='play'){G.paused=true;showOv('ovPause')}});
+document.addEventListener('visibilitychange',function(){if(document.hidden&&scene==='play'&&G&&G.state==='play'&&!G.F.prac){G.paused=true;showOv('ovPause')}});
 
 /* 館内マップ */
 function renderMap(){var box=$('floors');box.innerHTML='';
@@ -2650,7 +2675,34 @@ function openGacha(){var z=Zk();if(z&&z.openGacha)z.openGacha()}
 $('bBook1').onclick=openBook;$('bBook2').onclick=openBook;$('eBook').onclick=openBook;$('bGacha1').onclick=openGacha;$('bGacha2').onclick=openGacha;
 if(!Zk()){['bBook1','bBook2','bGacha1','bGacha2','eBook'].forEach(function(id){$(id).classList.add('hidden')})}
 function getName(){return(window.PLAYER_NAME||$('nameIn').value||SV.name||'').trim()}
-$('bStart').onclick=function(){ac();SV.name=$('nameIn').value.trim()||SV.name;save();if(SV.unl<=1&&!SV.stars[0])startFloor(0);else setScene('map')};
+function startPractice(){ac();var F=PFL,want=LAND?0:1;
+  G={fi:0,F:F,prac:1,oi:0,orders:[],coins:9,combo:0,maxCombo:0,first:0,miss:0,wrong:0,t:0,left:0,m:[mkMach(),mkMach()],view:0,act:0,state:'play',firstFlag:true,fx:[],msg:[],wait:0,paused:false};
+  var o=null;while(!o)o=genOrder(F,'ohm',null);
+  var inA=o.mach[want].some(function(p){return p.id===o.tid});if(!inA){var from=o.mach[1-want],ti=0;for(var i=0;i<from.length;i++)if(from[i].id===o.tid)ti=i;var tmp=from[ti];from[ti]=o.mach[want][1];o.mach[want][1]=tmp}
+  G.orders.push(o);setScene('play');dealOrder();paintBG();
+  var tp=o.mach[want].filter(function(p){return p.id===o.tid})[0],tag='「'+fmt(tp.V)+'V で '+iStr(tp)+'」',calc=fmt(tp.V)+'÷'+fmt(tp.mA?tp.I:tp.I)+'＝**'+fmt(tp.R)+'Ω**';
+  var st=PRACTICE.steps;st[0].skip=LAND;st[1].text='注文は **'+fmt(o.R)+'Ω**。札 '+tag+' → '+calc+'！ この景品の上へ アームを動かそう';
+  PRACTICE.steps=st.filter(function(q){return !q.skip||!LAND})}
+function knobPt(mi){var R=MR[mi],m=G.m[mi];return{x:R.sl.x+Math.max(0,Math.min(1,(m.tu-.03)/.955))*R.sl.w,y:R.sl.y,r:Math.max(24,Math.min(30,R.pn.h*.16))}}
+function slotPt(mi,u){var R=MR[mi];return{x:R.sl.x+Math.max(0,Math.min(1,(u-.03)/.955))*R.sl.w,y:R.sl.y,r:Math.max(24,Math.min(30,R.pn.h*.16))}}
+function tgMi(){var t=G&&pracTarget();return t?t.mi:0}
+function playArea(){var mi=tgMi(),R=MR[mi],top=prizeGeom(R,G.F.pc).top-14,bot=R.pn.y+R.pn.h;return{x:R.gl.x+R.gl.w/2,y:(top+bot)/2,w:R.gl.w+16,h:bot-top}}
+var PSTEPS=[
+    {gesture:'tap',target:function(){var tb=tabRect(MR[0]);return{x:tb.x+tb.w/2,y:tb.y+tb.h/2,w:tb.w+8,h:tb.h+8}},until:function(){return !!(G&&G.F.prac&&G.view===1)},praise:'2ごうき！',
+      text:'注文の線は **となりの台** にある。**2ごうきへ** をタップ'},
+    {gesture:'drag',target:function(){return knobPt(tgMi())},to:function(){var t=pracTarget();return t?slotPt(t.mi,t.p.u):knobPt(0)},area:playArea,
+      until:function(){var t=G&&pracTarget();if(!t)return false;var m=G.m[t.mi],R=MR[t.mi];return m.st==='idle'&&Math.abs(m.u-t.p.u)<.3*slotW(R,G.F.pc)/R.gl.w},praise:'真上！',text:''},
+    {gesture:'tap',target:function(){var b=MR[tgMi()].btn;return{x:b.x,y:b.y,r:b.r*1.1}},area:playArea,until:function(){return !!(G&&G.pracOK)},praise:false,
+      text:'真上に来たら **つかむ**！ 札が裏返って Ω が光る'}];
+var PRACTICE={start:function(){PRACTICE.steps=PSTEPS.slice();startPractice()},label:'れんしゅう中',clearOn:'manual',clearText:'れんしゅうクリア！',steps:PSTEPS.slice(),
+  onExit:function(res){if(res&&(res.stopped||res.replaced))return;PDONE=true;if(SV.unl<=1&&!SV.stars[0])startFloor(0);else setScene('map')}};
+var INTRO={title:'第10回 抵抗キャッチャー',learn:'電気抵抗は **電圧 ÷ 電流**（単位 Ω）で求められる',
+  how:'札を割り算して注文のΩを見ぬき、アームを **動かして**「つかむ」',gesture:'drag'};
+var busy=false;
+$('bStart').onclick=function(){if(busy)return;ac();SV.name=$('nameIn').value.trim()||SV.name;save();var first=SV.unl<=1&&!SV.stars[0];
+  var go=function(){busy=false;if(!first)setScene('map');else if(window.Guide)Guide.tutorial(PRACTICE);else startFloor(0)};
+  if(window.Guide){busy=true;Guide.intro(INTRO).then(go)}else go()};
+if(window.Guide)Guide.tutorialButton('#bHow',function(){ac();Guide.tutorial(PRACTICE)});else $('bHow').classList.add('hidden');
 $('bCont').onclick=function(){ac();SV.name=$('nameIn').value.trim()||SV.name;save();setScene('map')};
 
 /* ---------------- 確認テスト ---------------- */
@@ -2695,6 +2747,18 @@ function frame(now){var dt=Math.min(.05,(now-last)/1000);last=now;T+=dt;
   draw();requestAnimationFrame(frame)}
 
 /* ---------------- はじまり ---------------- */
+var HELP=null;
+if(window.Guide){
+  Guide.setup({theme:{bg:'#FFF6EC',fg:'#5A2E24',accent:'#E26D5A',accentText:'#FFFFFF',font:FK,bodyFont:FK,radius:26,texture:'dots',line:'#E3C4B3',
+      dim:'rgba(90,46,36,.4)',shadow:'inset 0 5px 4px rgba(255,255,255,.7), inset 0 -8px 12px rgba(150,80,60,.18), 0 10px 0 #DDB6A3, 0 18px 26px rgba(130,50,40,.22)',outline:'#FFF6EC',hand:'#FFF6EC',handLine:'#5A2E24'},
+    sfx:function(k){if(k==='step')SFX.coin();else if(k==='done')SFX.ok();else if(k==='clear')SFX.clear();else if(k==='open'||k==='close')SFX.squish();else if(k==='cheer')SFX.coin();else if(k==='nudge')SFX.tick()},
+    muted:function(){return muted}});
+  HELP=Guide.help({title:INTRO.title,learn:INTRO.learn,how:INTRO.how,size:46,offset:{x:62,y:2},show:false,attention:true,replay:'tutorial',
+    rules:['札の **電圧 ÷ 電流** ＝ 抵抗（Ω）。「5V」の数字はΩではない','**mA は A に直して**から割る（150mA＝0.15A）','同じ電熱線なら 電圧を変えても 電圧÷電流 は同じ',
+      'アームは動かすと揺れる。止まってから **つかむ**。まちがった線を運ぶと 連続ヨシが切れる'],
+    onOpen:function(){if(scene==='play'&&G&&!G.paused){G.paused=true;G.hp=1}},
+    onClose:function(){if(G&&G.hp){G.hp=0;G.paused=false}}});
+}
 mkNoise();window.addEventListener('resize',resize);resize();
 if(document.fonts&&document.fonts.ready)document.fonts.ready.then(function(){paintBG()});
 window.Zukan&&Zukan.setup&&Zukan.setup({game:GID,koma:[KOMA]});
@@ -2703,7 +2767,7 @@ if(!(SV.unl>1||SV.stars[0]))$('bCont').classList.add('hidden');
 if(TEST)startTest();else setScene('title');
 requestAnimationFrame(frame);
 /* 自動操作の確かめ用（遊びには影響しない） */
-window.__TS={G:function(){return G},start:startFloor,grab:grab,SV:function(){return SV},scene:function(){return scene},MR:function(){return MR},
+window.__TS={G:function(){return G},tab:function(){return tabRect(MR[0])},start:startFloor,grab:grab,SV:function(){return SV},scene:function(){return scene},MR:function(){return MR},
   aimTarget:function(){var o=curOrder();for(var mi=0;mi<2;mi++){var p=G.m[mi].ps.filter(function(p){return p.id===o.tid})[0];if(p)return{mi:mi,u:p.u}}return null},
   aimWrong:function(){var o=curOrder();for(var mi=0;mi<2;mi++){var p=G.m[mi].ps.filter(function(p){return p.id!==o.tid&&p.st==='stand'})[0];if(p)return{mi:mi,u:p.u}}return null},
   go:function(){hideOv('ovFloor');G.state='play'},gen:genOrder,FL:FL};

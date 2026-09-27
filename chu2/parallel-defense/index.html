@@ -212,7 +212,15 @@ h1.tt .t2{font:400 clamp(46px,13.4vw,112px) var(--fh);color:var(--or);text-shado
   #scrEnd .pnl{max-width:900px;display:grid;grid-template-columns:1fr 1fr;gap:10px 36px;align-items:center;padding:30px 34px}
   .big{font-size:110px}
 }
-@media (prefers-reduced-motion:reduce){.tag:active,.burst:active{transform:none}#toast{transition:none}}
+/* 仕上げ 2026-09-28（pd-finish-2026-09-28）: ★のドン・ドン・ドン／紙吹雪／ボタンの沈み */
+#resStars span.st{display:inline-block;opacity:0;transform:skewX(-11deg) scale(2.6) rotate(-14deg)}
+#resStars span.st.on{opacity:1;transform:skewX(-11deg);transition:transform .34s cubic-bezier(.2,1.9,.4,1),opacity .08s}
+#resStars span.st.got{background:#D9A441;box-shadow:3px 3px 0 #2B2A28}
+.pdcf{position:fixed;top:-18px;z-index:45;pointer-events:none;width:var(--w);height:var(--h);background:var(--c);clip-path:var(--cp,none);animation:pdcf var(--t) cubic-bezier(.3,.2,.6,1) var(--d) forwards}
+@keyframes pdcf{to{transform:translate(var(--dx),108vh) rotate(var(--r))}}
+.tag,.burst,#bBack,#bMute{transition:transform .08s}
+#bMute:active{transform:translate(2px,2px) scale(.94)}
+@media (prefers-reduced-motion:reduce){.tag:active,.burst:active{transform:none}#toast{transition:none}.pdcf{display:none}#resStars span.st{opacity:1;transform:skewX(-11deg)}}
 </style>
 </head>
 <body>
@@ -228,7 +236,7 @@ h1.tt .t2{font:400 clamp(46px,13.4vw,112px) var(--fh);color:var(--or);text-shado
   <div class="tbtns">
     <div class="entry pe" id="nmRow"><label for="nameIn">ドライバー</label><input id="nameIn" maxlength="16" placeholder="なまえ（なくてもOK）" autocomplete="off"></div>
     <div class="startrow"><button class="burst spin" id="bStart"><span><small>START</small>はじめる</span></button>
-      <div class="note">レバーで<b>直列⇄並列</b>。<br>看板の電圧を読んで<br>2台を走らせよう。</div></div>
+      <button class="tag cr" id="bHow"><span>🏁 あそびかた</span></button></div>
     <div class="row"><button class="tag" id="bCont"><span>つづきから</span></button><button class="tag mu" id="bBook1"><span>📖 図鑑</span></button></div>
   </div>
 </div>
@@ -2354,8 +2362,11 @@ var SFX={
   fan:function(){[523,659,784,1047,988,1047].forEach(function(f,i){vib(f,i*.11,.08)})},
   buy:function(){noise(.05,.2,3000);vib(1319,.02,.06)},
   nope:function(){tone(220,.2,'triangle',.1,0,180)},
-  rule:function(){[784,988,1175,1568].forEach(function(f,i){vib(f,i*.09,.09)})}
+  rule:function(){[784,988,1175,1568].forEach(function(f,i){vib(f,i*.09,.09)})},
+  stamp:function(i){tone(150,.24,'sine',.26,0,55);noise(.08,.18,500,0,1);vib([659,784,1047][i%3],.03,.08)},
+  tier:function(n){[523,659,784,1047,1319].slice(0,2+Math.min(3,n)).forEach(function(f,i){vib(f,i*.06,.08)})}
 };
+function buzz(p){try{if(navigator.vibrate)navigator.vibrate(p)}catch(e){}}
 var ENG=null;
 function engStart(){var a=ac();if(!a||ENG)return;try{var g=a.createGain();g.gain.value=0;var f=a.createBiquadFilter();f.type='lowpass';f.frequency.value=700;f.Q.value=3;f.connect(g);g.connect(a.destination);
   var o1=a.createOscillator(),o2=a.createOscillator();o1.type='sawtooth';o2.type='square';o1.connect(f);o2.connect(f);o1.start();o2.start();ENG={g:g,o1:o1,o2:o2,f:f}}catch(e){ENG=null}}
@@ -2388,6 +2399,7 @@ var ST=[
  {n:'グランプリ決勝',E0:4.5,laps:4,plan:['BCLC','TWJC','LcBC','WCTC'],mot:'diff',lamp:1,rain:1,jmin:7.5,boss:1,
   tip:'チャンピオンのタイムに勝てば優勝。これまでの看板が全部出る。'}
 ];
+var PRAC={n:'れんしゅう走行',E0:3.0,laps:1,plan:['BCL-'],lamp:1,prac:1};
 var ZN={B:'スターゲート',C:'ヘアピン',c:'ゆるいカーブ',W:'水たまり',T:'フォトゲート',L:'トンネル',J:'ジャンプ台'};
 function stE(si){return ST[si].E0+1.5*SV.upS}
 
@@ -2570,7 +2582,7 @@ function drawBoard(g){var B=R.board;
   for(var i=0;i<cnt;i++){var val=i<2?carV(g,i):(g.lampEff?g.E:0),lab=i===0?'A車'+(g.mot==='diff'?'(重)':''):i===1?'B車'+(g.mot==='diff'?'(軽)':''):'ライト';
     drawMeter(M.x+i*(mw+gap),M.y,mw,M.h,val,g.nd[i],lab,'15V端子',g.needle,false)}
   /* レバー */
-  var L=R.lever,kx=lerp(L.x+L.h*.42,L.x+L.w-L.h*.42,g.kpos);
+  var L=R.lever,kx=lerp(L.x+L.h*.42,L.x+L.w-L.h*.42,g.kpos)+(PD&&!RM?Math.sin(T*70)*1.6:0);
   c.fillStyle=K.tld;rr(L.x,L.y,L.w,L.h,[L.h*.4,8,L.h*.4,8]);c.fill();
   var hw=L.w*.36,lx=L.x+10,rx=L.x+L.w-10-hw,py=L.y+L.h*.16,ph=L.h*.3;
   c.fillStyle=g.cfg==='S'?K.mu:'rgba(217,164,65,.35)';rr(lx,py,hw,ph,4);c.fill();c.fillStyle=g.cfg==='P'?K.or:'rgba(232,106,51,.35)';rr(rx,py,hw,ph,4);c.fill();
@@ -2587,16 +2599,16 @@ function drawBoard(g){var B=R.board;
   /* チケット・かけら */
   var tk='🎟 '+(SV.tick+g.tick)+(KAK!=null&&Zk()?'　◆かけら '+KAK:'');
   if(R.head)txt(tk,R.head.x+R.head.w-44,R.head.y+42,13,K.mu,'right',FH);
-  if(R.foot){txt(tk,R.foot.x+4,R.foot.y+R.foot.h/2,12,K.mu,'left');txt(ST[g.si].n,R.foot.x+R.foot.w-4,R.foot.y+R.foot.h/2,12,'rgba(251,244,230,.6)','right')}
+  if(R.foot){txt(tk,R.foot.x+4,R.foot.y+R.foot.h/2,12,K.mu,'left');txt(g.S.n,R.foot.x+R.foot.w-4,R.foot.y+R.foot.h/2,12,'rgba(251,244,230,.6)','right')}
 }
 
 /* ---------------- レース ---------------- */
 var KAK=null;function refreshK(){try{var z=Zk();KAK=z&&z.state?(z.state().kakera||0):null}catch(e){KAK=null}}
-function newRace(si,sim){var S=ST[si],E=stE(si);
+function newRace(si,sim,prac){var S=prac?PRAC:ST[si],E=prac?PRAC.E0:stE(si);
   var g={si:si,S:S,E:E,laps:S.laps,mot:S.mot||'same',lamp:!!S.lamp,hide:!!S.hide,needle:!!S.needle,rain:!!S.rain,tut:!!S.tut,sim:!!sim,
     cfg:'S',cfgEff:'S',lag:0,lampOn:false,lampEff:false,llag:0,kpos:0,nd:[0,0,0],nv:[0,0,0],state:'pit',cd:0,t:0,
     cars:[{S:0,v:0,st:'run',fin:null,slow:0},{S:0,v:0,st:'run',fin:null,slow:0}],zones:[],combo:0,maxCombo:0,tick:0,ok:0,ng:0,slow:0,trace:[],trT:0,fx:[],fl:[],tutStep:0,naShown:0};
-  g.zones=buildZones(g,sim?g.seed:null);return g}
+  g.prac=!!prac;g.zones=buildZones(g,sim?g.seed:null);if(prac)g.zones.forEach(function(z){if(z.t==='B')z.min=g.E;if(z.t==='C')z.lim=2.0});return g}
 function buildZones(g){var P=PATH,zs=[],E=g.E,vsM=g.mot==='diff'?E*2/3:E/2,seed=rng(g.si*977+13);
   for(var lap=0;lap<g.laps;lap++){var pl=g.S.plan[lap]||'----';for(var k=0;k<4;k++){var ch=pl.charAt(k);if(!ch||ch==='-')continue;
     var a=P.segS[k][0],b=P.segS[k][1],L=b-a,z={t:ch,lap:lap,k:k,c:[null,null],st:null,id:zs.length};
@@ -2616,8 +2628,10 @@ function zoneLabel(z,g){if(z.t==='B'||z.t==='J')return vs(z.min)+'V以上';if(z.
 function nextZone(g){if(g.state==='pit'||g.state==='count'){var z0=g.zones[0];return z0?{z:z0,dt:9,warn:z0.hard||z0.t==='C'||z0.t==='W'}:null}
   var best=null;[g.cars[0]].forEach(function(car,i){if(car.fin!=null)return;g.zones.forEach(function(z){var e=z.s1!=null?z.s1:z.p;if(e<car.S||z.c[i]==='ok'||z.c[i]==='ng'||z.c[i]==='na')return;var d=zA(z)-car.S,dt=d/Math.max(car.v,.004);if(!best||dt<best.dt)best={z:z,dt:Math.max(0,dt)}})});
   if(best)best.warn=best.z.hard||best.z.t==='W';return best}
-function setLever(g,v){if(g.cfg===v)return;g.cfg=v;g.lag=LAG;if(!g.sim){SFX.lever();if(g.tut&&v==='P'&&g.tutStep===0){g.tutStep=1;toast('並列！ どの車にも電源と同じ <b>'+vs(g.E)+'V</b>','good',2600)}}}
-function setLamp(g,on){if(g.lampOn===on)return;g.lampOn=on;g.llag=.15;if(!g.sim)SFX.sw()}
+function pracNeed(g,z){if(z.t==='B'||z.t==='T')return g.cfgEff==='P';if(z.t==='L')return g.lampEff;if(z.hard||z.t==='C'||z.t==='W')return g.cfgEff==='S';return true}
+function pracCap(g,car){for(var j=0;j<g.zones.length;j++){var z=g.zones[j];if(z.c[0]!=null)continue;var a=zA(z);if(a<car.S-1e-6)continue;return pracNeed(g,z)?null:a-.014}return null}
+function setLever(g,v){if(g.cfg===v)return;g.cfg=v;g.lag=LAG;if(!g.sim){SFX.lever();buzz(8);if(g.tut&&v==='P'&&g.tutStep===0){g.tutStep=1;toast('並列！ どの車にも電源と同じ <b>'+vs(g.E)+'V</b>','good',2600)}}}
+function setLamp(g,on){if(g.lampOn===on)return;g.lampOn=on;g.llag=.15;if(!g.sim){SFX.sw();buzz(8)}}
 function autoPilot(g){var needS=false,needP=false,needL=false;
   [g.cars[0]].forEach(function(car,i){if(car.fin!=null||car.st==='off')return;var look=Math.max(car.v,g.E*KS*.45)*(LAG+.28)+.006;
     g.zones.forEach(function(z){var a=zA(z),b=z.s1!=null?z.s1:z.p;if(b<car.S-1e-6||a>car.S+look)return;
@@ -2633,7 +2647,9 @@ function step(g,dt){
   for(var i=0;i<2;i++){var car=g.cars[i];if(car.fin!=null)continue;all=false;var V=carV(g,i);
     if(car.st==='off'){car.ot-=dt;if(car.ot<=0){car.st='run';car.S=car.resS;car.v=0}continue}
     var tg=V*KS;if(i===1&&g.cfgEff==='P'&&g.cars[0].S-car.S>.012){tg*=2.1;car.slip=1}else car.slip=0;if(car.slow>0){car.slow-=dt;tg*=.3}if(car.dark)tg*=.22;if(car.st==='fly')tg*=1.9;
+    var cap=g.prac&&i===0?pracCap(g,car):null;
     car.v+=(tg-car.v)*Math.min(1,dt*(tg>car.v?3.2:6));var p=car.S;car.S+=car.v*dt;car.dark=false;
+    if(cap!=null&&car.S>cap){car.S=Math.max(p,cap);car.v=0;g.hold=1}else if(i===0)g.hold=0;
     if(i===0)zones(g,i,p,car.S,V);else{var A=g.cars[0];car.dark=A.dark&&Math.abs(A.S-car.S)<.05;if(A.st==='fly'&&car.st!=='fly'&&Math.abs(A.S-car.S)<.03){car.st='fly';car.land=A.land}if(car.S>A.S&&A.st!=='off')car.S=Math.min(car.S,A.S+.002)}
     if(car.st==='fly'&&car.S>=car.land){car.st='run';if(!g.sim){SFX.land();var lp=at(PATH,car.S%1,laneOff(PATH,i));burst(g,lp.x,lp.y,K.mu,10)}}
     if(car.S>=g.laps&&car.fin==null){car.fin=g.t;if(!g.sim)SFX.flag()}}
@@ -2662,16 +2678,21 @@ function crash(g,i,z,V){var car=g.cars[i];car.st='off';car.ot=1.5;car.resS=z.s1+
 function settle(g,z,force){if(z.st&&z.st!=='pend')return;var v0=z.c[0],done=v0==='ok'||v0==='ng'||v0==='na'||v0==='ngx';
   var anyNg=v0==='ng'||v0==='ngx';if(!done&&!(force&&anyNg))return;
   var na=v0==='na';z.st=anyNg?'ng':na?'na':(z.t==='c'&&!z.hard&&z.gSlow)?'slow':'ok';
-  if(z.st==='ok'){g.ok++;g.combo++;g.maxCombo=Math.max(g.maxCombo,g.combo);g.tick+=1+(g.combo>=5?1:0)}else if(z.st==='ng'){g.ng++;g.combo=0}else if(z.st==='slow')g.slow++;
+  var lost=g.combo;if(z.st==='ok'){g.ok++;g.combo++;g.maxCombo=Math.max(g.maxCombo,g.combo);g.tick+=1+(g.combo>=5?1:0)}else if(z.st==='ng'){g.ng++;g.combo=0}else if(z.st==='slow')g.slow++;
   if(g.sim)return;
   var car=g.cars[0],pp=at(PATH,car.S%1,0);
-  if(z.st==='ok'){SFX.ok(g.combo);float(g,pp.x,pp.y-26,okLabel(z,g)+(g.combo>1?'  ×'+g.combo:''),K.tl);
+  if(z.st==='ok'){SFX.ok(g.combo);float(g,pp.x,pp.y-26,okLabel(z,g)+(g.combo>1?'  ×'+g.combo:''),K.tl,1);
+    float(g,pp.x+34,pp.y-4,'+'+(g.combo>=5?2:1)+'🎟',K.or,0);burst(g,pp.x,pp.y,K.mu,14);g.shake=Math.max(g.shake||0,.16+Math.min(g.combo,8)*.03);g.okfl=.22;buzz(12);
+    if(TIERS.indexOf(g.combo)>=0){SFX.tier(TIERS.indexOf(g.combo));if(window.Guide)Guide.cheer('コンボ ×'+g.combo+'！',{x:R.track.x+R.track.w/2,y:R.path.y+R.path.h*.3,size:1+TIERS.indexOf(g.combo)*.15,sound:false})}
     if(z.t==='T')toast('パシャ！ そろって <b>'+vs(g.E)+'V</b>。抵抗がちがっても 並列なら同じ電圧','good',2400);
     if((z.hard||z.t==='C'||z.t==='W')&&g.lampEff&&g.lamp&&!SV.rule.b){SV.rule.b=1;save();earn(30,'rule');ruleToast('規則発見！ ライトの枝を並列に足しても、<b>車の電圧は変わらない</b>')}}
-  else if(z.st==='ng'){float(g,pp.x,pp.y-26,'ミス',K.or);toast(z.why||'','',3000)}
+  else if(z.st==='ng'){float(g,pp.x,pp.y-26,'ミス',K.or,1);toast(z.why||'','',3000);buzz([10,40,10]);
+    var nt=TIERS.filter(function(t){return t>lost})[0];if(lost>=2&&nt&&nt-lost===1&&window.Guide)setTimeout(function(){Guide.cheer('あと1回で ×'+nt+' だった！',{x:R.track.x+R.track.w/2,y:R.path.y+R.path.h*.42,size:.8,sound:false})},350)}
   else if(z.st==='slow'){float(g,pp.x,pp.y-26,'もったいない',K.mu);toast('ゆるいカーブは '+vs(z.lim)+'Vまで。並列のまま（'+(g.hide?'電源と同じ':vs(g.E)+'V')+'）で走れた','',2400)}}
+var TIERS=[3,5,8,12];
 function okLabel(z,g){if(z.t==='B')return'ゲート全開';if(z.t==='J')return'ジャンプ！';if(z.t==='T')return'写った！';if(z.t==='L')return'ライト点灯';if(z.t==='c'&&!z.hard)return'全開';return'セーフ'}
 function finish(g){if(g.state==='done')return;g.state='done';if(g.sim){g.time=g.t;return}engStop();
+  if(g.prac){setTimeout(function(){if(G===g&&window.Guide)Guide.tutorialClear()},450);return}
   var tm=g.t,si=g.si,judged=g.ok+g.ng+g.slow,st=[1,g.ng===0?1:0,tm<=g.target?1:0],prev=SV.best[si];
   var boss=g.S.boss,win=!boss||tm<=g.target;
   if(win){var old=SV.stars[si]||[0,0,0];SV.stars[si]=[1,old[1]||st[1],old[2]||st[2]];SV.unl=Math.max(SV.unl,Math.min(ST.length,si+2))}
@@ -2688,9 +2709,14 @@ function ideal(si){var g=newRace(si,true);g.state='run';var n=0;while(g.state!==
 
 /* ---------------- 演出 ---------------- */
 function burst(g,x,y,col,n,big){for(var i=0;i<n;i++){var a=Math.random()*6.28,v=60+Math.random()*(big?220:140);g.fx.push({x:x,y:y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,l:.5+Math.random()*.4,m:.9,col:Math.random()<.5?col:K.mu})}if(big)g.fx.push({x:x,y:y,st:1,l:.5,m:.5})}
-function float(g,x,y,s,col){g.fl.push({x:x,y:y,s:s,col:col,l:1.3})}
+function float(g,x,y,s,col,big){g.fl.push({x:x,y:y,s:s,col:col,l:1.3,big:big})}
 var TT=null;function toast(html,cls,ms){var t=$('toast');t.className='on '+(cls||'');t.firstChild.innerHTML=html;t.style.top=(LM==='L'?70:R.track.h-12-64)+'px';t.style.left=(R.track.x+R.track.w/2)+'px';clearTimeout(TT);TT=setTimeout(function(){t.className=''},ms||2200)}
 function ruleToast(html){SFX.rule();toast(html,'rule',4200)}
+
+function confetti(){if(RM)return;var cols=[K.or,K.tl,K.mu,K.sal,K.cr];for(var i=0;i<56;i++){var d=document.createElement('div');d.className='pdcf';var st=d.style;st.left=(Math.random()*100).toFixed(1)+'vw';
+  st.setProperty('--w',(7+Math.random()*8|0)+'px');st.setProperty('--h',(9+Math.random()*12|0)+'px');st.setProperty('--c',cols[i%5]);if(i%4===0)st.setProperty('--cp','var(--burst)');
+  st.setProperty('--dx',((Math.random()-.5)*180|0)+'px');st.setProperty('--r',((Math.random()-.5)*900|0)+'deg');st.setProperty('--t',(1.7+Math.random()*1.2).toFixed(2)+'s');st.setProperty('--d',(Math.random()*.4).toFixed(2)+'s');
+  document.body.appendChild(d);(function(n){setTimeout(function(){if(n.parentNode)n.parentNode.removeChild(n)},3600)})(d)}}
 
 /* ---------------- 描く ---------------- */
 function drawRace(g,dt){var P=PATH;if(!BGC)buildBG();
@@ -2720,12 +2746,14 @@ function drawRace(g,dt){var P=PATH;if(!BGC)buildBG();
   /* 火花・文字 */
   g.fx=g.fx.filter(function(f){f.l-=dt;if(f.l<=0)return false;if(f.st){var k=1-f.l/f.m;atom(f.x,f.y,20+k*60,'rgba(232,106,51,'+(1-k)+')',16,2.5);return true}
     f.x+=f.vx*dt;f.y+=f.vy*dt;f.vx*=.92;f.vy*=.92;c.fillStyle=f.col;c.globalAlpha=clamp(f.l/f.m,0,1);c.beginPath();c.arc(f.x,f.y,3,0,7);c.fill();c.globalAlpha=1;return true});
-  g.fl=g.fl.filter(function(f){f.l-=dt;if(f.l<=0)return false;f.y-=dt*26;c.globalAlpha=clamp(f.l*1.5,0,1);c.font='400 17px '+FH;c.textAlign='center';c.textBaseline='middle';c.lineWidth=5;c.strokeStyle=K.cr;c.strokeText(f.s,f.x,f.y);c.fillStyle=f.col;c.fillText(f.s,f.x,f.y);c.globalAlpha=1;return true});
+  g.fl=g.fl.filter(function(f){f.l-=dt;if(f.l<=0)return false;f.y-=dt*26;c.globalAlpha=clamp(f.l*1.5,0,1);var ag=1.3-f.l,sc=RM?1:ag<.12?.5+ag/.12*.95:ag<.26?1.45-(ag-.12)/.14*.45:1;c.font='400 '+Math.round((f.big?22:15)*sc)+'px '+FH;c.textAlign='center';c.textBaseline='middle';c.lineWidth=5;c.strokeStyle=K.cr;c.strokeText(f.s,f.x,f.y);c.fillStyle=f.col;c.fillText(f.s,f.x,f.y);c.globalAlpha=1;return true});
   if(g.photo){g.photo.t-=dt;var ph=g.photo;if(ph.t<=0)g.photo=null;else{var pw=Math.min(210,R.track.w*.46),phh=pw*.62,px=R.track.x+R.track.w-pw-16,py=R.path.y+8;c.save();c.translate(px+pw/2,py+phh/2);c.rotate(.06);
     c.fillStyle=K.cr;c.fillRect(-pw/2-6,-phh/2-6,pw+12,phh+30);c.fillStyle=ph.ok?K.tl:'#6B665E';c.fillRect(-pw/2,-phh/2,pw,phh);atom(0,0,phh*.45,'rgba(251,244,230,.35)',12);
     car(-pw*.15,-phh*.18,0,K.or,'6',1.3,ph.ok?1:.8);car(ph.ok?-pw*.15:pw*.12,phh*.18,0,K.tl2,'2',1.3,ph.ok?1:.8);
     txt(ph.ok?'そろった！':'ブレた…',0,phh/2+12,14,K.ch,'center');txt('A '+vs(ph.v[0])+'V ／ B '+vs(ph.v[1])+'V',0,-phh/2+12,11,K.cr,'center',FL);c.restore()}}
   if(g.flash>0){g.flash-=dt;c.fillStyle='rgba(255,255,255,'+(g.flash*2)+')';c.fillRect(R.track.x,R.track.y,R.track.w,R.track.h)}
+  if(g.okfl>0&&!RM){g.okfl-=dt;c.fillStyle='rgba(217,164,65,'+(g.okfl*1.1)+')';c.fillRect(R.track.x,R.track.y,R.track.w,R.track.h)}
+  if(g.combo>=3&&g.state==='run'){var ga=RM?.35:.28+.2*Math.sin(T*(g.combo>=8?14:8));c.strokeStyle=g.combo>=8?'rgba(217,164,65,'+ga+')':g.combo>=5?'rgba(232,106,51,'+ga+')':'rgba(47,111,107,'+ga+')';c.lineWidth=g.combo>=8?16:g.combo>=5?12:8;c.strokeRect(R.track.x+c.lineWidth/2,R.track.y+c.lineWidth/2,R.track.w-c.lineWidth,R.track.h-c.lineWidth)}
   c.restore();
   drawHUD(g);
   if(g.state==='count'){var n=Math.ceil(g.cd),cx=R.track.x+R.track.w/2,cy=R.path.y+R.path.h*.5;c.fillStyle=K.ch;rr(cx-86,cy-34,172,68,[30,8,30,8]);c.fill();
@@ -2763,7 +2791,7 @@ function drawHUD(g){var h=R.hud;c.fillStyle=K.ch;rr(h.x,h.y,h.w,h.h,[18,4,18,4])
   var gh=SV.ghost[g.si];if(LM==='L')items.push(['GHOST',gh?ghostDiff(g,gh):'—']);
   items.forEach(function(it,i){var x=h.x+i*cw;if(i){c.fillStyle='rgba(251,244,230,.18)';c.fillRect(x,h.y+8,1,h.h-16)}txt(it[0],x+cw/2,h.y+11,9,K.mu,'center',FL);txt(it[1],x+cw/2,h.y+28,Math.min(18,cw*.22),i===2&&g.combo>=3?K.or2:K.cr,'center',FL)});
   if(LM!=='L'&&gh&&g.state==='run'){txt('ゴースト '+ghostDiff(g,gh),h.x+h.w-4,h.y+h.h+12,11,K.tl,'right',FH)}
-  txt(ST[g.si].n,R.track.x+(LM==='L'?128:14),LM==='L'?h.y+h.h+18:h.y+h.h+12,LM==='L'?14:12,K.tl,'left')}
+  txt(g.S.n,R.track.x+(LM==='L'?128:14),LM==='L'?h.y+h.h+18:h.y+h.h+12,LM==='L'?14:12,K.tl,'left')}
 function ghostDiff(g,gh){var s=g.cars[0].S;for(var i=0;i<gh.length;i++)if(gh[i]>=s){var d=g.t-i*.25;return(d>=0?'+':'−')+Math.abs(d).toFixed(1)}return '−'}
 
 /* ---------------- タイトル・マップの絵 ---------------- */
@@ -2794,16 +2822,18 @@ function setScene(s){scene=s;$('scrBack').classList.add('hidden');
   if(s!=='race'){engStop();if(G&&G.state!=='done')G=null}
   if(s==='title')showScr('scrTitle');else if(s==='map'){refreshK();buildMap();showScr('scrMap')}else if(s==='garage'){buildGarage();showScr('scrGarage')}
   else if(s==='album'){buildAlbum();showScr('scrAlbum')}else if(s==='test')showScr('scrTest');else if(s==='end')showScr('scrEnd');
-  var b=$('bBack');b.classList.toggle('hidden',s==='title'&&!INHUB||s==='end');b.textContent=s==='title'?'◀ 一覧へ':'◀ もどる';
+  var b=$('bBack');b.classList.toggle('hidden',s==='title'&&!INHUB);b.textContent=s==='title'?'◀ 一覧へ':'◀ もどる';
+  if(HELP){if(s==='title'||s==='test'||s==='end')HELP.hide();else HELP.show()}
   $('bMute').classList.toggle('hidden',s!=='race');$('bMute').textContent=muted?'🔇':'🔊'}
 var backFrom=null;
 $('bBack').onclick=function(){ac();if(scene==='title'){try{window.parent.postMessage({type:'rika-close-game'},'*')}catch(e){}return}
+  if(scene==='race'&&G&&G.prac){if(window.Guide)Guide.tutorialEnd();G=null;setScene('title');return}
   backFrom=scene;if(scene==='race'&&G)G.paused=true;engSet(0);
   $('bkT').textContent=scene==='race'?'ピットにもどりますか？':'もどりますか？';
   $('bkSub').textContent=scene==='race'?'進み具合は保存されます（クリアしたサーキット・★・ガレージの部品はそのまま。このレースは次にはじめから）。':scene==='test'?'確認テストは次はさいしょから。レースの進み具合は保存されています。':scene==='map'?'進み具合は保存されます。タイトルにもどります。':'進み具合は保存されます。シーズン表にもどります。';
   $('bkGo').firstChild.textContent=scene==='map'?'タイトルへ':'シーズン表へ';$('scrBack').classList.remove('hidden')};
 $('bkNo').onclick=function(){$('scrBack').classList.add('hidden');if(backFrom==='race'&&G)G.paused=false};
-$('bkGo').onclick=function(){$('scrBack').classList.add('hidden');if(backFrom==='map')setScene('title');else{G=null;setScene('map')}};
+$('bkGo').onclick=function(){$('scrBack').classList.add('hidden');if(backFrom==='map'||TEST&&(backFrom==='end'||backFrom==='test'))setScene('title');else{G=null;setScene('map')}};
 $('bMute').onclick=function(){muted=!muted;try{localStorage.setItem(SKEY+':mute',muted?'1':'0')}catch(e){}$('bMute').textContent=muted?'🔇':'🔊';if(muted)engSet(0)};
 
 function startStage(si){ac();if(ST[si].garage&&!SV.gSeen){SV.gSeen=1;save();PEND=si;setScene('garage');return}
@@ -2813,12 +2843,31 @@ function startStage(si){ac();if(ST[si].garage&&!SV.gSeen){SV.gSeen=1;save();PEND
   $('pitChips').innerHTML=ch.filter(Boolean).map(function(s){return'<span>'+esc(s)+'</span>'}).join('');
   $('pitHow').innerHTML=S.tut?'はじめは<b>直列</b>になっている。スタートしたら、レバーを<b>並列</b>へ倒してみよう。':'スタートの前に、配線盤のレバーを<b>どちらにするか</b>決めておこう。';
   showScr('scrPit');placePanels();refreshK()}
+function startPractice(){ac();G=newRace(0,false,true);G.target=999;scene='race';setScene('race');
+  $('pitNo').textContent='PRACTICE　／　1周';$('pitT').textContent='れんしゅう走行';$('pitTip').innerHTML='指のとおりに 1つずつ やってみよう。れんしゅうでは <b>コースアウトしない</b>。';
+  $('pitChips').innerHTML='<span>電源 3.0V</span><span>同じモーター2台</span><span>ライトの枝あり</span>';$('pitHow').innerHTML='まずは <b>スタート</b>！';
+  showScr('scrPit');placePanels();refreshK()}
+function zDone(t){return function(){return !!(G&&G.prac&&G.zones.some(function(z){return z.t===t&&z.st==='ok'}))}}
+function knob(k){var L=R.lever;return{x:lerp(L.x+L.h*.42,L.x+L.w-L.h*.42,k),y:L.y+L.h*.68,r:Math.max(22,L.h*.26)}}
+var PRACTICE={start:startPractice,label:'れんしゅう中',clearOn:'manual',clearText:'れんしゅうクリア！',
+  steps:[
+    {gesture:'tap',target:'#bGo',until:function(){return !!(G&&G.prac&&G.state!=='pit')},text:'**スタート** をタップ'},
+    {gesture:'drag',target:function(){return knob(0)},to:function(){return knob(1)},until:zDone('B'),praise:'ゲート全開！',
+      text:'スターゲートは **3.0V以上**。レバーを右へ ドラッグして **並列** に（どの車にも 電源と同じ3.0V）'},
+    {gesture:'drag',target:function(){return knob(1)},to:function(){return knob(0)},until:zDone('C'),praise:'セーフ！',
+      text:'ヘアピンは **2.0Vまで**。こんどは左へ ドラッグして **直列** に（2台で分け合って1.5Vずつ）'},
+    {gesture:'tap',target:function(){var S=R.lamp;return{x:S.x+S.w/2,y:S.y+S.h*.6,w:Math.max(56,S.w*.8),h:Math.max(56,S.h*.7)}},until:zDone('L'),praise:'ライト点灯！',
+      text:'トンネルは まっくら。**ライト** のスイッチをタップ（ライトは並列の別の枝）'}
+  ],
+  onExit:function(res){if(res&&(res.stopped||res.replaced))return;if(SV.stars[0]&&SV.stars[0][0])setScene('map');else startStage(0)}};
 var PEND=null;
 $('bGo').onclick=function(){ac();if(!G)return;showScr();G.state='count';G.cd=3;SFX.beep(false)};
 function showResult(g){showScr('scrRes');var S=g.S,st=[1,g.ng===0,g.resT<=g.target];
   $('resNo').textContent=(S.boss?'FINAL':'CIRCUIT '+(g.si+1))+'　RESULT';
   $('resT').textContent=S.boss?(g.win?'優勝！ チャンピオンに勝った':'準優勝… あと '+(g.resT-g.target).toFixed(1)+'秒'):'ゴール！ '+S.n;
-  var lab=['ゴール','ミスなし','目標タイム'];$('resStars').innerHTML=st.map(function(v,i){return'<span style="'+(v?'background:#D9A441':'opacity:.55')+'">'+(v?'★ ':'☆ ')+lab[i]+'</span>'}).join('');
+  var lab=['ゴール','ミスなし','目標タイム'];$('resStars').innerHTML=st.map(function(v,i){return'<span class="st'+(v?' got':'')+'" style="'+(v?'':'opacity:.55')+'">'+(v?'★ ':'☆ ')+lab[i]+'</span>'}).join('');
+  var sp=[].slice.call($('resStars').children);sp.forEach(function(e,i){setTimeout(function(){if(scene!=='race')return;e.classList.add('on');if(st[i]){SFX.stamp(i);buzz(18)}else tone(260,.12,'triangle',.06)},RM?0:450+i*420)});
+  if(g.win!==false)setTimeout(function(){if(scene==='race')confetti()},RM?0:450+3*420);
   var diff=g.prev!=null?'　前回の自分より '+(g.resT<=g.prev?'<b>−'+(g.prev-g.resT).toFixed(1)+'秒</b>':'+'+(g.resT-g.prev).toFixed(1)+'秒'):'';
   $('resRec').innerHTML='タイム <b>'+fmtJ(g.resT)+'</b>'+diff+'<br>看板 '+g.ok+'／'+(g.ok+g.ng+g.slow)+' 成功　最大コンボ ×'+g.maxCombo+'　🎟 +'+g.tick+(g.resT>g.target&&!S.boss?'<br>目標タイムまで あと <b>'+(g.resT-g.target).toFixed(1)+'秒</b>':'');
   var last=g.si>=ST.length-1;$('resNext').firstChild.textContent=S.boss?(g.win?'📋 ピット審査へ':'もう一回'):ST[g.si+1].garage&&!SV.gSeen?'ガレージへ':'つぎのサーキット';
@@ -2950,7 +2999,13 @@ $('eCard').onclick=function(){if(CARD&&window.SubmitCard)SubmitCard.reopen(CARD)
 $('eMap').onclick=function(){setScene(TEST?'title':'map')};
 
 /* ---------------- タイトル ---------------- */
-$('bStart').onclick=function(){ac();SV.name=$('nameIn').value.trim()||SV.name;save();startStage(SV.stars[0]&&SV.stars[0][0]?Math.min(SV.unl-1,ST.length-1):0)};
+var INTRO={title:'第6回 パラレル・スロットカー',learn:'**並列** につなぐと、どの車にも **電源と同じ電圧** がかかる（直列は分け合う）',
+  how:'配線盤のレバーを **左右にドラッグ**。看板の電圧に合わせて 直列⇄並列',gesture:'swipe'};
+var busy=false;
+$('bStart').onclick=function(){if(busy)return;ac();SV.name=$('nameIn').value.trim()||SV.name;save();var first=!(SV.stars[0]&&SV.stars[0][0]);
+  var go=function(){busy=false;if(first&&window.Guide)Guide.tutorial(PRACTICE);else startStage(first?0:Math.min(SV.unl-1,ST.length-1))};
+  if(window.Guide){busy=true;Guide.intro(INTRO).then(go)}else go()};
+if(window.Guide)Guide.tutorialButton('#bHow',function(){ac();Guide.tutorial(PRACTICE)});else $('bHow').classList.add('hidden');
 $('bCont').onclick=function(){ac();SV.name=$('nameIn').value.trim()||SV.name;save();setScene('map')};
 
 /* ---------------- ループ ---------------- */
@@ -2963,12 +3018,26 @@ function frame(now){var dt=Math.min(.05,(now-last)/1000);last=now;T+=dt;c.setTra
   else if(scene==='title'){drawTitle(dt)}
   else{drawMapBg()}
   requestAnimationFrame(frame)}
-document.addEventListener('visibilitychange',function(){if(document.hidden&&scene==='race'&&G&&G.state==='run'){G.paused=true;engSet(0);$('bBack').onclick()}});
+document.addEventListener('visibilitychange',function(){if(document.hidden&&scene==='race'&&G&&G.state==='run'&&!G.prac){G.paused=true;engSet(0);$('bBack').onclick()}});
 window.addEventListener('resize',function(){resize();if(scene==='map')buildMap()});
 
 /* ---------------- はじまり ---------------- */
 (function(){var p=[];for(var k=0;k<32;k++){var a=k/32*Math.PI*2,r=k%2?36:50;p.push((50+Math.cos(a)*r).toFixed(1)+'% '+(50+Math.sin(a)*r).toFixed(1)+'%')}document.documentElement.style.setProperty('--burst','polygon('+p.join(',')+')')})();
-mkGrain();resize();
+var HELP=null;
+if(window.Guide){
+  Guide.setup({theme:{bg:'#FBF4E6',fg:'#2B2A28',accent:'#E86A33',accentText:'#FBF4E6',font:FH,bodyFont:FH,radius:12,texture:'grain',line:'#2B2A28',
+      dim:'rgba(31,77,74,.5)',shadow:'7px 7px 0 #2F6F6B',outline:'#FBF4E6',hand:'#FBF4E6',handLine:'#2B2A28'},
+    sfx:function(k){if(k==='step')SFX.ok(3);else if(k==='done')SFX.gate(5);else if(k==='clear')SFX.fan();else if(k==='open'||k==='close')SFX.sw();else if(k==='cheer')SFX.flag();else if(k==='nudge')SFX.relay()},
+    muted:function(){return muted}});
+  HELP=Guide.help({title:INTRO.title,learn:INTRO.learn,how:INTRO.how,size:44,show:false,attention:true,replay:'tutorial',
+    rules:['レバー右＝**並列**：どの車にも **電源と同じ電圧**（全速）','レバー左＝**直列**：電源の電圧を **2台で分け合う**（ゆっくり）',
+      '「◯V**以上**」の看板（ゲート・ジャンプ台）と「◯V**まで**」の看板（ヘアピン・水たまり）を読んで、**手前で** 切りかえる（0.3秒おくれて効く）',
+      'トンネルは **ライト** のスイッチ。ライトは並列の別の枝なので、車の電圧は変わらない'],
+    onOpen:function(){if(scene==='race'&&G&&!G.paused){G.paused=true;G.hp=1;engSet(0)}},
+    onClose:function(){if(G&&G.hp){G.hp=0;G.paused=false}}});
+}
+function placeHelp(){if(PRACTICE)PRACTICE.bandAt=LM==='P'?'bottom':'top';if(HELP)HELP.update({offset:LM==='L'?{x:Math.round(R.board.w)+52,y:0}:{x:0,y:50}})}
+mkGrain();resize();placeHelp();window.addEventListener('resize',placeHelp);
 if(document.fonts&&document.fonts.ready)document.fonts.ready.then(function(){BGC=null;TBG=null});
 window.Zukan&&Zukan.setup&&Zukan.setup({game:GID,koma:[KOMA]});
 refreshK();
@@ -2977,7 +3046,7 @@ if(!(SV.unl>1||SV.stars[0]))$('bCont').classList.add('hidden');
 if(TEST)startTest();else setScene('title');
 requestAnimationFrame(frame);
 /* テスト用の窓口（自動操作の確かめに使う。遊びには影響しない） */
-window.__PD={G:function(){return G},start:startStage,go:function(){$('bGo').onclick()},auto:function(v){AUTO=!!v},speed:function(n){SPD=n|0||1},scene:function(){return scene},SV:function(){return SV},lever:function(v){G&&setLever(G,v)},ideal:ideal,sim:function(si,pol){var g=newRace(si,true);g.state='run';var n=0;while(g.state!=='done'&&n<40000){if(pol==='P')g.cfg=g.cfgEff='P';step(g,1/30);n++}return{t:g.t,ok:g.ok,ng:g.ng,slow:g.slow,z:g.zones.length}}};
+window.__PD={G:function(){return G},lay:function(){return R},start:startStage,go:function(){$('bGo').onclick()},auto:function(v){AUTO=!!v},speed:function(n){SPD=n|0||1},scene:function(){return scene},SV:function(){return SV},lever:function(v){G&&setLever(G,v)},ideal:ideal,sim:function(si,pol){var g=newRace(si,true);g.state='run';var n=0;while(g.state!=='done'&&n<40000){if(pol==='P')g.cfg=g.cfgEff='P';step(g,1/30);n++}return{t:g.t,ok:g.ok,ng:g.ng,slow:g.slow,z:g.zones.length}}};
 })();
 </script>
 </body>

@@ -152,7 +152,15 @@ input{font:inherit}
 }
 #scrEnd .big{font-family:var(--hf);font-size:92px;line-height:1;color:var(--blue);margin:6px 0}
 #scrEnd .big small{font-size:30px;color:var(--ink)}
-@media (prefers-reduced-motion:reduce){.pb:active{transform:none}}
+/* 仕上げ 2026-09-28（ga-finish-2026-09-28）: ★のはんこ・紙吹雪（ノートの切れはし） */
+.stars div.st{opacity:0;transform:scale(2.2) rotate(-10deg)}
+.stars div.st.in{opacity:1;transform:none;transition:transform .32s cubic-bezier(.2,1.9,.4,1),opacity .08s}
+.stamp.pop{animation:gastamp .45s cubic-bezier(.2,1.9,.4,1) both}
+@keyframes gastamp{0%{opacity:0;transform:rotate(-14deg) scale(2.6)}100%{opacity:.85;transform:rotate(-14deg) scale(1)}}
+.gacf{position:fixed;top:-18px;z-index:45;pointer-events:none;width:var(--w);height:var(--h);background:var(--c);border:1px solid rgba(58,58,58,.35);animation:gacf var(--t) cubic-bezier(.3,.2,.6,1) var(--d) forwards}
+@keyframes gacf{to{transform:translate(var(--dx),108vh) rotate(var(--r))}}
+#bBack:active,#bMute:active{transform:translate(2px,3px)}
+@media (prefers-reduced-motion:reduce){.pb:active{transform:none}.gacf{display:none}.stars div.st{opacity:1;transform:none}.stamp.pop{animation:none}}
 </style>
 </head>
 <body>
@@ -168,6 +176,7 @@ input{font:inherit}
   <div class="tbtn">
     <div class="nm" id="nmRow"><label for="nameIn">なまえ</label><input id="nameIn" maxlength="16" placeholder="（なくてもOK）" autocomplete="off"></div>
     <button class="pb b" id="bStart">はじめる</button>
+    <button class="pb sm" id="bHow">✎ あそびかた（れんしゅう）</button>
     <div class="row"><button class="pb sm" id="bCont">つづきから</button><button class="pb sm" id="bBook1">📖 図鑑</button></div>
   </div>
 </div>
@@ -2284,6 +2293,8 @@ var PGS=[
   lesson:'5つの測定データすべてで、原点を通り、点が上下に同じくらい散らばる直線を引けた。'}
 ];
 var TEAM_EX=[[1,.11],[2,.19],[3,.31],[4,.40],[5,.52]];
+var PR={tag:'れんしゅう',n:'はじめの一本',tr:1,Vs:[1,2,3,4,5],vmax:6,ks:[.1],amp:.02,pat:'rand',m:.05,prac:1,intro:'',lesson:''};
+var TIERS=[3,5,8],PDONE=false;
 
 /* ---------------- データを作る（決まった種から毎回同じ値） ---------------- */
 function rng(seed){var s=(seed*2654435761)>>>0||1;return function(){s^=s<<13;s>>>=0;s^=s>>>17;s^=s<<5;s>>>=0;return s/4294967296}}
@@ -2292,7 +2303,7 @@ function r3(x){return Math.round(x*1e6)/1e6}
 var AX_A=[[.2,.05],[.25,.05],[.3,.05],[.4,.1],[.5,.1],[.6,.1],[.8,.2],[1,.2],[1.2,.2],[1.5,.3],[2,.5]],AX_CM=[[6,1],[8,2],[10,2],[12,2],[14,2],[16,4],[20,4]];
 function niceAx(x,cm){var L=cm?AX_CM:AX_A;for(var i=0;i<L.length;i++)if(L[i][0]>=x-1e-9)return L[i];return L[L.length-1]}
 function vStep(vmax){return vmax<=1.5?.2:vmax<=4?.5:1}
-function spec(pi,t){var P=PGS[pi];if(P.boss){var s=P.sub[t];return Object.assign({},s,{rm:0})}return P}
+function spec(pi,t){if(pi<0)return PR;var P=PGS[pi];if(P.boss){var s=P.sub[t];return Object.assign({},s,{rm:0})}return P}
 function finishWire(wv,m,imax,Vs){var inc=wv.pts.filter(function(p){return !p.ex}),sv=0,si=0;inc.forEach(function(p){sv+=p.v;si+=(p.out?p.fix:p.i)});
   wv.k=sv>0?si/sv:0;var mr=0;inc.forEach(function(p){mr=Math.max(mr,Math.abs((p.out?p.fix:p.i)-wv.k*p.v))});wv.tol=mr+m*imax;
   var mv=Math.max.apply(null,inc.map(function(p){return p.v}).concat([1e-9]));wv.D=.6*m*imax*sv/mv;wv.sumV=sv;wv.maxV=mv}
@@ -2349,8 +2360,11 @@ var SFX={
  tap:function(){tone(700,.05,'triangle',.05)},
  ok:function(){mar(784,.1);mar(1046.5,.08,.07)},
  bad:function(){tone(220,.22,'triangle',.07,0,160)},
- tick:function(){tone(1500,.02,'square',.02)}
+ tick:function(){tone(1500,.02,'square',.02)},
+ dong:function(i){noise(.14,.16,260,.7);tone(120,.16,'sine',.14);mar(PENTA[4+i*2],.09,.04)},
+ tier:function(n){[0,2,4,5,7,9].slice(0,3+Math.min(3,n)).forEach(function(k,i){mar(PENTA[k+2],.1,i*.06)})}
 };
+function buzz(p){try{if(navigator.vibrate)navigator.vibrate(p)}catch(e){}}
 
 /* ---------------- 鉛筆の道具 ---------------- */
 function hsh(n){var x=Math.sin(n*12.9898+78.233)*43758.5453;return x-Math.floor(x)}
@@ -2387,12 +2401,12 @@ function resize(){W=Math.max(320,innerWidth);H=Math.max(320,innerHeight);DPR=Mat
 function rowsN(){return G&&G.D?1+G.D.wires.length:2}
 function layout(){LY={};var rh=Math.round(22*U+6),rows=rowsN();LY.rh=rh;
   if(LAND){var m=10;LY.L={x:m+16,y:m+6,w:W/2-m-46,h:H-2*m-12};LY.R={x:W/2+30,y:m+6,w:W/2-m-46,h:H-2*m-12};
-    LY.hd={x:150,y:LY.L.y+2,w:LY.L.x+LY.L.w-150,h:48};LY.hud={x:LY.R.x,y:LY.R.y+2,w:W-LY.R.x-96,h:48};
+    LY.hd={x:150,y:LY.L.y+2,w:LY.L.x+LY.L.w-150,h:48};LY.hud={x:LY.R.x,y:LY.R.y+2,w:W-LY.R.x-146,h:48};
     LY.tb={x:LY.L.x+4,y:LY.L.y+76,w:LY.L.w-8,h:rows*rh+6};
     LY.ctrl={x:LY.L.x+4,y:LY.L.y+LY.L.h-62,w:LY.L.w-8,h:56};
     LY.memo={x:LY.L.x+4,y:LY.tb.y+LY.tb.h+22,w:LY.L.w-8,h:LY.ctrl.y-16-(LY.tb.y+LY.tb.h+22)};
     var lm=Math.round(52*U);LY.P={x:LY.R.x+lm,y:LY.R.y+72,w:LY.R.w-lm-22,h:LY.R.h-72-Math.round(42*U)}}
-  else{LY.hd={x:132,y:10,w:W-132-86,h:48};LY.hud={x:12,y:60,w:W-24,h:28};
+  else{LY.hd={x:132,y:10,w:W-132-150,h:48};LY.hud={x:12,y:60,w:W-24,h:28};
     LY.tb={x:12,y:112,w:W-24,h:rows*rh+6};LY.ctrl={x:12,y:H-64-SAFE,w:W-24,h:54};var mh=Math.round(62*U);LY.memo={x:12,y:LY.ctrl.y-8-mh,w:W-24,h:mh};
     var lm=Math.round(44*U);LY.P={x:12+lm,y:LY.tb.y+LY.tb.h+Math.round(30*U),w:W-12-lm-Math.round(26*U),h:0};LY.P.h=LY.memo.y-Math.round(34*U)-LY.P.y}
   LY.BR=Math.round(9*U)}
@@ -2444,14 +2458,14 @@ function buildStatic(){stL.width=Math.ceil(W*DPR);stL.height=Math.ceil(H*DPR);va
   c=keep}
 
 /* ---------------- ゲームの状態 ---------------- */
-function startPage(pi){var S=PGS[pi];ac();
+function startPage(pi){var S=pi<0?PR:PGS[pi];ac();
   G={pi:pi,S:S,ti:0,first:0,even:0,combo:0,maxc:0,rolls:0,time:0,left:S.limit||0,tickets:S.rm||0,paused:true,trialsOK:[],fx:[],ftx:[],stamps:[]};
   scene='run';hideAll();backBtn();
   if(S.team){G.D=null;showTeam();return}
-  startTrial(0,true)}
+  startTrial(0,!S.prac)}
 function startTrial(ti,intro){var S=G.S;G.ti=ti;G.seed=(S.boss?1100:100*(G.pi+1))+ti*17+1;
   if(S.team)G.D=G._teamD;else G.D=gen(G.pi,ti,G.seed);
-  G.lines=G.D.wires.map(function(){return null});G.state='draw';G.tries=0;G.runners=null;G.msg=null;G.bal=null;G.stroke=null;G.snapT=0;G.flip=intro?0:1;G.near=[];G.rmA=null;G.idle=0;G.hintOK=G.pi===0&&ti===0;G.fx=[];G.ftx=[];G.stamps=[];G.result=null;G.tDone=null;G.handle=null;
+  G.lines=G.D.wires.map(function(){return null});G.state='draw';G.tries=0;G.runners=null;G.msg=null;G.bal=null;G.stroke=null;G.snapT=0;G.flip=intro?0:1;G.near=[];G.rmA=null;G.idle=0;G.hintOK=G.pi===0&&ti===0&&!PDONE;G.fx=[];G.ftx=[];G.stamps=[];G.result=null;G.tDone=null;G.handle=null;
   if(!S.boss&&!S.team)G.tickets=S.rm||0;
   layout();buildStatic();posCtrl();setCtrl();refreshK();
   if(!intro)SFX.flip();
@@ -2488,6 +2502,7 @@ function finishStroke(raw){var P=LY.P,D=G.D;if(raw.length<2)return;
       D.wires.forEach(function(wv,wi){var d=Math.abs(Math.log(Math.max(1e-4,kk)/wv.k));if(kk<=0)d=wi;if(d<bd){bd=d;w0=wi}})}}
   pts=clipTop(pts);if(pts.length<2||plen(pts)<20*U)return;
   var dl=pts.map(function(q){return[r3(dv(q[0])),r3(di(q[1]))]});if(org)dl[0]=[0,0];
+  if(G.S.prac){var e0=dl[dl.length-1],wv0=D.wires[0],ve=Math.max(e0[0],wv0.maxV*1.08);var kk0=e0[0]>0?Math.max(0,e0[1]/e0[0]):wv0.k;if(!(kk0>0))kk0=wv0.k;ve=Math.min(D.vmax*.98,ve,D.imax*.97/kk0);dl=[[0,0],[r3(ve),r3(kk0*ve)]];org=true;w0=0}
   G.lines[w0]={pts:dl,org:org,seed:Math.floor(Math.random()*999),straight:dl.length===2,t:0};
   if(dl.length===2){G.snapT=1;G.snapW=w0;SFX.snap()}
   G.runners=null;G.near=[];G.msg=null;G.state='draw';G.stamps=[];G.bal=null;G.result=null;setCtrl()}
@@ -2508,7 +2523,10 @@ function say(s){G.msg=s;G.msgT=0}
 
 /* ---------------- ころがす ---------------- */
 function roll(){if(G.state!=='draw')return;if(!G.lines.some(Boolean)){say(G.D.wires.length>1?'まず線を引こう（原点から、●にも□にも1本ずつ）':'まず線を引こう。原点（左下の発射台）から指でスーッと');SFX.bad();return}
-  if(G.rmA)return;G.tries++;G.rolls++;G.state='roll';G.near=[];G.msg=null;G.stamps=[];G.bal=null;G.runners=G.D.wires.map(function(wv,wi){return mkRunner(wi)});G.ringN=0;setCtrl();SFX.tick()}
+  if(G.rmA)return;
+  if(G.S.prac){var L0=G.lines[0],wv1=G.D.wires[0],e1=L0.pts[L0.pts.length-1],k1=e1[0]>0?e1[1]/e1[0]:0,bad=L0.pts.length!==2||!L0.org||e1[0]<wv1.maxV*1.02||wv1.pts.some(function(p){return Math.abs(k1*p.v-p.i)>wv1.tol*.92});
+    if(bad){var ve1=Math.min(G.D.vmax*.98,G.D.imax*.97/wv1.k);G.lines[0]={pts:[[0,0],[r3(ve1),r3(wv1.k*ve1)]],org:true,seed:L0.seed,straight:true,t:0};G.snapT=1;G.snapW=0;SFX.snap();ftext('定規で まん中に そろえた',LY.P.x+LY.P.w*.5,LY.P.y+30*U,17*U,BLUE,1.6)}}
+  G.tries++;G.rolls++;G.state='roll';G.near=[];G.msg=null;G.stamps=[];G.bal=null;G.runners=G.D.wires.map(function(wv,wi){return mkRunner(wi)});G.ringN=0;setCtrl();SFX.tick()}
 function mkRunner(wi){var wv=G.D.wires[wi],L=G.lines[wi],rr=ringR(wv),rings=wv.pts.filter(function(p){return !p.ex}).map(function(p){return{p:p,x:px(p.v),y:py(p.i),r:rr,st:0,d:0}}).sort(function(a,b){return a.x-b.x});
   var R={wi:wi,rings:rings,st:'roll',x:px(0),y:py(0),vx:0,vy:0,t:0,ang:0,trail:[],reason:null,cup:(G.D.cup&&wi===0)?{st:0}:null};
   if(!L){R.st='done';R.reason='noline';rings.forEach(function(r){r.st=-2});if(R.cup)R.cup.st=-2;return R}
@@ -2519,7 +2537,7 @@ function mkRunner(wi){var wv=G.D.wires[wi],L=G.lines[wi],rr=ringR(wv),rings=wv.p
   return R}
 function lineYAt(P,x){for(var i=1;i<P.length;i++){var a=P[i-1],b=P[i];if(x>=Math.min(a[0],b[0])-.01&&x<=Math.max(a[0],b[0])+.01&&Math.abs(b[0]-a[0])>1e-6)return a[1]+(b[1]-a[1])*(x-a[0])/(b[0]-a[0])}return null}
 function checkRings(R,uptoX){var P=R.path.slice(0,R.si+2);R.rings.forEach(function(r){if(r.st!==0||r.x>uptoX+.01)return;var ly=lineYAt(P,r.x);if(ly==null){r.st=-2;return}var d=Math.abs(ly-r.y);r.ly=ly;
-    if(d<=r.r){r.st=1;r.t=0;G.ringN++;SFX.ring(G.ringN);spark(r.x,r.y,8);ftext('ピカッ',r.x,r.y-r.r-12*U,15*U,BLUE,.8)}
+    if(d<=r.r){r.st=1;r.t=0;G.ringN++;SFX.ring(G.ringN);spark(r.x,r.y,14);ftext(G.ringN>1?'ピカッ ×'+G.ringN:'ピカッ',r.x,r.y-r.r-12*U,(15+Math.min(G.ringN,6)*1.5)*U,BLUE,.9);buzz(8);G.shake=Math.max(G.shake||0,.12)}
     else{r.st=-1;r.d=di(ly)-r.p.i;r.gap=Math.abs(r.d)-G.D.wires[R.wi].tol;SFX.miss()}})}
 function stepRunner(R,dt){var spd=R.spd||Math.max(300,LY.P.w*.8);R.t+=dt;
   if(R.st==='roll'){var d=spd*dt;while(d>0&&R.si<R.seg.length){var sg=R.seg[R.si],rem=sg.l-R.sd;if(d<rem){R.sd+=d;d=0}else{d-=rem;R.si++;R.sd=0;if(R.si===R.kink||R.si>=R.seg.length)break}}
@@ -2547,11 +2565,14 @@ function finishRoll(){var D=G.D,rs=G.runners,allLit=rs.every(function(R){return 
       if(even){G.even++;earnK(5,'hit',px(D.vmax*.6),LY.P.y+40*U)}
       if(D.cup)earnK(4,'hit',px(D.cup.v),py(D.cup.i));
       G.stamps.push({s:'合格',x:LY.P.x+LY.P.w*.28,y:LY.P.y+LY.P.h*.28,t:0,col:INK});if(even)G.stamps.push({s:'均等',x:LY.P.x+LY.P.w*.72,y:LY.P.y+LY.P.h*.62,t:-.35,col:BLUE});
-      SFX.stamp();if(even)setTimeout(SFX.even,380);
+      SFX.stamp();if(even)setTimeout(SFX.even,380);G.okfl=.5;G.shake=.3;buzz([15,30,20]);spark(LY.P.x+LY.P.w*.5,LY.P.y+LY.P.h*.4,26);
       if(G.combo>=2)ftext('連続 ×'+G.combo,LY.P.x+LY.P.w*.5,LY.P.y+24*U,24*U,BLUE,1.2);
+      var tier=TIERS.indexOf(G.combo);if(tier>=0&&window.Guide)setTimeout(function(){SFX.tier(tier);Guide.cheer('連続 ×'+G.combo+'！',{x:LY.P.x+LY.P.w*.5,y:LY.P.y+LY.P.h*.2,size:1.1+tier*.2,sound:false})},450);
+      if(S.prac){G.state='result';say('合格！ 原点から、点のまん中を通る1本の直線。これが「一本線」。');setCtrl();var g1=G;setTimeout(function(){if(G===g1&&window.Guide)Guide.tutorialClear()},1500);return}
       msg=(even?'均等！ 点が線の上と下に同じくらい散らばっている。':'合格。でも上と下の散らばりに差がある（下の天びん）。')+(D.cup?'直線をのばして的にも当たった。':'');
       G.state='result';say(msg);saveTrial();setCtrl();return}}
-  G.result={ok:false};G.combo=0;
+  var lost=G.combo;G.result={ok:false};G.combo=0;buzz([10,40,10]);
+  var nt=TIERS.filter(function(t){return t>lost})[0];if(lost>=2&&nt&&nt-lost===1)setTimeout(function(){if(G)ftext('あと1回で ×'+nt+' だった！',LY.P.x+LY.P.w*.5,LY.P.y+24*U,22*U,RED,1.6)},300);
   if(!msg){if(reasons.indexOf('noline')>=0&&D.wires.length>1)msg='線が1本足りない。●にも□にも、原点から1本ずつ。';
     else if(reasons.indexOf('origin')>=0)msg='原点から線が始まっていない！ 電圧0Vのとき電流は0A。だから線は原点（発射台）から。';
     else if(reasons.indexOf('kink')>=0)msg='折れ線は角で脱線！ 点のずれは誤差。点を全部つながず、1本の直線で。';
@@ -2561,9 +2582,9 @@ function finishRoll(){var D=G.D,rs=G.runners,allLit=rs.every(function(R){return 
       else if(g&&g.cup&&G.near.length===1)msg='的まで あと'+fIu(g.gap)+'。点のまん中を通る線を、まっすぐのばそう。';
       else msg='あと少し！ 輪まで あと'+fIu(g?g.gap:D.q)+'。1つの点に合わせず、点が線の上下に同じくらいに。'}}
   say(msg);G.state='draw';setCtrl()}
-function saveTrial(){var D=G.D,rec={vmax:D.vmax,imax:D.imax,unitI:D.unitI,w:D.wires.map(function(wv,wi){var L=G.lines[wi],e=L.pts[L.pts.length-1];return{p:wv.pts.filter(function(p){return !p.ex}).map(function(p){return[p.v,p.i]}),k:e[1]/e[0]}})};
+function saveTrial(){if(G.S.prac)return;var D=G.D,rec={vmax:D.vmax,imax:D.imax,unitI:D.unitI,w:D.wires.map(function(wv,wi){var L=G.lines[wi],e=L.pts[L.pts.length-1];return{p:wv.pts.filter(function(p){return !p.ex}).map(function(p){return[p.v,p.i]}),k:e[1]/e[0]}})};
   SV.lines[G.pi]=rec;if(D.team)SV.team=rec;save()}
-function nextTrial(){if(!G)return;G.trialsOK.push(G.tDone||G.result);if(G.ti+1>=G.S.tr){clearPage();return}startTrial(G.ti+1,false)}
+function nextTrial(){if(!G)return;if(G.S.prac){if(window.Guide)Guide.tutorialClear();return}G.trialsOK.push(G.tDone||G.result);if(G.ti+1>=G.S.tr){clearPage();return}startTrial(G.ti+1,false)}
 function clearPage(){var S=G.S,n=S.tr;G.state='clear';G.paused=true;SFX.even();
   var allEven=G.trialsOK.every(function(r){return r.even}),allFirst=G.trialsOK.every(function(r){return r.first});
   var st=[true,allEven,S.boss?G.left>=40:allFirst],o=SV.stars[G.pi]||[false,false,false];SV.stars[G.pi]=o.map(function(v,i){return v||st[i]});
@@ -2575,14 +2596,20 @@ function clearPage(){var S=G.S,n=S.tr;G.state='clear';G.paused=true;SFX.even();
   $('cL').textContent=S.lesson;var L=['全部の実験に合格',S.boss?'全部「均等」':'全部「均等」',S.boss?'40秒以上のこす':'全部1回で合格'];
   $('cStars').innerHTML=st.map(function(v,i){return'<div class="'+(v?'on':'')+'"><i>'+(v?'★':'☆')+'</i>'+L[i]+'</div>'}).join('');
   $('cRec').innerHTML='<span>1回で合格<b>'+G.first+' / '+n+'</b></span><span>均等<b>'+G.even+'</b></span><span>最大の連続<b>'+G.maxc+'</b></span>';
-  $('cNext').textContent=S.boss?'📝 確認テストへ':'次のページへ ▶';setTimeout(function(){$('scrClear').classList.remove('hidden')},900)}
+  $('cNext').textContent=S.boss?'📝 確認テストへ':'次のページへ ▶';var g0=G;setTimeout(function(){if(G!==g0)return;$('scrClear').classList.remove('hidden');
+    var cs=$('cStamp');cs.classList.remove('pop');cs.style.visibility='hidden';var sp=[].slice.call($('cStars').children);sp.forEach(function(e,i){e.classList.add('st');setTimeout(function(){if(G!==g0)return;e.classList.add('in');if(st[i]){SFX.dong(i);buzz(18)}else SFX.tap()},RM?0:350+i*420)});
+    setTimeout(function(){if(G!==g0)return;cs.style.visibility='';cs.classList.add('pop');SFX.stamp();confetti()},RM?0:350+3*420)},900)}
+function confetti(){if(RM)return;var cols=['#2C7BE5','#F7F5EE','#C8453A','#FCFBF6','#9DC0F0'];for(var i=0;i<54;i++){var d=document.createElement('div');d.className='gacf';var q=d.style;q.left=(Math.random()*100).toFixed(1)+'vw';
+  q.setProperty('--w',(8+Math.random()*9|0)+'px');q.setProperty('--h',(6+Math.random()*9|0)+'px');q.setProperty('--c',cols[i%5]);
+  q.setProperty('--dx',((Math.random()-.5)*180|0)+'px');q.setProperty('--r',((Math.random()-.5)*900|0)+'deg');q.setProperty('--t',(1.8+Math.random()*1.2).toFixed(2)+'s');q.setProperty('--d',(Math.random()*.4).toFixed(2)+'s');
+  document.body.appendChild(d);(function(n){setTimeout(function(){if(n.parentNode)n.parentNode.removeChild(n)},3700)})(d)}}
 $('cNext').onclick=function(){ac();$('scrClear').classList.add('hidden');if(G.S.boss)toTest();else startPage(Math.min(PGS.length-1,G.pi+1))};
 $('cAgain').onclick=function(){$('scrClear').classList.add('hidden');startPage(G.pi)};
 $('cMap').onclick=function(){$('scrClear').classList.add('hidden');G=null;setScene('map')};
 $('fAgain').onclick=function(){$('scrFail').classList.add('hidden');startPage(G.pi)};
 $('fMap').onclick=function(){$('scrFail').classList.add('hidden');G=null;setScene('map')};
 function fmtT(s){s=Math.max(0,s);var m=Math.floor(s/60),x=Math.floor(s%60);return m+':'+(x<10?'0':'')+x}
-function earnK(n,why,x,y){var z=Zk();if(!z||!z.earn)return 0;var got=0;try{got=z.earn(n,why,{koma:KOMA,x:x,y:y})||0}catch(e){}refreshK();return got}
+function earnK(n,why,x,y){if(G&&G.S&&G.S.prac)return 0;var z=Zk();if(!z||!z.earn)return 0;var got=0;try{got=z.earn(n,why,{koma:KOMA,x:x,y:y})||0}catch(e){}refreshK();return got}
 function refreshK(){try{var z=Zk();K=z&&z.state?(z.state().kakera||0):0}catch(e){K=0}}
 function spark(x,y,n,col){if(RM)n=Math.ceil(n/3);for(var i=0;i<n;i++){var a=Math.random()*6.283,v=(90+Math.random()*170)*U;G&&G.fx.push({x:x,y:y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,life:.45+Math.random()*.4,t:0,col:col||BLUE,s:3+Math.random()*4})}}
 function ftext(s,x,y,size,col,life){if(G)G.ftx.push({s:s,x:x,y:y,size:size,col:col,life:life||1.2,t:0})}
@@ -2605,7 +2632,7 @@ function drawBall(x,y,ang,alpha){var r=LY.BR;c.save();c.globalAlpha=alpha==null?
   penLine(x+Math.cos(ang)*r*.2,y+Math.sin(ang)*r*.2,x+Math.cos(ang)*r*.85,y+Math.sin(ang)*r*.85,INK,1.4,9,alpha,0)}
 function drawLineSketch(L,wi,alpha){var P=toPx(L);pen(P,INK,2.6,L.seed,alpha==null?1:alpha,.8);
   if(!L.org){var s=P[0];penCirc(s[0],s[1],7*U,RED,1.6,L.seed+3,.8)}}
-function drawRun(){var D=G.D,P=LY.P,S=G.S;c.drawImage(stL,0,0,W,H);
+function drawRun(){var D=G.D,P=LY.P,S=G.S;c.save();if(G.shake>0&&!RM){G.shake=Math.max(0,G.shake-.016);c.translate((Math.random()-.5)*14*G.shake,(Math.random()-.5)*14*G.shake)}c.drawImage(stL,0,0,W,H);
   drawTable();drawHeader();
   /* 均等の目安（天びん）: 点から線までの縦のずれ */
   if(G.bal){G.bal.forEach(function(b){D.wires[b.wi].pts.forEach(function(p,k){if(p.ex)return;var x=px(p.v),y1=py(p.i),y2=py(b.k*p.v);c.save();c.setLineDash([3,4]);penLine(x,y1,x,y2,p.i>b.k*p.v?BLUE:INK,1.4,k+b.wi*9,.8,0);c.restore()})})}
@@ -2645,6 +2672,8 @@ function drawRun(){var D=G.D,P=LY.P,S=G.S;c.drawImage(stL,0,0,W,H);
   G.stamps.forEach(function(s){if(s.t<0)return;var k=Math.min(1,s.t/.18),sc=RM?1:(k<1?2.2-1.2*k:1),r=Math.min(52*U,LY.P.w*.16);c.save();c.translate(s.x,s.y);c.rotate(-.22);c.scale(sc,sc);c.globalAlpha=Math.min(1,k*1.4)*.85;
     c.strokeStyle=s.col;c.lineWidth=3.2;c.beginPath();c.arc(0,0,r,0,6.283);c.stroke();c.lineWidth=1.4;c.beginPath();c.arc(0,0,r-6,0,6.283);c.stroke();c.fillStyle=s.col;c.font=Math.round(r*.62)+'px '+HF;c.textAlign='center';c.textBaseline='middle';c.fillText(s.s,0,2);c.restore()});
   /* ページをめくる */
+  if(G.okfl>0&&!RM){G.okfl=Math.max(0,G.okfl-.02);c.fillStyle='rgba(44,123,229,'+(G.okfl*.22)+')';c.fillRect(0,0,W,H)}
+  c.restore();
   if(G.flip>0&&!RM){var fx=W*(1-(1-G.flip)*1.3);if(fx>-W*.3){var gr=c.createLinearGradient(fx-60,0,fx+30,0);gr.addColorStop(0,'rgba(58,58,58,0)');gr.addColorStop(.7,'rgba(58,58,58,.18)');gr.addColorStop(1,'rgba(247,245,238,1)');c.fillStyle=gr;c.fillRect(fx-60,0,90,H);c.fillStyle=PAPER;c.fillRect(fx+30,0,W,H)}}
 }
 function drawTable(){var D=G.D,tb=LY.tb,tc=LY.tcol,rh=LY.rh;D.wires.forEach(function(wv,wi){wv.pts.forEach(function(p,k){var x=tc.x0+tc.cw*(k+.5),y=tb.y+rh*(wi+1.5),fs=Math.min(17*U,tc.cw*.36);
@@ -2727,14 +2756,16 @@ function drawTitle(dt){c.drawImage(bgL,0,0,W,H);var ax,ay,aw,ah;if(LAND){ax=W*.5
 var OVS=['scrTitle','scrMap','scrIntro','scrClear','scrFail','scrTeam','scrTest','scrEnd','scrBack'];
 function hideAll(){OVS.forEach(function(id){$(id).classList.add('hidden')})}
 var INHUB=!!window.COLLECTION_NAME||(function(){try{return window.parent!==window}catch(e){return true}})();
-function backBtn(){var b=$('bBack'),on=scene==='run'||scene==='map'||scene==='test'||scene==='end'||(scene==='title'&&INHUB);b.classList.toggle('hidden',!on);b.textContent=scene==='title'?'◀ 一覧へ':'◀ もどる'}
+function backBtn(){var b=$('bBack'),on=scene==='run'||scene==='map'||scene==='test'||scene==='end'||(scene==='title'&&INHUB);b.classList.toggle('hidden',!on);b.textContent=scene==='title'?'◀ 一覧へ':'◀ もどる';
+  if(HELP){if(scene==='run'||scene==='map')HELP.show();else HELP.hide()}}
 function setScene(s){scene=s;hideAll();if(s==='title'){$('scrTitle').classList.remove('hidden');$('bCont').classList.toggle('hidden',!(SV.unl>0||SV.stars[0]))}
   else if(s==='map'){refreshK();$('scrMap').classList.remove('hidden');$('bToTest').classList.toggle('hidden',!SV.done);posMapBtns()}
   else if(s==='test')$('scrTest').classList.remove('hidden');else if(s==='end')$('scrEnd').classList.remove('hidden');
   backBtn();posCtrl();muteLabel()}
-function muteLabel(){$('bMute').textContent=muted?'おと ×':'おと ○'}
+function muteLabel(){$('bMute').textContent=muted?'おと ×':'おと ○';if(typeof placeHelp==='function')placeHelp()}
 var backFrom=null,wasPaused=false;
 $('bBack').onclick=function(){ac();if(scene==='title'){try{window.parent.postMessage({type:'rika-close-game'},'*')}catch(e){}return}
+  if(scene==='run'&&G&&G.S.prac){SFX.scrStop();if(window.Guide)Guide.tutorialEnd();G=null;setScene('title');return}
   backFrom=scene;wasPaused=!!(G&&G.paused);if(G)G.paused=true;SFX.scrStop();if(G)G.stroke=null;
   $('bkSub').textContent=scene==='test'?'確認テストは、次はさいしょから。ノートの進み具合は保存されています。':scene==='map'||scene==='end'?'進み具合は保存されています。タイトルにもどります。':'進み具合は保存されます（合格したページと★はそのまま。このページは次にはじめから）。';
   $('bkGo').textContent=scene==='run'||scene==='test'?'もくじへ':'タイトルへ';$('scrBack').classList.remove('hidden')};
@@ -2747,7 +2778,25 @@ $('bGacha').onclick=function(){var z=Zk();if(z&&z.openGacha)z.openGacha()};
 if(!Zk())['bBook1','bBook2','bGacha','eBook'].forEach(function(id){$(id).classList.add('hidden')});
 $('bToTest').onclick=function(){startTest()};
 function getName(){return(window.PLAYER_NAME||$('nameIn').value||SV.name||'').trim()}
-$('bStart').onclick=function(){ac();SFX.ok();SV.name=$('nameIn').value.trim()||SV.name;save();if(SV.unl===0&&!SV.stars[0])startPage(0);else setScene('map')};
+function dpt(v,i){return{x:px(v),y:py(i)}}
+var PRACTICE={start:function(){ac();startPage(-1)},label:'れんしゅう中',clearOn:'manual',clearText:'れんしゅうクリア！',
+  steps:[
+    {gesture:'draw',label:'線を引く',target:function(){var o=dpt(0,0);return{x:o.x,y:o.y,r:Math.max(26,24*U)}},area:function(){var P=LY.P;return{x:P.x+P.w/2,y:P.y+P.h/2,w:P.w+60*U,h:P.h+40*U}},
+      path:function(){var wv=G.D.wires[0],ve=Math.min(G.D.vmax*.95,G.D.imax*.95/wv.k),P=[];for(var k=0;k<=12;k++){var v=ve*k/12;P.push(dpt(v,wv.k*v))}return P},
+      until:function(){return !!(G&&G.S.prac&&G.lines[0])},praise:'スーッ！',text:'左下の **原点**（発射台）から、点の **まん中を通る1本の線** を指で引こう'},
+    {gesture:'drag',target:function(){var L=G.lines[0],e=endPx(L);return{x:e[0],y:e[1],r:Math.max(24,22*U)}},
+      to:function(){var L=G.lines[0],e=L.pts[L.pts.length-1],k=e[0]>0?e[1]/e[0]:G.D.wires[0].k,q=dpt(e[0]*.92,e[1]*.92*(1-.18));return{x:q.x,y:q.y,r:Math.max(24,22*U)}},
+      until:function(){return !!(G&&G.moved)},praise:'くいっ',text:'線の先の **青い○** をドラッグすると、線の向きを 細かく直せる'},
+    {gesture:'tap',target:'#bRoll',until:function(){return !!(G&&G.S.prac&&G.result&&G.result.ok)},praise:'合格！',text:'**ころがす** をタップ。玉が 輪を全部くぐれば 合格！'}
+  ],
+  onExit:function(res){if(res&&(res.stopped||res.replaced))return;PDONE=true;if(SV.unl===0&&!SV.stars[0])startPage(0);else setScene('map')}};
+var INTRO={title:'第9回 一本線ローラー',learn:'測定値には **誤差** がある。ばらついた点は **原点を通る1本の直線** で表す',
+  how:'原点から点のまん中に **指で線を引いて**「ころがす」。玉が輪を全部くぐれば合格',gesture:'draw'};
+var busy=false;
+$('bStart').onclick=function(){if(busy)return;ac();SFX.ok();SV.name=$('nameIn').value.trim()||SV.name;save();var first=SV.unl===0&&!SV.stars[0];
+  var go=function(){busy=false;if(!first)setScene('map');else if(window.Guide)Guide.tutorial(PRACTICE);else startPage(0)};
+  if(window.Guide){busy=true;Guide.intro(INTRO).then(go)}else go()};
+if(window.Guide)Guide.tutorialButton('#bHow',function(){ac();SFX.ok();Guide.tutorial(PRACTICE)});else $('bHow').classList.add('hidden');
 $('bCont').onclick=function(){ac();SFX.ok();SV.name=$('nameIn').value.trim()||SV.name;save();setScene('map')};
 function toTest(){var z=Zk();if(z&&z.mainClear&&!TEST){try{z.mainClear({onClose:startTest});return}catch(e){}}startTest()}
 
@@ -2760,7 +2809,7 @@ cv.addEventListener('pointerdown',function(e){ac();var x=e.clientX,y=e.clientY;
   if(G.state==='draw'){for(var w=0;w<G.lines.length;w++){var L=G.lines[w];if(L&&L.straight&&L.org){var ep=endPx(L);if(Math.hypot(x-ep[0],y-ep[1])<24*U){G.handle={wi:w};down={x:x,y:y,t:T,h:true};G.runners=null;G.near=[];G.msg=null;try{cv.setPointerCapture(e.pointerId)}catch(er){}return}}}}
   down={x:x,y:y,t:T,id:e.pointerId};G.stroke={pts:[[x,y]],lx:x,ly:y,lt:T};G.idle=0;SFX.scrStart();try{cv.setPointerCapture(e.pointerId)}catch(er){}});
 cv.addEventListener('pointermove',function(e){if(G&&G.handle){moveHandle(e.clientX,e.clientY);return}if(!G||!G.stroke)return;var x=e.clientX,y=e.clientY,s=G.stroke,l=s.pts[s.pts.length-1],d=Math.hypot(x-l[0],y-l[1]);if(d<2)return;s.pts.push([x,y]);var dt=Math.max(.008,T-s.lt);SFX.scrSpeed(d/dt);s.lt=T});
-function moveHandle(x,y){var P=LY.P,L=G.lines[G.handle.wi],ox=px(0),oy=py(0);x=Math.max(P.x+30*U,Math.min(P.x+P.w,x));y=Math.min(oy-4,y);if(y<P.y){var t=(oy-P.y)/(oy-y);x=ox+(x-ox)*t;y=P.y}var nv=[r3(dv(x)),r3(di(y))],o=L.pts[1];if(Math.abs(py(nv[1])-py(o[1]))>6||Math.abs(px(nv[0])-px(o[0]))>6)SFX.tick();L.pts[1]=nv}
+function moveHandle(x,y){if(G.S.prac)G.moved=1;var P=LY.P,L=G.lines[G.handle.wi],ox=px(0),oy=py(0);x=Math.max(P.x+30*U,Math.min(P.x+P.w,x));y=Math.min(oy-4,y);if(y<P.y){var t=(oy-P.y)/(oy-y);x=ox+(x-ox)*t;y=P.y}var nv=[r3(dv(x)),r3(di(y))],o=L.pts[1];if(Math.abs(py(nv[1])-py(o[1]))>6||Math.abs(px(nv[0])-px(o[0]))>6)SFX.tick();L.pts[1]=nv}
 function up(e){SFX.scrStop();if(G&&G.handle){G.handle=null;down=null;return}if(!G||!down){down=null;return}var d=down;down=null;if(d.far||!G.stroke)return;var s=G.stroke;G.stroke=null;
   var moved=plen(s.pts);if(moved<14*U){tapAt(d.x,d.y);return}if(G.state==='result'&&G.result&&G.result.ok){G.state='draw';G.result=null;setCtrl()}finishStroke(s.pts)}
 cv.addEventListener('pointerup',up);cv.addEventListener('pointercancel',function(){SFX.scrStop();down=null;if(G){G.stroke=null;G.handle=null}});
@@ -2809,9 +2858,23 @@ function frame(now){var dt=Math.min(.05,(now-last)/1000);last=now;T+=dt;c.setTra
   else c.drawImage(bgL,0,0,W,H);
   requestAnimationFrame(frame)}
 window.addEventListener('resize',resize);
-document.addEventListener('visibilitychange',function(){if(document.hidden){SFX.scrStop();if(scene==='run'&&G&&!G.paused&&G.state!=='clear'){G.paused=true;backFrom='run';wasPaused=false;$('bkSub').textContent='一時停止中。進み具合は保存されます。';$('bkGo').textContent='もくじへ';$('scrBack').classList.remove('hidden')}}});
+document.addEventListener('visibilitychange',function(){if(document.hidden){SFX.scrStop();if(scene==='run'&&G&&!G.paused&&G.state!=='clear'&&!G.S.prac){G.paused=true;backFrom='run';wasPaused=false;$('bkSub').textContent='一時停止中。進み具合は保存されます。';$('bkGo').textContent='もくじへ';$('scrBack').classList.remove('hidden')}}});
 
 /* ---------------- はじまり ---------------- */
+var HELP=null;
+if(window.Guide){
+  Guide.setup({theme:{bg:'#FCFBF6',fg:'#3A3A3A',accent:'#2C7BE5',accentText:'#FCFBF6',font:HF,bodyFont:HF,radius:10,texture:'grid',line:'#3A3A3A',
+      dim:'rgba(247,245,238,.62)',shadow:'4px 6px 0 -1px rgba(58,58,58,.35)',outline:'#F7F5EE',hand:'#FCFBF6',handLine:'#3A3A3A'},
+    sfx:function(k){ac();if(k==='step')SFX.ring(3);else if(k==='done')SFX.even();else if(k==='clear')SFX.even();else if(k==='open'||k==='close')SFX.flip();else if(k==='cheer')SFX.ok();else if(k==='nudge')SFX.tick()},
+    muted:function(){return muted}});
+  HELP=Guide.help({title:INTRO.title,learn:INTRO.learn,how:INTRO.how,size:44,offset:{x:72,y:0},show:false,attention:true,replay:'tutorial',
+    rules:['線は **原点**（左下の発射台）から。0Vなら0A','点を順につながない。**折れ線** は角で脱線する','1つの点に合わせず、点が線の **上と下に同じくらい** 散らばるように',
+      '線の先の **青い○** で向きを直せる。「消す」で引き直し','大きく外れた点は **タップして測り直し**（券があるページだけ）'],
+    onOpen:function(){if(scene==='run'&&G&&!G.paused){G.paused=true;G.hp=1;SFX.scrStop()}},
+    onClose:function(){if(G&&G.hp){G.hp=0;G.paused=false}}});
+}
+function placeHelp(){if(!HELP)return;var r=$('bMute').getBoundingClientRect();if(r.width)HELP.update({offset:{x:Math.round(innerWidth-r.left),y:0}})}
+window.addEventListener('resize',placeHelp);
 resize();
 try{document.fonts&&document.fonts.ready.then(function(){buildBG();if(G&&G.D)buildStatic()})}catch(e){}
 window.Zukan&&Zukan.setup&&Zukan.setup({game:GID,koma:[KOMA]});
@@ -2820,7 +2883,7 @@ if(window.PLAYER_NAME){$('nameIn').value=window.PLAYER_NAME;$('nmRow').classList
 if(TEST)startTest();else setScene('title');
 requestAnimationFrame(frame);
 /* 自動操作の確かめ用の窓口（遊びには影響しない） */
-window.__GA={G:function(){return G},page:startPage,trial:function(t){startTrial(t,false)},scene:function(){return scene},SV:function(){return SV},gen:gen,PGS:PGS,
+window.__GA={G:function(){return G},lay:function(){return LY},page:startPage,trial:function(t){startTrial(t,false)},scene:function(){return scene},SV:function(){return SV},gen:gen,PGS:PGS,
   go:function(){$('iGo').click()},
   /* 答えの線：原点から、均等の傾き（輪の中心）で右端まで */
   best:function(off){if(!G||!G.D)return;off=off||0;G.lines=G.D.wires.map(function(wv){var k=wv.k*(1+off),ve=G.D.cup?Math.max(G.D.cup.v*1.02,G.D.vmax*.98):G.D.vmax*.98;ve=Math.min(G.D.vmax,ve,G.D.imax*.99/k);return{pts:[[0,0],[r3(ve),r3(k*ve)]],org:true,seed:3,straight:true}});G.state='draw';G.runners=null;G.near=[];G.result=null;G.stamps=[];G.bal=null},
