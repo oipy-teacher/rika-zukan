@@ -2,164 +2,354 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#20242c">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#F2EDE4">
 <title>でんねつ実験プログラム ～温度上昇の実験計画～</title>
+<!--
+  でんねつ実験プログラム ～温度上昇の実験計画～（ゲームID dennetsu-program ／ コマID chu2-denryu-16 ／ 探究・予想用）
+  2026-09-27 v2 ゼロから作り直し（割り当て表 通し16）
+
+  【遊びの核】命令ブロックでロボを動かす（Lightbot型）。矢印ブロック（↑→↓←・同じ向きを続けて押すと歩数が増える）を並べて ▶実行。
+    実験ロボが盤面を歩き、通ったマスの器具（水の量・使う水・電熱線・電圧・時間・容器）を持ち替えながら、机A・机Bに装置を組む。
+    机に着いた瞬間の手持ちが、その机の装置になる。＝「どのマスを通るか」が「どの条件にするか」。
+  【理科の埋め込み】依頼（電力で決まる？／時間で決まる？）に対して、AとBで変わる条件が「依頼の1つだけ」のときだけロボは最後まで動く。
+    2つ変える→「比べられない」で止まる。そろえ忘れやすい水の量・使う水（くみ置き/冷たい水道水）・容器（発泡/金属）は、近道の上に罠として置く（死に覚え）。
+    山場＝「6Wの電熱線しかない世界」（縛り）：電熱線を替えずに、電圧を変えて電力を変える。温度が何℃上がるかは一度も出さない。
+    最後に、上昇温度の予想グラフを指で4本描いて封筒に封印（rika-zukan:chu2:seal:chu2-denryu-16。形は v1 と同じ {v,koma,game,at,name,slots:{power,time,volt,prod:{q,pred,reason}},plan}＋draw）。
+  【画風】バウハウスの幾何（別のデザイナー）：円・三角・四角の原色の平面構成。角丸なし・影なし・太い黒の罫。ロボも円と四角と三角でできている。
+  【世界とメタファー】原色の積み木でできた実験室。盤面＝実験室の床、壁＝原色の積み木、器具＝幾何の記号。計画書は構成主義のポスター。
+  【配色】紙 #F2EDE4／主（青）#1F3A93／差し（黄）#F6C600／赤 #D8342A／墨 #161616。グラデーションは使わない。
+  【書体】Murecho（見出し900・本文700。幾何的なゴシック）。
+  【画面の組み方】PC・iPad横＝左に実験室（上に実験台A/Bと条件表・下に盤面）、右に命令の棚。スマホ・iPad縦＝上に実験台と盤面、下に命令の帯。
+  【HUD】上の帯：左端に黒い「◀ もどる」、机の番号（黄の円）、計画書の束の進み（13マスの四角）、かけら（赤い円）、音（黒い円）。
+  【音】WebAudio合成の木琴＋クリック（正弦波・三角波）。ミュートあり。
+  【流れ】タイトル→実験室マップ→机1〜9（新要素を1つずつ）→ラッシュ4台（タイム）→予想グラフを描いて封印→確認テスト→提出カード
+-->
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;800&family=DotGothic16&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Murecho:wght@500;700;900&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#20242c;--bg2:#2a2f3a;--line:#3a4150;--txt:#e9edf3;--mut:#9aa4b5;--ok:#3fbf73;--ng:#ef5a4c;--gold:#f2c14e}
+:root{--paper:#F2EDE4;--blue:#1F3A93;--yel:#F6C600;--red:#D8342A;--ink:#161616;--pale:#E2DACB;--f:"Murecho","Hiragino Sans","Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif;--shH:300px}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{margin:0;height:100%}
-body{background:var(--bg);background-image:radial-gradient(#2e3441 1px,transparent 1px);background-size:14px 14px;color:var(--txt);font-family:"M PLUS Rounded 1c","Hiragino Maru Gothic ProN","Hiragino Sans","Meiryo",sans-serif;overflow-x:hidden;user-select:none;-webkit-user-select:none;touch-action:manipulation}
-button{font-family:inherit;cursor:pointer;touch-action:manipulation;color:inherit}
+html,body{margin:0;height:100%;background:var(--paper);overflow:hidden;overscroll-behavior:none}
+body{font-family:var(--f);color:var(--ink);font-weight:700;user-select:none;-webkit-user-select:none;touch-action:manipulation;-webkit-touch-callout:none}
+button{font-family:inherit;cursor:pointer;color:inherit;touch-action:manipulation;border-radius:0}
+input{font-family:inherit}
 .hidden{display:none!important}
-.px{font-family:"DotGothic16","M PLUS Rounded 1c",monospace}
-#app{max-width:520px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;padding:6px 8px calc(12px + env(safe-area-inset-bottom))}
-#hud{display:flex;align-items:center;gap:4px;min-height:44px;flex-wrap:wrap;font-weight:800;font-size:13px}
-.pill{background:var(--bg2);border:1.5px solid var(--line);border-radius:999px;padding:3px 8px;white-space:nowrap}
-#hud .sp{flex:1}
-.ib{min-width:44px;height:44px;border-radius:12px;border:1.5px solid var(--line);background:var(--bg2);font-size:20px;padding:0 8px}
-#combo{color:var(--gold)}
-#req{background:#fdf7e7;color:#23262d;border-radius:12px;padding:8px 10px;margin:4px 0;border-left:8px solid var(--gold);box-shadow:0 3px 0 #00000055}
-#req .top{display:flex;gap:6px;align-items:center;font-weight:800;font-size:12.5px;color:#6d6552}
-#req .new{background:var(--ng);color:#fff;border-radius:6px;padding:0 6px;font-size:11px}
-#req .q{font-size:19px;font-weight:800;margin:2px 0}
-#req .h{font-size:13px;font-weight:800;color:#4d4a42}
-#labWrap{background:#f4f1ea;border-radius:12px;overflow:hidden;border:2px solid #11141a}
-#lab{width:100%;display:block}
-#ed{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px}
-.colh{font-weight:800;text-align:center;font-size:14px;padding:2px 0;border-radius:8px;background:var(--bg2)}
-.blk{position:relative;min-height:46px;border-radius:9px;padding:3px 6px 4px 8px;color:#fff;display:flex;flex-direction:column;justify-content:center;box-shadow:inset 0 -3px 0 rgba(0,0,0,.25);margin-top:4px}
-.blk:before{content:"";position:absolute;left:14px;top:-5px;width:18px;height:6px;border-radius:0 0 4px 4px;background:inherit;filter:brightness(1.05)}
-.blk .l{font-size:11.5px;font-weight:800;opacity:.95;line-height:1.2}
-.blk .v{margin-top:2px;min-height:26px;border-radius:999px;background:#fff;color:#20242c;font-weight:800;font-size:13.5px;border:none;padding:2px 8px;text-align:left;display:flex;align-items:center;justify-content:space-between;gap:4px}
-.blk .v:after{content:"▾";opacity:.5;font-size:11px}
-.blk.lock .v{background:#ffffffcc}
-.blk.lock .v:after{content:""}
-.blk.run{outline:3px solid var(--gold);outline-offset:1px}
-.blk.bad{outline:3px solid var(--ng);outline-offset:1px;animation:shk .35s 2}
-.blk.chg{outline:3px dashed #fff;outline-offset:1px}
-.blk .mk{position:absolute;right:4px;top:3px;font-size:11px;font-weight:800;background:#0006;border-radius:6px;padding:0 5px}
-@keyframes shk{25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
-.blk.fixed{background:#4a5263}
-.hideRow{grid-column:1/3;text-align:center;font-size:12px;color:var(--mut);font-weight:800;padding:4px;border:1.5px dashed var(--line);border-radius:8px;margin-top:4px}
-#ctrl{display:flex;gap:8px;margin-top:10px}
-.big{min-height:56px;border-radius:14px;border:none;font-weight:800;font-size:18px;background:var(--ok);color:#0d2416;box-shadow:0 4px 0 #1d6e40;width:100%}
-.big:active{transform:translateY(3px);box-shadow:0 1px 0 #1d6e40}
-.big.gray{background:#3a4150;color:var(--txt);box-shadow:0 4px 0 #1a1e26}
-.big.gold{background:var(--gold);color:#2a2000;box-shadow:0 4px 0 #9a7a1e}
-.big:disabled{opacity:.45}
-#log{margin-top:8px;min-height:44px;background:#11141a;border-radius:10px;padding:7px 10px;font-size:14px;line-height:1.55;font-weight:800;border:1.5px solid var(--line)}
-#log .ok{color:var(--ok)}#log .ng{color:#ff8a7e}
-.screen{position:fixed;inset:0;z-index:50;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:18px;overflow:auto;text-align:center}
-.screen h1{font-size:clamp(24px,7.2vw,40px);margin:.05em 0;line-height:1.2}
-.screen .sub{font-size:17px;margin-bottom:10px;font-weight:800;color:var(--mut)}
-.emo{font-size:56px;line-height:1}
-.col{display:flex;flex-direction:column;gap:10px;width:min(100%,360px)}
-.col input{min-height:48px;border-radius:12px;border:1.5px solid var(--line);background:var(--bg2);color:var(--txt);font:inherit;font-size:18px;padding:0 12px;text-align:center}
-.poster{width:min(100%,330px);margin:6px 0 12px}
-#sheet{position:fixed;left:0;right:0;bottom:0;z-index:40;display:flex;justify-content:center;pointer-events:none}
-#sheet .in{pointer-events:auto;width:min(100%,520px);background:#fdf7e7;color:#23262d;border-radius:18px 18px 0 0;padding:12px 14px calc(14px + env(safe-area-inset-bottom));box-shadow:0 -8px 30px rgba(0,0,0,.5);animation:up .25s ease-out;max-height:86vh;overflow:auto}
-@keyframes up{from{transform:translateY(100%)}}
-#sheet h3{margin:0 0 6px;font-size:19px}
-#sheet p{margin:6px 0;font-size:15.5px;line-height:1.55}
-.opts{display:flex;flex-direction:column;gap:7px;margin:6px 0}
-.opt{min-height:48px;border-radius:12px;border:2px solid #b9b19a;background:#fff;font-weight:800;font-size:15px;text-align:left;padding:7px 11px;color:#23262d}
-.opt.on{border-color:#23262d;background:#fff0b8;box-shadow:inset 0 0 0 2px #23262d}
-.lbl{font-weight:800;font-size:14px;margin-top:8px;color:#6d6552}
-.tbl2{width:100%;border-collapse:collapse;font-size:14px;margin:6px 0}
-.tbl2 td,.tbl2 th{border:1.5px solid #23262d;padding:4px 6px;text-align:left}
-.fx{position:fixed;pointer-events:none;z-index:60;font-weight:800;font-size:22px;color:var(--gold);text-shadow:0 2px 0 #000;animation:rise 1.1s ease-out forwards}
-@keyframes rise{to{transform:translateY(-70px);opacity:0}}
-.px8{position:fixed;width:8px;height:8px;z-index:59;pointer-events:none;animation:px8 .9s steps(6) forwards}
-@keyframes px8{to{transform:translate(var(--dx),var(--dy));opacity:0}}
-#toast{position:fixed;left:50%;top:14%;transform:translateX(-50%);z-index:70;background:#11141a;color:var(--gold);font-weight:800;font-size:18px;padding:9px 16px;border-radius:12px;border:2px solid var(--gold);pointer-events:none;animation:tpop .25s ease-out;max-width:92vw;text-align:center}
-@keyframes tpop{from{transform:translateX(-50%) scale(.6)}}
-#blue{background:#1d3f73;justify-content:flex-start}
-.hold{position:relative;overflow:hidden;min-height:60px;border-radius:14px;border:2px solid #eaf1fb;background:#b3261e;color:#fff;font-weight:800;font-size:19px;width:min(100%,360px)}
-.hold i{position:absolute;left:0;top:0;bottom:0;width:0;background:rgba(255,255,255,.35)}
-.sealmark{width:84px;height:84px;border-radius:50%;background:#b3261e;color:#fff;font-size:40px;display:flex;align-items:center;justify-content:center;margin:8px auto;border:3px solid #fff;animation:stamp .5s cubic-bezier(.2,1.6,.4,1)}
-@keyframes stamp{from{transform:scale(2.2) rotate(-20deg);opacity:0}}
-#test{justify-content:flex-start;background:#fdf7e7;color:#23262d}
-#test .qn{font-weight:800;color:#6d6552;margin:6px 0}
-#test .qt{font-size:18px;font-weight:800;line-height:1.6;text-align:left;width:min(100%,520px)}
-#test .fig{width:min(100%,420px);margin:8px 0;background:#fff;border-radius:12px;padding:4px;border:1px solid #ddd}
-#test .fig svg{width:100%;height:auto;display:block}
-#test .opts{width:min(100%,520px)}
-.numrow{display:flex;gap:8px;align-items:center;justify-content:center;width:min(100%,420px)}
-.numrow input{flex:1;min-height:52px;font:inherit;font-size:22px;text-align:center;border-radius:12px;border:2px solid #23262d}
-.seq{min-height:52px;width:min(100%,520px);border:2px dashed #b9b19a;border-radius:12px;padding:6px;text-align:left;font-weight:800;font-size:15px;line-height:1.7}
-.stat{background:var(--bg2);border:1.5px solid var(--line);border-radius:10px;padding:8px;margin:3px 0;font-size:16px;font-weight:800}
-@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
+#app{position:fixed;inset:0;overflow:hidden;background:var(--paper)}
+
+/* ---- もどる（いつも左上の同じ場所） ---- */
+#bBack{position:absolute;left:0;top:0;height:56px;min-width:128px;padding:0 16px 0 12px;background:var(--ink);color:#fff;border:0;font:900 17px var(--f);letter-spacing:.06em;display:flex;align-items:center;gap:10px;z-index:40}
+#bBack i{display:block;width:0;height:0;border-top:11px solid transparent;border-bottom:11px solid transparent;border-right:17px solid var(--yel)}
+#bBack:active{background:var(--red)}
+
+/* ---- HUD ---- */
+#hud{position:absolute;left:0;right:0;top:0;height:56px;border-bottom:4px solid var(--ink);display:flex;align-items:center;gap:10px;padding:0 10px 0 140px;background:var(--paper);z-index:5}
+.hn{width:44px;height:44px;border-radius:50%;background:var(--yel);display:flex;align-items:center;justify-content:center;font:900 19px var(--f);flex:none}
+.hbar{display:flex;gap:3px;flex:1;min-width:0;align-items:center}
+.hbar i{flex:1;max-width:26px;height:18px;border:2.5px solid var(--ink);background:transparent}
+.hbar i.on{background:var(--blue)}.hbar i.on:nth-child(3n+2){background:var(--red)}.hbar i.on:nth-child(3n){background:var(--yel)}
+.hbar i.cur{outline:3px solid var(--red);outline-offset:1px}
+.hlab{font:900 12px var(--f);line-height:1.15;white-space:nowrap}
+.hlab b{display:block;font-size:15px}
+.hk{height:40px;min-width:40px;padding:0 10px 0 8px;border-radius:20px;background:var(--red);color:#fff;display:flex;align-items:center;gap:5px;font:900 16px var(--f);flex:none}
+.hk::before{content:"";width:12px;height:12px;background:#fff;transform:rotate(45deg)}
+.hb{width:44px;height:44px;border-radius:50%;border:0;background:var(--ink);color:#fff;font-size:18px;flex:none;display:flex;align-items:center;justify-content:center}
+.hb.sq{border-radius:0;background:var(--blue)}
+#hRush{font:900 15px var(--f);background:var(--ink);color:var(--yel);padding:6px 10px;flex:none}
+body.P #bBack{min-width:96px;padding:0 10px;font-size:15px;gap:6px}
+body.P #hud{padding-left:102px;gap:6px}
+body.P .hn{width:34px;height:34px;font-size:15px}
+body.P .hlab{font-size:10px}body.P .hlab b{font-size:12px;max-width:6.5em;overflow:hidden;text-overflow:ellipsis}
+body.P .hbar{display:none}
+body.P .hk{height:34px;min-width:34px;font-size:14px;padding:0 8px}
+body.P .hb{width:38px;height:38px}
+body.P #hRush{font-size:12px;padding:4px 6px}
+
+/* ---- 実験室（canvas）と命令の棚 ---- */
+#cvWrap{position:absolute;overflow:hidden}
+#cv{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
+#shelf{position:absolute;background:var(--paper);display:flex;flex-direction:column;gap:10px;padding:12px;overflow:hidden}
+body.L #cvWrap{left:0;top:60px;bottom:0;right:max(360px,36%)}
+body.L #shelf{right:0;top:60px;bottom:0;width:max(360px,36%);border-left:4px solid var(--ink)}
+body.P #cvWrap{left:0;right:0;top:60px;bottom:var(--shH)}
+body.P #shelf{left:0;right:0;bottom:0;height:var(--shH);border-top:4px solid var(--ink);padding:8px 10px;gap:7px}
+
+#req{display:flex;align-items:stretch;min-height:72px;border:3px solid var(--ink);background:#fff;flex:none;position:relative}
+#req .no{width:72px;background:var(--blue);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;font:900 30px/1 var(--f);flex:none}
+#req .no small{font-size:11px;letter-spacing:.1em;margin-bottom:3px}
+#req .tx{padding:7px 10px;flex:1;min-width:0}
+#req .tx b{display:block;font:900 19px/1.3 var(--f)}
+#req .tx small{display:block;font:700 13px/1.4 var(--f);margin-top:2px;color:#3b3b3b}
+#req .nw{position:absolute;right:-3px;top:-14px;background:var(--red);color:#fff;font:900 12px var(--f);padding:3px 8px;letter-spacing:.05em}
+body.P #req{min-height:52px}
+body.P #req .no{width:52px;font-size:22px}
+body.P #req .tx{padding:4px 8px}
+body.P #req .tx b{font-size:15px}
+body.P #req .tx small{font-size:11.5px;margin-top:0}
+
+.plab{display:flex;justify-content:space-between;align-items:baseline;font:900 13px var(--f);letter-spacing:.08em}
+.plab span{font-size:15px}
+#prog{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+body.P #prog{grid-template-columns:repeat(9,1fr);gap:4px}
+.slot{aspect-ratio:1;border:2.5px dashed #9b9588;display:flex;align-items:center;justify-content:center;position:relative;background:transparent;padding:0;min-height:44px}
+.slot.f{border:3px solid var(--ink)}
+.slot.f.U{background:var(--yel)}.slot.f.R{background:var(--red)}.slot.f.D{background:var(--blue)}.slot.f.L{background:var(--ink)}
+.slot svg{width:52%;height:52%}
+.slot b{position:absolute;right:3px;bottom:0;font:900 20px/1 var(--f);color:var(--ink)}
+.slot.f.R b,.slot.f.D b{color:#fff}.slot.f.L b{color:var(--yel)}
+.slot.run{outline:5px solid var(--ink);outline-offset:2px;transform:scale(1.06)}
+body.P .slot b{font-size:15px}
+
+#pal{display:grid;grid-template-columns:repeat(4,1fr) 1fr 1fr 1.9fr;gap:6px;flex:none}
+#pal button{min-height:58px;border:3px solid var(--ink);padding:0;display:flex;align-items:center;justify-content:center;font:900 13px/1.1 var(--f)}
+#pal .ar svg{width:44%;height:44%}
+#pal .ar[data-d=U]{background:var(--yel)}#pal .ar[data-d=R]{background:var(--red)}#pal .ar[data-d=D]{background:var(--blue)}#pal .ar[data-d=L]{background:var(--ink)}
+#pal .ar:active{transform:translate(2px,2px)}
+#bUndo,#bClr{background:#fff}
+#bRun{background:var(--red);color:#fff;font-size:18px!important;gap:5px;border-radius:0;white-space:nowrap}
+#bRun::before{content:"";width:0;height:0;border-top:10px solid transparent;border-bottom:10px solid transparent;border-left:15px solid #fff}
+#bRun:disabled{background:#9b9588}
+body.P #pal button{min-height:50px}
+#log{flex:1;min-height:0;overflow:auto;border-left:6px solid var(--ink);padding:4px 10px;font:700 15px/1.55 var(--f);background:rgba(255,255,255,.5)}
+#log b{font-weight:900}
+#log .ng{color:var(--red);font-weight:900}
+#log .ok{color:var(--blue);font-weight:900}
+body.P #log{font-size:13px;line-height:1.45;padding:3px 8px}
+.kbd{margin-top:auto;font:700 11px var(--f);color:#6f6a60}
+body.P .kbd{display:none}
+
+/* ---- 画面（タイトル・マップ・予想・テスト…） ---- */
+.scr{position:absolute;inset:0;background:var(--paper);overflow:hidden;z-index:10}
+.scroll{overflow-y:auto;-webkit-overflow-scrolling:touch}
+.bx{min-height:56px;border:3px solid var(--ink);background:#fff;font:900 19px var(--f);letter-spacing:.06em;padding:0 22px;display:flex;align-items:center;justify-content:center;gap:10px}
+.bx.red{background:var(--red);color:#fff}.bx.blue{background:var(--blue);color:#fff}.bx.yel{background:var(--yel)}.bx.ink{background:var(--ink);color:#fff}
+.bx:active{transform:translate(2px,2px)}
+.bx:disabled{background:#cfc8ba;color:#827c70}
+.bx.sm{min-height:48px;font-size:16px;padding:0 14px}
+
+/* タイトル */
+#scrTitle .poster{position:absolute;inset:0;width:100%;height:100%}
+#scrTitle .tt{position:absolute;left:6vw;top:13vh;max-width:min(640px,88vw)}
+.kick{display:inline-block;background:var(--ink);color:#fff;font:900 13px var(--f);letter-spacing:.12em;padding:6px 10px}
+#scrTitle h1{margin:14px 0 0;font:900 clamp(40px,7.4vw,104px)/1.02 var(--f);letter-spacing:-.01em}
+#scrTitle h1 span{display:block}
+#scrTitle h1 span:nth-child(2){color:var(--red)}
+#scrTitle h1 span:nth-child(3){color:var(--blue)}
+#scrTitle .sub{margin-top:14px;display:inline-block;background:var(--yel);font:900 clamp(16px,2vw,24px) var(--f);padding:6px 14px;border:3px solid var(--ink)}
+#scrTitle .menu{position:absolute;right:5vw;bottom:8vh;width:min(360px,88vw);display:flex;flex-direction:column;gap:10px}
+#scrTitle .menu label{display:flex;align-items:center;gap:8px;background:#fff;border:3px solid var(--ink);padding:0 0 0 10px;font:900 14px var(--f)}
+#scrTitle .menu input{flex:1;min-width:0;height:48px;border:0;border-left:3px solid var(--ink);padding:0 10px;font:700 17px var(--f);background:transparent}
+#scrTitle .menu .row{display:flex;gap:10px}#scrTitle .menu .row .bx{flex:1}
+body.P #scrTitle .tt{left:6vw;top:10vh}
+body.P #scrTitle .poster{top:40%;height:60%}
+body.P #scrTitle .menu{left:6vw;right:6vw;width:auto;bottom:5vh}
+
+/* マップ */
+#scrMap{padding:76px 5vw 24px}
+#scrMap h2,.h2{font:900 clamp(24px,3.4vw,40px)/1.15 var(--f);margin:0}
+#scrMap .lead{font:700 15px/1.5 var(--f);margin:6px 0 14px}
+#scrMap .lead b{background:var(--yel);padding:0 4px}
+#mGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(190px,42vw),1fr));gap:12px}
+.mt{position:relative;aspect-ratio:1.25;border:3px solid var(--ink);background:#fff;text-align:left;padding:10px;display:flex;flex-direction:column;justify-content:space-between;overflow:hidden}
+.mt .n{font:900 34px/1 var(--f);position:relative;z-index:1}
+.mt .nm{font:900 14px/1.3 var(--f);position:relative;z-index:1}
+.mt .nw{font:700 11.5px/1.3 var(--f);position:relative;z-index:1}
+.mt .deco{position:absolute;right:-16%;top:-30%;width:52%;aspect-ratio:1;border-radius:50%;background:var(--pale)}
+.mt.done .deco{background:var(--blue)}.mt.done:nth-child(3n+2) .deco{background:var(--red);border-radius:0;transform:rotate(12deg)}.mt.done:nth-child(3n) .deco{background:var(--yel);clip-path:polygon(50% 0,100% 100%,0 100%);border-radius:0}
+.mt.next{outline:5px solid var(--red);outline-offset:-1px}
+.mt.lock{background:var(--pale);color:#8c8578;cursor:default}
+.mt.rush{background:var(--ink);color:#fff}.mt.rush.lock{background:#5b574f}
+.mt.fin{background:var(--yel)}
+.mt .chk{position:absolute;right:8px;top:8px;z-index:1;background:var(--ink);color:#fff;font:900 12px var(--f);padding:2px 6px}
+.mfoot{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
+
+/* 予想グラフ */
+#scrDraw{display:flex}
+#gWrap{position:relative;flex:1;min-width:0;min-height:0}
+#gcv{position:absolute;inset:0;width:100%;height:100%;touch-action:none;display:block}
+#gPanel{background:var(--paper);display:flex;flex-direction:column;gap:10px;padding:14px;overflow-y:auto}
+body.L #scrDraw{flex-direction:row;padding-top:60px}
+body.L #gPanel{width:max(360px,34%);border-left:4px solid var(--ink)}
+body.P #scrDraw{flex-direction:column;padding-top:60px}
+body.P #gPanel{height:46%;border-top:4px solid var(--ink);padding:10px}
+.gstep{display:flex;gap:6px}
+.gstep i{flex:1;height:10px;border:2px solid var(--ink)}
+.gstep i.on{background:var(--ink)}
+.gq{font:900 20px/1.35 var(--f)}
+.gq em{font-style:normal;padding:0 5px;color:#fff}
+.gnote{font:700 14px/1.55 var(--f)}
+.rs{display:flex;flex-direction:column;gap:6px}
+.rs button{min-height:48px;border:3px solid var(--ink);background:#fff;text-align:left;padding:6px 10px 6px 44px;font:700 14.5px/1.35 var(--f);position:relative}
+.rs button::before{content:"";position:absolute;left:12px;top:50%;width:18px;height:18px;margin-top:-9px;background:var(--blue);border-radius:50%}
+.rs button:nth-child(2)::before{background:var(--red);border-radius:0}
+.rs button:nth-child(3)::before{background:var(--yel);border-radius:0;clip-path:polygon(50% 0,100% 100%,0 100%)}
+.rs button:nth-child(4)::before{background:var(--ink);border-radius:0;transform:rotate(45deg)}
+.rs button:nth-child(5)::before{background:#b8b1a3}
+.sumt{border:3px solid var(--ink);background:#fff}
+.sumt div{display:flex;gap:8px;padding:7px 10px;border-top:2px solid var(--ink);font:700 14px/1.4 var(--f)}
+.sumt div:first-child{border-top:0}
+.sumt i{flex:none;width:14px;height:14px;margin-top:3px}
+.sumt b{font-weight:900}
+.hold{position:relative;overflow:hidden;min-height:64px;border:3px solid var(--ink);background:var(--red);color:#fff;font:900 19px var(--f)}
+.hold i{position:absolute;left:0;top:0;bottom:0;width:0;background:var(--ink)}
+.hold span{position:relative}
+
+/* クリア・テスト・おわり */
+#scrClear{padding:76px 6vw 30px}
+.stats{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px;margin:14px 0}
+.stat{border:3px solid var(--ink);background:#fff;padding:10px 12px;font:700 14px/1.4 var(--f)}
+.stat b{display:block;font:900 30px/1.1 var(--f)}
+.stat:nth-child(1){border-top:12px solid var(--blue)}.stat:nth-child(2){border-top:12px solid var(--red)}.stat:nth-child(3){border-top:12px solid var(--yel)}.stat:nth-child(4){border-top:12px solid var(--ink)}
+.lesson{border-left:10px solid var(--red);background:#fff;padding:10px 14px;font:700 16px/1.6 var(--f);max-width:900px}
+.btnrow{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+
+#scrTest{padding:70px 0 20px}
+#tIn{max-width:980px;margin:0 auto;padding:0 5vw;display:grid;grid-template-columns:1fr 1fr;gap:18px 24px}
+body.P #tIn{grid-template-columns:1fr}
+.tq-h{display:flex;align-items:center;gap:12px;grid-column:1/-1}
+.tq-n{width:64px;height:64px;border-radius:50%;background:var(--red);color:#fff;display:flex;align-items:center;justify-content:center;font:900 26px var(--f);flex:none}
+.tq-dots{display:flex;gap:4px;flex:1}
+.tq-dots i{flex:1;max-width:30px;height:12px;border:2.5px solid var(--ink)}
+.tq-dots i.ok{background:var(--blue)}.tq-dots i.ng{background:var(--red)}.tq-dots i.cur{background:var(--yel)}
+.tq-q{font:900 19px/1.55 var(--f)}
+.tq-fig{border:3px solid var(--ink);background:#fff;padding:6px;margin-top:10px}
+.tq-fig svg{width:100%;height:auto;display:block}
+.tq-a{display:flex;flex-direction:column;gap:8px}
+.ch{min-height:54px;border:3px solid var(--ink);background:#fff;text-align:left;padding:8px 12px 8px 50px;font:700 16px/1.4 var(--f);position:relative}
+.ch::before{content:"";position:absolute;left:14px;top:50%;margin-top:-10px;width:20px;height:20px;background:var(--blue);border-radius:50%}
+.ch:nth-child(2)::before{background:var(--red);border-radius:0}.ch:nth-child(3)::before{background:var(--yel);border-radius:0;clip-path:polygon(50% 0,100% 100%,0 100%)}.ch:nth-child(4)::before{background:var(--ink);border-radius:0;transform:rotate(45deg) scale(.85)}
+.ch.ok{background:var(--blue);color:#fff}.ch.ng{background:var(--red);color:#fff}
+.numv{display:flex;align-items:center;gap:10px}.numv div{flex:1;border:3px solid var(--ink);background:#fff;min-height:58px;font:900 28px var(--f);display:flex;align-items:center;padding:0 12px}
+.keys{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.keys button{min-height:52px;border:3px solid var(--ink);background:#fff;font:900 20px var(--f)}
+.keys .go{grid-column:1/-1;background:var(--red);color:#fff;font-size:18px}
+.ordl{display:flex;flex-direction:column;gap:6px}
+.ordl .sl{border:3px solid var(--ink);background:var(--yel);padding:8px 10px;font:700 15px/1.4 var(--f)}
+.ex{border-left:10px solid var(--blue);background:#fff;padding:10px 12px;font:700 15px/1.55 var(--f)}
+.ex.ng{border-left-color:var(--red)}
+
+#scrEnd{display:flex;align-items:center;justify-content:center;padding:70px 6vw 20px}
+.endc{border:4px solid var(--ink);background:#fff;padding:22px;width:min(560px,100%);display:flex;flex-direction:column;gap:10px}
+.endc .sc{font:900 64px/1 var(--f)}.endc .sc small{font-size:22px}
+
+/* ダイアログ・帯 */
+#dlg{position:absolute;inset:0;background:rgba(22,22,22,.55);z-index:50;display:flex;align-items:center;justify-content:center;padding:16px}
+#dlgIn{background:var(--paper);border:4px solid var(--ink);width:min(560px,100%);max-height:92%;overflow:auto;position:relative}
+#dlgIn .band{height:16px;display:flex}#dlgIn .band i{flex:1}
+#dlgIn .bd{padding:16px 18px 18px;display:flex;flex-direction:column;gap:10px}
+#dlgIn h3{margin:0;font:900 24px/1.25 var(--f)}
+#dlgIn p{margin:0;font:700 15px/1.6 var(--f)}
+.ptab{border:3px solid var(--ink);background:#fff;font:700 14px/1.45 var(--f)}
+.ptab div{display:grid;grid-template-columns:7.5em 1fr;border-top:2px solid var(--ink)}
+.ptab div:first-child{border-top:0}
+.ptab span{padding:6px 8px;background:var(--ink);color:#fff;font-weight:900}
+.ptab em{font-style:normal;padding:6px 8px}
+.ptab .c em{background:var(--yel);font-weight:900}
+#ban{position:absolute;left:0;right:0;top:40%;z-index:45;pointer-events:none;display:flex;justify-content:center}
+#ban div{background:var(--ink);color:#fff;font:900 clamp(20px,3vw,34px) var(--f);padding:14px 26px;border-left:22px solid var(--red);border-right:22px solid var(--yel);animation:ban 1.6s ease both}
+@keyframes ban{0%{transform:translateX(-60vw)}18%,78%{transform:none}100%{transform:translateX(60vw);opacity:0}}
+#toast{position:absolute;left:50%;bottom:22%;transform:translateX(-50%);z-index:60;background:var(--ink);color:#fff;font:900 16px var(--f);padding:10px 16px;border-left:10px solid var(--yel);pointer-events:none;max-width:90vw}
+@media (prefers-reduced-motion:reduce){#ban div{animation:none}}
 </style>
 </head>
-<body>
-
-<div id="title" class="screen">
-  <div class="emo">💻</div>
-  <h1 class="px">でんねつ実験プログラム</h1>
-  <div class="sub">～温度上昇の実験計画～</div>
-  <svg class="poster" viewBox="0 0 330 150" aria-hidden="true">
-    <rect x="4" y="4" width="322" height="142" rx="10" fill="#2a2f3a" stroke="#3a4150" stroke-width="2"/>
-    <rect x="18" y="18" width="130" height="24" rx="6" fill="#3a78d4"/><text x="26" y="35" font-size="12" font-weight="800" fill="#fff">水を入れる 100g</text>
-    <rect x="18" y="46" width="130" height="24" rx="6" fill="#d64545"/><text x="26" y="63" font-size="12" font-weight="800" fill="#fff">電熱線 6V-6W</text>
-    <rect x="18" y="74" width="130" height="24" rx="6" fill="#d9a21b"/><text x="26" y="91" font-size="12" font-weight="800" fill="#fff">電流を流す 4分</text>
-    <rect x="182" y="18" width="130" height="24" rx="6" fill="#3a78d4"/><text x="190" y="35" font-size="12" font-weight="800" fill="#fff">水を入れる 100g</text>
-    <rect x="182" y="46" width="130" height="24" rx="6" fill="#d64545" stroke="#fff" stroke-width="2" stroke-dasharray="4 3"/><text x="190" y="63" font-size="12" font-weight="800" fill="#fff">電熱線 6V-18W</text>
-    <rect x="182" y="74" width="130" height="24" rx="6" fill="#d9a21b"/><text x="190" y="91" font-size="12" font-weight="800" fill="#fff">電流を流す 4分</text>
-    <text x="165" y="63" text-anchor="middle" font-size="18" font-weight="800" fill="#f2c14e">≠</text><text x="165" y="35" text-anchor="middle" font-size="16" font-weight="800" fill="#3fbf73">＝</text><text x="165" y="91" text-anchor="middle" font-size="16" font-weight="800" fill="#3fbf73">＝</text>
-    <text x="165" y="128" text-anchor="middle" font-size="14" font-weight="800" fill="#e9edf3">変えるのは1つ、ほかは全部そろえる</text>
-  </svg>
-  <div class="col">
-    <button id="bStart" class="big">はじめる</button>
-    <button id="bCont" class="big gray hidden">つづきから</button>
-    <input id="nameIn" maxlength="16" placeholder="なまえ（なくても遊べる）" autocomplete="off">
-    <button id="bEnvT" class="big gray hidden">✉ 封筒の中身（実験のあと）</button>
-    <button id="bBookT" class="big gray hidden">📖 図鑑</button>
-  </div>
-</div>
-
+<body class="L">
 <div id="app">
-  <div id="hud">
-    <span class="pill" id="hR">依頼1</span>
-    <span class="pill" id="combo" style="display:none"></span>
-    <span class="pill" id="hT">0:00</span>
-    <span id="zhud"></span>
-    <span class="sp"></span>
-    <button class="ib" id="bBook" aria-label="図鑑">📖</button>
-    <button class="ib" id="bMute" aria-label="音">🔊</button>
-  </div>
-  <div id="req"></div>
-  <div id="labWrap"><svg id="lab" viewBox="0 0 360 150"></svg></div>
-  <div id="ed"></div>
-  <div id="ctrl"><button class="big" id="bRun">▶ 実行</button></div>
-  <div id="log"></div>
-</div>
+  <header id="hud">
+    <div class="hn" id="hNo">1</div>
+    <div class="hlab"><b id="hName">見本の机</b>計画書 <span id="hCnt">0</span>/13</div>
+    <div class="hbar" id="hBar"></div>
+    <div id="hRush" class="hidden">0:00</div>
+    <div class="hk" id="hK">0</div>
+    <button class="hb sq" id="bMapH" aria-label="実験室マップ">▦</button>
+    <button class="hb" id="bMute" aria-label="音">♪</button>
+  </header>
+  <div id="cvWrap"><canvas id="cv"></canvas></div>
+  <section id="shelf">
+    <div id="req"><div class="no"><small>依頼</small><span id="rNo">01</span></div><div class="tx"><b id="rQ"></b><small id="rH"></small></div><div class="nw hidden" id="rNew"></div></div>
+    <div><div class="plab">命令ブロック <span id="pCnt">0 / 3</span></div></div>
+    <div id="prog"></div>
+    <div id="pal">
+      <button class="ar" data-d="U" aria-label="上へ"><svg viewBox="0 0 10 10"><path d="M5 1L9.5 9H.5Z" fill="#161616"/></svg></button>
+      <button class="ar" data-d="R" aria-label="右へ"><svg viewBox="0 0 10 10"><path d="M9 5L1 9.5V.5Z" fill="#fff"/></svg></button>
+      <button class="ar" data-d="D" aria-label="下へ"><svg viewBox="0 0 10 10"><path d="M5 9L9.5 1H.5Z" fill="#fff"/></svg></button>
+      <button class="ar" data-d="L" aria-label="左へ"><svg viewBox="0 0 10 10"><path d="M1 5L9 9.5V.5Z" fill="#F6C600"/></svg></button>
+      <button id="bUndo">1つ<br>けす</button>
+      <button id="bClr">全部<br>けす</button>
+      <button id="bRun">実行</button>
+    </div>
+    <div id="log"></div>
+    <div class="kbd">キーボードでも：矢印キー＝ブロック／Backspace＝けす／Enter＝実行</div>
+  </section>
 
-<div id="sheet" class="hidden"><div class="in" id="sheetIn"></div></div>
-<div id="blue" class="screen hidden"></div>
-<div id="clear" class="screen hidden">
-  <div class="emo">💻</div>
-  <h1 class="px">実験計画 完成！</h1>
-  <div class="col" id="clearStats"></div>
-  <div class="col" style="margin-top:10px">
-    <button id="bTest" class="big">確認テストへ ▶</button>
-    <button id="bEnvC" class="big gray">✉ 封筒の中身（実験のあと）</button>
-    <button id="bBookC" class="big gray hidden">📖 図鑑</button>
-    <button id="bAgain" class="big gray">本編をもう一度</button>
+  <div id="scrTitle" class="scr">
+    <svg class="poster" viewBox="0 0 1000 1000" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+      <rect width="1000" height="1000" fill="#F2EDE4"/>
+      <circle cx="770" cy="300" r="250" fill="#1F3A93"/>
+      <rect x="610" y="520" width="330" height="330" fill="#D8342A"/>
+      <path d="M560 1000 L760 640 L960 1000Z" fill="#F6C600"/>
+      <rect x="0" y="880" width="1000" height="18" fill="#161616"/>
+      <rect x="560" y="0" width="14" height="1000" fill="#161616"/>
+      <circle cx="770" cy="300" r="120" fill="none" stroke="#F6C600" stroke-width="16"/>
+      <g transform="translate(770 560)">
+        <path d="M-70 110 L-44 40 L-18 110Z M18 110 L44 40 L70 110Z" fill="#161616"/>
+        <rect x="-78" y="-70" width="156" height="120" fill="#F2EDE4" stroke="#161616" stroke-width="12"/>
+        <rect x="-50" y="-40" width="40" height="40" fill="#D8342A"/><circle cx="30" cy="-20" r="20" fill="#1F3A93"/>
+        <circle cx="0" cy="-140" r="62" fill="#F6C600" stroke="#161616" stroke-width="12"/>
+        <circle cx="-22" cy="-146" r="9" fill="#161616"/><circle cx="22" cy="-146" r="9" fill="#161616"/>
+        <path d="M-12 -240 L0 -205 L12 -240Z" fill="#D8342A"/><rect x="-5" y="-208" width="10" height="10" fill="#161616"/>
+      </g>
+      <g opacity=".9"><circle cx="120" cy="860" r="40" fill="#161616"/><rect x="200" y="822" width="76" height="76" fill="#1F3A93"/><path d="M320 898 L358 822 L396 898Z" fill="#D8342A"/></g>
+    </svg>
+    <div class="tt">
+      <div class="kick">中2理科　電流とその利用　第16回（探究）</div>
+      <h1><span>でんねつ</span><span>実験</span><span>プログラム</span></h1>
+      <div class="sub">温度上昇の実験計画</div>
+    </div>
+    <div class="menu">
+      <label id="nmRow">なまえ<input id="nameIn" maxlength="16" placeholder="なくてもOK" autocomplete="off"></label>
+      <button class="bx red" id="bStart">はじめる</button>
+      <button class="bx blue hidden" id="bCont">つづきから</button>
+      <div class="row"><button class="bx yel sm" id="bBookT">図鑑</button><button class="bx sm hidden" id="bEnvT">封筒を見る</button></div>
+    </div>
   </div>
-</div>
-<div id="env" class="screen hidden"></div>
-<div id="test" class="screen hidden"></div>
-<div id="end" class="screen hidden">
-  <div class="emo">📝</div>
-  <h1 class="px">おつかれさま！</h1>
-  <div class="col">
-    <button id="bCard" class="big">提出カードをもう一度見る</button>
-    <button id="bRetest" class="big gray">確認テストをやり直す</button>
-    <button id="bTitle" class="big gray">タイトルへ</button>
+
+  <div id="scrMap" class="scr scroll hidden">
+    <h2>実験室マップ</h2>
+    <div class="lead" id="mLead"></div>
+    <div id="mGrid"></div>
+    <div class="mfoot"><button class="bx yel sm" id="bBookM">図鑑</button><button class="bx sm" id="bSheets">計画書の束を見る</button><button class="bx sm hidden" id="bEnvM">封筒を見る</button></div>
   </div>
+
+  <div id="scrDraw" class="scr hidden">
+    <div id="gWrap"><canvas id="gcv"></canvas></div>
+    <div id="gPanel"></div>
+  </div>
+
+  <div id="scrClear" class="scr scroll hidden">
+    <div class="kick">計画書 13枚 完成</div>
+    <h2 class="h2" style="margin-top:10px">実験室、ぜんぶ仕上がった！</h2>
+    <div class="stats" id="cStats"></div>
+    <div class="lesson" id="cLesson"></div>
+    <div class="btnrow"><button class="bx red" id="bTest">確認テストへ</button><button class="bx yel sm" id="bBookC">図鑑</button><button class="bx sm" id="bEnvC">封筒を見る</button><button class="bx sm" id="bMapC">実験室マップ</button></div>
+  </div>
+
+  <div id="scrTest" class="scr scroll hidden"><div id="tIn"></div></div>
+
+  <div id="scrEnd" class="scr hidden">
+    <div class="endc">
+      <div class="kick" id="eName">確認テスト</div>
+      <div class="sc" id="eScore"></div>
+      <button class="bx red" id="eCard">提出カードを表示</button>
+      <button class="bx yel sm" id="eBook">図鑑</button>
+      <button class="bx sm" id="eRetest">確認テストをもう一度</button>
+      <button class="bx sm" id="eTitle">タイトルへ</button>
+    </div>
+  </div>
+
+  <div id="dlg" class="hidden"><div id="dlgIn"></div></div>
+  <div id="ban" class="hidden"></div>
+  <button id="bBack" class="hidden"><i></i><span id="bBackT">もどる</span></button>
 </div>
 
 <script>/*@SUBMIT_CARD_BEGIN*/
@@ -375,7 +565,7 @@ button{font-family:inherit;cursor:pointer;touch-action:manipulation;color:inheri
   window.Quiz=Quiz;
 })();
 
-window.QUIZ={"v": 1, "grade": "chu2", "unit": "denryu", "game": "dennetsu-program", "koma": ["chu2-denryu-16"], "testCount": 10, "questions": [{"t": "choice", "q": "「電熱線の電力によって、水の上昇温度が変わるか」を調べたい。変える条件はどれ？", "choices": ["電熱線の電力（6W・9W・18W など）", "水の量", "電流を流す時間", "はじめの水温"], "ex": "確かめたいこと（電力）だけを変え、ほかの条件はそろえる。", "kind": "method", "level": 1, "fig": null, "id": "chu2-dennetsu-program-q001", "koma": "chu2-denryu-16"}, {"t": "choice", "q": "「電流を流す時間によって、水の上昇温度が変わるか」を調べる。同じにしなくてよいものは？", "choices": ["電流を流す時間", "電熱線の電力", "水の量", "はじめの水温"], "ex": "時間を調べるので、時間だけを変える。電力・水の量・はじめの水温などはそろえる。", "kind": "method", "level": 1, "fig": null, "id": "chu2-dennetsu-program-q002", "koma": "chu2-denryu-16"}, {"t": "choice", "q": "電熱線の電力と水の上昇温度の関係を調べる計画ア〜ウ（それぞれ2つのカップを比べる）。正しく比べられる計画はどれ？", "choices": ["計画ア", "計画イ", "計画ウ", "どれも比べられない"], "ex": "イは電力と水の量の2つが変わっていて、どちらが効いたか分からない。ウは何も変えていない。", "kind": "judge", "level": 2, "fig": "\u003csvg viewBox=\"0 0 360 136\" xmlns=\"http://www.w3.org/2000/svg\">\u003crect width=\"360\" height=\"136\" fill=\"#fff\"/>\u003crect x=\"6\" y=\"6\" width=\"348\" height=\"124\" fill=\"#fff\" stroke=\"#1d2433\" stroke-width=\"1.5\"/>\u003cline x1=\"96\" y1=\"6\" x2=\"96\" y2=\"130\" stroke=\"#1d2433\" stroke-width=\"1.5\"/>\u003cline x1=\"182\" y1=\"6\" x2=\"182\" y2=\"130\" stroke=\"#1d2433\" stroke-width=\"1.5\"/>\u003cline x1=\"268\" y1=\"6\" x2=\"268\" y2=\"130\" stroke=\"#1d2433\" stroke-width=\"1.5\"/>\u003cline x1=\"6\" y1=\"34\" x2=\"354\" y2=\"34\" stroke=\"#1d2433\" stroke-width=\"1.5\"/>\u003cline x1=\"6\" y1=\"66\" x2=\"354\" y2=\"66\" stroke=\"#1d2433\" stroke-width=\"1.5\"/>\u003cline x1=\"6\" y1=\"98\" x2=\"354\" y2=\"98\" stroke=\"#1d2433\" stroke-width=\"1.5\"/>\u003ctext x=\"51\" y=\"26\" font-size=\"13\" font-weight=\"800\" text-anchor=\"middle\" fill=\"#1d2433\">\u003c/text>\u003ctext x=\"139\" y=\"26\" font-size=\"13\" font-weight=\"800\" text-anchor=\"middle\" fill=\"#1d2433\">電熱線\u003c/text>\u003ctext x=\"225\" y=\"26\" font-size=\"13\" font-weight=\"800\" text-anchor=\"middle\" fill=\"#1d2433\">水の量\u003c/text>\u003ctext x=\"311\" y=\"26\" font-size=\"13\" font-weight=\"800\" text-anchor=\"middle\" fill=\"#1d2433\">時間\u003c/text>\u003ctext x=\"51\" y=\"56\" font-size=\"14\" font-weight=\"800\" text-anchor=\"middle\" fill=\"#1d2433\">計画ア\u003c/text>\u003ctext x=\"139\" y=\"56\" font-size=\"12\" font-weight=\"500\" text-anchor=\"middle\" fill=\"#1d2433\">6W と 18W\u003c/text>\u003ctext x=\"225\" y=\"56\" font-size=\"12\" font-weight=\"500\" text-anchor=\"middle\" fill=\"#1d2433\">100g と 100g\u003c/text>\u003ctext x=\"311\" y=\"56\" font-size=\"12\" font-weight=\"500\" text-anchor=\"middle\" fill=\"#1d2433\">5分 と 5分\u003c/text>\u003ctext x=\"51\" y=\"88\" font-size=\"14\" font-weight=\"800\" text-anchor=\"middle\" fill=\"#1d2433\">計画イ\u003c/text>\u003ctext x=\"139\" y=\"88\" font-size=\"12\" font-weight=\"500\" text-anchor=\"middle\" fill=\"#1d2433\">6W と 18W\u003c/text>\u003ctext x=\"225\" y=\"88\" font-size=\"12\" font-weight=\"500\" text-anchor=\"middle\" fill=\"#1d2433\">100g と 150g\u003c/text>\u003ctext x=\"311\" y=\"88\" font-size=\"12\" font-weight=\"500\" text-anchor=\"middle\" fill=\"#1d2433\">5分 と 5分\u003c/text>\u003ctext x=\"51\" y=\"120\" font-size=\"14\" font-weight=\"800\" text-anchor=\"middle\" fill=\"#1d2433\">計画ウ\u003c/text>\u003ctext x=\"139\" y=\"120\" font-size=\"12\" font-weight=\"500\" text-anchor=\"middle\" fill=\"#1d2433\">6W と 6W\u003c/text>\u003ctext x=\"225\" y=\"120\" font-size=\"12\" font-weight=\"500\" text-anchor=\"middle\" fill=\"#1d2433\">100g と 100g\u003c/text>\u003ctext x=\"311\" y=\"120\" font-size=\"12\" font-weight=\"500\" text-anchor=\"middle\" fill=\"#1d2433\">5分 と 5分\u003c/text>\u003c/svg>", "id": "chu2-dennetsu-program-q003", "koma": "chu2-denryu-16"}, {"t": "choice", "q": "水の温度上昇を調べる実験で、水道水をくみ置きしておき、室温と同じ温度にしてから使うのはなぜ？", "choices": ["電熱線の熱以外で、水の温度が変わらないようにするため", "水の量を正確にはかるため", "電流を流れやすくするため", "水を早く沸騰させるため"], "ex": "室温より冷たい水だと、まわりの空気からも温まり、電熱線の熱による上昇だけを調べられない。", "kind": "method", "level": 2, "fig": null, "id": "chu2-dennetsu-program-q004", "koma": "chu2-denryu-16"}, {"t": "choice", "q": "実験中に、ときどき水をかき混ぜるのはなぜ？", "choices": ["水の温度を均一にするため", "電熱線の電力を大きくするため", "水が蒸発しないようにするため", "電流計の針を安定させるため"], "ex": "かき混ぜないと、電熱線の近くだけ温度が高くなり、正しく測れない。", "kind": "method", "level": 1, "fig": null, "id": "chu2-dennetsu-program-q005", "koma": "chu2-denryu-16"}, {"t": "choice", "q": "水を入れる容器に、金属のカップではなく発泡ポリスチレンのカップを使うのはなぜ？", "choices": ["熱が外に逃げにくいから", "電流が流れやすいから", "水がこぼれにくいから", "温度計が見やすいから"], "ex": "発泡ポリスチレンは熱を伝えにくく、発生した熱が外へ逃げにくい。", "kind": "method", "level": 1, "fig": null, "id": "chu2-dennetsu-program-q006", "koma": "chu2-denryu-16"}, {"t": "choice", "q": "電熱線の電力と水の上昇温度の関係を調べる実験。「結果」としてはかるものはどれ？", "choices": ["水の上昇温度", "電熱線の電力", "水の量", "電流を流す時間"], "ex": "変える条件（電力）を変えたときに、どうなるかを見る「結果」が上昇温度。水の量・時間はそろえる条件。", "kind": "judge", "level": 2, "fig": null, "id": "chu2-dennetsu-program-q007", "koma": "chu2-denryu-16"}, {"t": "order", "q": "電熱線で水を温める実験の手順を、正しい順に並べよう。", "items": ["発泡ポリスチレンのカップに、くみ置きの水を決めた量だけ入れる", "はじめの水温をはかる", "電熱線に決めた電圧を加えて、電流を流し始める", "ときどきかき混ぜながら、1分ごとに水温をはかる"], "ex": "水を用意→はじめの水温→電流を流す→かき混ぜながら一定時間ごとに測る。", "kind": "method", "level": 1, "fig": null, "id": "chu2-dennetsu-program-q008", "koma": "chu2-denryu-16"}, {"t": "choice", "q": "電熱線から発生した熱の量を何という？", "choices": ["熱量", "電力", "電圧", "電気抵抗"], "ex": "発生した熱の量を熱量といい、単位はジュール（J）。", "kind": "term", "level": 1, "fig": null, "id": "chu2-dennetsu-program-q009", "koma": "chu2-denryu-16"}, {"t": "num", "q": "電力量は「電力×時間（秒）」で表す。6Wの電熱線に5分間電流を流したときの電力量は何J？", "ans": 1800, "unit": "J", "tol": 0.5, "ex": "5分＝300秒。6×300＝1800J。時間は秒に直してかける。", "kind": "calc", "level": 2, "fig": null, "id": "chu2-dennetsu-program-q010", "koma": "chu2-denryu-16"}, {"t": "choice", "q": "電力量の単位はどれ？", "choices": ["ジュール（J）", "ワット（W）", "アンペア（A）", "ボルト（V）"], "ex": "電力量＝電力×時間。単位はジュール（J）。1Wで1秒間電流を流したときが1J。", "kind": "term", "level": 1, "fig": null, "id": "chu2-dennetsu-program-q011", "koma": "chu2-denryu-16"}, {"t": "choice", "q": "Aさんは「電熱線を6Wから18Wにかえ、同時に時間も5分から10分にした」。この計画の問題点は？", "choices": ["2つの条件を同時に変えたので、上昇温度の違いがどちらによるのか分からない", "電熱線の電力を変えてはいけない", "時間は長いほどよいので問題はない", "水の量を変えていないのが問題"], "ex": "変える条件は1つだけ。2つ同時に変えると、結果の違いの原因が分からない。", "kind": "judge", "level": 2, "fig": null, "id": "chu2-dennetsu-program-q012", "koma": "chu2-denryu-16"}, {"t": "choice", "q": "同じ電熱線に加える電圧を変えて、電力と上昇温度の関係を調べる。このとき同じにする条件として正しい組み合わせは？", "choices": ["電熱線・水の量・はじめの水温・時間", "電圧・水の量・時間", "電圧・電熱線・時間", "水の量だけ"], "ex": "電圧だけを変える。電熱線（同じもの）・水の量・はじめの水温・時間などはそろえる。", "kind": "method", "level": 2, "fig": null, "id": "chu2-dennetsu-program-q013", "koma": "chu2-denryu-16"}]};
+window.QUIZ={"v": 1, "grade": "chu2", "unit": "denryu", "game": "dennetsu-program", "koma": ["chu2-denryu-16"], "testCount": 10, "questions": [{"t": "choice", "q": "「電熱線の電力によって、水の上昇温度が変わるか」を調べたい。変える条件はどれ？", "choices": ["電熱線の電力（6W・9W・18W など）", "水の量", "電流を流す時間", "はじめの水温"], "ex": "確かめたいこと（電力）だけを変え、ほかの条件はそろえる。", "kind": "method", "level": 1, "fig": null, "id": "chu2-dennetsu-program-q001", "koma": "chu2-denryu-16"}, {"t": "choice", "q": "「電流を流す時間によって、水の上昇温度が変わるか」を調べる。同じにしなくてよいものは？", "choices": ["電流を流す時間", "電熱線の電力", "水の量", "はじめの水温"], "ex": "時間を調べるので、時間だけを変える。電力・水の量・はじめの水温などはそろえる。", "kind": "method", "level": 1, "fig": null, "id": "chu2-dennetsu-program-q002", "koma": "chu2-denryu-16"}, {"t": "choice", "q": "電熱線の電力と水の上昇温度の関係を調べる計画ア〜ウ（それぞれ2つのカップを比べる）。正しく比べられる計画はどれ？", "choices": ["計画ア", "計画イ", "計画ウ", "どれも比べられない"], "ex": "イは電力と水の量の2つが変わっていて、どちらが効いたか分からない。ウは何も変えていない。", "kind": "judge", "level": 2, "fig": "\u003csvg viewBox=\"0 0 360 136\" xmlns=\"http://www.w3.org/2000/svg\">\u003crect width=\"360\" height=\"136\" fill=\"#fff\"/>\u003crect x=\"6\" y=\"6\" width=\"348\" height=\"124\" fill=\"#fff\" stroke=\"#1d2433\" stroke-width=\"1.5\"/>\u003cline x1=\"96\" y1=\"6\" x2=\"96\" y2=\"130\" stroke=\"#1d2433\" stroke-width=\"1.5\"/>\u003cline x1=\"182\" y1=\"6\" x2=\"182\" y2=\"130\" stroke=\"#1d2433\" stroke-width=\"1.5\"/>\u003cline x1=\"268\" y1=\"6\" x2=\"268\" y2=\"130\" stroke=\"#1d2433\" stroke-width=\"1.5\"/>\u003cline x1=\"6\" y1=\"34\" x2=\"354\" y2=\"34\" stroke=\"#1d2433\" stroke-width=\"1.5\"/>\u003cline x1=\"6\" y1=\"66\" x2=\"354\" y2=\"66\" stroke=\"#1d2433\" stroke-width=\"1.5\"/>\u003cline x1=\"6\" y1=\"98\" x2=\"354\" y2=\"98\" stroke=\"#1d2433\" stroke-width=\"1.5\"/>\u003ctext x=\"51\" y=\"26\" font-size=\"13\" font-weight=\"800\" text-anchor=\"middle\" fill=\"#1d2433\">\u003c/text>\u003ctext x=\"139\" y=\"26\" font-size=\"13\" font-weight=\"800\" text-anchor=\"middle\" fill=\"#1d2433\">電熱線\u003c/text>\u003ctext x=\"225\" y=\"26\" font-size=\"13\" font-weight=\"800\" text-anchor=\"middle\" fill=\"#1d2433\">水の量\u003c/text>\u003ctext x=\"311\" y=\"26\" font-size=\"13\" font-weight=\"800\" text-anchor=\"middle\" fill=\"#1d2433\">時間\u003c/text>\u003ctext x=\"51\" y=\"56\" font-size=\"14\" font-weight=\"800\" text-anchor=\"middle\" fill=\"#1d2433\">計画ア\u003c/text>\u003ctext x=\"139\" y=\"56\" font-size=\"12\" font-weight=\"500\" text-anchor=\"middle\" fill=\"#1d2433\">6W と 18W\u003c/text>\u003ctext x=\"225\" y=\"56\" font-size=\"12\" font-weight=\"500\" text-anchor=\"middle\" fill=\"#1d2433\">100g と 100g\u003c/text>\u003ctext x=\"311\" y=\"56\" font-size=\"12\" font-weight=\"500\" text-anchor=\"middle\" fill=\"#1d2433\">5分 と 5分\u003c/text>\u003ctext x=\"51\" y=\"88\" font-size=\"14\" font-weight=\"800\" text-anchor=\"middle\" fill=\"#1d2433\">計画イ\u003c/text>\u003ctext x=\"139\" y=\"88\" font-size=\"12\" font-weight=\"500\" text-anchor=\"middle\" fill=\"#1d2433\">6W と 18W\u003c/text>\u003ctext x=\"225\" y=\"88\" font-size=\"12\" font-weight=\"500\" text-anchor=\"middle\" fill=\"#1d2433\">100g と 150g\u003c/text>\u003ctext x=\"311\" y=\"88\" font-size=\"12\" font-weight=\"500\" text-anchor=\"middle\" fill=\"#1d2433\">5分 と 5分\u003c/text>\u003ctext x=\"51\" y=\"120\" font-size=\"14\" font-weight=\"800\" text-anchor=\"middle\" fill=\"#1d2433\">計画ウ\u003c/text>\u003ctext x=\"139\" y=\"120\" font-size=\"12\" font-weight=\"500\" text-anchor=\"middle\" fill=\"#1d2433\">6W と 6W\u003c/text>\u003ctext x=\"225\" y=\"120\" font-size=\"12\" font-weight=\"500\" text-anchor=\"middle\" fill=\"#1d2433\">100g と 100g\u003c/text>\u003ctext x=\"311\" y=\"120\" font-size=\"12\" font-weight=\"500\" text-anchor=\"middle\" fill=\"#1d2433\">5分 と 5分\u003c/text>\u003c/svg>", "id": "chu2-dennetsu-program-q003", "koma": "chu2-denryu-16"}, {"t": "choice", "q": "水の温度上昇を調べる実験で、水道水をくみ置きしておき、室温と同じ温度にしてから使うのはなぜ？", "choices": ["電熱線の熱以外で、水の温度が変わらないようにするため", "水の量を正確にはかるため", "電流を流れやすくするため", "水を早く沸騰させるため"], "ex": "室温より冷たい水だと、まわりの空気からも温まり、電熱線の熱による上昇だけを調べられない。", "kind": "method", "level": 2, "fig": null, "id": "chu2-dennetsu-program-q004", "koma": "chu2-denryu-16"}, {"t": "choice", "q": "実験中に、ときどき水をかき混ぜるのはなぜ？", "choices": ["水の温度を均一にするため", "電熱線の電力を大きくするため", "水が蒸発しないようにするため", "電流計の針を安定させるため"], "ex": "かき混ぜないと、電熱線の近くだけ温度が高くなり、正しく測れない。", "kind": "method", "level": 1, "fig": null, "id": "chu2-dennetsu-program-q005", "koma": "chu2-denryu-16"}, {"t": "choice", "q": "水を入れる容器に、金属のカップではなく発泡ポリスチレンのカップを使うのはなぜ？", "choices": ["熱が外に逃げにくいから", "電流が流れやすいから", "水がこぼれにくいから", "温度計が見やすいから"], "ex": "発泡ポリスチレンは熱を伝えにくく、発生した熱が外へ逃げにくい。", "kind": "method", "level": 1, "fig": null, "id": "chu2-dennetsu-program-q006", "koma": "chu2-denryu-16"}, {"t": "choice", "q": "電熱線の電力と水の上昇温度の関係を調べる実験。「結果」としてはかるものはどれ？", "choices": ["水の上昇温度", "電熱線の電力", "水の量", "電流を流す時間"], "ex": "変える条件（電力）を変えたときに、どうなるかを見る「結果」が上昇温度。水の量・時間はそろえる条件。", "kind": "judge", "level": 2, "fig": null, "id": "chu2-dennetsu-program-q007", "koma": "chu2-denryu-16"}, {"t": "order", "q": "電熱線で水を温める実験の手順を、正しい順に並べよう。", "items": ["発泡ポリスチレンのカップに、くみ置きの水を決めた量だけ入れる", "はじめの水温をはかる", "電熱線に決めた電圧を加えて、電流を流し始める", "ときどきかき混ぜながら、1分ごとに水温をはかる"], "ex": "水を用意→はじめの水温→電流を流す→かき混ぜながら一定時間ごとに測る。", "kind": "method", "level": 1, "fig": null, "id": "chu2-dennetsu-program-q008", "koma": "chu2-denryu-16"}, {"t": "choice", "q": "電熱線から発生した熱の量を何という？", "choices": ["熱量", "電力", "電圧", "電気抵抗"], "ex": "発生した熱の量を熱量といい、単位はジュール（J）。", "kind": "term", "level": 1, "fig": null, "id": "chu2-dennetsu-program-q009", "koma": "chu2-denryu-16"}, {"t": "num", "q": "電力量は「電力×時間（秒）」で表す。6Wの電熱線に5分間電流を流したときの電力量は何J？", "ans": 1800, "unit": "J", "tol": 0.5, "ex": "5分＝300秒。6×300＝1800J。時間は秒に直してかける。", "kind": "calc", "level": 2, "fig": null, "id": "chu2-dennetsu-program-q010", "koma": "chu2-denryu-16"}, {"t": "choice", "q": "電力量の単位はどれ？", "choices": ["ジュール（J）", "ワット（W）", "アンペア（A）", "ボルト（V）"], "ex": "電力量＝電力×時間。単位はジュール（J）。1Wで1秒間電流を流したときが1J。", "kind": "term", "level": 1, "fig": null, "id": "chu2-dennetsu-program-q011", "koma": "chu2-denryu-16"}, {"t": "choice", "q": "Aさんは「電熱線を6Wから18Wにかえ、同時に時間も5分から10分にした」。この計画の問題点は？", "choices": ["2つの条件を同時に変えたので、上昇温度の違いがどちらによるのか分からない", "電熱線の電力を変えてはいけない", "時間は長いほどよいので問題はない", "水の量を変えていないのが問題"], "ex": "変える条件は1つだけ。2つ同時に変えると、結果の違いの原因が分からない。", "kind": "judge", "level": 2, "fig": null, "id": "chu2-dennetsu-program-q012", "koma": "chu2-denryu-16"}, {"t": "choice", "q": "同じ電熱線に加える電圧を変えて、電力と上昇温度の関係を調べる。このとき同じにする条件として正しい組み合わせは？", "choices": ["電熱線・水の量・はじめの水温・時間", "電圧・水の量・時間", "電圧・電熱線・時間", "水の量だけ"], "ex": "電圧だけを変える。電熱線（同じもの）・水の量・はじめの水温・時間などはそろえる。", "kind": "method", "level": 2, "fig": null, "id": "chu2-dennetsu-program-q013", "koma": "chu2-denryu-16"}, {"t": "choice", "q": "手元に 6V-6W の電熱線が1本しかない。電熱線を替えずに「電力」を変えて、上昇温度とのちがいを調べるにはどうすればよいか。", "choices": ["電熱線に加える電圧を変える（ほかの条件はそろえる）", "水の量を変える", "電流を流す時間と電圧を両方変える", "容器を金属のカップに変える"], "ex": "同じ電熱線でも、加える電圧を変えると流れる電流も変わり、電力が変わる。変えるのは電圧だけにして、ほかはそろえる。", "kind": "judge", "level": 2, "fig": null, "id": "chu2-dennetsu-program-q014", "koma": "chu2-denryu-16"}]};
 /*@QUIZ_END*/</script>
 <script>/*@ZUKAN_BEGIN*/
 window.ZUKAN_UPDATES={"v": 1, "updates": []};
@@ -1399,319 +1589,616 @@ window.ZUKAN_CARDS={"v": 1, "grade": "chu2", "name": "中2理科図鑑", "econom
 <script>
 (function(){
 'use strict';
-const GAME='dennetsu-program',KOMA='chu2-denryu-16',SAVE='rika-zukan:chu2:game:'+GAME+':v1',SEAL='rika-zukan:chu2:seal:'+KOMA;
-const $=id=>document.getElementById(id);
-const RM=matchMedia('(prefers-reduced-motion: reduce)').matches;
-const Z=()=>window.Zukan||null;
+var GAME='dennetsu-program',KOMA='chu2-denryu-16',SAVE='rika-zukan:chu2:game:'+GAME+':v1',SEAL='rika-zukan:chu2:seal:'+KOMA;
+var $=function(id){return document.getElementById(id)};
+var RM=matchMedia('(prefers-reduced-motion: reduce)').matches;
+var TEST=window.GAME_MODE==='test';
+var Zk=function(){return window.Zukan||null};
+var C={paper:'#F2EDE4',blue:'#1F3A93',yel:'#F6C600',red:'#D8342A',ink:'#161616',pale:'#E2DACB',white:'#FFFFFF',cold:'#8FB0DE',metal:'#B7BAC0',gray:'#9b9588'};
+var FONT='Murecho,"Hiragino Sans","Yu Gothic",sans-serif';
+function clamp(v,a,b){return v<a?a:v>b?b:v}
+function lerp(a,b,t){return a+(b-a)*t}
+function shuffle(a){a=a.slice();for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t}return a}
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+function fmtT(ms){ms=ms||0;var s=Math.round(ms/1000);return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')}
 
-/* ============ 音 ============ */
-let AC=null,muted=false;try{muted=localStorage.getItem('rika-zukan:chu2:mute')==='1'}catch(e){}
+/* ================= 音（木琴＋クリック） ================= */
+var AC=null,muted=false;try{muted=localStorage.getItem('rika-zukan:chu2:mute')==='1'}catch(e){}
 function ac(){if(!AC){try{AC=new(window.AudioContext||window.webkitAudioContext)()}catch(e){}}if(AC&&AC.state==='suspended')AC.resume();return AC}
-function tone(f,d,type,vol,when,slide){const a=ac();if(!a||muted)return;const t=a.currentTime+(when||0);const o=a.createOscillator(),g=a.createGain();o.type=type||'sine';o.frequency.setValueAtTime(f,t);if(slide)o.frequency.exponentialRampToValueAtTime(slide,t+d);g.gain.setValueAtTime(vol||.1,t);g.gain.exponentialRampToValueAtTime(.001,t+d);o.connect(g);g.connect(a.destination);o.start(t);o.stop(t+d+.02)}
-const sfx={
-  tap(){tone(880,.04,'square',.04)},
-  step(i){tone(520+i*60,.07,'square',.05)},
-  ok(){[523,659,784,1047].forEach((f,i)=>tone(f,.14,'square',.06,i*.07))},
-  err(){tone(330,.12,'square',.08);tone(220,.3,'square',.08,.12)},
-  combo(n){[659,880,1175].slice(0,Math.min(3,n)).forEach((f,i)=>tone(f*(1+n*.05),.12,'square',.05,i*.06))},
-  coin(){tone(1319,.07,'square',.05);tone(1760,.16,'square',.05,.06)},
-  seal(){tone(160,.3,'sine',.2);[784,988,1175].forEach((f,i)=>tone(f,.25,'triangle',.08,.25+i*.1))},
-  boot(){[262,330,392,523].forEach((f,i)=>tone(f,.08,'square',.05,i*.05))}
+function tone(f,d,type,vol,when,slide){var a=ac();if(!a||muted)return;var t=a.currentTime+(when||0);var o=a.createOscillator(),g=a.createGain();o.type=type||'sine';o.frequency.setValueAtTime(f,t);if(slide)o.frequency.exponentialRampToValueAtTime(slide,t+d);g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(vol||.1,t+.006);g.gain.exponentialRampToValueAtTime(.0008,t+d);o.connect(g);g.connect(a.destination);o.start(t);o.stop(t+d+.03)}
+function mar(f,when,vol){tone(f,.35,'sine',vol||.11,when);tone(f*4,.08,'sine',(vol||.11)*.25,when)}
+var PK={cup:392,water:440,start:494,heater:523,volt:587,time:659};
+var SFX={
+  tap:function(){tone(1200,.03,'square',.03)},
+  add:function(n){mar(330+n*40,0,.08)},
+  del:function(){tone(300,.06,'triangle',.07,0,180)},
+  step:function(i){tone(220+(i%4)*30,.05,'triangle',.05)},
+  pick:function(k){mar(PK[k]||500,0,.12);mar((PK[k]||500)*1.5,.07,.07)},
+  inst:function(){[523,659,784].forEach(function(f,i){mar(f,i*.05,.09)})},
+  bump:function(){tone(140,.18,'square',.09,0,70)},
+  row:function(i,ok){mar(ok?600+i*60:300,0,.07)},
+  ok:function(){[523,659,784,1047,1319].forEach(function(f,i){mar(f,i*.07,.1)})},
+  ng:function(){tone(262,.14,'triangle',.1);tone(196,.3,'triangle',.1,.12)},
+  stamp:function(){tone(90,.25,'sine',.25,0,50);[784,988,1175].forEach(function(f,i){mar(f,.18+i*.08,.09)})},
+  coin:function(){mar(1319,0,.08);mar(1760,.06,.08)},
+  seal:function(){tone(120,.4,'sine',.25,0,60);[659,784,988,1319].forEach(function(f,i){mar(f,.3+i*.1,.1)})}
 };
 
-/* ============ 命令ブロック ============ */
-const BL={
-  cup:{t:'容器を置く',col:'#9a6b45',vals:['発泡ポリスチレン','金属のカップ']},
-  water:{t:'水を入れる',col:'#3a78d4',vals:['100g','150g']},
-  start:{t:'使う水',col:'#e0703a',vals:['くみ置き（室温）','冷たい水道水']},
-  heater:{t:'電熱線をつなぐ',col:'#d64545',vals:['6V-6W','6V-9W','6V-18W']},
-  volt:{t:'電圧を合わせる',col:'#2f9e62',vals:['3V','6V']},
-  time:{t:'電流を流す時間',col:'#c8931a',vals:['2分','4分','6分']},
-  stir:{t:'かき混ぜる',col:'#6f7f8f',vals:['ときどきする','しない']}
-};
-const ORDER=['cup','water','start','heater','volt','time','stir'];
-const NAMEK={cup:'容器',water:'水の量',start:'使う水（はじめの水温）',heater:'電熱線（電力）',volt:'電圧',time:'電流を流す時間',stir:'かき混ぜ'};
-const STD={cup:'発泡ポリスチレン',water:'100g',start:'くみ置き（室温）',heater:'6V-6W',volt:'6V',time:'4分',stir:'ときどきする'};
-const REQ={
-  heater:{q:'電熱線の電力で決まる？',tgt:['heater'],h:'電熱線（W）だけを変える'},
-  time:{q:'電流を流す時間で決まる？',tgt:['time'],h:'時間だけを変える'},
-  volt:{q:'電圧を変えたら？（同じ電熱線で）',tgt:['volt'],h:'電圧だけを変える'},
-  power:{q:'電力で決まる？',tgt:['heater','volt'],h:'電熱線か電圧の、どちらか1つだけを変える'}
-};
-const ROUNDS=[
-  {r:'heater',show:['heater','volt','time'],A:{heater:'6V-6W'},B:{heater:'6V-18W'},guide:1},
-  {r:'time',show:['heater','volt','time'],A:{heater:'6V-9W',time:'4分'},B:{heater:'6V-18W',time:'4分'}},
-  {r:'volt',show:['heater','volt','time'],A:{time:'2分'},B:{time:'4分'}},
-  {r:'power',show:['water','start','heater','volt','time'],A:{water:'100g',heater:'6V-6W'},B:{water:'150g',start:'冷たい水道水',heater:'6V-6W'},nw:'そろえ忘れやすい命令',yama:1},
-  {r:'time',show:ORDER,A:{cup:'金属のカップ',time:'2分'},B:{cup:'金属のカップ',stir:'しない',time:'2分'},nw:'容器・かき混ぜ'},
+/* ================= 条件と器具 ================= */
+var KINDS=['cup','water','start','heater','volt','time'];
+var KS={cup:'容器',water:'水の量',start:'使う水',heater:'電熱線',volt:'電圧',time:'時間'};
+var KL={cup:'容器',water:'水の量',start:'使う水（はじめの水温）',heater:'電熱線（電力）',volt:'電源の電圧',time:'電流を流す時間'};
+var VL={cup:{foam:'発泡ポリスチレン',metal:'金属のカップ'},water:{'100':'100g','150':'150g'},start:{room:'くみ置き（室温）',cold:'冷たい水道水'},heater:{'6':'6V-6W','9':'6V-9W','18':'6V-18W'},volt:{'6':'6V','3':'3V'},time:{'2':'2分','4':'4分','6':'6分'}};
+var VS={cup:{foam:'発泡',metal:'金属'},water:{'100':'100g','150':'150g'},start:{room:'くみ置き',cold:'冷たい水'},heater:{'6':'6W','9':'9W','18':'18W'},volt:{'6':'6V','3':'3V'},time:{'2':'2分','4':'4分','6':'6分'}};
+var BASE={cup:'foam',water:'100',start:'room',heater:'6',volt:'6',time:'4'};
+var TOK={F:['cup','foam'],M:['cup','metal'],w1:['water','100'],w5:['water','150'],r:['start','room'],k:['start','cold'],h6:['heater','6'],h9:['heater','9'],h18:['heater','18'],v3:['volt','3'],v6:['volt','6'],t2:['time','2'],t4:['time','4'],t6:['time','6']};
+var TG={power:['heater','volt'],heater:['heater'],time:['time'],volt:['volt']};
+var RQ={power:'電力で決まる？',heater:'電熱線の電力で決まる？',time:'電流を流す時間で決まる？',volt:'電圧を変えたら？（同じ電熱線）'};
+var RH={power:'電熱線か電圧の、どちらか1つだけを変える',heater:'電熱線（W）だけを変える',time:'時間だけを変える',volt:'電圧だけを変える'};
+var DIR={U:[0,-1],R:[1,0],D:[0,1],L:[-1,0]};
+var COLS=7,ROWS=5;
+
+/* 机（面）。map は 7×5。A が pre のときは「見本の机A」（もう組んである） */
+var LV=[
+ {n:'見本の机',req:{B:'heater'},need:['heater'],pre:{},lim:3,prog:[['R',6]],
+  tip:'見本のプログラム。<b>▶実行</b> を押してみよう。ロボが通ったマスの器具を持って、机Bに装置を組む。',
+  map:['. . . . . . .','. # . h6 . # .','S . . h18 . . B','. # . . . # .','. . . . . . .']},
+ {n:'2つの器具',req:{B:'power'},need:['heater','time'],pre:{},lim:4,nw:'時間のマス',
+  tip:'机Aは<b>6W・4分</b>。机Bは電熱線だけを変え、時間は<b>そろえる</b>。',
+  map:['. . t2 . h9 . .','S . . # . . B','. . t4 . h18 . .','. # . # . # .','. . . . . . .']},
+ {n:'時間の依頼',req:{B:'time'},need:['water','heater','time'],pre:{heater:'9',time:'2'},lim:5,nw:'水の量のマス',
+  tip:'机Aは<b>水100g・9W・2分</b>。今度は<b>時間だけ</b>を変える。',
+  map:['S . . w5 . . .','w1 # . # . # .','. . h9 . t4 . .','. # . # . # h18','. . . t6 . . B']},
+ {n:'2台とも組む',req:{B:'power'},need:['water','heater','time'],lim:6,nw:'机Aも自分で組む',
+  tip:'机Aで置いた器具は手に持ったまま。<b>Aのあと、1つだけ持ち替えて</b>Bへ。',
+  map:['S w1 t4 . . . .','# # h6 # . # .','. . A t2 . . B','. # h9 . . # .','. . . . . . .']},
+ {n:'使う水',req:{B:'time'},need:['water','start','heater','time'],lim:6,nw:'使う水のマス',
+  tip:'水は<b>くみ置き（室温）</b>と<b>冷たい水道水</b>がある。',
+  map:['S k w1 h9 t2 . .','. # . # . # .','. . . r . . A','. # . # . # t4','. . . . . . B']},
+ {n:'6Wしかない世界',req:{B:'power'},need:['water','start','heater','volt','time'],lim:6,nw:'電圧のマス',rule:'volt',yama:1,
+  tip:'この部屋の電熱線は<b>6V-6Wの1本だけ</b>。それでも電力を変えて比べたい。',
+  map:['S w1 r h6 t4 v6 A','. # # # # # t6','. . . v3 . . .','. # # # # # .','. . . . . . B']},
+ {n:'容器',req:{B:'power'},need:['cup','water','start','heater','time'],lim:9,nw:'容器のマス',
+  tip:'容器は<b>発泡ポリスチレン</b>と<b>金属のカップ</b>がある。',
+  map:['S M w1 . r . h9','. # . # . # t4','F . . . . . A','. # h18 # . # .','. . . . . . B']},
+ {n:'命令7個の縛り',req:{B:'time'},need:['cup','water','start','heater','volt','time'],lim:7,nw:'全部の器具・命令は7個まで',
+  tip:'器具が全部そろった。命令ブロックは<b>7個まで</b>。近道には気をつけて。',
+  map:['S F w1 r . . .','. # # # # # k','. . h9 v6 t2 . A','. # # # # # .','t6 . . t4 . . B']},
+ {n:'3台で2つの計画',req:{B:'heater',C:'time'},need:['water','start','heater','time'],lim:9,nw:'机C（2つの依頼を同時に）',rule:'two',
+  tip:'<b>AとB</b>で「電熱線だけ」、<b>AとC</b>で「時間だけ」がちがう計画にする。',
+  map:['S w1 r h6 t4 . A','. # # # # # h18','. . . . . . B','. # h6 # t6 # .','. . . . . . C']},
+ {n:'ラッシュ1',rush:1,req:{B:'time'},need:['water','heater','time'],lim:6,
+  map:['S w1 h9 t2 . . A','. # . # . # h18','. . . . . . t4','. # . # . # .','. . . . . . B']},
+ {n:'ラッシュ2',rush:1,req:{B:'power'},need:['start','heater','time'],lim:6,
+  map:['S r . t4 . . .','. # . # . # .','k . h6 A h9 . B','. # . # . # .','. . . . . . .']},
+ {n:'ラッシュ3',rush:1,req:{B:'volt'},need:['heater','volt','time'],lim:5,
+  map:['S h9 t4 v6 . . .','. # # # # # .','. . . A . v3 B','. # # # # # .','h18 . . . . . .']},
+ {n:'ラッシュ4',rush:1,req:{B:'time'},need:['cup','water','start','heater','time'],lim:6,
+  map:['S F w1 r h9 t2 A','. # # # # # w5','. t6 . . . . .','. # # # # # .','. . . . . . B']}
 ];
-const RUSH=5;
-function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
-function pick(a){return a[Math.floor(Math.random()*a.length)]}
-function genRush(){
-  const r=pick(['heater','time','volt','power','time','power']);const A={},B={};
-  ORDER.forEach(k=>{A[k]=STD[k];B[k]=STD[k]});
-  // わざとずらす（1〜3か所）
-  const keys=shuffle(ORDER);let n=1+Math.floor(Math.random()*3);
-  for(const k of keys){if(n<=0)break;const vs=BL[k].vals;if(Math.random()<.5)A[k]=pick(vs);else B[k]=pick(vs);n--}
-  if(Math.random()<.35){const k=pick(['cup','stir','start']);A[k]=B[k]=BL[k].vals[1]}
-  return {r,show:ORDER,A,B,rush:1};
+LV.forEach(function(L,i){L.i=i;L.grid=L.map.map(function(r){return r.split(/\s+/)});
+  L.desks=[];if(L.pre)L.desks.push('A');
+  for(var y=0;y<ROWS;y++)for(var x=0;x<COLS;x++){var t=L.grid[y][x];if(t==='S'){L.sx=x;L.sy=y}if(/^[ABC]$/.test(t)&&L.desks.indexOf(t)<0)L.desks.push(t)}
+  L.desks.sort();
+});
+var NLV=LV.length,NMAIN=LV.filter(function(L){return !L.rush}).length;
+
+function build(L,tray){var c={};KINDS.forEach(function(k){c[k]=L.need.indexOf(k)>=0?(tray[k]!=null?tray[k]:null):BASE[k]});return c}
+function preA(L){var c={};KINDS.forEach(function(k){c[k]=L.pre[k]!=null?L.pre[k]:BASE[k]});return c}
+function simulate(L,prog){
+  var g=L.grid,x=L.sx,y=L.sy,tray={},cfg={},steps=[],bump=null,bi=0;
+  if(L.pre)cfg.A=preA(L);
+  outer:for(bi=0;bi<prog.length;bi++){var d=DIR[prog[bi][0]];for(var i=0;i<prog[bi][1];i++){var nx=x+d[0],ny=y+d[1];
+    if(nx<0||ny<0||nx>=COLS||ny>=ROWS||g[ny][nx]==='#'){bump={x:nx,y:ny,fx:x,fy:y,b:bi};break outer}
+    x=nx;y=ny;var t=g[y][x],st={x:x,y:y,b:bi};
+    if(TOK[t]){tray[TOK[t][0]]=TOK[t][1];st.pick=TOK[t]}
+    else if(/^[ABC]$/.test(t)&&!cfg[t]){cfg[t]=build(L,tray);st.inst=t;st.tray=JSON.parse(JSON.stringify(tray))}
+    steps.push(st)}}
+  return {steps:steps,bump:bump,cfg:cfg,x:x,y:y};
+}
+function judge(L,cfg){
+  var i,d,k;
+  for(i=0;i<L.desks.length;i++){d=L.desks[i];if(!cfg[d])return {ok:false,sci:false,type:'reach',d:d,why:'ロボが<b>机'+d+'</b>まで行けていない。机のマスを通ると装置が組み上がる。'}}
+  for(i=0;i<L.desks.length;i++){d=L.desks[i];for(var j=0;j<L.need.length;j++){k=L.need[j];if(cfg[d][k]==null)return {ok:false,sci:false,type:'miss',d:d,k:k,why:'机'+d+'に<b>「'+KS[k]+'」が無い</b>。「'+KS[k]+'」のマスを通ってから机へ。'}}}
+  var chg={};
+  for(d in L.req){var rq=L.req[d],A=cfg.A,B=cfg[d];var diffs=KINDS.filter(function(k){return A[k]!==B[k]});
+    if(diffs.length===0)return {ok:false,sci:true,type:'same',d:d,why:'机Aと机'+d+'が<b>全部同じ</b>。これでは何も比べられない。'+RH[rq]+'。'};
+    if(diffs.length>1)return {ok:false,sci:true,type:'two',d:d,ks:diffs,why:'<b>「'+diffs.map(function(k){return KS[k]}).join('」と「')+'」</b>がAと'+d+'でちがう。変えた条件が2つ以上 → どれが効いたか分からない＝<b>比べられない</b>。'};
+    if(TG[rq].indexOf(diffs[0])<0)return {ok:false,sci:true,type:'wrong',d:d,ks:diffs,why:'変わったのは「'+KS[diffs[0]]+'」。依頼は<b>「'+RQ[rq]+'」</b>。変える条件がちがう。'};
+    chg[d]=diffs[0]}
+  if(L.desks.every(function(d){return cfg[d].cup==='metal'}))return {ok:false,sci:true,type:'trap',k:'cup',why:'<b>金属のカップ</b>は熱が外へ逃げやすい。電熱線の熱をはかるなら<b>発泡ポリスチレン</b>のカップ。'};
+  if(L.desks.every(function(d){return cfg[d].start==='cold'}))return {ok:false,sci:true,type:'trap',k:'start',why:'<b>冷たい水道水</b>は、電熱線の熱のほかに<b>まわりの空気からも温まって</b>しまう。<b>くみ置きの水（室温）</b>を使おう。'};
+  return {ok:true,chg:chg};
 }
 
-/* ============ 状態 ============ */
-function fresh(){return {v:1,name:'',ri:0,t:0,first:0,runs:0,passes:0,streak:0,best:0,score:0,done:{},rushT:0,preds:null,sealed:false,cleared:false,rule:false}}
-let S=fresh();
+/* ================= セーブ ================= */
+function fresh(){return {v:1,name:'',done:{},firstOk:{},first:0,streak:0,best:0,t:0,rushT:0,rushOn:0,cur:0,sealed:false,cleared:false,lines:null,reasons:null,rules:{},plans:{}}}
+var S=fresh();
 function save(){try{localStorage.setItem(SAVE,JSON.stringify(S))}catch(e){}}
-function load(){try{return JSON.parse(localStorage.getItem(SAVE))}catch(e){return null}}
-let RD=null,A={},B={},att=0,busy=false,rushList=[],rushI=-1,rushStart=0,tLast=0,runStep=-1,badKey=null,chgKeys=[];
+function load(){try{var o=JSON.parse(localStorage.getItem(SAVE));if(o&&o.v===1&&o.done)return o}catch(e){}return null}
+var old=load();if(old)S=Object.assign(fresh(),old);
+function doneN(){var n=0;for(var i=0;i<NLV;i++)if(S.done[i])n++;return n}
+function nextLv(){for(var i=0;i<NLV;i++)if(!S.done[i])return i;return -1}
+function unlocked(i){return i===0||!!S.done[i-1]||!!S.done[i]}
 
-/* ============ 実験台の絵 ============ */
-function station(x,P,lab,st){
-  // P: 条件, st: {step,bad}
-  let s='<g transform="translate('+x+' 0)">';
-  s+='<text x="80" y="16" text-anchor="middle" font-size="13" font-weight="800" fill="#23262d">実験台'+lab+'</text>';
-  // 電源装置
-  s+='<rect x="8" y="92" width="48" height="36" rx="4" fill="#3a4150" stroke="#11141a"/><rect x="13" y="98" width="38" height="14" rx="2" fill="#0f2a18"/><text x="32" y="109" text-anchor="middle" font-size="11" font-family="DotGothic16,monospace" fill="#7dff9c">'+P.volt+'</text><circle cx="20" cy="120" r="3" fill="#ef5a4c"/><circle cx="44" cy="120" r="3" fill="#11141a"/>';
-  // 容器と水
-  const metal=P.cup==='金属のカップ',h=P.water==='150g'?46:34;
-  s+='<path d="M70 44 L76 132 L120 132 L126 44 Z" fill="'+(metal?'#c9ced6':'#ffffff')+'" stroke="#23262d" stroke-width="2"/>';
-  s+='<path d="M'+(76-(h/88)*6).toFixed(1)+' '+(132-h)+' L'+(120+(h/88)*6).toFixed(1)+' '+(132-h)+' L120 132 L76 132Z" fill="'+(P.start==='冷たい水道水'?'#9fd0f5':'#c9e6f7')+'" opacity=".9"/>';
-  if(metal)s+='<text x="98" y="58" text-anchor="middle" font-size="9" font-weight="800" fill="#23262d">金属</text>';
+/* ================= canvas ================= */
+var cv=$('cv'),cx=cv.getContext('2d'),W=1,H=1,DPR=1,LY={};
+var gcv=$('gcv'),gx=gcv.getContext('2d'),GW=1,GH=1;
+function resize(){
+  var Lm=innerWidth/Math.max(1,innerHeight)>=1.05;document.body.classList.toggle('L',Lm);document.body.classList.toggle('P',!Lm);
+  var shH=Math.round(clamp(innerHeight*.36,262,330));document.documentElement.style.setProperty('--shH',shH+'px');
+  DPR=Math.min(2,window.devicePixelRatio||1);
+  var r=$('cvWrap').getBoundingClientRect();W=Math.max(1,r.width);H=Math.max(1,r.height);
+  cv.width=Math.round(W*DPR);cv.height=Math.round(H*DPR);
+  var pad=clamp(Math.min(W,H)*.03,8,18);
+  var cellW=Math.min((W-pad*2)/COLS,120);
+  var benchH=W/H<1.15?clamp(H-cellW*ROWS-pad*3,130,Math.max(130,H*.45)):clamp(H*.36,140,300);
+  var availH=H-benchH-pad*3,availW=W-pad*2;
+  var cell=Math.min(availW/COLS,availH/ROWS,120);
+  var bw=cell*COLS,bh=cell*ROWS;
+  LY={pad:pad,cell:cell,board:{x:(W-bw)/2,y:benchH+pad*2+(availH-bh)/2,w:bw,h:bh},bench:{x:pad,y:pad,w:W-pad*2,h:benchH}};
+  var gr=$('gWrap').getBoundingClientRect();GW=Math.max(1,gr.width);GH=Math.max(1,gr.height);
+  gcv.width=Math.round(GW*DPR);gcv.height=Math.round(GH*DPR);
+}
+function font(w,s){return w+' '+Math.round(s)+'px '+FONT}
+function txt(c,s,x,y,sz,col,al,w,base){c.font=font(w||700,sz);c.fillStyle=col||C.ink;c.textAlign=al||'center';c.textBaseline=base||'middle';c.fillText(s,x,y)}
+function rect(c,x,y,w,h,f,st,lw){if(f){c.fillStyle=f;c.fillRect(x,y,w,h)}if(st){c.lineWidth=lw||3;c.strokeStyle=st;c.strokeRect(x,y,w,h)}}
+function circ(c,x,y,r,f,st,lw){c.beginPath();c.arc(x,y,Math.max(0,r),0,Math.PI*2);if(f){c.fillStyle=f;c.fill()}if(st){c.lineWidth=lw||3;c.strokeStyle=st;c.stroke()}}
+function tri(c,x,y,s,f,dir){c.beginPath();if(dir==='down'){c.moveTo(x-s,y-s*.8);c.lineTo(x+s,y-s*.8);c.lineTo(x,y+s*.9)}else{c.moveTo(x,y-s*.9);c.lineTo(x+s,y+s*.8);c.lineTo(x-s,y+s*.8)}c.closePath();c.fillStyle=f;c.fill()}
+function zig(c,x0,x1,y,a,col,lw){c.beginPath();var n=6,dx=(x1-x0)/n;c.moveTo(x0,y);for(var i=0;i<n;i++)c.lineTo(x0+dx*(i+.5),y+(i%2?a:-a)),c.lineTo(x0+dx*(i+1),y);c.lineWidth=lw;c.strokeStyle=col;c.lineJoin='miter';c.stroke()}
+
+/* 器具の記号（盤面・机・グラフで共通） */
+function token(c,k,v,x,y,s,label){
+  if(k==='cup'){if(v==='foam'){rect(c,x-s*.4,y-s*.4,s*.8,s*.8,'#fff',C.ink,Math.max(2,s*.07));rect(c,x-s*.24,y-s*.1,s*.48,s*.3,C.pale)}else{rect(c,x-s*.4,y-s*.4,s*.8,s*.8,C.metal,C.ink,Math.max(2,s*.07));c.strokeStyle='#fff';c.lineWidth=s*.06;c.beginPath();c.moveTo(x-s*.25,y+s*.25);c.lineTo(x+s*.1,y-s*.28);c.moveTo(x-s*.05,y+s*.3);c.lineTo(x+s*.26,y-s*.14);c.stroke()}}
+  else if(k==='water'){circ(c,x,y,v==='150'?s*.46:s*.33,C.blue)}
+  else if(k==='start'){if(v==='room'){circ(c,x,y,s*.4,'#fff',C.blue,Math.max(2,s*.07));c.beginPath();c.arc(x,y,s*.4,0,Math.PI);c.closePath();c.fillStyle=C.blue;c.fill()}else{tri(c,x,y,s*.46,C.cold,'down');c.fillStyle='#fff';for(var i=-1;i<=1;i++){c.fillRect(x+i*s*.16-s*.04,y-s*.28,s*.08,s*.08)}}}
+  else if(k==='heater'){rect(c,x-s*.42,y-s*.42,s*.84,s*.84,C.red);zig(c,x-s*.3,x+s*.3,y,s*(v==='18'?.2:v==='9'?.14:.09),'#fff',Math.max(2,s*.09))}
+  else if(k==='volt'){rect(c,x-s*.42,y-s*.42,s*.84,s*.84,C.ink);txt(c,v+'V',x,y+s*.02,s*.42,C.yel,'center',900)}
+  else if(k==='time'){circ(c,x,y,s*.42,C.yel,C.ink,Math.max(2,s*.06));c.beginPath();c.moveTo(x,y);c.arc(x,y,s*.34,-Math.PI/2,-Math.PI/2+Math.PI*2*(+v/6));c.closePath();c.fillStyle=C.ink;c.fill()}
+  if(label){txt(c,label,x,y+s*.64,Math.max(9,s*.28),C.ink,'center',900)}
+}
+
+/* ================= 遊びの状態 ================= */
+var scene='title',G=null,FX=[],FLY=[],shake=0,stamp=null,flash=null;
+function newGame(li){
+  var L=LV[li];S.cur=li;
+  G={L:L,li:li,prog:L.prog&&!S.done[li]?L.prog.map(function(p){return p.slice()}):[],run:null,res:null,shown:{},sci:0,runs:0,rx:L.sx,ry:L.sy,tray:{},face:1,hi:{}};
+  if(L.pre)G.shown.A=preA(L);
+  if(L.rush&&!S.rushOn){S.rushOn=performance.now()-(S.rushT||0)}
+  save();
+}
+function resetRun(){if(!G)return;G.run=null;G.res=null;G.rx=G.L.sx;G.ry=G.L.sy;G.tray={};G.shown={};if(G.L.pre)G.shown.A=preA(G.L);G.hi={};stamp=null;flash=null;G.fail=null}
+
+/* ---- 命令ブロック ---- */
+var ARW={U:'<path d="M5 1L9.5 9H.5Z" fill="#161616"/>',R:'<path d="M9 5L1 9.5V.5Z" fill="#fff"/>',D:'<path d="M5 9L9.5 1H.5Z" fill="#fff"/>',L:'<path d="M1 5L9 9.5V.5Z" fill="#F6C600"/>'};
+function renderProg(runB){
+  if(!G)return;var L=G.L,h='';
+  for(var i=0;i<L.lim;i++){var p=G.prog[i];
+    if(p)h+='<button class="slot f '+p[0]+(runB===i?' run':'')+'" data-i="'+i+'" aria-label="ブロック'+(i+1)+'"><svg viewBox="0 0 10 10">'+ARW[p[0]]+'</svg><b>'+p[1]+'</b></button>';
+    else h+='<div class="slot"></div>'}
+  $('prog').innerHTML=h;
+  $('pCnt').textContent=G.prog.length+' / '+L.lim+(L.lim<=7&&L.i>=7?'（縛り）':'');
+  $('bRun').disabled=!!(G.run&&!G.res)||!G.prog.length;
+}
+function addBlock(d){
+  if(!G||scene!=='play'||(G.run&&!G.res)||G.passing)return;ac();resetRun();
+  var last=G.prog[G.prog.length-1];
+  if(last&&last[0]===d&&last[1]<6)last[1]++;
+  else if(G.prog.length<G.L.lim)G.prog.push([d,1]);
+  else{SFX.ng();toast('命令ブロックは '+G.L.lim+' 個まで。同じ向きは続けて押すと歩数が増える');return}
+  SFX.add(G.prog.length);renderProg();logIdle();
+}
+$('prog').addEventListener('click',function(e){var b=e.target.closest('.slot.f');if(!b||!G||(G.run&&!G.res)||G.passing)return;var i=+b.dataset.i,p=G.prog[i];if(!p)return;resetRun();
+  if(p[1]>1)p[1]--;else G.prog.splice(i,1);SFX.del();renderProg();logIdle()});
+[].forEach.call(document.querySelectorAll('#pal .ar'),function(b){b.addEventListener('click',function(){addBlock(b.dataset.d)})});
+$('bUndo').onclick=function(){if(!G||(G.run&&!G.res)||G.passing||!G.prog.length)return;resetRun();var p=G.prog[G.prog.length-1];if(p[1]>1)p[1]--;else G.prog.pop();SFX.del();renderProg();logIdle()};
+$('bClr').onclick=function(){if(!G||(G.run&&!G.res)||G.passing)return;resetRun();G.prog=[];SFX.del();renderProg();logIdle()};
+$('bRun').onclick=function(){runProg()};
+document.addEventListener('keydown',function(e){
+  if(scene!=='play'||!$('dlg').classList.contains('hidden'))return;
+  var m={ArrowUp:'U',ArrowRight:'R',ArrowDown:'D',ArrowLeft:'L'}[e.key];
+  if(m){e.preventDefault();addBlock(m)}else if(e.key==='Backspace'){e.preventDefault();$('bUndo').onclick()}else if(e.key==='Enter'||e.key===' '){e.preventDefault();runProg()}});
+
+function logIdle(){if(!G)return;var L=G.L;$('log').innerHTML=(L.tip||'机Aと机'+Object.keys(L.req).join('・')+'に装置を組む。')+(G.sci>=2?'<br><span class="ok">ヒント：</span>'+hint(L):'')}
+function hint(L){var s=[];for(var d in L.req){var rq=L.req[d];s.push('机Aと机'+d+'で、<b>'+TG[rq].map(function(k){return KS[k]}).join('か')+'</b>以外のマス（'+L.need.filter(function(k){return TG[rq].indexOf(k)<0}).map(function(k){return KS[k]}).join('・')+'）は同じものを通る')}return s.join('。')+'。'}
+
+/* ---- 実行 ---- */
+var STEP=RM?.07:.2;
+function runProg(){
+  if(!G||scene!=='play'||G.passing||(G.run&&!G.res)||!G.prog.length)return;ac();resetRun();
+  G.runs++;var sim=simulate(G.L,G.prog);
+  G.run={sim:sim,i:0,t:0,phase:'walk',px:G.L.sx,py:G.L.sy};
+  renderProg(0);$('log').innerHTML='ロボが動いている…';
+}
+function stepRun(dt){
+  var R=G.run;if(!R||G.res)return;
+  if(R.phase==='walk'){R.t+=dt;
+    while(R.t>=STEP&&R.phase==='walk'){R.t-=STEP;
+      if(R.i<R.sim.steps.length){var st=R.sim.steps[R.i];R.px=G.rx;R.py=G.ry;G.rx=st.x;G.ry=st.y;renderProg(st.b);SFX.step(R.i);
+        if(st.pick){G.tray[st.pick[0]]=st.pick[1];SFX.pick(st.pick[0]);var p=cellC(st.x,st.y);burst(p[0],p[1],pcol(st.pick[0]),10)}
+        if(st.inst){G.shown[st.inst]=R.sim.cfg[st.inst];SFX.inst();flyTo(st.x,st.y,st.inst)}
+        R.i++}
+      else if(R.sim.bump){R.phase='bump';R.t=0;SFX.bump();shake=.3;G.fail={bump:R.sim.bump};finish({ok:false,sci:false,type:'bump',why:'<b>ゴツン！</b> 積み木（または外）にぶつかった。'+(R.sim.bump.b+1)+'番目のブロックを直そう。'})}
+      else{R.phase='cmp';R.t=0;R.res=judge(G.L,R.sim.cfg);R.rows=0}}}
+  else if(R.phase==='cmp'){R.t+=dt;var need=R.res.ok||R.res.sci?KINDS.length:0;
+    if(R.res.type==='reach'||R.res.type==='miss'){finish(R.res);return}
+    while(R.rows<need&&R.t>=(R.rows+1)*(RM?.02:.11)){var k=KINDS[R.rows];G.hi[k]=rowCol(k,R.res);SFX.row(R.rows,G.hi[k]!=='bad');R.rows++}
+    if(R.rows>=need&&R.t>(need*(RM?.02:.11)+.25))finish(R.res)}
+}
+function rowCol(k,res){var L=G.L,cf=G.run.sim.cfg;var same=L.desks.every(function(d){return cf[d]&&cf[d][k]===cf.A[k]});
+  if(res.ok)return same?'same':'chg';
+  if(res.type==='trap')return k===res.k?'bad':'same';
+  if(same)return 'same';
+  if(res.type==='two'||res.type==='wrong')return 'bad';
+  return 'chg'}
+function finish(res){
+  G.res=res;renderProg();
+  if(res.ok){onPass(res);return}
+  if(res.sci){G.sci++;if(S.streak>1)toast('連続合格 リセット');S.streak=0;SFX.ng();shake=.25}else if(res.type!=='bump')SFX.ng();
+  G.fail=G.fail||{};G.fail.d=res.d;G.fail.k=res.k;
+  $('log').innerHTML='<span class="ng">■ 停止</span>　'+res.why+'<br><small>ブロックをさわると、やり直せる。</small>'+(G.sci>=2&&res.sci?'<br><span class="ok">ヒント：</span>'+hint(G.L):'');
+  updHUD();save();
+}
+function onPass(res){
+  var L=G.L,li=G.li,first=G.sci===0&&!S.firstOk[li];G.passing=true;
+  var wasDone=!!S.done[li];S.done[li]=1;
+  if(G.sci===0){if(!S.firstOk[li]){S.firstOk[li]=1;S.first++}S.streak++;S.best=Math.max(S.best,S.streak)}
+  S.plans[li]={cfg:G.run.sim.cfg,chg:res.chg};
+  SFX.ok();stamp={t:0};var bp=benchCenter();burst(bp[0],bp[1],null,36);
+  if(first&&!wasDone){setTimeout(function(){earn(L.rush?10:10,L.rush?'first-try':'control',bp[0],bp[1])},500)}
+  if(L.rule&&!S.rules[L.rule]){S.rules[L.rule]=1;setTimeout(function(){earn(30,'rule',bp[0],bp[1]+40);banner(L.rule==='volt'?'発見：電熱線が同じでも、電圧を変えると電力が変わる':'発見：比べる相手ごとに、変えるのは1つだけ')},1300)}
+  if(L.rush&&li===NLV-1){S.rushT=performance.now()-S.rushOn}
+  save();updHUD();
+  $('log').innerHTML='<span class="ok">■ 合格</span>　比べられる計画。'+(G.sci===0?'<b>一発で合格！</b>'+(S.streak>1?'　連続 '+S.streak:''):'');
+  setTimeout(function(){G.passing=false;
+    if(L.rush&&li<NLV-1){startLevel(li+1);return}
+    planDialog(li)},L.rush?900:1500);
+}
+
+/* ---- 計画書（合格のダイアログ） ---- */
+function planTable(li){var P=S.plans[li];if(!P)return '';var L=LV[li],h='';
+  for(var d in L.req){var k=P.chg[d],A=P.cfg.A,B=P.cfg[d];
+    h+='<div class="ptab"><div class="c"><span>変える条件</span><em>'+KL[k]+'（A '+VL[k][A[k]]+' ／ '+d+' '+VL[k][B[k]]+'）</em></div>'+
+      '<div><span>そろえる条件</span><em>'+KINDS.filter(function(x){return x!==k}).map(function(x){return KS[x]+' '+VS[x][A[x]]}).join('、')+'</em></div>'+
+      '<div><span>はかる結果</span><em>水の上昇温度（何℃上がるかは<b>学校の実験で</b>）</em></div></div>'}
+  return h}
+function planDialog(li){
+  var L=LV[li],last=li===NLV-1;
+  dialog('<h3>計画書 No.'+String(li+1).padStart(2,'0')+'　'+esc(L.n)+'</h3>'+planTable(li)+
+    (L.rush&&last?'<p>ラッシュのタイム <b>'+fmtT(S.rushT)+'</b></p>':'')+
+    '<p style="font-size:13px">A と B は同じ手順（1分ごとに水温をはかる・ときどきかき混ぜる）で動く。温度計の「？」は、実験の日まで開けない。</p>',
+    [[last?'予想グラフを描く ▶':'つぎの机へ ▶','red',function(){closeDlg();if(last)toDraw();else startLevel(li+1)}],['実験室マップ','',function(){closeDlg();toMap()}]]);
+}
+
+/* ---- 描画：盤面 ---- */
+function cellC(x,y){var b=LY.board,c=LY.cell;return [b.x+(x+.5)*c,b.y+(y+.5)*c]}
+function pcol(k){return {cup:C.ink,water:C.blue,start:C.blue,heater:C.red,volt:C.ink,time:C.yel}[k]||C.ink}
+var WALLC=[C.blue,C.red,C.yel,C.ink];
+function drawBoard(){
+  var L=G.L,b=LY.board,s=LY.cell;
+  rect(cx,b.x,b.y,b.w,b.h,'#FBF8F2');
+  cx.strokeStyle='#cfc6b5';cx.lineWidth=1.5;cx.beginPath();
+  for(var i=1;i<COLS;i++){cx.moveTo(b.x+i*s,b.y);cx.lineTo(b.x+i*s,b.y+b.h)}for(i=1;i<ROWS;i++){cx.moveTo(b.x,b.y+i*s);cx.lineTo(b.x+b.w,b.y+i*s)}cx.stroke();
+  for(var y=0;y<ROWS;y++)for(var x=0;x<COLS;x++){var t=L.grid[y][x],p=cellC(x,y),X=b.x+x*s,Y=b.y+y*s;
+    if(t==='#'){var ci=(x*3+y*5+L.i)%4,col=WALLC[ci];rect(cx,X,Y,s,s,col);
+      var m=(x+y*2)%3,ic=ci===2?C.ink:ci===3?C.yel:'#F2EDE4';
+      if(m===0)circ(cx,p[0],p[1],s*.26,ic);else if(m===1)tri(cx,p[0],p[1]+s*.04,s*.28,ic);else{cx.beginPath();cx.arc(X,Y+s,s*.62,-Math.PI/2,0);cx.lineTo(X,Y+s);cx.closePath();cx.fillStyle=ic;cx.fill()}}
+    else if(t==='S'){circ(cx,p[0],p[1],s*.3,null,C.ink,Math.max(3,s*.08));txt(cx,'スタート',p[0],p[1]+s*.4,Math.max(9,s*.15),C.ink,'center',900)}
+    else if(/^[ABC]$/.test(t)){var dc=t==='A'?C.blue:t==='B'?C.red:C.yel,got=G.shown[t];
+      rect(cx,X+s*.08,Y+s*.08,s*.84,s*.84,dc);txt(cx,t,p[0],p[1]-(got?s*.08:0),s*.5,t==='C'?C.ink:'#fff','center',900);
+      if(got&&!(G.rx===x&&G.ry===y)){txt(cx,'組んだ',p[0],p[1]+s*.3,Math.max(9,s*.15),t==='C'?C.ink:'#fff','center',900)}
+      if(G.fail&&G.fail.d===t){cx.lineWidth=5;cx.strokeStyle=C.ink;cx.setLineDash([6,4]);cx.strokeRect(X+3,Y+3,s-6,s-6);cx.setLineDash([])}}
+    else if(TOK[t]){token(cx,TOK[t][0],TOK[t][1],p[0],p[1]-s*.1,s*.56,null);txt(cx,VS[TOK[t][0]][TOK[t][1]],p[0],p[1]+s*.34,Math.max(9,s*.17),C.ink,'center',900)}
+  }
+  rect(cx,b.x,b.y,b.w,b.h,null,C.ink,4);
+  // 道すじの下書き
+  if(G.prog.length&&!(G.run&&!G.res)){var sim=simulate(L,G.prog),pts=[cellC(L.sx,L.sy)];sim.steps.forEach(function(st){pts.push(cellC(st.x,st.y))});
+    cx.save();cx.globalAlpha=G.run?.25:.75;cx.setLineDash([s*.12,s*.1]);cx.lineWidth=Math.max(2,s*.05);cx.strokeStyle=C.ink;cx.beginPath();pts.forEach(function(p,i){i?cx.lineTo(p[0],p[1]):cx.moveTo(p[0],p[1])});cx.stroke();cx.setLineDash([]);
+    var e=pts[pts.length-1];circ(cx,e[0],e[1],s*.08,C.ink);
+    if(sim.bump&&!G.run){var bx=b.x+(sim.bump.x+.5)*s,by=b.y+(sim.bump.y+.5)*s;cx.globalAlpha=.9;cx.strokeStyle=C.red;cx.lineWidth=Math.max(3,s*.08);cx.beginPath();cx.moveTo(bx-s*.2,by-s*.2);cx.lineTo(bx+s*.2,by+s*.2);cx.moveTo(bx+s*.2,by-s*.2);cx.lineTo(bx-s*.2,by+s*.2);cx.stroke()}
+    cx.restore()}
+  drawRobot();
+}
+function drawRobot(){
+  var s=LY.cell,R=G.run,x=G.rx,y=G.ry,hop=0;
+  if(R&&R.phase==='walk'&&R.i>0){var k=clamp(R.t/STEP,0,1);x=lerp(R.px,G.rx,Math.min(1,k*1.8));y=lerp(R.py,G.ry,Math.min(1,k*1.8));hop=Math.sin(Math.min(1,k*1.8)*Math.PI)*s*.12}
+  if(R&&R.phase==='bump'){var bb=R.sim.bump;var q=Math.sin(Math.min(1,R.t*4)*Math.PI)*.22;R.t+=0;x=G.rx+(bb.x-bb.fx)*q;y=G.ry+(bb.y-bb.fy)*q}
+  var p=[LY.board.x+(x+.5)*s,LY.board.y+(y+.5)*s-hop],X=p[0],Y=p[1]+s*.05,u=s*.9,sad=G.res&&!G.res.ok;
+  cx.fillStyle='rgba(22,22,22,.18)';cx.beginPath();cx.ellipse(X,LY.board.y+(y+.5)*s+s*.36,s*.26,s*.07,0,0,Math.PI*2);cx.fill();
+  cx.fillStyle=C.ink;cx.fillRect(X-u*.2,Y+u*.1,u*.1,u*.24);cx.fillRect(X+u*.1,Y+u*.1,u*.1,u*.24);
+  rect(cx,X-u*.26,Y-u*.14,u*.52,u*.3,C.blue,C.ink,Math.max(2,u*.04));
+  rect(cx,X-u*.17,Y-u*.08,u*.12,u*.12,C.red);circ(cx,X+u*.1,Y-u*.02,u*.07,C.yel);
+  circ(cx,X,Y-u*.34,u*.19,C.yel,C.ink,Math.max(2,u*.04));
+  if(sad){cx.strokeStyle=C.ink;cx.lineWidth=Math.max(2,u*.04);[-1,1].forEach(function(sg){var ex=X+sg*u*.07,ey=Y-u*.36;cx.beginPath();cx.moveTo(ex-u*.04,ey-u*.04);cx.lineTo(ex+u*.04,ey+u*.04);cx.moveTo(ex+u*.04,ey-u*.04);cx.lineTo(ex-u*.04,ey+u*.04);cx.stroke()})}
+  else{circ(cx,X-u*.07,Y-u*.35,u*.035,C.ink);circ(cx,X+u*.07,Y-u*.35,u*.035,C.ink)}
+  tri(cx,X,Y-u*.6,u*.07,C.red);
+  // 手に持っている器具
+  var ks=KINDS.filter(function(k){return G.tray[k]!=null});
+  if(ks.length){var ts=Math.max(12,s*.22),w=ks.length*ts*1.05,x0=X-w/2+ts/2;rect(cx,X-w/2-3,Y-u*.9-ts*.6,w+6,ts*1.2,'#fff',C.ink,2);
+    ks.forEach(function(k,i){token(cx,k,G.tray[k],x0+i*ts*1.05,Y-u*.9,ts*.95,null)})}
+}
+
+/* ---- 描画：実験台（上） ---- */
+function benchCenter(){var b=LY.bench;return [b.x+b.w/2,b.y+b.h/2]}
+function deskRects(){var b=LY.bench,L=G.L,n=L.desks.length,side=b.w>=520;
+  var cupA=side?{x:b.x,y:b.y,w:b.w*.44,h:b.h}:{x:b.x,y:b.y,w:b.w,h:b.h*.47};
+  var tab=side?{x:b.x+b.w*.46,y:b.y,w:b.w*.54,h:b.h}:{x:b.x,y:b.y+b.h*.5,w:b.w,h:b.h*.5};
+  var cw=cupA.w/n,rs={};L.desks.forEach(function(d,i){rs[d]={x:cupA.x+i*cw,y:cupA.y,w:cw,h:cupA.h}});return {cups:rs,tab:tab}}
+function drawCup(r,d,cf,flash){
+  var dc=d==='A'?C.blue:d==='B'?C.red:C.yel,s=Math.min(r.w*.9,r.h),lb=clamp(s*.2,18,34);
+  rect(cx,r.x+4,r.y+4,lb,lb,dc);txt(cx,d,r.x+4+lb/2,r.y+4+lb/2+1,lb*.72,d==='C'?C.ink:'#fff','center',900);
+  var cw=Math.min(r.w*.4,r.h*.52),ch=Math.min(r.h*.6,cw*1.3),x0=r.x+r.w*.42-cw/2,y0=r.y+r.h*.86-ch;
+  if(!cf){cx.setLineDash([6,5]);rect(cx,x0,y0,cw,ch,null,C.gray,3);cx.setLineDash([]);txt(cx,'まだ',x0+cw/2,y0+ch/2,Math.max(10,cw*.2),C.gray,'center',900);return}
+  var metal=cf.cup==='metal';
+  // 水
+  if(cf.water){var wh=ch*(cf.water==='150'?.8:.56);rect(cx,x0,y0+ch-wh,cw,wh,cf.start==='cold'?C.cold:C.blue);
+    if(cf.start==='cold'){cx.fillStyle='#fff';for(var i=0;i<3;i++)cx.fillRect(x0+cw*(.2+i*.25),y0+ch-wh+cw*.08,cw*.08,cw*.08)}}
+  // 容器
+  if(cf.cup){rect(cx,x0,y0,cw,ch,null,C.ink,Math.max(3,cw*.06));if(metal){cx.fillStyle='rgba(183,186,192,.55)';cx.fillRect(x0-cw*.08,y0,cw*.08,ch);cx.fillRect(x0+cw,y0,cw*.08,ch);cx.strokeStyle=C.ink;cx.lineWidth=2;cx.strokeRect(x0-cw*.08,y0,cw*1.16,ch)}}
+  else{cx.setLineDash([5,4]);rect(cx,x0,y0,cw,ch,null,C.ink,2);cx.setLineDash([])}
   // 電熱線
-  s+='<path d="M86 124 c3-8 6-8 9 0 c3-8 6-8 9 0 c3-8 6-8 9 0" stroke="#6f7580" stroke-width="3" fill="none"/><path d="M86 124 L60 112" stroke="#d64545" stroke-width="2"/><path d="M113 124 L130 100 L56 118" stroke="#23262d" stroke-width="2" fill="none" opacity=".0"/>';
-  s+='<text x="98" y="146" text-anchor="middle" font-size="10" font-weight="800" fill="#d64545">'+P.heater+'</text>';
-  // 温度計
-  s+='<rect x="130" y="26" width="8" height="98" rx="4" fill="#fff" stroke="#23262d" stroke-width="1.5"/><circle cx="134" cy="126" r="6" fill="#ef5a4c" stroke="#23262d" stroke-width="1.5"/><rect x="132" y="96" width="4" height="26" fill="#ef5a4c"/>';
-  s+='<rect x="139" y="30" width="18" height="18" rx="4" fill="#23262d"/><text x="148" y="44" text-anchor="middle" font-size="13" font-weight="800" fill="#f2c14e">？</text>';
-  // かき混ぜ棒
-  if(P.stir==='ときどきする')s+='<line x1="112" y1="30" x2="104" y2="118" stroke="#8fb3c9" stroke-width="3" stroke-linecap="round"'+(st&&st.step>=6&&!RM?' class="stirA"':'')+'/>';
-  // タイマー
-  s+='<rect x="8" y="30" width="48" height="24" rx="5" fill="#11141a"/><text x="32" y="47" text-anchor="middle" font-size="13" font-family="DotGothic16,monospace" fill="#f2c14e">⏱'+P.time+'</text>';
-  if(st&&st.bad)s+='<rect x="2" y="20" width="156" height="128" rx="8" fill="none" stroke="#ef5a4c" stroke-width="4" stroke-dasharray="8 5"/>';
-  return s+'</g>';
+  if(cf.heater){zig(cx,x0+cw*.14,x0+cw*.86,y0+ch*.84,cw*(cf.heater==='18'?.1:cf.heater==='9'?.075:.05),C.red,Math.max(3,cw*.07));
+    cx.strokeStyle=C.ink;cx.lineWidth=2;cx.beginPath();cx.moveTo(x0+cw*.14,y0+ch*.84);cx.lineTo(x0+cw*.14,y0-ch*.12);cx.lineTo(x0+cw*1.3,y0-ch*.12);cx.stroke();
+    txt(cx,VS.heater[cf.heater],x0+cw/2,y0+ch+Math.max(9,cw*.16)*.9,Math.max(10,cw*.2),C.red,'center',900)}
+  // 温度計（結果は「？」）
+  var tx=x0+cw*.72;cx.strokeStyle=C.ink;cx.lineWidth=Math.max(2,cw*.05);cx.beginPath();cx.moveTo(tx,y0-ch*.28);cx.lineTo(tx,y0+ch*.66);cx.stroke();circ(cx,tx,y0+ch*.7,cw*.07,C.red);
+  circ(cx,tx,y0-ch*.34,Math.max(9,cw*.13),C.yel,C.ink,2);txt(cx,'?',tx,y0-ch*.33,Math.max(10,cw*.18),C.ink,'center',900);
+  // 電圧・時間
+  var sx=x0+cw*1.3,bs=Math.max(16,Math.min(cw*.42,r.x+r.w-sx-6));
+  if(cf.volt){rect(cx,sx,y0-ch*.12-bs/2,bs,bs,C.ink);txt(cx,cf.volt+'V',sx+bs/2,y0-ch*.12,bs*.45,C.yel,'center',900)}
+  if(cf.time){token(cx,'time',cf.time,sx+bs/2,y0+ch*.45,bs*1.05,null);txt(cx,VS.time[cf.time],sx+bs/2,y0+ch*.45+bs*.72,Math.max(9,bs*.34),C.ink,'center',900)}
+  if(flash){cx.lineWidth=4;cx.strokeStyle=C.red;cx.setLineDash([7,5]);cx.strokeRect(r.x+2,r.y+2,r.w-4,r.h-4);cx.setLineDash([])}
 }
-function drawLab(st){
-  let s='<rect width="360" height="150" fill="#f4f1ea"/><line x1="180" y1="8" x2="180" y2="146" stroke="#c9c2b0" stroke-width="2" stroke-dasharray="4 4"/>';
-  s+=station(8,A,'A',st)+station(190,B,'B',st);
-  s+='<style>.stirA{transform-origin:108px 74px;animation:sw .5s ease-in-out infinite alternate}@keyframes sw{from{transform:rotate(-8deg)}to{transform:rotate(8deg)}}</style>';
-  $('lab').innerHTML=s;
+function drawBench(){
+  var b=LY.bench,L=G.L,R=deskRects();
+  rect(cx,b.x,b.y,b.w,b.h,'#fff',C.ink,4);
+  L.desks.forEach(function(d){drawCup(R.cups[d],d,G.shown[d],G.fail&&G.fail.d===d)});
+  // 条件表
+  var ROWK=KINDS.filter(function(k){return L.need.indexOf(k)>=0}),FIX=KINDS.filter(function(k){return L.need.indexOf(k)<0});var t=R.tab,n=L.desks.length,nr=ROWK.length+1+(FIX.length?1:0),rh=Math.min(30,(t.h-12)/nr),fs=clamp(rh*.5,10,15),lw=Math.min(t.w*.3,110),cw=(t.w-lw-12)/n,y0=t.y+6+(t.h-12-rh*nr)/2;
+  txt(cx,'条件表',t.x+8,y0+rh/2,fs,C.ink,'left',900);
+  L.desks.forEach(function(d,i){var dc=d==='A'?C.blue:d==='B'?C.red:C.yel;rect(cx,t.x+lw+i*cw+2,y0+2,cw-4,rh-4,dc);txt(cx,'机'+d,t.x+lw+i*cw+cw/2,y0+rh/2,fs,d==='C'?C.ink:'#fff','center',900)});
+  if(FIX.length){var fy=y0+rh*(ROWK.length+1);txt(cx,'そのほか（A・B同じに固定）：'+FIX.map(function(k){return KS[k]+' '+VS[k][BASE[k]]}).join('・'),t.x+8,fy+rh/2,fs*.9,C.gray,'left',700)}
+  ROWK.forEach(function(k,j){var y=y0+rh*(j+1),need=true,hc=G.hi[k];
+    if(hc){rect(cx,t.x+2,y+1,t.w-8,rh-2,hc==='same'?'rgba(31,58,147,.14)':hc==='chg'?C.yel:C.red)}
+    cx.fillStyle=hc==='bad'?'#fff':need?C.ink:C.gray;txt(cx,KS[k],t.x+8,y+rh/2,fs,cx.fillStyle,'left',need?900:700);
+    L.desks.forEach(function(d,i){var cf=G.shown[d],v=cf?cf[k]:null;txt(cx,v==null?(cf?'なし':'—'):VS[k][v],t.x+lw+i*cw+cw/2,y+rh/2,fs,hc==='bad'?'#fff':(!need?C.gray:v==null&&cf?C.red:C.ink),'center',900)});
+    cx.strokeStyle='#d8d0c0';cx.lineWidth=1;cx.beginPath();cx.moveTo(t.x+4,y);cx.lineTo(t.x+t.w-6,y);cx.stroke()});
+  if(stamp){var k=Math.min(1,stamp.t*3),p=[t.x+t.w*.72,t.y+t.h*.5],r=Math.min(t.h*.42,70)*(RM?1:(1.6-.6*k));
+    cx.save();cx.globalAlpha=Math.min(1,stamp.t*4)*.94;cx.translate(p[0],p[1]);cx.rotate(-.18);circ(cx,0,0,r,C.red);circ(cx,0,0,r*.8,null,'#fff',3);txt(cx,'合格',0,2,r*.55,'#fff','center',900);cx.restore()}
 }
 
-/* ============ エディタ ============ */
-function renderEd(){
-  const show=RD.show;let h='<div class="colh" style="color:#9ec5ff">実験台A</div><div class="colh" style="color:#ffc59e">実験台B</div>';
-  show.forEach((k,i)=>{['A','B'].forEach(side=>{const P=side==='A'?A:B;const cls=(runStep===i?' run':'')+(badKey===k?' bad':'')+(chgKeys.includes(k)&&runStep<0?' chg':'');
-    h+='<div class="blk'+cls+'" style="background:'+BL[k].col+'"><span class="l">'+(i+1)+'. '+BL[k].t+'</span><button class="v" data-s="'+side+'" data-k="'+k+'">'+P[k]+'</button></div>'})});
-  const hidden=ORDER.filter(k=>!show.includes(k));
-  if(hidden.length)h+='<div class="hideRow">そのほかの命令（'+hidden.map(k=>NAMEK[k]).join('・')+'）は、A・Bとも同じにしてある</div>';
-  h+='<div class="blk fixed" style="grid-column:1/3"><span class="l">'+(show.length+1)+'. 1分ごとに水温を記録して、上昇温度を出す（A・B共通）</span></div>';
-  $('ed').innerHTML=h;
-}
-$('ed').addEventListener('click',e=>{const b=e.target.closest('.v');if(!b||busy)return;ac();const P=b.dataset.s==='A'?A:B,k=b.dataset.k;const vs=BL[k].vals;P[k]=vs[(vs.indexOf(P[k])+1)%vs.length];sfx.tap();badKey=null;chgKeys=[];renderEd();drawLab()});
+/* ---- 粒・飛ぶ器具 ---- */
+function burst(x,y,col,n){if(RM)return;for(var i=0;i<n;i++){var a=Math.random()*Math.PI*2,v=80+Math.random()*260;FX.push({x:x,y:y,vx:Math.cos(a)*v,vy:Math.sin(a)*v-80,l:.7+Math.random()*.5,t:0,s:5+Math.random()*9,c:col||[C.blue,C.red,C.yel,C.ink][i%4],m:i%3,r:Math.random()*6})}}
+function flyTo(x,y,d){if(RM)return;var p=cellC(x,y),R=deskRects().cups[d];if(!R)return;var q=[R.x+R.w*.42,R.y+R.h*.6];
+  KINDS.forEach(function(k,i){if(G.tray[k]!=null)FLY.push({x0:p[0],y0:p[1],x1:q[0],y1:q[1],t:-i*.04,k:k,v:G.tray[k]})})}
+function stepFX(dt){FX=FX.filter(function(f){f.t+=dt;f.x+=f.vx*dt;f.y+=f.vy*dt;f.vy+=520*dt;return f.t<f.l});FLY=FLY.filter(function(f){f.t+=dt*2.4;return f.t<1})}
+function drawFX(c){FX.forEach(function(f){c.save();c.globalAlpha=1-f.t/f.l;c.translate(f.x,f.y);c.rotate(f.r+f.t*5);c.fillStyle=f.c;if(f.m===0){c.beginPath();c.arc(0,0,f.s/2,0,Math.PI*2);c.fill()}else if(f.m===1){c.fillRect(-f.s/2,-f.s/2,f.s,f.s)}else{tri(c,0,0,f.s/2,f.c)}c.restore()});
+  FLY.forEach(function(f){if(f.t<0)return;var k=f.t,x=lerp(f.x0,f.x1,k),y=lerp(f.y0,f.y1,k)-Math.sin(k*Math.PI)*60;token(c,f.k,f.v,x,y,Math.max(14,LY.cell*.3),null)})}
 
-/* ============ 進行 ============ */
-function setRound(rd,label){
-  RD=rd;A={};B={};ORDER.forEach(k=>{A[k]=(rd.A&&rd.A[k])||STD[k];B[k]=(rd.B&&rd.B[k])||STD[k]});
-  att=0;busy=false;runStep=-1;badKey=null;chgKeys=[];
-  const R=REQ[rd.r];
-  $('req').innerHTML='<div class="top"><span>📨 '+label+'</span>'+(rd.nw?'<span class="new">NEW '+rd.nw+'</span>':'')+(rd.rush?'<span class="new" style="background:#c8931a">ラッシュ '+(rushI+1)+'/'+RUSH+'</span>':'')+'</div><div class="q">「'+R.q+'」を確かめたい</div><div class="h">▶ '+R.h+'。ほかの命令は全部そろえる</div>';
-  $('hR').textContent=label;
-  renderEd();drawLab();
-  $('log').innerHTML=rd.guide?'<span class="ok">見本のプログラム。電熱線だけがAとBでちがう。そのまま ▶実行 を押してみよう</span>':'値のボタンをタップすると、命令の値が切りかわる。組めたら ▶実行';
-  save();
-}
-function startRound(i){
-  S.ri=i;
-  if(i<ROUNDS.length){setRound(ROUNDS[i],'依頼'+(i+1));if(ROUNDS[i].yama)toast('山場：そろえ忘れやすい命令が出てきた')}
-  else{if(rushI<0){rushList=[...Array(RUSH)].map(genRush);rushI=0;rushStart=performance.now();toast('ラッシュ！ 依頼が5件つづけて届く')}setRound(rushList[rushI],'依頼'+(i+1))}
-}
-function judge(){
-  const R=REQ[RD.r],diffs=ORDER.filter(k=>A[k]!==B[k]);
-  for(let i=0;i<ORDER.length;i++){const k=ORDER[i];
-    if(A[k]===B[k]&&k==='cup'&&A[k]==='金属のカップ')return {ok:false,at:k,why:'金属のカップは<b>熱が外へ逃げやすい</b>。発泡ポリスチレンのカップにしよう。'};
-    if(A[k]===B[k]&&k==='start'&&A[k]==='冷たい水道水')return {ok:false,at:k,why:'冷たい水道水だと、電熱線の熱のほかに<b>まわりの空気からも温まって</b>しまう。<b>くみ置きの水（室温と同じ温度）</b>を使おう。'};
-    if(A[k]===B[k]&&k==='stir'&&A[k]==='しない')return {ok:false,at:k,why:'かき混ぜないと、水の温度に<b>むら</b>ができて正しく測れない。'}}
-  if(diffs.length===0)return {ok:false,at:RD.show[RD.show.length-1],why:'AとBが<b>全部同じ</b>。これでは何も比べられない。依頼の条件を1つだけ変えよう。'};
-  if(diffs.length>1){const at=diffs.find(k=>!R.tgt.includes(k))||diffs[1];return {ok:false,at,two:true,why:'<b>'+diffs.map(k=>NAMEK[k]).join('」と「').replace(/^/,'「')+'」</b>がAとBでちがう。変えた条件が2つ以上 → どれが効いたか分からない＝<b>比べられない</b>。'}}
-  if(!R.tgt.includes(diffs[0]))return {ok:false,at:diffs[0],why:'変えたのは「'+NAMEK[diffs[0]]+'」。依頼は「'+R.q+'」。変える条件がちがう。'};
-  return {ok:true,chg:diffs[0]};
-}
-function run(){
-  if(busy)return;busy=true;ac();att++;S.runs++;sfx.boot();
-  const res=judge(),show=RD.show;
-  let i=0;$('bRun').disabled=true;
-  const tickStep=()=>{
-    if(i<show.length){runStep=i;renderEd();sfx.step(i);drawLab({step:i});
-      if(!res.ok&&show[i]===res.at){setTimeout(()=>fail(res),RM?50:450);return}
-      i++;setTimeout(tickStep,RM?30:330);return}
-    if(res.ok)pass(res);else fail(res);
-  };
-  tickStep();
-}
-function fail(res){
-  runStep=-1;badKey=show2(res.at);sfx.err();renderEd();drawLab({bad:1});
-  $('log').innerHTML='<span class="ng">■ 停止（'+NAMEK[res.at]+'）</span><br>'+res.why;toast(res.two?'比べられない！':'停止！');try{$('log').scrollIntoView({block:'nearest',behavior:RM?'auto':'smooth'})}catch(e){}
-  if(S.streak>1)toast('コンボ リセット');S.streak=0;updHUD();busy=false;$('bRun').disabled=false;save();
-}
-function show2(k){return RD.show.includes(k)?k:null}
-function pass(res){
-  runStep=-1;chgKeys=[res.chg];renderEd();drawLab({step:7});
-  const first=att===1;S.passes++;
-  if(first){S.first++;S.streak++;S.best=Math.max(S.best,S.streak);earn(10,'control',$('bRun'));sfx.combo(S.streak)}else{S.streak=0}
-  S.score+=first?100*Math.max(1,S.streak):30;
-  S.done[RD.r==='power'?(res.chg==='volt'?'volt':'heater'):RD.r]=1;
-  sfx.ok();burst($('labWrap'));updHUD();
-  const same=ORDER.filter(k=>k!==res.chg);
-  let tb='<table class="tbl2"><tr><th style="width:44%">変える条件</th><td><b style="color:#d64545">'+NAMEK[res.chg]+'</b>（A '+A[res.chg]+' ／ B '+B[res.chg]+'）</td></tr><tr><th>同じにする条件</th><td>'+same.map(k=>NAMEK[k]).join('、')+'</td></tr><tr><th>はかる結果</th><td>水の上昇温度（何℃上がるかは<b>実験で</b>）</td></tr></table>';
-  if(RD.yama&&!S.rule&&first){S.rule=true;setTimeout(()=>{earn(30,'rule',$('req'));toast('規則：変えるのは1つ、ほかは全部そろえる')},800)}
-  const last=S.ri+1>=ROUNDS.length+RUSH;
-  sheet('<h3 style="color:#1d6e40">✅ 合格！ 比べられる計画</h3>'+(first?'<p style="font-weight:800;color:#8a6a00">1回で合格'+(S.streak>1?'　🔥コンボ×'+S.streak:'')+'</p>':'')+tb+'<p style="font-size:13px;color:#6d6552">実験台は同じ手順で動いた。温度計の「？」は、学校の実験で確かめる。</p><button class="big" data-a="n">'+(last?'予想を封筒へ ▶':'つぎの依頼へ ▶')+'</button>',a=>{
-    closeSheet();busy=false;$('bRun').disabled=false;
-    if(S.ri>=ROUNDS.length){rushI++;}
-    if(last){S.rushT=performance.now()-rushStart;save();predictStep();return}
-    startRound(S.ri+1)});
-  save();
-}
-function updHUD(){$('combo').style.display=S.streak>1?'':'none';$('combo').textContent='🔥×'+S.streak;$('bMute').textContent=muted?'🔇':'🔊'}
+/* ---- 1コマ ---- */
+var last=performance.now();
+function frame(now){var dt=Math.min(.05,(now-last)/1000);last=now;
+  if(scene==='play'&&G){if(!document.hidden)S.t+=dt*1000;stepRun(dt);stepFX(dt);if(stamp)stamp.t+=dt;if(shake>0)shake-=dt;
+    cx.setTransform(DPR,0,0,DPR,0,0);cx.fillStyle=C.paper;cx.fillRect(0,0,W,H);
+    var sh=shake>0&&!RM?(Math.random()-.5)*10*shake:0;cx.translate(sh,0);
+    drawBench();drawBoard();drawFX(cx);
+    if(G.L.rush&&S.rushOn&&!S.done[NLV-1])$('hRush').textContent='ラッシュ '+fmtT(performance.now()-S.rushOn);}
+  else if(scene==='draw'){drawGraph()}
+  requestAnimationFrame(frame)}
 
-/* ============ 予想を封筒へ ============ */
-const PQ=[
-  {k:'power',q:'電熱線を 6V-6W → 6V-18W にかえる（ほかは同じ）。同じ時間での上昇温度は？',o:['約3倍になる','変わらない','約3分の1になる','約9倍になる']},
-  {k:'time',q:'電流を流す時間を 2分 → 4分 にする（ほかは同じ）。上昇温度は？',o:['約2倍になる','変わらない','約半分になる','約4倍になる']},
-  {k:'volt',q:'同じ電熱線で、電圧を 3V → 6V にする（ほかは同じ）。上昇温度は？',o:['約2倍になる','約4倍になる','変わらない','約半分になる']},
-  {k:'prod',q:'「6Wで4分」と「12Wで2分」。電力×時間（電力量）はどちらも 1440J。上昇温度は？',o:['同じくらい','6Wで4分の方が大きい','12Wで2分の方が大きい']}
+/* ================= HUD ================= */
+function updHUD(){
+  if(G){$('hNo').textContent=G.li+1;$('hName').textContent=G.L.n}
+  $('hCnt').textContent=doneN();
+  var h='';for(var i=0;i<NLV;i++)h+='<i class="'+(S.done[i]?'on':'')+(G&&G.li===i?' cur':'')+'"></i>';$('hBar').innerHTML=h;
+  var z=Zk(),k=0;if(z&&z.state){try{k=z.state().kakera||0}catch(e){}}$('hK').textContent=k;$('hK').classList.toggle('hidden',!z);
+  $('bMute').textContent=muted?'×':'♪';
+  $('hRush').classList.toggle('hidden',!(G&&G.L.rush&&scene==='play'));
+}
+$('bMute').onclick=function(){muted=!muted;try{localStorage.setItem('rika-zukan:chu2:mute',muted?'1':'0')}catch(e){}updHUD();if(!muted){ac();SFX.tap()}};
+$('bMapH').onclick=function(){if(G&&G.run&&!G.res)return;toMap()};
+
+/* ================= 画面の切りかえ ================= */
+var SCR=['scrTitle','scrMap','scrDraw','scrClear','scrTest','scrEnd'];
+var INHUB=!!window.COLLECTION_NAME||(function(){try{return window.parent!==window}catch(e){return true}})();
+function show(id){SCR.forEach(function(s){$(s).classList.toggle('hidden',s!==id)});['hud','cvWrap','shelf'].forEach(function(s){$(s).classList.toggle('hidden',id!==null)})}
+function setScene(s){scene=s;
+  if(s==='play')show(null);else if(s==='title')show('scrTitle');else if(s==='map')show('scrMap');else if(s==='draw')show('scrDraw');else if(s==='clear')show('scrClear');else if(s==='test')show('scrTest');else if(s==='end')show('scrEnd');
+  var b=$('bBack'),on=s!=='title'||INHUB;b.classList.toggle('hidden',!on);$('bBackT').textContent=s==='title'?'一覧へ':'もどる';
+  setTimeout(resize,0);updHUD()}
+$('bBack').onclick=function(){ac();
+  if(scene==='title'){try{window.parent.postMessage({type:'rika-close-game'},'*')}catch(e){}return}
+  if(scene==='end'||scene==='clear'){setScene('title');refreshTitle();return}
+  var to=scene==='play'||scene==='draw'?'実験室マップ':'タイトル';
+  var sub=scene==='test'?'確認テストは、次はさいしょから。実験室の進み具合は保存されています。':scene==='draw'?'描いたグラフは、封印するまで保存されません。机の計画書は保存されています。':'進み具合は保存されます。'+(scene==='play'?'（この机は、次はプログラムを組み直す）':'');
+  dialog('<h3>もどりますか？</h3><p>'+sub+'</p>',[[to+'へ','ink',function(){closeDlg();if(to==='タイトル'){setScene('title');refreshTitle()}else toMap()}],['つづける','',closeDlg]]);
+};
+
+/* ---- タイトル ---- */
+function refreshTitle(){var hasSave=doneN()>0;$('bCont').classList.toggle('hidden',!hasSave);$('bStart').textContent=hasSave?'はじめから':'はじめる';
+  $('bBookT').classList.toggle('hidden',!Zk());$('bEnvT').classList.toggle('hidden',!readSeal());
+  if(window.PLAYER_NAME){$('nmRow').classList.add('hidden')}else if(S.name)$('nameIn').value=S.name}
+function takeName(){var v=$('nameIn').value.trim();if(v)S.name=v}
+$('bStart').onclick=function(){ac();takeName();var nm=S.name;
+  if(doneN()>0){dialog('<h3>はじめから？</h3><p>計画書の束が 0 枚にもどる（封筒の予想・図鑑はそのまま）。</p>',[['はじめから','red',function(){closeDlg();var keep=S;S=fresh();S.name=nm;S.rules=keep.rules;S.firstOk=keep.firstOk;save();startLevel(0)}],['やめる','',closeDlg]]);return}
+  save();startLevel(0)};
+$('bCont').onclick=function(){ac();takeName();save();toMap()};
+
+/* ---- マップ ---- */
+function toMap(){setScene('map');
+  var n=doneN(),nx=nextLv();
+  $('mLead').innerHTML='計画書 <b>'+n+' / '+NLV+'</b> 枚。<b>'+NLV+'枚そろうまで終われません。</b>そろったら、上昇温度の予想グラフを描いて封筒に封印する。';
+  var h='';LV.forEach(function(L,i){var cls='mt'+(S.done[i]?' done':'')+(i===nx?' next':'')+(!unlocked(i)?' lock':'')+(L.rush?' rush':'');
+    h+='<button class="'+cls+'" data-i="'+i+'"'+(unlocked(i)?'':' disabled')+'><div class="deco"></div>'+(S.done[i]?'<span class="chk">'+(S.firstOk[i]?'一発':'済')+'</span>':'')+'<div class="n">'+String(i+1).padStart(2,'0')+'</div><div><div class="nm">'+esc(L.n)+'</div><div class="nw">'+(L.rush?'タイムを計る':L.nw?'NEW '+esc(L.nw):'')+'</div></div></button>'});
+  var all=n>=NLV;
+  h+='<button class="mt fin'+(all&&!S.sealed?' next':'')+(all?'':' lock')+'" data-a="draw"'+(all?'':' disabled')+'><div class="n">✉</div><div><div class="nm">予想グラフを描いて封印</div><div class="nw">'+(S.sealed?'封印ずみ（描き直せる）':'計画書13枚で解禁')+'</div></div></button>';
+  h+='<button class="mt'+(S.cleared?' next':' lock')+'" data-a="test"'+(S.cleared?'':' disabled')+'><div class="n">✎</div><div><div class="nm">確認テスト</div><div class="nw">封印のあと</div></div></button>';
+  $('mGrid').innerHTML=h;$('bEnvM').classList.toggle('hidden',!readSeal());$('bBookM').classList.toggle('hidden',!Zk());$('bSheets').classList.toggle('hidden',!n)}
+$('mGrid').addEventListener('click',function(e){var b=e.target.closest('.mt');if(!b||b.disabled)return;ac();SFX.tap();
+  if(b.dataset.a==='draw'){toDraw();return}if(b.dataset.a==='test'){startTest();return}
+  var i=+b.dataset.i;if(LV[i].rush&&!S.done[NLV-1]){var fr=LV.findIndex(function(L){return L.rush});if(i!==fr&&!S.done[i-1]){}S.rushOn=0;S.rushT=0;startLevel(fr);return}startLevel(i)});
+$('bSheets').onclick=function(){var h='';for(var i=0;i<NLV;i++)if(S.plans[i])h+='<p style="font-weight:900;margin-top:6px">No.'+String(i+1).padStart(2,'0')+' '+esc(LV[i].n)+'</p>'+planTable(i);dialog('<h3>計画書の束</h3>'+h,[['とじる','',closeDlg]])};
+
+/* ---- 机をはじめる ---- */
+function startLevel(i){
+  if(LV[i].rush&&!S.rushOn){S.rushOn=performance.now();S.rushT=0}
+  newGame(i);setScene('play');resize();
+  var L=G.L,d=Object.keys(L.req);
+  $('rNo').textContent=String(i+1).padStart(2,'0');
+  $('rQ').textContent=d.map(function(x){return (d.length>1?'A↔'+x+'：':'')+RQ[L.req[x]]}).join('　');
+  $('rH').textContent=d.map(function(x){return (d.length>1?x+'：':'')+RH[L.req[x]]}).join('／')+'。ほかは全部そろえる。';
+  $('rNew').classList.toggle('hidden',!L.nw&&!L.rush);$('rNew').textContent=L.rush?'ラッシュ '+(i-NMAIN+1)+'/'+(NLV-NMAIN):'NEW '+(L.nw||'');
+  renderProg();logIdle();updHUD();
+  if(L.nw||L.rush||i===0)banner(L.rush?'ラッシュ！ '+(i-NMAIN+1)+'台目':(L.yama?'山場：':'')+'机'+String(i+1).padStart(2,'0')+'　'+L.n);
+}
+
+/* ================= 予想グラフ（指で描いて封印） ================= */
+var LINES=[
+  {id:'w6',lab:'6V-6W の電熱線（6V）',sh:'6W',col:C.blue,slot:'time',ask:'まず基準の線。<em style="background:#1F3A93">6V-6W の電熱線に 6V</em> を加えたとき、水の上昇温度は時間とともにどうなる？'},
+  {id:'w18',lab:'6V-18W の電熱線（6V）',sh:'18W',col:C.red,slot:'power',ask:'<em style="background:#D8342A">6V-18W の電熱線</em>（ほかは同じ）なら？ 青い線とくらべて描こう。'},
+  {id:'v3',lab:'6V-6W の電熱線に 3V',sh:'6W・3V',col:C.yel,slot:'volt',ask:'同じ 6V-6W の電熱線に <em style="background:#F6C600;color:#161616">3V</em> しか加えなかったら？'},
+  {id:'w12',lab:'6V-12W の電熱線（6V）',sh:'12W',col:C.ink,slot:'prod',ask:'<em style="background:#161616">6V-12W の電熱線</em>なら？（6W の2倍の電力）'}
 ];
-const PR=[
-  {id:'a',t:'電力が大きいほど、1秒間に出る熱が多いと思うから'},
-  {id:'b',t:'電流を流す時間が長いほど、熱が出つづけて多くなると思うから'},
-  {id:'c',t:'電圧を上げると電流も大きくなり、電力は電圧と電流の両方で大きくなると思うから'},
-  {id:'d',t:'電力×時間（電力量）が同じなら、出る熱の量も同じだと思うから'},
-  {id:'w',t:'なんとなく',weak:1}
-];
-function predictStep(){
-  const ans={};
-  sheet('<h3>📝 ことばカード</h3><p><b>熱量</b>：電熱線から発生した熱の量。単位は<b>ジュール（J）</b>。</p><p><b>電力量</b>：電力×時間。単位は<b>ジュール（J）</b>。1Wの電力で1秒間電流を流したときが1J。</p><p style="font-size:14px;color:#6d6552">水の上昇温度が、電力や時間とどんな関係になるか。<b>実験の前に予想</b>して封筒に封印しよう（当たり外れで損はしない）。</p><button class="big" data-a="go">予想する ▶</button>',a=>{if(a==='go')ask(0)});
-  const ask=i=>{
-    if(i>=PQ.length){finishPred(ans);return}
-    const q=PQ[i];let o=ans[q.k]?ans[q.k].o:null,r=ans[q.k]?ans[q.k].r:null;const rs=shuffle(PR),qo=shuffle(q.o);
-    const render=()=>{const keep=$('sheetIn').scrollTop;sheet('<h3>🔮 予想 '+(i+1)+' / '+PQ.length+'</h3><p style="font-weight:800">'+q.q+'</p><div class="opts">'+qo.map((x,j)=>'<button class="opt'+(o===x?' on':'')+'" data-o="'+j+'">'+x+'</button>').join('')+'</div><div class="lbl">理由（1つ）</div><div class="opts">'+rs.map(x=>'<button class="opt'+(r===x.id?' on':'')+'" data-r="'+x.id+'">'+x.t+'</button>').join('')+'</div><button class="big" data-a="nx"'+(o&&r?'':' disabled')+'>'+(i+1<PQ.length?'つぎの予想 ▶':'予想を書き終えた')+'</button>',(a,b)=>{
-      if(b.dataset.o!=null){o=qo[+b.dataset.o];sfx.tap();render();return}
-      if(b.dataset.r){r=b.dataset.r;sfx.tap();render();return}
-      if(a==='nx'&&o&&r){ans[q.k]={o,r};ask(i+1)}});$('sheetIn').scrollTop=i===ans.__i?keep:0;ans.__i=i};
-    render();
-  };
+var PQ={power:'電熱線を 6V-6W → 6V-18W にかえる（ほかは同じ）。同じ時間での上昇温度は？',time:'電流を流す時間を 2分 → 4分 にする（ほかは同じ）。上昇温度は？',volt:'同じ電熱線で、電圧を 3V → 6V にする（ほかは同じ）。上昇温度は？',prod:'「6Wで4分」と「12Wで2分」。電力×時間（電力量）はどちらも 1440J。上昇温度は？'};
+var PR=[{id:'a',t:'電力が大きいほど、1秒間に出る熱が多いと思うから'},{id:'b',t:'電流を流す時間が長いほど、熱が出つづけて多くなると思うから'},{id:'c',t:'電圧を上げると電流も大きくなり、電力は電圧と電流の両方で大きくなると思うから'},{id:'d',t:'電力×時間（電力量）が同じなら、出る熱の量も同じだと思うから'},{id:'w',t:'なんとなく',weak:1}];
+var GD=null;
+function toDraw(){setScene('draw');GD={i:0,lines:{},reasons:{},cur:null,phase:'draw',rs:shuffle(PR.slice(0,4)).concat([PR[4]])};drawPanel()}
+function plotR(){var m=Math.min(GW,GH);var l=clamp(m*.12,44,80),t=clamp(m*.08,28,56);return {x:l,y:t,w:GW-l-clamp(m*.06,16,40),h:GH-t-clamp(m*.12,44,70)}}
+function valAt(ys,tm){if(!ys)return 0;var i=clamp(Math.round(tm*10),0,50);return ys[i]||0}
+function drawGraph(){
+  if(GW<60||GH<60){resize();if(GW<60||GH<60)return}
+  var c=gx;c.setTransform(DPR,0,0,DPR,0,0);c.fillStyle=C.paper;c.fillRect(0,0,GW,GH);var P=plotR();
+  // 背景の構成
+  circ(c,P.x+P.w*.86,P.y+P.h*.2,Math.min(P.w,P.h)*.16,'rgba(246,198,0,.28)');rect(c,P.x,P.y+P.h*.72,P.w*.1,P.h*.28,'rgba(216,52,42,.12)');
+  rect(c,P.x,P.y,P.w,P.h,'#fff');
+  c.strokeStyle='#e0d8c8';c.lineWidth=1;for(var m=1;m<=5;m++){var x=P.x+P.w*m/5;c.beginPath();c.moveTo(x,P.y);c.lineTo(x,P.y+P.h);c.stroke()}
+  for(var j=1;j<5;j++){var y=P.y+P.h*j/5;c.beginPath();c.moveTo(P.x,y);c.lineTo(P.x+P.w,y);c.stroke()}
+  c.strokeStyle=C.ink;c.lineWidth=4;c.beginPath();c.moveTo(P.x,P.y-10);c.lineTo(P.x,P.y+P.h);c.lineTo(P.x+P.w+10,P.y+P.h);c.stroke();
+  var fs=clamp(Math.min(GW,GH)*.028,11,16);
+  for(m=0;m<=5;m++)txt(c,m+'',P.x+P.w*m/5,P.y+P.h+fs*1.1,fs,C.ink,'center',900);
+  txt(c,'時間〔分〕',P.x+P.w,P.y+P.h+fs*2.4,fs,C.ink,'right',900);
+  c.save();c.translate(P.x-fs*1.3,P.y+P.h/2);c.rotate(-Math.PI/2);txt(c,'水の上昇温度（目もりは実験で）',0,0,fs,C.ink,'center',900);c.restore();
+  txt(c,'0',P.x-fs*.7,P.y+P.h+fs*.2,fs,C.ink,'center',900);
+  // 描いた線
+  function pl(ys,col,w){c.lineCap='round';c.lineJoin='round';var first=true;c.beginPath();for(var i=0;i<=50;i++){if(ys[i]==null)continue;var x=P.x+P.w*i/50,y=P.y+P.h*(1-ys[i]);if(first){c.moveTo(x,y);first=false}else c.lineTo(x,y)}if(col===C.yel){c.strokeStyle=C.ink;c.lineWidth=w+4;c.stroke()}c.strokeStyle=col;c.lineWidth=w;c.stroke()}
+  LINES.forEach(function(L){var ys=GD&&GD.lines[L.id];if(ys){pl(ys,L.col,5);var e=ys[50];if(e!=null){var ly=clamp(P.y+P.h*(1-e),P.y+14,P.y+P.h-14),lw=Math.max(40,L.sh.length*fs*.75);rect(c,P.x+P.w-lw-6,ly-24,lw,20,L.col);txt(c,L.sh,P.x+P.w-6-lw/2,ly-13,fs*.85,L.col===C.yel?C.ink:'#fff','center',900)}}});
+  if(GD&&GD.cur){pl(GD.cur,LINES[GD.i].col,7)}
+  // 2分・4分の目じるし
+  c.setLineDash([4,5]);c.strokeStyle=C.red;c.lineWidth=2;[2,4].forEach(function(m){var x=P.x+P.w*m/5;c.beginPath();c.moveTo(x,P.y);c.lineTo(x,P.y+P.h);c.stroke()});c.setLineDash([]);
+  if(GD&&GD.phase==='draw'&&!GD.cur&&GD.i<LINES.length){var hx=P.x+P.w*.08,hy=P.y+P.h*.9;var k=(performance.now()/1000)%1.6/1.6;var px=hx+(P.w*.8)*k,py=hy-(P.h*.5)*k;circ(c,px,py,14,'rgba(22,22,22,.18)');circ(c,px,py,6,C.ink);txt(c,'左から右へ、指でなぞる',P.x+P.w*.5,P.y+18,fs,C.ink,'center',900)}
 }
-function finishPred(ans){
-  delete ans.__i;S.preds=ans;save();
-  const strong=Object.values(ans).every(x=>!PR.find(p=>p.id===x.r).weak);
-  closeSheet();
-  if(strong&&!S.predEarned){S.predEarned=1;earn(10,'predict',$('req'))}
-  const b=$('blue');
-  b.innerHTML='<h1 class="px" style="font-size:28px;color:#fff">実験計画書</h1><div class="col" style="width:min(100%,480px);text-align:left">'+
-    '<div class="stat" style="background:#244d8a;border-color:#8fb3e6"><b>計画1「電力で決まる？」</b><br>変える：電熱線（6W・9W・18W）または電圧<br>そろえる：水の量・使う水・時間・容器・かき混ぜ</div>'+
-    '<div class="stat" style="background:#244d8a;border-color:#8fb3e6"><b>計画2「時間で決まる？」</b><br>変える：電流を流す時間<br>そろえる：電熱線・電圧・水の量・使う水・容器・かき混ぜ</div>'+
-    PQ.map(q=>'<div class="stat" style="background:#244d8a;border-color:#8fb3e6;font-size:14px">🔮 '+q.q+'<br>→ <b style="color:#f2c14e">'+ans[q.k].o+'</b></div>').join('')+
-    '</div><div style="height:10px"></div><button class="hold" id="holdB"><i id="holdI"></i><span style="position:relative">長押しで 封筒に封印</span></button>';
-  b.classList.remove('hidden');b.scrollTop=0;
-  const hb=$('holdB');let t0=0,iv=0;const stop=()=>{clearInterval(iv);if(!hb.disabled)$('holdI').style.width='0'};
-  hb.addEventListener('pointerdown',e=>{e.preventDefault();ac();t0=Date.now();clearInterval(iv);iv=setInterval(()=>{const k=Math.min(1,(Date.now()-t0)/900);$('holdI').style.width=(k*100)+'%';if(Math.random()<.3)sfx.tap();if(k>=1){clearInterval(iv);hb.disabled=true;doSeal()}},40)});
-  ['pointerup','pointerleave','pointercancel'].forEach(ev=>hb.addEventListener(ev,stop));
+var gDown=false,gLast=null;
+function gPt(e){var r=gcv.getBoundingClientRect(),P=plotR();return {t:clamp((e.clientX-r.left-P.x)/P.w*5,0,5),v:clamp(1-(e.clientY-r.top-P.y)/P.h,0,1)}}
+gcv.addEventListener('pointerdown',function(e){if(!GD||GD.phase!=='draw'||GD.i>=LINES.length)return;e.preventDefault();ac();gDown=true;try{gcv.setPointerCapture(e.pointerId)}catch(_){}GD.cur=new Array(51).fill(null);gLast=null;gMove(e)});
+gcv.addEventListener('pointermove',function(e){if(gDown)gMove(e)});
+function gMove(e){var p=gPt(e),i=Math.round(p.t*10);if(gLast){var a=gLast.i,b=i;var s=a<b?1:-1;for(var j=a;j!==b;j+=s){var k=(j-a)/(b-a);GD.cur[j]=lerp(gLast.v,p.v,k)}}GD.cur[i]=p.v;gLast={i:i,v:p.v};if(Math.random()<.25)tone(300+p.v*600,.04,'sine',.03)}
+['pointerup','pointercancel'].forEach(function(ev){gcv.addEventListener(ev,function(){if(!gDown)return;gDown=false;gEnd()})});
+function gEnd(){var ys=GD.cur;var idx=[];ys.forEach(function(v,i){if(v!=null)idx.push(i)});
+  if(!idx.length||idx[0]>12||idx[idx.length-1]<45){GD.cur=null;toast('左のはし（0分）の近くから、右のはし（5分）まで引こう');SFX.ng();return}
+  var out=new Array(51),a=idx[0];out[0]=0;for(var i=1;i<=a;i++)out[i]=ys[a]*i/a;
+  var lv=ys[a];for(i=a;i<=50;i++){if(ys[i]!=null)lv=ys[i];else{var n=i;while(n<=50&&ys[n]==null)n++;var nv=n<=50?ys[n]:lv;var p=i-1;out[i]=lerp(out[p],nv,1/(n-p));continue}out[i]=lv}
+  out=out.map(function(v){return Math.round(clamp(v,0,1)*1000)/1000});
+  GD.lines[LINES[GD.i].id]=out;GD.cur=null;SFX.pick('time');GD.phase='reason';drawPanel()}
+function ratioLabel(r){if(!isFinite(r)||r<=0)return '変わらない';var cand=[[1/3,'約3分の1になる'],[1/2,'約半分になる'],[1,'変わらない'],[2,'約2倍になる'],[3,'約3倍になる'],[4,'約4倍になる'],[9,'約9倍になる']];var best=null,bd=9;cand.forEach(function(c){var d=Math.abs(Math.log(r)-Math.log(c[0]));if(d<bd){bd=d;best=c}});
+  if(bd<=Math.log(1.3))return best[1];if(r>1)return '約'+(Math.round(r*10)/10)+'倍になる';return '約'+(Math.round(1/r*10)/10)+'分の1になる'}
+function safeR(a,b){if(b<.02&&a<.02)return 1;if(b<.02)return 99;return a/b}
+function derive(){var L=GD.lines;var out={};
+  out.time={r:safeR(valAt(L.w6,4),valAt(L.w6,2))};out.power={r:safeR(valAt(L.w18,4),valAt(L.w6,4))};out.volt={r:safeR(valAt(L.w6,4),valAt(L.v3,4))};
+  for(var k in out)out[k].pred=ratioLabel(out[k].r);
+  var a=valAt(L.w6,4),b=valAt(L.w12,2),q=safeR(b,a);out.prod={r:q,pred:q>=.85&&q<=1.18?'同じくらい':q>1?'12Wで2分の方が大きい':'6Wで4分の方が大きい'};return out}
+function drawPanel(){
+  var h='<div class="gstep">'+LINES.map(function(L,i){return '<i class="'+(i<GD.i||(i===GD.i&&GD.phase!=='draw')?'on':'')+'"></i>'}).join('')+'</div>';
+  if(GD.i<LINES.length){var L=LINES[GD.i];
+    if(GD.phase==='draw'){h+='<div class="kick">予想グラフ '+(GD.i+1)+' / 4</div><div class="gq">'+L.ask+'</div><div class="gnote">グラフの上を<b>指でなぞって</b>線を描く。目もりの数字はない（何℃かは実験で）。形と、ほかの線との<b>くらべ方</b>が予想になる。</div>'+(GD.i>0?'<button class="bx sm" id="gBack">ひとつ前の線を描き直す</button>':'')}
+    else{var d=derive(),sl=L.slot,said=sl==='prod'?'「6Wで4分」と「12Wで2分」は → <b>'+d.prod.pred+'</b>':sl==='time'?'2分→4分で 上昇温度は <b>'+d.time.pred+'</b>':sl==='power'?'6W→18W で（4分のところ） <b>'+d.power.pred+'</b>':'3V→6V で（4分のところ） <b>'+d.volt.pred+'</b>';
+      h+='<div class="kick">あなたのグラフの読み</div><div class="gq" style="font-size:18px">'+said+'</div><div class="gnote">そう描いた理由を1つ（当たり外れは実験の日に分かる。損はしない）</div><div class="rs">'+GD.rs.map(function(r){return '<button data-r="'+r.id+'">'+esc(r.t)+'</button>'}).join('')+'</div><button class="bx sm" id="gRedo">この線を描き直す</button>'}}
+  else{var d2=derive();
+    h+='<div class="kick">予想の封筒</div><div class="sumt">'+LINES.map(function(L){var s=d2[L.slot];return '<div><i style="background:'+L.col+';outline:2px solid #161616"></i><span>'+esc(PQ[L.slot])+'<br>→ <b>'+esc(s.pred)+'</b></span></div>'}).join('')+'</div><div class="gnote">学校で<b>電熱線で水を温める実験</b>をしたら、コマ17「ジュールの湯」でこの封筒を開けて、実験の結果とくらべる。</div><button class="hold" id="gHold"><i id="gHoldI"></i><span>長押しで 封筒に封印</span></button><button class="bx sm" id="gAgain">はじめから描き直す</button>'}
+  $('gPanel').innerHTML=h;$('gPanel').scrollTop=0;
+  var gb=$('gBack');if(gb)gb.onclick=function(){GD.i--;delete GD.lines[LINES[GD.i].id];GD.phase='draw';drawPanel()};
+  var gr=$('gRedo');if(gr)gr.onclick=function(){delete GD.lines[LINES[GD.i].id];GD.phase='draw';drawPanel()};
+  var ga=$('gAgain');if(ga)ga.onclick=function(){toDraw()};
+  [].forEach.call($('gPanel').querySelectorAll('[data-r]'),function(b){b.onclick=function(){SFX.tap();GD.reasons[LINES[GD.i].slot]=b.dataset.r;GD.i++;GD.phase='draw';drawPanel()}});
+  var hb=$('gHold');if(hb){var t0=0,iv=0;var stop=function(){clearInterval(iv);if(!hb.disabled)$('gHoldI').style.width='0'};
+    hb.addEventListener('pointerdown',function(e){e.preventDefault();ac();t0=Date.now();clearInterval(iv);iv=setInterval(function(){var k=Math.min(1,(Date.now()-t0)/900);$('gHoldI').style.width=(k*100)+'%';if(Math.random()<.3)SFX.tap();if(k>=1){clearInterval(iv);hb.disabled=true;doSeal()}},40)});
+    ['pointerup','pointerleave','pointercancel'].forEach(function(ev){hb.addEventListener(ev,stop)})}
 }
 function doSeal(){
-  const rec={v:1,koma:KOMA,game:GAME,at:Date.now(),name:S.name||'',slots:{}};
-  PQ.forEach(q=>{const a=S.preds[q.k];rec.slots[q.k]={q:q.q,pred:a.o,reason:(PR.find(p=>p.id===a.r)||{}).t||''}});
+  var d=derive(),rec={v:1,koma:KOMA,game:GAME,at:Date.now(),name:S.name||window.PLAYER_NAME||'',slots:{}};
+  ['power','time','volt','prod'].forEach(function(k){var r=PR.find(function(p){return p.id===GD.reasons[k]})||{};rec.slots[k]={q:PQ[k],pred:d[k].pred,reason:r.t||'',ratio:Math.round(d[k].r*100)/100};if(r.weak)rec.slots[k].weak=1});
   rec.plan={power:{change:['heater','volt'],same:['water','start','time','cup','stir']},time:{change:['time'],same:['heater','volt','water','start','cup','stir']}};
+  rec.draw={};LINES.forEach(function(L){rec.draw[L.id]=GD.lines[L.id]});
   try{localStorage.setItem(SEAL,JSON.stringify(rec))}catch(e){}
-  S.sealed=true;S.cleared=true;save();sfx.seal();burst(document.body,40);
-  const b=$('blue');b.innerHTML='<div class="sealmark">封</div><h1 class="px" style="font-size:26px;color:#fff">予想を封印した！</h1><p style="font-weight:800;line-height:1.7;color:#eaf1fb">学校で<b>電熱線で水を温める実験</b>をしたら、<br>コマ17「ジュールの湯」で結果を入れて開けよう。</p><div class="col"><button class="big gold" id="bgo">本編クリア ▶</button></div>';
-  $('bgo').onclick=()=>{b.classList.add('hidden');mainClear()};
+  var strong=['power','time','volt','prod'].every(function(k){return GD.reasons[k]&&GD.reasons[k]!=='w'});
+  var firstSeal=!S.sealed;S.sealed=true;S.cleared=true;S.lines=GD.lines;save();SFX.seal();
+  var r=gcv.getBoundingClientRect();if(!RM)for(var i=0;i<3;i++)setTimeout(function(){burstDom(r.left+r.width/2,r.top+r.height/2)},i*200);
+  if(strong&&firstSeal)setTimeout(function(){earn(10,'predict',r.left+r.width/2,r.top+r.height*.4)},500);
+  dialog('<div style="display:flex;justify-content:center"><svg width="120" height="120" viewBox="0 0 120 120"><circle cx="60" cy="60" r="56" fill="#D8342A"/><circle cx="60" cy="60" r="44" fill="none" stroke="#fff" stroke-width="4"/><text x="60" y="76" text-anchor="middle" font-size="46" font-weight="900" fill="#fff" font-family="Murecho,sans-serif">封</text></svg></div><h3 style="text-align:center">予想を封印した！</h3><p>実験をしたら、コマ17「ジュールの湯」で封筒を開けて、結果とくらべよう。</p>',[['本編クリア ▶','red',function(){closeDlg();mainClear()}]]);
 }
-function mainClear(){const show=()=>showClear();if(Z()&&Z().mainClear){try{Z().mainClear({onClose:show})}catch(e){show()}}else show()}
-function showClear(){
-  $('clearStats').innerHTML='<div class="stat">✅ 1回で合格 '+S.first+' / '+(ROUNDS.length+RUSH)+' 件</div><div class="stat">🔥 最高コンボ ×'+S.best+'</div><div class="stat">⏱ ラッシュ '+fmtT(S.rushT)+'</div><div class="stat">🕰 遊んだ時間 '+fmtT(S.t)+'</div><div class="stat" style="text-align:left;line-height:1.6">変える条件は<b>1つだけ</b>。ほかの条件（水の量・使う水・時間・容器・かき混ぜ…）は<b>そろえる</b>。結果（上昇温度）は実験ではかる。</div>';
-  $('bBookC').classList.toggle('hidden',!Z());$('clear').classList.remove('hidden');
-}
-function readSeal(){try{return JSON.parse(localStorage.getItem(SEAL)||'null')}catch(e){return null}}
-function openEnv(){
-  const sd=readSeal(),e=$('env');e.classList.remove('hidden');e.scrollTop=0;
-  if(!sd){e.innerHTML='<div class="emo">✉</div><h1 class="px">封筒はまだ無い</h1><div class="col"><button class="big" id="eB">もどる</button></div>';$('eB').onclick=()=>e.classList.add('hidden');return}
-  e.innerHTML='<div class="emo">✉</div><h1 class="px" style="font-size:26px">封筒の中身</h1><div class="col" style="width:min(100%,480px);text-align:left">'+Object.values(sd.slots).map(s=>'<div class="stat" style="font-size:14px">'+s.q+'<br>予想：<b style="color:#f2c14e">'+s.pred+'</b><br><small>理由：'+s.reason+'</small></div>').join('')+'<div class="stat" style="font-size:14px">実験の結果（上昇温度）を入れて確かめるのは、コマ17「ジュールの湯」。</div><button class="big" id="eB">とじる</button></div>';
-  $('eB').onclick=()=>e.classList.add('hidden');
-}
+function readSeal(){try{var o=JSON.parse(localStorage.getItem(SEAL)||'null');return o&&o.slots?o:null}catch(e){return null}}
+function openEnv(){var sd=readSeal();if(!sd){toast('封筒はまだ無い');return}
+  dialog('<h3>封筒の中身</h3>'+['power','time','volt','prod'].filter(function(k){return sd.slots[k]}).map(function(k){var s=sd.slots[k];return '<div class="ptab"><div><span>予想</span><em>'+esc(s.q)+'<br>→ <b>'+esc(s.pred)+'</b><br><small>理由：'+esc(s.reason)+'</small></em></div></div>'}).join('')+'<p style="font-size:13px">結果を入れて確かめるのは、コマ17「ジュールの湯」。</p>',[['とじる','',closeDlg]])}
+$('bEnvT').onclick=openEnv;$('bEnvM').onclick=openEnv;$('bEnvC').onclick=openEnv;
 
-/* ============ 確認テスト ============ */
-let TQ=[],TA=[],TI=0,lastCard=null;
-function startTest(){['clear','title','end','env','blue'].forEach(x=>$(x).classList.add('hidden'));closeSheet();
-  if(!window.Quiz){$('test').innerHTML='<p>問題データがありません</p>';$('test').classList.remove('hidden');return}
-  TQ=Quiz.test();TA=[];TI=0;$('test').classList.remove('hidden');showQ()}
-function showQ(){
-  const q=TQ[TI],el=$('test');if(!q)return finishTest();
-  let h='<div class="qn">確認テスト　'+(TI+1)+' / '+TQ.length+'</div><div class="qt">'+q.q+'</div>'+(q.fig?'<div class="fig">'+q.fig+'</div>':'');
-  if(q.t==='choice')h+='<div class="opts">'+q.shown.map((c,i)=>'<button class="opt" data-c="'+i+'">'+c+'</button>').join('')+'</div>';
-  else if(q.t==='num')h+='<div class="numrow"><input id="numIn" inputmode="decimal" autocomplete="off" placeholder="数を入れる"><b style="font-size:20px">'+(q.unit||'')+'</b></div><div class="col" style="margin-top:10px"><button class="big" id="numGo">決定</button></div>';
-  else if(q.t==='order')h+='<p style="margin:4px 0">上から順になるようにタップしよう</p><div class="seq" id="seq"></div><div class="opts">'+q.shown.map((c,i)=>'<button class="opt" data-o="'+i+'">'+c+'</button>').join('')+'</div><div style="display:flex;gap:8px;width:min(100%,520px)"><button class="big gray" id="oReset" style="flex:.5">やり直す</button><button class="big" id="oGo" disabled>決定</button></div>';
-  el.innerHTML=h;el.scrollTop=0;
-  if(q.t==='choice')el.querySelectorAll('[data-c]').forEach(b=>b.onclick=()=>{sfx.tap();ans(q.shown[+b.dataset.c])});
-  if(q.t==='num')$('numGo').onclick=()=>{const v=$('numIn').value.trim();if(!v){toast('数を入れてね');return}sfx.tap();ans(v.replace(/[０-９．]/g,c=>String.fromCharCode(c.charCodeAt(0)-0xFEE0)))};
-  if(q.t==='order'){let seq=[];const upd=()=>{$('seq').innerHTML=seq.map((i,n)=>(n+1)+'. '+q.shown[i]).join('<br>');el.querySelectorAll('[data-o]').forEach(b=>{b.disabled=seq.includes(+b.dataset.o);b.style.opacity=b.disabled?.35:1});$('oGo').disabled=seq.length!==q.shown.length};
-    el.querySelectorAll('[data-o]').forEach(b=>b.onclick=()=>{seq.push(+b.dataset.o);sfx.tap();upd()});$('oReset').onclick=()=>{seq=[];upd()};$('oGo').onclick=()=>{if(seq.length===q.shown.length)ans(seq.map(i=>q.shown[i]))};upd()}
-}
-function ans(a){TA[TI]=a;TI++;showQ()}
-function finishTest(){
-  const qs=TQ,answers=TA;const review=Quiz.review(qs,answers),marks=review.map(r=>r.ok),score=marks.filter(Boolean).length;
-  const tmode=window.GAME_MODE==='test';const name=(window.PLAYER_NAME||S.name||$('nameIn').value||'').trim();
-  lastCard=SubmitCard.show({gameId:GAME,grade:'chu2',koma:[KOMA],
-    unit:'中2理科　電流とその利用　第16回',game:'でんねつ実験プログラム ～温度上昇の実験計画～'+(tmode?'（確認テストのみ）':''),
-    name,score,total:qs.length,marks,
-    records:tmode?[['モード','確認テストだけ']]:[['1回で合格',S.first+'/'+(ROUNDS.length+RUSH)],['最高コンボ','×'+S.best],['予想の封印',S.sealed?'済み':'まだ'],['遊んだ時間',fmtT(S.t)]],
-    review},()=>{$('test').classList.add('hidden');$('end').classList.remove('hidden')});
-}
+/* ================= クリア ================= */
+function mainClear(){var go=function(){showClear()};var z=Zk();if(z&&z.mainClear){try{z.mainClear({onClose:go});return}catch(e){}}go()}
+function showClear(){setScene('clear');
+  $('cStats').innerHTML='<div class="stat"><b>'+S.first+' / '+NLV+'</b>一発で合格した机</div><div class="stat"><b>×'+S.best+'</b>最高の連続合格</div><div class="stat"><b>'+fmtT(S.rushT)+'</b>ラッシュ4台のタイム</div><div class="stat"><b>'+fmtT(S.t)+'</b>遊んだ時間</div>';
+  $('cLesson').innerHTML='実験の計画は、<b>変える条件を1つだけ</b>にして、<b>ほかの条件（水の量・使う水・容器・時間…）はそろえる</b>。そろえないと「どれが効いたか分からない＝比べられない」。<br>電力は<b>電熱線（W）</b>を替えても、<b>同じ電熱線に加える電圧</b>を変えても変わる。結果（水の上昇温度）は実験ではかる。';
+  $('bBookC').classList.toggle('hidden',!Zk())}
+$('bTest').onclick=function(){startTest()};$('bMapC').onclick=function(){toMap()};
 
-/* ============ 小物 ============ */
-function sheet(html,cb){const s=$('sheet'),i=$('sheetIn');i.innerHTML=html;s.classList.remove('hidden');i.onclick=e=>{const b=e.target.closest('button');if(!b||b.disabled)return;cb(b.dataset.a,b)}}
-function closeSheet(){$('sheet').classList.add('hidden')}
-function toast(t){const o=document.getElementById('toast');if(o)o.remove();const d=document.createElement('div');d.id='toast';d.textContent=t;document.body.appendChild(d);setTimeout(()=>d.remove(),1900)}
-function earn(n,why,el){let got=n;const r=el?el.getBoundingClientRect():{left:innerWidth/2,top:innerHeight/2,width:0,height:0};
-  if(Z()&&Z().earn){try{got=Z().earn(n,why,{koma:KOMA,x:r.left+r.width/2,y:r.top})}catch(e){}}else fx('+'+n+' かけら',r.left+r.width/2,r.top);sfx.coin();return got}
-function fx(t,x,y){const d=document.createElement('div');d.className='fx';d.textContent=t;d.style.left=(x-50)+'px';d.style.top=y+'px';document.body.appendChild(d);setTimeout(()=>d.remove(),1200)}
-function burst(el,n){if(RM||!el)return;const r=el.getBoundingClientRect();const cs=['#f2c14e','#3fbf73','#3a78d4','#d64545','#fff'];for(let i=0;i<(n||20);i++){const d=document.createElement('div');d.className='px8';d.style.left=(r.left+r.width/2)+'px';d.style.top=(r.top+Math.min(r.height,300)/2)+'px';d.style.background=cs[i%cs.length];d.style.setProperty('--dx',(Math.round((Math.random()*260-130)/8)*8)+'px');d.style.setProperty('--dy',(Math.round((Math.random()*220-150)/8)*8)+'px');document.body.appendChild(d);setTimeout(()=>d.remove(),950)}}
-function fmtT(ms){ms=ms||0;const s=Math.round(ms/1000);return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')}
-function tick(){const now=performance.now();if(tLast&&$('title').classList.contains('hidden')&&$('test').classList.contains('hidden')&&$('clear').classList.contains('hidden')&&!document.hidden)S.t+=now-tLast;tLast=now;$('hT').textContent='⏱'+fmtT(S.t)}
+/* ================= 確認テスト ================= */
+var TQ=[],TI=0,TA=[],TRES=[],CARD=null;
+function startTest(){setScene('test');closeDlg();TQ=window.Quiz?Quiz.test():[];TI=0;TA=[];TRES=[];showQ()}
+function showQ(){if(TI>=TQ.length)return finishTest();var q=TQ[TI];
+  var h='<div class="tq-h"><div class="tq-n">'+(TI+1)+'</div><div class="tq-dots">'+TQ.map(function(_,i){return '<i class="'+(i<TRES.length?(TRES[i]?'ok':'ng'):i===TI?'cur':'')+'"></i>'}).join('')+'</div></div>';
+  h+='<div><div class="kick">確認テスト '+(TI+1)+' / '+TQ.length+'</div><div class="tq-q" style="margin-top:8px">'+esc(q.q)+'</div>'+(q.fig?'<div class="tq-fig">'+q.fig+'</div>':'')+'</div><div class="tq-a" id="tA"></div>';
+  $('tIn').innerHTML=h;$('scrTest').scrollTop=0;var box=$('tA');
+  if(q.t==='choice'){q.shown.forEach(function(s){var b=document.createElement('button');b.className='ch';b.textContent=s;b.onclick=function(){answer(s,b)};box.appendChild(b)})}
+  else if(q.t==='num'){var v='';box.innerHTML='<div class="numv"><div id="nv">&nbsp;</div><b style="font-size:22px">'+esc(q.unit||'')+'</b></div><div class="keys" id="nk"></div>';
+    ['7','8','9','⌫','4','5','6','.','1','2','3','0'].forEach(function(k){var b=document.createElement('button');b.textContent=k;b.onclick=function(){if(TA.length>TI)return;if(k==='⌫')v=v.slice(0,-1);else if(v.length<7&&!(k==='.'&&v.indexOf('.')>=0))v+=k;$('nv').innerHTML=v?esc(v):'&nbsp;';SFX.tap()};$('nk').appendChild(b)});
+    var go=document.createElement('button');go.className='go';go.textContent='この値で決定';go.onclick=function(){if(v&&TA.length<=TI)answer(v,null)};$('nk').appendChild(go)}
+  else{var sel=[];var drawO=function(){box.innerHTML='<div class="ordl" id="ol"></div>';var ol=$('ol');sel.forEach(function(s,i){var d=document.createElement('div');d.className='sl';d.textContent=(i+1)+'. '+s;ol.appendChild(d)});
+      q.shown.forEach(function(s){if(sel.indexOf(s)>=0)return;var b=document.createElement('button');b.className='ch';b.textContent=s;b.onclick=function(){if(TA.length>TI)return;sel.push(s);SFX.add(sel.length);if(sel.length===q.shown.length)answer(sel.slice(),null);else drawO()};ol.appendChild(b)});
+      if(sel.length&&TA.length<=TI){var r=document.createElement('button');r.className='bx sm';r.textContent='やりなおす';r.onclick=function(){sel=[];drawO()};ol.appendChild(r)}};drawO()}
+}
+function answer(v,btn){if(TA.length>TI)return;var q=TQ[TI],ok=window.Quiz?Quiz.check(q,v):false;TA.push(v);TRES.push(ok);ok?SFX.ok():SFX.ng();
+  [].forEach.call($('tA').querySelectorAll('.ch'),function(b){b.disabled=true;if(q.t==='choice'){if(b.textContent===q.choices[0])b.classList.add('ok');else if(b===btn)b.classList.add('ng')}});
+  var ex=document.createElement('div');ex.className='ex'+(ok?'':' ng');ex.innerHTML=(ok?'<b style="color:#1F3A93">正解</b>　':'<b style="color:#D8342A">ざんねん</b>　正解：'+esc(window.Quiz?Quiz.answer(q):'')+'<br>')+esc(q.ex||'');$('tA').appendChild(ex);
+  var nb=document.createElement('button');nb.className='bx red';nb.textContent=TI+1>=TQ.length?'テストを終える':'つぎへ';nb.onclick=function(){TI++;showQ()};$('tA').appendChild(nb);
+  setTimeout(function(){try{nb.scrollIntoView({behavior:RM?'auto':'smooth',block:'nearest'})}catch(e){}},60)}
+function getName(){return (window.PLAYER_NAME||S.name||$('nameIn').value||'').trim()}
+function finishTest(){var qs=TQ,answers=TA,review=window.Quiz?Quiz.review(qs,answers):[],marks=review.map(function(r){return r.ok}),score=marks.filter(Boolean).length,name=getName();
+  var records=TEST?[['モード','確認テストだけ']]:[['一発で合格した机',S.first+' / '+NLV],['最高の連続合格','×'+S.best],['ラッシュのタイム',S.rushT?fmtT(S.rushT):'―'],['予想の封印',S.sealed?'済み':'まだ']];
+  $('eName').textContent=(name?name+'　':'')+'確認テスト';$('eScore').innerHTML=score+'<small> / '+qs.length+' 点</small>';setScene('end');
+  if(window.SubmitCard)CARD=SubmitCard.show({gameId:GAME,grade:'chu2',koma:[KOMA],unit:'中2理科　電流とその利用　第16回',
+    game:'でんねつ実験プログラム ～温度上昇の実験計画～'+(TEST?'（確認テストのみ）':''),name:name,score:score,total:qs.length,marks:marks,records:records,review:review},function(){})}
+$('eCard').onclick=function(){if(CARD&&window.SubmitCard)SubmitCard.reopen(CARD)};
+$('eRetest').onclick=function(){startTest()};$('eTitle').onclick=function(){setScene('title');refreshTitle()};
 
-/* ============ 画面の配線 ============ */
-$('bRun').onclick=run;
-function begin(cont){
-  ac();S.name=$('nameIn').value.trim()||S.name;$('title').classList.add('hidden');
-  if(Z()&&Z().setup)try{Z().setup({game:GAME,koma:[KOMA]})}catch(e){}
-  if(Z()&&Z().hud)try{$('zhud').innerHTML='';Z().hud($('zhud'))}catch(e){}
-  updHUD();
-  if(cont&&S.cleared){showClear();return}
-  if(cont&&S.ri>=ROUNDS.length+RUSH){predictStep();return}
-  rushI=-1;
-  if(cont&&S.ri>=ROUNDS.length){S.ri=ROUNDS.length}
-  startRound(cont?S.ri:0);
-}
-$('bStart').onclick=()=>{const k=S;S=fresh();S.best=k.best||0;S.rule=k.rule;S.predEarned=k.predEarned;begin(false)};
-$('bCont').onclick=()=>begin(true);
-$('bMute').onclick=()=>{muted=!muted;try{localStorage.setItem('rika-zukan:chu2:mute',muted?'1':'0')}catch(e){}updHUD()};
-const book=()=>{if(Z()&&Z().openBook)Z().openBook({unit:'denryu'})};
-$('bBook').onclick=book;$('bBookT').onclick=book;$('bBookC').onclick=book;
-$('bEnvT').onclick=openEnv;$('bEnvC').onclick=openEnv;
-$('bTest').onclick=startTest;$('bRetest').onclick=startTest;
-$('bAgain').onclick=()=>{$('clear').classList.add('hidden');const k=S;S=fresh();S.name=k.name;S.best=k.best;S.rule=k.rule;S.predEarned=k.predEarned;rushI=-1;startRound(0)};
-$('bCard').onclick=()=>{if(lastCard&&SubmitCard.reopen)SubmitCard.reopen(lastCard)};
-$('bTitle').onclick=()=>{$('end').classList.add('hidden');$('title').classList.remove('hidden');initTitle()};
-function initTitle(){
-  const sv=load();if(sv){S=Object.assign(fresh(),sv);$('bCont').classList.remove('hidden');$('bCont').textContent=sv.cleared?'つづきから（クリア済み）':'つづきから（依頼'+(sv.ri+1)+'）'}
-  if(window.PLAYER_NAME){$('nameIn').value=window.PLAYER_NAME;$('nameIn').classList.add('hidden')}else if(S.name)$('nameIn').value=S.name;
-  const hz=!Z();$('bBookT').classList.toggle('hidden',hz);$('bBook').classList.toggle('hidden',hz);
-  $('bEnvT').classList.toggle('hidden',!readSeal());
-}
-initTitle();
-setInterval(tick,500);addEventListener('pagehide',save);
-if(/dev/.test(location.hash))window.__g={get S(){return S},get A(){return A},get B(){return B},get RD(){return RD},judge,startRound};
-if(window.GAME_MODE==='test'){$('title').classList.add('hidden');startTest()}
-else{RD=ROUNDS[0];ORDER.forEach(k=>{A[k]=(RD.A[k])||STD[k];B[k]=(RD.B[k])||STD[k]});drawLab();renderEd()}
+/* ================= 小物 ================= */
+function dialog(html,btns){var band='<div class="band"><i style="background:#1F3A93"></i><i style="background:#D8342A"></i><i style="background:#F6C600"></i><i style="background:#161616"></i></div>';
+  $('dlgIn').innerHTML=band+'<div class="bd">'+html+'<div class="btnrow" id="dlgB"></div></div>';var bb=$('dlgB');
+  (btns||[]).forEach(function(b){var e=document.createElement('button');e.className='bx sm '+(b[1]||'');e.textContent=b[0];e.onclick=function(){ac();SFX.tap();b[2]()};bb.appendChild(e)});$('dlg').classList.remove('hidden')}
+function closeDlg(){$('dlg').classList.add('hidden')}
+function toast(t){var o=$('toast');if(o)o.remove();var d=document.createElement('div');d.id='toast';d.textContent=t;$('app').appendChild(d);setTimeout(function(){d.remove()},2200)}
+function banner(t){var b=$('ban');b.innerHTML='<div>'+esc(t)+'</div>';b.classList.remove('hidden');clearTimeout(banner.tm);banner.tm=setTimeout(function(){b.classList.add('hidden')},1700)}
+function burstDom(x,y){var r=cv.getBoundingClientRect();if(scene==='play')burst(x-r.left,y-r.top,null,30)}
+function earn(n,why,x,y){var r=cv.getBoundingClientRect(),X=x,Y=y;if(scene==='play'){X=x+r.left;Y=y+r.top}var z=Zk();if(z&&z.earn){try{z.earn(n,why,{x:X,y:Y})}catch(e){}}else{toast('+'+n+' かけら')}SFX.coin();setTimeout(updHUD,50)}
+var openBook=function(){var z=Zk();if(z&&z.openBook)z.openBook({unit:'denryu'})};
+$('bBookT').onclick=openBook;$('bBookM').onclick=openBook;$('bBookC').onclick=openBook;$('eBook').onclick=openBook;
+$('dlg').addEventListener('click',function(e){if(e.target===$('dlg')&&$('dlgB')&&$('dlgB').children.length===1&&/とじる/.test($('dlgB').textContent))closeDlg()});
+
+/* ================= はじまり ================= */
+window.addEventListener('resize',resize);
+try{window.Zukan&&Zukan.setup&&Zukan.setup({game:GAME,koma:[KOMA]})}catch(e){}
+resize();refreshTitle();
+if(TEST){startTest()}else setScene('title');
+requestAnimationFrame(frame);
+if(document.fonts&&document.fonts.ready)document.fonts.ready.then(resize);
+/* 自動操作の確かめ用（遊びには影響しない） */
+window.__DP={LV:LV,simulate:simulate,judge:judge,start:startLevel,G:function(){return G},S:function(){return S},add:addBlock,run:runProg,toDraw:toDraw,GD:function(){return GD},gEnd:gEnd,scene:function(){return scene},derive:function(){return derive()}};
 })();
 </script>
 </body>
