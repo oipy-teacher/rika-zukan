@@ -145,6 +145,9 @@ body.land #cap span{font-size:17px}
 .pinT svg{width:22px;height:36px}
 .pinT.used{opacity:.3}
 /* ---------- 重ねる窓（説明書のページ） ---------- */
+#ov.top{z-index:2147482990}
+#bBack{z-index:45!important}
+body.hashelp #hud{padding-right:128px}
 #ov{position:fixed;inset:0;z-index:40;background:rgba(5,8,11,.72);display:flex;align-items:center;justify-content:center;padding:16px}
 .pg{position:relative;width:100%;max-width:470px;max-height:100%;overflow-y:auto;background:var(--bg);border:1.5px solid var(--ln);padding:22px 20px 18px}
 body.land .pg{max-width:620px}
@@ -193,7 +196,7 @@ body.land .ch{font-size:19px;min-height:66px}
 </head>
 <body>
 <canvas id="cv"></canvas>
-<button id="bBack" hidden>もどる</button>
+<button id="bBack" data-gd-pass hidden>もどる</button>
 <button id="bMute" aria-label="音を切りかえる">SOUND<br>ON</button>
 
 <section id="scTitle" class="scr" hidden>
@@ -205,6 +208,7 @@ body.land .ch{font-size:19px;min-height:66px}
   <div class="tbtns">
    <button class="bt pri big pulse" id="btnStart">はじめる</button>
    <button class="bt" id="btnCont" hidden>つづきから</button>
+   <button class="bt sm" id="btnHowto">あそびかた</button>
    <button class="bt sm" id="btnBookT" hidden>📖 図鑑</button>
   </div>
  </div>
@@ -2410,17 +2414,18 @@ function extr(pts,z,d,closed,col,a,tf,step=4){ctx.strokeStyle=col;ctx.globalAlph
 let scene='title',G=null,T=null;
 const INHUB=!!window.COLLECTION_NAME||(function(){try{return window.parent!==window}catch(e){return true}})();
 function show(id){['scTitle','scMap','scPlay','scTest'].forEach(s=>$(s).hidden=s!==id);scene={scTitle:'title',scMap:'map',scPlay:'play',scTest:'test'}[id];
- const b=$('bBack');b.hidden=scene==='title'&&!INHUB;b.textContent=scene==='title'?'一覧へ':'もどる'}
+ const b=$('bBack');b.hidden=scene==='title'&&!INHUB;b.textContent=scene==='title'?'一覧へ':'もどる';
+ if(window.HELPC){const on=scene==='play';on?HELPC.show():HELPC.hide();document.body.classList.toggle('hashelp',on)}}
 $('bBack').onclick=()=>{SFX.click();
  if(scene==='title'){try{window.parent.postMessage({type:'rika-close-game'},'*')}catch(e){}return}
  if(G)G.paused=true;
  const msg=scene==='play'?'進み具合は保存されます（開けた箱と★はそのまま。この箱は次にはじめから）。':scene==='test'?'確認テストは次はさいしょから。模型の進み具合は保存されています。':'進み具合は保存されます。表紙にもどります。';
- ovOpen('<div class="k">BACK</div><h3>もどりますか？</h3><p>'+msg+'</p><div class="rowb"><button class="bt pri" id="bkGo">'+(scene==='map'?'表紙へ':'箱の棚へ')+'</button><button class="bt" id="bkNo">つづける</button></div>');
+ $('ov').classList.add('top');ovOpen('<div class="k">BACK</div><h3>もどりますか？</h3><p>'+msg+'</p><div class="rowb"><button class="bt pri" id="bkGo" data-gd-pass>'+(scene==='map'?'表紙へ':'箱の棚へ')+'</button><button class="bt" id="bkNo" data-gd-pass>つづける</button></div>');
  $('bkNo').onclick=()=>{ovClose();if(G)G.paused=false};
- $('bkGo').onclick=()=>{ovClose();if(scene==='map'){toTitle()}else{G=null;bgmOn=false;openMap()}}};
+ $('bkGo').onclick=()=>{ovClose();leaveGuide();if(scene==='map'){toTitle()}else{G=null;bgmOn=false;openMap()}}};
 $('bMute').onclick=()=>{SV.mute=!SV.mute;save();$('bMute').innerHTML='SOUND<br>'+(SV.mute?'OFF':'ON');if(!SV.mute){ac();SFX.click()}};
 function ovOpen(h){$('ovB').innerHTML=h;$('ov').hidden=false}
-function ovClose(){$('ov').hidden=true;$('ovB').innerHTML=''}
+function ovClose(){$('ov').hidden=true;$('ov').classList.remove('top');$('ovB').innerHTML=''}
 function big(t,s){const b=$('bigT');b.innerHTML='<div>'+t+(s?'<small>'+s+'</small>':'')+'</div>'}
 function kakera(){try{return window.Zukan?Zukan.state().kakera:null}catch(e){return null}}
 
@@ -2429,7 +2434,7 @@ const TT={t:0,m:null};
 function toTitle(){G=null;bgmOn=false;show('scTitle');const tt='3つの体の分解図';$('ttl').innerHTML=[...tt].map((c,i)=>'<span style="animation-delay:'+(i*.06)+'s">'+c+'</span>').join('');
  if(window.PLAYER_NAME)$('nameIn').value=window.PLAYER_NAME;else if(SV.name)$('nameIn').value=SV.name;
  $('btnCont').hidden=!SV.started;$('btnBookT').hidden=!window.Zukan;TT.t=0}
-$('btnStart').onclick=()=>{ac();SFX.pin();SV.name=$('nameIn').value.trim();SV.started=true;save();startBox(0)};
+$('btnStart').onclick=()=>{ac();SFX.pin();SV.name=$('nameIn').value.trim();SV.started=true;save();if(window.Guide)Guide.intro(INTRO).then(()=>startBox(0));else startBox(0)};
 $('btnCont').onclick=()=>{ac();SFX.click();SV.name=$('nameIn').value.trim()||SV.name;save();openMap()};
 $('btnBookT').onclick=()=>{window.Zukan&&Zukan.openBook()};
 function drawGrid(t,a=1){ctx.fillStyle='#0B0F14';ctx.fillRect(0,0,W,H);ctx.lineWidth=1;ctx.strokeStyle='rgba(232,238,242,'+(.045*a)+')';ctx.beginPath();const g=32;for(let x=(t*4)%g;x<W;x+=g){ctx.moveTo(x,0);ctx.lineTo(x,H)}for(let y=0;y<H;y+=g){ctx.moveTo(0,y);ctx.lineTo(W,y)}ctx.stroke();ctx.strokeStyle='rgba(232,238,242,'+(.08*a)+')';ctx.beginPath();for(let x=(t*4)%(g*4);x<W;x+=g*4){ctx.moveTo(x,0);ctx.lineTo(x,H)}for(let y=0;y<H;y+=g*4){ctx.moveTo(0,y);ctx.lineTo(W,y)}ctx.stroke()}
@@ -2447,7 +2452,7 @@ function drawScrew(x,y,r,rot,a=1,lift=0){ctx.save();ctx.globalAlpha=a;ctx.transl
 
 /* ================= 箱の棚 ================= */
 function boxSVG(i,st){const c=st?'#FF7F50':'#E8EEF2';return '<svg viewBox="0 0 120 90"><g fill="none" stroke="'+c+'" stroke-width="1.6"><path d="M20 30 L60 12 L100 30 L60 48Z"/><path d="M20 30 V70 L60 88 V48 M100 30 V70 L60 88"/>'+(st?'<path d="M20 30 L8 14 L48 -2 M100 30 L112 14 L72 -2" stroke-dasharray="4 3"/>':'')+'</g><text x="60" y="72" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="14" fill="'+c+'">No.'+(i+1)+'</text></svg>'}
-function openMap(){G=null;bgmOn=false;show('scMap');const st=SV.stars.reduce((a,b)=>a+(b||0),0);$('mapSt').textContent='★ '+st+' / 18　最大コンボ '+SV.maxCombo;
+function openMap(){leaveGuide();G=null;bgmOn=false;show('scMap');const st=SV.stars.reduce((a,b)=>a+(b||0),0);$('mapSt').textContent='★ '+st+' / 18　最大コンボ '+SV.maxCombo;
  $('boxes').innerHTML=BOXES.map((b,i)=>{const lock=i>SV.box,s=SV.stars[i]||0;return '<button class="bx'+(lock?' lock':'')+(i===SV.box&&!SV.cleared?' next':'')+'" data-i="'+i+'"'+(lock?' disabled':'')+'>'+boxSVG(i,i<SV.box)+'<span class="no">'+(b.boss?'BOSS':b.mid?'★山場':b.seal?'SEAL':'BOX')+'</span><span class="n">'+esc(b.nm)+'</span><span class="s">'+(b.seal?(i<SV.box?'封印ずみ':'　'):(i<SV.box?'★'.repeat(s)+'☆'.repeat(3-s):'　'))+'</span></button>'}).join('');
  $('boxes').querySelectorAll('.bx').forEach(el=>el.onclick=()=>{ac();SFX.click();startBox(+el.dataset.i)});
  $('btnTestM').hidden=!SV.cleared;$('btnSealM').hidden=!readSeal();$('btnBookM').hidden=!window.Zukan}
@@ -2461,15 +2466,17 @@ function showSeal(){const s=readSeal();if(!s)return;const row=(k,nm)=>{const p=s
 function comboLv(c){return c>=15?4:c>=10?3:c>=6?2:c>=3?1:0}
 function mult(c){return 1+comboLv(c)}
 const TH=[3,6,10,15];
-function startBox(i){const bx=BOXES[i];ovClose();$('bigT').innerHTML='';
+function startBox(i,opt){opt=opt||{};stopCoach();if(i===0&&!opt.practice&&!SV.tut&&!SV.box&&window.Guide){runPractice(false);return}
+ const bx=BOXES[i];ovClose();$('bigT').innerHTML='';
  G={i,bx,t:0,paused:false,panels:bx.panels.map(p=>({...p,st:'on',t:0,screws:p.sc.map(s=>({x:s[0],y:s[1],prog:0,out:false}))})),organs:bx.organs.map(o=>({...o,st:'hid',t:0,wrong:0,hx:0,hy:0})),
   step:0,phase:bx.seal?'seal':'pin',pin:null,found:{},seen:{},hits:0,misses:0,pinsUsed:0,sortErr:0,combo:0,maxC:0,pts:0,turn:null,drag:null,parts:[],fly:[],fl:[],shake:0,flash:0,flashC:'#FF7F50',firstOpened:false,
-  sealPins:{dig:null,res:null,circ:null},sealDrag:null,sealed:false,capHold:0};
+  sealPins:{dig:null,res:null,circ:null},sealDrag:null,sealed:false,capHold:0,practice:!!opt.practice};
  show('scPlay');bgmOn=true;$('sealBar').hidden=!bx.seal;$('drawers').hidden=!!bx.seal;
  if(!bx.seal)buildDrawers();else buildSealBar();
  layoutStage();hud();setCombo();
  const intro=bx.seal?'<p>'+(bx.seal==='fish'?'理科室で<b>煮干し</b>を解剖する前に、':'理科室で<b>イカ</b>を解剖する前に、')+'「消化・呼吸・循環の器官はどこにある？」の予言ピンを刺して<b>封印</b>しよう。答えはここでは見せない。解剖のあとで開ける。</p><p>手がかり：これまでの5つの模型で、どこに何があった？</p>':
   '<p>'+esc(bx.sub)+'</p>'+(i===0?'<p>① 外板に<b>予言ピン</b>を刺す（この下に◯◯の器官がある！）<br>② ピンの板の<b>ネジを長押し</b>（ぐるぐるなぞると速い）で外す<br>③ 出てきた部品を、同じ働きの<b>部品棚</b>へドラッグ</p>':bx.boss?'<p>ボス。<b>予言ピンは5本まで</b>。5本で3つの働きの器官を全部見つけないと、組み直し。</p>':bx.mid?'<p>背骨のない小さな体。<b>ヒトと同じ場所</b>にあるとは限らない…</p>':'<p>ヒトの体を思い出して、どの板の下にあるか予言しよう。</p>');
+ if(G.practice){G.paused=false;big('れんしゅう','ヒトの模型');setTimeout(()=>{if(G&&G.practice)$('bigT').innerHTML=''},1600);cap();return}
  ovOpen('<div class="k">BOX No.'+(i+1)+(bx.boss?'　BOSS':bx.mid?'　★山場':'')+'</div><h3>'+esc(bx.nm)+'</h3>'+intro+'<div class="rowb"><button class="bt pri big" id="goBox">'+(bx.seal?'予言をはじめる':'分解をはじめる')+'</button></div>');
  G.paused=true;$('goBox').onclick=()=>{ac();SFX.pin();ovClose();G.paused=false;cap()}}
 function layoutStage(){if(!G)return;const b=G.bx.b,top=66,dw=document.querySelector('.drw'),side=LAND&&!G.bx.seal?((dw&&dw.getBoundingClientRect().width)||200):0;
@@ -2484,7 +2491,7 @@ function hud(){if(!G)return;const bx=G.bx;let st='';
  $('hNum').innerHTML=(bx.boss?'PIN <b>'+Math.max(0,bx.pins-G.pinsUsed)+'</b>/'+bx.pins+'<br>':'')+'PTS <b>'+G.pts+'</b>'+(k!=null?'<br>かけら <b>'+k+'</b>':'')}
 function setCombo(bump){const c=$('combo');if(!G||G.combo<2){c.className='';return}c.className='on l'+comboLv(G.combo)+(bump?' bump':'');$('cN').textContent=G.combo;$('cL').textContent='COMBO ×'+mult(G.combo);if(bump){void c.offsetWidth}}
 function cap(t){const T0=t||capText();$('capT').innerHTML=T0}
-function capText(){if(!G)return'';const g=G,tg=['dig','res','circ'][Math.min(2,g.step)];
+function capText(){if(!G||G.practice)return'';const g=G,tg=['dig','res','circ'][Math.min(2,g.step)];
  if(g.bx.seal){const n=['dig','res','circ'].filter(f=>g.sealPins[f]).length;return n<3?'<b>予言</b>下の3本のピンを、シルエットの上へドラッグ（'+n+'/3）':'<b>確認</b>ピンは動かせる。これでよければ「封印する」'}
  if(g.parts.length)return '<b>仕分け</b>出てきた部品を、同じ働きの部品棚へドラッグ';
  if(g.phase==='pin')return '<b>予言</b>'+FN[tg].nm+'の器官は、どの板の下？ 板をタップしてピンを刺す';
@@ -2659,6 +2666,38 @@ function update(dt){const g=G;g.t+=dt;g.shake=Math.max(0,g.shake-dt*40);g.flash=
  bgm(dt)}
 
 /* ================= 確認テスト ================= */
+/* ================= 遊び方の案内（Guide）・れんしゅう（2026-09-28 仕上げ） ================= */
+const INTRO={title:'第20回　3つの体の分解図',learn:'ヒト以外の動物にも、**消化・呼吸・循環** の働きをする器官がある（場所はちがうこともある）',how:'板に **予言ピン** → ネジを **長おし** で外す → 出てきた器官を 部品棚へ **ドラッグ**',gesture:'hold'};
+let COACH=null;
+function stopCoach(){if(COACH&&COACH.stop){try{COACH.stop()}catch(e){}}COACH=null}
+function leaveGuide(){stopCoach();const g=G;if(g&&g.practice){g.practice=false;try{Guide.tutorialEnd()}catch(e){}}}
+function panelBox(id){if(!G)return null;const p=G.panels.find(q=>q.id===id);if(!p||p.st!=='on')return null;const sp=p.poly.map(q=>P(q[0],q[1],G.bx.z));let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;sp.forEach(q=>{x0=Math.min(x0,q[0]);y0=Math.min(y0,q[1]);x1=Math.max(x1,q[0]);y1=Math.max(y1,q[1])});return {x:(x0+x1)/2,y:(y0+y1)/2,w:x1-x0,h:y1-y0,rx:8}}
+function nextScrew(){if(!G||!G.pin)return null;const s=G.pin.p.screws.find(z=>!z.out);if(!s)return null;const q=P(s.x,s.y,G.bx.z);return {x:q[0],y:q[1],r:Math.max(22,scrR()*2)}}
+function partT(){if(!G||!G.parts.length)return null;const o=G.parts.find(z=>z.st==='loose')||G.parts[0];const q=P(o.c[0],o.c[1],0);return {x:q[0],y:q[1],r:Math.max(26,o.r*V.sc*.7)}}
+function drawerT(){if(!G||!G.parts.length)return null;const o=G.parts[0];const d=document.querySelector('.drw[data-fn="'+o.fn+'"]');if(!d)return null;const b=d.getBoundingClientRect();return {x:b.left+b.width/2,y:b.top+b.height/2,w:b.width,h:b.height,rx:4}}
+function mkPractice(replay){let PG=null;return {label:'れんしゅう中',block:true,
+ start:()=>{ovClose();startBox(0,{practice:true});PG=G},
+ steps:[
+  {gesture:'tap',label:'予言ピン',target:()=>panelBox(3),until:()=>!!G&&!!G.pin&&G.pin.p.id===3,text:'**消化** の器官は どの板の下？ **おなかの上** の板を タップして ピンを刺す'},
+  {gesture:'hold',label:'長おし',target:nextScrew,holdMs:1300,until:()=>!!G&&G.panels.find(q=>q.id===3).st!=='on',text:'ピンの板の **ネジを長おし**（ぐるぐる なぞると速い）。4本 外すと 板が開く',praise:'予言的中！'},
+  {gesture:'drag',label:'ドラッグ',target:partT,to:drawerT,until:()=>!!G&&!!G.found.dig&&!G.parts.length,text:'出てきた器官を、同じ働きの **部品棚** へ ドラッグ（肝臓・胃 → **消化**）',praise:'仕分け完了！'}
+ ],
+ onExit:res=>{if(res&&res.replaced)return;if(!G||G!==PG||!G.practice)return;const g=G;g.practice=false;SV.tut=1;save();
+  if(replay){G=null;bgmOn=false;openMap();return}cap()}
+}}
+function runPractice(replay){return Guide.tutorial(mkPractice(replay))}
+if(window.Guide){
+ Guide.setup({theme:{bg:'#0B0F14',fg:'#E8EEF2',accent:'#FF7F50',accentText:'#0B0F14',font:"'IBM Plex Sans JP',sans-serif",bodyFont:"'IBM Plex Sans JP',sans-serif",radius:0,
+   texture:'grid',line:'#E8EEF2',dim:'rgba(5,8,11,.6)',shadow:'0 0 0 1px rgba(255,127,80,.5),0 8px 24px rgba(0,0,0,.5)',outline:'#0B0F14',hand:'#0B0F14',handLine:'#FF7F50'},
+  sfx:k=>{if(k==='step')SFX.store(2);else if(k==='done')SFX.pop();else if(k==='clear')SFX.fan();else if(k==='cheer'||k==='open'||k==='close'||k==='nudge')SFX.click()},
+  muted:()=>SV.mute,learn:INTRO.learn,how:INTRO.how,title:INTRO.title});
+ Guide.tutorialButton('#btnHowto',()=>{ac();SFX.click();SV.name=$('nameIn').value.trim()||SV.name;save();runPractice(!!(SV.tut||SV.box))});
+ let wasP=false;
+ window.HELPC=Guide.help({corner:'tr',offset:{x:64},size:44,attention:true,show:false,
+  rules:['手順は ①板に **予言ピン** ②ネジを **長おし** で外す ③器官を **部品棚** へ','予言が当たると 点が大きい（コンボで ×2・×3…）','部品棚には **ヒトの同じ働きの器官** が書いてある','エビ（ボス）は **ピン5本まで**','魚とイカは 中を見せずに **予言を封印** する'],
+  onOpen:()=>{wasP=!!(G&&G.paused);if(G)G.paused=true},onClose:()=>{if(G&&!wasP&&$('ov').hidden)G.paused=false},
+  replay:()=>{runPractice(true);return null},labels:{replay:'れんしゅうをもう一度'}});
+}else $('btnHowto').hidden=true;
 function startTest(){if(!window.Quiz){alert('問題データがありません');return}G=null;bgmOn=false;ovClose();show('scTest');T={qs:Quiz.test(),i:0,ans:[]};renderQ()}
 function renderQ(){const q=T.qs[T.i];$('qNo').textContent=(T.i+1)+' / '+T.qs.length;$('qText').textContent=q.q;const f=$('qFig');if(q.fig){f.innerHTML=q.fig;f.hidden=false}else{f.innerHTML='';f.hidden=true}
  const A=$('qArea');A.innerHTML='';$('scTest').scrollTop=0;const mk=(c,lab)=>{const b=document.createElement('button');b.className='ch';b.innerHTML='<span class="L">'+lab+'</span><span></span>';b.lastChild.textContent=c;return b};

@@ -257,6 +257,31 @@ body.land .pan{font-size:20px;min-height:70px}
 .qfb .ex{position:relative;z-index:0;max-width:480px;font-size:17px;line-height:1.65;padding:14px 20px;margin:8px 0 16px}
 .qfb .ex::before{content:'';position:absolute;inset:0;z-index:-1;background:#FBF5E8 var(--paper);background-size:320px;filter:url(#fRough) drop-shadow(1px 3px 4px rgba(80,60,40,.28))}
 .qfb .ex b{color:#B8453C}
+/* ---------- もどる（どの画面でも左上の同じ場所・2026-09-28 仕上げ） ---------- */
+#bBack{position:fixed;z-index:15;top:calc(6px + env(safe-area-inset-top));left:calc(8px + env(safe-area-inset-left));min-height:44px;padding:0 14px 0 12px;font-size:18px;--bc:rgba(125,163,200,.62)}
+#bBack[hidden]{display:none!important}
+#ov.top{z-index:2147482990}
+#board .b1{padding-left:92px}
+body.land #board{padding-top:60px}
+body.land #board .b1{padding-left:0}
+.mp-head{padding-left:104px}
+body.land .mp-head{padding-left:22px}
+body.land #mapSvg{margin-top:54px;height:calc(100% - 54px)}
+.qt-head{padding-left:104px!important}
+@media (max-width:430px){#bBack{font-size:16px;padding:0 10px 0 8px}.mp-head{padding-left:96px}.mp-title{font-size:25px;white-space:nowrap}#board .b1{padding-left:94px}#board .b1 .bk{display:none!important}.bstage{font-size:18px}.bstage small{display:block;font-size:11px;line-height:1.1}.b1{min-height:46px}}
+/* ---------- 手ざわり（仕上げ） ---------- */
+.bz:active .jar{transform:translateY(2px) scale(.9)!important}
+.mt b{display:inline-block;transition:transform .14s cubic-bezier(.3,1.8,.5,1)}
+.mt.fl b{transform:scale(1.45)}
+#stageWrap.fever::after{content:'';position:absolute;inset:0;z-index:1;pointer-events:none;background:radial-gradient(ellipse at 50% 55%,rgba(237,174,73,0) 55%,rgba(237,174,73,.22));animation:fev 1.2s ease-in-out infinite alternate}
+@keyframes fev{from{opacity:.55}to{opacity:1}}
+.telop.combo{font-size:46px;color:#A35E14}
+.telop.combo.t2{color:#C0533F;font-size:54px}
+.telop.combo.t3{color:#D1495B;font-size:62px}
+.telop.near{font-size:30px;color:var(--ink)}
+body.land .telop.combo{font-size:60px}
+body.land .telop.combo.t3{font-size:80px}
+.stars span.on{animation:starIn .42s cubic-bezier(.2,1.6,.4,1) both}
 @media (prefers-reduced-motion: reduce){*{animation-duration:.01s!important;animation-iteration-count:1!important;transition:none!important}}
 </style>
 </head>
@@ -301,9 +326,9 @@ body.land .pan{font-size:20px;min-height:70px}
   <div class="tt-btns">
    <button class="tb red" id="btnStart"><span>はじめる</span></button>
    <button class="tb" id="btnCont" hidden><span>つづきから</span></button>
+   <button class="tb sm" id="btnHowto"><span>あそびかた</span></button>
    <button class="tb ink sm" id="btnBookT" hidden><span>📖 図鑑</span></button>
   </div>
-  <div class="tt-foot">食べ物を 消化して 小さくして、柔毛から 吸収させよう。</div>
  </div>
 </section>
 
@@ -326,7 +351,7 @@ body.land .pan{font-size:20px;min-height:70px}
 <!-- ============ 本編 ============ -->
 <section id="scPlay" class="scr" hidden>
  <header id="board">
-  <div class="b1">
+  <div class="b1" id="hudRow">
    <div class="bstage" id="hStage">第1話 おにぎり</div>
    <div class="bk" id="hK" hidden>かけら <span id="hKn">0</span></div>
    <button class="bkey" id="bMute" aria-label="音を切りかえる">おと</button>
@@ -349,6 +374,7 @@ body.land .pan{font-size:20px;min-height:70px}
  <div class="qt-body"><div class="qL"><div class="qtext" id="qText"></div><div class="qfig" id="qFig" hidden></div></div><div id="qArea"></div></div>
 </section>
 
+<button class="tb ink sm" id="bBack" data-gd-pass hidden><span id="bBackT">◀ もどる</span></button>
 <div id="ov" hidden><div class="mon"><div class="mscr" id="ovBody"></div></div></div>
 </div>
 
@@ -2389,8 +2415,11 @@ const SFX={
  lost(){tone(440,.35,{type:'sine',vol:.045,to:220})},
  drum(){noise(.38,{ft:'bandpass',f:1600,q:.4,vol:.14,swell:1});noise(.2,{ft:'highpass',f:3500,vol:.05,at:.22,swell:1});bell(1318.51,.6,{vol:.05,at:.34})},
  squirt(){noise(.05,{f:2800,vol:.05,q:1.2});tone(880,.07,{type:'sine',vol:.045,to:1650,at:.02})},
- buy(){[1046.5,1318.51,1567.98].forEach((f,i)=>bell(f,.5,{vol:.08,at:i*.08}))}
+ buy(){[1046.5,1318.51,1567.98].forEach((f,i)=>bell(f,.5,{vol:.08,at:i*.08}))},
+ don(k){noise(.16,{ft:'lowpass',f:320,vol:.34,q:.7,dec:2.4});tone(98,.22,{type:'triangle',vol:.14,to:55});bell([1046.5,1318.51,1567.98][k||0],.55,{vol:.08,at:.04})},
+ tier(n){[0,2,4,7].slice(0,Math.min(4,n+1)).forEach((d,i)=>bell(PENTA[Math.min(10,3+d)],.4,{vol:.06,at:i*.07}))}
 };
+function buzz(ms){try{if(navigator.vibrate)navigator.vibrate(ms)}catch(e){}}
 
 /* ================= 消化液・食物・お話 ================= */
 const JUICE={
@@ -2444,9 +2473,9 @@ orient();
 
 /* ================= 画面切りかえ ================= */
 let scene='title';
-function show(id){orient();['scTitle','scMap','scPlay','scTest'].forEach(s=>$(s).hidden=s!==id);scene={scTitle:'title',scMap:'map',scPlay:'play',scTest:'test'}[id];if(scene==='title')titleResize();if(scene==='play')resize()}
+function show(id){orient();['scTitle','scMap','scPlay','scTest'].forEach(s=>$(s).hidden=s!==id);scene={scTitle:'title',scMap:'map',scPlay:'play',scTest:'test'}[id];if(scene==='title')titleResize();if(scene==='play')resize();setBack()}
 function ovOpen(html){$('ovBody').innerHTML=html;$('ov').hidden=false;$('ovBody').scrollTop=0}
-function ovClose(){$('ov').hidden=true;$('ovBody').innerHTML=''}
+function ovClose(){$('ov').hidden=true;$('ov').classList.remove('top');$('ovBody').innerHTML=''}
 
 /* ================= 紙と絵の具（水彩の道具） ================= */
 function makePaper(){const n=320,c=document.createElement('canvas');c.width=c.height=n;const g=c.getContext('2d');
@@ -2685,11 +2714,13 @@ if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>{if(scene=
 function unitsOf(it){switch(it.type){case 'lump':return it.units;case 'starch':case 'protein':return it.n;case 'fdrop':return it.n*3;case 'fat':return 3;default:return 1}}
 let UID=1;
 function mkItem(type,n,base){return {id:UID++,type,n:n||1,s:base?base.s:0,lat:base?base.lat:rnd(-.6,.6),dx:base?base.dx:0,dy:base?base.dy:0,vx:0,vy:0,ph:Math.random()*TAU,st:'flow',x:base?base.x:0,y:base?base.y:0,a:0,z:'mouth',hit:{},age:0}}
-function startStage(i){
+function startStage(i,opt){
+ opt=opt||{};stopCoach();
+ if(i===0&&!opt.practice&&!SV.tut.t1&&window.Guide){runPractice(false);return}
  const st=STAGES[i];const plan=st.plan();let total=0;
  plan.forEach(e=>{if(e.f){e.contents=FOODS[e.f].c();e.units=e.contents.reduce((a,c)=>a+(c.type==='fdrop'?c.n*3:c.n),0);total+=e.units}});
  G={i,st,plan,total,need:Math.ceil(total*.6),spawnI:0,clock:0,t:0,items:[],parts:[],puddles:[],streams:[],dots:[],floats:[],abs:{glu:0,ami:0,fat:0},lost:0,combo:0,maxCombo:0,score:0,pts:0,miss:0,
-  tk:{},sel:null,paused:false,over:false,freeze:false,ff:false,slow:0,holdSpawn:false,tut:null,point:null,chomp:0,shake:0,fever:false,endT:0,hudT:0,kT:0,capPri:0,rushT:0,boss:null};
+  tk:{},sel:null,paused:false,over:false,freeze:false,ff:false,slow:0,holdSpawn:false,tut:null,point:null,chomp:0,shake:0,fever:false,endT:0,hudT:0,kT:0,capPri:0,rushT:0,boss:null,practice:!!opt.practice,flash:0,flashC:'#EDAE49'};
  JORD.forEach(j=>G.tk[j]=tankMax());
  G.juices=JORD.filter(j=>UNLOCK[j]<=i);G.sel=G.juices[0];
  buildDeck();hudStage();show('scPlay');updHUD(true);
@@ -2697,23 +2728,61 @@ function startStage(i){
  setTimeout(()=>{telop('第'+(i+1)+'話　'+st.name,'きょうの献立','big')},200);
  const newJ=JORD.filter(j=>UNLOCK[j]===i&&i>0);
  if(newJ.length)setTimeout(()=>{telop('新しい消化液が 届いた',newJ.map(j=>JUICE[j].name+'（'+JUICE[j].place+'）').join('・'));SFX.unlock();newJ.forEach(j=>{const b=document.querySelector('.bz[data-j="'+j+'"]');if(b){b.classList.add('hint');setTimeout(()=>b.classList.remove('hint'),3500)}})},1700);
- setTimeout(()=>caption(st.intro,4200,1),i===0&&!SV.tut.t1?50:1500);
- if(i===0&&!SV.tut.t1)beginTut1();
+ if(!G.practice)setTimeout(()=>caption(st.intro,4200,1),1500);
+ if(G.practice||(i===0&&!SV.tut.t1))beginTut1();
  else G.clock=-1.5;
+ if(HELP)HELP.show();
 }
 /* ---- はじめての手ほどき（第1話） ---- */
 function beginTut1(){G.holdSpawn=true;G.tut={k:'chew'};const e={f:'onigiri',contents:[S(ri(7,8)),S(6)]};e.units=e.contents.reduce((a,c)=>a+c.n,0);G.total+=e.units;G.need=Math.ceil(G.total*.6);
  const L=spawnLump(e);const hs=ZR.mouth.a+(ZR.mouth.b-ZR.mouth.a)*.42;L.holdS=hs;G.tut.lump=L;
- setTimeout(()=>caption('おにぎりが 口に入った。<b>おにぎりをタップして かもう</b>（2回）',99000,3),600)}
-function tutStep(ev,it){const T=G&&G.tut;if(!T)return;
- if(T.k==='chew'&&ev==='broke'){T.k='cut';G.freeze=true;caption('かんでも デンプンの <b>くさり</b>は長いまま。<br><b>だ液</b>のびんを えらんで、くさりを <b>タップ</b>しよう',99000,3)}
- else if(T.k==='cut'&&ev==='cut'){const big=G.items.some(x=>x.type==='starch'&&x.n>3);if(big)caption('ぷつん。<b>アミラーゼ</b>で くさりが切れた。<b>もう1本も</b>切ろう',99000,3);else{T.k='flow';G.freeze=false;G.ff=true;caption('小さくなった。流れていくよ ▶▶',99000,3)}}
- else if(T.k==='flow'&&ev==='abs'){T.k='abs';G.ff=false;G.slow=2.5;caption('<b>柔毛</b>が 小さなつぶ（<b>ブドウ糖</b>）だけを 吸いこんだ。<br>赤い線＝<b>毛細血管</b>で 全身へ',99000,3);
+ if(!G.practice)setTimeout(()=>caption('おにぎりが 口に入った。<b>おにぎりをタップして かもう</b>（2回）',99000,3),600)}
+function tutStep(ev,it){const T=G&&G.tut;if(!T)return;const P=G.practice;
+ if(T.k==='chew'&&ev==='broke'){T.k='cut';G.freeze=true;if(!P)caption('かんでも デンプンの <b>くさり</b>は長いまま。<br><b>だ液</b>のびんを えらんで、くさりを <b>タップ</b>しよう',99000,3)}
+ else if(T.k==='cut'&&ev==='cut'){const big=G.items.some(x=>x.type==='starch'&&x.n>3);if(big){if(!P)caption('ぷつん。<b>アミラーゼ</b>で くさりが切れた。<b>もう1本も</b>切ろう',99000,3)}else{T.k='flow';G.freeze=false;G.ff=true;if(!P)caption('小さくなった。流れていくよ ▶▶',99000,3)}}
+ else if(T.k==='flow'&&ev==='abs'){T.k='abs';G.ff=false;G.slow=2.5;if(P)return;caption('<b>柔毛</b>が 小さなつぶ（<b>ブドウ糖</b>）だけを 吸いこんだ。<br>赤い線＝<b>毛細血管</b>で 全身へ',99000,3);
   setTimeout(()=>{if(!G||!G.tut)return;G.tut=null;G.holdSpawn=false;G.clock=0;SV.tut.t1=1;save();caption('さあ、本番。<b>大きいまま</b>流すと 吸収されないよ',3500,3);telop('本番スタート');SFX.crowd()},3600)}
 }
-function tutFat(it){if(SV.tut.fat||G.tut)return;G.tut={k:'bile'};G.freeze=true;selJuice('bile');caption('<b>脂肪</b>の大きなつぶ。まず <b>胆汁</b>（消化酵素なし）を かけて 細かくしよう',99000,3)}
-function tutFatStep(ev){const T=G&&G.tut;if(!T)return;
- if(T.k==='bile'&&ev==='emul'){T.k='panc';caption('細かくなった。次は <b>すい液</b>（リパーゼ）を えらんで かけよう',99000,3);const b=document.querySelector('.bz[data-j="panc"]');if(b)b.classList.add('hint')}
+/* ---- れんしゅう面（Guide.tutorial・第1話の口の中で「かむ→びん→しずく→吸収」を1回ずつ） ---- */
+const CPX=(x,y,r)=>({x:x*US,y:y*US,r:r*US,el:cv});
+function tutLump(){const L=G&&G.tut&&G.tut.lump;return L&&G.items.indexOf(L)>=0?CPX(L.x,L.y,30):null}
+function bigChain(type,zone){if(!G)return null;const c=G.items.filter(x=>x.type===(type||'starch')&&x.st==='flow'&&(type?true:x.n>3)&&(!zone||x.z===zone)).sort((a,b)=>b.n-a.n)[0];return c?CPX(c.x,c.y,Math.max(22,itemRad(c)+6)):null}
+function absTarget(){if(!G)return null;const a=G.items.find(x=>x.st==='abs')||G.items.find(x=>(x.type==='glu'||x.type==='starch')&&(x.z==='int'||x.z==='int1'));return a?CPX(a.x,a.y,40):null}
+function mkPractice(replay){let PG=null;return {
+ label:'れんしゅう中',
+ start:()=>{ovClose();startStage(0,{practice:true});PG=G},
+ steps:[
+  {gesture:'tap',label:'かむ',target:tutLump,until:()=>!!G&&!!G.tut&&G.tut.k!=='chew',text:'口に **おにぎり** が来た。\n**タップして かもう**（2回）'},
+  {gesture:'tap',label:'びんをえらぶ',target:'.bz[data-j="saliva"]',until:()=>!!G&&!!G.jarTap,text:'かんでも デンプンの **くさり** は長いまま。\n**だ液**（アミラーゼ）の びんを タップ'},
+  {gesture:'tap',label:'しずくを落とす',target:()=>bigChain(),until:()=>!!G&&!!G.tut&&G.tut.k!=='cut'&&G.tut.k!=='chew',text:'長い **くさり** を タップ。だ液のしずくで **ぷつん** と切ろう（ぜんぶ）',praise:'ぷつん！'},
+  {gesture:'tap',label:'みる',target:absTarget,dim:false,until:()=>!!G&&!!G.tut&&G.tut.k==='abs',text:'小さくなった つぶが 小腸へ ▶▶\n**柔毛** は 小さな **ブドウ糖** だけを 吸いこむ',praise:'吸収！'}
+ ],
+ onClear:()=>{earn(10,'first-try',W/2,H*.4)},
+ onExit:res=>{if(res&&res.replaced)return;if(!G||G!==PG||!G.practice)return;const g=G;g.practice=false;g.tut=null;g.freeze=false;g.ff=false;g.jarTap=false;g.items.forEach(x=>{x.holdS=null});SV.tut.t1=1;save();
+  if(replay){G=null;openMap();return}
+  g.holdSpawn=false;g.clock=-.5;telop('本番スタート','大きいまま 流すと 吸収されない','big');SFX.crowd();setTimeout(()=>{if(G===g)caption(g.st.intro,4200,1)},1800)}
+}}
+function runPractice(replay){SV.tut.t1=SV.tut.t1||0;return Guide.tutorial(mkPractice(replay))}
+/* ---- 新しいびんの手ほどき（第2話＝胃液・第3話＝胆汁→すい液）: 指のお手本で1回ずつ ---- */
+let COACH=null;
+function stopCoach(){if(COACH&&COACH.stop){try{COACH.stop()}catch(e){}}COACH=null}
+function coachPro(it){SV.tut.pro=1;save();G.tut={k:'pro'};G.freeze=true;
+ COACH=Guide.coach([
+  {gesture:'tap',label:'びんをかえる',target:'.bz[data-j="gastric"]',until:()=>!!G&&G.sel==='gastric',text:'**タンパク質** のくさりが 胃に来た。\n**胃液**（ペプシン）の びんに 持ちかえよう'},
+  {gesture:'tap',label:'しずくを落とす',target:()=>bigChain('protein','stom'),until:'gut-pro-cut',text:'胃の中の くさりを **タップ**',praise:'ペプシン！'}
+ ],{onEnd:()=>{if(G&&G.tut&&G.tut.k==='pro'){G.tut=null;G.freeze=false}}})}
+function tutFat(it){if(SV.tut.fat||G.tut)return;G.tut={k:'bile'};G.freeze=true;
+ if(!window.Guide){selJuice('bile');caption('<b>脂肪</b>の大きなつぶ。まず <b>胆汁</b>（消化酵素なし）を かけて 細かくしよう',99000,3);return}
+ const fd=()=>{const d=G&&G.items.find(x=>x.type==='fdrop'&&(x.z==='duo'||x.z==='int1'));return d?CPX(d.x,d.y,dropR(d)+8):null};
+ const ft=()=>{const d=G&&G.items.find(x=>x.type==='fat');return d?CPX(d.x,d.y,20):null};
+ COACH=Guide.coach([
+  {gesture:'tap',label:'びんをかえる',target:'.bz[data-j="bile"]',until:()=>!!G&&G.sel==='bile',text:'**脂肪** の大きなつぶ。まず **胆汁**（消化酵素なし）の びんへ'},
+  {gesture:'tap',label:'しずくを落とす',target:fd,until:()=>!!G&&(!G.tut||G.tut.k!=='bile'),text:'脂肪のつぶを **タップ**。胆汁で 細かくしよう',praise:'こまかく！'},
+  {gesture:'tap',label:'びんをかえる',target:'.bz[data-j="panc"]',until:()=>!!G&&G.sel==='panc',text:'次は **すい液**（リパーゼ）の びんへ'},
+  {gesture:'tap',label:'しずくを落とす',target:ft,until:()=>!!G&&!G.tut,text:'細かい脂肪を **タップ**。すい液で 分解！',praise:'リパーゼ！'}
+ ],{onEnd:()=>{if(G&&G.tut&&(G.tut.k==='bile'||G.tut.k==='panc')){G.tut=null;G.freeze=false;SV.tut.fat=1;save()}}})}
+function tutFatStep(ev){const T=G&&G.tut;if(!T)return;const GD=!!window.Guide;
+ if(T.k==='bile'&&ev==='emul'){T.k='panc';if(!GD){caption('細かくなった。次は <b>すい液</b>（リパーゼ）を えらんで かけよう',99000,3);const b=document.querySelector('.bz[data-j="panc"]');if(b)b.classList.add('hint')}}
  else if(T.k==='panc'&&ev==='lip'){G.tut=null;G.freeze=false;SV.tut.fat=1;save();document.querySelectorAll('.bz.hint').forEach(b=>b.classList.remove('hint'));caption('<b>脂肪酸</b>と <b>モノグリセリド</b>に 分かれた。これなら 柔毛から吸収できる',3800,3)}
 }
 /* ---- 登場 ---- */
@@ -2749,7 +2818,7 @@ function update(dt){
    else if((it.type==='starch'||it.type==='protein')&&it.n<=3&&Math.random()<wr*dt*ts)wallSplit(it);
   }
   if(G.st.chew&&it.type!=='lump'&&(it.type==='fdrop')&&it.z==='duo'&&it.s>ZR.duo.a+(ZR.duo.b-ZR.duo.a)*.35&&G.i>=2&&!SV.tut.fat&&!G.tut)tutFat(it);
-  if(it.type==='protein'&&it.z==='stom'&&G.i>=1&&!SV.tut.pro){SV.tut.pro=1;save();selJuice('gastric');G.slow=3;caption('<b>タンパク質</b>のくさりが 胃に来た。<b>胃液（ペプシン）</b>で 切ろう',4200,2)}
+  if(it.type==='protein'&&it.z==='stom'&&G.i>=1&&!SV.tut.pro&&!G.tut){if(window.Guide){coachPro(it);continue}SV.tut.pro=1;save();selJuice('gastric');G.slow=3;caption('<b>タンパク質</b>のくさりが 胃に来た。<b>胃液（ペプシン）</b>で 切ろう',4200,2)}
   if(it.s>=PLEN-2){G.items.splice(k,1);lostItem(it)}
  }
  if(G.rushT>0)G.rushT-=dt;
@@ -2764,15 +2833,18 @@ function update(dt){
  else if(G.tut&&G.tut.k==='bile'){const d=G.items.find(x=>x.type==='fdrop'&&(x.z==='duo'||x.z==='int1'));G.point=d?{x:d.x,y:d.y}:null}
  else if(G.tut&&G.tut.k==='panc'){const d=G.sel==='panc'?G.items.find(x=>x.type==='fat'):null;G.point=d?{x:d.x,y:d.y}:null}
  else G.point=null;
+ if(window.Guide)G.point=null;
+ if(G.flash>0)G.flash-=dt*3.2;
+ const fv=G.fever||G.combo>=10;if(fv!==G.fvCls){G.fvCls=fv;$('stageWrap').classList.toggle('fever',fv)}
  if(!G.tut&&G.spawnI>=G.plan.length&&G.items.length===0&&G.puddles.length===0&&G.streams.length===0){G.endT+=dt;if(G.endT>1.1&&!G.over){G.over=true;endStage()}}
 }
 /* ---- かむ（物理的な消化） ---- */
-function chew(it){it.hp--;G.chomp=1;it.vx=rnd(-60,60);it.vy=rnd(-40,20);SFX.chew();burst(it.x,it.y,'#EBD9B0',RM?3:7,110,2.2,'crumb');if(it.boss)G.shake=.15;
+function chew(it){it.hp--;G.chomp=1;it.vx=rnd(-60,60);it.vy=rnd(-40,20);SFX.chew();buzz(8);G.shake=Math.max(G.shake,.07);fl(it.x+14,it.y-30,it.hp>0?'もぐ':'もぐもぐ！',INK,16,true);burst(it.x,it.y,'#EBD9B0',RM?3:7,110,2.2,'crumb');if(it.boss)G.shake=.15;
  if(it.hp<=0)breakLump(it,'mouth')}
 function breakLump(it,where){const i=G.items.indexOf(it);if(i<0)return;G.items.splice(i,1);
  const n=it.contents.length;it.contents.forEach((c,k)=>{const m=mkItem(c.type,c.n,it);m.s=it.s+(k-(n-1)/2)*(it.boss?12:7);m.holdS=null;m.lat=clamp(rnd(-.8,.8),-1,1);const a=k/n*TAU+rnd(-.4,.4),sp=it.boss?rnd(120,200):rnd(60,110);m.vx=Math.cos(a)*sp;m.vy=Math.sin(a)*sp;
   if(c.type==='protein')m.cols=Array.from({length:c.n},()=>pick(PCOL));G.items.push(m)});
- SFX.crunch();burst(it.x,it.y,'#EBD9B0',RM?5:14,160,2.6,'crumb');
+ SFX.crunch();burst(it.x,it.y,'#EBD9B0',RM?5:14,160,2.6,'crumb');G.shake=Math.max(G.shake,.16);G.flash=.7;G.flashX=it.x;G.flashY=it.y;G.flashC='#EDAE49';buzz(18);
  if(it.boss){G.boss=null;telop('かみくだいた','中身は まだ大きい。消化液で切ろう','big');SFX.crowd();G.shake=.5;confetti(it.x,it.y,40)}
  if(where==='stom'){if(!SV.firsts.churn){SV.firsts.churn=1;caption('かまずに飲みこんだ… <b>胃の運動</b>でくだかれたが、<b>だ液</b>は使えなかった',3600,1)}fl(it.x,it.y-18,'胃でもみもみ',INK,13)}
  else{fl(it.x,it.y-20,'かみくだいた',INK,14);if(!SV.firsts.chew){SV.firsts.chew=1;if(!G.tut)caption('かみくだいても、中の<b>くさり</b>は まだ大きいまま。<b>消化液で切ろう</b>',3600,1)}}
@@ -2789,8 +2861,12 @@ function applyJuice(pd,it){const J=pd.j;let res='none',info='';
  else if(it.type==='fdrop'){const a=J.acts.fdrop;if(a==='emul'){emulsify(it);res='ok';info='こまかく';tutFatStep('emul')}else if(a==='lip1'){lipase(it,true);res='ok';info='リパーゼ（少しだけ）';if(!G.tut)caption('大きな脂肪のつぶ… <b>胆汁</b>で細かくすると すい液が よく効く',3000,1)}else res='wrong'}
  else if(it.type==='fat'){const a=J.acts.fat;if(a==='lip'){lipase(it,false);res='ok';info='リパーゼ';rule('fat');tutFatStep('lip')}else if(J.id==='bile')res='small';else res='wrong'}
  else res='small';
- if(res==='ok'){pd.hits++;G.combo++;G.maxCombo=Math.max(G.maxCombo,G.combo);const mult=multi();G.score+=Math.round(10*mult);SFX.cut(G.combo);fl(it.x,it.y-16,info+' ✂',J.dark,14);if(G.combo>=3)fl(it.x+18,it.y-34,G.combo+' れんぞく','#A35E14',12);
-  if(G.combo%10===0){telop(G.combo+' れんぞく','×'+multi().toFixed(1)+' ボーナス');SFX.crowd()}
+ if(res==='ok'){pd.hits++;G.combo++;G.maxCombo=Math.max(G.maxCombo,G.combo);const mult=multi();const add=Math.round(10*mult);G.score+=add;SFX.cut(G.combo);fl(it.x,it.y-16,info+' ✂',J.dark,14);
+  fl(it.x-16,it.y-40,'+'+add,J.dark,20+Math.min(12,G.combo),true);G.shake=Math.max(G.shake,.1+Math.min(.14,G.combo*.012));G.flash=1;G.flashX=it.x;G.flashY=it.y;G.flashC=J.col;buzz(12);
+  if(G.combo>=2){const tr=G.combo>=15?3:G.combo>=10?2:G.combo>=5?1:0;fl(it.x+22,it.y-62,G.combo+' れんぞく',['#A35E14','#C0533F','#D1495B','#B8453C'][tr],15+tr*4,true)}
+  if(G.combo===5||G.combo===10){telop(G.combo+' れんぞく！','×'+multi().toFixed(1)+' ボーナス','combo t'+(G.combo/5));SFX.tier(G.combo/5)}
+  else if(G.combo%10===0){telop(G.combo+' れんぞく','×'+multi().toFixed(1)+' ボーナス','combo t3');SFX.crowd()}
+  if(J.id==='gastric'&&it.type==='protein'&&window.Guide)Guide.emit('gut-pro-cut');
   if(G.combo>=15&&!G.fever){G.fever=true;telop('ぽかぽかタイム','吸収つぶ 2倍','big');SFX.fanfare()}
   if(!SV.firsts['j_'+J.id]){SV.firsts['j_'+J.id]=1;save();earn(10,'first-try',it.x,it.y)}
   tutStep('cut',it)}
@@ -2811,14 +2887,14 @@ function startAbs(it){let best=null,bd=1e9;for(const v of VILLI){if(Math.abs(v.s
  if(!best)return;it.st='abs';it.at=0;it.x0=it.x;it.y0=it.y;it.v=best}
 function absorbed(it){const v=it.v,kind=it.type==='glu'?'glu':it.type==='ami'?'ami':'fat';v.glow=.45;G.abs[kind]++;SV.tot[kind]++;const m=multi();G.pts+=m*.5;G.score+=Math.round(5*m);
  const blood=kind!=='fat';G.dots.push({x:v.bx,y:v.run.y+HW.int+4+(blood?0:4.6),x1:v.run.xmax,col:blood?'#C8453C':'#E2B93E',kind});
- SFX.absorb();if(!RM)burst(v.bx+v.ix*12,v.by+v.iy*12,blood?'#D9605A':'#E8C75A',3,40,1.8);
+ SFX.absorb();if(!RM)burst(v.bx+v.ix*12,v.by+v.iy*12,blood?'#D9605A':'#E8C75A',5,60,2);if(G.floats.length<24)fl(v.bx+v.ix*16,v.by+v.iy*16-6,'+1',blood?'#B8453C':'#A35E14',14,true);
  if(!SV.firsts['abs_'+kind]){SV.firsts['abs_'+kind]=1;save();if(!G.tut)caption(kind==='glu'?'<b>ブドウ糖</b>は 柔毛の <b>毛細血管</b>へ（赤い線）':kind==='ami'?'<b>アミノ酸</b>も 柔毛の <b>毛細血管</b>へ（赤い線）':'<b>脂肪酸とモノグリセリド</b>は 柔毛で 再び脂肪になって <b>リンパ管</b>へ（黄の線）',3600,2)}
  tutStep('abs',it)}
 function exitPt(){const e=ZR.exit;return e?pathAt(e.a+(e.b-e.a)*.25):{x:.2*W,y:.95*H}}
-function lostItem(it){const u=unitsOf(it),ep=exitPt();G.lost+=u;if(u>0){if(G.combo>=5)fl(ep.x,ep.y-20,'れんぞく おしまい',INK,12);G.combo=0;G.fever=false}
+function lostItem(it){const u=unitsOf(it),ep=exitPt();G.lost+=u;if(u>0){if(G.combo>=5)fl(ep.x,ep.y-20,'れんぞく おしまい',INK,12);comboBreak()}
  const big=it.type!=='glu'&&it.type!=='ami'&&it.type!=='fa'&&it.type!=='mg';fl(ep.x,ep.y,'-'+u+' 流れ去った','#B8453C',13);SFX.lost();
  if(big&&!SV.firsts.lost){SV.firsts.lost=1;caption('<b>大きいまま</b>では 柔毛から吸収できず、大腸へ 流れ去る…',3600,2)}}
-function missed(pd){G.combo=0;G.fever=false;G.miss++;SFX.wrong();const t=pd.wt[0],J=pd.wt[1];const tn={lump:'かたまり',starch:'デンプン',protein:'タンパク質',fdrop:'脂肪',fat:'脂肪'}[t]||t;
+function missed(pd){comboBreak();G.miss++;SFX.wrong();const t=pd.wt[0],J=pd.wt[1];const tn={lump:'かたまり',starch:'デンプン',protein:'タンパク質',fdrop:'脂肪',fat:'脂肪'}[t]||t;
  let msg;if(J.id==='bile')msg='<b>胆汁</b>には 消化酵素がない。脂肪を細かくするだけ';else if(J.id==='saliva')msg='<b>だ液（アミラーゼ）</b>は デンプンにだけ はたらく。'+tn+'には効かない';else if(J.id==='gastric')msg='<b>胃液（ペプシン）</b>は タンパク質にだけ はたらく。'+tn+'には効かない';else msg=J.name+'は '+tn+'に効かない';
  caption('こつん。'+msg,3000,2)}
 function rule(k){if(SV.firsts['rule_'+k])return;SV.firsts['rule_'+k]=1;save();setTimeout(()=>{if(!G)return;if(k==='fat')telop('きまりを 見つけた','脂肪は 胆汁で細かく → すい液で分解');else telop('きまりを 見つけた','タンパク質は 胃液 → すい液 → 小腸の壁');SFX.fanfare();earn(30,'rule',W/2,H*.36)},400)}
@@ -2830,7 +2906,7 @@ cv.addEventListener('pointerdown',e=>{e.preventDefault();actx();if(!G||G.paused|
  const J=JUICE[G.sel];if(!J)return;
  let z=null,nd=1e9;G.items.forEach(it=>{if(it.st!=='flow'||it.type==='lump')return;const d=Math.hypot(it.x-x,it.y-y);if(d<itemRad(it)+14&&d<nd){nd=d;z=it.z}});if(!z)z=zoneAt(x,y);
  if(!z){return}
- if(J.zones.indexOf(z)<0){G.combo=0;G.fever=false;G.miss++;SFX.wrong();fl(x,y,'×','#B8453C',24);const o=ORIG[J.id]&&ORIG[J.id][0];if(o)burst(o.x,o.y,J.col,6,60,2);caption('<b>'+J.name+'</b>が出るのは <b>'+J.place+'</b>。'+(J.id==='bile'||J.id==='panc'?'（胆のう・すい臓から 管を通って出てくる）':''),2800,2);return}
+ if(J.zones.indexOf(z)<0){comboBreak();G.miss++;SFX.wrong();fl(x,y,'×','#B8453C',24);const o=ORIG[J.id]&&ORIG[J.id][0];if(o)burst(o.x,o.y,J.col,6,60,2);caption('<b>'+J.name+'</b>が出るのは <b>'+J.place+'</b>。'+(J.id==='bile'||J.id==='panc'?'（胆のう・すい臓から 管を通って出てくる）':''),2800,2);return}
  if(G.tk[J.id]<1){SFX.empty();fl(x,y,'からっぽ…',INK,12);return}
  G.tk[J.id]-=1;
  const os=ORIG[J.id];let o=os[0],od=1e9;os.forEach(q=>{const d=Math.hypot(q.x-x,q.y-y);if(d<od){od=d;o=q}});
@@ -2881,7 +2957,9 @@ function render(){cx.setTransform(KS,0,0,KS,0,0);cx.save();if(G.shake>0&&!RM)cx.
   else if(p.kind==='conf'){cx.save();cx.translate(p.x,p.y);cx.rotate(p.t*5+p.r0);cx.scale(1,.55+.45*Math.sin(p.t*9+p.r0));cx.beginPath();cx.ellipse(0,0,5,3,0,0,TAU);cx.fillStyle=hexA(p.col,.75*a);cx.fill();cx.restore()}
   else if(p.kind==='ring'){cx.beginPath();cx.arc(p.x,p.y,6+p.t*70,0,TAU);cx.strokeStyle=hexA(p.col,a*.7);cx.lineWidth=3;cx.stroke()}
   else{cx.beginPath();cx.arc(p.x,p.y,p.sz*a+.5,0,TAU);cx.fillStyle=hexA(p.col,a*.8);cx.fill();if(p.kind==='crumb'){cx.lineWidth=.7;cx.strokeStyle=PEN+(a*.6).toFixed(2)+')';cx.stroke()}}});
- G.floats.forEach(f=>{const a=clamp(1.4-f.t/f.life*1.4,0,1);cx.globalAlpha=a;otext(cx,f.txt,f.x,f.y,f.sz,f.col);cx.globalAlpha=1});
+ G.floats.forEach(f=>{const a=clamp(1.4-f.t/f.life*1.4,0,1);cx.globalAlpha=a;if(f.pop&&!RM){const q=f.t/.28,sc=q<1?.3+1.25*Math.sin(q*Math.PI/2)+.25*Math.sin(q*Math.PI):1+.08*Math.sin(f.t*14)*Math.max(0,1-f.t*2);cx.save();cx.translate(f.x,f.y);cx.scale(sc,sc);otext(cx,f.txt,0,0,f.sz,f.col,'center',true);cx.restore()}else otext(cx,f.txt,f.x,f.y,f.sz,f.col);cx.globalAlpha=1});
+ // 当たった瞬間のフラッシュ（にじむ光）
+ if(G.flash>0&&!RM){const a=clamp(G.flash,0,1);const gr=cx.createRadialGradient(G.flashX,G.flashY,0,G.flashX,G.flashY,Math.max(W,H)*.7);gr.addColorStop(0,hexA(G.flashC,.34*a));gr.addColorStop(.35,hexA(G.flashC,.16*a));gr.addColorStop(1,hexA(G.flashC,0));cx.fillStyle=gr;cx.fillRect(-20,-20,W+40,H+40)}
  // 手ほどきの矢印
  if(G.point){const p=G.point,k=(t*2)%1;cx.save();cx.beginPath();cx.ellipse(p.x,p.y,18+k*14,15+k*12,-.3,0,TAU);cx.strokeStyle=hexA(DEEP,(1-k)*.8);cx.lineWidth=2.2;cx.stroke();
   const bob=Math.sin(t*6)*3,ax=p.x+40,ay=p.y+40+bob;cx.strokeStyle=PEN+'.85)';cx.lineWidth=2.2;cx.beginPath();cx.moveTo(ax+14,ay+14);cx.quadraticCurveTo(ax+2,ay+2,p.x+17,p.y+17+bob);cx.stroke();cx.beginPath();cx.moveTo(p.x+17,p.y+17+bob);cx.lineTo(p.x+27,p.y+19+bob);cx.moveTo(p.x+17,p.y+17+bob);cx.lineTo(p.x+19,p.y+27+bob);cx.stroke();otext(cx,'ここを タップ',ax+22,ay+26,14,DEEP,'center',true);cx.restore()}
@@ -2907,7 +2985,9 @@ function bounceFx(it){it.bounce=.35;SFX.bounce();G.parts.push({kind:'ring',x:it.
 function burst(x,y,col,n,sp,sz,kind){if(!G)return;for(let i=0;i<n;i++){const a=rnd(0,TAU),v=rnd(sp*.4,sp);G.parts.push({kind:kind||'dot',x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,t:0,life:rnd(.35,.7),col,sz:sz||2.5,gr:kind==='crumb'?160:0})}}
 function sparks(x,y,col,c){if(!G)return;const dk=shade(col,-.25);for(let i=0;i<(RM?4:8+c*5);i++){const a=rnd(0,TAU),v=rnd(120,260);G.parts.push({kind:'spark',x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,t:0,life:rnd(.2,.4),col:i%2?dk:col})}G.parts.push({kind:'ring',x,y,vx:0,vy:0,t:0,life:.3,col})}
 function confetti(x,y,n){if(RM||!G)return;const cs=['#E0AE4A','#D96F84','#6FA3CC','#A5BE4E','#E39A45','#A0668C'];for(let i=0;i<n;i++){const a=rnd(-Math.PI,0),v=rnd(150,340);G.parts.push({kind:'conf',x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,t:0,life:rnd(1,1.6),col:pick(cs),r0:rnd(0,6),gr:260})}}
-function fl(x,y,txt,col,sz){if(!G)return;G.floats.push({x,y,txt,col,sz:sz||14,t:0,life:1})}
+function fl(x,y,txt,col,sz,pop){if(!G)return;G.floats.push({x,y,txt,col,sz:sz||14,t:0,life:pop?1.15:1,pop:!!pop})}
+/* れんぞくが切れたとき: あと1回で次の倍率だったら知らせる */
+function comboBreak(x,y){const c=G.combo;if(c>=4&&(c+1)%5===0){const nx=Math.min(4,1+Math.floor((c+1)/5)*.5);telop('あと1回で ×'+nx.toFixed(1)+' だった！','れんぞく '+c+' で とぎれた','near')}G.combo=0;G.fever=false}
 /* ---- にじむ文字・地の文 ---- */
 function telop(t,sub,cls){const d=document.createElement('div');d.className='telop'+(cls?' '+cls:'');d.innerHTML=t+(sub?'<small>'+sub+'</small>':'');$('telops').appendChild(d);setTimeout(()=>d.remove(),1650)}
 let capTimer=null,capPri=0,capUntil=0;
@@ -2924,7 +3004,7 @@ function buildDeck(){const box=$('deckBtns');box.innerHTML='';
   b.innerHTML='<svg class="ring" viewBox="0 0 100 100" preserveAspectRatio="none"><path pathLength="100" d="M52 5 C83 4 97 24 96 50 C95 79 75 96 48 95 C20 94 4 76 5 49 C6 22 26 7 60 9" fill="none" stroke="'+J.dark+'" stroke-opacity=".8" stroke-width="2.4" stroke-linecap="round" vector-effect="non-scaling-stroke" filter="url(#fPencil)"/></svg>'+
    '<span class="jar">'+jarSVG(j,open)+'<span class="tn">'+(open?'4':'？')+'</span></span>'+
    '<span class="txt"><span class="nm">'+(open?J.name:'？？')+'</span><span class="en">'+(open?({saliva:'アミラーゼ',gastric:'ペプシン',bile:'消化酵素なし',panc:'3つとも分解'}[j]):'')+'</span><span class="pl">'+(open?J.place.replace('の中','')+'で出る':'第'+(UNLOCK[j]+1)+'話で届く')+'</span></span>';
-  b.addEventListener('pointerdown',e=>{e.preventDefault();actx();if(!open){SFX.empty();caption('この消化液は <b>第'+(UNLOCK[j]+1)+'話</b>で届く',1800,1);return}selJuice(j);SFX.click()});box.appendChild(b)});
+  b.addEventListener('pointerdown',e=>{e.preventDefault();actx();if(!open){SFX.empty();caption('この消化液は <b>第'+(UNLOCK[j]+1)+'話</b>で届く',1800,1);return}selJuice(j);SFX.click();buzz(6);if(G)G.jarTap=true});box.appendChild(b)});
  selJuice(G.sel)}
 function selJuice(j){if(!G||G.juices.indexOf(j)<0)return;G.sel=j;document.querySelectorAll('.bz').forEach(b=>{b.classList.toggle('sel',b.dataset.j===j);if(b.dataset.j===j&&G.tut&&G.tut.k==='panc'&&j==='panc')b.classList.remove('hint')})}
 /* ---- 余白の札 ---- */
@@ -2956,6 +3036,7 @@ function endStage(){const got=G.abs.glu+G.abs.ami+G.abs.fat,pct=got/G.total,ok=g
   (ok?'':'<div class="near">あと <b>'+(G.need-got)+'</b> つぶ で クリアだった</div>')+
   '<div class="mbtns">'+(ok?(last?'<button class="tb red" id="rNext"><span>記念召喚 → 確認テストへ</span></button>':'<button class="tb red" id="rNext"><span>次のお話へ</span></button>'):'<button class="tb red" id="rRetry"><span>もう一度 読む</span></button>')+
   '<button class="tb sm" id="rShop"><span>どうぐ箱で強化（'+Math.floor(SV.pts)+'）</span></button>'+(Z()?'<button class="tb ink sm" id="rGacha"><span>図鑑ガチャ</span></button>':'')+'<button class="tb ink sm" id="rMap"><span>献立すごろくへ</span></button></div>');
+ for(let k=0;k<stars;k++)setTimeout(()=>{if(!$('ov').hidden){SFX.don(k);buzz(20)}},120+k*250);
  const nx=$('rNext');if(nx)nx.onclick=()=>{ovClose();if(last){G=null;goClear()}else{G=null;startStage(i+1)}};
  const rt=$('rRetry');if(rt)rt.onclick=()=>{ovClose();G=null;startStage(i)};
  $('rShop').onclick=()=>openShop(()=>{ovClose();G=null;openMap()});
@@ -2994,7 +3075,7 @@ function drawMap(){const svg=$('mapSvg');const rc=svg.getBoundingClientRect();co
  s+='<g transform="translate('+fx.toFixed(1)+' '+fy.toFixed(1)+')"><g>'+(RM?'':'<animateTransform attributeName="transform" type="translate" values="0 0;0 -6;0 0" dur="1.2s" repeatCount="indefinite"/>')+'<path d="M0 0 V-34" stroke="#43372F" stroke-opacity=".7" stroke-width="1.6" filter="url(#fPencil)"/><path d="M0 -34 L22 -28 L0 -21 Z" fill="rgba(217,111,105,.8)" filter="url(#fWash)"/><text x="'+(fl0?-4:4)+'" y="-40" text-anchor="'+(fl0?'end':'start')+'" font-family="Yomogi,sans-serif" font-size="15" fill="#2F4B6E" stroke="#F3EBDC" stroke-width="3" paint-order="stroke">いまここ</text></g></g>';
  svg.innerHTML=s;
  svg.querySelectorAll('.sq').forEach(g=>g.addEventListener('click',()=>{const i=+g.dataset.i;if(i<=SV.stage&&i<STAGES.length){SFX.click();startStage(i)}}))}
-function openMap(){show('scMap');const cur=Math.min(SV.stage,STAGES.length-1);
+function openMap(){stopCoach();if(window.Guide){try{Guide.tutorialEnd()}catch(e){}}show('scMap');const cur=Math.min(SV.stage,STAGES.length-1);
  const total=SV.stars.reduce((a,b)=>a+b,0);
  const bar=(nm,sub,v,col)=>{const lv=Math.floor(v/150)+1,f=(v%150)/150*100;return '<div>'+nm+' Lv.'+lv+'<b>'+v+'</b><br><span style="font-size:.85em;opacity:.85">'+sub+'</span><i><u style="width:calc('+f.toFixed(1)+'% - 2px);background:'+col+'"></u></i></div>'};
  $('mpBody').className='bodyS';$('mpBody').innerHTML=bar('元気','ブドウ糖',SV.tot.glu,'#E0AE4A')+bar('からだ','アミノ酸',SV.tot.ami,'#D9605A')+bar('たくわえ','脂肪酸など',SV.tot.fat,'#EDC75E');
@@ -3054,9 +3135,36 @@ let startArm=false;
 $('btnStart').onclick=()=>{actx();SV.name=$('nameIn').value.trim();
  if(hasSave()&&SV.stage>0&&!startArm){startArm=true;$('btnStart').querySelector('span').textContent='本当に はじめから？（記録が消える）';setTimeout(()=>{startArm=false;initTitle()},3500);return}
  if(startArm){const nm=SV.name,mute=SV.mute;SV=freshSave();SV.name=nm;SV.mute=mute}
- save();SFX.drum();startStage(0)};
+ save();SFX.drum();
+ if(window.Guide){Guide.intro(INTRO).then(()=>startStage(0))}else startStage(0)};
 $('btnCont').onclick=()=>{actx();SV.name=$('nameIn').value.trim()||SV.name;save();SFX.click();openMap()};
 $('btnBookT').onclick=()=>{try{Z().openBook()}catch(e){}};
+/* ================= 遊び方の案内（Guide）・もどる（2026-09-28 仕上げ） ================= */
+const INTRO={title:'第16回　小腸ゲート',learn:'食べ物は **消化液** で 小さな物質に分解されて、**小腸の柔毛** から吸収される',how:'**びん** を選んで、流れてくる食べ物を **タップ**（しずくを落とす）',gesture:'tap'};
+let HELP=null;
+if(window.Guide){
+ Guide.setup({theme:{bg:'#FAF4E6',fg:'#43372F',accent:'#D1495B',accentText:'#fff',font:'"Yomogi","Klee One",sans-serif',bodyFont:'"Klee One","Yomogi",serif',radius:22,
+   texture:'var(--paper)',line:'rgba(67,55,47,.5)',dim:'rgba(95,75,55,.36)',shadow:'2px 6px 12px rgba(60,40,20,.3)',outline:'#FBF5E8',hand:'#FFFDF6',handLine:'#43372F'},
+  sfx:k=>{if(k==='step')SFX.cut(4);else if(k==='done')SFX.unlock();else if(k==='clear')SFX.fanfare();else if(k==='open')SFX.click();else if(k==='cheer')bell(1318.51,.4,{vol:.06});else if(k==='nudge')SFX.bounce()},
+  muted:()=>SV.mute,learn:INTRO.learn,how:INTRO.how,title:INTRO.title});
+ Guide.tutorialButton('#btnHowto',()=>{actx();SFX.click();SV.name=$('nameIn').value.trim()||SV.name;save();runPractice(hasSave()&&SV.tut.t1)});
+ let wasP=false;
+ HELP=Guide.help({mount:$('hudRow'),size:44,attention:true,
+  rules:['だ液（アミラーゼ）は **口の中** で デンプンを切る','胃液（ペプシン）は **胃** で タンパク質を切る','脂肪は **十二指腸** で 胆汁 → すい液（リパーゼ）の順','**大きいまま** 流れたつぶは 吸収されず 大腸へ','口の食べ物は タップで **かむ**（かまないと消化液が届かない）'],
+  onOpen:()=>{wasP=!!(G&&G.paused);if(G)G.paused=true},onClose:()=>{if(G&&!wasP&&$('ov').hidden)G.paused=false},
+  replay:()=>{runPractice(true);return null},labels:{replay:'れんしゅうをもう一度'}});
+}else $('btnHowto').hidden=true;
+const INHUB=!!window.COLLECTION_NAME||(()=>{try{return window.parent!==window}catch(e){return true}})();
+function setBack(){const b=$('bBack');const tm=window.GAME_MODE==='test';const on=scene==='play'||scene==='map'||(scene==='test'&&!tm)||(scene==='title'&&INHUB);b.hidden=!on;$('bBackT').textContent=scene==='title'?'◀ 一覧へ':'◀ もどる'}
+function leavePlay(){const g=G;G=null;if(g&&g.practice){g.practice=false;try{Guide.tutorialEnd()}catch(e){}}stopCoach()}
+$('bBack').addEventListener('click',()=>{actx();SFX.click();
+ if(scene==='title'){try{window.parent.postMessage({type:'rika-close-game'},'*')}catch(e){}return}
+ const was=G?G.paused:true;if(G)G.paused=true;
+ const dest=scene==='map'?'表紙':'献立すごろく';
+ const sub=scene==='play'?'進み具合は保存されます（読み終えたお話と★はそのまま。このお話は 次は はじめから）。':scene==='test'?'確認テストは 次は さいしょから。お話の進み具合は保存されています。':'進み具合は保存されます。';
+ $('ov').classList.add('top');ovOpen('<div class="mh">もどる？</div><div class="msub">'+dest+'へ もどります</div><div class="near" style="font-size:16px">'+sub+'</div><div class="mbtns"><button class="tb red" id="bkGo"><span>もどる</span></button><button class="tb ink sm" id="bkNo"><span>つづける</span></button></div>');
+ $('bkNo').onclick=()=>{ovClose();if(G&&!was)G.paused=false};
+ $('bkGo').onclick=()=>{ovClose();if(scene==='map'){show('scTitle');initTitle()}else{leavePlay();T=null;openMap()}}});
 /* ================= さいごの確認テスト ================= */
 let T=null;const PANC=[['#D96F69','#A63E38'],['#5A9BC6','#2F6A96'],['#7FA650','#4E7426'],['#E0AE4A','#9A6A12'],['#A0668C','#6E3D5E']];
 function startTest(){if(!window.Quiz){alert('問題データがありません');return}G=null;ovClose();show('scTest');T={qs:Quiz.test(),i:0,ans:[]};renderQ()}

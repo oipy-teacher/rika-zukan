@@ -127,7 +127,7 @@ body:not(.land) .tt h1{font-size:clamp(50px,14vw,84px)}
 .rolls .card{margin:0}
 .rolls .lock{opacity:.35}
 /* もどる確認 */
-#scrBack{position:absolute;inset:0;z-index:40;display:flex;align-items:center;justify-content:center;background:rgba(40,36,30,.4);padding:16px}
+#scrBack{position:absolute;inset:0;z-index:2147482990;display:flex;align-items:center;justify-content:center;background:rgba(40,36,30,.4);padding:16px}
 /* 確認テスト */
 #scTest{position:absolute;inset:0;z-index:20;overflow:auto;padding:calc(66px + env(safe-area-inset-top)) 14px 26px}
 .qwrap{max-width:1180px;margin:0 auto;background:#F4EFE3;border-top:16px solid #2a241c;border-bottom:16px solid #2a241c;box-shadow:0 12px 30px rgba(26,26,26,.3);padding:16px 20px 20px;display:grid;gap:16px;grid-template-columns:1fr}
@@ -174,7 +174,7 @@ body.land .tt h1{animation:dropL 1s cubic-bezier(.2,1.4,.4,1) both}body:not(.lan
  <canvas id="cv"></canvas>
  <div id="plate" hidden><b id="plT"></b><div class="row"><span>消化 <em id="plQ">0</em></span><span id="plL">命 ●●●</span><span id="plC"></span></div><i id="inc"><u id="incU"></u></i></div>
  <div id="hudR" hidden><div class="seal" id="hK" hidden><small>かけら</small><b id="hKn">0</b></div><button id="bMute" aria-label="音">音</button></div>
- <button id="bBack" hidden><i></i><span id="bBackT">もどる</span></button>
+ <button id="bBack" data-gd-pass hidden><i></i><span id="bBackT">もどる</span></button>
  <div id="bar" hidden></div>
  <div id="cap" hidden><span id="capT"></span><button class="sb" id="capB" hidden></button></div>
  <section id="scTitle" hidden>
@@ -183,7 +183,7 @@ body.land .tt h1{animation:dropL 1s cubic-bezier(.2,1.4,.4,1) both}body:not(.lan
    <h1>酵素ニンジャ</h1>
    <div class="sub">～消化酵素～</div>
    <div class="nm">なまえ <input id="nameIn" maxlength="16" autocomplete="off"></div>
-   <div class="btns"><button class="sb" id="btnStart">はじめる</button><button class="pb" id="btnCont" hidden>つづきから</button><button class="pb" id="btnBookT" hidden>📖 図鑑</button></div>
+   <div class="btns"><button class="sb" id="btnStart">はじめる</button><button class="pb" id="btnCont" hidden>つづきから</button><button class="pb" id="btnHowto">あそびかた</button><button class="pb" id="btnBookT" hidden>📖 図鑑</button></div>
   </div>
  </section>
  <div id="mapUi" hidden><button class="sb" id="btnGo">次の間へ</button><button class="pb" id="btnRolls">巻物</button><button class="pb" id="btnTbl">相性表</button><button class="pb" id="btnBookM" hidden>📖 図鑑</button><button class="pb" id="btnGachaM" hidden>図鑑ガチャ</button><button class="pb" id="btnTestM" hidden>確認テスト</button></div>
@@ -191,7 +191,7 @@ body.land .tt h1{animation:dropL 1s cubic-bezier(.2,1.4,.4,1) both}body:not(.lan
   <div class="qwrap"><div><div class="qhd"><span>さいごの確認テスト</span><span id="qNo">1 / 10</span></div><div class="qtext" id="qText"></div><div class="qfig" id="qFig" hidden></div></div><div class="qch" id="qArea"></div></div>
  </section>
  <div id="ov" hidden><div class="scr" id="ovB"></div></div>
- <div id="scrBack" hidden><div class="scr"><h2>もどる？</h2><p id="bkSub"></p><div class="btns"><button class="sb ink" id="bkGo">もどる</button><button class="pb" id="bkNo">つづける</button></div></div></div>
+ <div id="scrBack" role="dialog" aria-modal="true" data-gd-pass hidden><div class="scr"><h2>もどる？</h2><p id="bkSub"></p><div class="btns"><button class="sb ink" id="bkGo" data-gd-pass>もどる</button><button class="pb" id="bkNo" data-gd-pass>つづける</button></div></div></div>
 </div>
 <script>/*@SUBMIT_CARD_BEGIN*/
 /* ==========================================================
@@ -2467,14 +2467,20 @@ function telop(a,b){if(!G)return;G.tel={a,b,t:0}}
 /* ================= 試し斬り ================= */
 function beginTrial(){const r=G.r;G.phase='trial';G.objs=[];const n=r.tg.length;
  r.tg.forEach((k,i)=>{const o=mkObj(k);o.fixed=1;if(LAND){o.bx=W*(i+1)/(n+1);o.by=H*.5}else{o.bx=W*(n===1?.5:(i%2?.68:.32));o.by=L.top+100+(H-L.top-240)*(n===1?.45:(i+.5)/n)}o.x=o.bx;o.y=o.by;o.rot=0;G.objs.push(o)});
- cap('<b>試し斬り</b>：刀を持ちかえて 巻きわらの物質を斬ろう。相性表の <b>赤い空欄</b> がうまる。',0);layout()}
-function trialCut(o,b,ang){const c=o.t==='food'?o.comps[0]:KD[o.k].c,e=EFF[b][c];const isNew=tblSet(b,c,e,o.x,o.y);G.hintOff=1;
+ if(!G.practice)cap('<b>試し斬り</b>：刀を持ちかえて 巻きわらの物質を斬ろう。相性表の <b>赤い空欄</b> がうまる。',0);layout();
+ if(G.ri===2&&window.Guide&&!SV.coachSw){const straw=k=>()=>{const o=G&&G.objs.find(x=>x.fixed&&x.k===k);return o?{x:o.x,y:o.y,r:o.r+14,el:cv}:null};
+  COACH=Guide.coach([
+   {gesture:'tap',label:'持ちかえ',target:'.bl[data-b="pe"]',until:()=>!!G&&G.blade==='pe',text:'刀の **鍔** を タップして **ペプシン** に 持ちかえる'},
+   {gesture:'swipe',label:'スワイプ',target:straw('pr'),dir:'right',until:()=>!!SV.tbl['pe|pr'],text:'**タンパク質** の巻きわらを なぞって斬る',praise:'ペプシン！'}
+  ],{onEnd:r=>{if(r&&r.done){SV.coachSw=1;save()}}})}}
+function trialCut(o,b,ang){if(G)G.tcut=(G.tcut||0)+1;const c=o.t==='food'?o.comps[0]:KD[o.k].c,e=EFF[b][c];const isNew=tblSet(b,c,e,o.x,o.y);G.hintOff=1;
  o.mark={s:tblMark(e),t:0,col:e==='o'?RED:e==='t'?OCH:INK};SFX.mark(e==='o');
  if(e==='o'){prods(c,o.x,o.y,ang,o.k);splat(o.x,o.y,ang,U*2,false);o.regen=.9;pop(PROD[c]||'',o.x,o.y+o.r+18,15,INK,BD)}
  else if(e==='t'){pop('細かくなるだけ（分解ではない）',o.x,o.y+o.r+18,14,OCH,BD);o.wob=.6}
  else{for(let i=0;i<8;i++)G.fx.push({k:'spark',x:o.x,y:o.y,a:ang+Math.PI+rnd(-1,1),l:rnd(U,U*2.5),t:0,d:.3});SFX.clang();o.wob=.5}
  if(isNew){const left=G.r.tr.filter(p=>!SV.tbl[p[0]+'|'+p[1]]).length;if(left===1&&G.r.tr.length>=4)telop('相性表 のこり1マス！','どの刀で 何を斬る？');
-  if(left===0&&G.phase==='trial'){G.phase='trialDone';setTimeout(()=>{if(!G||G.phase!=='trialDone')return;cap('相性表の空欄が うまった！',0,'本番へ',()=>beginRun())},500)}}}
+  if(left===0&&G.phase==='trial'){G.phase='trialDone';setTimeout(()=>{if(!G||G.phase!=='trialDone')return;cap('相性表の空欄が うまった！',0,'本番へ',()=>beginRun())},500)}}
+ if(G.practice&&G.phase==='trial'&&!trialLeft().length){G.phase='trialDone';setTimeout(()=>{if(!G||G.phase!=='trialDone')return;cap('試し斬り できた！',0,'本番へ',()=>beginRun())},500)}}
 function trialLeft(){return G&&G.r?G.r.tr.filter(p=>!SV.tbl[p[0]+'|'+p[1]]):[]}
 
 /* ================= 本番 ================= */
@@ -2515,10 +2521,12 @@ const g0=G;setTimeout(()=>{if(G!==g0)return;openOv(`<div class="kk">第十の間
   stampS(st);$('oT').onclick=()=>{closeOv();if(first){const z=Z();if(z&&z.mainClear){try{z.mainClear({onClose:startTest})}catch(e){startTest()}}else startTest()}else startTest()};$('oM').onclick=()=>{closeOv();openMap()}},1400)}
 
 /* ================= 間の開始 ================= */
-function startRoom(ri){const r=ROOMS[ri];if(r.get&&!SV.scrolls[r.get]){SV.scrolls[r.get]=1;save()}
+function startRoom(ri,opt){opt=opt||{};stopCoach();if(ri===0&&!opt.practice&&!SV.tut&&!SV.open&&window.Guide){runPractice(false);return}
+ const r=ROOMS[ri];if(r.get&&!SV.scrolls[r.get]){SV.scrolls[r.get]=1;save()}
  G={ri,r,phase:'intro',objs:[],parts:[],splats:[],fx:[],trail:[],sid:0,down:false,blade:r.bl[0],lives:r.boss?5:3,combo:0,maxc:0,score:0,bounce:0,mikiri:0,miss:0,
   tLeft:r.time,spawnT:1,ink:r.ink||0,sw:0,pause:false,shake:0,sh:{},judg:0,g:8*(.72*H)/Math.pow(r.fl||3.9,2),tan:{}};
- setScene('play');buildBar();updPlate();layout();
+ G.practice=!!opt.practice;setScene('play');buildBar();updPlate();layout();if(HELP)HELP.show();
+ if(G.practice){actx();telop('れんしゅう','口の間');beginTrial();return}
  const got=r.get?BL[r.get]:null;
  openOv(`<div class="kk">第${KAN[ri]}の間</div><h2>${esc(r.nm)}</h2>${got?`<div class="card"><small>巻物を 授かった</small><b>${esc(got.nm)}${r.get==='bi'?'':'の刀'}</b>（${esc(got.from)}）</div>`:''}
  <p>${r.intro}</p>${r.boss?'':'<p style="font-size:14px">目標：<b>'+r.q+'</b> こ 分解する（線香が燃えつきる前に）。はじかれてよいのは 2回まで。</p>'}
@@ -2662,9 +2670,9 @@ function drawPlay(demo){const S=G;if(!S)return;
   ctx.fillStyle='rgba(238,233,221,.7)';ctx.fillRect(0,H*.4-fz*.9,W,fz*(S.tel.b?2.3:1.8));halo(S.tel.a,W/2,H*.4,fz*(1+Math.max(0,.15-k)),INK,HD);if(S.tel.b)halo(S.tel.b,W/2,H*.4+fz*.95,fz*.34,RED,HD);ctx.globalAlpha=1}}
 
 /* ================= 見取り図 ================= */
-function mapRects(){const top=CMP?72:84,bot=CMP?170:120;const n=NR;const cols=LAND?5:2,rows=Math.ceil(n/cols);const gw=Math.min(W-40,LAND?1200:560),gh=H-top-bot;const cw=gw/cols,rh=gh/rows;const x0=(W-gw)/2;const R=[];
+function mapRects(){const top=CMP?116:84,bot=CMP?170:120;const n=NR;const cols=LAND?5:2,rows=Math.ceil(n/cols);const gw=Math.min(W-40,LAND?1200:560),gh=H-top-bot;const cw=gw/cols,rh=gh/rows;const x0=(W-gw)/2;const R=[];
  for(let i=0;i<n;i++){const r=Math.floor(i/cols);let c=i%cols;if(r%2)c=cols-1-c;R.push({i,x:x0+c*cw+cw*.08,y:top+r*rh+rh*.1,w:cw*.84,h:rh*.8})}return R}
-function drawMap(){const R=mapRects();halo('忍者屋敷　見取り図',W/2,CMP?40:36,CMP?24:32,INK,HD);
+function drawMap(){const R=mapRects();halo('忍者屋敷　見取り図',W/2,CMP?88:36,CMP?24:32,INK,HD);
  for(let i=0;i<R.length-1;i++){const a=R[i],b=R[i+1];ctx.strokeStyle='rgba(26,26,26,.6)';ctx.lineWidth=5;ctx.setLineDash([2,9]);ctx.lineCap='round';ctx.beginPath();ctx.moveTo(a.x+a.w/2,a.y+a.h/2);ctx.lineTo(b.x+b.w/2,b.y+b.h/2);ctx.stroke();ctx.setLineDash([])}
  R.forEach(r=>{const i=r.i,open=i<=SV.open,st=SV.stars[i]||0,cur=i===Math.min(SV.open,NR-1);ctx.fillStyle=open?'rgba(246,241,229,.95)':'rgba(190,182,166,.8)';ctx.fillRect(r.x,r.y,r.w,r.h);
   // 畳の目
@@ -2700,7 +2708,7 @@ let capT=0,capFn=null;
 function cap(h,sec,btn,fn){$('capT').innerHTML=h;$('cap').hidden=false;const b=$('capB');if(btn){b.textContent=btn;b.hidden=false;capFn=fn}else{b.hidden=true;capFn=null}clearTimeout(capT);if(sec)capT=setTimeout(()=>{if(G&&G.phase==='trial')cap('<b>試し斬り</b>：刀を持ちかえて 巻きわらの物質を斬ろう。相性表の <b>赤い空欄</b> がうまる。',0);else capOff()},sec*1000)}
 function capOff(){$('cap').hidden=true;clearTimeout(capT)}
 $('capB').onclick=()=>{const f=capFn;capOff();if(f)f()};
-function openMap(){G=null;setScene('map');const nx=Math.min(SV.open,NR-1);$('btnGo').textContent=SV.cleared?'墨龍の間（もう一度）':(nx===NR-1?'墨龍の間へ':'第'+KAN[nx]+'の間へ');
+function openMap(){leaveGuide();if(HELP)HELP.hide();G=null;setScene('map');const nx=Math.min(SV.open,NR-1);$('btnGo').textContent=SV.cleared?'墨龍の間（もう一度）':(nx===NR-1?'墨龍の間へ':'第'+KAN[nx]+'の間へ');
  $('btnTestM').hidden=!SV.cleared;$('btnBookM').hidden=!Z();$('btnGachaM').hidden=!Z()}
 $('btnGo').onclick=()=>{actx();startRoom(Math.min(SV.open,NR-1))};
 $('btnRolls').onclick=()=>{const h=BORD.map(b=>{const g=SV.scrolls[b],B=BL[b];return `<div class="card ${g?'':'lock'}"><small>${g?'授かった巻物':'まだ'}</small><b>${g?esc(B.nm):'？？？'}</b><br>${g?'つくる所：'+esc(B.from)+'<br>相手：'+esc(B.tg)+'<br>→ '+esc(B.pr):'屋敷の奥で 授かる'}</div>`}).join('');
@@ -2715,7 +2723,7 @@ $('bBack').onclick=()=>{actx();if(scene==='title'){try{window.parent.postMessage
  if(G)G.pause=true;$('bkSub').textContent=scene==='test'?'確認テストは 次はさいしょから。屋敷の進み具合は保存されています。':scene==='map'?'進み具合は保存されます。タイトルにもどります。':'進み具合は保存されます（斬りぬけた間と★はそのまま。この間は 次に はじめから）。';
  $('bkGo').textContent=scene==='map'?'タイトルへ':'見取り図へ';$('scrBack').hidden=false};
 $('bkNo').onclick=()=>{$('scrBack').hidden=true;if(G&&$('ov').hidden)G.pause=false};
-$('bkGo').onclick=()=>{$('scrBack').hidden=true;closeOv();save();if(scene==='map'){G=null;setScene('title');initTitle()}else{T=null;openMap()}};
+$('bkGo').onclick=()=>{$('scrBack').hidden=true;closeOv();save();leaveGuide();if(scene==='map'){G=null;setScene('title');initTitle()}else{T=null;openMap()}};
 
 /* ================= タイトル ================= */
 function initTitle(){G=null;if(window.PLAYER_NAME)$('nameIn').value=window.PLAYER_NAME;else if(SV.name)$('nameIn').value=SV.name;
@@ -2724,11 +2732,42 @@ let startArm=false;
 $('btnStart').onclick=()=>{actx();SV.name=$('nameIn').value.trim();
  if(hasSave()&&!startArm){startArm=true;$('btnStart').textContent='本当に？（記録が消える）';setTimeout(()=>{startArm=false;initTitle()},3500);return}
  if(startArm){const nm=SV.name,mu=SV.mute;SV=fresh();SV.name=nm;SV.mute=mu;startArm=false}
- save();SFX.drum();startRoom(0)};
+ save();SFX.drum();
+ if(window.Guide)Guide.intro(INTRO).then(()=>startRoom(0));else startRoom(0)};
 $('btnCont').onclick=()=>{actx();SV.name=$('nameIn').value.trim()||SV.name;save();SFX.tap();openMap()};
 $('btnBookT').onclick=()=>{try{Z().openBook()}catch(e){}};
 
 /* ================= さいごの確認テスト ================= */
+/* ================= 遊び方の案内（Guide）・れんしゅう（2026-09-28 仕上げ） ================= */
+const INTRO={title:'第19回　酵素ニンジャ',learn:'消化酵素は 種類ごとに **働く相手が決まっている**（アミラーゼ＝デンプン、ペプシン＝タンパク質、リパーゼ＝脂肪）',how:'飛んでくる物質を 指で **なぞって斬る**。合う刀に **持ちかえて** から',gesture:'swipe'};
+let HELP=null,COACH=null;
+function stopCoach(){if(COACH&&COACH.stop){try{COACH.stop()}catch(e){}}COACH=null}
+function leaveGuide(){stopCoach();const g=G;if(g&&g.practice){g.practice=false;try{Guide.tutorialEnd()}catch(e){}}}
+document.body.appendChild($('scrBack'));
+function flyT(){if(!G)return null;const o=G.objs.filter(o=>!o.dead&&!o.fixed&&o.y<H-(L.barH||80)-40&&o.y>(L.top||80)).sort((a,b)=>a.vy-b.vy)[0];return o?{x:o.x,y:o.y,r:o.r+16,el:cv}:null}
+function mkPractice(replay){let PG=null;return {label:'れんしゅう中',
+ start:()=>{closeOv();startRoom(0,{practice:true});PG=G},
+ steps:[
+  {gesture:'swipe',label:'スワイプ',target:()=>{const o=G&&G.objs.find(x=>x.fixed);return o?{x:o.x,y:o.y,r:o.r+14,el:cv}:null},dir:'right',until:()=>!!G&&(G.tcut||0)>=1,text:'**アミラーゼ** の刀で、巻きわらの **デンプン** を なぞって斬る',praise:'斬れた！'},
+  {gesture:'tap',label:'タップ',target:'#capB',until:()=>!!G&&G.phase==='run',text:'アミラーゼは **デンプンを分解** できた。「**本番へ**」を タップ'},
+  {gesture:'swipe',label:'スワイプ',target:flyT,dir:'right',dist:120,until:()=>!!G&&G.score>=1,text:'飛んでくる **デンプン** を なぞって斬れ！（ゆっくり落ちてくる）',praise:'一刀両断！'}
+ ],
+ onExit:res=>{if(res&&res.replaced)return;if(!G||G!==PG||!G.practice)return;const g=G;g.practice=false;SV.tut=1;save();
+  if(replay){G=null;openMap()}}
+}}
+function runPractice(replay){return Guide.tutorial(mkPractice(replay))}
+if(window.Guide){
+ Guide.setup({theme:{bg:'#F6F1E5',fg:'#1A1A1A',accent:'#B7282E',accentText:'#F6F1E5',font:"'Yuji Boku',serif",bodyFont:"'BIZ UDPMincho',serif",radius:2,
+   texture:'paper',line:'#1A1A1A',dim:'rgba(40,36,30,.42)',shadow:'4px 5px 0 rgba(26,26,26,.75)',outline:'#EEE9DD',hand:'#F6F1E5',handLine:'#1A1A1A'},
+  sfx:k=>{if(k==='step')SFX.hit(3);else if(k==='done')SFX.tier(1);else if(k==='clear')SFX.win();else if(k==='open'||k==='close'||k==='nudge'||k==='cheer')SFX.tap()},
+  muted:()=>SV.mute,learn:INTRO.learn,how:INTRO.how,title:INTRO.title});
+ Guide.tutorialButton('#btnHowto',()=>{actx();SFX.tap();SV.name=$('nameIn').value.trim()||SV.name;save();runPractice(!!(SV.tut||SV.open))});
+ let wasP=false;
+ HELP=Guide.help({mount:$('hudR'),size:46,attention:true,
+  rules:['刀は 相手が決まっている：**アミラーゼ＝デンプン**・**ペプシン＝タンパク質**・**リパーゼ＝脂肪**','合わない刀は **はじかれる**（連がとぎれ、命が減る）','刀の **鍔をタップ** して持ちかえる','分解できない物・分解されきった粒は **見送る**（見切り）','巻きわらの **試し斬り** で 相性表をうめる'],
+  onOpen:()=>{wasP=!!(G&&G.pause);if(G)G.pause=true},onClose:()=>{if(G&&!wasP&&$('ov').hidden&&$('scrBack').hidden)G.pause=false},
+  replay:()=>{runPractice(true);return null},labels:{replay:'れんしゅうをもう一度'}});
+}else $('btnHowto').hidden=true;
 let T=null;
 function startTest(){if(!window.Quiz){openOv('<h2>問題データがありません</h2><div class="btns"><button class="pb" id="oC">とじる</button></div>');$('oC').onclick=closeOv;return}G=null;closeOv();setScene('test');T={qs:Quiz.test(),i:0,ans:[]};renderQ()}
 function renderQ(){const q=T.qs[T.i];$('qNo').textContent=(T.i+1)+' / '+T.qs.length;$('qText').textContent=q.q;const f=$('qFig');if(q.fig){f.innerHTML=q.fig;f.hidden=false}else{f.innerHTML='';f.hidden=true}
@@ -2764,7 +2803,7 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden)save()});
 resize();
 try{window.Zukan&&Zukan.setup({game:GAME,koma:[KOMA]})}catch(e){}
 // 自動テスト用（遊びには使わない）
-window.__en={get G(){return G},get SV(){return SV},get L(){return L},get U(){return U},startRoom,startTest,openMap,selBlade,slashSeg,
+window.__en={mapRects:()=>mapRects(),get G(){return G},get SV(){return SV},get L(){return L},get U(){return U},startRoom,startTest,openMap,selBlade,slashSeg,
  go(){const b=$('oGo');if(b)b.click()},
  auto(){ // 理科として正しく1手だけ斬る
   if(!G)return 'none';const ph=G.phase;

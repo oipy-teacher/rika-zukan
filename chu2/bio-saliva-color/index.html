@@ -180,6 +180,15 @@ body.land .cgrid{grid-template-columns:repeat(5,1fr)}
 .qfb .pp{text-align:center}
 .qfb .mk{font-family:var(--head);font-size:92px;line-height:1;-webkit-text-stroke:3px var(--nv);paint-order:stroke fill}
 .qfb .ex{font-size:16px;line-height:1.65;text-align:left;margin:8px 0;font-weight:500}
+/* 仕上げ（2026-09-28）: もどるの確認は案内より上・COMBOのはずみ・段階のCOMBO */
+#scrBack{z-index:2147482990!important}
+#hud .gd-hbtn{pointer-events:auto}
+@media (max-width:430px){#hK{display:none!important}#bBack{font-size:16px;padding:2px 10px;min-height:44px}.hR{gap:5px}}
+.hK b{display:inline-block;transition:transform .16s cubic-bezier(.3,1.9,.5,1)}
+.hK.bump b{transform:scale(1.7)}
+.hK.hot{background:var(--yl)}.hK.hot2{background:var(--rd);color:#fff}
+.pow.combo{color:var(--sk)}.pow.combo.t2{color:var(--yl);font-size:min(58px,13vw)}.pow.combo.t3{color:#fff;font-size:min(66px,15vw);text-shadow:4px 4px 0 var(--rd),8px 8px 0 var(--nv)}
+.pow.near{font-size:min(34px,8vw);color:#fff}
 @media (prefers-reduced-motion: reduce){.pow,.card,.stars .on{animation-duration:.01s}}
 </style>
 </head>
@@ -196,9 +205,9 @@ body.land .cgrid{grid-template-columns:repeat(5,1fr)}
  <div class="tt-b">
   <button class="pb rd" id="btnStart">はじめる</button>
   <button class="pb" id="btnCont" hidden>つづきから</button>
+  <button class="pb sk sm" id="btnHowto">あそびかた</button>
   <button class="pb wh sm" id="btnBookT" hidden>📖 図鑑</button>
  </div>
- <div class="tt-f">カプセルを移しかえて、唾液の実験の試験管をそろえよう。<br>色の結果は 実験室で。ここでは 予想の色を塗って封印する。</div>
 </section>
 
 <!-- ============ ラウンド表 ============ -->
@@ -215,7 +224,7 @@ body.land .cgrid{grid-template-columns:repeat(5,1fr)}
 <!-- ============ 本編 HUD ============ -->
 <section id="hud" class="scr" hidden>
  <div class="hT"><b id="hRound">コマ1</b><small id="hSub"></small></div>
- <div class="hR"><div class="hK" id="hCombo">COMBO<b id="hCn">0</b></div><div class="hK" id="hK">かけら<b id="hKn">0</b></div><button class="mute pe" id="bMute" aria-label="音を切りかえる">音</button></div>
+ <div class="hR" id="hRbox"><div class="hK" id="hCombo">COMBO<b id="hCn">0</b></div><div class="hK" id="hK">かけら<b id="hKn">0</b></div><button class="mute pe" id="bMute" aria-label="音を切りかえる">音</button></div>
  <div id="legend"></div>
  <div id="caption"><span id="capT"></span></div>
  <div id="tools">
@@ -234,10 +243,10 @@ body.land .cgrid{grid-template-columns:repeat(5,1fr)}
   <div class="qt" id="qText"></div><div class="qf" id="qFig" hidden></div><div id="qArea"></div></div>
 </section>
 
-<button id="bBack" hidden>◀ もどる</button>
+<button id="bBack" data-gd-pass hidden>◀ もどる</button>
 <div id="ov" hidden><div class="pp" id="ovBody"></div></div>
 <div id="scrBack" hidden><div class="pp"><h2 style="font-size:30px">もどりますか？</h2><p class="ps" id="bkSub" style="font-size:15px">進み具合は保存されます。</p>
- <div class="pbtn"><button class="pb" id="bkNo">つづける</button><button class="pb rd" id="bkGo">もどる</button></div></div></div>
+ <div class="pbtn"><button class="pb" id="bkNo" data-gd-pass>つづける</button><button class="pb rd" id="bkGo" data-gd-pass>もどる</button></div></div></div>
 </div>
 
 <script>/*@SUBMIT_CARD_BEGIN*/
@@ -2269,8 +2278,11 @@ const SFX={
  pow(){noise(.3,{ft:'lowpass',f:900,vol:.18});tone(130,.25,{type:'sine',vol:.18,to:60})},
  fan(){[523,659,784,1047,1319].forEach((f,i)=>tone(f,.18,{vol:.05,at:i*.09}));SFX.pow()},
  bub(){tone(300+Math.random()*300,.08,{type:'sine',vol:.05,to:900})},
- click(){tone(1400,.03,{vol:.025})}
+ click(){tone(1400,.03,{vol:.025})},
+ don(k){noise(.18,{ft:'lowpass',f:500,vol:.2});tone(110,.2,{type:'sine',vol:.18,to:55});tone([784,988,1319][k||0],.16,{vol:.05,at:.03})},
+ tier(n){[523,659,784,1047].slice(0,n+1).forEach((f,i)=>tone(f,.1,{vol:.05,at:i*.06}))}
 };
+function hexA(h,a){const n=parseInt(h.slice(1),16);return 'rgba('+(n>>16&255)+','+(n>>8&255)+','+(n&255)+','+Math.max(0,Math.min(1,a)).toFixed(3)+')'}
 
 /* ================= 液・カプセル ================= */
 const LQ={
@@ -2386,11 +2398,12 @@ function place(){
 
 /* ================= 状態・操作 ================= */
 let G=null,scene='title',PRED=null;
-function startRound(ri){ovClose();G=buildRound(ri);place();showScene('play');
+function startRound(ri,opt){opt=opt||{};stopCoach();if(ri===0&&!opt.practice&&!SV.tut&&!SV.round&&window.Guide){runPractice(false);return}
+ ovClose();G=buildRound(ri);if(opt.practice){G.practice=true;G.R=Object.assign({},G.R,{bath:20});G.temp=20}place();showScene('play');
  $('hRound').textContent='コマ'+(ri+1)+'「'+G.R.name+'」';$('hSub').textContent=G.R.ta?'制限 '+G.R.ta+'秒':'';
  legend();tools();updHud();
- pow('コマ'+(ri+1),G.R.name,false);SFX.pow();
- cap(G.R.tip,6500)}
+ pow(G.practice?'れんしゅう':'コマ'+(ri+1),G.R.name,false);SFX.pow();
+ if(!G.practice)cap(G.R.tip,6500);if(HELP)HELP.show()}
 function legend(){const ks=new Set();G.tubes.forEach(t=>t.items.forEach(k=>ks.add(k)));['S','V','W','I','K'].forEach(k=>{});
  $('legend').innerHTML=['S','V','W','I','K'].filter(k=>ks.has(k)).map(k=>'<span><i style="background:'+LQ[k].c+'"></i>'+LQ[k].n+'</span>').join('')}
 function tools(){$('bUndo').hidden=G.phase!=='sort';$('bReset').hidden=G.phase!=='sort';$('bBath').hidden=G.phase!=='bath';
@@ -2426,7 +2439,9 @@ function pour(from,to){
   reject(to,msg,true);return}
  const m=Math.min(run,nd);G.undo.push(snapshot());move(from,to,m);
  G.combo++;G.maxCombo=Math.max(G.maxCombo,G.combo);SV.pours+=m;G.pours+=m;SFX.pour(m);SFX.ok(G.combo);
- splash(to,ty);if(G.combo>=3)popAt('×'+G.combo+' COMBO',to.x+to.w/2,to.y-20);
+ splash(to,ty);popAt('+'+m,to.x+to.w/2+to.w*.6,to.y+to.h*.3,false,true);G.shake=Math.max(G.shake,.07+Math.min(.1,G.combo*.012));G.flash=1;G.flashX=to.x+to.w/2;G.flashY=to.y+to.h*.5;G.flashC=LQ[ty].c==='#FFFFFF'?'#FFD23F':LQ[ty].c;buzz(12);bumpCombo();
+ if(G.combo>=2)popAt('×'+G.combo+' COMBO',to.x+to.w/2,to.y-20,false,true);
+ if(G.combo===3||G.combo===5||G.combo===8){const tr=G.combo===3?1:G.combo===5?2:3;pow('COMBO ×'+G.combo+'!',['','いい調子','ノッてきた!','とまらない!'][tr],false,'combo t'+tr);SFX.tier(tr)}
  const was=to.lit;to.lit=isLit(G,to);
  if(to.lit&&!was){to.glow=1.4;SFX.lit();burst(to.x+to.w/2,to.y+to.h*.4,30);
   if(to.ctrl&&!G.ctrlBad[to.i]&&!G.litOnce[to.i]){const g=earn(10,'control',to.x,to.y);pow('比べる管 OK!','だ液の代わりに同じ量の水'+(g?'　かけら+'+g:''),false)}
@@ -2435,8 +2450,8 @@ function pour(from,to){
  else if(!to.lit){const left=Object.values(recOf(G,to)).reduce((a,b)=>a+b,0)-to.items.length;if(left>0)popAt('あと'+left+'目盛り',to.x+to.w/2,to.y-18,true)}
  updHud();checkDone()}
 function move(from,to,m){const mv=from.items.splice(from.items.length-m,m);to.items.push(...mv);G.fx.push({x0:from.x+from.w/2,y0:from.y,x1:to.x+to.w/2,y1:to.y,c:LQ[mv[0]].c,t:0})}
-function reject(to,msg,sci){to.shake=.45;SFX.rej();G.shake=.25;
- if(sci){G.combo=0;G.rejects++;SV.rejects++;if(to.kind==='T'&&to.ctrl)G.ctrlBad[to.i]=1;pow('ブブー!','',true)}
+function reject(to,msg,sci){to.shake=.45;SFX.rej();G.shake=.25;buzz([20,40,20]);
+ if(sci){comboBreak();G.rejects++;SV.rejects++;if(to.kind==='T'&&to.ctrl)G.ctrlBad[to.i]=1;pow('ブブー!','',true)}
  cap(msg,5200);updHud()}
 function dump(){const t=G.tubes[G.sel];if(!t||t.kind!=='T')return;G.sel=-1;G.dec++;SV.dec++;
  if(t.pre&&isWrongPre(G,t)){t.items=[];t.pre=false;t.lit=false;SFX.bub();SFX.pow();pow('流した!','比べる管が正しくなかった',false);
@@ -2465,7 +2480,7 @@ function roundClear(){
  const foil=g.rejects===0;const had=SV.cards[ri]||0;SV.cards[ri]=Math.max(had,foil?2:1);save();
  setTimeout(()=>{if(G===g&&scene==='play')openBox(g,ri,st,foil,had)},RM?200:900)}
 function openBox(g,ri,st,foil,had){
- let taps=0;
+ let taps=0;for(let k=0;k<st;k++)setTimeout(()=>{if(!$('ov').hidden){SFX.don(k);buzz(20)}},120+k*150);
  ovOpen(`<h2>コマ${ri+1} クリア!</h2><div class="ps">「${esc(g.R.name)}」</div>
   <div class="stars">${[0,1,2].map(i=>'<span class="'+(i<st?'on':'')+'" style="animation-delay:'+(i*.15)+'s">★</span>').join('')}</div>
   <div class="tally"><div><span>注いだ回数</span><span>${g.pours}</span></div><div><span>はね返された</span><span>${g.rejects}</span></div><div><span>最高 COMBO</span><span>${g.maxCombo}</span></div>${g.R.ta?'<div><span>タイム</span><span>'+Math.round(g.t)+'秒 / '+g.R.ta+'</span></div>':''}</div>
@@ -2497,7 +2512,13 @@ function cardHtml(ri,foil,isNew){const c=CARDS[ri];return `<div class="card ${fo
 const SEAL_T=[{lab:'A',tag:'I',mix:'SV'},{lab:'B',tag:'I',mix:'SW'},{lab:'A',tag:'K',mix:'SV'},{lab:'B',tag:'K',mix:'SW'}];
 function startSeal(){ovClose();G={ri:-1,phase:'seal',tubes:[],parts:[],fx:[],shake:0,sel:-1,combo:0};PRED=[null,null,null,null];showScene('play');
  $('hRound').textContent='予言の封印';$('hSub').textContent='色の結果は 実験室で確かめる';tools();$('sealUi').hidden=false;$('hCombo').hidden=true;
- sealMsg();pow('予言の封印','4本の色を 予想して塗ろう',false)}
+ sealMsg();pow('予言の封印','4本の色を 予想して塗ろう',false);if(HELP)HELP.show();
+ if(window.Guide&&!SV.sealTut){const chip=()=>{const r=sealLayout()[0],c=sealChips(0,r)[1];return {x:c.x+c.s/2,y:c.y+c.s/2,r:c.s*.8}};
+  COACH=Guide.coach([
+   {gesture:'tap',label:'色をぬる',target:chip,until:()=>!!PRED&&PRED.filter(Boolean).length>=1,text:'この管は どんな色になる？ 予想の **色の見本** を タップ'},
+   {gesture:'tap',label:'4本とも',target:null,dim:false,until:()=>!!PRED&&PRED.filter(Boolean).length>=4,text:'のこりの管も **予想の色** を タップ（あとから 変えてもいい）'},
+   {gesture:'hold',label:'長おし',target:'#bSeal',holdMs:800,until:()=>!!G&&!!G.sealed,text:'はんこを **長おし** して 封印！',praise:'封印！'}
+  ],{onEnd:r=>{if(r&&r.done){SV.sealTut=1;save()}}})}}
 function sealMsg(){const n=PRED.filter(Boolean).length;$('sealMsg').innerHTML='A・Bを<b>約40℃で10分</b>→ 半分ずつに <b>ヨウ素液</b>／<b>ベネジクト液</b>（沸騰石を入れて<b>加熱</b>）。<br>'+(n<4?'色の見本を<b>タップ</b>して 4本とも塗ろう（'+n+' / 4）':'はんこを <b>長押し</b>して 封印！');$('bSeal').disabled=n<4}
 function sealLayout(){const n=4,L=LAND;const tw=L?Math.min(110,W*.08):Math.min(66,W*.16),th=L?Math.min(H-170-60-230,tw*3):Math.min(H*.21,tw*2.9);const gap=L?tw*1.5:tw*.45;
  const tot=n*tw+(n-1)*gap;let x=(W-tot)/2;const y=L?Math.max(170,H*.22):238;return SEAL_T.map((s,i)=>{const r={x:x+i*(tw+gap),y,w:tw,h:th};return r})}
@@ -2547,8 +2568,12 @@ $('bDump').onclick=()=>{if(G&&G.phase==='sort')dump()};
 $('bBath').onclick=()=>{if(G&&G.phase==='bath')bathGo()};
 
 /* ================= 演出 ================= */
-function pow(t,s,red){const d=document.createElement('div');d.className='pow'+(red?' red':'');d.innerHTML=esc(t)+(s?'<small>'+esc(s)+'</small>':'');$('telops').appendChild(d);setTimeout(()=>d.remove(),1550)}
-function popAt(t,x,y,small){G.parts.push({txt:t,x,y,vy:-40,life:1.1,small})}
+function pow(t,s,red,cls){const d=document.createElement('div');d.className='pow'+(red?' red':'')+(cls?' '+cls:'');d.innerHTML=esc(t)+(s?'<small>'+esc(s)+'</small>':'');$('telops').appendChild(d);setTimeout(()=>d.remove(),1550)}
+function popAt(t,x,y,small,pop){G.parts.push({txt:t,x,y,vy:-40,life:1.1,small,pop:!!pop,age:0})}
+function buzz(ms){try{if(navigator.vibrate)navigator.vibrate(ms)}catch(e){}}
+let bumpT=0;function bumpCombo(){const h=$('hCombo');h.classList.remove('bump');void h.offsetWidth;h.classList.add('bump');clearTimeout(bumpT);bumpT=setTimeout(()=>h.classList.remove('bump'),160);h.classList.toggle('hot',G.combo>=3&&G.combo<8);h.classList.toggle('hot2',G.combo>=8)}
+const TIERS=[3,5,8];
+function comboBreak(){const c=G.combo;const nx=TIERS.find(v=>v===c+1);if(nx&&c>=2)pow('あと1回で ×'+nx+' だった!','COMBO '+c+' で とぎれた',false,'near');G.combo=0;const h=$('hCombo');h.classList.remove('hot','hot2')}
 function burst(x,y,n){for(let i=0;i<n;i++){const a=rnd(0,TAU),v=rnd(100,360);G.parts.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,g:500,life:rnd(.5,1),c:pick([RD,YL,SK,'#fff']),r:rnd(4,9),star:Math.random()<.5,rot:rnd(0,TAU)})}}
 function splash(t,ty){for(let i=0;i<10;i++)G.parts.push({x:t.x+t.w/2+rnd(-t.w*.3,t.w*.3),y:t.y+t.h*.3,vx:rnd(-80,80),vy:rnd(-220,-80),g:700,life:rnd(.4,.7),c:LQ[ty].c,r:rnd(3,6)})}
 function confetti(){if(!G)return;G.parts.push({x:rnd(0,W),y:rnd(-H*.3,0),vx:rnd(-40,40),vy:rnd(80,220),g:40,life:rnd(2.5,4),c:pick([RD,YL,SK,'#fff',NV]),r:rnd(5,10),star:1,rot:rnd(0,TAU),fl:1})}
@@ -2572,6 +2597,7 @@ function render(dt,now){
  else if(G.phase==='bath'||G.phase==='soak')drawBath(t,dt);
  else{drawBench();G.tubes.forEach(tb=>drawTube(tb,t,dt));drawFx(dt)}
  drawParts(dt);
+ if(G.flash>0){G.flash-=dt*3.5;if(!RM){const a=clamp(G.flash,0,1),gr=cx.createRadialGradient(G.flashX,G.flashY,0,G.flashX,G.flashY,Math.max(W,H)*.6);gr.addColorStop(0,'rgba(255,255,255,'+(.55*a).toFixed(3)+')');gr.addColorStop(.25,hexA(G.flashC,.25*a));gr.addColorStop(1,hexA(G.flashC,0));cx.fillStyle=gr;cx.fillRect(-20,-20,W+40,H+40)}}
  cx.restore();
  if(G.R&&G.R.ta&&(G.phase==='sort'||G.phase==='bath')){const left=Math.max(0,G.R.ta-G.t);comicText(Math.ceil(left)+'秒',LAND?W-90:W/2,LAND?96:170,LAND?34:26,left<30?RD:YL)}
 }
@@ -2639,7 +2665,7 @@ function drawFx(dt){for(let i=G.fx.length-1;i>=0;i--){const f=G.fx[i];f.t+=dt*3;
 function drawBath(t,dt){
  const T=G.tubes.filter(x=>x.kind==='T');const pw=Math.min(W*.8,LAND?560:W*.86),ph=LAND?H*.26:H*.18;
  const px=W/2-pw/2,py=(LAND?H*.56:H*.62);
- if(G.phase==='soak'){G.soakT+=dt;if(G.soakT>2.6&&!G.cleared2){G.cleared2=1;roundClear()}}
+ if(G.phase==='soak'){G.soakT+=dt;if(G.soakT>2.6&&!G.cleared2&&!G.practice){G.cleared2=1;roundClear()}}
  // 管を湯へ下ろす
  const k=G.phase==='soak'?clamp(G.soakT/1,0,1):0;
  cx.fillStyle=YL;cx.strokeStyle=NV;cx.lineWidth=5;cx.fillRect(-10,py+ph*.7,W+20,H);cx.strokeRect(-10,py+ph*.7,W+20,H+20);dotFill(0,py+ph*.7+6,W,H,'rgba(255,90,95,.35)',14,3);
@@ -2663,7 +2689,7 @@ function drawBath(t,dt){
  if(G.phase==='soak')comicText('10分… チン!',W/2,py-ph*.2-th,LAND?40:28,YL);
 }
 function drawParts(dt){for(let i=G.parts.length-1;i>=0;i--){const q=G.parts[i];q.life-=dt;if(q.life<=0){G.parts.splice(i,1);continue}
- if(q.txt){q.y+=q.vy*dt;cx.globalAlpha=Math.min(1,q.life*2);comicText(q.txt,q.x,q.y,q.small?16:(LAND?26:20),q.small?'#fff':YL);cx.globalAlpha=1;continue}
+ if(q.txt){q.y+=q.vy*dt;cx.globalAlpha=Math.min(1,q.life*2);if(q.pop&&!RM){q.age+=dt;const u=q.age/.25,sc=u<1?.3+1.2*Math.sin(u*Math.PI/2)+.3*Math.sin(u*Math.PI):1;cx.save();cx.translate(q.x,q.y);cx.scale(sc,sc);comicText(q.txt,0,0,q.small?16:(LAND?30:24),q.small?'#fff':YL);cx.restore()}else comicText(q.txt,q.x,q.y,q.small?16:(LAND?26:20),q.small?'#fff':YL);cx.globalAlpha=1;continue}
  q.vy+=q.g*dt;if(q.fl)q.vx+=Math.sin(q.life*5)*40*dt;q.x+=q.vx*dt;q.y+=q.vy*dt;if(q.rot!=null)q.rot+=dt*4;
  cx.fillStyle=q.c;cx.strokeStyle=NV;cx.lineWidth=2;if(q.star){star(q.x,q.y,q.r,q.rot);cx.fill();cx.stroke()}else{cx.beginPath();cx.arc(q.x,q.y,q.r,0,TAU);cx.fill();cx.stroke()}}}
 function drawSeal(t,dt){
@@ -2713,11 +2739,11 @@ $('bBack').onclick=()=>{actx();SFX.click();
  $('bkSub').textContent=scene==='test'?'確認テストは、次はさいしょから。コマの進み具合は保存されています。':scene==='map'?'進み具合は保存されます。表紙にもどります。':'進み具合は保存されます（クリアしたコマとカードはそのまま。このコマは次にはじめから）。';
  $('bkGo').textContent=scene==='map'?'表紙へ':'ラウンド表へ';$('scrBack').hidden=false};
 $('bkNo').onclick=()=>{$('scrBack').hidden=true;if(G)G.paused=false};
-$('bkGo').onclick=()=>{$('scrBack').hidden=true;ovClose();if(backFrom==='map'){showScene('title');initTitle()}else{G=null;T=null;openMap()}};
+$('bkGo').onclick=()=>{$('scrBack').hidden=true;ovClose();leaveGuide();if(backFrom==='map'){showScene('title');initTitle()}else{G=null;T=null;openMap()}};
 $('bMute').onclick=()=>{SV.mute=!SV.mute;save();$('bMute').textContent=SV.mute?'消音':'音';$('bMute').classList.toggle('off',SV.mute)};
 
 /* ================= ラウンド表 ================= */
-function openMap(){G=null;showScene('map');const nx=Math.min(SV.round,ROUNDS.length-1);const allDone=SV.round>=ROUNDS.length;
+function openMap(){leaveGuide();G=null;showScene('map');const nx=Math.min(SV.round,ROUNDS.length-1);const allDone=SV.round>=ROUNDS.length;
  const ns=SV.stars.reduce((a,b)=>a+(b||0),0),nc=Object.keys(SV.cards).length;
  $('mapSub').textContent='全10コマ＋予言の封印　★ '+ns+' / 30　試薬カード '+nc+' / 10';
  $('panels').innerHTML=ROUNDS.map((r,i)=>{const lock=i>SV.round,st=SV.stars[i]||0;return `<button class="pnl ${i===nx&&!allDone?'cur':''} ${lock?'lock':''}" data-i="${i}" ${lock?'disabled':''}><i>${i+1}</i><b>${esc(r.name)}</b><span class="st">${[0,1,2].map(k=>k<st?'★':'<u>★</u>').join('')}</span></button>`}).join('')+
@@ -2739,10 +2765,47 @@ let startArm=false;
 $('btnStart').onclick=()=>{actx();SV.name=$('nameIn').value.trim();
  if(hasSave()&&SV.round>0&&!startArm){startArm=true;$('btnStart').textContent='本当に はじめから？（記録が消える）';setTimeout(()=>{startArm=false;initTitle()},3500);return}
  if(startArm){const nm=SV.name,mu=SV.mute;SV=fresh();SV.name=nm;SV.mute=mu}
- save();SFX.pow();startRound(0)};
+ save();SFX.pow();
+ if(window.Guide)Guide.intro(INTRO).then(()=>startRound(0));else startRound(0)};
 $('btnCont').onclick=()=>{actx();SV.name=$('nameIn').value.trim()||SV.name;save();SFX.click();openMap()};
 $('btnBookT').onclick=()=>{try{Z().openBook()}catch(e){}};
 
+/* ================= 遊び方の案内（Guide）・れんしゅう（2026-09-28 仕上げ） ================= */
+const INTRO={title:'第17回　試験管ウォーターソート',learn:'だ液のはたらきを調べるには、**だ液の代わりに同じ量の水** を入れた管と比べ、**約40℃** で温める',how:'カプセルを 試験管へ **ドラッグ**（タップ→タップでもOK）して、レシピどおりに そろえる',gesture:'drag'};
+let HELP=null,COACH=null;
+function stopCoach(){if(COACH&&COACH.stop){try{COACH.stop()}catch(e){}}COACH=null}
+function leaveGuide(){stopCoach();const g=G;if(g&&g.practice){g.practice=false;try{Guide.tutorialEnd()}catch(e){}}}
+const tubeBox=t=>t?{x:t.x+t.w/2,y:t.y+t.h/2,w:t.w+18,h:t.h+22,rx:14}:null;
+const standOf=k=>G&&G.tubes.find(t=>t.kind==='S'&&t.items.length&&t.items[t.items.length-1]===k);
+const tubeOf=l=>G&&G.tubes.find(t=>t.kind==='T'&&t.lab===l);
+const has=(l,k)=>{const t=tubeOf(l);return t?t.items.filter(x=>x===k).length:0};
+function mkPractice(replay){let PG=null;return {label:'れんしゅう中',
+ start:()=>{ovClose();startRound(0,{practice:true});PG=G},
+ steps:[
+  {gesture:'drag',label:'ドラッグ',target:()=>tubeBox(standOf('S')),to:()=>tubeBox(tubeOf('A')),until:()=>has('A','S')>=2,text:'**デンプン液**（白）を 試験管 **A** へ ドラッグ\n（タップ→タップでも 注げる）'},
+  {gesture:'drag',label:'ドラッグ',target:()=>tubeBox(standOf('V')),to:()=>tubeBox(tubeOf('A')),until:()=>has('A','V')>=1,text:'**だ液**（黄）も **A** へ。A＝デンプン液＋だ液'},
+  {gesture:'drag',label:'ドラッグ',target:()=>tubeBox(standOf('S')),to:()=>tubeBox(tubeOf('B')),until:()=>has('B','S')>=2,text:'B にも **同じ量のデンプン液**'},
+  {gesture:'drag',label:'ドラッグ',target:()=>tubeBox(standOf('W')),to:()=>tubeBox(tubeOf('B')),until:()=>has('B','W')>=1,text:'B は だ液の **代わりに 同じ量の水**（比べる管）',praise:'そろった！'},
+  {gesture:'drag',label:'温度計',target:()=>G&&G.phase==='bath'&&G.bath?{x:G.bath.tx,y:G.bath.y1-(G.bath.y1-G.bath.y0)*G.temp/100,r:26}:null,to:()=>G&&G.bath?{x:G.bath.tx,y:G.bath.y1-(G.bath.y1-G.bath.y0)*.38,r:22}:null,until:()=>!!G&&G.phase==='bath'&&G.temp>=35&&G.temp<=40&&!drag,text:'温度計を **上へドラッグ**。だ液は口の中で働くので **体温に近い 約40℃**'},
+  {gesture:'tap',label:'タップ',target:'#bBath',until:()=>!!G&&G.phase==='soak',text:'「**湯に入れる**」を タップ。AとBを **いっしょに** 同じ時間',praise:'40℃ OK!'}
+ ],
+ onClear:()=>{earn(10,'first-try',W/2,H/2)},
+ onExit:res=>{if(res&&res.replaced)return;if(!G||G!==PG||!G.practice)return;const g=G;g.practice=false;SV.tut=1;save();
+  if(replay){G=null;openMap()}}
+}}
+function runPractice(replay){return Guide.tutorial(mkPractice(replay))}
+if(window.Guide){
+ Guide.setup({theme:{bg:'#FFFFFF',fg:'#0B3954',accent:'#FF5A5F',accentText:'#FFFFFF',font:'"Reggae One","M PLUS 1p",sans-serif',bodyFont:'"M PLUS 1p",sans-serif',radius:4,
+   texture:'dots',line:'#0B3954',dim:'rgba(11,57,84,.45)',shadow:'6px 6px 0 #0B3954',outline:'#0B3954',hand:'#FFD23F',handLine:'#0B3954'},
+  sfx:k=>{if(k==='step')SFX.ok(3);else if(k==='done')SFX.lit();else if(k==='clear')SFX.fan();else if(k==='open')SFX.pow();else if(k==='close'||k==='nudge')SFX.click();else if(k==='cheer')SFX.sel()},
+  muted:()=>SV.mute,learn:INTRO.learn,how:INTRO.how,title:INTRO.title});
+ Guide.tutorialButton('#btnHowto',()=>{actx();SFX.click();SV.name=$('nameIn').value.trim()||SV.name;save();runPractice(!!SV.tut)});
+ let wasP=false;
+ HELP=Guide.help({mount:$('hRbox'),size:46,attention:true,
+  rules:['A＝**デンプン液＋だ液**、B＝**デンプン液＋水**（だ液と同じ量）','ちがうのは **だ液があるかどうか だけ** にする（比べる管）','**検査薬**（ヨウ素液・ベネジクト液）は 温めたあとに加える。今は入れない','湯せんは **体温に近い 約40℃**','色の結果は 実験室で。さいごに **予想の色** を塗って封印する'],
+  onOpen:()=>{wasP=!!(G&&G.paused);if(G)G.paused=true},onClose:()=>{if(G&&!wasP&&$('scrBack').hidden)G.paused=false},
+  replay:()=>{runPractice(true);return null},labels:{replay:'れんしゅうをもう一度'}});
+}else $('btnHowto').hidden=true;
 /* ================= さいごの確認テスト ================= */
 let T=null;
 function startTest(){if(!window.Quiz){alert('問題データがありません');return}G=null;ovClose();showScene('test');T={qs:Quiz.test(),i:0,ans:[]};renderQ()}
@@ -2780,7 +2843,7 @@ function frame(now){const dt=Math.min(.05,Math.max(0,(now-last)/1000));last=now;
 window.GAME_ID=GAME;
 layout();
 try{window.Zukan&&Zukan.setup({game:GAME,koma:[KOMA]})}catch(e){}
-window.__sal={need:(i,k)=>needOf(G,G.tubes[i],k),wrongPre:i=>isWrongPre(G,G.tubes[i]),get G(){return G},get SV(){return SV},startRound,startSeal,startTest,openMap,tapTube,bathGo,dump,setTemp:v=>{if(G)G.temp=v},pred:(i,k)=>{PRED[i]=k;sealMsg()},doSeal};
+window.__sal={need:(i,k)=>needOf(G,G.tubes[i],k),wrongPre:i=>isWrongPre(G,G.tubes[i]),get G(){return G},get SV(){return SV},startRound,startSeal,startTest,openMap,tapTube,bathGo,dump,setTemp:v=>{if(G)G.temp=v},pred:(i,k)=>{PRED[i]=k;sealMsg()},doSeal,sealChipPos:()=>sealLayout().map((r,i)=>sealChips(i,r))};
 if(window.GAME_MODE==='test'){startTest()}else{showScene('title');initTitle()}
 requestAnimationFrame(frame);
 })();

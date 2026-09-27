@@ -126,7 +126,7 @@ button{font-family:var(--hd);cursor:pointer;touch-action:manipulation;-webkit-us
 .qfb .mk.o{color:var(--red)}
 .qfb .ex{font-size:15.5px;line-height:1.7;text-align:left;margin:8px 0 12px}
 /* 戻る確認 */
-#scrBack{position:absolute;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;background:rgba(17,17,17,.55);padding:16px}
+#scrBack{position:absolute;inset:0;z-index:2147482990;display:flex;align-items:center;justify-content:center;background:rgba(17,17,17,.55);padding:16px}
 @media (max-width:560px){#plate{left:10px;right:10px;transform:none;max-width:none;top:calc(60px + env(safe-area-inset-top));padding:2px 8px 3px}#plate b{font-size:15px}#plate span{font-size:10px}.hbox{min-width:48px;padding:2px 6px}.hbox b{font-size:17px}#bBack{font-size:16px;padding:2px 12px 2px 10px}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
@@ -143,9 +143,9 @@ button{font-family:var(--hd);cursor:pointer;touch-action:manipulation;-webkit-us
    <div class="row">
     <button class="ob red" id="btnStart">はじめる</button>
     <button class="ob wh" id="btnCont" hidden>つづきから</button>
+    <button class="ob wh sm" id="btnHowto">あそびかた</button>
     <button class="ob wh sm" id="btnBookT" hidden>📖 図鑑</button>
    </div>
-   <div class="ft">こちらの管を動かすと、鏡の向こうの管も 同じ動きをする。<br>ちがいを <b style="color:#E63946">1つだけ</b> 作って、鏡の番人の反論を はね返せ。</div>
   </div>
  </section>
  <div id="plate" hidden><b id="plT"></b><span id="plS"></span><i><u id="plBar"></u></i></div>
@@ -162,8 +162,8 @@ button{font-family:var(--hd);cursor:pointer;touch-action:manipulation;-webkit-us
   <div class="qwrap"><div><div class="qhd"><span>さいごの確認テスト</span><span id="qNo">1 / 10</span></div><div class="qtext" id="qText"></div><div class="qfig" id="qFig" hidden></div></div><div class="qch" id="qArea"></div></div>
  </section>
  <div id="ov" hidden><div class="mb" id="ovB"></div></div>
- <button class="ob" id="bBack" hidden><i></i><span id="bBackT">もどる</span></button>
- <div id="scrBack" hidden><div class="mb" style="width:min(460px,92vw)"><h2>もどる？</h2><p id="bkSub">進み具合は保存されます。</p><div class="btns"><button class="ob red" id="bkGo">もどる</button><button class="ob wh" id="bkNo">つづける</button></div></div></div>
+ <button class="ob" id="bBack" data-gd-pass hidden><i></i><span id="bBackT">もどる</span></button>
+ <div id="scrBack" role="dialog" aria-modal="true" data-gd-pass hidden><div class="mb" style="width:min(460px,92vw)"><h2>もどる？</h2><p id="bkSub">進み具合は保存されます。</p><div class="btns"><button class="ob red" id="bkGo" data-gd-pass>もどる</button><button class="ob wh" id="bkNo" data-gd-pass>つづける</button></div></div></div>
 </div>
 <script>/*@SUBMIT_CARD_BEGIN*/
 /* ==========================================================
@@ -2464,10 +2464,12 @@ function drawBottle(k,x,y,w,h,tilt,ghost){ctx.save();ctx.translate(x,y);if(tilt)
  ctx.restore()}
 
 /* ================= 場面：実験台 ================= */
-function startRoom(ri){G={ri,S:newBench(ri),undo:[],cracks:0,phase:'intro',hl:[],hlT:0,drag:null,vol:null,combo:0,wave:1,lastFail:null,seal:false,t0:performance.now(),fx:[]};
+function startRoom(ri,opt){opt=opt||{};stopCoach();if(ri===0&&!opt.practice&&!SV.tut&&!SV.open&&window.Guide){runPractice(false);return}
+ G={practice:!!opt.practice,ri,S:newBench(ri),undo:[],cracks:0,phase:'intro',hl:[],hlT:0,drag:null,vol:null,combo:0,wave:1,lastFail:null,seal:false,t0:performance.now(),fx:[]};
  const r=ROOMS[ri];if(r.dist)G.dist=Object.assign({},r.dist);else G.dist={};
  if(r.boss){const ks=['st','time','bath'];const a=ks.splice(Math.floor(Math.random()*3),1)[0],b=ks[Math.floor(Math.random()*2)];G.dist={};[a,b].forEach(k=>G.dist[k]=k==='st'?.6:k==='time'?.5:1)}
- LY=null;setScene('play');
+ LY=null;setScene('play');if(HELP)HELP.show();
+ if(G.practice){closeOv();G.phase='build';SFX.link();bigTxt('れんしゅう','はじまりの間');return}
  openOv(`<div class="kk">鏡の回廊　第${ri+1}の間</div><h2>${esc(r.nm)}</h2><p>${r.br}</p><div class="rl"><small>この間では</small>${r.nu}</div>${Object.keys(G.dist).length?'<p style="font-size:13.5px">鏡のひびに <b style="color:#E63946">ゆがみ</b>が書いてある。左右のずれに気をつけよう。</p>':''}<div class="btns"><button class="ob red" id="oGo">入る</button></div>`);
  $('oGo').onclick=()=>{closeOv();G.phase='build';SFX.link();updCap()}}
 function pushUndo(){G.undo.push(JSON.stringify(G.S));if(G.undo.length>60)G.undo.shift()}
@@ -2476,14 +2478,15 @@ function toTubes(sd,idx,fn,mirror){const S=G.S;if(sd==='C'){fn(S.C,'C');return}c
  if(mirror&&S.link){const o=S[other(sd)].tubes[idx];if(o)fn(o,other(sd),true)}}
 function pourCommit(sd,idx,k,a){a=r2(a);if(a<=0)return;pushUndo();
  toTubes(sd,idx,(t,s,m)=>{const add=m?dv(k,a):a;t[k]=r2(Math.min(10-liqSum(t)+t[k],t[k]+add))},true);
- SFX.drop();afterOp()}
+ SFX.drop();pourFx(sd,idx,'+'+a+'mL');afterOp()}
+function pourFx(sd,idx,label){try{const L=Lget();const one=(s,i)=>{const t=s==='C'?L.C:L.tubes[s]&&L.tubes[s][i];if(!t)return;spring(t.x+t.w/2,t.y-16,label,s==='A'?INK:RED,LAND?30:24);burst(t.x+t.w/2,t.y+t.h*.3,RM?4:10,false)};one(sd,idx);if(G.S.link&&sd!=='C')one(other(sd),idx);flashT=Math.max(flashT,.06);flashC='#fff';shake=Math.max(shake,RM?0:3);buzz(10)}catch(e){}}
 function dropReag(sd,idx,k){pushUndo();const S=G.S;
  if(k==='sp'){if(sd==='C'){float(pt.x,pt.y,'管Cは分けない',RED,16);G.undo.pop();return}
   const doSplit=s=>{const side=S[s];if(side.tubes.length>1)return false;const t=side.tubes[0];const h={};for(const key in t)h[key]=t[key];['st','sa','wa'].forEach(q=>h[q]=r2(t[q]/2));side.tubes=[Object.assign({},h),Object.assign({},h)];return true};
   const ok=doSplit(sd);if(S.link)doSplit(other(sd));if(!ok){float(pt.x,pt.y,'もう分けてある',INK,16);G.undo.pop();return}
   LY=null;SFX.cut();burst(pt.x,pt.y,14);afterOp();return}
  toTubes(sd,idx,(t,s)=>{t[k]=1;if(k!=='sn'){const side=s==='C'?S.A:S[s];if(side.time<4.9)t.early=1}},true);
- SFX.drop();afterOp()}
+ SFX.drop();pourFx(sd,idx,IT[k].sh);afterOp()}
 function setBath(sd,k){pushUndo();const S=G.S;S[sd].bath=k;if(S.link)S[other(sd)].bath=dv('bath',k);SFX.bath();afterOp()}
 function setTime(sd,v,commit){const S=G.S;S[sd].time=v;if(S.link)S[other(sd)].time=dv('time',v)}
 function toggleHeat(sd,idx){pushUndo();toTubes(sd,idx,t=>{t.ht=t.ht?0:1},true);tone(200,.3,'sawtooth',.05,420);afterOp()}
@@ -2493,7 +2496,7 @@ function updCap(){if(scene!=='play'||!G)return capShow('');const S=G.S,ri=G.ri;
  if(G.phase!=='build')return;
  let s='';
  if(G.lastFail&&G.lastRule){s='きまり：'+G.lastRule}
- else if(ri===0){if(sideSum(S.A,'st')<.25)s='<b>デンプン液</b>のびんを 管Aへドラッグ。押したまま注ぐ（5mLで はなす）';else if(sideSum(S.A,'sa')<.25)s='次は <b>唾液</b>を 管Aへ（2mL）';else s='下の「<b>計画を出す</b>」で 鏡の番人に見せよう';}
+ else if(ri===0&&!G.practice){if(sideSum(S.A,'st')<.25)s='<b>デンプン液</b>のびんを 管Aへドラッグ。押したまま注ぐ（5mLで はなす）';else if(sideSum(S.A,'sa')<.25)s='次は <b>唾液</b>を 管Aへ（2mL）';else s='下の「<b>計画を出す</b>」で 鏡の番人に見せよう';}
  else if(ri===1&&!SV.stars[1]&&S.A.bath==='none'&&sideSum(S.A,'sa')>0)s='管Aの下の「<b>約40℃</b>」をタップして温める';
  else if(ri===2&&S.A.time<.1&&sideSum(S.A,'sa')>0)s='時計の<b>赤い針</b>をドラッグして 時間を置く';
  else if(ri===5&&S.A.tubes.length<2&&anyT(S.A,t=>t.sa>0))s='<b>空の試験管</b>を管に落とすと、半分に分けられる';
@@ -2528,6 +2531,7 @@ function volleyWin(){const r=ROOMS[G.ri];
  let got=0;if(G.cracks===0&&!G.broke&&!SV.ft[G.ri]){SV.ft[G.ri]=1;got+=earn(10,'first-try',W/2,H/2)}
  if((r.climax||r.transfer)&&!SV.ruleGot[G.ri]){SV.ruleGot[G.ri]=1;got+=earn(30,'rule',W/2,H/2-40)}
  SV.files[G.ri]=planFile();SV.open=Math.max(SV.open,G.ri+1);SV.best=Math.max(SV.best,G.combo);save();
+ if(G.practice){G.pendingWin=()=>winModal(stars,got,first);return}
  setTimeout(()=>winModal(stars,got,first),RM?200:1300)}
 function bossTwist(){const S=G.S;S.link=false;const L=Lget();
  // 鏡の王が 鏡の向こうをゆがめる（Bの中身を1〜2か所変える）
@@ -2825,7 +2829,7 @@ function updHud(){$('bMute').classList.toggle('off',!!SV.mute);$('bMute').textCo
 $('bMute').onclick=()=>{SV.mute=!SV.mute;save();updHud();if(!SV.mute)SFX.tap()};
 function openOv(h){$('ovB').innerHTML=h;$('ov').hidden=false}
 function closeOv(){$('ov').hidden=true}
-function openMap(){G=null;setScene('map');const nx=Math.min(SV.open,NR);$('btnGo').textContent=SV.sealed?'封印の間（塗りなおす）':(nx===NR?'封印の間へ':'第'+(nx+1)+'の間へ');
+function openMap(){leaveGuide();G=null;setScene('map');const nx=Math.min(SV.open,NR);$('btnGo').textContent=SV.sealed?'封印の間（塗りなおす）':(nx===NR?'封印の間へ':'第'+(nx+1)+'の間へ');
  $('btnTestM').hidden=!SV.sealed;$('btnBookM').hidden=!Z();$('btnGachaM').hidden=!Z()}
 $('btnGo').onclick=()=>{actx();const nx=Math.min(SV.open,NR);if(nx===NR)startSeal();else startRoom(nx)};
 $('btnFiles').onclick=()=>{const bt=ROOMS.map((r,i)=>`<button data-f="${i}" ${SV.files[i]?'':'disabled'}>No.${i+1}<small>${esc(r.nm)}${SV.files[i]?' ★'+(SV.stars[i]||0):''}</small></button>`).join('');
@@ -2836,7 +2840,7 @@ $('bBack').onclick=()=>{actx();if(scene==='title'){try{window.parent.postMessage
  $('bkSub').textContent=scene==='test'?'確認テストは 次はさいしょから。回廊の進み具合は保存されています。':scene==='map'?'進み具合は保存されます。タイトルにもどります。':'進み具合は保存されます（はね返した間と★はそのまま。この間は次にはじめから）。';
  $('bkGo').textContent=scene==='map'?'タイトルへ':'回廊へ';$('scrBack').hidden=false};
 $('bkNo').onclick=()=>{$('scrBack').hidden=true};
-$('bkGo').onclick=()=>{$('scrBack').hidden=true;closeOv();SFX.pourOff();if(scene==='map'){G=null;setScene('title');initTitle()}else{T=null;openMap()}};
+$('bkGo').onclick=()=>{$('scrBack').hidden=true;closeOv();SFX.pourOff();leaveGuide();if(scene==='map'){G=null;setScene('title');initTitle()}else{T=null;openMap()}};
 
 /* ================= タイトル ================= */
 function initTitle(){if(window.PLAYER_NAME)$('nameIn').value=window.PLAYER_NAME;else if(SV.name)$('nameIn').value=SV.name;
@@ -2845,10 +2849,44 @@ let startArm=false;
 $('btnStart').onclick=()=>{actx();SV.name=$('nameIn').value.trim();
  if(hasSave()&&!startArm){startArm=true;$('btnStart').textContent='本当に？（記録が消える）';setTimeout(()=>{startArm=false;initTitle()},3500);return}
  if(startArm){const nm=SV.name,mu=SV.mute;SV=fresh();SV.name=nm;SV.mute=mu;startArm=false}
- save();SFX.link();startRoom(0)};
+ save();SFX.link();
+ if(window.Guide)Guide.intro(INTRO).then(()=>startRoom(0));else startRoom(0)};
 $('btnCont').onclick=()=>{actx();SV.name=$('nameIn').value.trim()||SV.name;save();SFX.tap();openMap()};
 $('btnBookT').onclick=()=>{try{Z().openBook()}catch(e){}};
 
+/* ================= 遊び方の案内（Guide）・れんしゅう（2026-09-28 仕上げ） ================= */
+const INTRO={title:'第18回　ふたごの試験管',learn:'唾液のはたらきを確かめるには、唾液を入れない管と比べる。**変える条件は1つだけ**、ほかは そろえる',how:'びんを 管へ **ドラッグ**（押したまま注ぐ）。唾液を入れる一手だけ **鏡を切る**',gesture:'drag'};
+let HELP=null,COACH=null;
+document.body.appendChild($('scrBack'));
+function stopCoach(){if(COACH&&COACH.stop){try{COACH.stop()}catch(e){}}COACH=null}
+function leaveGuide(){stopCoach();const g=G;if(g&&g.practice){g.practice=false;try{Guide.tutorialEnd()}catch(e){}}}
+const rbox=R=>R?{x:R.x+R.w/2,y:R.y+R.h/2,w:R.w+14,h:R.h+14,rx:6}:null;
+const shelfOf=k=>{const L=Lget();return L.shelf.find(s=>s.k===k)};
+const tubeA=()=>{const t=Lget().tubes.A[0];return t?{x:t.x+t.w/2,y:t.y+t.h*.45,w:t.w*2.2,h:t.h+t.w*1.6,rx:10}:null};
+function mkPractice(replay){let PG=null;return {label:'れんしゅう中',block:true,
+ start:()=>{closeOv();startRoom(0,{practice:true});PG=G},
+ steps:[
+  {gesture:'drag',label:'ドラッグ',target:()=>rbox(shelfOf('st')),to:tubeA,until:()=>!!G&&sideSum(G.S.A,'st')>=.25&&!G.drag,text:'**デンプン液** のびんを 管A へ ドラッグ。\n**押したまま** 注いで、はなす（鏡の向こうのBも同じ動き）'},
+  {gesture:'tap',label:'タップ',target:()=>{const k=Lget().knob;return {x:k.x,y:k.y,r:k.r+10}},until:()=>!!G&&!G.S.link,text:'**鏡の結び目** を タップして 切る。\n唾液を入れる一手だけ、Bに映さない'},
+  {gesture:'drag',label:'ドラッグ',target:()=>rbox(shelfOf('sa')),to:tubeA,until:()=>!!G&&sideSum(G.S.A,'sa')>=.25&&!G.drag,text:'**唾液** を 管A へ。Bには入らない＝**ちがいは唾液だけ**'},
+  {gesture:'tap',label:'タップ',target:()=>rbox(Lget().submit),until:()=>!!G&&G.phase!=='build',text:'「**計画を出す**」を タップ。鏡の番人の反論を はね返せ！'},
+  {gesture:'tap',label:'みる',target:null,dim:false,until:()=>!!G&&(G.phase==='win'||G.phase==='fail'),text:'反論の矢が飛んでくる… 筋の通った計画なら **はね返せる**！',praise:'計画成立！'}
+ ],
+ onExit:res=>{if(res&&res.replaced)return;if(!G||G!==PG||!G.practice)return;const g=G;g.practice=false;SV.tut=1;save();
+  if(replay){G=null;openMap();return}
+  if(g.pendingWin){const f=g.pendingWin;g.pendingWin=null;setTimeout(f,RM?0:300)}else updCap()}
+}}
+function runPractice(replay){return Guide.tutorial(mkPractice(replay))}
+if(window.Guide){
+ Guide.setup({theme:{bg:'#F5F5F5',fg:'#111111',accent:'#E63946',accentText:'#FFFFFF',font:"'Dela Gothic One',sans-serif",bodyFont:"'BIZ UDPGothic',sans-serif",radius:0,
+   texture:'repeating-linear-gradient(135deg,rgba(17,17,17,.06) 0 2px,transparent 2px 9px)',line:'#111111',dim:'rgba(17,17,17,.5)',shadow:'5px 5px 0 #E63946',outline:'#111111',hand:'#FFFFFF',handLine:'#111111'},
+  sfx:k=>{if(k==='step')SFX.bounce(3);else if(k==='done')SFX.link();else if(k==='clear')SFX.clear();else if(k==='nudge'||k==='close'||k==='open')SFX.tap();else if(k==='cheer')SFX.tap()},
+  muted:()=>SV.mute,learn:INTRO.learn,how:INTRO.how,title:INTRO.title});
+ Guide.tutorialButton('#btnHowto',()=>{actx();SFX.tap();SV.name=$('nameIn').value.trim()||SV.name;save();runPractice(!!(SV.tut||SV.open))});
+ HELP=Guide.help({mount:$('hudR'),size:46,attention:true,
+  rules:['管Aを動かすと、鏡の向こうの **管Bも 同じ動き**','唾液を入れる一手だけ **鏡の結び目を切る** → ちがいは1つだけ','ほかの条件（量・温度・時間）は **そろえる**','「計画を出す」と 反論の矢。穴があると **鏡にひび**（3つで われる）','色の結果は 実験室で。さいごに **予想の色** を封印する'],
+  replay:()=>{runPractice(true);return null},labels:{replay:'れんしゅうをもう一度'}});
+}else $('btnHowto').hidden=true;
 /* ================= さいごの確認テスト ================= */
 let T=null;
 function startTest(){if(!window.Quiz){openOv('<h2>問題データがありません</h2><div class="btns"><button class="ob" id="oC">とじる</button></div>');$('oC').onclick=closeOv;return}G=null;closeOv();setScene('test');T={qs:Quiz.test(),i:0,ans:[]};renderQ()}
