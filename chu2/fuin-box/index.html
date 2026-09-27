@@ -276,6 +276,15 @@ body.land #sealIn{grid-template-columns:minmax(300px,1fr) minmax(360px,1.1fr);al
 #bk h3{margin:0 0 6px;font-family:"Kaisei Decol",serif;font-size:22px}
 #bk p{margin:0 0 14px;font-size:15px;line-height:1.6}
 #bk .row{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+/* ★のドン・ドン・ドン（仕上げ 2026-09-27） */
+#sclr .stars .dn{display:inline-block;opacity:0;transform:scale(2.8) rotate(-20deg)}
+#sclr .stars .dn.on{opacity:1;transform:none;transition:transform .3s cubic-bezier(.2,1.9,.4,1),opacity .1s}
+#sclr .stars .dn.off{color:#d8ccb4}
+#sclr .card.bump{animation:cardBump .28s ease-out}
+@keyframes cardBump{0%{translate:0 0}30%{translate:0 5px}100%{translate:0 0}}
+.tag{transition:transform .08s}
+.tag:active{transform:translate(1px,3px) scale(.97)}
+#bHow{background:#fff27a}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 </head>
@@ -307,7 +316,7 @@ body.land #sealIn{grid-template-columns:minmax(300px,1fr) minmax(360px,1.1fr);al
   <div class="btns">
     <div id="nmBox"><label for="nmIn">お届け先</label><input id="nmIn" maxlength="16" placeholder="なまえ（なくてもOK）" autocomplete="off"></div>
     <button class="tag red" id="bStart">はじめる</button>
-    <div class="row"><button class="tag sm" id="bCont">つづきから</button><button class="tag sm" id="bBook1">📖 図鑑</button><button class="tag sm brown hidden" id="bHub">◀ 一覧へ</button></div>
+    <div class="row"><button class="tag sm" id="bHow">あそびかた</button><button class="tag sm" id="bCont">つづきから</button><button class="tag sm" id="bBook1">📖 図鑑</button><button class="tag sm brown hidden" id="bHub">◀ 一覧へ</button></div>
   </div>
 </div>
 
@@ -2390,7 +2399,8 @@ var SFX={
  pop:function(){AU.noise(.08,.25,900,.7);AU.tone(180,.12,'sine',.1,0,60)},
  flare:function(){AU.noise(.5,.08,600,.6,0,2400)},
  fan:function(){[523,659,784,1047,1319].forEach(function(f,i){AU.tone(f,.35,'triangle',.05,i*.09);AU.tone(f*2,.2,'sine',.015,i*.09)})},
- tick:function(){AU.tone(1400,.03,'square',.02)}
+ tick:function(){AU.tone(1400,.03,'square',.02)},
+ up:function(n){var f=659*Math.pow(2,Math.min(n-1,12)/12*2);AU.tone(f,.16,'triangle',.07);AU.tone(f*1.5,.2,'sine',.035,.07)}
 };
 
 /* ================= 理科のデータ ================= */
@@ -2610,10 +2620,10 @@ function drawApparatus(c,x,y,s,o){var g=apGeo(o),t=o.t||0;c.save();c.translate(x
 
 /* ================= 面の実行 ================= */
 var G=null;
-function loadStage(i){var d=ST[i],m=d.map,H=m.length,W=m[0].length;
+function loadStage(i,tut){var d=ST[i],m=d.map,H=m.length,W=m[0].length;
  G={i:i,d:d,W:W,H:H,cell:[],cr:[],out:[],bot:[],ap:null,F:null,T:null,sx:[],sy:[],p:{x:0,y:0,rx:0,ry:0,dir:[1,0]},hist:[],ph:'build',
   fire:false,tubeIn:true,heat:0,black:0,drops:0,milky:0,crack:0,back:0,miss:0,acc:0,pushes:0,t0:performance.now(),elapsed:0,verd:null,done:{},
-  timer:d.timed||0,rehOK:true,fail:null,pow:d.pow,firstIgn:true,firstEnd:true};
+  timer:d.timed||0,rehOK:true,fail:null,pow:d.pow,firstIgn:true,firstEnd:true,tut:!!tut,undos:0};
  if(d.pow==='mystery')G.pow=['salt','sugar','starch'][Math.random()*3|0];
  var bots=d.bot==='rand'?shuffle([{g:'o2',o:'o2'},{g:'h2',o:'h2'},{g:'co2',o:'co2b'}]):(d.bot||[]);
  var bi=0,axy=null,id=0;
@@ -2631,7 +2641,7 @@ function loadStage(i){var d=ST[i],m=d.map,H=m.length,W=m[0].length;
  var sname=LAND?(i+1)+'列目　'+d.nm:(i+1)+'列目';$('hNm').textContent=sname;
  SFX.tape();
  if(d.gold)setTimeout(function(){note('<b>金の箱が届いた！</b> 中身は炭酸水素ナトリウム。<small>今日は割らない。装置を組んで手順のリハーサルをしたら、予言を封印する。</small>','good',6)},400);
- else if(d.hint)setTimeout(function(){note(d.hint,'',6.5)},350);
+ else if(d.hint&&!tut)setTimeout(function(){if(G&&!G.tut)note(d.hint,'',6.5)},350);
 }
 function fitStage(){if(!G)return;var W=G.W,H=G.H;
  var top=HB+8,bot,left=10,right;
@@ -2661,24 +2671,25 @@ function outAt(x,y){for(var i=0;i<G.out.length;i++){var o=G.out[i];if(o.x===x&&o
 function isSw(x,y){return (G.F&&G.F.x===x&&G.F.y===y)||(G.T&&G.T.x===x&&G.T.y===y)}
 function tilt(){var w=null;G.cr.forEach(function(c){if(c.k==='W')w=c});if(!w)return 'level';var t=cellAt(w.x,w.y);return t==='y'?'down':t==='x'?'up':'level'}
 function snap(){return {p:[G.p.x,G.p.y],c:G.cr.map(function(c){return [c.x,c.y]}),n:G.pushes}}
-function undo(){if(!G||G.ph!=='build'||!G.hist.length){SFX.bump();return}var s=G.hist.pop();G.p.x=s.p[0];G.p.y=s.p[1];G.cr.forEach(function(c,i){c.x=s.c[i][0];c.y=s.c[i][1]});G.pushes=s.n;SFX.tape();renderInv()}
+function undo(){if(!G||G.ph!=='build'||!G.hist.length){SFX.bump();return}var s=G.hist.pop();G.undos++;G.p.x=s.p[0];G.p.y=s.p[1];G.cr.forEach(function(c,i){c.x=s.c[i][0];c.y=s.c[i][1]});G.pushes=s.n;SFX.tape();renderInv()}
 var busy=0,moveQ=[];
-function tryMove(dx,dy){if(!G||scene!=='play')return false;if(G.ph!=='build'&&G.ph!=='result')return false;if(busy>now)return false;
+function tryMove(dx,dy){if(!G||scene!=='play'||PAUSED)return false;if(G.ph!=='build'&&G.ph!=='result')return false;if(busy>now)return false;
  G.p.dir=[dx,dy];var nx=G.p.x+dx,ny=G.p.y+dy;if(solid(nx,ny)){SFX.bump();return false}
  var cr=crateAt(nx,ny);
  if(cr){if(G.ph!=='build'){SFX.bump();return false}if(cr.lock){SFX.bump();return false}
   var bx=nx+dx,by=ny+dy;if(solid(bx,by)||crateAt(bx,by)||isSw(bx,by)){SFX.bump();cr.wob=1;return false}
+  if(G.tut&&!tutAllow(cr,bx,by)){SFX.bump();cr.wob=1;note(cr.k==='L'?'れんしゅう中：<b>指のとおり</b>に押そう。':'れんしゅうで運ぶのは<b>石灰水</b>の荷だけ。','',2.2);return false}
   var o=outAt(bx,by);
   if(o&&!accepts(o.k,cr.k)){/* 差し戻し */reject(cr,o,bx,by);return false}
   G.hist.push(snap());if(G.hist.length>200)G.hist.shift();
-  cr.x=bx;cr.y=by;G.pushes++;G.p.x=nx;G.p.y=ny;SFX.push();
+  cr.x=bx;cr.y=by;G.pushes++;G.p.x=nx;G.p.y=ny;SFX.push();var ds=toS(bx,by);dust(ds[0]+L.ts/2,ds[1]+L.ts/2,dx,dy);
   if(o)lockIn(cr,o);
   renderInv();return true}
  G.p.x=nx;G.p.y=ny;SFX.step();
  if(G.F&&nx===G.F.x&&ny===G.F.y)stepF();
  else if(G.T&&nx===G.T.x&&ny===G.T.y)stepT();
  return true}
-function reject(cr,o,bx,by){var s=toS(bx,by);G.miss++;combo=0;o.missed=true;cr.wob=1.4;SFX.boo();
+function reject(cr,o,bx,by){var s=toS(bx,by);buzz([12,40,12]);G.miss++;breakCombo();o.missed=true;cr.wob=1.4;SFX.boo();
  addStamp('差し戻し',s[0]+L.ts/2,s[1]+L.ts/2,Math.max(14,L.ts*.24),C.red,1.1);note('<b>差し戻し！</b> '+rejectMsg(o.k,cr.k),'bad',4.2);shake(4)}
 var combo=0;
 function lockIn(cr,o){cr.lock=true;o.fill=cr;o.grow=0;G.hist=[];var s=toS(o.x,o.y),cx=s[0]+L.ts/2,cy=s[1]+L.ts/2;
@@ -2686,19 +2697,19 @@ function lockIn(cr,o){cr.lock=true;o.fill=cr;o.grow=0;G.hist=[];var s=toS(o.x,o.
   b.fx={kind:cr.k==='L'?(hit?'milky':'none'):cr.k==='S'?(hit?'flare':'out'):(hit?'pop':'out'),t:0};
   if(cr.k==='L'&&hit)cr.st.milky=1;if(cr.k==='S'){if(hit)cr.st.flare=1;else cr.st.out=true}if(cr.k==='M'){if(hit)cr.st.popT=1;else cr.st.out=true}
   if(hit){SFX.stamp();setTimeout(function(){cr.k==='M'?SFX.pop():cr.k==='S'?SFX.flare():SFX.bell()},120);o.res=res;
-   addStamp('的中',cx,cy-L.ts*.1,Math.max(16,L.ts*.3),C.red,1.6);good(cx,cy,res[0]);confetti(cx,cy,26);
-   if(!o.missed&&!G.done['o'+o.d]){earnOnce('hit',15,cx,cy,'s'+G.i+'o'+o.d)}score(1);G.done['o'+o.d]=true;
+   addStamp('的中',cx,cy-L.ts*.1,Math.max(16,L.ts*.3),C.red,1.6);good(cx,cy,res[0]);confetti(cx,cy,34);shake(7);flash('#fff27a',.35);buzz(25);
+   if(!o.missed&&!G.done['o'+o.d]){earnOnce('hit',15,cx,cy,'s'+G.i+'o'+o.d)}score(1,cx,cy);G.done['o'+o.d]=true;
    note('<b>'+res[0]+'</b>　→ '+GASNM[b.g]+'<small>'+esc(ORIGIN[b.o])+'から出た気体は'+GASNM[b.g]+'。</small>','good',3.6);renderInv();checkBuilt()}
-  else{SFX.stamp();setTimeout(SFX.boo,200);G.miss++;combo=0;o.missed=true;addStamp('外れ',cx,cy,Math.max(16,L.ts*.3),'#5a4630',1.4);
+  else{SFX.stamp();setTimeout(SFX.boo,200);G.miss++;breakCombo();o.missed=true;addStamp('外れ',cx,cy,Math.max(16,L.ts*.3),'#5a4630',1.4);
    note('<b>'+res[0]+'</b>　→ '+res[1]+'<small>道具は返品。べつの道具で予言し直そう。</small>','bad',4);
    setTimeout(function(){returnCrate(cr,o)},1100)}}
- else{/* 装置の出口：配管がつながる */SFX.hit();addStamp('検品済',cx,cy,Math.max(14,L.ts*.24),C.red,1.3);confetti(cx,cy,16);good(cx,cy,PARTNM[o.part]+' OK');
-  if(!o.missed)earnOnce('first-try',10,cx,cy,'s'+G.i+'o'+o.d);score(1);G.done['o'+o.d]=true;renderInv();checkBuilt()}}
+ else{/* 装置の出口：配管がつながる */SFX.hit();addStamp('検品済',cx,cy,Math.max(14,L.ts*.24),C.red,1.3);confetti(cx,cy,24);good(cx,cy,PARTNM[o.part]+' OK');shake(5);flash('#fff27a',.25);buzz(20);
+  if(!o.missed)earnOnce('first-try',10,cx,cy,'s'+G.i+'o'+o.d);score(1,cx,cy);G.done['o'+o.d]=true;renderInv();checkBuilt()}}
 function returnCrate(cr,o){o.fill=null;cr.lock=false;cr.st={};var sx=cr.sx,sy=cr.sy;
  if(crateAt(sx,sy)||(G.p.x===sx&&G.p.y===sy)||outAt(sx,sy)){var best=null,bd=1e9;for(var y=1;y<G.H-1;y++)for(var x=1;x<G.W-1;x++){if(solid(x,y)||crateAt(x,y)||outAt(x,y)||isSw(x,y)||(G.p.x===x&&G.p.y===y))continue;var dd=Math.abs(x-sx)+Math.abs(y-sy);if(dd<bd){bd=dd;best=[x,y]}}if(best){sx=best[0];sy=best[1]}}
  cr.x=sx;cr.y=sy;cr.rx=sx;cr.ry=sy-.6;SFX.tape();o.bo.fx=null;G.hist=[];renderInv()}
 function checkBuilt(){var all=G.out.every(function(o){return o.fill&&(o.k!=='gasAny'||o.res)});if(!all)return;
- if(!G.ap){/* びんだけの面 → 出荷 */setTimeout(stageClear,900);return}
+ if(!G.ap){/* びんだけの面 → 出荷 */setTimeout(stageClear,G.tut?2400:900);return}
  if(G.ph==='build'){note(G.d.gold?'道具がそろった。<b>くさび</b>を確かめて、<b>ガス栓</b>をふもう（リハーサル）。':'道具がそろった！ <b>くさび</b>を確かめて、<b>ガス栓</b>をふんで加熱しよう。','',4)}}
 function built(){return G.out.every(function(o){return o.fill&&(o.k!=='gasAny'||o.res)})}
 /* ガス栓 */
@@ -2707,7 +2718,7 @@ function stepF(){if(!G.ap)return;var s=toS(G.F.x,G.F.y);
   G.fire=true;G.ph='heat';G.heat=0;G.hist=[];SFX.whoosh();busy=now+.3;G.tl=tilt();renderInv();
   addStamp(G.d.gold?'リハーサル':'点火',s[0]+L.ts/2,s[1],Math.max(13,L.ts*.22),C.red,1.2);return}
  if(G.ph==='result'){
-  if(G.d.tube&&G.tubeIn){/* 逆流 */G.ph='back';G.back=0;G.fire=false;G.acc++;combo=0;G.firstEnd=false;SFX.gurgle();
+  if(G.d.tube&&G.tubeIn){/* 逆流 */G.ph='back';G.back=0;G.fire=false;G.acc++;breakCombo();G.firstEnd=false;SFX.gurgle();
    if(G.d.gold){note('<b>ストップ！</b> 本番なら、ここで<b>逆流</b>。火を消すと試験管が冷えて、水そうの液が吸いこまれる。<small>先に<b>ガラス管を抜いて</b>から、火を消す。</small>','bad',5)}
    return}
   G.fire=false;G.ph='cool';SFX.whoosh();addStamp('消火',s[0]+L.ts/2,s[1],Math.max(13,L.ts*.22),'#5a4630',1.1);
@@ -2718,14 +2729,14 @@ function stepT(){if(!G.d.tube)return;if(G.ph!=='result'){if(G.ph==='build')note(
 function afterCool(){if(G.d.gold){G.ph='sealing';openSeal();return}openVerdict()}
 function heatTick(dt){G.heat+=dt;var p=POW[G.pow],tl=G.tl;
  if(G.d.gold){/* リハーサル：中身は見せない */
-  if(tl!=='down'&&G.heat>.8&&!G.fail){G.fail='red';G.acc++;G.rehOK=false;combo=0;SFX.boo();note('<b>赤ペン！</b> 試験管の口が下がっていない。<small>本番で口に液体ができたら、熱い底へ流れて<b>割れる</b>。くさびを置き直そう。</small>','bad',5);setTimeout(resetHeat,1600)}
+  if(tl!=='down'&&G.heat>.8&&!G.fail){G.fail='red';G.acc++;G.rehOK=false;breakCombo();SFX.boo();note('<b>赤ペン！</b> 試験管の口が下がっていない。<small>本番で口に液体ができたら、熱い底へ流れて<b>割れる</b>。くさびを置き直そう。</small>','bad',5);setTimeout(resetHeat,1600)}
   if(G.heat>2&&!G.fail){G.ph='result';G.fireP=true;note('リハーサルOK。中身は<b>封印中</b>で見えない。<small>次は後かたづけ：<b>ガラス管を抜く</b> → <b>火を消す</b>。</small>','good',5);
    if(G.firstIgn)earnOnce('first-try',10,L.ox+L.gw/2,L.oy+L.gh/2,'s'+G.i+'tilt');G.done.f=true;G.done.w=true;renderInv()}
   return}
  if(tl!=='down'&&!G.fail){var lim=p.liq?1.5:.9;if(G.heat>lim){
   if(p.liq){G.fail='crack';G.crack=1;SFX.crack();shake(10);G.fire=false;note('<b>パリン！</b> 口にできた水が、熱い底の方へ流れこんだ。<small>固体を熱するときは、<b>口を少し下げる</b>（くさびは底の側）。</small>','bad',5.5)}
   else{G.fail='red';SFX.boo();note('<b>赤ペン！</b> 試験管の口が下がっていない。<small>液体ができたら、熱い底へ流れて割れる。いつも<b>口を少し下げる</b>。</small>','bad',5)}
-  G.acc++;combo=0;G.firstIgn=false;setTimeout(resetHeat,1800)}}
+  G.acc++;breakCombo();G.firstIgn=false;setTimeout(resetHeat,1800)}}
  if(G.fail)return;
  if(p.liq)G.drops=clamp((G.heat-.8)/1.2,0,1);if(p.black)G.black=clamp((G.heat-.6)/1.6,0,1);
  if(G.heat>2.6){G.ph='result';revealResults()}}
@@ -2737,7 +2748,7 @@ function revealResults(){var p=POW[G.pow];G.done.w=true;G.done.f=true;
  var outs=G.out.filter(function(o){return o.k!=='gasAny'});
  outs.forEach(function(o,i){setTimeout(function(){var r=p.res[o.part];if(!r)return;o.res=r;var s=toS(o.x,o.y),cx=s[0]+L.ts/2,cy=s[1]+L.ts/2;
    var c=o.fill;if(o.part==='liq'&&p.liq)c.st.pink=true;
-   var pos=(o.part==='liq'&&p.liq)||(o.part==='sol'&&p.black);SFX.stamp();if(pos){SFX.bell();confetti(cx,cy,18)}
+   var pos=(o.part==='liq'&&p.liq)||(o.part==='sol'&&p.black);SFX.stamp();if(pos){SFX.bell();confetti(cx,cy,26);shake(5);flash('#fff27a',.22);buzz(18)}
    addStamp(pos?'変化あり':'変化なし',cx,cy,Math.max(13,L.ts*.22),pos?C.red:'#5a4630',1.3);good(cx,cy-L.ts*.3,r[0]);renderInv()},400+i*700)});
  setTimeout(function(){note(G.d.tube?'結果が出た。後かたづけ：<b>ガラス管を抜く</b> → <b>火を消す</b>（順番に注意）。':'結果が出た。<b>ガス栓</b>をふんで火を消そう。','',5);renderInv()},500+outs.length*700)}
 /* 判定スタンプ */
@@ -2748,21 +2759,22 @@ function openVerdict(){var p=POW[G.pow];scene='verdict';$('verdict').classList.r
  $('vDrop').innerHTML='ここへスタンプを押す';G.vTries=0;
  document.querySelectorAll('#vStamps .rstamp').forEach(function(e){e.classList.remove('used')})}
 function verdictDrop(v){var p=POW[G.pow];if(v===p.verdict){SFX.stamp();setTimeout(SFX.bell,120);$('vDrop').innerHTML='<span class="stampT" style="font-size:26px;transform:rotate(-8deg)">'+(v==='new'?'別の物質ができた':'元の物質のまま')+'</span>';
-  var r=$('vDrop').getBoundingClientRect();confetti(r.left+r.width/2,r.top+r.height/2,40);
-  if(!G.vTries){earnOnce(G.d.pow==='mystery'?'rule':'first-try',G.d.pow==='mystery'?30:10,r.left+r.width/2,r.top,'s'+G.i+'v');score(2)}
+  var r=$('vDrop').getBoundingClientRect();confetti(r.left+r.width/2,r.top+r.height/2,40);shake(6);buzz(25);
+  if(!G.vTries){earnOnce(G.d.pow==='mystery'?'rule':'first-try',G.d.pow==='mystery'?30:10,r.left+r.width/2,r.top,'s'+G.i+'v');score(2,r.left+r.width/2,r.top)}
   G.done.v=true;setTimeout(function(){$('verdict').classList.add('hidden');scene='play';stageClear()},1300)}
- else{G.vTries++;G.miss++;combo=0;SFX.boo();var el=$('vDrop');el.innerHTML='<span style="color:#D7263D">'+(v==='new'?'石灰水も塩化コバルト紙も変わらず、固体も元と同じ性質。<br>新しい物質ができた証拠がない。':'水ができた・黒い物質が残った。<br>元とちがう性質の物質ができている。')+'</span>'}}
+ else{G.vTries++;G.miss++;breakCombo();SFX.boo();var el=$('vDrop');el.innerHTML='<span style="color:#D7263D">'+(v==='new'?'石灰水も塩化コバルト紙も変わらず、固体も元と同じ性質。<br>新しい物質ができた証拠がない。':'水ができた・黒い物質が残った。<br>元とちがう性質の物質ができている。')+'</span>'}}
 /* 面クリア */
 function stageClear(){if(!G)return;G.ph='done';var d=G.d,i=G.i;var el=(performance.now()-G.t0)/1000;SV.time+=el;
  var st=1;var s2=G.miss===0,s3;
  if(d.timed)s3=el<=90;else if(!G.ap)s3=G.pushes<=d.par;else s3=G.acc===0;
  st+=(s2?1:0)+(s3?1:0);SV.stars[i]=Math.max(SV.stars[i]||0,st);var newS=[];(d.samp||[]).forEach(function(k){if(!SV.samples[k]){SV.samples[k]=1;newS.push(k)}});
  if(d.pow==='mystery'){var pk=G.pow==='salt'?'salt':G.pow;if(!SV.samples[pk]){SV.samples[pk]=1;newS.push(pk)}}
- SV.open=Math.max(SV.open,i+1);score(3);save();SFX.fan();confetti(VW/2,VH*.3,60);
+ SV.open=Math.max(SV.open,i+1);score(3);save();confetti(VW/2,VH*.3,60);
+ if(GD&&!G.tut&&!d.gold)GD.celebrate(d.timed?'のりきった！':'出荷完了！');else SFX.fan();
  if(d.gold)return;
  scene='sclr';$('sclr').classList.remove('hidden');
  $('scT').textContent=d.timed?'繁忙期、のりきった！':'出荷完了！';
- $('scStars').innerHTML='★'.repeat(st)+'<s>'+'★'.repeat(3-st)+'</s>';
+ dropStars(st);
  $('scWhy').innerHTML='★出荷　'+(s2?'★':'☆')+'差し戻し・外れなし　'+(s3?'★':'☆')+(d.timed?'90秒以内':!G.ap?'押した回数 '+d.par+'回以内（今回 '+G.pushes+'回）':'装置の事故なし');
  var lr=d.learn||(POW[G.pow]&&POW[G.pow].learn)||'';if(d.pow==='mystery')lr='なぞの白い粉の正体は<b>'+POW[G.pow].nm+'</b>。'+POW[G.pow].learn;
  $('scLearn').innerHTML=lr;$('scLearn').classList.toggle('hidden',!lr);
@@ -2772,8 +2784,23 @@ function stageFail(){/* 時間切れ */note('<b>時間切れ！</b> 棚をやり
 
 /* ================= かけら・得点 ================= */
 function earnOnce(why,n,x,y,key){if(SV.earned[key])return;SV.earned[key]=1;save();if(window.Zukan&&Zukan.earn){try{Zukan.earn(n,why,{x:x,y:y})}catch(e){}}updHud()}
-function score(kind){combo++;SV.best=Math.max(SV.best,combo);var mult=1+Math.min(combo-1,6)*.5;var v=Math.round(100*mult);SV.score+=v;
- if(combo>=2&&scene==='play'){var s=toS(G.p.x,G.p.y);floats.push({x:s[0]+L.ts/2,y:s[1]-8,t:0,txt:combo+'れんぞく ×'+mult,col:C.red,sz:Math.max(15,L.ts*.24)})}updHud()}
+function score(kind,x,y){combo++;SV.best=Math.max(SV.best,combo);var mult=1+Math.min(combo-1,6)*.5;var v=Math.round(100*mult);SV.score+=v;
+ if(x==null){if(scene==='play'&&G){var s=toS(G.p.x,G.p.y);x=s[0]+L.ts/2;y=s[1]}else{x=VW/2;y=VH*.35}}
+ var tier=0;for(var i=0;i<TIERS.length;i++)if(combo>=TIERS[i])tier=i+1;
+ SFX.up(combo);
+ popTxt('+'+v,x,y-10,TCOL[tier],1+tier*.15);
+ if(combo>=2)popTxt(combo+'れんぞく ×'+mult,x,y-10-(L.ts?Math.max(26,L.ts*.4):34),TCOL[tier],.8+tier*.18);
+ if(TIERS.indexOf(combo)>=0&&kind!==3){flash(TCOL[tier],.22+tier*.05);shake(4+tier*2);buzz([15,30,15]);if(GD)GD.cheer(combo+'れんぞく！',{x:x,y:y-60,size:1+tier*.12,sound:false,color:TCOL[tier]});AU.tone(1568,.3,'triangle',.05,.1);AU.tone(2093,.3,'triangle',.04,.2)}
+ updHud()}
+var TIERS=[3,5,7,10],TCOL=['#b3141f','#D7263D','#2b5fb3','#c77d00','#7a2bb3'];
+function breakCombo(){var n=combo;combo=0;if(n<2)return;var nx=null;for(var i=0;i<TIERS.length;i++)if(TIERS[i]>n){nx=TIERS[i];break}
+ popTxt(nx?'あと'+(nx-n)+'回で '+nx+'れんぞく だった！':n+'れんぞく で ストップ！',VW/2,VH*.36,'#5a4630',.9)}
+function popTxt(txt,x,y,col,k){if(scene==='play'){floats.push({x:x,y:y,t:0,txt:txt,col:col||C.red,sz:Math.max(16,(L.ts||60)*.26)*(k||1),pop:true});return}
+ if(GD)GD.cheer(txt,{x:x,y:y,size:.7*(k||1),sound:false,color:col,sparks:6})}
+function buzz(p){try{if(navigator.vibrate)navigator.vibrate(p)}catch(e){}}
+function dropStars(st){var el=$('scStars'),card=document.querySelector('#sclr .card');el.innerHTML='';
+ for(var i=0;i<3;i++){var sp=document.createElement('span');sp.className='dn'+(i<st?'':' off');sp.textContent='★';el.appendChild(sp)}
+ [].forEach.call(el.children,function(sp,i){setTimeout(function(){sp.classList.add('on');if(i<st){SFX.stamp();AU.tone(784*Math.pow(1.26,i),.28,'triangle',.07,.02);buzz(18);card.classList.remove('bump');void card.offsetWidth;card.classList.add('bump')}else SFX.bump()},500+i*400)})}
 
 /* ================= 演出 ================= */
 var parts=[],stamps=[],floats=[],SHK=0,now=0;
@@ -2781,6 +2808,8 @@ function confetti(x,y,n){if(RM)n=Math.min(n,8);var cols=[C.red,C.blue,'#f1dc8f',
 function addStamp(txt,x,y,sz,col,life){stamps.push({txt:txt,x:x,y:y,sz:sz,col:col,t:0,life:life||1.2,a:(Math.random()-.5)*.3})}
 function good(x,y,txt){floats.push({x:x,y:y,t:0,txt:txt,col:'#b3141f',sz:Math.max(14,L.ts*.2)})}
 function shake(n){if(!RM)SHK=Math.max(SHK,n)}
+var FL={a:0,c:'#fff'};function flash(col,a){if(RM)a=Math.min(a,.1);FL.c=col;FL.a=Math.max(FL.a,a)}
+function dust(x,y,dx,dy){var n=RM?2:7;for(var i=0;i<n;i++){var a=Math.random()*6.28,v=40+Math.random()*90;parts.push({x:x-dx*L.ts*.4,y:y-dy*L.ts*.4,vx:Math.cos(a)*v-dx*60,vy:Math.sin(a)*v-dy*60-60,r:0,vr:0,w:3+Math.random()*4,h:3+Math.random()*4,c:i%2?'#c89a64':'#e3d2b0',t:0,life:.45+Math.random()*.2})}}
 var noteT=0;function note(h,cls,sec){var e=$('note');e.innerHTML=h;e.className='on '+(cls||'');noteT=sec||3;var top=LAND?HB+14:HB+4;e.style.top=top+'px'}
 
 /* ================= 描画 ================= */
@@ -2846,7 +2875,8 @@ function draw(){var c=ctx;c.setTransform(DPR,0,0,DPR,0,0);if(!bgC)makeBg();c.dra
  drawFx(c)}
 function drawFx(c){parts.forEach(function(p){c.save();c.translate(p.x,p.y);c.rotate(p.r);c.globalAlpha=Math.max(0,1-p.t/p.life);c.fillStyle=p.c;c.fillRect(-p.w/2,-p.h/2,p.w,p.h);c.restore()});
  stamps.forEach(function(s){var k=s.t<.12?1.8-s.t/.12*.8:1;var al=s.t>s.life-.3?Math.max(0,(s.life-s.t)/.3):1;c.save();c.translate(s.x,s.y);c.scale(k,k);stamp(c,s.txt,0,0,s.sz,s.a,s.col,.92*al);c.restore()});
- floats.forEach(function(f){c.save();c.globalAlpha=Math.max(0,1-f.t/1.4);c.font='700 '+f.sz+'px '+FD;c.textAlign='center';c.textBaseline='middle';c.lineWidth=4;c.strokeStyle='#fbf8f0';var y=f.y-f.t*40;c.strokeText(f.txt,f.x,y);c.fillStyle=f.col;c.fillText(f.txt,f.x,y);c.restore()})}
+ floats.forEach(function(f){c.save();c.globalAlpha=Math.max(0,1-f.t/1.4);var k=1,y=f.y-f.t*40;if(f.pop){k=f.t<.16?f.t/.16*1.55:f.t<.3?1.55-(f.t-.16)/.14*.55:1;y=f.y-Math.max(0,f.t-.3)*50}c.translate(f.x,y);c.scale(k,k);c.font='700 '+f.sz+'px '+FD;c.textAlign='center';c.textBaseline='middle';c.lineWidth=Math.max(4,f.sz*.2);c.lineJoin='round';c.strokeStyle='#fbf8f0';c.strokeText(f.txt,0,0);c.fillStyle=f.col;c.fillText(f.txt,0,0);c.restore()});
+ if(FL.a>0){c.save();c.globalAlpha=FL.a;c.fillStyle=FL.c;c.fillRect(0,0,VW,VH);c.restore()}}
 /* タイトル（1枚絵のコラージュ） */
 function drawTitle(c){if(!titleC)makeTitle();c.drawImage(titleC,0,0,VW,VH);
  var t=now;var cx=L.tcx,cy=L.tcy,s=L.tsz;c.save();c.translate(cx+s*.18,cy-s*.05);c.rotate(-.18+Math.sin(t*1.3)*.015);var k=1+Math.sin(t*2.2)*.02;c.scale(k,k);
@@ -2898,7 +2928,7 @@ function renderInv(){if(!G)return;var d=G.d,inv=$('inv');
   '<div class="it">品名：<em>'+esc(d.item)+'</em></div>'+
   '<ul>'+rows.map(function(r,i){return '<li class="'+(r.ok?'ok':i===firstNo?'now':'')+'"><span class="bx"></span><span>'+esc(r.label)+'</span></li>'}).join('')+'</ul>'+
   (LAND?'<div class="legend">'+Object.keys(kits).map(function(k){return '<span>・'+esc(KIT[k].nm)+'</span>'}).join('')+'</div>':'')+
-  (LAND&&d.hint&&G.i<4?'<div class="hint">'+d.hint+'</div>':'')}
+  (LAND&&d.hint&&G.i<4&&!G.tut?'<div class="hint">'+d.hint+'</div>':'')}
 
 /* ================= 地図 ================= */
 function renderMap(){var h='';ST.forEach(function(d,i){var lock=i>SV.open,st=SV.stars[i]||0;
@@ -2938,8 +2968,8 @@ function renderSeal(){var w='';SLOTS.forEach(function(s,i){var sel=SL.sel[s.key]
 function sealDrop(e,tgt){var s=SLOTS[SL.i];if(!s)return false;var sel=SL.sel[s.key]=SL.sel[s.key]||{};var r=e.getBoundingClientRect();
  if(!sel.pred){sel.pred=e.dataset.v;SFX.stamp();renderSeal();return true}
  var re=s.reasons[+e.dataset.v];
- if(re.s.indexOf(sel.pred)>=0){sel.reason=re.t;SFX.hit();confetti(r.left+r.width/2,r.top,24);if(!SL.tries[s.key])earnOnce('predict',10,r.left+r.width/2,r.top,'seal'+s.key);score(4);SL.i++;setTimeout(renderSeal,350);return true}
- SL.tries[s.key]=1;SFX.boo();e.classList.remove('ng');void e.offsetWidth;e.classList.add('ng');combo=0;
+ if(re.s.indexOf(sel.pred)>=0){sel.reason=re.t;SFX.hit();confetti(r.left+r.width/2,r.top,24);buzz(20);if(!SL.tries[s.key])earnOnce('predict',10,r.left+r.width/2,r.top,'seal'+s.key);score(4,r.left+r.width/2,r.top);SL.i++;setTimeout(renderSeal,350);return true}
+ SL.tries[s.key]=1;SFX.boo();e.classList.remove('ng');void e.offsetWidth;e.classList.add('ng');breakCombo();
  note(re.s.length?'その根拠は、<b>別の予言</b>につながるもの。予言「'+esc(s.preds[sel.pred])+'」とつながるカードは？':'「なんとなく」は<b>根拠にならない</b>。すでに知っている事実とつなげよう。','bad',3.6);return false}
 function doSeal(){var rec={v:1,koma:KOMA,game:GID,at:Date.now(),name:SV.name||'',slots:{}};
  SLOTS.forEach(function(s){var x=SL.sel[s.key];rec.slots[s.key]={id:x.pred,t:s.preds[x.pred],reason:x.reason,method:s.method}});
@@ -2991,19 +3021,19 @@ function finishTest(){var qs=TQ,review=Quiz.review(qs,TA),marks=review.map(funct
 var scene='title';
 var INHUB=!!window.COLLECTION_NAME||(function(){try{return window.parent!==window}catch(e){return true}})();
 function hideAll(){['title','map','verdict','sclr','seal','clear','test','bk'].forEach(function(id){$(id).classList.add('hidden')});['inv','pad','tools'].forEach(function(id){$(id).classList.add('hidden')})}
-function hudShow(on){$('hud').classList.toggle('hidden',!on);updHud()}
+function hudShow(on){$('hud').classList.toggle('hidden',!on);if(HELP){if(on)HELP.show();else HELP.hide()}updHud()}
 function updHud(){var p=Math.min(1,(Math.min(SV.open,ST.length-1)+(SV.sealed?1:0)+1)/(ST.length+1));$('hBar').style.width=(p*100)+'%';$('hSc').textContent=SV.score.toLocaleString();
  var z=window.Zukan&&Zukan.state?Zukan.state():null;$('hKkW').style.display=z?'':'none';if(z)$('hKk').textContent=z.kakera}
 function toTitle(){hideAll();scene='title';G=null;$('title').classList.remove('hidden');hudShow(false);var sv=load();$('bCont').classList.toggle('hidden',!sv);$('bStart').textContent=sv?'はじめから':'はじめる';armed=false;
- $('bBook1').classList.toggle('hidden',!window.Zukan);$('bHub').classList.toggle('hidden',!INHUB);if(SV.name)$('nmIn').value=SV.name}
+ $('bBook1').classList.toggle('hidden',!window.Zukan);$('bHub').classList.toggle('hidden',!INHUB);if(SV.name)$('nmIn').value=SV.name;if(GD){GD.tutorialEnd();GD.skip()}}
 var armed=false;
 function newGame(cont){AU.init();var sv=load();
  if(!cont&&sv&&!armed){armed=true;$('bStart').textContent='もう一度おすと最初から';return}
  var nm=$('nmIn').value.trim()||window.PLAYER_NAME||'';
  if(cont&&sv){SV=sv;if(nm)SV.name=nm}else{SV=fresh();SV.name=nm;save()}
- if(cont&&sv)toMap();else startStage(0)}
-function toMap(){hideAll();scene='map';G=null;$('map').classList.remove('hidden');hudShow(true);$('hNm').textContent=LAND?'倉庫の地図':'地図';renderMap();floorC=null}
-function startStage(i){hideAll();scene='play';loadStage(i);hudShow(true);['inv','pad','tools'].forEach(function(id){$(id).classList.remove('hidden')})}
+ if(cont&&sv)toMap();else startWithGuide()}
+function toMap(){hideAll();scene='map';G=null;if(GD){GD.tutorialEnd();GD.skip()}$('map').classList.remove('hidden');hudShow(true);$('hNm').textContent=LAND?'倉庫の地図':'地図';renderMap();floorC=null}
+function startStage(i,tut){hideAll();scene='play';loadStage(i,tut);hudShow(true);['inv','pad','tools'].forEach(function(id){$(id).classList.remove('hidden')})}
 /* もどる */
 $('bBack').onclick=function(){AU.init();if(scene==='title')return;
  var p='進み具合は保存されます。',h='もどりますか？';if(scene==='play'||scene==='verdict'||scene==='seal'){p='進み具合は保存されます（この棚は次にはじめから）。倉庫の地図にもどります。'}else if(scene==='map'){p='進み具合は保存されます。タイトルにもどります。'}else if(scene==='test'){p='確認テストは、次はさいしょから。本編の進み具合は保存されています。'}
@@ -3022,7 +3052,7 @@ addEventListener('keydown',function(e){if(scene!=='play')return;var k={ArrowUp:'
  b.addEventListener('pointerdown',function(e){e.preventDefault();AU.init();b.classList.add('on');doDir(b.dataset.d);to=setTimeout(function(){iv=setInterval(function(){doDir(b.dataset.d)},150)},300)});
  ['pointerup','pointerleave','pointercancel'].forEach(function(ev){b.addEventListener(ev,stop)})});
 $('bUndo').onclick=function(){AU.init();undo()};
-function resetStage(){if(!G||scene!=='play'||G.ph==='heat')return;var i=G.i;loadStage(i);note('棚をはじめから並べ直した。','',2)}
+function resetStage(){if(!G||scene!=='play'||G.ph==='heat')return;var i=G.i;loadStage(i,G.tut);note('棚をはじめから並べ直した。','',2)}
 $('bReset').onclick=function(){AU.init();resetStage()};
 var PT=null;
 cv.addEventListener('pointerdown',function(e){AU.init();if(scene!=='play')return;PT={x:e.clientX,y:e.clientY,t:now}});
@@ -3050,7 +3080,8 @@ $('bSnd').onclick=function(){AU.init();AU.mute=!AU.mute;$('bSnd').classList.togg
 /* ================= ループ ================= */
 var last=performance.now(),hudT=0;
 function frame(t){var dt=Math.max(0,Math.min(.05,(t-last)/1000));last=t;now+=dt;
- if(G&&scene==='play'){
+ FL.a=Math.max(0,FL.a-dt*2.4);
+ if(G&&scene==='play'&&!PAUSED){
   var sp=RM?40:15;G.p.rx+=(G.p.x-G.p.rx)*Math.min(1,dt*sp);G.p.ry+=(G.p.y-G.p.ry)*Math.min(1,dt*sp);
   G.cr.forEach(function(c){c.rx+=(c.x-c.rx)*Math.min(1,dt*sp);c.ry+=(c.y-c.ry)*Math.min(1,dt*sp);if(c.wob>0)c.wob=Math.max(0,c.wob-dt*3)});
   if(moveQ.length&&Math.abs(G.p.rx-G.p.x)+Math.abs(G.p.ry-G.p.y)<.3&&busy<=now){var m=moveQ.shift();var ok=tryMove(m[0]-G.p.x,m[1]-G.p.y);if(!ok)moveQ=[]}
@@ -3067,6 +3098,59 @@ function frame(t){var dt=Math.max(0,Math.min(.05,(t-last)/1000));last=t;now+=dt;
  hudT-=dt;if(hudT<=0){hudT=.5;if(scene!=='title')updHud()}
  draw();requestAnimationFrame(frame)}
 
+/* ================= 遊び方案内（Guide・制作ルール13／仕上げ 2026-09-27） ================= */
+var GD=window.Guide||null,HELP=null,PAUSED=false,PRACTICE=null;
+/* 盤の向き → 画面の向き（スマホでは盤を90°まわして描くので、言葉もそれに合わせる） */
+function gdir(gx,gy){var d=L.T?[gy,gx]:[gx,gy];return d[0]>0?'右':d[0]<0?'左':d[1]>0?'下':'上'}
+function cellPt(x,y,r){var s=toS(x,y);return {x:s[0]+L.ts/2,y:s[1]+L.ts/2,r:L.ts*(r||.5)}}
+function tutCrate(){return G?G.cr.filter(function(c){return c.k==='L'})[0]:null}
+var TUTP=[[6,2],[7,2],[8,2],[8,3],[8,4],[8,5]];/* れんしゅう（1列目）で石灰水の荷が通る道 */
+function tutIdx(){var c=tutCrate();if(!c)return -1;for(var i=0;i<TUTP.length;i++)if(TUTP[i][0]===c.x&&TUTP[i][1]===c.y)return i;return -1}
+function tutAllow(cr,bx,by){if(cr.k!=='L')return false;var i=tutIdx();return i>=0&&i<TUTP.length-1&&TUTP[i+1][0]===bx&&TUTP[i+1][1]===by}
+function tutSteps(){var cr=function(){var c=tutCrate();return c?cellPt(c.rx,c.ry,.46):null};
+ return [
+  {gesture:'swipe',label:'あるく',target:function(){return cellPt(G.p.rx,G.p.ry,.46)},to:function(){return cellPt(G.p.x+1,G.p.y,.46)},
+   until:function(){return G.p.x!==2||G.p.y!==2},text:'**'+gdir(1,0)+'へスワイプ** すると、配達員が1マス歩く（十字キーでもOK）'},
+  {gesture:'tap',label:'タップで移動',target:function(){return cellPt(5,2,.46)},until:function(){return (G.p.x===5&&G.p.y===2)||tutIdx()>0},
+   text:'行きたい床を **タップ** すると、そこまで歩いていく'},
+  {gesture:'swipe',label:'押す',target:cr,to:function(){var i=Math.max(0,tutIdx());return cellPt(TUTP[i+1][0],TUTP[i+1][1],.46)},until:function(){return tutIdx()>=1},
+   text:'荷に向かって歩くと **押せる**。'+gdir(1,0)+'へ押そう',praise:'ずずっ！'},
+  {gesture:'tap',label:'やり直し',target:'#bUndo',until:function(){return G.undos>0},text:'押しまちがえても大丈夫。**1手もどす** で戻せる'},
+  {gesture:'swipe',label:'押す',target:cr,to:function(){return cellPt(8,2,.46)},until:function(){return tutIdx()>=2},
+   text:'続けて **'+gdir(1,0)+'へ押そう**（指の先まで）'},
+  {gesture:'tap',label:'回りこむ',target:function(){return cellPt(8,1,.46)},until:function(){return (G.p.x===8&&G.p.y===1)||tutIdx()>=3},
+   text:'荷の **'+gdir(0,-1)+'がわ** へ回りこむ（床をタップ）'},
+  {gesture:'swipe',label:'出口へ',target:cr,to:function(){return cellPt(8,5,.5)},until:function(){return !!G.done.o1},
+   text:'**'+gdir(0,1)+'へ押して**、赤い点線の **出口** へ入れよう！',praise:'的中！'}
+ ]}
+if(GD){
+ GD.setup({
+  theme:{bg:'#fbf8f0',fg:'#2b2118',accent:'#D7263D',accentText:'#fff',font:FD,bodyFont:FG,radius:0,texture:'lines',line:'#8C5A2B',
+   dim:'rgba(60,40,20,.42)',shadow:'4px 6px 0 rgba(70,45,15,.35)',outline:'#fbf8f0',hand:'#fff27a',handLine:'#3a2a18'},
+  sfx:function(k){AU.init();({step:SFX.stamp,done:SFX.hit,clear:SFX.fan,open:SFX.tape,close:SFX.push,cheer:SFX.bell,nudge:SFX.bump}[k]||SFX.tick)()},
+  muted:function(){return AU.mute}
+ });
+ PRACTICE={label:'れんしゅう中　─ 1列目',clearText:'れんしゅうクリア！',
+  start:function(){startStage(0,true);PRACTICE.steps=tutSteps()},
+  steps:[],
+  onExit:function(res){if(G&&G.i===0){G.tut=false;if(!res.cleared&&scene==='play'&&G.ph==='build')note(ST[0].hint,'',6)}}};
+ HELP=GD.help({title:'封印ボックス',
+  rules:['荷は **押す** だけ（引けない）。動かなくなったら **1手もどす**・**棚をやり直す**',
+   '出口には合う道具を：気体→**石灰水** など／水→**塩化コバルト紙**／残った固体→**フェノールフタレイン液**',
+   'びんの気体は、道具を入れる＝**予言**。外れた道具は返品',
+   '加熱装置：**くさびを底の側** に置いて口を下げる → **ガス栓** で加熱 → **管を抜いてから** 火を消す',
+   '最後の金の箱は、中身を見ずに **予言を封印**（開けるのは化学2）'],
+  onOpen:function(){PAUSED=true},onClose:function(){PAUSED=false},
+  replay:'tutorial',mount:$('hud'),size:44,attention:true,show:false});
+}
+function startWithGuide(){if(!GD){startStage(0);return}
+ GD.intro({title:'第1回　封印ボックス',
+  learn:'加熱で出てくる物を **調べる道具** の使い分けと、**別の物質ができるか** の予言',
+  how:'**スワイプ** で歩いて、荷を **押して** 赤い点線の出口へ',gesture:'swipe'}).then(function(){GD.tutorial(PRACTICE)})}
+if(GD)GD.tutorialButton('#bHow',function(){AU.init();var sv=load();if(sv)SV=sv;else{SV=fresh();SV.name=$('nmIn').value.trim()||window.PLAYER_NAME||''}
+ GD.tutorial(PRACTICE)});
+else $('bHow').classList.add('hidden');
+
 /* ================= 起動 ================= */
 addEventListener('resize',function(){layout()});
 layout();
@@ -3078,7 +3162,7 @@ if(document.fonts&&document.fonts.load){document.fonts.load('700 20px "Kaisei De
 if(TEST){SV.name=window.PLAYER_NAME||SV.name;startTest()}else toTitle();
 requestAnimationFrame(frame);
 /* 自動テスト用の読み取り口（ゲームの外からは使わない） */
-window.__FB={openSeal:function(){openSeal()},get G(){return G},get scene(){return scene},tryMove:tryMove,startStage:startStage,ST:ST,SV:function(){return SV},walkTo:walkTo,verdictDrop:verdictDrop,sealDrop:sealDrop,doSeal:doSeal,SLOTS:SLOTS,get SL(){return SL}};
+window.__FB={get PAUSED(){return PAUSED},tutIdx:tutIdx,openSeal:function(){openSeal()},get G(){return G},get scene(){return scene},tryMove:tryMove,startStage:startStage,ST:ST,SV:function(){return SV},walkTo:walkTo,verdictDrop:verdictDrop,sealDrop:sealDrop,doSeal:doSeal,SLOTS:SLOTS,get SL(){return SL}};
 })();
 </script>
 </body>

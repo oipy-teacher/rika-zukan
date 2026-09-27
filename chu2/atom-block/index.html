@@ -173,7 +173,14 @@ body.land #tFig svg{width:100%;max-height:56vh}
 #tFb .mk{font-family:"Reggae One",sans-serif;font-size:1.7em;margin-right:6px}
 #tFb .ex{display:block;font-weight:500;font-size:.95em;color:#222;margin-top:4px}
 #tNext{margin-top:12px}
-@media (prefers-reduced-motion:reduce){#banner,#forge,#sign{transition:none}#forgeBtn.ready{animation:none}}
+/* 仕上げ 2026-09-27：？ボタン・★のドン・ドン・ドン */
+#hud .gd-hbtn{pointer-events:auto;flex:none}
+#banner .st{font-family:"Reggae One",sans-serif;font-size:clamp(34px,3vw + 16px,50px);line-height:1;margin:2px 0 8px}
+#banner .st i{font-style:normal;display:inline-block;opacity:0;transform:scale(3) rotate(-20deg);color:#111;text-shadow:3px 3px 0 #fff,5px 5px 0 #111}
+#banner .st i.off{color:#fff;-webkit-text-stroke:2px #111;text-shadow:none}
+#banner .st i.on{opacity:1;transform:none;transition:transform .28s cubic-bezier(.2,1.9,.4,1),opacity .08s}
+#banner .sw{font-family:"Yusei Magic",sans-serif;font-size:13px;margin-bottom:6px}
+@media (prefers-reduced-motion:reduce){#banner,#forge,#sign{transition:none}#forgeBtn.ready{animation:none}#banner .st i{transition:none}}
 </style>
 </head>
 <body>
@@ -189,7 +196,7 @@ body.land #tFig svg{width:100%;max-height:56vh}
       <button id="btnStart" class="plank">⛏ はじめる</button>
       <button id="btnCont" class="plank hidden">つづきから</button>
     </div>
-    <div class="row"><button id="btnBook" class="plank sm iron">📖 図鑑</button></div>
+    <div class="row"><button id="btnHow" class="plank sm">あそびかた</button><button id="btnBook" class="plank sm iron">📖 図鑑</button></div>
     <div class="hint">正しい道具で化合物を割り、こぼれた原子を組み替えて、地下120mまで潜れ！</div>
   </div>
 </div>
@@ -2364,7 +2371,7 @@ var SFX={
 var G=null, state='title', NAME=window.PLAYER_NAME||'';
 function fresh(){return {v:1,seed:(Math.random()*1e9)|0,top:0,gen:0,blocks:[],table:[],spills:{},sid:1,bid:1,coins:0,combo:0,best:0,
   up:{pick:0,heat:0,elec:0,table:0,drill:0},st:{ok:0,ng:0,prod:0,ship:0,time:0,react:0},seenRx:{},seenSp:{},tut:0,rule:0,done:0,fx:0,name:''}}
-function saveGame(){if(!G||TEST)return;try{var o=JSON.parse(JSON.stringify(G,function(k,v){return k.charAt(0)==='_'?undefined:v}));localStorage.setItem(SAVE,JSON.stringify(o))}catch(e){}}
+function saveGame(){if(!G||TEST||SANDBOX)return;try{var o=JSON.parse(JSON.stringify(G,function(k,v){return k.charAt(0)==='_'?undefined:v}));localStorage.setItem(SAVE,JSON.stringify(o))}catch(e){}}
 function loadGame(){try{var o=JSON.parse(localStorage.getItem(SAVE));if(o&&o.v===1&&Array.isArray(o.blocks))return o}catch(e){}return null}
 function tableN(){return UP.table.v[G.up.table]}
 function freeSlots(){var r=[];for(var i=0;i<tableN();i++)if(!G.table[i])r.push(i);return r}
@@ -2910,7 +2917,7 @@ function hit(x,y){
   return {};
 }
 function hoverBlock(){return PTR.mode==='hold'?PTR.blk:null}
-function onDown(e){if(state!=='play'||FORGE)return;AU.init();if(AU.c&&AU.c.state==='suspended')AU.c.resume();
+function onDown(e){if(state!=='play'||FORGE||PAUSED)return;AU.init();if(AU.c&&AU.c.state==='suspended')AU.c.resume();
   var x=e.clientX,y=e.clientY,h=hit(x,y);PTR={mode:null,id:e.pointerId,x:x,y:y,sx:x,sy:y,t0:now};
   if(h.tool){if(toolLocked(h.tool)){msg('電源装置は 深さ10m で手に入る','',2);return}TOOL=h.tool;SFX.click();if(G.tut===0&&TOOL==='heat')setTut(1);if(G.tut===5&&TOOL==='pick')setTut(6);return}
   if(h.cart){shipAll();return}
@@ -2962,11 +2969,20 @@ function applyTool(b,tool){var rc=blockRect(b),cx=rc.x+rc.w/2,cy=rc.y+rc.h/2;
   if(T.res)return wrong(b,'炭酸ナトリウムは、これ以上加熱しても分解しない。⛏で回収しよう');
   wrong(b,T.nm+'は1種類の原子だけでできている（'+SP[Object.keys(T.give)[0]].nm+'）。これ以上分解できない。⛏で掘り出そう')}
 function needOk(b,R){if(!R.need)return true;for(var k in R.need)if((b.ld[k]||0)<R.need[k])return false;return true}
-function wrong(b,m,fx){G.st.ng++;G.combo=0;b.wr=(b.wr||0)+1;b._sh=7;SFX.wrong();msg(m,'bad',3.6);shake(3);var rc=blockRect(b),cx=rc.x+rc.w/2,cy=rc.y+rc.h/2;onoAt(rc,fx==='steam'?'シュー…':fx==='fizz'?'パチパチ':'ボロッ',.28);
+function wrong(b,m,fx){G.st.ng++;breakCombo();buzz([12,40,12]);b.wr=(b.wr||0)+1;b._sh=7;SFX.wrong();msg(m,'bad',3.6);shake(3);var rc=blockRect(b),cx=rc.x+rc.w/2,cy=rc.y+rc.h/2;onoAt(rc,fx==='steam'?'シュー…':fx==='fizz'?'パチパチ':'ボロッ',.28);
   if(fx==='steam'){SFX.steam();for(var i=0;i<(RM?4:14);i++)PT.push({x:cx+(Math.random()-.5)*rc.w*.6,y:rc.y+rc.h*.3,vx:(Math.random()-.5)*20,vy:-30-Math.random()*40,t:0,life:1.1,col:'rgba(235,240,245,.45)',sz:5,k:'steam'})}
   else if(fx==='fizz'){SFX.fizz();burst(cx,cy,'#9fd8ff',8,90)}else burst(cx,cy,'#8a7a66',8,90)
   if(b.boss){b.boss.oil=Math.max(0,b.boss.oil-8);floatT(cx,cy,'油 −8s','#ff8a6a',16)}}
-function ok(){G.st.ok++;G.combo++;G.best=Math.max(G.best,G.combo);comboT=now;if(G.combo>0&&G.combo%10===0){floatT(L.mp.x+L.mp.w/2,L.mp.y+L.mp.h-50,G.combo+'連！ 組み替え名人','#ffdf6a',22);SFX.fan()}}
+var TIERS=[3,5,7,10];
+function breakCombo(){var n=G.combo;G.combo=0;if(n<2)return;var nx=null;for(var i=0;i<TIERS.length;i++)if(TIERS[i]>n){nx=TIERS[i];break}
+  floatT(L.mp.x+L.mp.w/2,L.mp.y+L.mp.h*.3,nx?'あと'+(nx-n)+'で '+nx+'連だった！':n+'連で ストップ',INK,18)}
+function buzz(p){try{if(navigator.vibrate)navigator.vibrate(p)}catch(e){}}
+function tierFx(){var c=G.combo,tier=0;for(var i=0;i<TIERS.length;i++)if(c>=TIERS[i])tier=i+1;LAYER.mx=Math.max(LAYER.mx,c);buzz(15);
+  if(TIERS.indexOf(c)<0)return;var cx=L.mp.x+L.mp.w/2,cy=L.mp.y+L.mp.h*.42;shake(4+tier*2);buzz([15,30,15]);speed(cx,cy,L.mc*.8,L.mp,.5);
+  ono(cx,cy,['連鎖!!','ゴゴゴ!!','ドドド!!','覚醒!!'][tier-1],L.mc*(.36+tier*.05),{life:1.1});
+  if(GD)GD.cheer(c+'連!!',{x:cx,y:cy-L.mc*.5,size:1+tier*.15,sound:false});AU.osc('triangle',1568,0,.3,.06,.12);AU.osc('triangle',2093,0,.3,.05,.22)}
+var LAYER={ng0:0,mx:0};
+function ok(){G.st.ok++;G.combo++;G.best=Math.max(G.best,G.combo);comboT=now;tierFx();if(G.combo>0&&G.combo%10===0){floatT(L.mp.x+L.mp.w/2,L.mp.y+L.mp.h-50,G.combo+'連！ 組み替え名人','#ffdf6a',22);SFX.fan()}}
 function addCoins(n,x,y){var v=Math.max(1,Math.round(n*mult()));G.coins+=v;floatT(x,y,'+'+v,'#ffd24a',17);SFX.merge(G.combo);return v}
 function firstSp(sp,x,y){if(G.seenSp[sp])return;G.seenSp[sp]=1;if(window.Zukan&&Zukan.earn&&SP[sp].a.length>1)Zukan.earn(5,'first-try',{x:x,y:y-30})}
 function decompose(b,R,cx,cy,rc,noRemove){
@@ -3023,7 +3039,7 @@ function merge(i,j){var A=G.table[i],B=G.table[j],c=slotC(j);
     var from=relAtoms(B,j).concat(relAtoms(A,j).map(function(a){return {e:a.e,x:a.x+(PTR.x-c[0])*.0,y:a.y,r:a.r}}));
     for(var k=0;k<pr.length;k++){if(same(ec,cnt(SP[pr[k]].a))){var p=pr[k];G.table[j]={k:'sub',sp:p,n:1,_mo:{from:from,t:0},_gl:1.2};G.table[i]=null;
         atoms.forEach(function(a){var s=G.spills[a.s];if(s){s.left--;if(s.left<=0){spillDone(a.s,c)}}});
-        G.st.prod++;ok();addCoins(SP[p].c,c[0],c[1]-10);floatT(c[0],c[1]-34,SP[p].nm+' '+SP[p].f,'#fff3c8',17);burst(c[0],c[1],'#ffe08a',RM?4:16,160);firstSp(p,c[0],c[1]);ono(c[0],c[1]-L.tc*.62,'カチッ',L.tc*.3,{life:.7});
+        G.st.prod++;ok();addCoins(SP[p].c,c[0],c[1]-10);floatT(c[0],c[1]-34,SP[p].nm+' '+SP[p].f,'#fff3c8',17);burst(c[0],c[1],'#ffe08a',RM?4:16,160);firstSp(p,c[0],c[1]);ono(c[0],c[1]-L.tc*.62,'カチッ',L.tc*.3,{life:.7});shake(2);
         if(G.tut===2&&p==='O2')setTut(3);saveSoon();return}}
     for(k=0;k<pr.length;k++){if(leq(ec,cnt(SP[pr[k]].a))){G.table[j]={k:'at',a:atoms,_mo:{from:from,t:0}};G.table[i]=null;SFX.stack();return}}
     return rejectMerge(i,j,ec,rxs,pr)}
@@ -3040,7 +3056,7 @@ function merge(i,j){var A=G.table[i],B=G.table[j],c=slotC(j);
 function rejectMerge(i,j,ec,rxs,pr){var el=Object.keys(ec).map(function(e){return e+(ec[e]>1?'×'+ec[e]:'')}).join('＋');
   for(var k=0;k<rxs.length;k++){var R=RX[rxs[k]];if(R&&leq(ec,cnt(SP[R.orig].a))){badMerge('それだと元の'+SP[R.orig].nm+'（'+SP[R.orig].f+'）にもどるだけ！ '+R.kd+'でできるのは '+nmList(R.pr));return}}
   badMerge(el+' では、できる物質がない。つくれるのは '+nmList(pr))}
-function badMerge(m){G.st.ng++;G.combo=0;SFX.wrong();msg(m,'bad',3.6)}
+function badMerge(m){G.st.ng++;breakCombo();buzz([12,40,12]);SFX.wrong();msg(m,'bad',3.6)}
 function spillDone(sid,c){var s=G.spills[sid];delete G.spills[sid];if(!s)return;var R=RX[s.rx==='na2co3'?'nahco3':s.rx];if(!R)return;
   note(R.L,R.R,R.kd,false);addCoins(3,c[0],c[1]+18);floatT(L.tab.x+L.tab.w/2,L.note.y+L.note.h+14,'組み替え完了！ 原子の数はそのまま','#bfe39a',16)}
 function heatItem(i){var it=G.table[i],c=slotC(i);if(!it)return;
@@ -3094,15 +3110,17 @@ function supplyCheck(){var needs={};G.blocks.forEach(function(b){if(!exposed(b))
 
 /* ================= 節目・チュートリアル ================= */
 var bannerT=0,BQ=[];
-function showBanner(o,dur){if(bannerT>0){BQ.push([o,dur]);return}var b=$('banner');b.innerHTML='<div class="d">'+o.d+'</div><div class="t">'+o.t+'</div><div class="f">'+o.f+'</div>'+(o.u?'<div class="u">'+o.u+'</div>':'')+'<div class="x">タップでとじる</div>';b.classList.add('on');bannerT=dur||6}
-function milestone(s){var S=STR[s];SFX.fan();FLASH={col:'#ffcf7a',t:0,d:.35};speed(L.mp.x+L.mp.w/2,L.mp.y+L.mp.h*.45,L.mc*.9,L.mp,.9);
-  showBanner({d:'第'+(s+1)+'話　深さ '+(s*10)+'m 到達',t:S.nm,f:S.f,u:S.u||''},6.5);
+function showBanner(o,dur){if(bannerT>0){BQ.push([o,dur]);return}var b=$('banner');b.innerHTML='<div class="d">'+o.d+'</div><div class="t">'+o.t+'</div>'+(o.st?'<div class="st">'+o.st.map(function(x){return '<i class="'+(x?'':'off')+'">★</i>'}).join('')+'</div><div class="sw">★到達　'+(o.st[1]?'★':'☆')+'この層ノーミス　'+(o.st[2]?'★':'☆')+'この層で5連</div>':'')+'<div class="f">'+o.f+'</div>'+(o.u?'<div class="u">'+o.u+'</div>':'')+'<div class="x">タップでとじる</div>';b.classList.add('on');bannerT=dur||6;
+  if(o.st)[].forEach.call(b.querySelectorAll('.st i'),function(e,k){setTimeout(function(){e.classList.add('on');if(o.st[k]){SFX.pick();AU.osc('triangle',784*Math.pow(1.26,k),0,.3,.08);shake(5);buzz(18)}else SFX.click()},550+k*380)})}
+function milestone(s){var S=STR[s];if(GD)GD.celebrate('深さ'+(s*10)+'m!!');else SFX.fan();FLASH={col:'#ffcf7a',t:0,d:.35};speed(L.mp.x+L.mp.w/2,L.mp.y+L.mp.h*.45,L.mc*.9,L.mp,.9);buzz([20,40,30]);
+  var st=[true,G.st.ng===LAYER.ng0,LAYER.mx>=5];LAYER={ng0:G.st.ng,mx:0};
+  showBanner({d:'第'+(s+1)+'話　深さ '+(s*10)+'m 到達',t:S.nm,st:st,f:S.f,u:S.u||''},7);
   if(s===1&&TOOL==='pick'){}saveSoon()}
 function setTut(n){G.tut=n;var t={1:'② 酸化銀のブロックを<b>長押し</b>して加熱',2:'③ こぼれた <b>O</b> を、もう1つの <b>O</b> へドラッグして重ねる',3:'④ できた物質は <b>トロッコ</b>へ（タップで全部出荷）',
   4:'⑤ 酸化銀をもう1つ割ろう。<b>加熱</b>を選んで長押し',5:'⑥ <b>⛏ツルハシ</b>を選んで岩をたたく',6:'⑦ 1列ぜんぶ掘ると、下の層へ進む',7:''}[n];
   if(n===4&&!G.blocks.some(function(b){return b.t==='ag2o'&&b.r===0}))return setTut(5);
-  if(t)tutMsg(t);else{tutText='';$('sign').className='';signT=0}saveSoon()}
-function tutPoint(){if(!G||G.tut>=7||state!=='play')return null;var tr=toolRects();
+  if(t){if(!GD)tutMsg(t)}else{tutText='';$('sign').className='';signT=0}saveSoon()}
+function tutPoint(){if(GD||!G||G.tut>=7||state!=='play')return null;var tr=toolRects();
   if(G.tut===0){var r=tr[1];return [r.x+r.w/2,r.y+r.h/2]}
   if(G.tut===1||G.tut===4){if(G.tut===4&&TOOL!=='heat'){r=tr[1];return [r.x+r.w/2,r.y+r.h/2]}var b=G.blocks.filter(function(b){return b.t==='ag2o'&&exposed(b)})[0];if(!b)return null;var rc=blockRect(b);return [rc.x+rc.w/2,rc.y+rc.h/2]}
   if(G.tut===2){var os=[];for(var i=0;i<tableN();i++){var it=G.table[i];if(it&&it.k==='at'&&it.a.length===1&&it.a[0].e==='O')os.push(i)}if(os.length<2)return null;
@@ -3131,7 +3149,7 @@ function fmtTime(s){s=Math.round(s);return Math.floor(s/60)+'分'+('0'+s%60).sli
 function showClear(){state='clear';hideAll();$('clear').classList.remove('hidden');
   $('clRec').innerHTML='到達 120m ／ 正しい組み替え '+G.st.ok+'回<br>できた物質 '+G.st.prod+'個 ／ 最大 '+G.best+'連 ／ '+fmtTime(G.st.time);
   $('clBook').classList.toggle('hidden',!window.Zukan)}
-function hideAll(){tutText='';['title','clear','test'].forEach(function(id){$(id).classList.add('hidden')});$('hud').classList.add('hidden');$('forgeBtn').classList.add('hidden');closeForge();$('sign').className='';$('banner').classList.remove('on')}
+function hideAll(){tutText='';if(HELP)HELP.hide();['title','clear','test'].forEach(function(id){$(id).classList.add('hidden')});$('hud').classList.add('hidden');$('forgeBtn').classList.add('hidden');closeForge();$('sign').className='';$('banner').classList.remove('on')}
 
 /* ================= 確認テスト ================= */
 var TQ=[],TA=[],TI=0;
@@ -3161,7 +3179,7 @@ function finishTest(){var qs=TQ,review=Quiz.review(qs,TA),marks=review.map(funct
     name:nm,score:score,total:qs.length,marks:marks,records:recs,review:review},function(){if(TEST){startTest()}else{toTitle()}})}
 
 /* ================= 進行 ================= */
-function toTitle(){state='title';hideAll();$('title').classList.remove('hidden');var sv=loadGame();$('btnCont').classList.toggle('hidden',!sv);
+function toTitle(){state='title';hideAll();if(GD&&!SANDBOX){GD.tutorialEnd();GD.skip()}$('title').classList.remove('hidden');var sv=loadGame();$('btnCont').classList.toggle('hidden',!sv);
   $('btnStart').innerHTML=sv?'⛏ はじめから':'⛏ はじめる';$('btnBook').classList.toggle('hidden',!window.Zukan);armed=false}
 var armed=false;
 function startGame(cont){AU.init();var sv=cont?loadGame():null;
@@ -3170,8 +3188,10 @@ function startGame(cont){AU.init();var sv=cont?loadGame():null;
   if(G.done){state='clear';showClear();return}
   ensureGen();state='play';hideAll();$('hud').classList.remove('hidden');$('forgeBtn').classList.remove('hidden');
   miner.x=miner.tx=L.mx+L.mw*1.5;drill.x=drill.tx=L.mx+L.mw*4;scrollOff=0;
-  if(G.tut===0)tutMsg('① 道具帯の <b>🔥加熱</b>（ガスバーナー）を選ぶ');else if(G.tut<7)setTut(G.tut);
-  if(!sv)setTimeout(function(){showBanner({d:'第1話　深さ 0m',t:STR[0].nm,f:'坑道の地下は、化合物の地層。<b>合う道具</b>で割ると原子がこぼれる。こぼれた原子を<b>重ねて組み替えて</b>、物質にしよう。',u:'目標：地下120m'},5.5)},300);
+  LAYER={ng0:G.st.ng,mx:0};if(HELP)HELP.show();
+  if(GD&&G.tut<7){if(!sv)GD.intro(INTRO).then(function(){if(state==='play')GD.tutorial(PRACTICE)});else GD.tutorial(PRACTICE)}
+  else if(G.tut===0)tutMsg('① 道具帯の <b>🔥加熱</b>（ガスバーナー）を選ぶ');else if(G.tut<7)setTut(G.tut);
+  if(!sv&&!GD)setTimeout(function(){showBanner({d:'第1話　深さ 0m',t:STR[0].nm,f:'坑道の地下は、化合物の地層。<b>合う道具</b>で割ると原子がこぼれる。こぼれた原子を<b>重ねて組み替えて</b>、物質にしよう。',u:'目標：地下120m'},5.5)},300);
   updHud();saveGame()}
 var saveTO=null;function saveSoon(){if(saveTO)return;saveTO=setTimeout(function(){saveTO=null;saveGame()},800)}
 function updHud(){if(!G)return;$('hDep').textContent=('00'+G.top*2).slice(-3);var s=strat(Math.min(G.top,ROWS-1));$('hLay').textContent=STR[s].nm;
@@ -3182,7 +3202,7 @@ function updHud(){if(!G)return;$('hDep').textContent=('00'+G.top*2).slice(-3);va
 /* ================= ループ ================= */
 var last=performance.now(), hudT=0;
 function frame(t){var dt=Math.min(.05,(t-last)/1000);last=t;now+=dt;
-  if(state==='play'&&G){G.st.time+=dt;
+  if(state==='play'&&G&&!PAUSED){G.st.time+=dt;coachT-=dt;if(coachT<=0){coachT=1;ctxCoach()}
     if(scrollOff>0)scrollOff=Math.max(0,scrollOff-dt*L.mc*4.5);
     miner.x+=(miner.tx-miner.x)*Math.min(1,dt*6);if(miner.sw>0){miner.sw+=dt*5;if(miner.sw>1)miner.sw=0}
     /* 長押し */
@@ -3216,6 +3236,75 @@ function frame(t){var dt=Math.min(.05,(t-last)/1000);last=t;now+=dt;
   if(bannerT>0){bannerT-=dt;if(bannerT<=0){$('banner').classList.remove('on');if(BQ.length){var nb=BQ.shift();setTimeout(function(){showBanner(nb[0],nb[1])},450)}}}
   draw();requestAnimationFrame(frame)}
 
+/* ================= 遊び方案内（Guide・制作ルール13／仕上げ 2026-09-27） ================= */
+var GD=window.Guide||null,HELP=null,PAUSED=false,PRACTICE=null,SANDBOX=null,coachT=3;
+var INTRO={title:'第12回　アトム・ブロック',learn:'分解も、結び付く反応も、**原子の組合せ** が変わるだけ（原子の **種類と数** はそのまま）',
+  how:'道具を選んでブロックを **長押し**、こぼれた原子を **ドラッグで重ねて** 物質にする',gesture:'hold'};
+function tRect(i){var r=toolRects()[i];return {x:r.x+r.w/2,y:r.y+r.h/2,w:r.w,h:r.h,rx:4}}
+function bRect(b){if(!b)return null;var rc=blockRect(b);return {x:rc.x+rc.w/2,y:rc.y+rc.h/2,w:rc.w,h:rc.h,rx:4}}
+function sRect(i){if(i==null||i<0)return null;var c=slotC(i);return {x:c[0],y:c[1],r:L.tc*.46}}
+function firstBlk(t){return G.blocks.filter(function(b){return b.t===t&&exposed(b)})[0]}
+function oSlots(){var os=[];for(var i=0;i<tableN();i++){var it=G.table[i];if(it&&it.k==='at'&&it.a.length===1&&it.a[0].e==='O')os.push(i)}return os}
+function tutSteps(){return [
+  {gesture:'tap',label:'道具',target:function(){return tRect(1)},until:function(){return G.tut>=1},text:'道具帯の **🔥加熱**（ガスバーナー）をタップ',praise:'ゴォッ！'},
+  {gesture:'hold',label:'長押し',target:function(){return bRect(firstBlk('ag2o'))},until:function(){return G.tut>=2},text:'黒い **酸化銀** のブロックを **長押し** して加熱',praise:'バキッ！！'},
+  {gesture:'drag',label:'重ねる',target:function(){var o=oSlots();return o.length>1?sRect(o[0]):null},to:function(){var o=oSlots();return o.length>1?sRect(o[1]):null},until:function(){return G.tut>=3},
+   text:'こぼれた **O** を、もう1つの **O** へ **ドラッグ** して重ねる',praise:'O₂ 合体！'},
+  {gesture:'tap',label:'出荷',target:function(){return {x:L.cartX+L.cartW/2,y:L.cartY+L.cartH/2,w:L.cartW,h:L.cartH,rx:4}},until:function(){return G.tut>=4},
+   text:'できた物質は **トロッコ** をタップで出荷（コインになる）',praise:'ガラガラッ！'},
+  {gesture:'hold',label:'長押し',target:function(){return bRect(firstBlk('ag2o'))},until:function(){return G.tut>=5},text:'もう1つの酸化銀も **長押し** で割ろう',praise:'バキッ！！'},
+  {gesture:'tap',label:'道具',target:function(){return tRect(0)},until:function(){return G.tut>=6},text:'**⛏ツルハシ** に持ちかえる',praise:'カキーン！'},
+  {gesture:'tap',label:'掘る',target:function(){return bRect(firstBlk('rock'))},until:function(){return G.tut>=7},text:'ただの岩は **⛏でタップ**。1列ぜんぶ掘ると、下の層へ！',praise:'ガラッ！'}
+]}
+/* あそびかたのやり直しは、本物の坑道とは別の「お試しの坑道」で（進み具合・かけらは動かさない） */
+function enterSandbox(){SANDBOX={g:G,st:state,scroll:scrollOff,earn:window.Zukan?Zukan.earn:null,tool:TOOL};if(window.Zukan)Zukan.earn=function(){};
+  G=fresh();G.name=NAME;G.table.length=20;ensureGen();blkCache={};scrollOff=0;TOOL='pick';state='play';hideAll();$('hud').classList.remove('hidden');if(HELP)HELP.show();
+  miner.x=miner.tx=L.mx+L.mw*1.5;drill.x=drill.tx=L.mx+L.mw*4;updHud()}
+function leaveSandbox(){var s=SANDBOX;if(!s)return;SANDBOX=null;if(window.Zukan&&s.earn)Zukan.earn=s.earn;G=s.g;blkCache={};scrollOff=0;TOOL=s.tool;
+  if(s.st==='play'&&G){state='play';hideAll();$('hud').classList.remove('hidden');$('forgeBtn').classList.remove('hidden');if(HELP)HELP.show();updHud()}else toTitle()}
+/* その場の手ほどき（はじめて出会ったときに1回だけ）：電気分解・結び付く反応・ブロックに試薬をまぜる */
+function bondPair(){for(var i=0;i<tableN();i++){var A=G.table[i];if(!A||A.k!=='sub')continue;for(var j=0;j<tableN();j++){if(i===j)continue;var B=G.table[j];if(!B||B.k!=='sub'||B.sp===A.sp)continue;
+  var p={};p[A.sp]=A.n;p[B.sp]=(p[B.sp]||0)+B.n;if(MR.some(function(r){return same(p,r.i)}))return [i,j]}}return null}
+function mixSlot(){for(var i=0;i<tableN();i++){var it=G.table[i];if(it&&it.k==='mix'&&MR.some(function(r){return same(r.i,it.p)}))return i}return -1}
+function ctxCoach(){if(!GD||SANDBOX||G.tut<7||GD.active()||FORGE||$('banner').classList.contains('on'))return;
+  var seen=function(k){try{return !!localStorage.getItem('rika-guide:coach:'+k)}catch(e){return true}};
+  var w=firstBlk('water');
+  if(w&&!G.seenRx.water&&!toolLocked('elec')&&!seen('atom-block-elec')){GD.coach([
+    {gesture:'tap',label:'道具',target:function(){return tRect(2)},until:function(){return TOOL==='elec'||G.seenRx.water},text:'水は加熱では分解しない。**⚡電流**（電源装置）を選ぶ'},
+    {gesture:'hold',label:'長押し',target:function(){return bRect(firstBlk('water'))},until:function(){return !!G.seenRx.water},text:'**水** のブロックを **長押し** して電流を流す',praise:'ジジジ…バキッ！'}],{key:'atom-block-elec'});return}
+  var bp=bondPair();
+  if((bp||mixSlot()>=0)&&!seen('atom-block-bond')){var r0=G.st.react;GD.coach([
+    {gesture:'drag',label:'重ねる',target:function(){var q=bondPair();return q?sRect(q[0]):null},to:function(){var q=bondPair();return q?sRect(q[1]):null},until:function(){return mixSlot()>=0||G.st.react>r0},
+     text:'物質どうしを **重ねる** と混合物（まだ結び付いていない）'},
+    {gesture:'tap',label:'道具',target:function(){return tRect(1)},until:function(){return TOOL==='heat'||G.st.react>r0},text:'**🔥加熱** を選ぶ'},
+    {gesture:'hold',label:'長押し',target:function(){return sRect(mixSlot())},until:function(){return G.st.react>r0},text:'混合物を **長押し** で加熱 → **結び付く反応**！',praise:'結び付いた！'}],{key:'atom-block-bond'});return}
+  var tb=null,sl=-1;G.blocks.some(function(b){if(b.t==='boss'||!exposed(b))return false;var T=BT[b.t],R=T&&T.rx?RX[T.rx]:null;if(!R||!R.need||needOk(b,R))return false;
+    for(var i=0;i<tableN();i++){var it=G.table[i];if(it&&it.k==='sub'&&R.need[it.sp]){tb=b;sl=i;return true}}return false});
+  if(tb&&!seen('atom-block-reagent')){var R=RX[BT[tb.t].rx],sp=G.table[sl].sp;GD.coach([
+    {gesture:'drag',label:'まぜる',target:function(){for(var i=0;i<tableN();i++){var it=G.table[i];if(it&&it.k==='sub'&&it.sp===sp)return sRect(i)}return null},to:function(){return G.blocks.indexOf(tb)>=0?bRect(tb):null},
+     until:function(){return G.blocks.indexOf(tb)<0||needOk(tb,R)},text:'**'+SP[sp].nm+'** を **'+BT[tb.t].nm+'** のブロックへドラッグして まぜる'},
+    {gesture:'hold',label:'長押し',target:function(){return G.blocks.indexOf(tb)>=0?bRect(tb):null},until:function(){return G.blocks.indexOf(tb)<0},
+     text:'**🔥加熱** を選んで、ブロックを **長押し**',praise:'バキッ！！'}],{key:'atom-block-reagent'})}}
+if(GD){
+  GD.setup({
+    theme:{bg:'#ffffff',fg:INK,accent:INK,accentText:'#ffffff',font:'"Reggae One", sans-serif',bodyFont:'"Hiragino Kaku Gothic ProN","Hiragino Sans","Noto Sans JP",sans-serif',radius:0,texture:'dots',line:INK,
+      dim:'rgba(255,255,255,.66)',shadow:'8px 8px 0 #111',outline:'#fff',hand:'#fff',handLine:INK},
+    sfx:function(k){AU.init();({step:SFX.click,done:function(){SFX.merge(4)},clear:SFX.fan,open:SFX.stack,close:SFX.click,cheer:function(){SFX.merge(6)},nudge:SFX.wrong}[k]||SFX.click)()},
+    muted:function(){return AU.mute}});
+  PRACTICE={label:'れんしゅう中　─ 深さ 0m',clearText:'れんしゅうクリア！',block:true,
+    start:function(){if(!G||G.tut>=7||SANDBOX)enterSandbox();PRACTICE.steps=tutSteps()},steps:[],
+    onExit:function(res){if(SANDBOX){setTimeout(leaveSandbox,200);return}
+      if(res.cleared&&G)setTimeout(function(){showBanner({d:'第1話　深さ 0m',t:STR[0].nm,f:'坑道の地下は、化合物の地層。<b>合う道具</b>で割ると原子がこぼれる。こぼれた原子を<b>重ねて組み替えて</b>、物質にしよう。',u:'目標：地下120m'},5.5)},200)}};
+  HELP=GD.help({title:'アトム・ブロック',
+    rules:['道具を選んで、化合物のブロックを **長押し**（🔥加熱／⚡電流）。⛏は **タップ**',
+      '合わない道具では割れない（水を加熱しても水蒸気になるだけ、など）',
+      'こぼれた原子を **ドラッグで重ねる** → 正しい組なら物質に **合体**',
+      '物質どうしを重ねて **🔥長押し** ＝ 結び付く反応。**ダブルタップ** でばらせる',
+      'できた物質は **トロッコ** へ。コインで **かじ場** の道具を強化'],
+    onOpen:function(){PAUSED=true;stopHold();PTR={mode:null}},onClose:function(){PAUSED=false},replay:'tutorial',mount:$('hud'),size:44,attention:true,show:false});
+  GD.tutorialButton('#btnHow',function(){AU.init();NAME=$('nameIn').value.trim()||NAME;if(!loadGame()){startGame(false);return}GD.tutorial(PRACTICE)});
+}else $('btnHow').classList.add('hidden');
+
 /* ================= 起動 ================= */
 cv.addEventListener('pointerdown',onDown);addEventListener('pointermove',onMove);addEventListener('pointerup',onUp);addEventListener('pointercancel',onUp);
 addEventListener('resize',function(){layout()});
@@ -3237,7 +3326,7 @@ if(document.fonts&&document.fonts.load){Promise.all([document.fonts.load('20px "
 if(TEST){startTest()}else toTitle();
 requestAnimationFrame(frame);
 /* 自動テスト用の読み取り口（ゲームの外からは使わない） */
-window.__AB={SP:SP,MR:MR,get G(){return G},get L(){return L},slotC:slotC,blockRect:blockRect,exposed:exposed,toolRects:toolRects,get state(){return state},RX:RX,BT:BT};
+window.__AB={get PAUSED(){return PAUSED},get SANDBOX(){return SANDBOX},oSlots:oSlots,get TOOL(){return TOOL},SP:SP,MR:MR,get G(){return G},get L(){return L},slotC:slotC,blockRect:blockRect,exposed:exposed,toolRects:toolRects,get state(){return state},RX:RX,BT:BT};
 })();
 </script>
 </body>
