@@ -2,163 +2,248 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#3a2a1a">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#EFE3C8">
 <title>見えない粒のすじ ～真空放電と電子～</title>
+<!--
+  見えない粒のすじ ～真空放電と電子～　（ゲームID shinku-houden ／ コマID chu2-denryu-22 ／ 確認用）
+  2026-09-27 v2 作り直し（割り当て表 通し22）
+
+  【遊びの核】ビーム誘導。光のすじ（陰極線）を、極の向き・電極板・磁石で曲げて、管の奥の的に当てる。
+    理科＝動かし方: すじは−極から出る（極を逆にすると出る向きも逆）／−の電気をもつので＋の電極板の側へ曲がる／
+    磁石でも曲がり、N・Sを逆にすると曲がる向きも逆／十字板の影はすじがまっすぐ進む証拠／導線の中の電子は−→＋、電流は＋→−。
+    当てずっぽう対策: 撃つ前に設定を確定。一発命中だけがかけら。外すと連続命中が途切れる。
+  【道のり×集める×美麗】19世紀の物理実験室の戸棚を下の段から1段ずつ上る（9段）／段ごとに放電管の版画が棚に並ぶ（放電管の図鑑）／
+    セピアの銅版画。
+  【画風】銅版画エッチング（別のデザイナー）。生成りの紙に焦げ茶のハッチング（平行線・交差線）だけで陰影を描く。
+    色は紙と墨と、蛍光の緑だけ。緑は「電子が当たって光る所」だけに使う（手彩色の版画のように、そこだけ色が差す）。
+    UIのボタンも、二重罫の真鍮プレート（ハッチングの地）として描く。
+  【配色】紙 #EFE3C8／墨 #3B2A1A／蛍光 #5BD17A（ほかに薄墨 #7A6247、紙の影 #E2D2AE。桃色の放電の光だけ #D98AA0 を薄く）
+  【書体】Shippori Mincho B1（見出し・本文・数字）
+  【全画面の構図】横長（PC・iPad横）＝管を横に大きく置き、左が−極（はじめ）。下に操作盤（極の切りかえ・電極板・磁石・放電キー）。
+    縦長（スマホ・iPad縦）＝管を縦に立て、下が−極（はじめ）。右に操作盤の柱、右下に放電キー。
+  【HUD】欄外の書き込み風（段の名・的の数・かけら・連続命中）。Zukan.state() で読んで自分で描く
+  【音】WebAudio。誘導コイルのうなり（のこぎり波）・火花（ノイズ）・命中はガラスの鈴（音程が連続で上がる）
+  【磁石の向き（物理として正しく）】すじが左→右（縦長では下→上）へ進むとき、手前からN極を近づけると下（縦長では右）へ、
+    S極なら上（縦長では左）へ曲がる。すじの進む向きが逆なら曲がる向きも逆。
+-->
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@700;800&family=M+PLUS+Rounded+1c:wght@500;800&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@500;700;800&display=swap" rel="stylesheet">
 <style>
-:root{--paper:#efe2c4;--paper2:#e4d3ad;--ink:#3a2a1a;--sepia:#8a6a44;--red:#b8322a;--blue:#2c5d9c;--glow:#7fe0a0;--gold:#b88a2e}
+:root{--paper:#EFE3C8;--paper2:#E2D2AE;--ink:#3B2A1A;--ink2:#7A6247;--glow:#5BD17A;--fm:"Shippori Mincho B1","Hiragino Mincho ProN","Yu Mincho","YuMincho",serif;
+  --hatch:repeating-linear-gradient(135deg,rgba(59,42,26,.13) 0 1px,transparent 1px 5px)}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{margin:0;height:100%}
-body{background:var(--paper);background-image:repeating-linear-gradient(45deg,rgba(58,42,26,.035) 0 1px,transparent 1px 7px),radial-gradient(ellipse at 50% 0,#f6ecd4 0,#e2cfa6 100%);color:var(--ink);font-family:"M PLUS Rounded 1c","Hiragino Maru Gothic ProN","Hiragino Sans","Meiryo",sans-serif;overflow-x:hidden;user-select:none;-webkit-user-select:none;touch-action:manipulation}
-button{font-family:inherit;cursor:pointer;touch-action:manipulation}
+html,body{margin:0;height:100%;background:var(--paper);overflow:hidden;overscroll-behavior:none}
+body{color:var(--ink);font-family:var(--fm);user-select:none;-webkit-user-select:none;touch-action:manipulation;-webkit-touch-callout:none}
+button{font-family:inherit;cursor:pointer;touch-action:manipulation;color:inherit}
+#stage{position:fixed;inset:0;overflow:hidden}
+#cv{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
 .hidden{display:none!important}
-#app{max-width:520px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;padding:6px 8px calc(10px + env(safe-area-inset-bottom));gap:6px}
-#hud{display:flex;align-items:center;gap:4px;font-size:13px;font-weight:800;min-height:44px;flex-wrap:wrap}
-#hud .pill{background:#f7eedb;border:1.5px solid var(--sepia);border-radius:999px;padding:4px 8px;white-space:nowrap}
-#hud .sp{flex:1}
-.ib{min-width:44px;height:44px;border-radius:12px;border:1.5px solid var(--sepia);background:#f7eedb;color:var(--ink);font-size:20px;padding:0 8px}
-#bar{background:#f7eedb;border:1.5px solid var(--sepia);border-radius:12px;padding:6px 8px}
-#bar .t{font-size:13px;font-weight:800;display:flex;justify-content:space-between}
-#bar .cells{display:flex;gap:4px;margin-top:4px}
-#bar .cells i{flex:1;height:10px;border-radius:3px;background:#dccaa2;display:block;border:1px solid #b89e70}
-#bar .cells i.on{background:linear-gradient(#7fbf8f,#4f9a67);border-color:#3f7a52}
-#bar .cells i.now{background:#f3d27a;animation:pulse 1s infinite alternate}
-@keyframes pulse{to{opacity:.55}}
-#goal{background:#fbf5e6;border:1.5px solid var(--ink);border-radius:12px;padding:7px 10px;font-weight:800;font-size:15px;line-height:1.45;display:flex;gap:8px;align-items:center;box-shadow:3px 3px 0 rgba(58,42,26,.25)}
-#goal .tag{flex:none;background:var(--ink);color:#f3e2b8;border-radius:6px;padding:2px 7px;font-size:12px}
-#goal .new{flex:none;background:var(--red);color:#fff;border-radius:6px;padding:2px 6px;font-size:11px}
-#benchW{position:relative;background:#f6ecd4;border:2px solid var(--ink);border-radius:14px;box-shadow:inset 0 0 0 4px #efe2c4,inset 0 0 0 5px var(--sepia);overflow:hidden}
-#app svg#appa{width:100%;display:block}
-#era{position:absolute;left:10px;top:6px;font-size:12px;font-weight:800;color:var(--sepia);font-family:"Shippori Mincho","Hiragino Mincho ProN",serif}
-#ctrl{display:flex;flex-wrap:wrap;gap:6px}
-.tg{flex:1 1 30%;min-height:46px;border-radius:12px;border:1.5px solid var(--ink);background:#fbf5e6;color:var(--ink);font-weight:800;font-size:14px;padding:4px 6px}
-.tg:disabled{opacity:.35}
-.tg.hint{animation:pulse .8s infinite alternate;background:#f3d27a}
-.big{flex:1;min-height:54px;border-radius:14px;border:2px solid var(--ink);font-weight:800;font-size:17px;background:#e9b949;color:var(--ink);box-shadow:0 4px 0 var(--ink);padding:4px 8px}
-.big:active{transform:translateY(3px);box-shadow:0 1px 0 var(--ink)}
-.big.gray{background:#e4d3ad}
-.big.red{background:var(--red);color:#fff}
-.big:disabled{opacity:.45}
-.row{display:flex;gap:8px}
-.screen{position:fixed;inset:0;z-index:50;background:var(--paper);background-image:repeating-linear-gradient(45deg,rgba(58,42,26,.04) 0 1px,transparent 1px 7px),radial-gradient(ellipse at 50% 0,#f6ecd4 0,#dcc79b 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;overflow:auto;text-align:center}
-.screen h1{font-family:"Shippori Mincho","Hiragino Mincho ProN","Yu Mincho",serif;font-size:clamp(30px,9vw,46px);margin:.1em 0;letter-spacing:.06em;color:var(--ink)}
-.screen .sub{font-size:17px;margin-bottom:8px;color:var(--sepia);font-weight:800}
-.emo{font-size:54px;line-height:1}
-.col{display:flex;flex-direction:column;gap:10px;width:min(100%,360px)}
-.col input{min-height:48px;border-radius:12px;border:2px solid var(--ink);background:#fbf5e6;color:var(--ink);font:inherit;font-size:18px;padding:0 12px;text-align:center}
-.titleArt{width:min(100%,340px);margin:4px 0 10px}
-#sheet{position:fixed;left:0;right:0;bottom:0;z-index:40;display:flex;justify-content:center;pointer-events:none}
-#sheet .in{pointer-events:auto;width:min(100%,520px);background:#fbf5e6;color:var(--ink);border:2px solid var(--ink);border-bottom:none;border-radius:20px 20px 0 0;padding:14px 14px calc(14px + env(safe-area-inset-bottom));box-shadow:0 -8px 30px rgba(58,42,26,.35);animation:up .25s ease-out;max-height:84vh;overflow:auto}
-@keyframes up{from{transform:translateY(100%)}}
-#sheet h3{margin:0 0 8px;font-size:19px}
-#sheet p{margin:6px 0;font-size:16px;line-height:1.6}
-#sheet .big{width:100%}
-#sheet svg.fig{width:100%;max-width:330px;display:block;margin:4px auto;background:#f6ecd4;border:1px solid var(--sepia);border-radius:10px}
-.opts{display:flex;flex-direction:column;gap:7px;margin:6px 0}
-.opt{min-height:50px;border-radius:12px;border:1.5px solid #9c8058;background:#fff;font-weight:800;font-size:15px;text-align:left;padding:7px 12px;color:var(--ink);line-height:1.45}
-.opt.on{border-color:var(--ink);background:#f7e3a6;box-shadow:inset 0 0 0 2px var(--ink)}
-.res-ok{color:#2f7a45}.res-ng{color:var(--red)}
-.note{border-left:4px solid var(--sepia);padding:4px 8px;margin:6px 0;background:#f3e7cb;font-size:14px;line-height:1.55;text-align:left}
-.fx{position:fixed;pointer-events:none;z-index:60;font-weight:800;font-size:22px;color:var(--ink);text-shadow:0 1px 0 #fff;animation:rise 1.1s ease-out forwards;white-space:nowrap}
-@keyframes rise{to{transform:translateY(-70px);opacity:0}}
-.spark{position:fixed;width:8px;height:8px;border-radius:2px;z-index:59;pointer-events:none;animation:spark .8s ease-out forwards}
-@keyframes spark{to{transform:translate(var(--dx),var(--dy)) rotate(200deg);opacity:0}}
-#toast{position:fixed;left:50%;top:14%;transform:translateX(-50%);z-index:70;background:var(--ink);color:#f7e3a6;font-weight:800;font-size:17px;padding:10px 16px;border-radius:12px;pointer-events:none;animation:pop .25s ease-out;max-width:92vw;text-align:center;line-height:1.45}
-@keyframes pop{from{transform:translateX(-50%) scale(.6)}}
-#warp{position:fixed;inset:0;z-index:80;background:rgba(58,42,26,.92);display:flex;align-items:center;justify-content:center;flex-direction:column;color:#f7e3a6;font-weight:800;font-size:18px;gap:10px}
-#warp svg{width:160px}
-#warp .hand{transform-origin:80px 80px;animation:spin 1.3s cubic-bezier(.5,0,.3,1) forwards}
-@keyframes spin{to{transform:rotate(-1080deg)}}
-#test{justify-content:flex-start}
-#test .qn{font-weight:800;color:var(--sepia);margin:6px 0}
-#test .qt{font-size:18px;font-weight:800;line-height:1.6;text-align:left;width:min(100%,520px)}
-#test .fig{width:min(100%,420px);margin:8px 0;background:#fff;border-radius:12px;padding:4px;border:1px solid var(--sepia)}
-#test .fig svg{width:100%;height:auto;display:block}
-#test .opts{width:min(100%,520px)}
-.numrow{display:flex;gap:8px;align-items:center;justify-content:center;width:min(100%,420px)}
-.numrow input{flex:1;min-height:52px;font:inherit;font-size:22px;text-align:center;border-radius:12px;border:2px solid var(--ink)}
-.seq{min-height:52px;width:min(100%,520px);border:2px dashed var(--sepia);border-radius:12px;padding:6px;text-align:left;font-weight:800;font-size:15px;line-height:1.7}
-#clear .stat{background:#fbf5e6;border:1.5px solid var(--sepia);border-radius:12px;padding:10px;margin:2px 0;font-size:16px}
-@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
+.scr{position:absolute;inset:0;pointer-events:none}
+.scr>*{pointer-events:auto}
+/* 真鍮プレート（二重罫・ハッチング地） */
+.pl{position:relative;background:var(--paper);background-image:var(--hatch);border:2px solid var(--ink);box-shadow:inset 0 0 0 3px var(--paper),inset 0 0 0 4px var(--ink),3px 4px 0 rgba(59,42,26,.28);
+  font:700 17px var(--fm);letter-spacing:.08em;padding:10px 18px;min-height:48px;color:var(--ink);transition:transform .08s}
+button.pl:active{transform:translate(2px,3px);box-shadow:inset 0 0 0 3px var(--paper),inset 0 0 0 4px var(--ink),1px 1px 0 rgba(59,42,26,.28)}
+.pl.dk{background:var(--ink);background-image:repeating-linear-gradient(135deg,rgba(239,227,200,.10) 0 1px,transparent 1px 5px);color:var(--paper);box-shadow:inset 0 0 0 3px var(--ink),inset 0 0 0 4px var(--paper),3px 4px 0 rgba(59,42,26,.3)}
+.pl:disabled{opacity:.45;cursor:default}
+.pl small{display:block;font-size:.66em;letter-spacing:.04em;font-weight:500;opacity:.8}
+/* もどる（欄外の見出し札） */
+#bBack{position:absolute;left:max(10px,env(safe-area-inset-left));top:max(10px,env(safe-area-inset-top));z-index:30;min-height:46px;padding:6px 16px 6px 12px;
+  font:800 17px var(--fm);background:var(--ink);color:var(--paper);border:0;clip-path:polygon(14px 0,100% 0,100% 100%,14px 100%,0 50%);padding-left:22px;box-shadow:none;letter-spacing:.1em}
+#bBack:active{transform:translateX(-2px)}
+#bMute{position:absolute;right:max(10px,env(safe-area-inset-right));top:max(10px,env(safe-area-inset-top));z-index:30;width:46px;height:46px;border:2px solid var(--ink);background:var(--paper);font-size:20px;padding:0}
+/* HUD（欄外の書き込み） */
+#hud{position:absolute;left:0;right:0;top:0;height:64px;pointer-events:none;z-index:10}
+#hud .ttl{position:absolute;left:50%;top:10px;transform:translateX(-50%);text-align:center;white-space:nowrap}
+#hud .ttl i{display:block;font-style:normal;font-size:12px;letter-spacing:.35em;color:var(--ink2)}
+#hud .ttl b{font-size:20px;letter-spacing:.12em;font-weight:800}
+#hud .rt{position:absolute;right:66px;top:12px;text-align:right;font-size:14px;line-height:1.35;font-weight:700}
+#hud .rt em{font-style:normal;color:#1f7a3f}
+#hud .lt{position:absolute;left:12px;top:62px;font-size:14px;font-weight:700;line-height:1.4}
+body.port #hud .ttl{left:auto;right:64px;transform:none;text-align:right;top:8px}
+body.port #hud .ttl b{font-size:17px}
+body.port #hud .rt{right:auto;left:12px;top:62px;text-align:left}
+body.port #hud .lt{top:98px}
+/* 一言の帯（銅版の銘板） */
+#msg{position:absolute;z-index:12;padding:8px 18px;background:var(--paper);border-top:2px solid var(--ink);border-bottom:2px solid var(--ink);font-size:17px;font-weight:700;line-height:1.5;text-align:center;pointer-events:none;transition:opacity .25s}
+#msg.bad{background:#E8D6B4}
+#msg b{color:#1b6b37}
+/* 連続命中 */
+#combo{position:absolute;z-index:14;pointer-events:none;text-align:center;font-weight:800;opacity:0;transform-origin:50% 50%}
+#combo .n{font-size:64px;line-height:1;letter-spacing:.02em;display:block;-webkit-text-stroke:1px var(--ink);text-shadow:3px 3px 0 var(--paper),5px 5px 0 rgba(59,42,26,.35)}
+#combo .l{font-size:15px;letter-spacing:.3em;display:block}
+#combo.t2 .n{color:#1f7a3f}#combo.t3 .n{color:var(--glow);font-size:84px}#combo.t4 .n{color:var(--glow);font-size:104px;text-shadow:0 0 18px rgba(91,209,122,.8),4px 4px 0 var(--ink)}
+@keyframes cpop{0%{opacity:0;transform:scale(2.2) rotate(-6deg)}35%{opacity:1;transform:scale(.9) rotate(2deg)}55%{transform:scale(1.08)}100%{opacity:1;transform:scale(1)}}
+@keyframes cfade{to{opacity:0;transform:translateY(-20px)}}
+/* 操作盤 */
+#deck{position:absolute;z-index:11;display:flex;gap:12px;align-items:stretch;justify-content:center}
+body.port #deck{flex-direction:column;gap:10px}
+body.port .ct{max-width:none;flex:0 0 auto}
+.ct{max-width:330px;position:relative;background:var(--paper);background-image:var(--hatch);border:2px solid var(--ink);box-shadow:inset 0 0 0 3px var(--paper),inset 0 0 0 4px var(--ink);padding:8px 10px 10px;min-width:0;flex:1 1 0;display:flex;flex-direction:column;align-items:center;gap:6px}
+.ct h4{margin:0;font-size:14px;letter-spacing:.3em;font-weight:800;background:var(--paper);padding:0 8px;margin-top:-2px}
+.ct.lock{opacity:.55}
+.ct.lock::after{content:"固定";position:absolute;right:6px;top:4px;font-size:11px;border:1px solid var(--ink);padding:0 4px;background:var(--paper)}
+.sw{width:100%;min-height:48px;border:2px solid var(--ink);background:var(--paper);font:800 16px var(--fm);display:flex;align-items:center;justify-content:center;gap:8px;padding:4px 6px;letter-spacing:.05em}
+.sw svg{width:46px;height:30px;flex:none}
+.sw:active{transform:translateY(2px)}
+.sw .knife{transition:transform .18s cubic-bezier(.5,1.8,.5,1);transform-origin:8px 24px}
+.sw.b .knife{transform:rotate(-40deg)}
+.studs{position:relative;width:100%;height:50px;touch-action:none}
+.studs .st{position:absolute;top:22px;width:40px;height:30px;margin-left:-20px;border:0;background:none;padding:0;font:800 14px var(--fm)}
+.studs .st::before{content:"";display:block;width:18px;height:18px;margin:0 auto;border-radius:50%;border:2px solid var(--ink);background:var(--paper);background-image:radial-gradient(circle at 35% 35%,#fff8e8 0 3px,transparent 4px)}
+.studs .st.on::before{background:var(--ink)}
+.studs .arm{position:absolute;top:13px;width:0;height:0;margin-left:-8px;border-left:8px solid transparent;border-right:8px solid transparent;border-top:11px solid var(--ink);pointer-events:none;transition:left .12s}
+.studs::after{content:"";position:absolute;left:14%;right:14%;top:30px;height:2px;background:var(--ink);z-index:-1}
+.studs .lab{position:absolute;left:0;top:0;text-align:center;font-size:12px;letter-spacing:.1em;color:var(--ink2)}
+#bFire{position:absolute;z-index:13;border-radius:50%;border:3px solid var(--ink);background:var(--ink);color:var(--paper);font:800 22px var(--fm);letter-spacing:.15em;
+  box-shadow:inset 0 0 0 4px var(--ink),inset 0 0 0 6px var(--paper),inset 0 -14px 0 rgba(0,0,0,.25),4px 6px 0 rgba(59,42,26,.35);padding:0;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.1}
+#bFire small{font-size:12px;letter-spacing:.1em;font-weight:500;opacity:.85}
+#bFire:active,#bFire.dn{transform:translate(3px,5px);box-shadow:inset 0 0 0 4px var(--ink),inset 0 0 0 6px var(--paper),inset 0 -4px 0 rgba(0,0,0,.25),1px 1px 0 rgba(59,42,26,.35)}
+#bFire:disabled{opacity:.4}
+#bFire.ready{animation:beat 1.1s ease-in-out infinite}
+@keyframes beat{0%,100%{box-shadow:inset 0 0 0 4px var(--ink),inset 0 0 0 6px var(--paper),inset 0 -14px 0 rgba(0,0,0,.25),4px 6px 0 rgba(59,42,26,.35),0 0 0 0 rgba(91,209,122,.0)}50%{box-shadow:inset 0 0 0 4px var(--ink),inset 0 0 0 6px var(--paper),inset 0 -14px 0 rgba(0,0,0,.25),4px 6px 0 rgba(59,42,26,.35),0 0 0 10px rgba(91,209,122,.35)}}
+/* タイトル */
+#scrTitle .logo{position:absolute;left:0;right:0;text-align:center;pointer-events:none}
+#scrTitle .logo .ov{font-size:15px;letter-spacing:.6em;font-weight:700;color:var(--ink2);margin-bottom:6px}
+#scrTitle h1{margin:0;white-space:nowrap;font-weight:800;letter-spacing:.14em;line-height:1.05;color:var(--ink);text-shadow:1px 1px 0 var(--paper),3px 3px 0 var(--ink2),4px 4px 0 var(--paper),6px 6px 0 rgba(59,42,26,.35)}
+#scrTitle h1 .g{color:#2b8a4e;text-shadow:0 0 14px rgba(91,209,122,.55),1px 1px 0 var(--paper),3px 3px 0 var(--ink2)}
+#scrTitle .sub{margin-top:10px;font-size:20px;letter-spacing:.3em;font-weight:700}
+#scrTitle .rule{height:0;border-top:1px solid var(--ink);border-bottom:3px double var(--ink);width:min(420px,70%);margin:10px auto}
+@keyframes drop{0%{opacity:0;transform:translateY(-60px) scale(1.15)}60%{opacity:1;transform:translateY(6px)}80%{transform:translateY(-3px)}100%{transform:none}}
+#scrTitle .logo{animation:drop .9s cubic-bezier(.3,1.4,.5,1) both}
+#scrTitle .btns{position:absolute;left:0;right:0;display:flex;flex-direction:column;align-items:center;gap:12px}
+#scrTitle .btns .pl{min-width:260px}
+#bStart{font-size:21px;padding:14px 26px;animation:pulse 1.6s ease-in-out infinite}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
+#nmRow{display:flex;gap:8px;align-items:center;font-size:15px;font-weight:700}
+#nmRow input{font:700 17px var(--fm);border:0;border-bottom:2px solid var(--ink);background:transparent;padding:6px;width:180px;color:var(--ink);outline:none}
+.row2{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+/* 戸棚（マップ） */
+#scrMap{overflow-y:auto;-webkit-overflow-scrolling:touch;pointer-events:auto}
+#scrMap .wrap{min-height:100%;display:flex;flex-direction:column;align-items:center;padding:74px 12px 24px}
+#scrMap h2{margin:0 0 4px;font-size:24px;letter-spacing:.3em;font-weight:800}
+#scrMap .hint{font-size:14px;color:var(--ink2);margin-bottom:10px;text-align:center}
+#cab{width:min(760px,100%);border:3px solid var(--ink);box-shadow:inset 0 0 0 5px var(--paper),inset 0 0 0 6px var(--ink);padding:12px;background:var(--paper2);background-image:repeating-linear-gradient(90deg,rgba(59,42,26,.10) 0 1px,transparent 1px 4px);display:flex;flex-direction:column-reverse;gap:8px}
+.shelf{display:flex;align-items:center;gap:12px;min-height:66px;padding:6px 12px;border:2px solid var(--ink);background:var(--paper);background-image:var(--hatch);text-align:left;font:700 16px var(--fm);width:100%;position:relative;box-shadow:0 5px 0 var(--ink2)}
+.shelf .no{font-size:13px;letter-spacing:.2em;color:var(--ink2);display:block}
+.shelf .nm{font-size:18px;font-weight:800;letter-spacing:.08em}
+.shelf .ic{width:84px;height:48px;flex:none}
+.shelf .sr{margin-left:auto;font-size:18px;letter-spacing:.1em;white-space:nowrap}
+.shelf.lock{opacity:.5}
+.shelf.cur{animation:shl 1.4s ease-in-out infinite}
+@keyframes shl{0%,100%{box-shadow:0 5px 0 var(--ink2),0 0 0 0 rgba(91,209,122,0)}50%{box-shadow:0 5px 0 var(--ink2),0 0 0 6px rgba(91,209,122,.45)}}
+.shelf.done .ic{filter:drop-shadow(0 0 6px rgba(91,209,122,.8))}
+#scrMap .foot{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:14px}
+/* 段の始まり・クリア */
+.card{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(560px,92vw);max-height:92vh;overflow:auto;background:var(--paper);background-image:var(--hatch);border:3px solid var(--ink);box-shadow:inset 0 0 0 6px var(--paper),inset 0 0 0 7px var(--ink),8px 10px 0 rgba(59,42,26,.3);padding:26px 24px 22px;text-align:center}
+.card .k{font-size:13px;letter-spacing:.5em;color:var(--ink2);font-weight:700}
+.card h2{margin:6px 0 4px;font-size:30px;letter-spacing:.14em;font-weight:800}
+.card p{margin:8px 0;font-size:17px;line-height:1.7;font-weight:700}
+.card .fig{margin:6px auto;max-width:360px}
+.card .btns{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:14px}
+@keyframes slidein{0%{opacity:0;transform:translate(-50%,-30%) rotate(-2deg)}100%{opacity:1;transform:translate(-50%,-50%)}}
+.card.in{animation:slidein .45s cubic-bezier(.3,1.5,.5,1) both}
+.seals{display:flex;gap:14px;justify-content:center;margin:12px 0}
+.seal{width:72px;height:72px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;border:3px double var(--ink);font-size:12px;font-weight:800;opacity:.25;line-height:1.2}
+.seal i{font-style:normal;font-size:28px}
+.seal.on{opacity:1;background:var(--ink);color:var(--paper);border-color:var(--paper);box-shadow:0 0 0 3px var(--ink),0 0 18px rgba(91,209,122,.6)}
+@keyframes stamp{0%{transform:scale(2.4) rotate(-20deg);opacity:0}60%{transform:scale(.88) rotate(4deg);opacity:1}100%{transform:scale(1) rotate(0)}}
+.seal.go{animation:stamp .35s cubic-bezier(.3,1.5,.5,1) both}
+.recs{display:flex;gap:16px;justify-content:center;flex-wrap:wrap;font-size:15px;font-weight:700}
+.recs b{font-size:20px}
+/* 確認テスト（口頭試問の答案） */
+#scrTest{overflow-y:auto;pointer-events:auto;-webkit-overflow-scrolling:touch}
+#scrTest .sheet{width:min(760px,94vw);margin:70px auto 30px;background:#F6EEDA;border:2px solid var(--ink);box-shadow:inset 0 0 0 5px #F6EEDA,inset 0 0 0 6px var(--ink),6px 8px 0 rgba(59,42,26,.25);padding:22px 22px 26px}
+#tHead{display:flex;justify-content:space-between;align-items:center;border-bottom:3px double var(--ink);padding-bottom:8px;margin-bottom:12px;font-weight:800;letter-spacing:.1em}
+#tLamps{display:flex;gap:4px}
+#tLamps i{width:14px;height:14px;border:1.5px solid var(--ink);border-radius:50%;display:block}
+#tLamps i.ok{background:var(--glow)}#tLamps i.ng{background:var(--ink)}#tLamps i.cur{box-shadow:0 0 0 3px rgba(91,209,122,.5)}
+#tQ{font-size:19px;font-weight:700;line-height:1.7;margin:4px 0 10px}
+#tFig{text-align:center;margin:6px 0 10px}#tFig svg{max-width:100%;height:auto;max-height:240px;background:#fff9ec;border:1px solid var(--ink2)}
+#tA{display:flex;flex-direction:column;gap:9px}
+#tA .ch{text-align:left;display:flex;gap:10px;align-items:center;min-height:52px;font-size:17px}
+#tA .ch i{font-style:normal;border:1.5px solid currentColor;width:28px;height:28px;display:flex;align-items:center;justify-content:center;flex:none;font-size:14px}
+#tA .ch.ok{background:#d9f3df;box-shadow:inset 0 0 0 3px #d9f3df,inset 0 0 0 4px #1f7a3f}
+#tA .ch.ng{background:#e4cfb0;text-decoration:line-through}
+.ord .slot{border:2px dashed var(--ink2);padding:10px 12px;display:flex;gap:10px;font-size:16px;font-weight:700;background:#fff9ec}
+.ord .slot i{font-style:normal;font-weight:800}
+.ord{display:flex;flex-direction:column;gap:8px}
+.numbox{display:flex;align-items:center;gap:8px;justify-content:center}.numbox .v{min-width:140px;border-bottom:2px solid var(--ink);font-size:28px;text-align:center;padding:4px}
+.keys{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+#tEx{margin-top:12px;padding:10px 12px;border-left:4px solid var(--ink);background:#fff9ec;font-size:16px;line-height:1.6;font-weight:500}
+#tNext{margin-top:12px;width:100%}
+/* 終わり */
+#eScore{font-size:54px;font-weight:800}#eScore small{font-size:20px}
+/* ポーズ系 */
+.dim{position:absolute;inset:0;background:rgba(59,42,26,.35)}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01s!important;animation-iteration-count:1!important;transition:none!important}}
 </style>
 </head>
 <body>
+<div id="stage">
+<canvas id="cv"></canvas>
 
-<div id="title" class="screen">
-  <div class="emo">🔬</div>
-  <h1>見えない粒のすじ</h1>
-  <div class="sub">～真空放電と電子～</div>
-  <svg class="titleArt" viewBox="0 0 340 130" aria-hidden="true">
-    <rect x="2" y="2" width="336" height="126" rx="10" fill="#f6ecd4" stroke="#3a2a1a" stroke-width="2"/>
-    <rect x="30" y="40" width="200" height="50" rx="25" fill="#e8efe4" fill-opacity=".6" stroke="#3a2a1a" stroke-width="2"/>
-    <rect x="44" y="52" width="5" height="26" fill="#6b5a44"/><path d="M56 65Q140 64 214 65" stroke="#7fe0a0" stroke-width="4" fill="none"/><path d="M56 65Q140 64 214 65" stroke="#7fe0a0" stroke-width="10" fill="none" opacity=".25"/>
-    <circle cx="44" cy="30" r="9" fill="#2c5d9c"/><text x="44" y="35" text-anchor="middle" fill="#fff" font-size="14" font-weight="800">−</text>
-    <circle cx="290" cy="64" r="36" fill="#fbf5e6" stroke="#3a2a1a" stroke-width="2.5"/>
-    <g stroke="#3a2a1a" stroke-width="2">
-      <path d="M290 34v5M290 89v5M260 64h5M315 64h5"/></g>
-    <path d="M290 64V42" stroke="#3a2a1a" stroke-width="3"/><path d="M290 64l14 8" stroke="#3a2a1a" stroke-width="2.5"/><circle cx="290" cy="64" r="3" fill="#3a2a1a"/>
-    <text x="130" y="115" text-anchor="middle" font-size="12" font-weight="800" fill="#8a6a44">19世紀の実験室へ</text>
-  </svg>
-  <div class="col">
-    <button id="bStart" class="big">はじめる（時計の針を回す）</button>
-    <button id="bCont" class="big gray hidden">つづきから</button>
-    <input id="nameIn" maxlength="16" placeholder="なまえ（なくても遊べる）" autocomplete="off">
-    <button id="bBookT" class="big gray hidden">📖 図鑑</button>
+<div id="hud" class="hidden"><div class="ttl"><i id="hNo">第一の棚</i><b id="hName">誘導コイルと放電管</b></div>
+  <div class="rt" id="hR"></div><div class="lt" id="hL"></div></div>
+<div id="msg" class="hidden"></div>
+<div id="combo"></div>
+
+<div id="deck" class="hidden">
+  <div class="ct" id="cCoil"><h4>誘導コイル</h4><button class="sw" id="swCoil"><svg viewBox="0 0 46 30"><circle cx="8" cy="24" r="3.5" fill="none" stroke="#3B2A1A" stroke-width="2"/><circle cx="40" cy="24" r="3.5" fill="none" stroke="#3B2A1A" stroke-width="2"/><g class="knife"><line x1="8" y1="24" x2="40" y2="22" stroke="#3B2A1A" stroke-width="4" stroke-linecap="round"/></g></svg><span id="swCoilT">切</span></button></div>
+  <div class="ct" id="cPol"><h4>主の極</h4><button class="sw" id="swPol"><svg viewBox="0 0 46 30"><circle cx="8" cy="24" r="3.5" fill="none" stroke="#3B2A1A" stroke-width="2"/><circle cx="40" cy="24" r="3.5" fill="none" stroke="#3B2A1A" stroke-width="2"/><circle cx="36" cy="6" r="3.5" fill="none" stroke="#3B2A1A" stroke-width="2"/><g class="knife"><line x1="8" y1="24" x2="40" y2="22" stroke="#3B2A1A" stroke-width="4" stroke-linecap="round"/></g></svg><span id="swPolT">左を−</span></button></div>
+  <div class="ct" id="cPlate"><h4>電極板</h4><button class="sw" id="swPl"><span id="swPlT">上＋ 下−</span></button>
+    <div class="studs" id="stPl"><div class="lab">電圧</div></div></div>
+  <div class="ct" id="cMag"><h4>磁石</h4><button class="sw" id="swMg"><span id="swMgT">手前に N</span></button>
+    <div class="studs" id="stMg"><div class="lab">近づける</div></div></div>
+</div>
+<button id="bFire" class="hidden"><span>放電</span><small>スイッチ</small></button>
+
+<!-- タイトル -->
+<div id="scrTitle" class="scr hidden">
+  <div class="logo" id="tLogo"><div class="ov">十 九 世 紀 の 実 験 室</div><h1 id="tH1">見えない<span class="g">粒</span>のすじ</h1><div class="rule"></div><div class="sub">～真空放電と電子～</div></div>
+  <div class="btns" id="tBtns">
+    <div id="nmRow">名前<input id="nameIn" maxlength="16" placeholder="（なくても遊べる）"></div>
+    <button class="pl dk" id="bStart">実験をはじめる</button>
+    <div class="row2"><button class="pl hidden" id="bCont">つづきから</button><button class="pl" id="bBook1">📖 図鑑</button></div>
   </div>
 </div>
 
-<div id="app">
-  <div id="hud">
-    <span class="pill" id="hStage">第1段</span>
-    <span class="pill" id="hTime">0:00</span>
-    <span class="pill" id="hHit">🎯0</span>
-    <span id="zhud"></span>
-    <span class="sp"></span>
-    <button class="ib" id="bNote" aria-label="研究ノート">📓</button>
-    <button class="ib" id="bBook" aria-label="図鑑">📖</button>
-    <button class="ib" id="bMute" aria-label="音">🔊</button>
-  </div>
-  <div id="bar"><div class="t"><span id="barT">電流の正体を見つけるまで あと 8 段</span><span id="barN"></span></div><div class="cells" id="cells"></div></div>
-  <div id="goal"></div>
-  <div id="benchW"><svg id="appa" viewBox="0 0 360 210"></svg><div id="era"></div></div>
-  <div id="ctrl">
-    <button class="tg" id="tSwap">🔄 極を入れかえる</button>
-    <button class="tg" id="tPlate">⚡ 電極板：電圧なし</button>
-    <button class="tg" id="tTop">↘ 十字板をたおす</button>
-    <button class="tg" id="tPump">💨 ポンプで空気をぬく</button>
-    <button class="tg" id="tE">電子の向き ⇄</button>
-    <button class="tg" id="tI">電流の向き ⇄</button>
-    <button class="tg" id="tB">🔋 電池の向き ⇄</button>
-  </div>
-  <div class="row"><button id="bOn" class="big">🔮 予言してスイッチ ON</button></div>
-</div>
+<!-- 戸棚 -->
+<div id="scrMap" class="scr hidden"><div class="wrap">
+  <h2>実験室の戸棚</h2><div class="hint" id="mapHint">下の段から1段ずつ。棚の実験を終えると、放電管の版画が並ぶ。</div>
+  <div id="cab"></div>
+  <div class="foot"><button class="pl dk hidden" id="bToTest">口頭試問（確認テスト）へ</button><button class="pl" id="bBook2">📖 図鑑</button><button class="pl" id="bGacha">かけらで引く</button></div>
+</div></div>
 
-<div id="sheet" class="hidden"><div class="in" id="sheetIn"></div></div>
-<div id="warp" class="hidden"><svg viewBox="0 0 160 160"><circle cx="80" cy="80" r="70" fill="#f6ecd4" stroke="#f7e3a6" stroke-width="4"/><g stroke="#3a2a1a" stroke-width="3"><path d="M80 14v10M80 136v10M14 80h10M136 80h10"/></g><g class="hand"><path d="M80 80V28" stroke="#3a2a1a" stroke-width="5" stroke-linecap="round"/></g><circle cx="80" cy="80" r="5" fill="#3a2a1a"/></svg><div id="warpT">時計の針をもどす…</div></div>
+<!-- 段の始まり -->
+<div id="scrIntro" class="scr hidden"><div class="dim"></div><div class="card in" id="inCard"></div></div>
+<!-- 段のクリア -->
+<div id="scrClear" class="scr hidden"><div class="dim"></div><div class="card in" id="clCard"></div></div>
 
-<div id="clear" class="screen hidden">
-  <div class="emo">📜</div>
-  <h1>電流の正体を見つけた！</h1>
-  <div class="col" id="clearStats"></div>
-  <div class="col" style="margin-top:12px">
-    <button id="bTest" class="big">確認テストへ ▶</button>
-    <button id="bBookC" class="big gray hidden">📖 図鑑</button>
-    <button id="bAgain" class="big gray">本編をもう一度</button>
-  </div>
-</div>
+<!-- 確認テスト -->
+<div id="scrTest" class="scr hidden"><div class="sheet">
+  <div id="tHead"><span id="tNo">第1問</span><div id="tLamps"></div></div>
+  <div id="tQ"></div><div id="tFig" class="hidden"></div><div id="tA"></div>
+  <div id="tEx" class="hidden"></div><button class="pl dk hidden" id="tNext">つぎへ</button>
+</div></div>
 
-<div id="test" class="screen hidden"></div>
+<!-- 終わり -->
+<div id="scrEnd" class="scr hidden"><div class="dim"></div><div class="card in">
+  <div class="k">口 頭 試 問 　 結 果</div><h2 id="eName">確認テスト</h2><div id="eScore"></div>
+  <p>電流の正体は、−極から出る電子の流れだった。</p>
+  <div class="btns"><button class="pl dk" id="eCard">提出カードをもう一度</button><button class="pl" id="eBook">📖 図鑑</button><button class="pl" id="eMap">戸棚へ</button></div>
+</div></div>
 
-<div id="end" class="screen hidden">
-  <div class="emo">📝</div>
-  <h1>おつかれさま！</h1>
-  <div class="col">
-    <button id="bCard" class="big">提出カードをもう一度見る</button>
-    <button id="bRetest" class="big gray">確認テストをやり直す</button>
-    <button id="bTitle" class="big gray">タイトルへ</button>
-  </div>
+<!-- もどる確認 -->
+<div id="scrBack" class="scr hidden"><div class="dim"></div><div class="card in">
+  <div class="k">も ど り ま す か</div><h2 style="font-size:24px" id="bkT">実験を中断します</h2><p id="bkSub">進み具合は保存されます。</p>
+  <div class="btns"><button class="pl" id="bkNo">つづける</button><button class="pl dk" id="bkGo">戸棚へ</button></div>
+</div></div>
+
+<button id="bBack" class="hidden">もどる</button>
+<button id="bMute" aria-label="音">🔊</button>
 </div>
 
 <script>/*@SUBMIT_CARD_BEGIN*/
@@ -374,7 +459,7 @@ button{font-family:inherit;cursor:pointer;touch-action:manipulation}
   window.Quiz=Quiz;
 })();
 
-window.QUIZ={"v": 1, "grade": "chu2", "unit": "denryu", "game": "shinku-houden", "koma": ["chu2-denryu-22"], "testCount": 10, "questions": [{"id": "chu2-shinku-houden-q001", "koma": "chu2-denryu-22", "t": "choice", "q": "気圧を低くした空間に電流が流れる現象を何という？", "choices": ["真空放電", "火花放電", "帯電", "静電気"], "ex": "放電管の空気をぬいて高い電圧をかけると、管の中の空間を電流が流れて光る。", "fig": null, "kind": "term", "level": 1}, {"id": "chu2-shinku-houden-q002", "koma": "chu2-denryu-22", "t": "choice", "q": "図のように、十字板（＋極）の入った管に高い電圧をかけた。右のガラス面はどうなる？", "choices": ["十字の影ができる", "ガラス全体が光り、影はできない", "ガラスは光らない"], "ex": "−極から出た粒の流れが直進し、十字板にさえぎられた部分だけ影になる。", "fig": "\u003csvg viewBox=\"0 0 320 150\" xmlns=\"http://www.w3.org/2000/svg\">\u003crect width=\"320\" height=\"150\" fill=\"#fff\"/>\u003crect x=\"20\" y=\"40\" width=\"280\" height=\"70\" rx=\"35\" fill=\"#eef3ee\" stroke=\"#333\" stroke-width=\"2\"/>\u003crect x=\"38\" y=\"55\" width=\"6\" height=\"40\" fill=\"#665\"/>\u003cpath d=\"M20 75H38\" stroke=\"#333\" stroke-width=\"2\"/>\u003ctext x=\"30\" y=\"30\" font-size=\"13\" font-weight=\"bold\">−極\u003c/text>\u003cpath d=\"M220 60v30M207 75h26\" stroke=\"#665\" stroke-width=\"6\"/>\u003cpath d=\"M220 60V22\" stroke=\"#333\" stroke-width=\"2\"/>\u003ctext x=\"228\" y=\"22\" font-size=\"13\" font-weight=\"bold\">＋極（十字板）\u003c/text>\u003ctext x=\"290\" y=\"134\" text-anchor=\"end\" font-size=\"12\" font-weight=\"bold\">ガラス面 → ？\u003c/text>\u003c/svg>", "kind": "graph", "level": 1}, {"id": "chu2-shinku-houden-q003", "koma": "chu2-denryu-22", "t": "choice", "q": "十字板の実験で、＋極と−極を入れかえた。右のガラス面の十字の影はどうなる？", "choices": ["影はできない", "左右が反対になった影ができる", "同じ影ができる"], "ex": "すじは−極から出る。十字板の側が−極になると、すじは右のガラスへ向かわない。", "fig": null, "kind": "judge", "level": 2}, {"id": "chu2-shinku-houden-q004", "koma": "chu2-denryu-22", "t": "choice", "q": "図の管で、上の電極板を＋、下の電極板を−にした。光のすじはどうなる？", "choices": ["上に曲がる", "下に曲がる", "まっすぐ進む"], "ex": "すじは−の電気をもつ粒の流れなので、＋の電極板の側へ引かれる。", "fig": "\u003csvg viewBox=\"0 0 320 150\" xmlns=\"http://www.w3.org/2000/svg\">\u003crect width=\"320\" height=\"150\" fill=\"#fff\"/>\u003crect x=\"20\" y=\"40\" width=\"280\" height=\"70\" rx=\"35\" fill=\"#eef3ee\" stroke=\"#333\" stroke-width=\"2\"/>\u003crect x=\"38\" y=\"55\" width=\"6\" height=\"40\" fill=\"#665\"/>\u003cpath d=\"M20 75H38\" stroke=\"#333\" stroke-width=\"2\"/>\u003ctext x=\"30\" y=\"30\" font-size=\"13\" font-weight=\"bold\">−極\u003c/text>\u003crect x=\"276\" y=\"55\" width=\"6\" height=\"40\" fill=\"#665\"/>\u003ctext x=\"282\" y=\"30\" font-size=\"13\" font-weight=\"bold\">＋極\u003c/text>\u003crect x=\"130\" y=\"47\" width=\"90\" height=\"5\" fill=\"#665\"/>\u003crect x=\"130\" y=\"98\" width=\"90\" height=\"5\" fill=\"#665\"/>\u003ctext x=\"228\" y=\"52\" font-size=\"12\" font-weight=\"bold\">上の板（＋）\u003c/text>\u003ctext x=\"228\" y=\"106\" font-size=\"12\" font-weight=\"bold\">下の板（−）\u003c/text>\u003cpath d=\"M50 75H120\" stroke=\"#2a9a5a\" stroke-width=\"3\"/>\u003ctext x=\"140\" y=\"80\" font-size=\"13\" font-weight=\"bold\">？\u003c/text>\u003c/svg>", "kind": "graph", "level": 1}, {"id": "chu2-shinku-houden-q005", "koma": "chu2-denryu-22", "t": "choice", "q": "光のすじ（陰極線）が＋の電極板の側へ曲がったことから、すじについて何が分かる？", "choices": ["−の電気をもっている", "＋の電気をもっている", "電気をもっていない"], "ex": "ちがう種類の電気は引き合う。＋に引かれるので、すじは−の電気をもつ。", "fig": null, "kind": "judge", "level": 1}, {"id": "chu2-shinku-houden-q006", "koma": "chu2-denryu-22", "t": "choice", "q": "陰極線（光のすじ）の正体である、−の電気をもつとても小さな粒を何という？", "choices": ["電子", "原子", "分子"], "ex": "陰極線は電子の流れ。そのため電子線ともよばれる。", "fig": null, "kind": "term", "level": 1}, {"id": "chu2-shinku-houden-q007", "koma": "chu2-denryu-22", "t": "choice", "q": "図の回路で、導線の中の電子はア・イのどちら向きに動く？（上の導線で考える）", "choices": ["イ（→）", "ア（←）", "動かない"], "ex": "電子は電池の−極から出て、回路を回って＋極へ向かう。上の導線では→向き。電流はその逆の←向き。", "fig": "\u003csvg viewBox=\"0 0 300 170\" xmlns=\"http://www.w3.org/2000/svg\">\u003crect width=\"300\" height=\"170\" fill=\"#fff\"/>\u003crect x=\"40\" y=\"30\" width=\"220\" height=\"110\" fill=\"none\" stroke=\"#333\" stroke-width=\"3\"/>\u003crect x=\"130\" y=\"130\" width=\"40\" height=\"20\" fill=\"#fff\"/>\u003cpath d=\"M156 120V160\" stroke=\"#333\" stroke-width=\"2.5\"/>\u003cpath d=\"M144 128V152\" stroke=\"#333\" stroke-width=\"7\"/>\u003ctext x=\"170\" y=\"122\" font-size=\"15\" font-weight=\"bold\" fill=\"#b8322a\">＋\u003c/text>\u003ctext x=\"124\" y=\"122\" font-size=\"15\" font-weight=\"bold\" fill=\"#2c5d9c\">−\u003c/text>\u003ccircle cx=\"40\" cy=\"85\" r=\"13\" fill=\"#fff\" stroke=\"#333\" stroke-width=\"2.5\"/>\u003cpath d=\"M31 76L49 94M49 76L31 94\" stroke=\"#333\" stroke-width=\"2\"/>\u003ctext x=\"100\" y=\"22\" font-size=\"13\" font-weight=\"bold\">ア ←\u003c/text>\u003ctext x=\"180\" y=\"22\" font-size=\"13\" font-weight=\"bold\">→ イ\u003c/text>\u003cpath d=\"M150 12V44\" stroke=\"#999\" stroke-dasharray=\"3 3\"/>\u003c/svg>", "kind": "graph", "level": 2}, {"id": "chu2-shinku-houden-q008", "koma": "chu2-denryu-22", "t": "choice", "q": "回路を流れる電流の向きと、導線の中を電子が動く向きの関係は？", "choices": ["逆向き", "同じ向き", "決まっていない"], "ex": "電流は＋極→−極、電子は−極→＋極。", "fig": null, "kind": "judge", "level": 1}, {"id": "chu2-shinku-houden-q009", "koma": "chu2-denryu-22", "t": "choice", "q": "電流の向きと電子の動く向きが逆になっているのは、なぜ？", "choices": ["電子が見つかる前に、電流の向きを＋極から−極と決めていたから", "電子は＋の電気をもっているから", "導線の中では、電子は止まっているから"], "ex": "電流の向きは電子の発見より前に決められ、そのまま使われている。", "fig": null, "kind": "judge", "level": 2}, {"id": "chu2-shinku-houden-q010", "koma": "chu2-denryu-22", "t": "order", "q": "真空放電を観察する手順を、正しい順に並べよう。", "items": ["放電管を誘導コイルにつなぐ", "誘導コイルのスイッチを入れて、高い電圧をかける", "真空ポンプで、管の中の空気をぬいていく", "管の中の光り方の変化を観察する"], "ex": "高い電圧をかけたまま空気をぬいていくと、光り方が変わっていく。", "fig": null, "kind": "method", "level": 1}, {"id": "chu2-shinku-houden-q011", "koma": "chu2-denryu-22", "t": "choice", "q": "図のように、光のすじが上に曲がった。電極板Pは＋極・−極のどちらにつないだ？", "choices": ["＋極", "−極", "どちらでも同じ"], "ex": "−の電気をもつすじは＋の電極板に引かれる。上に曲がったので上のPが＋。", "fig": "\u003csvg viewBox=\"0 0 320 150\" xmlns=\"http://www.w3.org/2000/svg\">\u003crect width=\"320\" height=\"150\" fill=\"#fff\"/>\u003crect x=\"20\" y=\"40\" width=\"280\" height=\"70\" rx=\"35\" fill=\"#eef3ee\" stroke=\"#333\" stroke-width=\"2\"/>\u003crect x=\"38\" y=\"55\" width=\"6\" height=\"40\" fill=\"#665\"/>\u003cpath d=\"M20 75H38\" stroke=\"#333\" stroke-width=\"2\"/>\u003ctext x=\"30\" y=\"30\" font-size=\"13\" font-weight=\"bold\">−極\u003c/text>\u003crect x=\"276\" y=\"55\" width=\"6\" height=\"40\" fill=\"#665\"/>\u003ctext x=\"282\" y=\"30\" font-size=\"13\" font-weight=\"bold\">＋極\u003c/text>\u003crect x=\"130\" y=\"47\" width=\"90\" height=\"5\" fill=\"#665\"/>\u003crect x=\"130\" y=\"98\" width=\"90\" height=\"5\" fill=\"#665\"/>\u003ctext x=\"228\" y=\"52\" font-size=\"13\" font-weight=\"bold\">電極板P\u003c/text>\u003ctext x=\"228\" y=\"106\" font-size=\"13\" font-weight=\"bold\">電極板Q\u003c/text>\u003cpath d=\"M50 75C120 75 180 72 270 58\" stroke=\"#2a9a5a\" stroke-width=\"3\" fill=\"none\"/>\u003c/svg>", "kind": "graph", "level": 2}, {"id": "chu2-shinku-houden-q012", "koma": "chu2-denryu-22", "t": "choice", "q": "真空放電のしくみを利用している身近なものはどれ？", "choices": ["蛍光灯", "豆電球", "電熱線のヒーター"], "ex": "蛍光灯は、管の中の真空放電で出たものが、管の内側にぬった物を光らせている。", "fig": null, "kind": "judge", "level": 1}, {"id": "chu2-shinku-houden-q013", "koma": "chu2-denryu-22", "t": "choice", "q": "陰極線（電子線）について正しいものはどれ？", "choices": ["−極から＋極に向かって、まっすぐ進む", "＋極から−極に向かって、まっすぐ進む", "管の形にそって、曲がりながら進む"], "ex": "十字板の影ができることから、−極から出て直進することが分かる。", "fig": null, "kind": "judge", "level": 1}, {"id": "chu2-shinku-houden-q014", "koma": "chu2-denryu-22", "t": "choice", "q": "真空放電の実験で、誘導コイルは何のために使う？", "choices": ["高い電圧をつくるため", "管の中の空気をぬくため", "電流の向きを変えるため"], "ex": "誘導コイルは数万Vの高い電圧をつくる。空気をぬくのは真空ポンプ。", "fig": null, "kind": "method", "level": 1}]};
+window.QUIZ={"v": 1, "grade": "chu2", "unit": "denryu", "game": "shinku-houden", "koma": ["chu2-denryu-22"], "testCount": 10, "questions": [{"id": "chu2-shinku-houden-q001", "koma": "chu2-denryu-22", "t": "choice", "q": "気圧を低くした空間に電流が流れる現象を何という？", "choices": ["真空放電", "火花放電", "帯電", "静電気"], "ex": "放電管の空気をぬいて高い電圧をかけると、管の中の空間を電流が流れて光る。", "fig": null, "kind": "term", "level": 1}, {"id": "chu2-shinku-houden-q002", "koma": "chu2-denryu-22", "t": "choice", "q": "図のように、十字板（＋極）の入った管に高い電圧をかけた。右のガラス面はどうなる？", "choices": ["十字の影ができる", "ガラス全体が光り、影はできない", "ガラスは光らない"], "ex": "−極から出た粒の流れが直進し、十字板にさえぎられた部分だけ影になる。", "fig": "\u003csvg viewBox=\"0 0 320 150\" xmlns=\"http://www.w3.org/2000/svg\">\u003crect width=\"320\" height=\"150\" fill=\"#fff\"/>\u003crect x=\"20\" y=\"40\" width=\"280\" height=\"70\" rx=\"35\" fill=\"#eef3ee\" stroke=\"#333\" stroke-width=\"2\"/>\u003crect x=\"38\" y=\"55\" width=\"6\" height=\"40\" fill=\"#665\"/>\u003cpath d=\"M20 75H38\" stroke=\"#333\" stroke-width=\"2\"/>\u003ctext x=\"30\" y=\"30\" font-size=\"13\" font-weight=\"bold\">−極\u003c/text>\u003cpath d=\"M220 60v30M207 75h26\" stroke=\"#665\" stroke-width=\"6\"/>\u003cpath d=\"M220 60V22\" stroke=\"#333\" stroke-width=\"2\"/>\u003ctext x=\"228\" y=\"22\" font-size=\"13\" font-weight=\"bold\">＋極（十字板）\u003c/text>\u003ctext x=\"290\" y=\"134\" text-anchor=\"end\" font-size=\"12\" font-weight=\"bold\">ガラス面 → ？\u003c/text>\u003c/svg>", "kind": "graph", "level": 1}, {"id": "chu2-shinku-houden-q003", "koma": "chu2-denryu-22", "t": "choice", "q": "十字板の実験で、＋極と−極を入れかえた。右のガラス面の十字の影はどうなる？", "choices": ["影はできない", "左右が反対になった影ができる", "同じ影ができる"], "ex": "すじは−極から出る。十字板の側が−極になると、すじは右のガラスへ向かわない。", "fig": null, "kind": "judge", "level": 2}, {"id": "chu2-shinku-houden-q004", "koma": "chu2-denryu-22", "t": "choice", "q": "図の管で、上の電極板を＋、下の電極板を−にした。光のすじはどうなる？", "choices": ["上に曲がる", "下に曲がる", "まっすぐ進む"], "ex": "すじは−の電気をもつ粒の流れなので、＋の電極板の側へ引かれる。", "fig": "\u003csvg viewBox=\"0 0 320 150\" xmlns=\"http://www.w3.org/2000/svg\">\u003crect width=\"320\" height=\"150\" fill=\"#fff\"/>\u003crect x=\"20\" y=\"40\" width=\"280\" height=\"70\" rx=\"35\" fill=\"#eef3ee\" stroke=\"#333\" stroke-width=\"2\"/>\u003crect x=\"38\" y=\"55\" width=\"6\" height=\"40\" fill=\"#665\"/>\u003cpath d=\"M20 75H38\" stroke=\"#333\" stroke-width=\"2\"/>\u003ctext x=\"30\" y=\"30\" font-size=\"13\" font-weight=\"bold\">−極\u003c/text>\u003crect x=\"276\" y=\"55\" width=\"6\" height=\"40\" fill=\"#665\"/>\u003ctext x=\"282\" y=\"30\" font-size=\"13\" font-weight=\"bold\">＋極\u003c/text>\u003crect x=\"130\" y=\"47\" width=\"90\" height=\"5\" fill=\"#665\"/>\u003crect x=\"130\" y=\"98\" width=\"90\" height=\"5\" fill=\"#665\"/>\u003ctext x=\"228\" y=\"52\" font-size=\"12\" font-weight=\"bold\">上の板（＋）\u003c/text>\u003ctext x=\"228\" y=\"106\" font-size=\"12\" font-weight=\"bold\">下の板（−）\u003c/text>\u003cpath d=\"M50 75H120\" stroke=\"#2a9a5a\" stroke-width=\"3\"/>\u003ctext x=\"140\" y=\"80\" font-size=\"13\" font-weight=\"bold\">？\u003c/text>\u003c/svg>", "kind": "graph", "level": 1}, {"id": "chu2-shinku-houden-q005", "koma": "chu2-denryu-22", "t": "choice", "q": "光のすじ（陰極線）が＋の電極板の側へ曲がったことから、すじについて何が分かる？", "choices": ["−の電気をもっている", "＋の電気をもっている", "電気をもっていない"], "ex": "ちがう種類の電気は引き合う。＋に引かれるので、すじは−の電気をもつ。", "fig": null, "kind": "judge", "level": 1}, {"id": "chu2-shinku-houden-q006", "koma": "chu2-denryu-22", "t": "choice", "q": "陰極線（光のすじ）の正体である、−の電気をもつとても小さな粒を何という？", "choices": ["電子", "原子", "分子"], "ex": "陰極線は電子の流れ。そのため電子線ともよばれる。", "fig": null, "kind": "term", "level": 1}, {"id": "chu2-shinku-houden-q007", "koma": "chu2-denryu-22", "t": "choice", "q": "図の回路で、導線の中の電子はア・イのどちら向きに動く？（上の導線で考える）", "choices": ["イ（→）", "ア（←）", "動かない"], "ex": "電子は電池の−極から出て、回路を回って＋極へ向かう。上の導線では→向き。電流はその逆の←向き。", "fig": "\u003csvg viewBox=\"0 0 300 170\" xmlns=\"http://www.w3.org/2000/svg\">\u003crect width=\"300\" height=\"170\" fill=\"#fff\"/>\u003crect x=\"40\" y=\"30\" width=\"220\" height=\"110\" fill=\"none\" stroke=\"#333\" stroke-width=\"3\"/>\u003crect x=\"130\" y=\"130\" width=\"40\" height=\"20\" fill=\"#fff\"/>\u003cpath d=\"M156 120V160\" stroke=\"#333\" stroke-width=\"2.5\"/>\u003cpath d=\"M144 128V152\" stroke=\"#333\" stroke-width=\"7\"/>\u003ctext x=\"170\" y=\"122\" font-size=\"15\" font-weight=\"bold\" fill=\"#b8322a\">＋\u003c/text>\u003ctext x=\"124\" y=\"122\" font-size=\"15\" font-weight=\"bold\" fill=\"#2c5d9c\">−\u003c/text>\u003ccircle cx=\"40\" cy=\"85\" r=\"13\" fill=\"#fff\" stroke=\"#333\" stroke-width=\"2.5\"/>\u003cpath d=\"M31 76L49 94M49 76L31 94\" stroke=\"#333\" stroke-width=\"2\"/>\u003ctext x=\"100\" y=\"22\" font-size=\"13\" font-weight=\"bold\">ア ←\u003c/text>\u003ctext x=\"180\" y=\"22\" font-size=\"13\" font-weight=\"bold\">→ イ\u003c/text>\u003cpath d=\"M150 12V44\" stroke=\"#999\" stroke-dasharray=\"3 3\"/>\u003c/svg>", "kind": "graph", "level": 2}, {"id": "chu2-shinku-houden-q008", "koma": "chu2-denryu-22", "t": "choice", "q": "回路を流れる電流の向きと、導線の中を電子が動く向きの関係は？", "choices": ["逆向き", "同じ向き", "決まっていない"], "ex": "電流は＋極→−極、電子は−極→＋極。", "fig": null, "kind": "judge", "level": 1}, {"id": "chu2-shinku-houden-q009", "koma": "chu2-denryu-22", "t": "choice", "q": "電流の向きと電子の動く向きが逆になっているのは、なぜ？", "choices": ["電子が見つかる前に、電流の向きを＋極から−極と決めていたから", "電子は＋の電気をもっているから", "導線の中では、電子は止まっているから"], "ex": "電流の向きは電子の発見より前に決められ、そのまま使われている。", "fig": null, "kind": "judge", "level": 2}, {"id": "chu2-shinku-houden-q010", "koma": "chu2-denryu-22", "t": "order", "q": "真空放電を観察する手順を、正しい順に並べよう。", "items": ["放電管を誘導コイルにつなぐ", "誘導コイルのスイッチを入れて、高い電圧をかける", "真空ポンプで、管の中の空気をぬいていく", "管の中の光り方の変化を観察する"], "ex": "高い電圧をかけたまま空気をぬいていくと、光り方が変わっていく。", "fig": null, "kind": "method", "level": 1}, {"id": "chu2-shinku-houden-q011", "koma": "chu2-denryu-22", "t": "choice", "q": "図のように、光のすじが上に曲がった。電極板Pは＋極・−極のどちらにつないだ？", "choices": ["＋極", "−極", "どちらでも同じ"], "ex": "−の電気をもつすじは＋の電極板に引かれる。上に曲がったので上のPが＋。", "fig": "\u003csvg viewBox=\"0 0 320 150\" xmlns=\"http://www.w3.org/2000/svg\">\u003crect width=\"320\" height=\"150\" fill=\"#fff\"/>\u003crect x=\"20\" y=\"40\" width=\"280\" height=\"70\" rx=\"35\" fill=\"#eef3ee\" stroke=\"#333\" stroke-width=\"2\"/>\u003crect x=\"38\" y=\"55\" width=\"6\" height=\"40\" fill=\"#665\"/>\u003cpath d=\"M20 75H38\" stroke=\"#333\" stroke-width=\"2\"/>\u003ctext x=\"30\" y=\"30\" font-size=\"13\" font-weight=\"bold\">−極\u003c/text>\u003crect x=\"276\" y=\"55\" width=\"6\" height=\"40\" fill=\"#665\"/>\u003ctext x=\"282\" y=\"30\" font-size=\"13\" font-weight=\"bold\">＋極\u003c/text>\u003crect x=\"130\" y=\"47\" width=\"90\" height=\"5\" fill=\"#665\"/>\u003crect x=\"130\" y=\"98\" width=\"90\" height=\"5\" fill=\"#665\"/>\u003ctext x=\"228\" y=\"52\" font-size=\"13\" font-weight=\"bold\">電極板P\u003c/text>\u003ctext x=\"228\" y=\"106\" font-size=\"13\" font-weight=\"bold\">電極板Q\u003c/text>\u003cpath d=\"M50 75C120 75 180 72 270 58\" stroke=\"#2a9a5a\" stroke-width=\"3\" fill=\"none\"/>\u003c/svg>", "kind": "graph", "level": 2}, {"id": "chu2-shinku-houden-q012", "koma": "chu2-denryu-22", "t": "choice", "q": "真空放電のしくみを利用している身近なものはどれ？", "choices": ["蛍光灯", "豆電球", "電熱線のヒーター"], "ex": "蛍光灯は、管の中の真空放電で出たものが、管の内側にぬった物を光らせている。", "fig": null, "kind": "judge", "level": 1}, {"id": "chu2-shinku-houden-q013", "koma": "chu2-denryu-22", "t": "choice", "q": "陰極線（電子線）について正しいものはどれ？", "choices": ["−極から＋極に向かって、まっすぐ進む", "＋極から−極に向かって、まっすぐ進む", "管の形にそって、曲がりながら進む"], "ex": "十字板の影ができることから、−極から出て直進することが分かる。", "fig": null, "kind": "judge", "level": 1}, {"id": "chu2-shinku-houden-q014", "koma": "chu2-denryu-22", "t": "choice", "q": "真空放電の実験で、誘導コイルは何のために使う？", "choices": ["高い電圧をつくるため", "管の中の空気をぬくため", "電流の向きを変えるため"], "ex": "誘導コイルは数万Vの高い電圧をつくる。空気をぬくのは真空ポンプ。", "fig": null, "kind": "method", "level": 1}, {"id": "chu2-shinku-houden-q015", "koma": "chu2-denryu-22", "t": "choice", "q": "蛍光板入りの真空放電管で、光のすじに手前からN極を近づけると、すじは下に曲がった。S極を近づけるとどうなる？", "choices": ["上に曲がる", "下に曲がる", "まっすぐ進む", "すじが消える"], "ex": "電子の流れは磁石の力でも曲がる。磁石の極を逆にすると、曲がる向きも逆になる。", "kind": "judge", "level": 2}]};
 /*@QUIZ_END*/</script>
 <script>/*@ZUKAN_BEGIN*/
 window.ZUKAN_UPDATES={"v": 1, "updates": []};
@@ -1398,374 +1483,733 @@ window.ZUKAN_CARDS={"v": 1, "grade": "chu2", "name": "中2理科図鑑", "econom
 <script>
 (function(){
 'use strict';
-const GAME='shinku-houden', KOMA='chu2-denryu-22', SAVE='rika-zukan:chu2:game:'+GAME+':v1';
-const $=id=>document.getElementById(id);
-const RMO=matchMedia('(prefers-reduced-motion: reduce)').matches;
-const Z=()=>window.Zukan||null;
-if(Z()&&Z().setup){try{Z().setup({game:GAME,koma:[KOMA]})}catch(e){}}
+var GID='shinku-houden',KOMA='chu2-denryu-22',SKEY='rika-zukan:chu2:game:'+GID+':v1';
+var $=function(id){return document.getElementById(id)};
+var RM=!!(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches);
+var TEST=window.GAME_MODE==='test';
+var INK='#3B2A1A',INK2='#7A6247',PAPER='#EFE3C8',PAPER2='#E2D2AE',GL='#5BD17A',ROSE='#D98AA0';
+var FM='"Shippori Mincho B1","Hiragino Mincho ProN","Yu Mincho",serif';
+function Zk(){return window.Zukan||null}
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+function rnd(a,b){return a+Math.random()*(b-a)}
+function ri(a,b){return Math.floor(rnd(a,b+1))}
+function shuf(a){a=a.slice();for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1)),t=a[i];a[i]=a[j];a[j]=t}return a}
+function fmtT(ms){var s=Math.round(ms/1000),m=Math.floor(s/60);return m+'分'+('0'+(s%60)).slice(-2)+'秒'}
 
-/* ================= 音 ================= */
-let AC=null,muted=false,hum=null;
-function ac(){if(!AC){try{AC=new (window.AudioContext||window.webkitAudioContext)()}catch(e){}}if(AC&&AC.state==='suspended')AC.resume();return AC}
-function tone(f,d,type,vol,when,slide){const a=ac();if(!a||muted)return;const t=a.currentTime+(when||0);const o=a.createOscillator(),g=a.createGain();o.type=type||'sine';o.frequency.setValueAtTime(f,t);if(slide)o.frequency.exponentialRampToValueAtTime(slide,t+d);g.gain.setValueAtTime(vol||.1,t);g.gain.exponentialRampToValueAtTime(.001,t+d);o.connect(g);g.connect(a.destination);o.start(t);o.stop(t+d+.02)}
-function noise(d,vol,when,hp){const a=ac();if(!a||muted)return;const t=a.currentTime+(when||0);const n=Math.floor(a.sampleRate*d),b=a.createBuffer(1,n,a.sampleRate),x=b.getChannelData(0);for(let i=0;i<n;i++)x[i]=(Math.random()*2-1)*(1-i/n);const s=a.createBufferSource();s.buffer=b;let node=s;if(hp){const f=a.createBiquadFilter();f.type='highpass';f.frequency.value=hp;s.connect(f);node=f}const g=a.createGain();g.gain.value=vol||.1;node.connect(g);g.connect(a.destination);s.start(t)}
-function buzz(on){const a=ac();if(!a)return;if(on&&!hum&&!muted){const o=a.createOscillator(),g=a.createGain();o.type='sawtooth';o.frequency.value=100;g.gain.value=.015;o.connect(g);g.connect(a.destination);o.start();hum={o,g}}if(!on&&hum){try{hum.o.stop()}catch(e){}hum=null}}
-const sfx={
-  tap(){tone(700,.05,'square',.04)},
-  sw(){noise(.06,.18,0,2000);tone(160,.12,'square',.05)},
-  good(){[523,659,784,1047].forEach((f,i)=>tone(f,.18,'triangle',.1,i*.08))},
-  rare(){[392,523,659,784,1047,1319].forEach((f,i)=>tone(f,.24,'triangle',.1,i*.08));tone(1568,.6,'sine',.06,.5)},
-  bad(){tone(170,.35,'sawtooth',.07,0,90)},
-  crackle(){for(let i=0;i<7;i++)noise(.04,.14,i*.06+Math.random()*.03,2500)},
-  pump(){noise(.3,.08,0,400);tone(90,.25,'sine',.06,.05,60)},
-  tick(){tone(1200,.03,'square',.03)},
-  coin(){tone(1319,.08,'square',.05);tone(1760,.16,'square',.05,.07)}
+/* ---------------- セーブ ---------------- */
+function fresh(){return {v:1,name:'',unl:1,stars:{},best:{},ms:0,done:0,clearMs:0,bossT:0,disc:{}}}
+var SV=null;try{SV=JSON.parse(localStorage.getItem(SKEY))}catch(e){}
+if(!SV||SV.v!==1)SV=fresh();
+function save(){try{localStorage.setItem(SKEY,JSON.stringify(SV))}catch(e){}}
+
+/* ---------------- 音 ---------------- */
+var AC=null,muted=false;try{muted=localStorage.getItem(SKEY+':mute')==='1'}catch(e){}
+function ac(){if(!AC){try{AC=new(window.AudioContext||window.webkitAudioContext)()}catch(e){}}if(AC&&AC.state==='suspended')AC.resume();return AC}
+function tone(f,d,type,vol,when,slide){var a=ac();if(!a||muted)return;var t=a.currentTime+(when||0),o=a.createOscillator(),g=a.createGain();o.type=type||'sine';o.frequency.setValueAtTime(f,t);if(slide)o.frequency.exponentialRampToValueAtTime(slide,t+d);
+  g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol||.08,t+.008);g.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(g);g.connect(a.destination);o.start(t);o.stop(t+d+.05)}
+function noise(d,vol,hp,when){var a=ac();if(!a||muted)return;var t=a.currentTime+(when||0),n=Math.floor(a.sampleRate*d),b=a.createBuffer(1,n,a.sampleRate),x=b.getChannelData(0);for(var i=0;i<n;i++)x[i]=(Math.random()*2-1)*Math.pow(1-i/n,2);
+  var s=a.createBufferSource();s.buffer=b;var f=a.createBiquadFilter();f.type='highpass';f.frequency.value=hp||1500;var g=a.createGain();g.gain.value=vol||.1;s.connect(f);f.connect(g);g.connect(a.destination);s.start(t)}
+function bell(f,vol,when){tone(f,.9,'sine',vol||.07,when);tone(f*2.76,.5,'sine',(vol||.07)*.35,when);tone(f*5.4,.25,'sine',(vol||.07)*.15,when)}
+var SFX={
+  click:function(){tone(520,.05,'triangle',.05);noise(.03,.04,3000)},
+  spark:function(){noise(.12,.16,2500);tone(90,.25,'sawtooth',.05,0,60)},
+  buzz:function(d){tone(95,d||.5,'sawtooth',.035);tone(190,d||.5,'square',.012)},
+  hit:function(c){var base=523*Math.pow(2,Math.min(c,14)/12);bell(base,.08);bell(base*1.5,.05,.07);if(c>=3)bell(base*2,.04,.14);if(c>=6)bell(base*2.5,.035,.2)},
+  miss:function(){tone(130,.3,'triangle',.09,0,85);noise(.08,.05,400)},
+  pump:function(i){noise(.14,.06,700+i*80);tone(160+i*14,.12,'triangle',.03)},
+  fan:function(){[523,659,784,1047].forEach(function(f,i){tone(f,.35,'triangle',.07,i*.11);tone(f/2,.35,'sine',.05,i*.11)});bell(1568,.06,.5)},
+  stamp:function(i){tone(90,.2,'sine',.16);noise(.06,.1,300);bell(660*(1+i*.25),.04,.05)},
+  swipe:function(){noise(.1,.05,1800)}
 };
 
-/* ================= データ ================= */
-const STAGES=[
- {id:'coil',nm:'第1段 誘導コイル',era:'19世紀のなかごろ',goal:'誘導コイルのスイッチを入れよう。高い電圧で何が起こる？',kind:'coil',note:'誘導コイルは高い電圧をつくる。電極の間の空気に火花が飛んだ（放電）。'},
- {id:'pump',nm:'第2段 真空放電管',era:'19世紀のなかごろ',goal:'放電管に高い電圧をかけたまま、ポンプで空気をぬこう',kind:'pump',note:'空気をぬいて気圧を低くすると、管の中の空間を電流が流れて光る＝<b>真空放電</b>。蛍光灯もこのなかま。'},
- {id:'cross',nm:'第3段 十字板の影',era:'19世紀の後半',goal:'十字板の入った管。スイッチを入れると、右のガラスはどうなる？',kind:'cross',note:'左の−極から出た何かが直進し、十字板にさえぎられて、右のガラスに十字の影ができた。'},
- {id:'swap',nm:'第4段 ＋と−の入れかえ',era:'19世紀の後半',goal:'極を入れかえてから、もう一度スイッチを入れよう',kind:'swap',nw:'大発見',note:'＋と−を入れかえると影は消えた。すじ（<b>陰極線</b>）は<b>−極から出て</b>まっすぐ進む。'},
- {id:'beam',nm:'第5段 光のすじ',era:'19世紀の後半',goal:'蛍光板の入った管。スイッチを入れると、すじはどう見える？',kind:'beam',note:'蛍光板の上に、−極から＋極へまっすぐのびる光のすじ（陰極線）が見えた。'},
- {id:'plate',nm:'第6段 すじを曲げる',era:'19世紀の終わり',goal:'すじの上下に電極板を置いた。スイッチを入れると、すじはどうなる？',kind:'plate',nw:'電極板',note:'すじは＋の電極板の側へ曲がる → すじは<b>−の電気をもつ小さな粒</b>の流れ＝<b>電子</b>（陰極線＝電子線）。'},
- {id:'wire',nm:'第7段 導線の中の粒',era:'そして現代へ',goal:'導線の中でも電子が動いている。電子と電流の向きを決めよう',kind:'wire',nw:'電流の正体',note:'導線の中でも電子は−極→＋極へ動く。電流の向き（＋極→−極）は、電子の流れと<b>逆</b>。'},
- {id:'final',nm:'最終実験',era:'現代へもどる前に',goal:'電極板と極を組みかえて、すじを的に当てよう（7回）',kind:'ta',note:''}
+/* ---------------- 画面の大きさ（高解像度対応） ---------------- */
+var cv=$('cv'),c=cv.getContext('2d'),W=390,H=844,DPR=1,PORT=true,L=500,R=60,TC={x:0,y:0};
+var BG=document.createElement('canvas'),bg=BG.getContext('2d');
+var PAT={};
+function mkPat(){
+  function p(sz,fn){var e=document.createElement('canvas');e.width=e.height=sz;var x=e.getContext('2d');fn(x,sz);return c.createPattern(e,'repeat')}
+  PAT.l=p(7,function(x,s){x.strokeStyle='rgba(59,42,26,.42)';x.lineWidth=1;x.beginPath();x.moveTo(-1,s+1);x.lineTo(s+1,-1);x.stroke()});
+  PAT.d=p(6,function(x,s){x.strokeStyle='rgba(59,42,26,.6)';x.lineWidth=1.1;x.beginPath();x.moveTo(-1,s+1);x.lineTo(s+1,-1);x.moveTo(-1,-1);x.lineTo(s+1,s+1);x.stroke()});
+  PAT.h=p(5,function(x,s){x.strokeStyle='rgba(59,42,26,.45)';x.lineWidth=1;x.beginPath();x.moveTo(0,2.5);x.lineTo(s,2.5);x.stroke()});
+  PAT.v=p(4,function(x,s){x.strokeStyle='rgba(59,42,26,.55)';x.lineWidth=1;x.beginPath();x.moveTo(2,0);x.lineTo(2,s);x.stroke()});
+  PAT.g=p(6,function(x,s){x.strokeStyle='rgba(91,209,122,.55)';x.lineWidth=1;x.beginPath();x.moveTo(-1,s+1);x.lineTo(s+1,-1);x.stroke()});
+}
+function resize(){
+  var r=$('stage').getBoundingClientRect();W=r.width||innerWidth||390;H=r.height||innerHeight||844;DPR=Math.min(3,window.devicePixelRatio||1);
+  cv.width=Math.round(W*DPR);cv.height=Math.round(H*DPR);
+  PORT=H>W*1.05;document.body.classList.toggle('port',PORT);
+  if(!PORT){var top=70,deck=Math.max(150,Math.min(196,H*.23)),av=H-top-deck;L=Math.min(W*.76,av*3.4);R=Math.min(av*.27,L*.12);TC={x:W*.5,y:top+av*.5}}
+  else{var top2=W<500?128:112,bot=Math.max(130,H*.15),av2=H-top2-bot;L=av2*.88;R=Math.min(W*.16,L*.13,120);TC={x:W*(W<500?.34:.36),y:top2+av2*.5}}
+  calib();mkPat();paintBG();placeUI();
+}
+window.addEventListener('resize',function(){resize()});
+/* 管の座標 → 画面: u＝管にそって(0が左/下の端)、w＝管の横(＋が上/左) */
+function T(u,w){if(!PORT)return[TC.x+(u-.5)*L,TC.y-w*R];return[TC.x-w*R,TC.y-(u-.5)*L]}
+function inTube(){c.save();c.translate(TC.x,TC.y);if(PORT)c.rotate(-Math.PI/2)}
+function LX(u){return(u-.5)*L}function LY(w){return -w*R}
+
+/* 背景（紙・実験室の壁・机）: 画面が変わったときだけ描く */
+function paintBG(){
+  BG.width=cv.width;BG.height=cv.height;bg.setTransform(DPR,0,0,DPR,0,0);
+  bg.fillStyle=PAPER;bg.fillRect(0,0,W,H);
+  // 紙の繊維
+  var n=Math.floor(W*H/900);bg.fillStyle='rgba(122,98,71,.10)';for(var i=0;i<n;i++){bg.fillRect(Math.random()*W,Math.random()*H,rnd(.6,2.2),rnd(.4,1))}
+  // 壁の縦板（細い縦線）
+  bg.strokeStyle='rgba(59,42,26,.07)';bg.lineWidth=1;for(var x=0;x<W;x+=6){bg.beginPath();bg.moveTo(x,0);bg.lineTo(x,H);bg.stroke()}
+  // アーチ窓
+  var aw=PORT?W*.36:W*.18,ax=PORT?W*.82:W*.86,ay=PORT?H*.05:H*.06,ah=PORT?H*.2:H*.34;
+  bg.save();bg.beginPath();bg.moveTo(ax-aw/2,ay+ah);bg.lineTo(ax-aw/2,ay+aw/2);bg.arc(ax,ay+aw/2,aw/2,Math.PI,0);bg.lineTo(ax+aw/2,ay+ah);bg.closePath();
+  bg.fillStyle='#F5ECD6';bg.fill();bg.lineWidth=2;bg.strokeStyle='rgba(59,42,26,.5)';bg.stroke();bg.clip();
+  for(var k=0;k<40;k++){bg.strokeStyle='rgba(59,42,26,.08)';bg.beginPath();bg.moveTo(ax-aw/2,ay+k*9);bg.lineTo(ax+aw/2,ay+k*9-aw*.3);bg.stroke()}
+  bg.restore();bg.strokeStyle='rgba(59,42,26,.45)';bg.lineWidth=2;bg.beginPath();bg.moveTo(ax,ay);bg.lineTo(ax,ay+ah);bg.moveTo(ax-aw/2,ay+ah*.55);bg.lineTo(ax+aw/2,ay+ah*.55);bg.stroke();
+  // 左の棚の影（ハッチング）
+  if(!PORT){bg.save();bg.fillStyle=PAT.l;bg.globalAlpha=.55;bg.fillRect(0,H*.1,W*.07,H*.62);bg.restore();
+    for(var s=0;s<4;s++){var y=H*.16+s*H*.15;bg.fillStyle='rgba(59,42,26,.35)';bg.fillRect(0,y,W*.075,3);drawFlask(bg,W*.035,y-4,.7+s*.08)}}
+  // 机
+  var dy=PORT?H-Math.max(120,H*.14)+10:TC.y+R*1.55;
+  bg.fillStyle=PAPER2;bg.fillRect(0,dy,W,H-dy);bg.save();bg.globalAlpha=.8;bg.fillStyle=PAT.h;bg.fillRect(0,dy,W,H-dy);bg.restore();
+  bg.fillStyle=INK;bg.fillRect(0,dy,W,3);bg.fillStyle='rgba(59,42,26,.25)';bg.fillRect(0,dy+6,W,1.5);
+  // 周りの焼け（版の縁）
+  var gr=bg.createRadialGradient(W/2,H/2,Math.min(W,H)*.35,W/2,H/2,Math.max(W,H)*.75);gr.addColorStop(0,'rgba(59,42,26,0)');gr.addColorStop(1,'rgba(59,42,26,.22)');bg.fillStyle=gr;bg.fillRect(0,0,W,H);
+  // 版の枠線
+  bg.strokeStyle='rgba(59,42,26,.55)';bg.lineWidth=1;bg.strokeRect(5.5,5.5,W-11,H-11);
+}
+function drawFlask(x,cx,by,s){x.save();x.translate(cx,by);x.scale(s,s);x.beginPath();x.moveTo(-5,-40);x.lineTo(-5,-24);x.lineTo(-18,0);x.lineTo(18,0);x.lineTo(5,-24);x.lineTo(5,-40);
+  x.fillStyle='rgba(239,227,200,.9)';x.fill();x.strokeStyle='rgba(59,42,26,.7)';x.lineWidth=1.4;x.stroke();x.clip();x.fillStyle=PAT.l;x.fillRect(-20,-12,40,12);x.restore()}
+
+/* ---------------- 演出 ---------------- */
+var FX=[],POPS=[],SHK=0,FLASH=0,FLC=GL,TT=0;
+function shake(a){if(!RM)SHK=Math.max(SHK,a)}
+function flash(a,col){FLASH=Math.max(FLASH,RM?a*.3:a);FLC=col||GL}
+function burst(x,y,n,col,sp){for(var i=0;i<n;i++){var a=Math.random()*Math.PI*2,v=rnd(80,(sp||380));FX.push({x:x,y:y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,l:rnd(.4,.9),t:0,col:col||GL,w:rnd(1.2,3)})}}
+function pop(x,y,txt,sz,col){POPS.push({x:x,y:y,t:0,txt:txt,sz:sz||34,col:col||INK})}
+function buzz(ms){try{if(navigator.vibrate)navigator.vibrate(ms)}catch(e){}}
+function drawFX(dt){
+  for(var i=FX.length-1;i>=0;i--){var p=FX[i];p.t+=dt;if(p.t>p.l){FX.splice(i,1);continue}p.x+=p.vx*dt;p.y+=p.vy*dt;p.vx*=.93;p.vy=p.vy*.93+300*dt;
+    var k=1-p.t/p.l;c.strokeStyle=p.col;c.globalAlpha=k;c.lineWidth=p.w;c.beginPath();c.moveTo(p.x,p.y);c.lineTo(p.x-p.vx*.03,p.y-p.vy*.03);c.stroke()}
+  c.globalAlpha=1;
+  for(var j=POPS.length-1;j>=0;j--){var q=POPS[j];q.t+=dt;if(q.t>1.3){POPS.splice(j,1);continue}
+    var s=q.t<.18?.4+q.t/.18*.9:q.t<.3?1.3-(q.t-.18)/.12*.3:1,a=q.t>.9?1-(q.t-.9)/.4:1,yy=q.y-q.t*40;
+    c.save();c.translate(q.x,yy);c.scale(s,s);c.globalAlpha=Math.max(0,a);c.font='800 '+q.sz+'px '+FM;c.textAlign='center';c.textBaseline='middle';
+    c.lineWidth=5;c.strokeStyle=PAPER;c.strokeText(q.txt,0,0);c.fillStyle=q.col;c.fillText(q.txt,0,0);c.restore()}
+  if(FLASH>0){c.fillStyle=FLC;c.globalAlpha=Math.min(.5,FLASH);c.fillRect(0,0,W,H);c.globalAlpha=1;FLASH-=dt*1.6}
+}
+var comboT=null;
+function showCombo(n,brokeAt){var el=$('combo');clearTimeout(comboT);
+  if(brokeAt){el.className='';el.innerHTML='<span class="l">連続命中 '+brokeAt+' でとぎれた</span><span class="n" style="font-size:30px">'+(nextTier(brokeAt)-brokeAt===1?'あと1回で ×'+nextTier(brokeAt)+' だった！':'また積み上げよう')+'</span>';
+    el.style.animation='cpop .35s both';comboT=setTimeout(function(){el.style.animation='cfade .5s both'},1300);return}
+  if(n<2){el.style.opacity=0;return}
+  el.className=n>=10?'t4':n>=6?'t3':n>=3?'t2':'';
+  el.innerHTML='<span class="n">×'+n+'</span><span class="l">連 続 命 中</span>';
+  el.style.animation='none';void el.offsetWidth;el.style.animation='cpop .45s both';comboT=setTimeout(function(){el.style.animation='cfade .6s both'},1600)}
+function nextTier(n){return n<3?3:n<6?6:n<10?10:n+1}
+var msgT=null;
+function say(html,bad,ms){var m=$('msg');m.innerHTML=html;m.classList.remove('hidden');m.classList.toggle('bad',!!bad);m.style.opacity=1;clearTimeout(msgT);if(ms)msgT=setTimeout(function(){m.style.opacity=0},ms)}
+
+/* ---------------- 段のしくみ ---------------- */
+var D=.14,P1=.38,P2=.62,M1=.40,M2=.60,UW=.02,UC=.06,KP=1,KM=1,MAG=2;
+function calib(){UW=.2*R/L;UC=.55*R/L;var e=1-UW;KP=D/((P2-P1)*(P2-P1)/2+(P2-P1)*(e-P2));KM=D/((M2-M1)*(M2-M1)/2+(M2-M1)*(e-M2));MAG=(1-UW-UC)/(.5-UC)}
+function uCat(e){return e?1-UC:UC}function uWin(e){return e?1-UW:UW}
+var STG=[
+ {n:'第一の棚',t:'誘導コイルと放電管',k:'pump',goal:'管の空気をぬいて、光のすじを出そう',ic:'coil'},
+ {n:'第二の棚',t:'羽根車の管',k:'pol',N:6,goal:'すじを、光る的の端へ届けよう',ic:'wheel'},
+ {n:'第三の棚',t:'十字板の管',k:'cross',N:6,goal:'十字の影を、ガラスの枠にぴたりと落とそう',ic:'cross'},
+ {n:'第四の棚',t:'電極板の管',k:'plate',N:6,goal:'電極板ですじを曲げて、的に当てよう',ic:'plate'},
+ {n:'第五の棚',t:'両はしに蛍光板の管',k:'plate2',N:6,goal:'極の向きと電極板をそろえて当てよう',ic:'plate2'},
+ {n:'第六の棚',t:'磁石',k:'mag',N:6,goal:'磁石を近づけて、すじを曲げて当てよう',ic:'mag'},
+ {n:'第七の棚',t:'電極板と磁石',k:'both',N:6,goal:'二つの曲げる力を組み合わせて当てよう',ic:'both'},
+ {n:'第八の棚',t:'導線の中',k:'wire',N:8,goal:'指示された向きに、導線を指でなぞろう',ic:'wire'},
+ {n:'最上段',t:'最終実験',k:'boss',N:8,goal:'懐中時計が止まるまでに、8つの配置で当てよう',ic:'boss'}
 ];
-const OPT={
- shadow:'十字の影ができる',glow:'ガラス全体が光るが、影はない',none_c:'右のガラスは光らず、影もできない',flip:'左右反対の向きに影ができる',
- straight:'すじは まっすぐのびる',up:'すじは 上に曲がる',down:'すじは 下に曲がる',none_b:'すじは 出ない',wiggle:'すじは 波のように曲がりくねる'
-};
-const TRIALS={
- coil:[{pred:{q:'スイッチを入れると、電極の間はどうなる？',opts:[['spark','電極の間の空気に、火花が飛ぶ'],['nothing','何も起こらない'],['coilglow','誘導コイルの箱が光り出す']],rs:['高い電圧で、ふだん電気を通しにくい空気中を電流が流れるから','空気は電気をよく通すから','コイルが熱くなって光るから']}}],
- pump:[{pred:{q:'高い電圧をかけたまま空気をぬいていくと、放電管の中は？',opts:[['glow','管の中に電流が流れて、光りだす'],['nothing','何も変わらない'],['stop','空気がなくなるので、電気は流れなくなる']],rs:['気圧が低いほど、空間を電流が流れやすくなるから','ポンプが電気を管に送りこむから','ガラスが熱くなって光るから']}}],
- cross:[{init:{pol:'-',top:1},pred:{q:'スイッチを入れると、右のガラス面はどうなる？',opts:[['shadow',OPT.shadow],['glow',OPT.glow],['none',OPT.none_c]],rs:['−極から出た何かがまっすぐ進み、十字板にさえぎられるから','十字板が光を出して、ガラスに映るから','ガラスにぬった光る物がかたよっているから']}},
-        {init:{pol:'-',top:1},allow:['top'],req:s=>s.top===0,reqMsg:'まず「十字板をたおす」を押そう',goal:'十字板をたおして、すじの通り道からはずしてみよう',pred:{q:'十字板をたおした。右のガラス面はどうなる？',opts:[['glow',OPT.glow],['shadow','十字の影が残る'],['none',OPT.none_c]],rs:['さえぎる物がなくなり、すじがそのままガラスに当たるから','一度できた影は消えないから','十字板がないと、すじが出ないから']}}],
- swap:[{init:{pol:'-',top:1},allow:['swap'],req:s=>s.pol==='+',reqMsg:'まず「極を入れかえる」を押そう',pred:{q:'＋と−を入れかえた。右のガラス面はどうなる？',opts:[['none',OPT.none_c],['flip',OPT.flip],['shadow','さっきと同じ十字の影ができる']],rs:['すじは−極から出てまっすぐ進むので、右のガラスへは向かわないから','すじは＋極から出るので、向きが反対になるから','影は十字板の形なので、極には関係ないから']},rule:1},
-       {init:{pol:'+',top:1},allow:['swap','top'],need:'shadow',control:1,goal:'もう一度、右のガラスに十字の影を出そう。どこを変える？'}],
- beam:[{init:{pol:'-',plate:0},pred:{q:'スイッチを入れると、蛍光板の上のすじは？',opts:[['straight','左の−極の側から右へ、まっすぐのびる'],['rev','右の＋極の側から左へのびる'],['wiggle',OPT.wiggle]],rs:['すじは−極から出て直進する（十字板の影と同じ）から','すじは＋極から出るから','管の形にそって曲がるから']}},
-       {init:{pol:'+',plate:0},allow:['swap'],need:'straight',ft:1,goal:'左の電極が＋になっている。すじを出すにはどうする？'}],
- plate:[{init:{pol:'-',plate:1},pred:{q:'上の板が＋、下の板が−。すじはどうなる？',opts:[['up',OPT.up],['down',OPT.down],['straight',OPT.straight]],rs:['すじは−の電気をもつ粒の流れなので、＋の板に引かれるから','すじは＋の電気をもつ粒の流れなので、−の板に引かれるから','電極板が熱くなって、すじがよけるから']}},
-        {init:{pol:'-',plate:2},pred:{q:'今度は上の板が−、下の板が＋。すじは？',opts:[['down',OPT.down],['up',OPT.up],['straight',OPT.straight]],rs:['−の電気をもつすじは、＋の板（下）に引かれ、−の板（上）としりぞけ合うから','すじは上へ進む性質があるから','板の電気はすじに関係ないから']},name:1},
-        {init:{pol:'-',plate:0},pred:{q:'電極板に電圧をかけないと、すじは？',opts:[['straight',OPT.straight],['up',OPT.up],['down',OPT.down]],rs:['引いたりしりぞけたりする電気がないので、直進するから','すじはいつも＋の極の方へ曲がるから','板があるだけで、すじは下に落ちるから']}},
-        {init:{pol:'+',plate:1},pred:{q:'左の電極が＋、上の板が＋。すじは？',opts:[['none',OPT.none_b],['up',OPT.up],['down',OPT.down]],rs:['すじは−極から出るので、左の電極が＋では出ないから','＋の板に引かれて上がるから','＋どうしがしりぞけ合って下がるから']}},
-        {init:{pol:'-',plate:0},allow:['plate'],need:'down',ft:1,goal:'電極板の＋−を自分で組んで、すじを<b>下</b>に曲げよう'},
-        {init:{pol:'+',plate:2},allow:['plate','swap'],need:'up',ft:1,goal:'すじを<b>上</b>に曲げよう（左の電極の向きにも注意）'}],
- wire:[{bat:'R'},{bat:'L'},{bat:'L',motor:1},{bat:'R',rev:1,goal:'電子（青い粒）の動きを見て、電池の＋極の向きと電流の向きを決めよう'},{bat:'L',rev:1,motor:1,goal:'電子の動きから、電池の向きと電流の向きを決めよう'}],
- ta:[]
-};
-const RES={
- spark:'高い電圧で、ふだん電気を通しにくい空気中に電流が流れた。火花が飛ぶ<b>放電</b>。',
- shadow:'−極から出た何かが直進し、十字板にさえぎられた。さえぎられなかった分がガラスに当たって光り、十字の影ができた。',
- glow:'十字板をたおすと、さえぎる物がないので、右のガラス全体が光った（影はない）。',
- none_c:'−極は十字板の側（右寄り）。すじは−極から出て＋極（左）へ向かうので、右のガラスには当たらない。影もできない。',
- none_b:'左の電極が＋になっている。すじは−極から出るので、この向きではすじは出ない。',
- straight:'すじは−極から出て、まっすぐ進んだ。',
- up:'上の板が＋。−の電気をもつすじは＋の板に引かれ、−の板としりぞけ合って、上に曲がった。',
- down:'下の板が＋。−の電気をもつすじは下に曲がった。'
-};
+var TAB={cross:'十字板',plate:'電極板'};
+function genRounds(k){
+  var out=[],i;
+  if(k==='pol'){var e=shuf([0,1,0,1,1,0]);for(i=0;i<6;i++)out.push({k:'pol',te:e[i],pol:ri(0,1)})}
+  else if(k==='cross'){var ks=shuf([-3,-2,-1,1,2,3]);for(i=0;i<6;i++)out.push({k:'cross',de:i%2?1:0,tk:ks[i],pol:ri(0,1)});out=shuf(out)}
+  else if(k==='plate'){var a=shuf([1,-1,2,-2,3,-3]);for(i=0;i<6;i++)out.push({k:'plate',cat:0,lockPol:1,tk:a[i]})}
+  else if(k==='plate2'){var b=shuf([1,-1,2,-2,3,-3]);for(i=0;i<6;i++)out.push({k:'plate',cat:i%2,tk:b[i],te:i%2?0:1,pol:ri(0,1)});out=shuf(out)}
+  else if(k==='mag'){out.push({k:'mag',trial:1,tk:null});var m=shuf([1,-1,2,-2,3,-3]);for(i=0;i<6;i++)out.push({k:'mag',tk:m[i]})}
+  else if(k==='both'){out=shuf([{k:'both',tk:5},{k:'both',tk:-6},{k:'both',tk:4},{k:'both',tk:0,rust:[1,2]},{k:'both',tk:-1,rust:[-1,3]},{k:'both',tk:1,rust:[1,3]}])}
+  else if(k==='wire'){var bs=shuf([0,1,0,1,1,0,0,1]),sg=['top','right','bottom','top','bottom','right','top','bottom'];
+    for(i=0;i<8;i++)out.push({k:'wire',bat:bs[i],seg:sg[i],mode:(i===3||i===6)?'e':'c',showE:i<3,showL:i<6})}
+  else if(k==='boss'){var p2=shuf([1,-1,2,-2,3,-3]);out=shuf([{k:'pol',te:ri(0,1),pol:ri(0,1)},{k:'cross',de:ri(0,1),tk:ri(1,3)*(Math.random()<.5?1:-1),pol:ri(0,1)},
+    {k:'plate',cat:1,te:0,tk:p2[0],pol:ri(0,1)},{k:'plate',cat:0,te:1,tk:p2[1],pol:ri(0,1)},{k:'mag',tk:p2[2]},{k:'mag',tk:p2[3]},{k:'both',tk:-5},{k:'both',tk:1,rust:[-1,2]}])}
+  return out;
+}
 
-/* ================= 状態 ================= */
-function fresh(){return {name:'',si:0,t:0,hits:0,preds:0,first:0,firstN:0,rule:false,cleared:false,phase:'stages',taT:0,taBest:0,note:[]}}
-let S=fresh();
-function save(){try{localStorage.setItem(SAVE,JSON.stringify(S))}catch(e){}}
-function load(){try{return JSON.parse(localStorage.getItem(SAVE))}catch(e){return null}}
-try{muted=localStorage.getItem('rika-zukan:chu2:mute')==='1'}catch(e){}
-let ST=null,TR=null,ti=0,A={},busy=false,att=0,tLast=0,sheetOpen=false,TAq=null,TOK=0,TT=0;
+/* ---------------- ゲームの状態 ---------------- */
+var scene='title',G=null;
+var CT={pol:0,ps:1,pv:0,mf:-1,mv:0,cw:0,coil:0};
+function S(){return G&&G.S}
+function startStage(si){
+  ac();var st=STG[si];
+  G={si:si,S:st,rounds:st.k==='pump'?[]:genRounds(st.k),ri:0,R:null,state:'intro',first:0,n:0,miss:0,combo:0,maxC:0,time:0,boss:st.k==='boss'?120:0,
+     nT:0,strokes:0,pumpY:0,pumpDir:0,orderOK:true,shot:null,wheel:0,wx:0,wire:null,tries:0};
+  G.nT=G.rounds.filter(function(r){return !r.trial}).length;scene='play';showScr();backBtn();
+  $('hNo').textContent=st.n;$('hName').textContent=st.t;
+  var ic=shelfIcon(st.ic);
+  $('inCard').innerHTML='<div class="k">'+esc(st.n.split('').join(' '))+'</div><h2>'+esc(st.t)+'</h2><div class="fig">'+ic.replace('<svg','<svg style="width:220px;height:120px"')+'</div><p>'+esc(st.goal)+'</p>'+
+    (st.k==='boss'?'<p style="font-size:15px">まちがえると 6秒 へる。</p>':'')+'<div class="btns"><button class="pl dk" id="inGo">はじめる</button></div>';
+  $('scrIntro').classList.remove('hidden');$('inGo').onclick=function(){SFX.click();$('scrIntro').classList.add('hidden');beginPlay()};
+}
+function beginPlay(){var g=G;g.state='aim';
+  if(g.S.k==='pump'){CT.coil=0;CT.pol=0;g.state='coil';setDeck();say('① 誘導コイルのスイッチを入れよう');return}
+  nextRound(true)}
+function nextRound(first){var g=G;if(!first)g.ri++;
+  if(g.ri>=g.rounds.length){stageClear();return}
+  var r=g.R=g.rounds[g.ri];g.tries=0;g.shot=null;g.state='aim';
+  // つまみの初期位置（毎回そろえ直す。答えの位置からは始めない）
+  CT.pv=0;CT.mv=0;CT.cw=0;CT.ps=Math.random()<.5?1:-1;CT.mf=Math.random()<.5?1:-1;
+  if(r.k==='pol'||r.k==='cross'||(r.k==='plate'&&!r.lockPol))CT.pol=r.pol;else CT.pol=r.cat||0;
+  if(r.k==='mag'||r.k==='both')CT.pol=0;
+  if(r.rust){CT.ps=r.rust[0];CT.pv=r.rust[1]}
+  if(r.trial){CT.mf=-1;CT.mv=2}
+  if(r.k==='wire'){setupWire(r)}
+  setDeck();
+  var t=r.k;
+  if(r.trial)say('まず試し撃ち：手前に<b>N極</b>を近づけてある。放電してみよう');
+  else if(t==='pol')say('的は'+endName(r.te)+'の端。すじが届くように<b>主の極</b>を決めて放電！');
+  else if(t==='cross')say('十字の影を、光る'+endName(1-r.de)+'のガラスの枠へ。<b>十字板</b>は指で動かせる');
+  else if(t==='plate')say(r.lockPol?'的に当たるように、<b>電極板</b>の＋−と電圧を決めて放電！':'的は'+endName(r.te)+'の端。極の向きと電極板を決めて放電！');
+  else if(t==='mag')say('<b>磁石</b>のN・Sと近さを決めて放電！');
+  else if(t==='both')say(r.rust?'電極板のねじがさびて動かない！<b>磁石</b>で合わせて当てよう':'遠い的！<b>電極板と磁石</b>を合わせて曲げよう');
+  else if(t==='wire')say(r.mode==='c'?'<b>電流</b>の向きに、光った導線を指でなぞろう':'<b>電子</b>の動く向きに、光った導線を指でなぞろう');
+  hud();
+}
+function endName(e){return PORT?(e?'上':'下'):(e?'右':'左')}
+function setDeck(){
+  var g=G,k=g&&g.S.k,r=g&&g.R;var d=$('deck'),f=$('bFire');
+  if(scene!=='play'||!g){d.classList.add('hidden');f.classList.add('hidden');return}
+  d.classList.remove('hidden');
+  var show={cCoil:k==='pump',cPol:false,cPlate:false,cMag:false};
+  if(r){show.cPol=r.k==='pol'||r.k==='cross'||r.k==='plate'||r.k==='mag'||r.k==='both';
+    show.cPlate=r.k==='plate'||r.k==='both';show.cMag=r.k==='mag'||r.k==='both'}
+  if(r&&r.k==='wire'){d.classList.add('hidden')}
+  for(var id in show)$(id).classList.toggle('hidden',!show[id]);
+  $('cPol').classList.toggle('lock',!!(r&&(r.lockPol||r.k==='mag'||r.k==='both')));
+  $('cPlate').classList.toggle('lock',!!(r&&r.rust));
+  $('cMag').classList.toggle('lock',!!(r&&r.trial));
+  f.classList.toggle('hidden',k==='wire'||(k==='pump'&&g.state!=='shoot'));
+  f.disabled=g.state!=='aim'&&g.state!=='shoot';f.classList.toggle('ready',!f.disabled);
+  syncCtl();placeUI();
+}
+function syncCtl(){
+  $('swCoil').classList.toggle('b',!!CT.coil);$('swCoilT').textContent=CT.coil?'入':'切';
+  $('swPol').classList.toggle('b',CT.pol===1);$('swPolT').textContent=(PORT?(CT.pol?'上':'下'):(CT.pol?'右':'左'))+'を −';
+  $('swPlT').textContent=PORT?(CT.ps>0?'左＋ 右−':'左− 右＋'):(CT.ps>0?'上＋ 下−':'上− 下＋');
+  $('swMgT').textContent='手前に '+(CT.mf>0?'S':'N')+' 極';
+  studs('stPl',CT.pv);studs('stMg',CT.mv);
+}
+function studs(id,v){var el=$(id);if(!el.dataset.ok){for(var i=0;i<4;i++){var b=document.createElement('button');b.className='st';b.dataset.v=i;b.style.left=(14+i*24)+'%';b.style.left='calc('+(14+i*24)+'% )';el.appendChild(b)}
+    var a=document.createElement('div');a.className='arm';el.appendChild(a);el.dataset.ok=1}
+  var bs=el.querySelectorAll('.st');for(var j=0;j<4;j++){bs[j].classList.toggle('on',j<=v&&v>0);bs[j].textContent=j}
+  el.querySelector('.arm').style.left=(14+v*24)+'%'}
+function studDrag(id,key){var el=$(id),on=false;
+  function pick(e){var r=el.getBoundingClientRect(),x=(e.clientX-r.left)/r.width,v=Math.max(0,Math.min(3,Math.round((x-.14)/.24)));if(v!==CT[key]&&canEdit(key)){CT[key]=v;tone(700+v*120,.05,'triangle',.05);noise(.02,.03,4000);syncCtl()}}
+  el.addEventListener('pointerdown',function(e){ac();if(!canEdit(key))return;on=true;try{el.setPointerCapture(e.pointerId)}catch(x){}pick(e)});
+  el.addEventListener('pointermove',function(e){if(on)pick(e)});
+  el.addEventListener('pointerup',function(){on=false});el.addEventListener('pointercancel',function(){on=false})}
+function canEdit(key){var g=G;if(!g||(g.state!=='aim'))return false;var r=g.R;if(!r)return false;
+  if(key==='pol')return !(r.lockPol||r.k==='mag'||r.k==='both');
+  if(key==='pv'||key==='ps')return !r.rust;
+  if(key==='mv'||key==='mf')return !r.trial;return true}
+studDrag('stPl','pv');studDrag('stMg','mv');
+$('swPol').onclick=function(){ac();if(!canEdit('pol')){SFX.miss();return}CT.pol=1-CT.pol;SFX.click();noise(.05,.05,2000);syncCtl()};
+$('swPl').onclick=function(){ac();if(!canEdit('ps')){SFX.miss();return}CT.ps=-CT.ps;SFX.click();syncCtl()};
+$('swMg').onclick=function(){ac();if(!canEdit('mf')){SFX.miss();return}CT.mf=-CT.mf;SFX.click();tone(300,.15,'sine',.05,0,600);syncCtl()};
+$('swCoil').onclick=function(){ac();var g=G;if(!g||g.S.k!=='pump'||g.state==='shoot')return;CT.coil=1-CT.coil;SFX.click();
+  if(CT.coil){SFX.spark();SFX.buzz(.6);var p=coilXY();burst(p[0],p[1],14,INK,260);shake(3);
+    if(g.strokes<11)say(g.strokes?'② 電圧がかかった。ポンプを動かして、さらに空気をぬこう':'② ポンプのハンドルを<b>上下に大きく</b>動かして、管の空気をぬこう');}
+  syncCtl()};
 
-/* ================= 装置の絵 ================= */
-function badge(x,y,sg,lab){return '<g><circle cx="'+x+'" cy="'+y+'" r="11" fill="'+(sg==='+'?'#b8322a':'#2c5d9c')+'" stroke="#3a2a1a" stroke-width="1.5"/><text x="'+x+'" y="'+(y+5)+'" text-anchor="middle" fill="#fff" font-size="16" font-weight="800">'+(sg==='+'?'+':'−')+'</text>'+(lab?'<text x="'+x+'" y="'+(y+26)+'" text-anchor="middle" fill="#3a2a1a" font-size="11" font-weight="800">'+lab+'</text>':'')+'</g>'}
-function coilBox(){return '<rect x="112" y="172" width="136" height="32" rx="5" fill="#8a6a44" stroke="#3a2a1a" stroke-width="2"/>'+[...Array(9)].map((_,i)=>'<path d="M'+(124+i*6)+' 176v24" stroke="#c9a978" stroke-width="3"/>').join('')+'<text x="210" y="193" text-anchor="middle" fill="#fbf5e6" font-size="11" font-weight="800">誘導コイル</text>'}
-function tube(){return '<defs><linearGradient id="gl" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff" stop-opacity=".7"/><stop offset=".5" stop-color="#dfe9df" stop-opacity=".35"/><stop offset="1" stop-color="#c9d6c9" stop-opacity=".55"/></linearGradient><radialGradient id="pk"><stop offset="0" stop-color="#f3a5b5" stop-opacity=".9"/><stop offset="1" stop-color="#f3a5b5" stop-opacity="0"/></radialGradient><filter id="bl"><feGaussianBlur stdDeviation="2.5"/></filter></defs>'+
-  '<rect x="28" y="66" width="304" height="80" rx="40" fill="url(#gl)" stroke="#3a2a1a" stroke-width="2.5"/><path d="M62 73H298" stroke="#fff" stroke-width="3" opacity=".8"/>'+[...Array(8)].map((_,i)=>'<path d="M'+(70+i*30)+' 140l8 -5" stroke="#3a2a1a" stroke-width=".8" opacity=".4"/>').join('')}
-function drawApp(fx){
-  const k=ST.kind;let s='';
-  if(k==='coil'){
-    s+=coilBox()+'<path d="M140 172V120H164M220 172V120H196" stroke="#6b5a44" stroke-width="4" fill="none"/><circle cx="168" cy="120" r="9" fill="#d9d2c0" stroke="#3a2a1a" stroke-width="2"/><circle cx="192" cy="120" r="9" fill="#d9d2c0" stroke="#3a2a1a" stroke-width="2"/>';
-    if(fx==='spark'){let p='M176 120';for(let i=1;i<5;i++)p+='L'+(176+i*2)+' '+(120+(Math.random()*14-7)).toFixed(0);p+='L184 120';s+='<path d="'+p+'" stroke="#9ec4ff" stroke-width="8" opacity=".5" fill="none"/><path d="'+p+'" stroke="#fffbe8" stroke-width="2.5" fill="none"/>'}
-    s+='<text x="180" y="50" text-anchor="middle" font-size="13" font-weight="800" fill="#8a6a44">電極の間の空気</text><path d="M180 56V104" stroke="#8a6a44" stroke-dasharray="3 3"/>';
-    return $('appa').innerHTML=s;
-  }
-  if(k==='wire')return $('appa').innerHTML=wireSVG(fx);
-  s+=tube()+coilBox();
-  const pol=A.pol||'-',other=pol==='-'?'+':'-';
-  // 左の電極A
-  s+='<rect x="48" y="84" width="7" height="44" fill="#6b5a44" stroke="#3a2a1a"/><path d="M28 106H48" stroke="#3a2a1a" stroke-width="3"/><path d="M14 106V188H112" stroke="#3a2a1a" stroke-width="2" fill="none"/>'+badge(14,106,pol,'A');
-  if(k==='pump'){
-    s+='<rect x="306" y="84" width="7" height="44" fill="#6b5a44" stroke="#3a2a1a"/><path d="M313 106H346V188H248" stroke="#3a2a1a" stroke-width="2" fill="none"/>'+badge(346,106,other,'B');
-    s+='<path d="M180 146V160H70" stroke="#3a2a1a" stroke-width="5" fill="none"/><rect x="40" y="150" width="34" height="22" rx="4" fill="#8a6a44" stroke="#3a2a1a" stroke-width="2"/><text x="57" y="165" text-anchor="middle" font-size="10" fill="#fff" font-weight="800">ポンプ</text>';
-    const lv=A.p||0;s+='<g transform="translate(288 32)"><circle r="18" fill="#fbf5e6" stroke="#3a2a1a" stroke-width="2"/><path d="M0 0L'+(Math.cos((200-lv*60)*Math.PI/180)*13).toFixed(1)+' '+(-Math.sin((200-lv*60)*Math.PI/180)*13).toFixed(1)+'" stroke="#b8322a" stroke-width="2.5"/><text y="32" text-anchor="middle" font-size="10" font-weight="800" fill="#3a2a1a">管の中の気圧</text></g>';
-    if(fx&&fx.on){if(lv===1)s+='<path d="M58 106H304" stroke="#f3a5b5" stroke-width="10" opacity=".75" filter="url(#bl)"/><path d="M58 106H304" stroke="#fbd3dc" stroke-width="3"/>';
-      if(lv===2)s+='<rect x="90" y="76" width="210" height="60" rx="30" fill="#f3a5b5" opacity=".55" filter="url(#bl)"/><rect x="58" y="80" width="30" height="52" fill="#3a2a1a" opacity=".12"/>';
-      if(lv>=3)s+='<rect x="30" y="68" width="300" height="76" rx="38" fill="none" stroke="#9be07a" stroke-width="7" opacity=".8" filter="url(#bl)"/><path d="M300 76q30 30 0 60" stroke="#9be07a" stroke-width="10" fill="none" opacity=".9"/>'}
-    return $('appa').innerHTML=s;
-  }
-  if(k==='cross'||k==='swap'){
-    const top=A.top!==0;
-    s+=(top?'<path d="M236 90v32M222 106h28" stroke="#6b5a44" stroke-width="7"/>':'<path d="M226 130l26 6" stroke="#6b5a44" stroke-width="7"/>')+'<path d="M236 '+(top?90:132)+'V48" stroke="#3a2a1a" stroke-width="2.5"/><path d="M236 48H320V188H248" stroke="#3a2a1a" stroke-width="2" fill="none"/>'+badge(236,40,other,'十字板');
-    s+='<text x="318" y="160" text-anchor="middle" font-size="10" font-weight="800" fill="#8a6a44">ガラス面</text>';
-    if(fx&&fx.res==='shadow')s+='<path d="M306 74q24 32 0 64" stroke="#9be07a" stroke-width="16" fill="none" opacity=".85"/><path d="M318 88v36M308 106h20" stroke="#3a4a2a" stroke-width="8" opacity=".85"/>'+beamFan();
-    if(fx&&fx.res==='glow')s+='<path d="M306 74q24 32 0 64" stroke="#9be07a" stroke-width="16" fill="none" opacity=".85"/>'+beamFan();
-    if(fx&&fx.res==='none')s+='<ellipse cx="140" cy="106" rx="80" ry="10" fill="#f3a5b5" opacity=".25" filter="url(#bl)"/>';
-    return $('appa').innerHTML=s;
-  }
-  // beam / plate / ta
-  s+='<rect x="306" y="84" width="7" height="44" fill="#6b5a44" stroke="#3a2a1a"/><path d="M313 106H346V188H248" stroke="#3a2a1a" stroke-width="2" fill="none"/>'+badge(346,106,other,'B');
-  s+='<rect x="62" y="96" width="6" height="8" fill="#6b5a44"/><rect x="62" y="108" width="6" height="8" fill="#6b5a44"/>';
-  s+='<path d="M72 112L300 112L292 101L80 101z" fill="#eef3d8" stroke="#8a6a44" stroke-width="1"/><text x="186" y="126" text-anchor="middle" font-size="9" fill="#8a6a44" font-weight="800">蛍光板</text>';
-  if(k!=='beam'){const pl=A.plate||0,tS=pl===1?'+':pl===2?'-':'0',bS=pl===1?'-':pl===2?'+':'0';
-    s+='<rect x="150" y="74" width="92" height="6" fill="#6b5a44" stroke="#3a2a1a"/><rect x="150" y="132" width="92" height="6" fill="#6b5a44" stroke="#3a2a1a"/><path d="M196 74V22M196 138V160" stroke="#3a2a1a" stroke-width="2"/>';
-    s+=(tS==='0'?'<circle cx="196" cy="18" r="10" fill="#e4d3ad" stroke="#3a2a1a"/><text x="196" y="22" text-anchor="middle" font-size="10" font-weight="800">0</text>':badge(196,18,tS))+'<text x="222" y="22" font-size="11" font-weight="800" fill="#3a2a1a">上の板</text>';
-    s+=(bS==='0'?'<circle cx="196" cy="162" r="9" fill="#e4d3ad" stroke="#3a2a1a"/>':'<circle cx="196" cy="162" r="9" fill="'+(bS==='+'?'#b8322a':'#2c5d9c')+'" stroke="#3a2a1a"/><text x="196" y="166" text-anchor="middle" fill="#fff" font-size="13" font-weight="800">'+(bS==='+'?'+':'−')+'</text>')+'<text x="258" y="166" font-size="11" font-weight="800" fill="#3a2a1a">下の板</text>';}
-  if(k==='ta'&&TAq){const y=106+TAq.dy;s+='<circle cx="298" cy="'+y+'" r="9" fill="none" stroke="#b8322a" stroke-width="2.5"/><circle cx="298" cy="'+y+'" r="3" fill="#b8322a"/><text x="286" y="'+(y-12)+'" text-anchor="end" font-size="10" font-weight="800" fill="#b8322a">的</text>'}
-  if(fx&&fx.res&&fx.res!=='none'){const dy=fx.res==='up'?-26:fx.res==='down'?26:0,p='M72 106 C 150 106, 200 '+(106+dy*.4).toFixed(0)+', 298 '+(106+dy);
-    s+='<path d="'+p+'" stroke="#7fe0a0" stroke-width="10" fill="none" opacity=".35" filter="url(#bl)"/><path d="'+p+'" stroke="#bff5cf" stroke-width="3" fill="none"/>';
-    if(fx.dots){for(let i=0;i<5;i++){const t=((fx.dots+i*.2)%1),x=72+226*t,yy=106+dy*Math.pow(Math.max(0,(x-150)/148),1.6)*(x>150?1:0);s+='<circle cx="'+x.toFixed(1)+'" cy="'+yy.toFixed(1)+'" r="5" fill="#2c5d9c"/><text x="'+x.toFixed(1)+'" y="'+(yy+3.5).toFixed(1)+'" text-anchor="middle" fill="#fff" font-size="9" font-weight="800">−</text>'}}}
-  if(fx&&fx.res==='none')s+='<text x="186" y="94" text-anchor="middle" font-size="12" font-weight="800" fill="#b8322a">すじが出ない…</text>';
-  $('appa').innerHTML=s;
+/* ---------------- 放電（撃つ） ---------------- */
+$('bFire').addEventListener('pointerdown',function(e){e.preventDefault();fire()});
+document.addEventListener('keydown',function(e){if(scene!=='play'||!G)return;if(e.code==='Space'||e.key==='Enter'){e.preventDefault();fire()}});
+function curS(){return CT.ps*CT.pv}function curM(){return CT.mf*CT.mv}
+function fire(){var g=G;if(!g||(g.state!=='aim'&&g.state!=='shoot'))return;ac();
+  var r=g.R,res;$('bFire').classList.add('dn');setTimeout(function(){$('bFire').classList.remove('dn')},140);
+  SFX.spark();SFX.buzz(.7);shake(4);
+  if(g.S.k==='pump'){res={hit:true,cat:0,te:1,w:0,kind:'st'};g.shot={t:0,res:res,path:straightPath(0)};g.state='fire';setDeck();return}
+  res=evalShot(r);g.shot={t:0,res:res,path:res.path};g.state='fire';g.tries++;setDeck();
 }
-function beamFan(){return '<path d="M56 106L306 80M56 106L306 132" stroke="#7fe0a0" stroke-width="2" opacity=".35"/>'}
-function wireSVG(fx){
-  const w=TR,R=(w.rev&&!(fx&&fx.solved)?A.bat:w.bat)==='R';let s='<rect x="60" y="44" width="240" height="116" fill="none" stroke="#3a2a1a" stroke-width="4" rx="4"/>';
-  s+='<rect x="160" y="148" width="40" height="24" fill="#f6ecd4"/><path d="M'+(R?186:174)+' 138V182" stroke="#3a2a1a" stroke-width="3"/><path d="M'+(R?174:186)+' 148V172" stroke="#3a2a1a" stroke-width="8"/>';
-  s+='<text x="'+(R?198:162)+'" y="136" text-anchor="middle" font-size="18" font-weight="800" fill="#b8322a">＋</text><text x="'+(R?162:198)+'" y="136" text-anchor="middle" font-size="18" font-weight="800" fill="#2c5d9c">−</text><text x="180" y="198" text-anchor="middle" font-size="11" font-weight="800">電池</text>';
-  if(w.motor)s+='<circle cx="60" cy="102" r="18" fill="#f6ecd4" stroke="#3a2a1a" stroke-width="3"/><text x="60" y="108" text-anchor="middle" font-size="16" font-weight="800">M</text>';
-  else s+='<circle cx="60" cy="102" r="16" fill="'+(fx&&fx.on?'#fff3a8':'#f6ecd4')+'" stroke="#3a2a1a" stroke-width="3"/><path d="M49 91L71 113M71 91L49 113" stroke="#3a2a1a" stroke-width="2.5"/>';
-  const arr=(y,dir,col,lab)=>{const x1=dir>0?130:230,x2=dir>0?230:130;return '<path d="M'+x1+' '+y+'H'+x2+'" stroke="'+col+'" stroke-width="4"/><path d="M'+x2+' '+y+'l'+(-10*dir)+' -7v14z" fill="'+col+'"/><text x="'+(dir>0?120:240)+'" y="'+(y+4)+'" text-anchor="'+(dir>0?'end':'start')+'" font-size="12" font-weight="800" fill="'+col+'">'+lab+'</text>'};
-  if(w.rev)s+='<text x="180" y="212" text-anchor="middle" font-size="11" font-weight="800" fill="#b8322a">↑ 電池の向きは予想（🔋で入れかえ）</text>';
-  s+=arr(20,w.rev?(w.bat==='R'?1:-1):A.e,'#2c5d9c','電子')+arr(72,A.i,'#b8322a','電流');
-  if(fx&&fx.dots!=null){const cw=w.bat==='R'?1:-1;for(let i=0;i<10;i++){let t=((fx.dots*cw+i/10)%1+1)%1;const P=loopPt(t);s+='<circle cx="'+P[0].toFixed(1)+'" cy="'+P[1].toFixed(1)+'" r="6" fill="#2c5d9c"/><text x="'+P[0].toFixed(1)+'" y="'+(P[1]+4).toFixed(1)+'" text-anchor="middle" fill="#fff" font-size="10" font-weight="800">−</text>'}}
-  return s;
+function straightPath(cat){var pts=[],a=uCat(cat),b=uWin(1-cat);for(var i=0;i<=40;i++)pts.push([a+(b-a)*i/40,0]);return pts}
+function bendPath(cat,s,m,hasP,hasM){var dir=cat===0?1:-1,pts=[],w=0,v=0,du=.004,u=uCat(cat),ue=uWin(1-cat),n=Math.ceil(Math.abs(ue-u)/du);
+  for(var i=0;i<=n;i++){var a=0;if(hasP&&u>=P1&&u<P2)a+=KP*s;if(hasM&&u>=M1&&u<M2)a+=KM*m*dir;v+=a*du;w+=v*du;pts.push([u,w]);u+=du*dir}
+  var wEnd=D*((hasP?s:0)+(hasM?m*dir:0));pts[pts.length-1]=[ue,wEnd];return {pts:pts,w:wEnd}}
+function evalShot(r){
+  var cat=CT.pol,s=curS(),m=curM(),o={cat:cat,kind:r.k};
+  if(r.k==='pol'){o.path=straightPath(cat);o.te=1-cat;o.w=0;o.hit=(1-cat)===r.te;
+    o.why=o.hit?'すじは<b>−極から出て</b>、反対の端へまっすぐ進む！':'すじは<b>−極から出る</b>。的と反対側の極を−にしよう';return o}
+  if(r.k==='cross'){var ok=cat===r.de;o.crossSrc=!ok;o.path=ok?null:null;o.te=1-r.de;
+    o.shadow=CT.cw*.15*MAG;o.hit=ok&&CT.cw===r.tk;
+    if(!ok)o.why='十字板が−極になると、すじは十字板から出て、こちらのガラスは光らない';
+    else if(o.hit)o.why='すじは−極から広がって<b>まっすぐ</b>進む。だから影は十字板より大きく落ちる！';
+    else o.why=(CT.cw===r.tk*2||Math.abs(CT.cw)===Math.abs(r.tk)&&CT.cw*r.tk>0)?'すじは−極から広がってまっすぐ進む。影は十字板の<b>2倍</b>外側に落ちる':'影の位置がずれた。−極から十字板を通る<b>まっすぐな線</b>を思いうかべよう';
+    o.near=ok&&Math.abs(CT.cw-r.tk)===1;return o}
+  var hasP=r.k==='plate'||r.k==='both',hasM=r.k==='mag'||r.k==='both';
+  var bp=bendPath(cat,s,m,hasP,hasM);o.path=bp.pts;o.w=bp.w;o.te=1-cat;
+  if(r.trial){o.hit=true;o.trial=true;o.why='手前にNを近づけると、すじは'+(PORT?'右':'下')+'へ曲がった。<b>Sにすると？</b>';return o}
+  var te=r.te==null?1:r.te;
+  if((1-cat)!==te){o.hit=false;o.why='すじは<b>−極から</b>出る。'+endName(te)+'の端へ向かうように極を決めよう';return o}
+  var k=Math.round(o.w/D);o.hit=k===r.tk;o.near=Math.abs(k-r.tk)===1&&Math.sign(k)===Math.sign(r.tk);
+  if(o.hit){o.why=hasP&&!hasM?'すじは<b>−の電気</b>をもつので、<b>＋の電極板</b>の側へ曲がる！':hasM&&!hasP?'磁石のN・Sを逆にすると、曲がる向きも<b>逆</b>になる！':'電極板と磁石、二つの力でねらいどおり！'}
+  else if(o.near)o.why='向きはOK！ 曲がり方があと<b>1目盛り</b>';
+  else if(Math.sign(k)!==Math.sign(r.tk)&&r.tk!==0)o.why=hasP&&!hasM?'逆に曲がった。すじは<b>−の電気</b>をもつので<b>＋の板</b>に引かれる':hasM&&!hasP?'逆に曲がった。磁石の<b>N・Sを逆</b>にすると曲がる向きも逆':'曲がる向きを見直そう（＋の板の側／磁石はN・Sで逆）';
+  else o.why='曲がり方の大きさがずれた（電圧・近さの目盛りで大きさが変わる）';
+  return o}
+function resolveShot(){var g=G,res=g.shot.res,r=g.R;
+  var tp=targetXY(res);
+  if(res.kind==='st'){hitFX(tp,1,true);g.first=1;Zk()&&Zk().earn(5,'first-try',{x:tp[0],y:tp[1]-40});g.state='done';
+    say('緑のすじが的に当たった！ これが<b>真空放電</b>の光のすじ（陰極線）',false);
+    setTimeout(function(){stageClear()},1400);return}
+  if(res.trial){say(res.why);g.state='done';hud();setDeck();setTimeout(function(){if(G===g&&scene==='play')nextRound()},2200);return}
+  if(res.hit){var first=g.tries===1;g.n++;if(first){g.first++;g.combo++;g.maxC=Math.max(g.maxC,g.combo)}
+    hitFX(tp,g.combo,first);say((first?'':'（2回目以降）')+res.why,false);
+    // 発見の瞬間
+    if(r.k==='pol'&&!SV.disc.cat){SV.disc.cat=1;save();discover('すじは −極から 出る','光のすじ（陰極線）は、−極から＋極の向きに進む',tp);Zk()&&Zk().earn(30,'rule',{x:tp[0],y:tp[1]-40})}
+    else if(r.k==='plate'&&!SV.disc.pl){SV.disc.pl=1;save();discover('すじは −の電気をもつ','＋の電極板に引かれる。正体は−の電気をもつ粒＝電子',tp);Zk()&&Zk().earn(30,'rule',{x:tp[0],y:tp[1]-40})}
+    else if(first){Zk()&&Zk().earn(5,'first-try',{x:tp[0],y:tp[1]-40})}
+    if(g.S.k==='boss'){}
+    g.state='done';setTimeout(function(){if(G===g&&scene==='play')nextRound()},first?1300:1100)}
+  else{g.miss++;var br=g.combo;g.combo=0;if(br>=2)showCombo(0,br);SFX.miss();shake(3);buzz(40);
+    pop(tp[0],tp[1]-30,res.near?'おしい！':'はずれ',res.near?30:26,INK2);say(res.why,true);
+    if(g.S.k==='boss'){g.boss=Math.max(0,g.boss-6);pop(W/2,90,'−6秒',28,INK)}
+    g.state='aim';setDeck()}
+  hud();setDeck()}
+function hitFX(p,combo,first){var big=Math.min(combo,12);
+  SFX.hit(combo);shake(6+big*.8);flash(.22+big*.02);buzz(first?[30,30,60]:20);
+  burst(p[0],p[1],24+big*4,GL,380+big*30);burst(p[0],p[1],10,INK,220);
+  pop(p[0],p[1]-20,first?(combo>=2?'命中 ×'+combo:'命中！'):'命中',first?40+big*2:30,first?'#1f7a3f':INK);
+  if(first)showCombo(combo);
+  if(combo===3||combo===6||combo===10){flash(.5);SFX.fan();for(var i=0;i<3;i++)burst(rnd(0,W),rnd(0,H*.5),16,GL,300)}
 }
-function loopPt(t){const L=[[60,44],[300,44],[300,160],[60,160]],per=240*2+116*2;let d=t*per;for(let i=0;i<4;i++){const a=L[i],b=L[(i+1)%4],len=Math.hypot(b[0]-a[0],b[1]-a[1]);if(d<=len){const k=d/len;return [a[0]+(b[0]-a[0])*k,a[1]+(b[1]-a[1])*k]}d-=len}return L[0]}
+var DISC=null;
+function discover(t1,t2,p){DISC={t:0,t1:t1,t2:t2,x:p[0],y:p[1]};SFX.fan();flash(.6);shake(10);
+  for(var i=0;i<5;i++)(function(i){setTimeout(function(){burst(rnd(W*.1,W*.9),rnd(H*.2,H*.7),20,GL,420);bell(784*(1+i*.12),.05)},i*140)})(i)}
 
-/* ================= 進行 ================= */
-function renderBar(){
-  const n=STAGES.length,done=S.si;$('cells').innerHTML=STAGES.map((_,i)=>'<i class="'+(i<done?'on':i===done?'now':'')+'"></i>').join('');
-  $('barT').textContent=S.cleared?'電流の正体を見つけた！':'電流の正体を見つけるまで あと '+(n-done)+' 段';
-}
-function startStage(i){
-  TOK++;S.si=i;ST=STAGES[i];S.phase=ST.kind==='ta'?'ta':'stages';ti=0;renderBar();$('hStage').textContent=ST.nm.split(' ')[0];$('era').textContent=ST.era;save();
-  if(ST.kind==='ta')return taStart();
-  startTrial();
-}
-function startTrial(){
-  TR=(TRIALS[ST.kind]||[])[ti];att=0;busy=false;A=Object.assign({pol:'-',plate:0,top:1,p:0,e:1,i:1},(TR&&TR.init)||{});
-  TT++;
-  if(ST.kind==='wire'){A.e=Math.random()<.5?1:-1;A.i=Math.random()<.5?1:-1;A.bat=Math.random()<.5?'R':'L';
-    if(TR.rev){const my=TT;let ph=0;const f=()=>{if(my!==TT)return;if(!busy){ph+=.0035;$('appa').innerHTML=wireSVG({dots:ph,live:1})}requestAnimationFrame(f)};requestAnimationFrame(f)}}
-  const g=(TR&&TR.goal)||ST.goal;
-  $('goal').innerHTML='<span class="tag">'+ST.nm+'</span>'+(ST.nw&&ti===0?'<span class="new">NEW '+ST.nw+'</span>':'')+'<span>'+g+'</span>';
-  setCtrl();drawApp(null);
-}
-function setCtrl(){
-  const k=ST.kind,allow=(TR&&TR.allow)||[];
-  const show={tSwap:['cross','swap','beam','plate','ta'],tPlate:['plate','ta'],tTop:['cross','swap'],tPump:['pump'],tE:['wire'],tI:['wire'],tB:[]};
-  Object.keys(show).forEach(id=>$(id).classList.toggle('hidden',!show[id].includes(k)));
-  if(k==='wire'&&TR&&TR.rev){$('tE').classList.add('hidden');$('tB').classList.remove('hidden')}
-  $('tSwap').disabled=!(k==='ta'||allow.includes('swap'));$('tTop').disabled=!allow.includes('top');$('tPlate').disabled=!(k==='ta'||allow.includes('plate'));
-  $('tTop').classList.toggle('hint',!!(TR&&TR.req&&!TR.req(A)&&allow.includes('top')));
-  $('tPump').disabled=!(k==='pump'&&A.on);
-  $('tSwap').classList.toggle('hint',!!(TR&&TR.req&&!TR.req(A)&&allow.includes('swap')));
-  $('tPlate').textContent='⚡ 電極板：'+['電圧なし','上＋・下−','上−・下＋'][A.plate||0];
-  $('tTop').textContent=A.top?'↘ 十字板をたおす':'↗ 十字板を立てる';
-  const pred=TR&&TR.pred&&!(k==='pump'&&A.on);
-  $('bOn').textContent=k==='pump'&&A.on?'💨 ポンプを使おう':pred?'🔮 予言してスイッチ ON':'⚡ スイッチ ON';$('bOn').disabled=k==='pump'&&A.on;
-}
-function result(){
-  const k=ST.kind;
-  if(k==='coil')return 'spark';
-  if(k==='cross'||k==='swap'){if(A.pol==='+')return 'none';return A.top?'shadow':'glow'}
-  if(A.pol==='+')return 'none';return ['straight','up','down'][A.plate||0];
-}
-$('tSwap').addEventListener('pointerup',()=>{if(busy||$('tSwap').disabled)return;ac();A.pol=A.pol==='-'?'+':'-';A.changed=(A.changed||0)|1;sfx.tap();setCtrl();drawApp(null)});
-$('tTop').addEventListener('pointerup',()=>{if(busy||$('tTop').disabled)return;ac();A.top=A.top?0:1;A.changed=(A.changed||0)|2;sfx.tap();setCtrl();drawApp(null)});
-$('tPlate').addEventListener('pointerup',()=>{if(busy||$('tPlate').disabled)return;ac();A.plate=((A.plate||0)+1)%3;sfx.tap();setCtrl();drawApp(null)});
-$('tE').addEventListener('pointerup',()=>{if(busy)return;ac();A.e=-A.e;sfx.tap();drawApp(null)});
-$('tI').addEventListener('pointerup',()=>{if(busy)return;ac();A.i=-A.i;sfx.tap();if(!(TR&&TR.rev))drawApp(null)});
-$('tB').addEventListener('pointerup',()=>{if(busy)return;ac();A.bat=A.bat==='R'?'L':'R';sfx.tap()});
-$('tPump').addEventListener('pointerup',()=>{if(busy||!A.on||A.p>=3)return;ac();busy=true;sfx.pump();A.p++;const cap=['','うすいピンク色の光の帯が、電極の間に出た！','管の中がぼんやり光り、−極のまわりに暗い部分ができた','管の中はほぼ暗くなり、ガラスが緑色に光りだした！'][A.p];
-  setTimeout(()=>{busy=false;drawApp({on:true});toast(cap);sfx.crackle();if(A.p>=3)setTimeout(pumpDone,1500);setCtrl()},500)});
-$('bOn').addEventListener('pointerup',()=>{
-  if(busy||$('bOn').disabled)return;ac();
-  if(ST.kind==='ta')return taFire();
-  if(ST.kind==='wire')return wireFire();
-  if(TR&&TR.req&&!TR.req(A)){toast(TR.reqMsg);sfx.bad();return}
-  if(TR&&TR.pred)return predict();
-  fire(null);
+/* ---------------- 導線の中（なぞる） ---------------- */
+function setupWire(r){G.wire={t:0,ok:false,arrow:0}}
+function wireGeo(){var x0,x1,y0,y1;if(!PORT){x0=W*.26;x1=W*.74;y0=Math.max(110,H*.2);y1=Math.min(H-120,H*.78)}else{x0=W*.16;x1=W*.84;y0=H*.2;y1=H*.78}
+  return{x0:x0,x1:x1,y0:y0,y1:y1}}
+/* 電流の向き: 電池の＋が上(bat=0)なら、外の回路を時計回り（上の導線は左→右） */
+function segDir(r,which){var cw=r.bat===0?1:-1;if(which==='c'){}else cw=-cw;
+  if(r.seg==='top')return[cw,0];if(r.seg==='right')return[0,cw];return[-cw,0]}
+var SW=null;
+cv.addEventListener('pointerdown',function(e){ac();var g=G;if(scene!=='play'||!g)return;
+  if(g.R&&g.R.k==='wire'&&g.state==='aim'){SW={x:e.clientX,y:e.clientY};return}
+  if(g.S.k==='pump'&&(g.state==='coil'||g.state==='pump')){g.drag={y0:e.clientY,v0:g.pumpY};try{cv.setPointerCapture(e.pointerId)}catch(x){}return}
+  if(g.R&&g.R.k==='cross'&&g.state==='aim'){g.drag={cross:1};moveCross(e);try{cv.setPointerCapture(e.pointerId)}catch(x){}}
 });
-function predict(){
-  const P=TR.pred;let a=null,b=null;
-  const html='<h3>🔮 スイッチを入れる前に予言！</h3><p style="font-weight:800">'+P.q+'</p><div class="opts" id="pA">'+shuffle(P.opts).map(o=>'<button class="opt" data-pa="'+o[0]+'">'+o[1]+'</button>').join('')+'</div><p style="font-weight:800;margin:4px 0">そう考える理由は？</p><div class="opts" id="pB">'+shuffle(P.rs.map((r,i)=>[i,r])).map(o=>'<button class="opt" data-pb="'+o[0]+'">'+o[1]+'</button>').join('')+'</div><button class="big" id="bLock" data-a="go" disabled>🔒 予言を確定してスイッチ ON</button>';
-  sheet(html,(act,btn)=>{
-    if(btn&&btn.dataset.pa){a=btn.dataset.pa;document.querySelectorAll('#pA .opt').forEach(x=>x.classList.toggle('on',x===btn));sfx.tap()}
-    if(btn&&btn.dataset.pb){b=+btn.dataset.pb;document.querySelectorAll('#pB .opt').forEach(x=>x.classList.toggle('on',x===btn));sfx.tap()}
-    const L=$('bLock');if(L)L.disabled=!(a&&b!=null);
-    if(act==='go'&&a&&b!=null){closeSheet();fire({a,b})}
-  });
-}
-function fire(pr){
-  busy=true;att++;sfx.sw();const tok=TOK;
-  if(ST.kind==='pump'){A.on=true;A.pr=pr;buzz(true);drawApp({on:true});setTimeout(()=>{if(tok!==TOK)return;busy=false;toast('ブーン… まだ何も光らない。空気が多すぎる？');setCtrl()},700);return}
-  const res=result();buzz(true);
-  if(ST.kind==='coil'){let k=0;sfx.crackle();const iv=setInterval(()=>{if(tok!==TOK){clearInterval(iv);return}drawApp(k%2?null:'spark');if(++k>9){clearInterval(iv);drawApp('spark');buzz(false);busy=false;judge(pr,res)}},RMO?20:100);return}
-  let k=0;const iv=setInterval(()=>{if(tok!==TOK){clearInterval(iv);return}drawApp({res,dots:k*.04});if(++k>28){clearInterval(iv);buzz(false);busy=false;judge(pr,res)}},RMO?10:60);
-  if(res!=='none')sfx.crackle();
-}
-function pumpDone(){buzz(false);judge(A.pr,'glow')}
-function judge(pr,res){
-  const P=TR.pred;
-  if(TR.need){ // 組み替えの課題
-    if(res===TR.need){
-      let bonus='';
-      if(TR.control&&att===1&&A.changed===1){earn(10,'control',$('benchW'));bonus='<p style="color:#8a5a00;font-weight:800">🧪 変えたのは「極の向き」1つだけ。条件を1つだけ変えて確かめられた！</p>'}
-      if(TR.ft&&att===1){earn(10,'first-try',$('benchW'));S.first++;bonus='<p style="color:#8a5a00;font-weight:800">⚡ 一発で成功！</p>'}
-      sfx.good();burst($('benchW'));
-      return resultSheet('<h3 class="res-ok">✅ できた！</h3><p>'+resText(res)+'</p>'+bonus,true);
-    }
-    sfx.bad();return resultSheet('<h3 class="res-ng">…ねらいとちがう</h3><p>'+resText(res)+'</p><p>ねらいは「'+({shadow:'十字の影',straight:'まっすぐのすじ',up:'上に曲がるすじ',down:'下に曲がるすじ'}[TR.need])+'」。</p>',false);
-  }
-  const key=P.opts.find(o=>o[0]===res||(res==='none'&&o[0]==='none')||(res==='glow'&&ST.kind==='pump'&&o[0]==='glow'))||P.opts[0];
-  const correct=P.opts.find(o=>o[0]===res)?res:P.opts[0][0];
-  const okA=pr&&pr.a===correct,okB=pr&&pr.b===0;S.preds++;
-  let h='<h3 class="'+(okA?'res-ok':'res-ng')+'">'+(okA&&okB?'🎯 予言的中！ 理由も正しい':okA?'⭕ 予言的中（理由は…）':'❌ 予言はずれ')+'</h3>';
-  h+='<p>結果：<b>'+(P.opts.find(o=>o[0]===correct)||[0,''])[1]+'</b></p><p>'+resText(res)+'</p>';
-  if(!okB)h+='<p style="font-size:14px">理由は「'+P.rs[0]+'」。</p>';
-  if(okA&&okB){S.hits++;sfx.good();burst($('benchW'));earn(15,'hit',$('benchW'))}else sfx.bad();
-  updHUD();save();
-  if(TR.rule&&!S.rule){S.rule=true;setTimeout(()=>{sfx.rare();earn(30,'rule',$('benchW'))},300);
-    h+='<div class="note">📜 <b>大発見！</b> すじ（陰極線）は <b>−極から出て</b> まっすぐ進む。＋と−を入れかえると、すじの出る場所も入れかわる。</div>'}
-  if(TR.name)h+='<div class="note">🔬 すじは＋の板に引かれ、−の板としりぞけ合う → すじは <b>−の電気をもつ、とても小さな粒</b> の流れ。この粒を <b>電子</b> という（陰極線＝電子線）。</div>';
-  resultSheet(h,true);
-}
-function resText(res){if(ST.kind==='pump')return '気圧を低くすると、空間を電流が流れる＝<b>真空放電</b>。光り方は、ぬいた空気の量で変わった。';if(res==='none')return (ST.kind==='cross'||ST.kind==='swap')?RES.none_c:RES.none_b;return RES[res]||''}
-function resultSheet(h,adv){
-  sheet(h+(adv?'<button class="big" data-a="n">つぎへ ▶</button>':'<button class="big red" data-a="r">組み直す（0秒）</button>'),a=>{closeSheet();if(a==='n')nextTrial();else{drawApp(null);setCtrl()}});
-}
-function nextTrial(){
-  ti++;const list=TRIALS[ST.kind]||[];
-  if(ti<list.length)return startTrial();
-  stageDone();
-}
-function stageDone(){
-  if(ST.note&&!S.note.includes(ST.id))S.note.push(ST.id);
-  S.si++;renderBar();save();sfx.rare();
-  const nx=STAGES[S.si];
-  sheet('<h3>📓 研究ノートに記録した</h3><div class="note">'+ST.note+'</div><p style="font-size:14px">電流の正体を見つけるまで あと <b>'+(STAGES.length-S.si)+'</b> 段</p><button class="big" data-a="n">'+(nx?'つぎの時代へ ▶':'')+'</button>',()=>{closeSheet();warp(()=>startStage(S.si))});
-}
-function warp(cb){if(RMO){cb();return}$('warp').classList.remove('hidden');$('warpT').textContent=STAGES[S.si]?STAGES[S.si].era+'…':'';tone(300,.8,'sine',.05,0,900);setTimeout(()=>{$('warp').classList.add('hidden');cb()},1400)}
+cv.addEventListener('pointermove',function(e){var g=G;if(!g||!g.drag)return;
+  if(g.drag.cross){moveCross(e);return}
+  var pp=pumpXY(),dy=(e.clientY-g.drag.y0)/(pp.s*2.2);var v=Math.max(0,Math.min(1,g.drag.v0+dy));pumpMove(v)});
+cv.addEventListener('pointerup',function(e){var g=G;if(g&&g.drag){g.drag=null}
+  if(SW&&g&&g.R&&g.R.k==='wire'){var dx=e.clientX-SW.x,dy=e.clientY-SW.y;SW=null;if(Math.hypot(dx,dy)<30)return;wireAnswer(dx,dy)}});
+cv.addEventListener('pointercancel',function(){if(G)G.drag=null;SW=null});
+function moveCross(e){var g=G,r=g.R;var t=PORT?(TC.x-e.clientX)/R:(TC.y-e.clientY)/R;var k=Math.max(-3,Math.min(3,Math.round(t/.15)));if(k!==CT.cw){CT.cw=k;tone(600+k*40,.04,'triangle',.04)}}
+function wireAnswer(dx,dy){var g=G,r=g.R,d=segDir(r,r.mode);var dot=dx*d[0]+dy*d[1],len=Math.hypot(dx,dy);
+  var along=Math.abs(dot)/len;g.tries++;SFX.swipe();
+  if(along<.55){say('導線にそって、まっすぐなぞろう',true,1500);g.tries--;return}
+  var ok=dot>0;var geo=wireGeo(),p=segMid(r,geo);
+  if(ok){var first=g.tries===1;g.n++;if(first){g.first++;g.combo++;g.maxC=Math.max(g.maxC,g.combo)}
+    g.wire.ok=true;g.wire.t=0;hitFX(p,g.combo,first);if(first)Zk()&&Zk().earn(5,'first-try',{x:p[0],y:p[1]-40});
+    say(r.mode==='c'?'電流は<b>＋極→−極</b>。電子の動きとは<b>逆向き</b>！':'電子は<b>−極→＋極</b>へ動く。電流とは<b>逆向き</b>！');
+    g.state='done';hud();setTimeout(function(){if(G===g&&scene==='play')nextRound()},1500)}
+  else{g.miss++;var br=g.combo;g.combo=0;if(br>=2)showCombo(0,br);SFX.miss();shake(3);buzz(40);pop(p[0],p[1]-30,'逆向き',28,INK2);
+    say(r.mode==='c'?'電流は電池の<b>＋極から出て−極へ</b>。電子の動く向きとは逆':'電子は電池の<b>−極から出て＋極へ</b>。電流の向きとは逆',true);g.wire.bad=.6;hud()}}
+function segMid(r,g){if(r.seg==='top')return[(g.x0+g.x1)/2,g.y0];if(r.seg==='bottom')return[(g.x0+g.x1)/2,g.y1];return[g.x1,(g.y0+g.y1)/2]}
 
-/* ---- 導線の中 ---- */
-function wireFire(){
-  busy=true;att++;const tok=TOK;const R=TR.bat==='R',eOK=TR.rev?A.bat===TR.bat:A.e===(R?1:-1),iOK=A.i===(R?-1:1);sfx.sw();
-  let k=0;const iv=setInterval(()=>{if(tok!==TOK){clearInterval(iv);return}$('appa').innerHTML=wireSVG({on:true,dots:k*.012,solved:eOK&&iOK});if(++k>70){clearInterval(iv);busy=false;
-    if(eOK&&iOK){sfx.good();burst($('benchW'));let b='';if(att===1){earn(10,'first-try',$('benchW'));S.first++;S.firstN++;b='<p style="color:#8a5a00;font-weight:800">⚡ 一発正解！</p>'}
-      resultSheet('<h3 class="res-ok">✅ 向きがそろった！</h3><p>電子（−の粒）は電池の<b>−極から出て＋極へ</b>。電流の向きは<b>＋極から−極へ</b>と決められていて、電子の流れと<b>逆</b>。</p>'+b,true)}
-    else{sfx.bad();resultSheet('<h3 class="res-ng">❌ 向きがちがう</h3><p>'+(!eOK?(TR.rev?'電子は電池の−極から出て、回路を回って＋極にもどる。青い粒が向かっていく側が＋極。':'青い粒（電子）の動きをよく見よう。電子は−極から出て＋極へ向かう。'):'')+(!iOK?'電流の向きは＋極から出て−極へ。電子の流れとは逆向き。':'')+'</p>',false)}}},RMO?5:35);
+/* ---------------- ポンプ ---------------- */
+function pumpXY(){var s=PORT?Math.min(W*.1,46):Math.min(R*.5,54);var x,y;
+  if(!PORT){x=TC.x+L*.3;y=TC.y+R*1.55+s*.2}else{x=W*.8;y=TC.y+L*.18}
+  return{x:x,y:y,s:s,hx:x,hy:y-s*1.6+G.pumpY*s*2.2}}
+function pumpMove(v){var g=G;var old=g.pumpY;g.pumpY=v;
+  if(g.pumpDir===0&&v>.85){g.pumpDir=1;SFX.pump(g.strokes)}
+  if(g.pumpDir===1&&v<.15){g.pumpDir=0;g.strokes=Math.min(12,g.strokes+1);onStroke()}}
+function onStroke(){var g=G,s=g.strokes;if(!CT.coil)g.orderOK=false;
+  var p=T(.5,0);
+  if(!CT.coil){say(s<12?'空気はぬけていく。でも<b>電圧をかけていない</b>ので、何も光らない':'空気はぬけた。<b>誘導コイルのスイッチ</b>を入れよう',true);}
+  else{var tx={3:'細い光の糸がゆらめきはじめた',6:'管全体が<b>桃色</b>に光った！',9:'−極のまわりに<b>暗い部分</b>が広がっていく',12:'管の中は暗くなり、ガラスが<b>緑</b>に光った！'}[s];
+    if(tx){say(tx);bell(440+s*40,.06);flash(.3,s>=12?GL:ROSE);burst(p[0],p[1],18,s>=12?GL:ROSE,300);shake(4)}}
+  if(s>=12&&CT.coil&&g.state!=='shoot'){g.state='shoot';SFX.fan();setTimeout(function(){if(G===g){say('③ 放電スイッチを押して、すじを右の的へ！'.replace('右',endName(1)));setDeck()}},900)}
+  hud()}
+function pressure(){var s=G?G.strokes:0;return Math.pow(.45,s)}
+
+/* ---------------- 描く ---------------- */
+function coilXY(){return !PORT?[TC.x-L*.3,TC.y+R*1.85]:[W*.72,TC.y+L*.5-10]}
+function capsule(x0,x1,r){c.beginPath();c.moveTo(x0,-r);c.lineTo(x1,-r);c.arc(x1,0,r,-Math.PI/2,Math.PI/2);c.lineTo(x0,r);c.arc(x0,0,r,Math.PI/2,Math.PI*1.5);c.closePath()}
+function drawTube(o){
+  // o: {vac:0..1 暗さ, rose:0..1, glowEnd:-1/0/1, plates, mag, cross, wheel, screen}
+  inTube();var hl=L/2,r=R;
+  // 台（木の台と支柱）… 管の外（下側）
+  c.save();c.fillStyle=PAPER;c.strokeStyle=INK;c.lineWidth=1.6;
+  [-.3,.3].forEach(function(f){var x=hl*2*f/1;c.beginPath();c.rect(x-6,r*.9,12,r*.55);c.fill();c.stroke();c.save();c.clip();c.fillStyle=PAT.v;c.fillRect(x-6,r*.9,12,r*.55);c.restore();
+    c.beginPath();c.ellipse(x,r*.95,r*.45,r*.14,0,0,Math.PI*2);c.stroke()});
+  c.restore();
+  // ガラスの中
+  capsule(-hl+r*.9,hl-r*.9,r);c.save();c.clip();
+  c.fillStyle='#F4EBD5';c.fillRect(-hl,-r,L,r*2);
+  if(o.vac>0){c.globalAlpha=Math.min(.85,o.vac);c.fillStyle=PAT.d;c.fillRect(-hl,-r,L,r*2);c.globalAlpha=Math.min(.35,o.vac*.4);c.fillStyle=INK;c.fillRect(-hl,-r,L,r*2);c.globalAlpha=1}
+  if(o.rose>0){var dark=o.dark||0,cx=o.catX,ax=-cx;var g0=c.createLinearGradient(cx,0,ax,0);g0.addColorStop(0,'rgba(217,138,160,0)');g0.addColorStop(Math.min(.9,dark),'rgba(217,138,160,0)');g0.addColorStop(Math.min(.98,dark+.08),'rgba(217,138,160,'+(o.rose*.75)+')');g0.addColorStop(1,'rgba(217,138,160,'+(o.rose*.6)+')');
+    c.fillStyle=g0;var th=o.thread?r*.18:r*2;c.fillRect(-hl,-th/2+(o.thread?Math.sin(TT*9)*r*.1:0),L,th)}
+  // 蛍光板（管の中の細長い板）
+  if(o.screen){c.fillStyle='rgba(239,227,200,.35)';c.fillRect(-hl+r,-r*.06,L-2*r,r*.12)}
+  // 下側の影のハッチング（立体感）
+  c.save();c.globalAlpha=.7;c.fillStyle=PAT.l;c.fillRect(-hl,r*.45,L,r*.6);c.restore();
+  // 端のガラスが光る
+  [-1,1].forEach(function(s){var gv=o.endGlow&&o.endGlow[s>0?1:0];if(!gv)return;var x=s*(hl-r*.25);var g1=c.createRadialGradient(x,0,0,x,0,r*1.3);g1.addColorStop(0,'rgba(91,209,122,'+(.75*gv)+')');g1.addColorStop(1,'rgba(91,209,122,0)');c.fillStyle=g1;c.fillRect(x-r*1.4,-r,r*2.8,r*2)});
+  c.restore();
+  // ガラスの輪郭（二重線・つや）
+  capsule(-hl+r*.9,hl-r*.9,r);c.lineWidth=2.4;c.strokeStyle=INK;c.stroke();
+  capsule(-hl+r*.9+3,hl-r*.9-3,r-3.5);c.lineWidth=.9;c.strokeStyle='rgba(59,42,26,.55)';c.stroke();
+  c.strokeStyle='rgba(255,250,236,.95)';c.lineWidth=Math.max(2,r*.06);c.lineCap='round';c.beginPath();c.moveTo(-hl+r*1.3,-r*.68);c.lineTo(-hl+r*1.3+L*.25,-r*.68);c.moveTo(-hl+r*1.3+L*.3,-r*.68);c.lineTo(hl-r*1.6,-r*.68);c.stroke();c.lineCap='butt';
+  // 排気口
+  c.beginPath();c.moveTo(hl*.72,-r);c.lineTo(hl*.72,-r*1.3);c.lineTo(hl*.78,-r*1.3);c.lineTo(hl*.78,-r);c.strokeStyle=INK;c.lineWidth=1.6;c.stroke();
+  // 両はしの電極（円板）と導入線
+  [-1,1].forEach(function(s){if(o.noEnd&&o.noEnd===s)return;var x=s*(hl-r*.55);c.save();c.beginPath();c.rect(x-r*.07,-r*.5,r*.14,r);c.fillStyle=PAPER;c.fill();c.clip();c.fillStyle=PAT.d;c.fillRect(x-r,-r,r*2,r*2);c.restore();
+    c.strokeStyle=INK;c.lineWidth=1.8;c.strokeRect(x-r*.07,-r*.5,r*.14,r);c.beginPath();c.moveTo(x,0);c.lineTo(s*(hl+r*.15),0);c.stroke();
+    c.beginPath();c.arc(s*(hl+r*.22),0,r*.1,0,Math.PI*2);c.fillStyle=INK;c.fill()});
+  // 端の蛍光の窓（的を描く場所）
+  if(o.windows){[-1,1].forEach(function(s){var x=s*(hl-r*.2);c.save();c.beginPath();c.ellipse(x,0,r*.2,r*.94,0,0,Math.PI*2);c.fillStyle='rgba(239,227,200,.6)';c.fill();c.strokeStyle=INK;c.lineWidth=1.2;c.stroke();
+    for(var k=-6;k<=6;k++){var y=-k*D*r;c.beginPath();c.moveTo(x-(k%3?r*.06:r*.11),y);c.lineTo(x+(k%3?r*.06:r*.11),y);c.lineWidth=k===0?1.6:.9;c.stroke()}c.restore()})}
+  // 電極板
+  if(o.plates){[1,-1].forEach(function(s){var y=-s*r*.7,x0=LX(P1),x1=LX(P2);c.save();c.beginPath();c.rect(x0,y-r*.05,x1-x0,r*.1);c.fillStyle=PAPER;c.fill();c.clip();c.fillStyle=PAT.d;c.fillRect(x0,y-r,x1-x0,r*2);c.restore();
+    c.strokeStyle=INK;c.lineWidth=1.6;c.strokeRect(x0,y-r*.05,x1-x0,r*.1);c.beginPath();c.moveTo((x0+x1)/2,y-s*r*.05);c.lineTo((x0+x1)/2,-s*r*1.28);c.stroke();c.beginPath();c.arc((x0+x1)/2,-s*r*1.34,r*.07,0,Math.PI*2);c.fillStyle=INK;c.fill()})}
+  // 十字板
+  if(o.cross){var cx2=0,cy=LY(CT.cw*.15),a=r*.2,b=r*.07;c.save();c.translate(cx2,cy);c.beginPath();c.rect(-b,-a,b*2,a*2);c.rect(-a,-b,a*2,b*2);c.fillStyle=PAPER;c.fill();c.save();c.clip();c.fillStyle=PAT.d;c.fillRect(-a,-a,a*2,a*2);c.restore();
+    c.beginPath();c.moveTo(-b,-a);c.lineTo(b,-a);c.lineTo(b,-b);c.lineTo(a,-b);c.lineTo(a,b);c.lineTo(b,b);c.lineTo(b,a);c.lineTo(-b,a);c.lineTo(-b,b);c.lineTo(-a,b);c.lineTo(-a,-b);c.lineTo(-b,-b);c.closePath();c.strokeStyle=INK;c.lineWidth=1.6;c.stroke();c.restore();
+    c.strokeStyle=INK;c.lineWidth=1.4;c.beginPath();c.moveTo(0,cy+(PORT?0:a));c.lineTo(0,r*1.28);c.stroke();c.beginPath();c.arc(0,r*1.34,r*.07,0,Math.PI*2);c.fillStyle=INK;c.fill();
+    if(G&&G.state==='aim'){c.save();c.setLineDash([3,4]);c.strokeStyle='rgba(59,42,26,.5)';c.beginPath();c.moveTo(0,-r*.9);c.lineTo(0,r*.9);c.stroke();c.restore()}}
+  // 羽根車
+  if(o.wheel){var wx=G?G.wx:0,wr=r*.42;c.save();c.strokeStyle=INK;c.lineWidth=1.2;c.beginPath();c.moveTo(-L*.3,wr+2);c.lineTo(L*.3,wr+2);c.moveTo(-L*.3,wr+5);c.lineTo(L*.3,wr+5);c.stroke();
+    c.translate(wx*L*.18,0);c.rotate(G?G.wheel:0);for(var i=0;i<8;i++){c.rotate(Math.PI/4);c.beginPath();c.rect(-1.2,wr*.15,2.4,wr*.85);c.fillStyle=PAPER;c.fill();c.stroke()}
+    c.beginPath();c.arc(0,0,wr*.18,0,Math.PI*2);c.fillStyle=INK;c.fill();c.restore()}
+  c.restore();
+}
+function beamStroke(pts,frac,wmul){if(!pts||pts.length<2)return;var n=Math.max(2,Math.floor(pts.length*frac));
+  function path(){c.beginPath();for(var i=0;i<n;i++){var q=T(pts[i][0],pts[i][1]);i?c.lineTo(q[0],q[1]):c.moveTo(q[0],q[1])}}
+  var jit=RM?0:Math.sin(TT*40)*.6;c.lineCap='round';c.lineJoin='round';
+  path();c.strokeStyle='rgba(91,209,122,.22)';c.lineWidth=(R*.32+jit)*wmul;c.stroke();
+  path();c.strokeStyle='rgba(91,209,122,.55)';c.lineWidth=R*.12*wmul;c.stroke();
+  path();c.strokeStyle='#E6FFE9';c.lineWidth=Math.max(1.5,R*.035)*wmul;c.stroke();
+  return T(pts[n-1][0],pts[n-1][1])}
+function targetXY(res){var r=G.R;if(res.kind==='st')return T(uWin(1),0);
+  if(r&&r.k==='pol')return T(uWin(r.te),0);
+  if(r&&r.k==='cross'){var e=1-r.de;return T(uWin(e),r.tk*.15*MAG)}
+  if(r){var te=r.te==null?1:r.te;return T(uWin(te),(r.tk==null?0:r.tk)*D)}return T(uWin(1),0)}
+function drawTarget(u,w,big,pulse){var p=T(u,w),s=Math.max(9,R*.13)*(big||1)*(1+(pulse?.12*Math.sin(TT*6):0));
+  c.save();c.strokeStyle=INK;c.lineWidth=2;c.beginPath();c.arc(p[0],p[1],s,0,Math.PI*2);c.stroke();c.lineWidth=1;c.beginPath();c.arc(p[0],p[1],s*.55,0,Math.PI*2);c.stroke();
+  c.beginPath();c.moveTo(p[0]-s*1.5,p[1]);c.lineTo(p[0]-s*.7,p[1]);c.moveTo(p[0]+s*.7,p[1]);c.lineTo(p[0]+s*1.5,p[1]);c.moveTo(p[0],p[1]-s*1.5);c.lineTo(p[0],p[1]-s*.7);c.moveTo(p[0],p[1]+s*.7);c.lineTo(p[0],p[1]+s*1.5);c.stroke();
+  c.fillStyle='rgba(91,209,122,'+(.25+.2*Math.sin(TT*4))+')';c.beginPath();c.arc(p[0],p[1],s*.5,0,Math.PI*2);c.fill();c.restore()}
+function signBadge(p,sgn,sz){var s=sz||Math.max(13,R*.17);c.save();c.beginPath();c.arc(p[0],p[1],s,0,Math.PI*2);c.fillStyle=sgn<0?INK:PAPER;c.fill();c.strokeStyle=INK;c.lineWidth=2;c.stroke();
+  c.fillStyle=sgn<0?PAPER:INK;c.font='800 '+Math.round(s*1.5)+'px '+FM;c.textAlign='center';c.textBaseline='middle';c.fillText(sgn<0?'−':'＋',p[0],p[1]+1);c.restore()}
+function label(p,txt,sz,col,al){c.save();c.font='700 '+(sz||14)+'px '+FM;c.textAlign=al||'center';c.textBaseline='middle';c.lineWidth=4;c.strokeStyle=PAPER;c.strokeText(txt,p[0],p[1]);c.fillStyle=col||INK;c.fillText(txt,p[0],p[1]);c.restore()}
+function drawCoil(x,y,s,on){c.save();c.translate(x,y);var w=s*2.6,h=s*.9;
+  c.fillStyle=PAPER2;c.strokeStyle=INK;c.lineWidth=1.6;c.beginPath();c.rect(-w*.6,h*.55,w*1.2,h*.35);c.fill();c.stroke();c.save();c.clip();c.fillStyle=PAT.h;c.fillRect(-w,h*.5,w*2,h);c.restore();
+  c.beginPath();c.rect(-w/2,-h/2,w,h);c.fillStyle=PAPER;c.fill();c.stroke();c.save();c.clip();c.fillStyle=PAT.v;c.fillRect(-w/2,-h/2,w,h);c.fillStyle=PAT.l;c.fillRect(-w/2,h*.1,w,h*.4);c.restore();
+  [-1,1].forEach(function(k){c.beginPath();c.rect(k*w/2-(k>0?0:s*.2),-h*.62,s*.2,h*1.24);c.fillStyle=PAPER;c.fill();c.stroke();
+    c.beginPath();c.moveTo(k*w*.3,-h/2);c.lineTo(k*w*.3,-h*1.05);c.lineTo(k*s*.28,-h*1.05);c.stroke();c.beginPath();c.arc(k*s*.28,-h*1.05,s*.13,0,Math.PI*2);c.fillStyle=PAPER;c.fill();c.stroke()});
+  if(on){c.strokeStyle=Math.random()<.5?'#fff':GL;c.lineWidth=1.6;c.beginPath();c.moveTo(-s*.15,-h*1.05);for(var i=1;i<5;i++)c.lineTo(-s*.15+s*.3*i/5,-h*1.05+rnd(-4,4));c.lineTo(s*.15,-h*1.05);c.stroke()}
+  c.restore()}
+function drawPump(){var p=pumpXY(),s=p.s;c.save();c.strokeStyle=INK;c.lineWidth=1.8;
+  // 筒
+  c.beginPath();c.rect(p.x-s*.35,p.y-s*1.2,s*.7,s*2.2);c.fillStyle=PAPER;c.fill();c.stroke();c.save();c.clip();c.fillStyle=PAT.l;c.fillRect(p.x,p.y-s*1.2,s*.35,s*2.2);c.restore();
+  c.beginPath();c.rect(p.x-s*.7,p.y+s*1,s*1.4,s*.25);c.fillStyle=PAPER2;c.fill();c.stroke();
+  // 柄
+  c.beginPath();c.moveTo(p.hx,p.y-s*1.2);c.lineTo(p.hx,p.hy);c.lineWidth=3;c.stroke();c.lineWidth=1.8;
+  c.beginPath();c.rect(p.hx-s*.8,p.hy-s*.14,s*1.6,s*.28);c.fillStyle=INK;c.fill();
+  // ホース（管の排気口へ）
+  var tgt=T(.86,1.3);c.beginPath();c.moveTo(p.x+s*.35,p.y+s*.8);c.bezierCurveTo(p.x+s*1.5,p.y+s*.8,tgt[0]+(PORT?s*1.4:s*.2),tgt[1]-(PORT?0:s*1.2),tgt[0],tgt[1]);c.lineWidth=4;c.strokeStyle=INK;c.stroke();c.lineWidth=2;c.strokeStyle=PAPER2;c.stroke();
+  // 圧力計（水銀柱）
+  var mx=p.x+(PORT?-s*1.3:s*1.3),mh=s*2.2,my=p.y-s*1.2;c.lineWidth=1.6;c.strokeStyle=INK;c.beginPath();c.rect(mx-s*.12,my,s*.24,mh);c.fillStyle='#F7F0DE';c.fill();c.stroke();
+  var lev=1-pressure();c.fillStyle=INK;c.fillRect(mx-s*.08,my+mh*(1-Math.max(.04,lev)),s*.16,mh*Math.max(.04,lev));
+  label([mx,my-12],'空気',12);
+  // 手のひらの案内
+  if(G.state!=='shoot'&&G.strokes<12){var a=.5+.5*Math.sin(TT*5);c.globalAlpha=a;label([p.x-s*1.9,p.hy],'⇕ 上下',16,INK);c.globalAlpha=1}
+  c.restore()}
+function electrodeSigns(cat,opt){var hl=.5;opt=opt||{};
+  [0,1].forEach(function(e){if(opt.skip===e)return;var p=T(e?1.0:0.0,0);var q=PORT?[p[0]+R*.6,p[1]+(e?-R*.45:R*.45)]:[p[0]+(e?R*.45:-R*.45),p[1]-R*.6];signBadge(q,e===cat?-1:1)})}
+function drawWires(cat){var cp=coilXY(),a=T(0,0),b=T(1,0);c.save();c.strokeStyle=INK;c.lineWidth=1.8;
+  var e0=PORT?[a[0],a[1]+R*.3]:[a[0]-R*.3,a[1]],e1=PORT?[b[0],b[1]-R*.3]:[b[0]+R*.3,b[1]];
+  c.beginPath();c.moveTo(cp[0]-R*.3,cp[1]-R*.5);if(PORT){c.lineTo(cp[0]-R*.3,e0[1]+R*.5);c.lineTo(e0[0],e0[1]+R*.5);c.lineTo(e0[0],e0[1])}else c.bezierCurveTo(cp[0]-R,cp[1]-R*1.4,e0[0]-R,e0[1]+R*1.8,e0[0],e0[1]);c.stroke();
+  if(PORT){var rx=W-12;c.beginPath();c.moveTo(cp[0]+R*.3,cp[1]-R*.5);c.lineTo(cp[0]+R*.3,cp[1]-R*.9);c.lineTo(rx,cp[1]-R*.9);c.lineTo(rx,e1[1]-R*.9);c.lineTo(e1[0],e1[1]-R*.9);c.lineTo(e1[0],e1[1]);c.stroke()}
+  else{c.beginPath();c.moveTo(cp[0]+R*.3,cp[1]-R*.5);c.bezierCurveTo(cp[0]+R*1.5,cp[1]-R*2,e1[0]+R*.4,e1[1]+R*2.2,e1[0],e1[1]);c.stroke()}c.restore()}
+function drawMagnet(){var mv=CT.mv,mf=CT.mf;var base=T(.5,0),ob=[R*.8,R*.8],k=(3-mv)/3;var fx=base[0]+ob[0]*(.35+k*1.1),fy=base[1]+ob[1]*(.35+k*1.1),s=R*.36;
+  c.save();c.globalAlpha=mv?1:.55;
+  // 本体（手前へのびる斜め投影の角棒）
+  var bx=fx+R*.9,by=fy+R*.9;c.beginPath();c.moveTo(fx-s,fy-s);c.lineTo(fx+s,fy-s);c.lineTo(bx+s,by-s);c.lineTo(bx+s,by+s);c.lineTo(bx-s,by+s);c.lineTo(fx-s,fy+s);c.closePath();c.fillStyle=PAPER;c.fill();c.save();c.clip();c.fillStyle=PAT.l;c.fillRect(fx-s,fy-s,R*3,R*3);c.restore();
+  c.strokeStyle=INK;c.lineWidth=1.6;c.stroke();c.beginPath();c.moveTo(fx+s,fy+s);c.lineTo(bx+s,by+s);c.moveTo(fx+s,fy-s);c.lineTo(fx+s,fy+s);c.lineTo(fx-s,fy+s);c.stroke();
+  // 管に向いた面
+  c.beginPath();c.rect(fx-s,fy-s,s*2,s*2);c.fillStyle=mf<0?INK:PAPER;c.fill();c.stroke();c.fillStyle=mf<0?PAPER:INK;c.font='800 '+Math.round(s*1.4)+'px '+FM;c.textAlign='center';c.textBaseline='middle';c.fillText(mf<0?'N':'S',fx,fy+1);
+  c.restore();label([bx+s*.2,by+s+14],'手前から近づける磁石',12,INK2)}
+
+function drawPlay(dt){var g=G,r=g.R,k=g.S.k;
+  if(k==='wire'||(r&&r.k==='wire')){drawWire(dt);return}
+  var vac=1,rose=0,dark=0,thread=false;
+  if(k==='pump'){var s=g.strokes,on=CT.coil;vac=Math.min(1,s/12);if(on){if(s>=3&&s<6){rose=.6;thread=true}else if(s>=6&&s<9){rose=.8}else if(s>=9&&s<12){rose=.7;dark=(s-8)*.22}}}
+  var cat=CT.pol;var catX=LX(cat?1:0);
+  var shot=g.shot,endGlow=[0,0];
+  if(k==='pump'&&CT.coil&&g.strokes>=12)endGlow[1]=.6+.2*Math.sin(TT*8);
+  var rr=r||{};var o={vac:vac,rose:rose,dark:dark,thread:thread,catX:catX*(PORT?1:1),endGlow:endGlow,
+    plates:rr.k==='plate'||rr.k==='both',cross:rr.k==='cross',wheel:rr.k==='pol',screen:rr.k==='plate'||rr.k==='mag'||rr.k==='both'||k==='pump',windows:rr.k==='plate'||rr.k==='mag'||rr.k==='both'||k==='pump'};
+  if(rr.k==='cross')o.noEnd=rr.de?-1:1;
+  if(shot&&shot.res&&shot.res.kind==='cross'&&shot.t>.25&&!shot.res.crossSrc){endGlow[1-rr.de]=.9}
+  if(shot&&shot.res&&(shot.res.kind!=='cross')&&shot.t>.35){var te=shot.res.te;endGlow[te]=.8}
+  drawWires(cat);drawCoil(coilXY()[0],coilXY()[1],PORT?Math.min(W*.09,40):Math.min(R*.5,54),(k==='pump'&&CT.coil&&g.strokes<3)||(shot&&shot.t<.2));
+  drawTube(o);
+  if(k==='pump')drawPump();
+  // 極の札
+  if(rr.k==='cross'){var de=rr.de;var p=T(de?1:0,0);var q=PORT?[p[0]+R*.6,p[1]+(de?-R*.45:R*.45)]:[p[0]+(de?R*.45:-R*.45),p[1]-R*.6];signBadge(q,cat===de?-1:1);
+    var cp=T(.5,-1.34),cq=PORT?[cp[0]-R*.35,cp[1]]:[cp[0]+R*.35,cp[1]];signBadge(cq,cat===de?1:-1,Math.max(11,R*.13))}
+  else electrodeSigns(cat);
+  // 電極板の札
+  if(o.plates){var s1=curS();[1,-1].forEach(function(sd){var pp=T(.5,sd*1.34);var q=PORT?[pp[0],pp[1]-R*.3]:[pp[0]+R*.3,pp[1]];if(s1===0)label(q,'0',14,INK2);else signBadge(q,(sd>0)===(s1>0)?1:-1,Math.max(11,R*.13))})}
+  if(rr.k==='mag'||rr.k==='both')drawMagnet();
+  // 的
+  if(r&&!r.trial){if(r.k==='pol')drawTarget(uWin(r.te),0,1.3,true);
+    else if(r.k==='cross'){drawFrame(1-r.de,r.tk*.15*MAG)}
+    else if(r.k!=='wire'){var te2=r.te==null?1:r.te;drawTarget(uWin(te2),r.tk*D,1,true)}}
+  if(k==='pump'&&g.state==='shoot')drawTarget(uWin(1),0,1.3,true);
+  // 十字の影
+  if(rr.k==='cross')drawCrossShadow(shot);
+  // 撃ったすじ
+  if(shot){shot.t+=dt;var res=shot.res;
+    if(res.kind==='cross'){drawCrossBeam(shot)}
+    else{var fr=Math.min(1,shot.t/.35);var tip=beamStroke(shot.path,fr,1+Math.min(g.combo,10)*.05);
+      if(fr<1&&tip)burst(tip[0],tip[1],2,GL,120);
+      if(rr.k==='pol'){var dirw=res.cat===0?1:-1;g.wheel+=dt*9*dirw;g.wx=Math.max(-1,Math.min(1,g.wx+dt*dirw*.8))}}
+    if(g.state==='fire'&&shot.t>=.45){resolveShot()}
+    if(shot.t>1.6&&g.state!=='fire')g.shot=null}
+  else if(k==='pump'&&CT.coil&&g.strokes>=12&&g.state!=='shoot'){}
+}
+function drawFrame(e,w){var p=T(uWin(e),w),s=Math.max(10,R*.16);c.save();c.strokeStyle=INK;c.lineWidth=2;c.setLineDash([4,3]);c.strokeRect(p[0]-s,p[1]-s,s*2,s*2);c.setLineDash([]);
+  c.fillStyle='rgba(91,209,122,'+(.2+.15*Math.sin(TT*5))+')';c.fillRect(p[0]-s,p[1]-s,s*2,s*2);c.restore()}
+function drawCrossShadow(shot){if(!shot||shot.res.kind!=='cross'||shot.res.crossSrc||shot.t<.25)return;var e=1-G.R.de,p=T(uWin(e),shot.res.shadow),a=R*.4,b=R*.14;
+  c.save();c.translate(p[0],p[1]);c.fillStyle=INK;c.globalAlpha=.85;c.fillRect(-b,-a,b*2,a*2);c.fillRect(-a,-b,a*2,b*2);c.restore()}
+function drawCrossBeam(shot){var r=G.R,res=shot.res,fr=Math.min(1,shot.t/.3);
+  if(res.crossSrc){// 十字板から、元の円板の方へ
+    var pts=[];for(var p=0;p<=1;p+=.05){var u=.5+(r.de?1:-1)*.45*p*fr;pts.push([u,CT.cw*.15*(1-p)])}beamStroke(pts,1,.8);return}
+  var su=uCat(r.de),eu=uWin(1-r.de);c.save();c.globalAlpha=.35*fr;c.fillStyle=GL;var a=T(su,0),b=T(eu,.95),d=T(eu,-.95);c.beginPath();c.moveTo(a[0],a[1]);c.lineTo(b[0],b[1]);c.lineTo(d[0],d[1]);c.closePath();c.fill();c.restore();
+  // 十字の縁をかすめる線（まっすぐ進む証拠）
+  c.save();c.setLineDash([5,5]);c.strokeStyle='rgba(59,42,26,.6)';c.lineWidth=1.2;var cp=T(.5,CT.cw*.15),sp=T(eu,res.shadow);c.beginPath();c.moveTo(a[0],a[1]);c.lineTo(sp[0],sp[1]);c.stroke();c.restore()}
+
+/* 導線の中: 回路図（電気用図記号）と電子 */
+function drawWire(dt){var g=G,r=g.R;if(!r||r.k!=='wire'||!g.wire)return;var geo=wireGeo(),x0=geo.x0,x1=geo.x1,y0=geo.y0,y1=geo.y1;var w=g.wire;w.t+=dt;if(w.bad)w.bad=Math.max(0,w.bad-dt);
+  c.save();c.lineWidth=3;c.strokeStyle=INK;
+  var bm=(y0+y1)/2,gap=18;
+  // 導線
+  c.beginPath();c.moveTo(x0,bm-gap);c.lineTo(x0,y0);c.lineTo(x1,y0);c.lineTo(x1,bm-28);c.moveTo(x1,bm+28);c.lineTo(x1,y1);c.lineTo(x0,y1);c.lineTo(x0,bm+gap);c.stroke();
+  // 電池（長い線＝＋、短く太い線＝−）
+  var topPlus=r.bat===0;function plate(y,long){c.beginPath();c.lineWidth=long?3:7;c.moveTo(x0-(long?26:13),y);c.lineTo(x0+(long?26:13),y);c.stroke()}
+  plate(bm-gap,topPlus);plate(bm+gap,!topPlus);
+  if(r.showL){label([x0-44,bm-gap],topPlus?'＋':'−',22);label([x0-44,bm+gap],topPlus?'−':'＋',22)}
+  label([x0-(PORT?0:70),bm+(PORT?60:0)],'電池',14,INK2,PORT?'center':'center');
+  // 抵抗器（電熱線）
+  c.lineWidth=3;c.fillStyle=PAPER;c.fillRect(x1-12,bm-28,24,56);c.strokeRect(x1-12,bm-28,24,56);label([x1+(PORT?0:46),bm+(PORT?46:0)],'電熱線',14,INK2);
+  // 光るべき導線
+  var hs=r.seg,hl=[[x0,y0,x1,y0],[x1,y0,x1,y1],[x0,y1,x1,y1]][hs==='top'?0:hs==='right'?1:2];
+  c.strokeStyle=w.bad?'rgba(59,42,26,.8)':'rgba(91,209,122,'+(.55+.3*Math.sin(TT*6))+')';c.lineWidth=14;c.lineCap='round';c.beginPath();c.moveTo(hl[0],hl[1]);c.lineTo(hl[2],hl[3]);c.stroke();
+  c.lineWidth=3;c.strokeStyle=INK;c.beginPath();c.moveTo(hl[0],hl[1]);c.lineTo(hl[2],hl[3]);c.stroke();
+  // 電子（−の粒）: 電池の−極から出て回路を回り＋極へ
+  if(r.showE||w.ok){var per=2*(x1-x0)+2*(y1-y0),n=Math.floor(per/46),sp=(w.ok?130:60);
+    var ccw=r.bat===0?-1:1; // 電子の向き: ＋が上なら反時計回り
+    for(var i=0;i<n;i++){var d=((i/n)*per+ccw*TT*sp)%per;if(d<0)d+=per;var p=onLoop(d,geo);if(Math.abs(p[0]-x0)<2&&Math.abs(p[1]-bm)<gap+6)continue;
+      c.beginPath();c.arc(p[0],p[1],7,0,Math.PI*2);c.fillStyle=GL;c.fill();c.strokeStyle=INK;c.lineWidth=1.3;c.stroke();c.fillStyle=INK;c.font='800 11px '+FM;c.textAlign='center';c.textBaseline='middle';c.fillText('−',p[0],p[1])}}
+  // 正解後の矢印（電流と電子）
+  if(w.ok){var mid=segMid(r,geo),dc=segDir(r,'c'),de=segDir(r,'e');arrow(mid[0]+(dc[1]?-40:0),mid[1]+(dc[0]?-34:0),dc,'電流',INK);arrow(mid[0]+(de[1]?40:0),mid[1]+(de[0]?34:0),de,'電子','#1f7a3f');
+    var lp=[x1,bm];c.fillStyle='rgba(91,209,122,.35)';c.beginPath();c.arc(lp[0],lp[1],40+Math.sin(TT*10)*4,0,Math.PI*2);c.fill()}
+  c.restore();
+  if(g.state==='aim'&&!RM){var mid2=segMid(r,geo);c.globalAlpha=.4+.3*Math.sin(TT*4);label([mid2[0],mid2[1]+(r.seg==='right'?0:(r.seg==='top'?-30:30))],'← 指でなぞる →'.replace(/[←→]/g,function(){return r.seg==='right'?'↕':'↔'}),14,INK);c.globalAlpha=1}
+}
+function onLoop(d,g){var w=g.x1-g.x0,h=g.y1-g.y0;if(d<w)return[g.x0+d,g.y0];d-=w;if(d<h)return[g.x1,g.y0+d];d-=h;if(d<w)return[g.x1-d,g.y1];d-=w;return[g.x0,g.y1-d]}
+function arrow(x,y,d,t,col){c.save();c.translate(x,y);c.rotate(Math.atan2(d[1],d[0]));c.strokeStyle=col;c.fillStyle=col;c.lineWidth=3;c.beginPath();c.moveTo(-26,0);c.lineTo(20,0);c.stroke();c.beginPath();c.moveTo(26,0);c.lineTo(14,-7);c.lineTo(14,7);c.closePath();c.fill();c.restore();label([x,y+(d[0]?-16:0)+(d[1]?0:0)],t,13,col)}
+
+/* タイトル画面の1枚絵 */
+function drawTitle(dt){var sv0={P:PORT,TC:TC,L:L,R:R};PORT=false;L=W*(sv0.P?.76:.62);R=L*(sv0.P?.16:.105);TC={x:W/2,y:H*(sv0.P?.53:.6)};calib();
+  try{drawTitle0(dt)}finally{PORT=sv0.P;TC=sv0.TC;L=sv0.L;R=sv0.R;calib()}}
+function drawTitle0(dt){var o={vac:1,rose:0,endGlow:[0,.7+.2*Math.sin(TT*3)],plates:true,screen:true,windows:true};
+  var save=CT.ps,sv=CT.pv;CT.ps=1;CT.pv=2;
+  drawWires(0);drawCoil(coilXY()[0],coilXY()[1],PORT?Math.min(W*.09,40):Math.min(R*.5,54),Math.random()<.3);drawTube(o);
+  var bp=bendPath(0,2+Math.sin(TT*.8)*1.2,0,true,false);beamStroke(bp.pts,1,1.1);var tip=T(.97,bp.w);if(Math.random()<.3)burst(tip[0],tip[1],1,GL,90);
+  electrodeSigns(0);[1,-1].forEach(function(sd){var pp=T(.5,sd*1.34);var q=PORT?[pp[0],pp[1]-R*.3]:[pp[0]+R*.3,pp[1]];signBadge(q,sd>0?1:-1,Math.max(11,R*.13))});
+  CT.ps=save;CT.pv=sv;
+  // 舞う埃（光の粒）
+  for(var i=0;i<18;i++){var x=(i*137.5+TT*12*(1+i%3))%W,y=(i*89+Math.sin(TT*.5+i)*30+H*.1)%H;c.fillStyle='rgba(59,42,26,.25)';c.fillRect(x,y,1.5,1.5)}
+}
+function drawMapBG(){}
+
+/* ---------------- HUD ---------------- */
+function hud(){var g=G;if(!g)return;var z=Zk(),kk=z&&z.state?z.state().kakera:null;
+  var tot=g.nT,st=g.S.k;
+  var left=st==='pump'?('空気を ぬいた回数 '+g.strokes+' / 12'):((st==='wire'?'導線 ':'的 ')+g.n+' / '+tot);
+  if(st==='boss')left+='　残り '+Math.ceil(g.boss)+' 秒';
+  $('hR').innerHTML='一発命中 <em>'+g.first+'</em>'+(kk!=null?'<br>かけら '+kk:'');
+  $('hL').innerHTML=left+(g.combo>=2?'<br>連続 ×'+g.combo:'');
 }
 
-/* ---- 最終実験（タイムアタック） ---- */
-let taStartT=0,taPen=0,taI=0,taList=[];
-function taStart(){
-  $('goal').innerHTML='<span class="tag" style="background:#b8322a">最終実験</span><span>すじを的に当てよう（7回）。極も電極板も組みかえてよい</span>';
-  taList=shuffle([-26,0,26,-26,26,0,26]);taI=0;taPen=0;
-  sheet('<h3>⏱ 最終実験：7つの的</h3><p>的は蛍光板の右はし（上・まん中・下）。<b>左の電極が−</b>でないとすじは出ない。上の板を＋にすれば上へ、下の板を＋にすれば下へ。</p><p>はずすと <b>+5秒</b>。</p><button class="big" data-a="go">スタート！</button>',()=>{closeSheet();taStartT=performance.now();taNext()});
+/* ---------------- 段のクリア ---------------- */
+function stageClear(){var g=G;g.state='clear';$('deck').classList.add('hidden');$('bFire').classList.add('hidden');
+  var st=g.S,si=g.si,n=g.nT;var stars;
+  if(st.k==='pump')stars=[1,1,g.orderOK?1:0];
+  else if(st.k==='boss')stars=[1,g.boss>=30?1:0,g.miss===0?1:0];
+  else stars=[1,g.first>=Math.ceil(n*2/3)?1:0,g.miss===0?1:0];
+  var old=SV.stars[si]||[0,0,0];SV.stars[si]=old.map(function(v,i){return v||stars[i]?1:0});SV.unl=Math.max(SV.unl,si+2);
+  var b=SV.best[si]||{};SV.best[si]={first:Math.max(b.first||0,g.first),n:n,combo:Math.max(b.combo||0,g.maxC)};
+  if(st.k==='boss'){SV.done=1;SV.bossT=Math.max(SV.bossT||0,Math.round(g.boss));if(!SV.clearMs)SV.clearMs=SV.ms}
+  save();
+  var L3=st.k==='pump'?['光のすじ','空気をぬいた','手順どおり']:st.k==='boss'?['完了','30秒のこした','ノーミス']:['完了','一発命中 2/3','ノーミス'];
+  var newly=!old[0];
+  $('clCard').innerHTML='<div class="k">'+esc(st.n.split('').join(' '))+'　完 了</div><h2>'+esc(st.t)+'</h2>'+
+    (newly?'<div class="fig" id="clFig">'+shelfIcon(st.ic).replace('<svg','<svg style="width:200px;height:110px"')+'</div><p style="font-size:14px;margin:0">放電管の版画が戸棚に加わった</p>':'')+
+    '<div class="seals">'+stars.map(function(v,i){return'<div class="seal" data-on="'+v+'"><i>★</i>'+L3[i]+'</div>'}).join('')+'</div>'+
+    '<div class="recs">'+(st.k==='pump'?'<span>ポンプ <b>'+g.strokes+'</b> 回</span>':'<span>一発命中 <b>'+g.first+'</b> / '+n+'</span><span>最大連続 <b>'+g.maxC+'</b></span>')+(st.k==='boss'?'<span>残り <b>'+Math.round(g.boss)+'</b> 秒</span>':'')+'</div>'+
+    '<div class="btns"><button class="pl dk" id="clNext">'+(st.k==='boss'?'口頭試問へ':'次の棚へ')+'</button><button class="pl" id="clMap">戸棚へ</button></div>';
+  $('scrClear').classList.remove('hidden');SFX.fan();flash(.5);for(var i=0;i<4;i++)(function(i){setTimeout(function(){burst(rnd(W*.2,W*.8),rnd(H*.2,H*.6),26,i%2?GL:INK,420)},i*180)})(i);confetti();
+  var seals=[].slice.call(document.querySelectorAll('#clCard .seal'));seals.forEach(function(el,i){setTimeout(function(){if(el.dataset.on==='1'){el.classList.add('on','go');SFX.stamp(i);shake(6);buzz(30)}},600+i*420)});
+  if(st.k==='boss'){Zk()&&Zk().earn(100,'boss',{id:GID+':boss'})}
+  $('clNext').onclick=function(){$('scrClear').classList.add('hidden');if(st.k==='boss'){toTest()}else startStage(Math.min(STG.length-1,si+1))};
+  $('clMap').onclick=function(){$('scrClear').classList.add('hidden');G=null;setScene('map')};
 }
-function taNext(){TR={};A={pol:Math.random()<.5?'+':'-',plate:Math.floor(Math.random()*3),top:1};TAq={dy:taList[taI]};$('hStage').textContent='⏱'+(taI+1)+'/7';setCtrl();drawApp(null)}
-function taFire(){
-  busy=true;const tok=TOK;const res=result(),dy=res==='up'?-26:res==='down'?26:res==='straight'?0:null;sfx.sw();buzz(true);
-  let k=0;const iv=setInterval(()=>{if(tok!==TOK){clearInterval(iv);return}drawApp({res,dots:k*.05});if(++k>14){clearInterval(iv);buzz(false);busy=false;
-    if(dy===TAq.dy){sfx.good();burst($('benchW'));toast('命中！ '+(taI+1)+'/7');taI++;if(taI>=7)return taDone();setTimeout(taNext,500)}
-    else{sfx.bad();taPen+=5;toast(res==='none'?'すじが出ない！ 左の電極は−に':'はずれ… +5秒');}}},RMO?10:45);
-}
-function taDone(){const t=performance.now()-taStartT+taPen*1000;S.taT=t;if(!S.taBest||t<S.taBest)S.taBest=t;S.si=STAGES.length;renderBar();mainClear()}
-function mainClear(){S.cleared=true;S.phase='cleared';renderBar();save();sfx.rare();const show=()=>showClear();if(Z()&&Z().mainClear)Z().mainClear({onClose:show});else show()}
-function showClear(){
-  $('clearStats').innerHTML='<div class="stat">⏱ 最終実験 <b>'+fmtT(S.taT)+'</b>（ベスト '+fmtT(S.taBest)+'）</div><div class="stat">🎯 予言も理由も的中 <b>'+S.hits+'</b> / '+S.preds+' 回</div><div class="stat">🕰 遊んだ時間 '+fmtT(S.t)+'</div><div class="note">📓 すじは−極から出る、−の電気をもつ小さな粒（電子）の流れ。導線の中の電流も電子の流れで、電流の向きは電子の流れと逆。</div>';
-  $('bBookC').classList.toggle('hidden',!Z());$('clear').classList.remove('hidden');
+var CONF=[];function confetti(){if(RM)return;for(var i=0;i<70;i++)CONF.push({x:rnd(0,W),y:rnd(-H*.4,0),vy:rnd(80,200),vx:rnd(-40,40),r:rnd(0,6),vr:rnd(-6,6),s:rnd(5,11),g:Math.random()<.35,l:rnd(2.2,3.5),t:0})}
+function drawConf(dt){for(var i=CONF.length-1;i>=0;i--){var p=CONF[i];p.t+=dt;if(p.t>p.l){CONF.splice(i,1);continue}p.x+=p.vx*dt;p.y+=p.vy*dt;p.r+=p.vr*dt;
+  c.save();c.translate(p.x,p.y);c.rotate(p.r);c.fillStyle=p.g?GL:PAPER;c.strokeStyle=INK;c.lineWidth=1;c.fillRect(-p.s/2,-p.s/3,p.s,p.s*.66);c.strokeRect(-p.s/2,-p.s/3,p.s,p.s*.66);c.restore()}}
+
+/* 棚の版画アイコン（SVG） */
+function shelfIcon(k){var I='#3B2A1A',P='#EFE3C8',G2='#5BD17A';var tube='<rect x="14" y="16" width="92" height="28" rx="14" fill="'+P+'" stroke="'+I+'" stroke-width="2"/><rect x="18" y="22" width="3" height="16" fill="'+I+'"/><rect x="99" y="22" width="3" height="16" fill="'+I+'"/>';
+  var h='<defs><pattern id="ph" width="4" height="4" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="4" stroke="'+I+'" stroke-width="1" opacity=".5"/></pattern></defs>';
+  var body={coil:'<rect x="30" y="24" width="60" height="22" fill="url(#ph)" stroke="'+I+'" stroke-width="2"/><line x1="44" y1="24" x2="44" y2="10" stroke="'+I+'" stroke-width="2"/><line x1="76" y1="24" x2="76" y2="10" stroke="'+I+'" stroke-width="2"/><circle cx="54" cy="10" r="4" fill="'+P+'" stroke="'+I+'" stroke-width="2"/><circle cx="66" cy="10" r="4" fill="'+P+'" stroke="'+I+'" stroke-width="2"/><path d="M58 10 l3 -3 l2 5 z" fill="'+G2+'"/>',
+    wheel:tube+'<line x1="22" y1="30" x2="98" y2="30" stroke="'+G2+'" stroke-width="3"/><circle cx="60" cy="30" r="9" fill="none" stroke="'+I+'" stroke-width="1.5"/><path d="M60 21v18M51 30h18M54 24l12 12M66 24l-12 12" stroke="'+I+'" stroke-width="1.2"/>',
+    cross:tube+'<path d="M22 30 L100 18 L100 42 Z" fill="'+G2+'" opacity=".45"/><path d="M57 22h6v5h5v6h-5v5h-6v-5h-5v-6h5z" fill="'+I+'"/>',
+    plate:tube+'<rect x="48" y="19" width="24" height="3" fill="'+I+'"/><rect x="48" y="38" width="24" height="3" fill="'+I+'"/><path d="M22 30 L48 30 Q62 30 72 25 L100 20" fill="none" stroke="'+G2+'" stroke-width="3"/>',
+    plate2:tube+'<rect x="48" y="19" width="24" height="3" fill="'+I+'"/><rect x="48" y="38" width="24" height="3" fill="'+I+'"/><path d="M98 30 L72 30 Q58 30 48 35 L20 40" fill="none" stroke="'+G2+'" stroke-width="3"/>',
+    mag:tube+'<rect x="54" y="40" width="14" height="14" fill="'+I+'"/><text x="61" y="51" font-size="11" fill="'+P+'" text-anchor="middle" font-weight="800">N</text><path d="M22 30 L52 30 Q64 31 72 35 L100 40" fill="none" stroke="'+G2+'" stroke-width="3"/>',
+    both:tube+'<rect x="48" y="19" width="24" height="3" fill="'+I+'"/><rect x="48" y="38" width="24" height="3" fill="'+I+'"/><rect x="74" y="42" width="12" height="12" fill="'+P+'" stroke="'+I+'"/><text x="80" y="52" font-size="10" fill="'+I+'" text-anchor="middle" font-weight="800">S</text><path d="M22 30 L48 30 Q62 28 72 21 L90 17" fill="none" stroke="'+G2+'" stroke-width="3"/>',
+    wire:'<rect x="20" y="10" width="80" height="40" fill="none" stroke="'+I+'" stroke-width="2.5"/><line x1="12" y1="26" x2="28" y2="26" stroke="'+I+'" stroke-width="2"/><line x1="16" y1="33" x2="24" y2="33" stroke="'+I+'" stroke-width="4"/><circle cx="46" cy="10" r="4" fill="'+G2+'" stroke="'+I+'"/><circle cx="72" cy="50" r="4" fill="'+G2+'" stroke="'+I+'"/><path d="M60 4 l10 6 l-10 6" fill="none" stroke="'+I+'" stroke-width="2"/>',
+    boss:'<circle cx="60" cy="30" r="20" fill="'+P+'" stroke="'+I+'" stroke-width="2.5"/><circle cx="60" cy="30" r="16" fill="url(#ph)"/><line x1="60" y1="30" x2="60" y2="16" stroke="'+I+'" stroke-width="2.5"/><line x1="60" y1="30" x2="70" y2="34" stroke="'+I+'" stroke-width="2"/><rect x="56" y="4" width="8" height="6" fill="'+I+'"/>'}[k]||'';
+  return '<svg viewBox="0 0 120 60" xmlns="http://www.w3.org/2000/svg">'+h+body+'</svg>'}
+
+/* ---------------- 場面 ---------------- */
+var INHUB=!!window.COLLECTION_NAME||(function(){try{return window.parent!==window}catch(e){return true}})();
+function showScr(){['scrTitle','scrMap','scrTest','scrEnd'].forEach(function(id){$(id).classList.add('hidden')});
+  if(scene==='title')$('scrTitle').classList.remove('hidden');else if(scene==='map'){buildMap();$('scrMap').classList.remove('hidden')}
+  else if(scene==='test')$('scrTest').classList.remove('hidden');else if(scene==='end')$('scrEnd').classList.remove('hidden');
+  $('hud').classList.toggle('hidden',scene!=='play');$('msg').classList.add('hidden');$('combo').style.opacity=0;
+  if(scene!=='play'){$('deck').classList.add('hidden');$('bFire').classList.add('hidden');$('scrIntro').classList.add('hidden')}
+  placeUI()}
+function setScene(s){scene=s;showScr();backBtn()}
+function backBtn(){var b=$('bBack'),on=scene==='play'||scene==='map'||scene==='test'||(scene==='title'&&INHUB);b.classList.toggle('hidden',!on);b.textContent=scene==='title'?'一覧へ':'もどる'}
+var backFrom=null;
+$('bBack').onclick=function(){ac();SFX.click();
+  if(scene==='title'){try{window.parent.postMessage({type:'rika-close-game'},'*')}catch(e){}return}
+  backFrom=scene;
+  $('bkT').textContent=scene==='test'?'口頭試問を中断します':scene==='map'?'表紙にもどります':'実験を中断します';
+  $('bkSub').textContent=scene==='test'?'確認テストは、次はさいしょから。戸棚の進み具合は保存されています。':scene==='map'?'進み具合は保存されます。':'進み具合は保存されます（終えた棚と★はそのまま。この棚は次にはじめから）。';
+  $('bkGo').textContent=scene==='map'?'表紙へ':'戸棚へ';$('scrBack').classList.remove('hidden')};
+$('bkNo').onclick=function(){$('scrBack').classList.add('hidden')};
+$('bkGo').onclick=function(){$('scrBack').classList.add('hidden');if(backFrom==='map')setScene('title');else{G=null;setScene('map')}};
+$('bMute').onclick=function(){muted=!muted;try{localStorage.setItem(SKEY+':mute',muted?'1':'0')}catch(e){}$('bMute').textContent=muted?'🔇':'🔊'};
+$('bMute').textContent=muted?'🔇':'🔊';
+
+function buildMap(){var h='';for(var i=0;i<STG.length;i++){var st=STG[i],lk=i+1>SV.unl,s=SV.stars[i]||[0,0,0],done=!!s[0],cur=!lk&&!done;
+  h+='<button class="shelf'+(lk?' lock':'')+(done?' done':'')+(cur?' cur':'')+'" data-i="'+i+'"><span class="ic">'+shelfIcon(st.ic).replace('<svg','<svg width="84" height="48"')+'</span><span><span class="no">'+esc(st.n)+'</span><span class="nm">'+(lk?'？？？':esc(st.t))+'</span></span><span class="sr">'+(lk?'🔒':s.map(function(v){return v?'★':'☆'}).join(''))+'</span></button>'}
+  $('cab').innerHTML=h;[].slice.call($('cab').querySelectorAll('.shelf')).forEach(function(b){b.onclick=function(){var i=+b.dataset.i;if(i+1>SV.unl){SFX.miss();return}SFX.click();startStage(i)}});
+  $('bToTest').classList.toggle('hidden',!SV.done);
+  var z=Zk();['bBook2','bGacha'].forEach(function(id){$(id).classList.toggle('hidden',!z)})}
+function openBook(){var z=Zk();if(z&&z.openBook)z.openBook()}
+$('bBook1').onclick=openBook;$('bBook2').onclick=openBook;$('eBook').onclick=openBook;
+$('bGacha').onclick=function(){var z=Zk();if(z&&z.openGacha)z.openGacha()};
+if(!Zk()){['bBook1','bBook2','bGacha','eBook'].forEach(function(id){$(id).classList.add('hidden')})}
+function getName(){return(window.PLAYER_NAME||$('nameIn').value||SV.name||'').trim()}
+$('bStart').onclick=function(){ac();SFX.spark();SV.name=$('nameIn').value.trim()||SV.name;save();if(SV.unl>1)setScene('map');else startStage(0)};
+$('bCont').onclick=function(){ac();SFX.click();SV.name=$('nameIn').value.trim()||SV.name;save();setScene('map')};
+$('bToTest').onclick=function(){if(SV.done)startTest()};
+function toTest(){var z=Zk();if(z&&z.mainClear&&!TEST){try{z.mainClear({onClose:startTest});return}catch(e){}}startTest()}
+
+/* 画面に合わせてUIを置く */
+function placeUI(){
+  var d=$('deck'),f=$('bFire'),m=$('msg'),cb=$('combo');
+  if(!PORT){var deckH=Math.max(150,Math.min(196,H*.23)),fs=Math.min(deckH-26,150);
+    d.style.cssText='left:16px;right:'+(fs+40)+'px;bottom:12px;height:'+(deckH-26)+'px;top:auto;width:auto';
+    f.style.cssText='right:22px;bottom:'+(12+(deckH-26-fs)/2)+'px;width:'+fs+'px;height:'+fs+'px';
+    var tp=T(.5,1)[1];m.style.cssText='left:50%;transform:translateX(-50%);top:'+Math.max(66,tp-R*.55-60)+'px;max-width:'+(W*.8)+'px';
+    cb.style.cssText='right:4%;left:auto;top:'+Math.max(70,TC.y-R*2.4)+'px;text-align:right';
+  }else{var colX=TC.x+R+(W<500?16:28),colW=W-colX-10,fs2=Math.min(112,W*.28);
+    d.style.cssText='left:'+colX+'px;width:'+colW+'px;top:'+(W<500?136:130)+'px;right:auto;bottom:auto;height:auto';
+    f.style.cssText='right:14px;bottom:'+(18)+'px;width:'+fs2+'px;height:'+fs2+'px';
+    m.style.cssText='left:10px;right:'+(fs2+30)+'px;bottom:18px;top:auto;font-size:15px;min-height:'+(fs2*.8)+'px;padding:10px 12px';
+    cb.style.cssText='left:6px;width:'+(TC.x+R+10)+'px;top:'+(H*.4)+'px';}
+  if(G&&G.R&&G.R.k==='wire'){if(!PORT)m.style.top='68px'}
+  if(G&&G.S&&G.S.k==='pump'&&PORT){d.style.top=(TC.y-L*.35)+'px'}
+  // タイトル
+  var lg=$('tLogo'),bt=$('tBtns'),h1=$('tH1');
+  if(!PORT){h1.style.fontSize=Math.min(84,W*.062)+'px';lg.style.top=Math.max(40,H*.08)+'px';bt.style.top='auto';bt.style.bottom=Math.max(20,H*.05)+'px'}
+  else{h1.style.fontSize=Math.min(64,W*.092)+'px';lg.style.top=(H*.05+30)+'px';bt.style.bottom='24px';bt.style.top='auto'}
+  syncCtl();
 }
 
-/* ---- 研究ノート ---- */
-$('bNote').addEventListener('pointerup',()=>{ac();sfx.tap();const got=STAGES.filter(s=>S.note.includes(s.id));
-  sheet('<h3>📓 研究ノート</h3>'+(got.length?got.map(s=>'<div class="note"><b>'+s.nm+'</b><br>'+s.note+'</div>').join(''):'<p>まだ記録がない。実験をすすめよう。</p>')+'<button class="big gray" data-a="c">とじる</button>',()=>closeSheet())});
+/* ---------------- 確認テスト ---------------- */
+var TQ=[],TI=0,TA=[],TOK=[],CARD=null;
+function startTest(){scene='test';G=null;showScr();backBtn();TQ=window.Quiz?Quiz.test():[];TI=0;TA=[];TOK=[];$('scrTest').scrollTop=0;showQ()}
+function lamps(){$('tLamps').innerHTML=TQ.map(function(q,i){return'<i class="'+(i<TOK.length?(TOK[i]?'ok':'ng'):i===TI?'cur':'')+'"></i>'}).join('')}
+function showQ(){if(TI>=TQ.length)return finishTest();var q=TQ[TI];$('tNo').textContent='第'+(TI+1)+'問 ／ '+TQ.length;lamps();
+  $('tQ').textContent=q.q;var f=$('tFig');if(q.fig){f.innerHTML=q.fig;f.classList.remove('hidden')}else{f.innerHTML='';f.classList.add('hidden')}
+  $('tEx').classList.add('hidden');$('tNext').classList.add('hidden');var box=$('tA');box.innerHTML='';
+  if(q.t==='choice'){q.shown.forEach(function(s,i){var b=document.createElement('button');b.className='ch pl';b.innerHTML='<i>'+'イロハニホヘ'.charAt(i)+'</i><span></span>';b.querySelector('span').textContent=s;b.onclick=function(){answer(s,b)};box.appendChild(b)})}
+  else if(q.t==='num'){var v='';box.innerHTML='<div class="numbox"><div class="v" id="nv">&nbsp;</div><div class="u">'+esc(q.unit||'')+'</div></div><div class="keys" id="nk"></div>';
+    ['7','8','9','⌫','4','5','6','.','1','2','3','0'].forEach(function(k){var b=document.createElement('button');b.className='pl';b.textContent=k;b.onclick=function(){if(TA.length>TI)return;if(k==='⌫')v=v.slice(0,-1);else if(v.length<7&&!(k==='.'&&v.indexOf('.')>=0))v+=k;$('nv').innerHTML=v?esc(v):'&nbsp;'};$('nk').appendChild(b)});
+    var go=document.createElement('button');go.className='pl dk';go.textContent='この値で決定';go.onclick=function(){if(v&&TA.length<=TI)answer(v,null)};$('nk').appendChild(go)}
+  else{var sel=[],wrap=document.createElement('div');wrap.className='ord';box.appendChild(wrap);
+    var draw=function(){wrap.innerHTML='';sel.forEach(function(s,i){var d=document.createElement('div');d.className='slot';d.innerHTML='<i>'+(i+1)+'</i><span></span>';d.querySelector('span').textContent=s;wrap.appendChild(d)});
+      q.shown.forEach(function(s){if(sel.indexOf(s)>=0)return;var b=document.createElement('button');b.className='ch pl';b.innerHTML='<i>＋</i><span></span>';b.querySelector('span').textContent=s;b.onclick=function(){if(TA.length>TI)return;sel.push(s);tone(600+sel.length*90,.06,'triangle',.05);if(sel.length===q.shown.length)answer(sel.slice(),null);else draw()};wrap.appendChild(b)});
+      if(sel.length&&TA.length<=TI){var r=document.createElement('button');r.className='pl';r.textContent='やりなおす';r.onclick=function(){sel=[];draw()};wrap.appendChild(r)}};
+    draw()}}
+function answer(v,btn){if(TA.length>TI)return;var q=TQ[TI],ok=window.Quiz?Quiz.check(q,v):false;TA.push(v);TOK.push(ok);if(ok){bell(784,.07);bell(1175,.05,.08)}else SFX.miss();
+  [].slice.call($('tA').querySelectorAll('.ch')).forEach(function(b){b.disabled=true;var t=b.querySelector('span').textContent;if(q.t==='choice'){if(t===q.choices[0])b.classList.add('ok');else if(b===btn)b.classList.add('ng')}});
+  if(q.t==='order'){[].slice.call($('tA').querySelectorAll('.slot')).forEach(function(d,i){d.style.borderColor=v[i]===q.items[i]?'#1f7a3f':INK;d.style.borderStyle='solid'})}
+  var ex=$('tEx');ex.innerHTML=(ok?'<b style="color:#1f7a3f">正解。</b>':'<b>正しくは：</b>'+esc(window.Quiz?Quiz.answer(q):'')+'<br>')+esc(q.ex||'');ex.classList.remove('hidden');
+  lamps();var nb=$('tNext');nb.textContent=TI+1>=TQ.length?'試問を終える':'つぎへ';nb.classList.remove('hidden');setTimeout(function(){nb.scrollIntoView({behavior:RM?'auto':'smooth',block:'nearest'})},50)}
+$('tNext').onclick=function(){TI++;$('scrTest').scrollTop=0;showQ()};
+function totalStars(){var n=0;for(var k in SV.stars)n+=SV.stars[k].filter(Boolean).length;return n}
+function finishTest(){var qs=TQ,answers=TA,review=window.Quiz?Quiz.review(qs,answers):[],marks=review.map(function(r){return r.ok}),score=marks.filter(Boolean).length,name=getName();
+  var fs=0,ns=0;for(var k in SV.best){fs+=SV.best[k].first||0;ns+=SV.best[k].n||0}
+  var records=TEST?[['モード','確認テストだけ']]:[['クリアタイム',SV.clearMs?fmtT(SV.clearMs):'（最終実験まだ）'],['一発命中',fs+' / '+ns],['戸棚の★',totalStars()+' / '+STG.length*3],['最終実験の残り時間',SV.bossT?SV.bossT+'秒':'―']];
+  $('eName').textContent=(name?name+'　':'')+'確認テスト';$('eScore').innerHTML=score+'<small> / '+qs.length+' 点</small>';
+  setScene('end');
+  if(window.SubmitCard)CARD=SubmitCard.show({gameId:GID,grade:'chu2',koma:[KOMA],unit:'中2理科　電流とその利用　第22回',
+    game:'見えない粒のすじ ～真空放電と電子～'+(TEST?'（確認テストのみ）':''),name:name,score:score,total:qs.length,marks:marks,records:records,review:review},function(){})}
+$('eCard').onclick=function(){if(CARD&&window.SubmitCard)SubmitCard.reopen(CARD)};
+$('eMap').onclick=function(){setScene(TEST?'title':'map')};
 
-/* ================= 確認テスト ================= */
-let TQ=[],TA=[],TI=0,lastCard=null;
-function startTest(){
-  ['clear','title','end'].forEach(x=>$(x).classList.add('hidden'));closeSheet();buzz(false);
-  if(!window.Quiz){$('test').innerHTML='<p>問題データがありません</p>';$('test').classList.remove('hidden');return}
-  TQ=Quiz.test();TA=[];TI=0;$('test').classList.remove('hidden');showQ();
-}
-function showQ(){
-  const q=TQ[TI],el=$('test');if(!q)return finishTest();
-  let h='<div class="qn">確認テスト　'+(TI+1)+' / '+TQ.length+'</div><div class="qt">'+q.q+'</div>'+(q.fig?'<div class="fig">'+q.fig+'</div>':'');
-  if(q.t==='choice')h+='<div class="opts">'+q.shown.map((c,i)=>'<button class="opt" data-c="'+i+'">'+c+'</button>').join('')+'</div>';
-  else if(q.t==='num')h+='<div class="numrow"><input id="numIn" inputmode="decimal" autocomplete="off" placeholder="数を入れる"><b style="font-size:20px">'+(q.unit||'')+'</b></div><div class="col" style="margin-top:10px"><button class="big" id="numGo">決定</button></div>';
-  else if(q.t==='order')h+='<p style="margin:4px 0">上から順に なるように タップしよう</p><div class="seq" id="seq"></div><div class="opts">'+q.shown.map((c,i)=>'<button class="opt" data-o="'+i+'">'+c+'</button>').join('')+'</div><div style="display:flex;gap:8px;width:min(100%,520px)"><button class="big gray" id="oReset" style="flex:.5">やり直す</button><button class="big" id="oGo" disabled>決定</button></div>';
-  el.innerHTML=h;el.scrollTop=0;
-  if(q.t==='choice')el.querySelectorAll('[data-c]').forEach(b=>b.onclick=()=>{sfx.tap();ans(q.shown[+b.dataset.c])});
-  if(q.t==='num'){$('numGo').onclick=()=>{const v=$('numIn').value.trim();if(!v){toast('数を入れてね');return}sfx.tap();ans(v.replace(/[０-９．]/g,c=>String.fromCharCode(c.charCodeAt(0)-0xFEE0)))}}
-  if(q.t==='order'){let seq=[];const upd=()=>{$('seq').innerHTML=seq.map((i,n)=>(n+1)+'. '+q.shown[i]).join('<br>');el.querySelectorAll('[data-o]').forEach(b=>{b.disabled=seq.includes(+b.dataset.o);b.style.opacity=b.disabled?.35:1});$('oGo').disabled=seq.length!==q.shown.length};
-    el.querySelectorAll('[data-o]').forEach(b=>b.onclick=()=>{seq.push(+b.dataset.o);sfx.tap();upd()});$('oReset').onclick=()=>{seq=[];upd()};$('oGo').onclick=()=>{if(seq.length===q.shown.length)ans(seq.map(i=>q.shown[i]))};upd();}
-}
-function ans(a){TA[TI]=a;TI++;showQ()}
-function finishTest(){
-  const qs=TQ,answers=TA;
-  const review=Quiz.review(qs,answers),marks=review.map(r=>r.ok),score=marks.filter(Boolean).length;
-  const tmode=window.GAME_MODE==='test';
-  const name=(window.PLAYER_NAME||S.name||$('nameIn').value||'').trim();
-  lastCard=SubmitCard.show({gameId:GAME,grade:'chu2',koma:[KOMA],
-    unit:'中2理科　電流とその利用　第22回',game:'見えない粒のすじ ～真空放電と電子～'+(tmode?'（確認テストのみ）':''),
-    name,score,total:qs.length,marks,
-    records:tmode?[['モード','確認テストだけ']]:[['最終実験',fmtT(S.taT)],['予言も理由も的中',S.hits+'/'+S.preds],['導線の向き 一発正解',S.firstN+'/5'],['遊んだ時間',fmtT(S.t)]],
-    review},()=>{$('test').classList.add('hidden');$('end').classList.remove('hidden')});
-}
+/* ---------------- ループ ---------------- */
+var last=performance.now();
+function frame(now){try{frame0(now)}catch(e){try{console.error(e)}catch(x){}}requestAnimationFrame(frame)}
+function frame0(now){var dt=Math.min(.05,(now-last)/1000);last=now;TT+=dt;
+  c.setTransform(DPR,0,0,DPR,0,0);
+  var sx=0,sy=0;if(SHK>0){sx=rnd(-SHK,SHK);sy=rnd(-SHK,SHK);SHK=Math.max(0,SHK-dt*40)}
+  c.drawImage(BG,0,0,W,H);c.save();c.translate(sx,sy);
+  if(scene==='play'&&G){drawPlay(dt);if(G.S.k==='boss'&&G.state!=='clear'&&G.state!=='intro'&&$('scrBack').classList.contains('hidden')){G.boss-=dt;if(G.boss<=0){G.boss=0;bossFail()}else if(Math.floor(G.boss+dt)!==Math.floor(G.boss)){hud();if(G.boss<10)tone(1200,.04,'square',.03)}}
+    SV.ms+=dt*1000;if(DISC){drawDisc(dt)}}
+  else if(scene==='title')drawTitle(dt);
+  drawFX(dt);drawConf(dt);c.restore()}
+function drawDisc(dt){DISC.t+=dt;var t=DISC.t;if(t>3.2){DISC=null;return}var a=t<.3?t/.3:t>2.6?1-(t-2.6)/.6:1;
+  c.save();c.globalAlpha=a*.85;var gr=c.createLinearGradient(0,H*.3,0,H*.7);gr.addColorStop(0,'rgba(239,227,200,0)');gr.addColorStop(.5,'rgba(239,227,200,.95)');gr.addColorStop(1,'rgba(239,227,200,0)');c.fillStyle=gr;c.fillRect(0,H*.28,W,H*.44);
+  c.globalAlpha=a*.5;c.fillStyle=GL;c.fillRect(DISC.x-18-Math.sin(t*6)*6,0,36+Math.sin(t*6)*12,H);
+  c.globalAlpha=a;label([W/2,H*.44],'― 大 発 見 ―',16,INK2);var s=Math.min(1,t/.35);c.save();c.translate(W/2,H*.5);c.scale(.6+s*.4,.6+s*.4);label([0,0],DISC.t1,Math.min(46,W*.075),'#1f7a3f');c.restore();var f2=Math.min(18,W*.042);c.font='700 '+f2+'px '+FM;var tw=c.measureText(DISC.t2).width;if(tw>W*.92){var cut=DISC.t2.indexOf('。');if(cut>0){label([W/2,H*.57],DISC.t2.slice(0,cut+1),f2,INK);label([W/2,H*.57+f2*1.5],DISC.t2.slice(cut+1),f2,INK)}else label([W/2,H*.57],DISC.t2,f2*W*.92/tw,INK)}else label([W/2,H*.57],DISC.t2,f2,INK);c.restore()}
+function bossFail(){var g=G;g.state='clear';SFX.miss();say('懐中時計が止まった……。もう一度！',true);
+  setTimeout(function(){if(G===g){$('clCard').innerHTML='<div class="k">最 終 実 験</div><h2>時間切れ</h2><p>的 '+g.ri+' / '+g.rounds.length+'。配置の読み方は身についている。もう一度！</p><div class="btns"><button class="pl dk" id="clNext">もう一度</button><button class="pl" id="clMap">戸棚へ</button></div>';
+    $('scrClear').classList.remove('hidden');$('clNext').onclick=function(){$('scrClear').classList.add('hidden');startStage(g.si)};$('clMap').onclick=function(){$('scrClear').classList.add('hidden');G=null;setScene('map')}}},900)}
+document.addEventListener('visibilitychange',function(){if(document.hidden)save()});
+window.addEventListener('pagehide',save);
 
-/* ================= 小物 ================= */
-function sheet(html,cb){const s=$('sheet'),i=$('sheetIn');i.innerHTML=html;s.classList.remove('hidden');sheetOpen=true;i.onclick=e=>{const b=e.target.closest('button');if(!b||b.disabled)return;cb(b.dataset.a,b)}}
-function closeSheet(){$('sheet').classList.add('hidden');sheetOpen=false}
-function toast(t){const o=document.getElementById('toast');if(o)o.remove();const d=document.createElement('div');d.id='toast';d.innerHTML=t;document.body.appendChild(d);setTimeout(()=>d.remove(),1800)}
-function earn(n,why,el){
-  let got=n;if(Z()&&Z().earn){const r=el?el.getBoundingClientRect():{left:innerWidth/2,top:innerHeight/2,width:0,height:0};try{got=Z().earn(n,why,{koma:KOMA,x:r.left+r.width/2,y:r.top+20})}catch(e){}}
-  else if(el){const r=el.getBoundingClientRect();fx('+'+n+' かけら',r.left+r.width/2,r.top+20);sfx.coin()}
-  return got;
-}
-function fx(t,x,y){const d=document.createElement('div');d.className='fx';d.textContent=t;d.style.left=(x-50)+'px';d.style.top=y+'px';document.body.appendChild(d);setTimeout(()=>d.remove(),1200)}
-function burst(el,col){if(RMO||!el)return;const r=el.getBoundingClientRect();for(let i=0;i<18;i++){const d=document.createElement('div');d.className='spark';d.style.left=(r.left+r.width/2)+'px';d.style.top=(r.top+r.height/2)+'px';d.style.background=col||['#7fe0a0','#e9b949','#b8322a','#2c5d9c'][i%4];d.style.setProperty('--dx',(Math.random()*260-130)+'px');d.style.setProperty('--dy',(Math.random()*220-150)+'px');document.body.appendChild(d);setTimeout(()=>d.remove(),900)}}
-function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
-function fmtT(ms){ms=ms||0;const s=Math.round(ms/1000);return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')}
-function updHUD(){$('hHit').textContent='🎯'+S.hits;$('hHit').style.display=Z()?'none':'';$('bMute').textContent=muted?'🔇':'🔊'}
-function playing(){return $('title').classList.contains('hidden')&&$('test').classList.contains('hidden')&&$('clear').classList.contains('hidden')&&$('end').classList.contains('hidden')&&!document.hidden}
-function tick(){const now=performance.now();const dt=tLast?now-tLast:0;tLast=now;if(playing()&&ST)S.t+=dt;
-  $('hTime').textContent=S.phase==='ta'&&taStartT?'⏱'+fmtT(now-taStartT+taPen*1000):fmtT(S.t);if(Math.random()<.03)save()}
-
-/* ================= 配線 ================= */
-function begin(cont){
-  ac();S.name=$('nameIn').value.trim()||S.name;$('title').classList.add('hidden');
-  if(Z()&&Z().hud&&!$('zhud').firstChild)try{Z().hud($('zhud'))}catch(e){}
-  if(cont&&S.cleared){showClear();return}
-  const go=()=>startStage(cont?Math.min(S.si,STAGES.length-1):0);
-  if(cont)go();else warp(go);updHUD();
-}
-$('bStart').onclick=()=>{const k=S;S=fresh();S.taBest=k.taBest||0;S.rule=!!k.rule;begin(false)};
-$('bCont').onclick=()=>begin(true);
-$('bMute').onclick=()=>{muted=!muted;try{localStorage.setItem('rika-zukan:chu2:mute',muted?'1':'0')}catch(e){}if(muted)buzz(false);updHUD()};
-const book=()=>{if(Z()&&Z().openBook)Z().openBook({unit:'denryu'})};
-$('bBook').onclick=book;$('bBookT').onclick=book;$('bBookC').onclick=book;
-$('bTest').onclick=startTest;$('bRetest').onclick=startTest;
-$('bAgain').onclick=()=>{$('clear').classList.add('hidden');S.cleared=false;S.phase='stages';S.si=0;startStage(0)};
-$('bCard').onclick=()=>{if(lastCard)SubmitCard.reopen(lastCard)};
-$('bTitle').onclick=()=>{$('end').classList.add('hidden');$('title').classList.remove('hidden');initTitle()};
-function initTitle(){const sv=load();if(sv){S=Object.assign(fresh(),sv);$('bCont').classList.remove('hidden');$('bCont').textContent=sv.cleared?'つづきから（クリア済み）':'つづきから（'+(STAGES[Math.min(sv.si||0,STAGES.length-1)].nm)+'）'}
-  if(window.PLAYER_NAME){$('nameIn').value=window.PLAYER_NAME;$('nameIn').classList.add('hidden')}else if(S.name)$('nameIn').value=S.name;
-  const hz=!Z();$('bBookT').classList.toggle('hidden',hz);$('bBook').classList.toggle('hidden',hz)}
-initTitle();updHUD();renderBar();
-setInterval(tick,250);
-addEventListener('pagehide',save);
-if(/dev/.test(location.hash))window.__g={get S(){return S},get ST(){return ST},get TR(){return TR},get A(){return A},get busy(){return busy},get TAq(){return TAq},startStage,result};
-if(window.GAME_MODE==='test'){$('title').classList.add('hidden');startTest()}
-else{ST=STAGES[2];A={pol:'-',top:1};drawApp({res:'shadow'});ST=null;$('goal').innerHTML='<span class="tag">第1段</span><span>誘導コイル</span>'}
+/* ---------------- はじまり ---------------- */
+resize();
+window.Zukan&&Zukan.setup&&Zukan.setup({game:GID,koma:[KOMA]});
+if(window.PLAYER_NAME){$('nameIn').value=window.PLAYER_NAME;$('nmRow').classList.add('hidden')}else if(SV.name)$('nameIn').value=SV.name;
+if(SV.unl>1||SV.stars[0])$('bCont').classList.remove('hidden');
+if(TEST)startTest();else setScene('title');
+setTimeout(function(){placeUI()},300);
+requestAnimationFrame(frame);
+window.__SH={G:function(){return G},CT:CT,start:startStage,begin:beginPlay,fire:fire,scene:function(){return scene},SV:function(){return SV},pump:pumpMove,wire:wireAnswer,next:nextRound};
 })();
 </script>
 </body>

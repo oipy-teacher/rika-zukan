@@ -1,154 +1,214 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-<meta charset="utf-8">
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#1D3557">
 <title>前線がくる町 ～前線の通過と天気の変化～</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=M+PLUS+1+Code:wght@500;700&display=swap" rel="stylesheet">
+<!--
+  前線がくる町 ～前線の通過と天気の変化～（中2理科 気象 コマ22 / kisho-zensen-town / chu2-kisho-22）v2
+
+  ■ 遊びの核: レーン配置防衛（PvZ型）。西から温帯低気圧が近づく町の「通り（レーン）」に、傘・うすぎ・雨戸・上着の
+    備えを置く。天気の帯（しとしと雨／むしむし南風／ザアザア雷雨／ひゅうひゅう北風）は西から順に通りを進み、
+    最初に出会った備えが合っていれば「バシッ」と止まり、合わなければ備えはこわれて帯は先へ進む。
+    → 温暖前線の雨 → 暖気 → 寒冷前線の雨 → 寒気 の順番どおりに、西から備えを並べた通りだけが守れる。
+  ■ 理科＝操作: 天気の帯の位置は「温帯低気圧と前線の図」そのものから計算する（温暖前線は中心から南東、寒冷前線は南西へ
+    のびる → 南の通りほど暖気が広い）。町が今どこにいるか（前線の前・暖気の中）で必要な備えが変わる。
+    夜は雲が見えず、西の見張り台の記録（天気記号・風向・気温・気圧）から次に来る天気を読む。寒冷前線が速い回は
+    北の通りで暖気が消える（閉塞前線）。
+  ■ 世界とメタファー: アメコミ／ポップアートの町（網点・原色・太い輪郭・描き文字の擬音）。画面ぜんぶがコミックの1コマ。
+    HUDはナレーションの黄色いキャプション、もどるはフキダシ、スタートは斜めのバクハツ札。
+  ■ 配色: 背景 #FFF6DA／主 #1D3557（ネイビー）／差し #E63946（赤）＋ 黄 #FFC914・水色 #5BC0EB・オレンジ #FF8C42。
+  ■ 書体: 見出し・擬音＝Reggae One／本文＝M PLUS 1p（太字）。
+  ■ 画面の組み方: 全画面canvasが主役。PC・iPad横＝左（西）から天気が来て右（東）に家（天気図と同じ向き。割り当て表の
+    「左に町」から、天気図の向きにそろえるため左右を入れかえた）／スマホ・iPad縦＝上（西）から天気が来て下に家。
+    天気図の小窓（等圧線・前線記号・町の位置）はPCで左下、縦画面で右上。
+  ■ ハマる仕組み: 主⑮守り合い（CPUの天気とだけ）／副⑭予兆を読む（すじ雲・気圧の下がり）・⑤コンボ（誤りでリセット）。
+  ■ 演出: 当たるたびに画面シェイク・フラッシュ・網点の爆発・擬音・+点数が弾む・音程が上がる。コンボ3/6/10で
+    背景の集中線が黄→赤→虹に変わる。面クリアは★がドン・ドン・ドン。ボス（嵐の大王）撃破は虹の光とスロー。
+  ■ 数値（架空の代表値）: 気温 12→13（雨）→19（暖気）→14（雷雨）→8℃（寒気）、気圧 1012→1004→1000→1001→1008hPa。
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Reggae+One&family=M+PLUS+1p:wght@500;800;900&display=swap" rel="stylesheet">
 <style>
-:root{--pp:#f6f2e7;--ink:#1f1f1f;--dim:#8a8578;--bl:#2459a8;--rd:#b8322b;--gd:#b98a10;--gr:#3a7a3a;--ln:#cfc7b3}
+:root{--ink:#111;--bg:#FFF6DA;--navy:#1D3557;--red:#E63946;--yel:#FFC914;--cya:#5BC0EB;--org:#FF8C42;--blu:#457B9D;
+ --fh:'Reggae One','Hiragino Sans','Yu Gothic',sans-serif;--fb:'M PLUS 1p','Hiragino Sans','Yu Gothic',sans-serif}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{margin:0;min-height:100%;color:var(--ink);font-family:"M PLUS 1 Code","Osaka-Mono","MS Gothic","Hiragino Sans",monospace;-webkit-text-size-adjust:100%}
-body{background:var(--pp);overflow-x:hidden;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
-body.night{--pp:#15171c;--ink:#e8e4d8;--dim:#7d7a70;--ln:#3a3d45;--bl:#79a9ea;--rd:#ef7b72;--gd:#e5c35c}
+html,body{margin:0;height:100%;overflow:hidden;background:var(--navy);font-family:var(--fb);font-weight:800;color:var(--ink);-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+#app{position:relative;width:100%;height:100vh;height:100dvh;overflow:hidden}
+#cv{position:absolute;inset:0;display:block;touch-action:none}
+.scr{position:absolute;inset:0;pointer-events:none}
+.pe{pointer-events:auto}
 .hidden{display:none!important}
-#app{width:100%;max-width:540px;margin:0 auto;padding:8px 10px 28px}
-.box{border:2px solid var(--ink);padding:8px 10px;position:relative;background:var(--pp)}
-.box.dbl{border:4px double var(--ink)}
-.box .cap{position:absolute;top:-11px;left:10px;background:var(--pp);padding:0 6px;font-weight:700;font-size:13px}
-.btn{font:inherit;font-weight:700;font-size:16px;min-height:48px;padding:8px 14px;border:2px solid var(--ink);background:var(--ink);color:var(--pp);cursor:pointer;touch-action:manipulation;border-radius:0}
-.btn:active{transform:translateY(2px)}
-.btn.sub{background:var(--pp);color:var(--ink)}
-.btn[disabled]{opacity:.35}
-#title{text-align:center;padding-top:6px}
-#title pre{font:inherit;font-size:clamp(10px,3.1vw,14px);line-height:1.2;margin:6px auto;display:inline-block;text-align:left}
-#title h1{font-size:clamp(28px,8.6vw,40px);margin:8px 0 0;letter-spacing:.06em}
-#title .sub{font-size:16px;margin:2px 0 10px}
-#title .lead{font-size:15px;line-height:1.8;text-align:left;margin:14px 0 0}
-#title .row{display:flex;flex-direction:column;gap:12px;align-items:center;margin-top:14px}
-#title .row .btn{width:min(80vw,320px);flex:0 0 auto}
-#tArt{display:grid;grid-template-columns:repeat(15,1fr);border:2px solid var(--ink);padding:4px 2px;line-height:1.25;text-align:center;font-weight:700;font-size:min(5.2vw,24px)}
-#tArt div{height:1.3em;display:flex;align-items:center;justify-content:center}
-#nameRow{display:flex;gap:8px;align-items:center;justify-content:center;font-weight:700;margin-top:12px}
-#nameRow input{font:inherit;font-size:17px;padding:8px 10px;border:2px solid var(--ink);width:12em;background:#fff;color:#1f1f1f;border-radius:0}
-.tiny{font-size:12.5px;color:var(--dim)}
-#hud{display:flex;gap:6px;align-items:center;justify-content:space-between;padding:4px 6px;margin-bottom:10px;border:2px solid var(--ink);font-weight:700;font-size:13px;overflow:hidden}
-#hud span{white-space:nowrap}
-#hZk{min-width:0;overflow:hidden;flex-shrink:1}
-.ib{font:inherit;min-width:44px;min-height:40px;border:2px solid var(--ink);background:var(--pp);color:var(--ink);font-size:16px;cursor:pointer}
-#runhd{margin-bottom:12px}
-#runhd .nm{font-weight:700;font-size:17px}
-#runhd .gh{font-size:13px;margin-top:4px;letter-spacing:.05em;word-break:break-all}
-#town{display:grid;grid-template-columns:repeat(15,1fr);border:2px solid var(--ink);padding:4px 2px;line-height:1.25;text-align:center;font-weight:700;position:relative;overflow:hidden}
-#town div{height:1.3em;display:flex;align-items:center;justify-content:center;white-space:nowrap}
-.c-cl{color:#8d8d8d}.c-cb{color:#555}.c-rn{color:var(--bl)}.c-rs{color:var(--bl);font-weight:900}.c-th{color:var(--gd)}.c-fg{color:var(--ln)}.c-sun{color:var(--gd)}
-.c-me{color:var(--rd);font-weight:900}.c-wf{color:var(--rd)}.c-cf{color:var(--bl)}.c-hi{background:rgba(185,138,16,.18)}
-body.night .c-cl{color:#6a6a6a}body.night .c-cb{color:#9a9a9a}
-#obs{margin-top:14px;font-size:15px;line-height:1.7}
-#obs table{border-collapse:collapse;width:100%}
-#obs td{padding:1px 4px;vertical-align:top}
-#obs td:first-child{white-space:nowrap;width:4.5em}
-.miss{color:var(--dim)}
-#log{margin-top:14px;font-size:13px;line-height:1.55}
-#logIn{max-height:130px;overflow:auto}
-#act{margin-top:14px}
-.q{font-weight:700;font-size:15.5px;line-height:1.5;margin:0 0 8px}
-.opts{display:flex;flex-direction:column;gap:7px}
-.opts button{font:inherit;text-align:left;font-size:15px;font-weight:700;min-height:48px;padding:7px 10px;border:2px solid var(--ink);background:var(--pp);color:var(--ink);cursor:pointer;line-height:1.4;border-radius:0;touch-action:manipulation}
-.opts button:before{content:"▷ "}
-.opts button.sel{background:var(--ink);color:var(--pp)}
-.opts button.ok{background:#cfe8c8;color:#1f1f1f}
-.opts button.ng{background:#f0c9c4;color:#1f1f1f}
-.eq{display:grid;grid-template-columns:1fr 1fr;gap:7px}
-.eq button{font:inherit;font-size:14.5px;font-weight:700;min-height:56px;padding:6px;border:2px solid var(--ink);background:var(--pp);color:var(--ink);cursor:pointer;border-radius:0;line-height:1.3}
-.big{font-size:22px;font-weight:700;text-align:center;margin:4px 0}
-.good{color:var(--gr)}.bad{color:var(--rd)}
-.expl{font-size:14px;line-height:1.6;border-left:4px solid var(--ink);padding:4px 8px;margin-top:8px}
-.row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
-.row .btn{flex:1 1 140px}
-.memo{font-size:13.5px;line-height:1.7;white-space:pre-wrap;margin:0}
-.fig{width:100%;max-width:460px;display:block;margin:4px auto;height:auto;background:#fff}
-#clear .box,#rbox,#tbox{padding:14px 12px}
-.recs2{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0}
-.recs2 div{border:2px solid var(--ink);padding:6px 8px;font-size:13px}
-.recs2 b{display:block;font-size:19px}
-.col{display:flex;flex-direction:column;gap:10px;margin-top:12px}
-#tbox .tno{font-weight:700}
-#tbox .prog{display:flex;gap:4px;margin:6px 0 12px}
-#tbox .prog i{flex:1;height:8px;border:1.5px solid var(--ink)}
-#tbox .prog i.on{background:var(--ink)}
-#tbox .tq{font-size:17px;font-weight:700;line-height:1.65;margin-bottom:10px}
-#tbox .fig2{border:2px solid var(--ink);background:#fff;padding:6px;margin:6px 0 12px;text-align:center}
-#tbox .fig2 svg{max-width:100%;height:auto;max-height:240px}
-.ch{display:flex;flex-direction:column;gap:8px}
-.ch button{font:inherit;text-align:left;font-size:15.5px;font-weight:700;min-height:50px;padding:8px 12px;border:2px solid var(--ink);background:var(--pp);color:var(--ink);cursor:pointer;line-height:1.45;border-radius:0}
-.numrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-.numrow input{font:inherit;font-size:22px;width:8em;padding:8px 10px;border:2px solid var(--ink);border-radius:0}
-.ord{min-height:54px;border:2px dashed var(--ink);padding:6px;margin-bottom:8px;display:flex;flex-direction:column;gap:6px}
-.ord div{border:2px solid var(--ink);padding:6px 8px;font-weight:700;font-size:14.5px;background:#f1e6c2;color:#1f1f1f}
-#fx{position:fixed;inset:0;pointer-events:none;z-index:50}
-.pop{position:fixed;z-index:60;pointer-events:none;font-weight:700;font-size:20px;color:var(--pp);background:var(--ink);padding:1px 8px;animation:pop 1.2s ease-out forwards;white-space:nowrap}
-@keyframes pop{0%{transform:translate(-50%,0) scale(.6);opacity:0}15%{transform:translate(-50%,-8px) scale(1.1);opacity:1}100%{transform:translate(-50%,-60px) scale(1);opacity:0}}
-#banner{position:fixed;left:50%;top:26%;transform:translate(-50%,-50%);z-index:70;pointer-events:none;opacity:0;font-size:26px;font-weight:700;background:var(--pp);color:var(--ink);border:4px double var(--ink);padding:8px 18px;white-space:nowrap}
-#banner.on{animation:ban 1.6s ease forwards}
-@keyframes ban{0%{opacity:0;transform:translate(-50%,-50%) scale(1.6)}15%{opacity:1;transform:translate(-50%,-50%) scale(1)}80%{opacity:1}100%{opacity:0}}
-.shake{animation:shk .35s}
-@keyframes shk{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
-@media (prefers-reduced-motion:reduce){*,*:before,*:after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition:none!important}}
-</style>
-</head>
-<body>
-<canvas id="fx"></canvas>
-<div id="banner"></div>
+button{font-family:var(--fh);color:var(--ink);cursor:pointer;border:0;background:none;padding:0;touch-action:manipulation}
+button:disabled{opacity:.45;cursor:default}
+.hd{font-family:var(--fh);font-weight:400}
+/* コマの札ボタン */
+.pnl{position:relative;min-height:48px;padding:8px 18px;font-size:19px;background:#fff;border:4px solid var(--ink);box-shadow:5px 5px 0 var(--ink);transition:transform .08s}
+.pnl:active{transform:translate(4px,4px);box-shadow:1px 1px 0 var(--ink)}
+.pnl.y{background:var(--yel)}.pnl.r{background:var(--red);color:#fff}.pnl.n{background:var(--navy);color:#fff}.pnl.c{background:var(--cya)}
+.pnl.s{min-height:44px;font-size:16px;padding:6px 12px}
+/* バクハツ札（いちばん押したいボタン） */
+.bam{position:relative;min-height:62px;padding:10px 34px;font-size:30px;color:var(--yel);background-color:var(--red);
+ background-image:radial-gradient(circle,rgba(0,0,0,.18) 2px,transparent 2.4px);background-size:9px 9px;
+ border:5px solid var(--ink);box-shadow:7px 7px 0 var(--ink);transform:skew(-8deg);
+ text-shadow:3px 0 var(--ink),-3px 0 var(--ink),0 3px var(--ink),0 -3px var(--ink),3px 3px var(--ink),-3px -3px var(--ink),3px -3px var(--ink),-3px 3px var(--ink),5px 5px 0 var(--ink);
+ animation:pulse 1.1s ease-in-out infinite}
+.bam:active{transform:skew(-8deg) translate(5px,5px);box-shadow:2px 2px 0 var(--ink)}
+@keyframes pulse{0%,100%{scale:1}50%{scale:1.06}}
+.row{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
+/* もどる（フキダシ） */
+#bBack{position:absolute;left:10px;top:calc(8px + env(safe-area-inset-top));z-index:30;height:48px;padding:0 16px 0 12px;font-size:19px;background:#fff;border:4px solid var(--ink);border-radius:26px;box-shadow:4px 4px 0 var(--ink)}
+#bBack::after{content:'';position:absolute;left:22px;bottom:-15px;border:8px solid transparent;border-top:12px solid var(--ink);border-bottom:0}
+#bBack b{color:var(--red);font-weight:400}
+#bBack:active{transform:translate(3px,3px);box-shadow:1px 1px 0 var(--ink)}
+#bSnd{position:absolute;right:10px;top:calc(8px + env(safe-area-inset-top));z-index:30;width:48px;height:48px;font-size:20px;background:var(--yel);border:4px solid var(--ink);box-shadow:4px 4px 0 var(--ink)}
+#bSnd.off{background:#bbb;text-decoration:line-through}
+/* タイトル */
+#scTitle .logo{position:absolute;left:50%;top:9%;transform:translateX(-50%) rotate(-4deg);text-align:center;white-space:nowrap;animation:logoIn .9s cubic-bezier(.3,1.6,.5,1) both}
+@keyframes logoIn{0%{transform:translate(-50%,-60vh) rotate(-14deg)}100%{transform:translateX(-50%) rotate(-4deg)}}
+.lg{font-family:var(--fh);line-height:.95;color:var(--yel);-webkit-text-stroke:0;paint-order:stroke fill;
+ text-shadow:5px 0 var(--ink),-5px 0 var(--ink),0 5px var(--ink),0 -5px var(--ink),4px 4px var(--ink),-4px -4px var(--ink),4px -4px var(--ink),-4px 4px var(--ink),11px 11px 0 var(--red),13px 13px 0 var(--ink)}
+.lg1{font-size:clamp(46px,8.5vw,108px)}
+.lg2{font-size:clamp(66px,12.5vw,160px);margin-top:-.05em}
+.lgsub{display:inline-block;margin-top:14px;font-family:var(--fh);font-size:clamp(16px,2.3vw,26px);background:#fff;border:4px solid var(--ink);padding:4px 14px;box-shadow:5px 5px 0 var(--navy);transform:rotate(3deg)}
+#scTitle .tbox{position:absolute;left:50%;bottom:calc(5% + env(safe-area-inset-bottom));transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:14px;width:min(92vw,440px)}
+.namebox{display:flex;align-items:center;gap:8px;background:var(--yel);border:4px solid var(--ink);padding:6px 12px;box-shadow:4px 4px 0 var(--ink);font-family:var(--fh);width:100%}
+.namebox input{flex:1;min-width:0;font:inherit;font-family:var(--fb);font-size:18px;border:0;border-bottom:3px solid var(--ink);background:transparent;padding:4px;outline:none}
+.t3{font-family:var(--fh);font-size:14px;background:var(--navy);color:#fff;padding:3px 10px;border:3px solid var(--ink)}
+/* 地図（コマ割りのページ） */
+#scMap{display:flex;flex-direction:column;align-items:center;padding:calc(66px + env(safe-area-inset-top)) 12px 14px}
+.mhead{background:var(--yel);border:4px solid var(--ink);box-shadow:5px 5px 0 var(--ink);padding:6px 16px;font-family:var(--fh);font-size:clamp(18px,2.6vw,28px);transform:rotate(-1.5deg);text-align:center}
+.mhead small{display:block;font-family:var(--fb);font-size:13px}
+#panels{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;width:min(96vw,980px);margin:14px 0 12px;flex:1;min-height:0}
+.pan{position:relative;display:flex;flex-direction:column;justify-content:flex-end;align-items:flex-start;text-align:left;padding:8px 10px;border:4px solid var(--ink);background:#fff;box-shadow:4px 4px 0 var(--ink);overflow:hidden;min-height:0}
+.pan .no{position:absolute;left:0;top:0;background:var(--ink);color:#fff;font-family:var(--fh);font-size:15px;padding:2px 9px}
+.pan .st{position:absolute;right:6px;top:4px;font-size:22px;color:var(--yel);-webkit-text-stroke:1.5px var(--ink);letter-spacing:-2px}
+.pan .nm{font-family:var(--fh);font-size:clamp(14px,1.9vw,22px);line-height:1.15;background:#fff;padding:0 4px;border:2px solid var(--ink)}
+.pan .sb{font-size:11.5px;line-height:1.3;background:rgba(255,255,255,.85);padding:1px 4px;margin-top:3px}
+.pan.lock{filter:grayscale(1) brightness(.8);cursor:default}
+.pan.cur{animation:panGlow 1s ease-in-out infinite}
+@keyframes panGlow{50%{box-shadow:4px 4px 0 var(--ink),0 0 0 6px var(--yel)}}
+.mbtn{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;align-items:center}
+.kk{font-family:var(--fh);font-size:15px;background:#fff;border:3px solid var(--ink);padding:4px 10px;box-shadow:3px 3px 0 var(--ink)}
+/* 遊ぶ画面のHUD */
+#cap{position:absolute;left:168px;top:calc(10px + env(safe-area-inset-top));max-width:calc(100% - 420px);background:var(--yel);border:4px solid var(--ink);box-shadow:4px 4px 0 var(--ink);padding:3px 12px;font-family:var(--fh);font-size:17px;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#cap small{font-family:var(--fb);font-size:12px;margin-left:6px}
+#tix{position:absolute;right:70px;top:calc(8px + env(safe-area-inset-top));display:flex;gap:8px;align-items:center}
+.tk{background:#fff;border:4px solid var(--ink);box-shadow:4px 4px 0 var(--ink);padding:2px 10px;font-family:var(--fh);font-size:17px;white-space:nowrap}
+.tk b{font-weight:400;color:var(--red);font-size:22px}
+#tray{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(8px + env(safe-area-inset-bottom));display:flex;gap:10px}
+.card{position:relative;width:104px;height:102px;background:#fff;border:4px solid var(--ink);box-shadow:4px 4px 0 var(--ink);display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding:2px 2px 4px;touch-action:none}
+.card canvas{position:absolute;left:50%;top:4px;transform:translateX(-50%);pointer-events:none}
+.card .cn{font-family:var(--fh);font-size:17px;line-height:1;position:relative}
+.card .cv{font-family:var(--fb);font-size:10.5px;line-height:1.1;position:relative;background:#fff}
+.card.sel{background:var(--yel);transform:translateY(-10px) rotate(-3deg);box-shadow:6px 10px 0 var(--ink)}
+.card .cd{position:absolute;left:0;right:0;bottom:0;background:rgba(17,17,17,.55);pointer-events:none}
+#goBox{position:absolute;right:16px;bottom:calc(14px + env(safe-area-inset-bottom));display:flex;flex-direction:column;align-items:flex-end;gap:10px}
+#bGo{font-size:26px;padding:8px 26px}
+#tip{position:absolute;left:50%;transform:translateX(-50%);top:calc(70px + env(safe-area-inset-top));width:min(92vw,640px);background:#fff;border:4px solid var(--ink);border-radius:18px;box-shadow:5px 5px 0 var(--ink);padding:8px 14px 8px 54px;font-size:15px;line-height:1.45;z-index:5}
+#tip::before{content:'📢';position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:26px}
+#tip b{color:var(--red)}
+#tip.bad{background:#FFE3E3}
+#bossBar{position:absolute;left:50%;transform:translateX(-50%);top:calc(64px + env(safe-area-inset-top));display:flex;align-items:center;gap:8px;background:var(--navy);color:#fff;border:4px solid var(--ink);padding:3px 12px;font-family:var(--fh);font-size:16px;box-shadow:4px 4px 0 var(--red)}
+#bossBar i{display:inline-block;width:22px;height:14px;background:var(--red);border:2px solid #fff;margin-left:2px}
+#bossBar i.off{background:transparent}
+body.port #cap{left:10px;top:calc(64px + env(safe-area-inset-top));max-width:calc(100% - 190px);font-size:15px;white-space:normal}
+body.port #tix{right:auto;left:10px;top:calc(106px + env(safe-area-inset-top))}
+body.port .tk{font-size:14px;padding:1px 8px}body.port .tk b{font-size:18px}
+body.port #tray{left:6px;right:6px;transform:none;justify-content:space-between;gap:6px}
+body.port .card{flex:1 1 0;width:auto;height:96px}
+body.port #goBox{right:8px;bottom:calc(112px + env(safe-area-inset-bottom));flex-direction:row;align-items:center}
+body.port #bGo{font-size:22px;padding:6px 20px;min-height:54px}
+body.port #tip{top:calc(56px + env(safe-area-inset-top));font-size:14px;z-index:31}
+body.port #bossBar{top:auto;bottom:calc(118px + env(safe-area-inset-bottom));font-size:13px}
+/* 重ねる紙面 */
+#ov{display:flex;align-items:center;justify-content:center;padding:12px;background:rgba(17,17,17,.45);z-index:20}
+.page{position:relative;width:min(94vw,780px);max-height:calc(100dvh - 24px);overflow:auto;background:var(--bg);background-image:radial-gradient(circle,rgba(29,53,87,.10) 1.6px,transparent 1.9px);background-size:9px 9px;border:5px solid var(--ink);box-shadow:9px 9px 0 var(--ink);padding:18px 18px 16px;font-size:16px;line-height:1.6}
+.page h2{margin:0 0 8px;font-family:var(--fh);font-weight:400;font-size:clamp(24px,3.4vw,36px);line-height:1.15}
+.page h2 small{display:block;font-family:var(--fb);font-size:14px}
+.page .capb{display:inline-block;background:var(--yel);border:3px solid var(--ink);padding:2px 10px;font-family:var(--fh);font-size:14px;margin-bottom:8px}
+.page p{margin:6px 0}
+.page b{color:var(--red)}
+.page .sm{font-size:13.5px;line-height:1.5}
+.seq{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:10px 0}
+.seq div{background:#fff;border:3px solid var(--ink);padding:6px;text-align:center;font-size:13px;line-height:1.35;box-shadow:3px 3px 0 var(--ink)}
+.seq div b{display:block;font-family:var(--fh);font-weight:400;font-size:16px;color:var(--ink)}
+.stars{display:flex;gap:14px;justify-content:center;margin:6px 0 10px;min-height:66px}
+.stars span{font-size:60px;line-height:1;color:#ddd;-webkit-text-stroke:3px var(--ink);transform:scale(0)}
+.stars span.on{color:var(--yel);animation:stamp .35s cubic-bezier(.3,1.8,.5,1) forwards}
+.stars span.off{animation:stamp .35s forwards;color:#fff}
+@keyframes stamp{0%{transform:scale(3) rotate(-20deg);opacity:0}100%{transform:scale(1) rotate(0);opacity:1}}
+.recs{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin:8px 0}
+.recs div{background:#fff;border:3px solid var(--ink);padding:5px 8px;font-size:12.5px;line-height:1.3}
+.recs div b{display:block;font-family:var(--fh);font-weight:400;font-size:21px;color:var(--navy)}
+.graph{background:#fff;border:3px solid var(--ink);margin:8px 0;padding:4px}
+.graph svg{display:block;width:100%;height:auto}
+.stk{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:8px}
+.stk div{background:#fff;border:3px solid var(--ink);padding:6px 4px;text-align:center;font-size:12px;line-height:1.3;min-height:132px}
+.stk div.off{background:#e5ddc5;color:#8a826b}
+.stk div b{display:block;font-family:var(--fh);font-weight:400;font-size:14px;color:var(--ink)}
+.stk canvas{display:block;margin:0 auto 2px}
+.legend{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
+.legend span{background:#fff;border:2px solid var(--ink);padding:1px 8px;font-size:13px}
+/* 確認テスト */
+#scTest{display:flex;align-items:center;justify-content:center;padding:calc(64px + env(safe-area-inset-top)) 12px 12px;z-index:15}
+#scTest .page{max-height:calc(100dvh - 80px)}
+.tno{font-family:var(--fh);font-size:15px;background:var(--navy);color:#fff;display:inline-block;padding:2px 10px;border:3px solid var(--ink)}
+.prog{display:flex;gap:4px;margin:8px 0}.prog i{flex:1;height:10px;background:#fff;border:2px solid var(--ink)}.prog i.on{background:var(--red)}
+.tq{font-size:18px;line-height:1.55;margin:8px 0;font-weight:800}
+.fig2{background:#fff;border:3px solid var(--ink);margin:6px 0;padding:4px;text-align:center}
+.fig2 svg{max-width:100%;height:auto;max-height:36vh}
+.ch{display:grid;gap:9px;margin-top:8px}
+.ch button{min-height:50px;padding:8px 12px;font-family:var(--fb);font-weight:800;font-size:16px;text-align:left;border:4px solid var(--ink);box-shadow:4px 4px 0 var(--ink);background:#fff}
+.ch button:nth-child(4n+1){background:#FFF0B8}.ch button:nth-child(4n+2){background:#D6EEF8}.ch button:nth-child(4n+3){background:#FFD9D1}.ch button:nth-child(4n+4){background:#E3F2D8}
+.ch button:active{transform:translate(3px,3px);box-shadow:1px 1px 0 var(--ink)}
+.numrow{display:flex;gap:8px;align-items:center;margin-top:10px}.numrow input{flex:1;min-width:0;font:inherit;font-size:22px;padding:10px;border:4px solid var(--ink);background:#fff}
+.ord{min-height:30px;margin:8px 0}.ord div{padding:6px 10px;background:#D6EEF8;border:3px solid var(--ink);margin:4px 0;font-size:15px}
+/* 演出 */
+#flash{position:absolute;inset:0;pointer-events:none;opacity:0;z-index:12}
+.bnr{position:absolute;left:50%;top:40%;z-index:14;pointer-events:none;font-family:var(--fh);font-size:clamp(34px,6vw,72px);white-space:nowrap;color:var(--yel);background:var(--red);border:5px solid var(--ink);padding:4px 26px;box-shadow:9px 9px 0 var(--ink);
+ text-shadow:3px 0 var(--ink),-3px 0 var(--ink),0 3px var(--ink),0 -3px var(--ink),3px 3px var(--ink),-3px -3px var(--ink);animation:bnr 1.7s cubic-bezier(.3,1.5,.5,1) forwards}
+.bnr.b{background:var(--navy)}.bnr.y{background:var(--yel);color:#fff}.bnr.rb{background:linear-gradient(90deg,#E63946,#FFC914,#5BC0EB,#8A5CF6)}
+@keyframes bnr{0%{transform:translate(-50%,-50%) scale(.2) rotate(-12deg);opacity:0}15%{transform:translate(-50%,-50%) scale(1.12) rotate(-4deg);opacity:1}25%{transform:translate(-50%,-50%) scale(1) rotate(-4deg)}80%{opacity:1}100%{transform:translate(-50%,-50%) scale(1.05) rotate(-4deg);opacity:0}}
+body.shake #app{animation:shk .28s}
+@keyframes shk{20%{transform:translate(-7px,4px)}40%{transform:translate(6px,-5px)}60%{transform:translate(-4px,-3px)}80%{transform:translate(3px,4px)}}
+@media (prefers-reduced-motion:reduce){.bam{animation:none}.pan.cur{animation:none}body.shake #app{animation:none}#scTitle .logo{animation:none}}
+</style></head><body>
 <div id="app">
+ <canvas id="cv"></canvas>
+ <div id="flash"></div>
 
-<section id="title">
-<div id="tArt" aria-hidden="true"></div><div class="tiny" style="margin-top:4px"><span style="color:var(--bl)">寒</span>＝寒冷前線　<span style="color:var(--rd)">温</span>＝温暖前線　→ 東へ進む</div>
-  <div class="tiny">中2理科 気象とその変化 第22回</div>
-  <h1>前線がくる町</h1>
-  <div class="sub">～ 前線の通過と天気の変化 ～</div>
-  <div class="box lead"><span class="cap">＠ きみは この町の住人</span>西の空は山で見えない。見えるのは、頭の上の空と、3時間ごとの<b>観測</b>だけ。<br>次に何が来るかを読んで、<b>そなえ</b>を選べ。読みちがえると、雨の帯（おに）につかまる。</div>
-  <div id="nameRow"><label for="nameIn">なまえ</label><input id="nameIn" maxlength="20" placeholder="（なくてもOK）" autocomplete="off"></div>
-  <div class="row">
-    <button class="btn" id="bStart">▶ はじめる</button>
-    <button class="btn hidden" id="bCont">▶ つづきから</button>
-    <button class="btn sub zk hidden" id="bBook1">📖 図鑑</button>
-    <button class="btn sub" id="bSnd1">🔊 音：オン</button>
+ <div id="scTitle" class="scr">
+  <div class="logo"><div class="lg lg1">前線が</div><div class="lg lg2">くる町</div><div class="lgsub">～前線の通過と天気の変化～</div></div>
+  <div class="tbox pe">
+   <div class="t3">☔ 中2理科　気象とその変化　第22回</div>
+   <div class="namebox" id="nameRow">なまえ<input id="nameIn" maxlength="16" placeholder="（空でも遊べる）" autocomplete="off"></div>
+   <button class="bam" id="bStart">はじめる！</button>
+   <button class="pnl y hidden" id="bCont">つづきから</button>
+   <div class="row"><button class="pnl s zk" id="bBookT">📖 図鑑</button></div>
   </div>
-</section>
+ </div>
 
-<section id="game" class="hidden">
-  <div id="hud"><span id="hRun">通過 0</span><span id="hHp">♥♥♥</span><span id="hCb">連続 0</span><span id="hT">0:00</span><span id="hZk"></span><button class="ib" id="bSnd2" aria-label="音">🔊</button></div>
-  <div id="runhd" class="box"><span class="cap" id="rCap">通過1</span><div class="nm" id="rNm"></div><div class="gh" id="rGh"></div></div>
-  <div id="mapw" class="hidden"></div>
-  <div id="town"></div>
-  <div id="obs" class="box"><span class="cap" id="oCap">観測</span><div id="obsIn"></div></div>
-  <div id="act"></div>
-  <div id="log" class="box"><span class="cap">町の記録</span><div id="logIn"></div></div>
-</section>
+ <div id="scMap" class="scr hidden">
+  <div class="mhead pe">町の通りを守れ！ 全9話<small id="mInfo"></small></div>
+  <div id="panels" class="pe"></div>
+  <div class="mbtn pe"><button class="bam" id="bNext" style="font-size:24px;min-height:54px">つぎの話へ！</button>
+   <button class="pnl s c" id="bStk">ステッカー帳</button><button class="pnl s y zk" id="bGacha">ガチャ</button><button class="pnl s zk" id="bBookM">📖 図鑑</button><span class="kk zk" id="kkM"></span></div>
+ </div>
 
-<section id="clear" class="hidden">
-  <div class="box dbl">
-    <h2 style="margin:0 0 6px;font-size:22px" id="clrH">5回連続、乗り切った！</h2>
-<pre class="memo" id="clrMemo">低気圧が西から東へ通るとき、町の天気は決まった順に変わる。
+ <div id="scPlay" class="scr hidden">
+  <div id="cap"></div>
+  <div id="tix"><span class="tk">そなえ券 <b id="tixN">0</b></span><span class="tk" id="cmbT">コンボ <b id="cmbN">0</b></span></div>
+  <div id="bossBar" class="hidden"></div>
+  <div id="tip" class="hidden"></div>
+  <div id="tray" class="pe"></div>
+  <div id="goBox" class="pe"><button class="bam" id="bGo">スタート！</button><button class="pnl s n hidden" id="bFF">≫ はやおくり</button></div>
+ </div>
 
- 〜 すじ雲・うす雲（高い空）
- ＝ 雲が低く厚くなる
- ╎ 乱層雲の弱い雨が長く　気圧↓
- ── 温暖前線 通過 ──
- ○ 雨がやみ南寄りの風で暖かい（暖域）
- ── 寒冷前線 通過 ──
- ┃ 積乱雲の強い雨・雷　北寄りの風で急に冷える
- ☀ 晴れて北西の風　気圧↑</pre>
-    <div class="recs2" id="clrRecs"></div>
-    <div class="col"><button class="btn" id="bTest">📝 確認テストへ（10問）</button><button class="btn sub zk hidden" id="bBook2">📖 図鑑</button></div>
-  </div>
-</section>
-<section id="test" class="hidden"><div class="box dbl" id="tbox"></div></section>
-<section id="result" class="hidden"><div class="box dbl" id="rbox"></div></section>
+ <div id="ov" class="scr hidden pe"><div class="page" id="ovBox"></div></div>
+ <div id="scTest" class="scr hidden pe"><div class="page" id="tbox"></div></div>
+ <button id="bBack" class="hidden"><b>◀</b> もどる</button>
+ <button id="bSnd" class="hidden" aria-label="音">♪</button>
 </div>
-
 <script>/*@SUBMIT_CARD_BEGIN*/
 /* ==========================================================
    提出カード（全ゲーム共通） v2
@@ -1386,250 +1446,485 @@ window.ZUKAN_CARDS={"v": 1, "grade": "chu2", "name": "中2理科図鑑", "econom
 <script>
 'use strict';
 const GID='kisho-zensen-town',KOMA='chu2-kisho-22',SKEY='rika-zukan:chu2:game:'+GID+':v1';
-try{window.Zukan&&Zukan.setup&&Zukan.setup({game:GID,koma:[KOMA]})}catch(e){}
 const UNIT='中2理科　気象とその変化　第22回',GTITLE='前線がくる町 ～前線の通過と天気の変化～';
 const TEST_ONLY=window.GAME_MODE==='test';
 const RM=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const INHUB=!!window.COLLECTION_NAME||(()=>{try{return window.parent!==window}catch(e){return true}})();
 const $=s=>document.querySelector(s);
 const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
-const LIMIT=25*60;
-function fresh(){return{v:1,started:false,name:'',sound:true,t:0,ri:0,introDone:false,paid:{},ghost:{},maxCombo:0,hits:0,preds:0,runsCleared:0,bossBest:0,cleared:false,timeUp:false,mainClearShown:false}}
+const clamp=(v,a,b)=>v<a?a:v>b?b:v,rnd=(a,b)=>a+Math.random()*(b-a);
+const INK='#111',BG='#FFF6DA',NAVY='#1D3557',RED='#E63946',YEL='#FFC914',CYA='#5BC0EB',ORG='#FF8C42',BLU='#457B9D',PUR='#8A5CF6';
+const FH='"Reggae One","Hiragino Sans",sans-serif',FB='"M PLUS 1p","Hiragino Sans",sans-serif';
+
+/* ===== 天気の帯と備え ===== */
+const BK={
+ omen:{nm:'すじ雲',col:'#fff'},
+ rain:{nm:'しとしと雨',ono:'しとしと',col:'#8FA1B6',need:'umb',sci:'温暖前線の前：乱層雲から<b>弱い雨が長く</b>降る'},
+ warm:{nm:'むしむし南風',ono:'むわっ',col:ORG,need:'shirt',sci:'温暖前線が通過：雨がやみ、<b>南寄りの風で気温が上がる</b>（暖気の中）'},
+ storm:{nm:'ザアザア雷雨',ono:'ザアアッ',col:'#2B2D42',need:'shut',sci:'寒冷前線が通過：積乱雲から<b>強い雨が短時間</b>。雷・突風'},
+ cold:{nm:'ひゅうひゅう北風',ono:'ヒュウウ',col:CYA,need:'coat',sci:'寒冷前線の通過後：<b>北寄りの風で気温が急に下がる</b>（寒気の中）'}};
+const IT={umb:{nm:'傘',vs:'rain',col:RED,ono:'パッ！',lab:'弱く長い雨'},shirt:{nm:'うすぎ',vs:'warm',col:YEL,ono:'スッキリ！',lab:'暖かい南風'},shut:{nm:'雨戸',vs:'storm',col:NAVY,ono:'ガシャン！',lab:'激しい雷雨'},coat:{nm:'上着',vs:'cold',col:'#2A9DF4',ono:'ぬくぬく！',lab:'冷たい北風'}};
+const IK=['umb','shirt','shut','coat'];
+const BAD={
+ 'rain|shirt':'まだ暖かくならない！ 温暖前線の前は、弱い雨が長く降る。先に<b>傘</b>。',
+ 'rain|shut':'雨戸はまだ早い！ いま来たのは温暖前線の前の<b>弱い雨</b>。先に<b>傘</b>。',
+ 'rain|coat':'上着はずっとあと！ 温暖前線の前は、弱い雨が長く降る。先に<b>傘</b>。',
+ 'warm|umb':'雨はもうやんだ！ 温暖前線が通ると、<b>雨がやんで南寄りの風で暖かく</b>なる。',
+ 'warm|shut':'まだ早い！ 温暖前線が通ったあとは<b>暖気の中</b>。むし暑い → うすぎ。',
+ 'warm|coat':'暖かくなるのに上着？ 温暖前線の通過後は<b>気温が上がる</b>。',
+ 'storm|umb':'突風で傘がこわれた！ 寒冷前線の雨は<b>短く激しい</b>（積乱雲）。<b>雨戸</b>で。',
+ 'storm|shirt':'寒冷前線だ！ 積乱雲の<b>激しい雨・雷・突風</b>。<b>雨戸</b>で。',
+ 'storm|coat':'上着の前に、激しい雨！ 寒冷前線が通るときは、まず<b>強い雨と突風</b>。',
+ 'cold|umb':'雨はもう通りすぎた！ 寒冷前線が通ると晴れて、<b>北寄りの風で冷える</b>。',
+ 'cold|shirt':'寒い！ 寒冷前線が通ると<b>気温が急に下がる</b>。<b>上着</b>を。',
+ 'cold|shut':'もう雨は通りすぎた。北寄りの風で<b>気温が急に下がる</b>。<b>上着</b>を。'};
+/* 見張り台の記録（架空の代表値） */
+const RD={ahead:{wx:'kai',wt:'晴れ',wind:'東',wd:90,f:2,temp:12,pres:1012,pt:'→'},omen:{wx:'hare',wt:'うす雲',wind:'東',wd:90,f:2,temp:12,pres:1009,pt:'↓'},
+ rain:{wx:'ame',wt:'弱い雨',wind:'東南東',wd:112,f:2,temp:13,pres:1004,pt:'↓'},warm:{wx:'kumo',wt:'くもり',wind:'南南西',wd:202,f:3,temp:19,pres:1000,pt:'↓'},
+ storm:{wx:'rai',wt:'強い雨・雷',wind:'北北西',wd:338,f:5,temp:14,pres:1001,pt:'↑'},cold:{wx:'hare',wt:'晴れ',wind:'北西',wd:315,f:4,temp:8,pres:1008,pt:'↑'},
+ after:{wx:'kai',wt:'快晴',wind:'北西',wd:315,f:3,temp:7,pres:1012,pt:'↑'}};
+
+/* ===== 面（町の通り） =====
+   帯の位置は前線の式から: 温暖前線 xw=w0+sw*l+v*t（南の通りほど東）／寒冷前線 xc=w0-gap-sc*l+v*vc*t（南の通りほど西）
+   l=通りの番号（0がいちばん北）。u=西→東の位置（マス）。u=C が家。 */
+const C=7,UMIN=-2.9,UMAX=C+1.55,RW=2.0,SWD=.8,CL=2.4,STA=-.7,CD=3.2;
+const ST=[
+ {nm:'はじめての低気圧',sub:'来る順に、西から並べる',n:1,w0:-2.5,sw:.4,gap:2.2,sc:.4,v:.24,spare:2,guide:1,
+  tip:'西から<b>温帯低気圧</b>がくる！ 天気は決まった順に変わる。光るマスに、<b>西（手前）から順に</b>備えを置こう。'},
+ {nm:'2本の通り',sub:'北の通り・南の通り',n:2,w0:-2.5,sw:.5,gap:1.8,sc:.4,v:.25,spare:2,
+  tip:'天気の順番はどの通りも同じ。<b>傘 → うすぎ → 雨戸 → 上着</b>を、西から。天気図の小窓も見てみよう。'},
+ {nm:'南ほど広い暖気',sub:'前線はななめにのびる',n:3,w0:-2.6,sw:.7,gap:1.6,sc:.55,v:.26,spare:2,
+  tip:'温暖前線は低気圧の中心から<b>南東</b>、寒冷前線は<b>南西</b>へのびる。南の通りほど、暖気の中にいる時間が長い。'},
+ {nm:'もう雨の中の町',sub:'町は今、どこにいる？',n:3,w0:3.2,sw:1.9,gap:2.4,sc:.6,v:.24,spare:1,
+  tip:'もう前線が町に来ている！ 天気図で、それぞれの通りが<b>前線の前か・暖気の中か</b>を読んで、<b>これから来るもの</b>だけ備えよう。'},
+ {nm:'夜の通過',sub:'雲が見えない。記録を読め',n:3,night:1,w0:-2.4,sw:.6,gap:1.8,sc:.4,v:.24,spare:2,
+  tip:'夜は雲が見えない。天気図も届かない。<b>西の見張り台の記録</b>（天気記号・風向・気温・気圧）で、次に来る天気を読もう。'},
+ {nm:'記録がとぎれた夜',sub:'足りない記録で推理する',n:4,night:1,w0:-1,sw:.9,gap:1.6,sc:.4,v:.23,spare:2,miss:[['wind','temp'],['wx','pres'],['wind','wx'],['temp','pres']],
+  tip:'見張り台の記録が<b>一部しか届かない</b>！ 残った記録から、いま見張り台が<b>どの天気の中か</b>を読み、町に来る順番を考えよう。'},
+ {nm:'追いつく寒冷前線',sub:'北の通りで、暖気が消える',n:4,w0:-2.6,sw:.8,gap:.9,sc:.3,v:.25,vc:1.45,spare:2,
+  tip:'寒冷前線は温暖前線より<b>速い</b>。追いつくと<b>閉塞前線</b>になり、その通りでは<b>暖気がなくなる</b>。天気図の小窓をよく見て。'},
+ {nm:'2つめの低気圧',sub:'通りすぎたら、また来る',n:4,w0:-2.4,sw:.6,gap:1.6,sc:.4,v:.3,spare:2,second:10.5,
+  tip:'低気圧が<b>2つ続けて</b>やってくる。1つめが通りすぎたら、2つめの順番も同じ。そなえ券は大切に。'},
+ {nm:'嵐の大王',sub:'夕方から夜へ。5本の通り',n:5,boss:1,w0:-1.8,sw:2.3,gap:1.8,sc:.3,v:.27,spare:2,nightAt:24,
+  tip:'最終話！ 寒冷前線の<b>積乱雲の大王</b>が5本の通りをおそう。通りごとに今いる場所がちがう。<b>雨戸で雷雨を止めるたびに大王にダメージ</b>。途中で日がくれる！'}];
+const NS=ST.length;
+/* ステッカー帳（ゲーム内コレクション） */
+const STK=[
+ ['low','温帯低気圧','前線をともなう低気圧。西から東へ進む'],
+ ['wf','温暖前線','半円の記号。前方で弱い雨が長く降る'],
+ ['cf','寒冷前線','三角の記号。積乱雲で強い雨が短時間'],
+ ['ci','すじ雲（巻雲）','温暖前線が近づく前ぶれの高い雲'],
+ ['ns','乱層雲','空一面の厚い雲。弱い雨を長く降らせる'],
+ ['cb','積乱雲','高くのびる雲。雷・突風・強い雨'],
+ ['wa','暖気','温暖前線の通過後。南寄りの風で暖かい'],
+ ['ca','寒気','寒冷前線の通過後。北寄りの風で冷える'],
+ ['night','夜の観測記録','雲が見えなくても、風向と気温で分かる'],
+ ['oc','閉塞前線','寒冷前線が温暖前線に追いついた前線'],
+ ['boss','嵐の大王','5本の通りを守りきった証']];
+
+/* ===== セーブ ===== */
+function fresh(){return{v:1,name:'',sound:true,started:false,next:0,stars:{},paid:{},stk:{},t:0,best:0,safe:0,lanes:0,waste:0,cnt:{},cleared:false,mc:false,score:0}}
 let S;try{S=Object.assign(fresh(),JSON.parse(localStorage.getItem(SKEY))||{})}catch(e){S=fresh()}
 function save(){try{localStorage.setItem(SKEY,JSON.stringify(S))}catch(e){}}
 
-/* ===== 音 ===== */
+/* ===== 音（コミックのSE：矩形波＋ノイズ） ===== */
 let AC=null;
-function ac(){if(!S.sound)return null;try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();if(AC.state==='suspended')AC.resume();return AC}catch(e){return null}}
-function tone(f,d,type,vol,delay){const a=ac();if(!a)return;const t=a.currentTime+(delay||0),o=a.createOscillator(),g=a.createGain();o.type=type||'square';o.frequency.setValueAtTime(f,t);g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol||.05,t+.01);g.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(g).connect(a.destination);o.start(t);o.stop(t+d+.05)}
-function noise(d,f,vol,type){const a=ac();if(!a)return;const n=a.sampleRate*d,b=a.createBuffer(1,n,a.sampleRate),x=b.getChannelData(0);for(let i=0;i<n;i++)x[i]=(Math.random()*2-1)*Math.min(1,i/(n*.1))*Math.min(1,(n-i)/(n*.4));const s=a.createBufferSource();s.buffer=b;const fl=a.createBiquadFilter();fl.type=type||'highpass';fl.frequency.value=f;const g=a.createGain();g.gain.value=vol;s.connect(fl).connect(g).connect(a.destination);s.start()}
-const sfx={key:()=>tone(1400+Math.random()*300,.025,'square',.018),tap:()=>tone(900,.04,'square',.025),
- hit:c=>[523,659,784].forEach((f,i)=>tone(f*(1+Math.min(c,8)*.06),.18,'square',.04,i*.06)),miss:()=>{tone(200,.2,'sawtooth',.03);tone(150,.28,'sawtooth',.03,.1)},
- rain:s=>noise(s?1.2:1.4,s?900:3200,s?.1:.04,s?'lowpass':'highpass'),thunder:()=>{noise(1.4,180,.16,'lowpass');tone(55,1,'triangle',.06,.05)},
- caught:()=>{[400,300,200,120].forEach((f,i)=>tone(f,.18,'square',.05,i*.1))},big:()=>[392,523,659,784,1047].forEach((f,i)=>tone(f,.4,'square',.04,i*.09)),coin:()=>{tone(1568,.08,'square',.03);tone(2093,.15,'square',.03,.06)}};
-function setSnd(){const t=S.sound?'🔊':'🔇';$('#bSnd1').textContent=t+' 音：'+(S.sound?'オン':'オフ');$('#bSnd2').textContent=t}
+function ac(){if(!S.sound)return null;try{AC=AC||new(window.AudioContext||window.webkitAudioContext)();if(AC.state==='suspended')AC.resume()}catch(e){AC=null}return AC}
+function tone(f,d,type,vol,dl,slide){const a=ac();if(!a)return;try{const t=a.currentTime+(dl||0),o=a.createOscillator(),g=a.createGain();o.type=type||'square';o.frequency.setValueAtTime(f,t);if(slide)o.frequency.exponentialRampToValueAtTime(slide,t+d);g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol||.04,t+.008);g.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(g);g.connect(a.destination);o.start(t);o.stop(t+d+.05)}catch(e){}}
+function noise(d,vol,dl,fr,tp){const a=ac();if(!a)return;try{const t=a.currentTime+(dl||0),n=Math.floor(a.sampleRate*d),b=a.createBuffer(1,n,a.sampleRate),ch=b.getChannelData(0);for(let i=0;i<n;i++)ch[i]=(Math.random()*2-1)*(1-i/n);const s=a.createBufferSource();s.buffer=b;const f=a.createBiquadFilter();f.type=tp||'lowpass';f.frequency.value=fr||1200;const g=a.createGain();g.gain.value=vol||.05;s.connect(f);f.connect(g);g.connect(a.destination);s.start(t)}catch(e){}}
+const sfx={
+ tap(){tone(990,.05,'square',.025)},
+ place(){tone(330,.05,'square',.04,0,660);tone(880,.07,'square',.03,.05)},
+ hit(c){const b=440*Math.pow(2,Math.min(c,16)/12);tone(b,.08,'square',.04);tone(b*1.26,.08,'square',.035,.05);tone(b*1.5,.16,'square',.035,.1);noise(.14,.07,0,2400,'highpass')},
+ bad(){tone(400,.3,'sawtooth',.035,0,120);noise(.18,.05,0,600)},
+ house(){tone(120,.4,'square',.06,0,50);noise(.4,.09,0,300)},
+ tier(){[523,659,784,1047,1319].forEach((f,i)=>tone(f,.14,'square',.035,i*.06))},
+ fan(){[523,659,784,1047,0,784,1047,1319,1568].forEach((f,i)=>f&&tone(f,.2,'square',.04,i*.1))},
+ don(){tone(90,.28,'square',.08,0,45);noise(.22,.1,0,180)},
+ thunder(){noise(1.1,.07,0,160);noise(.2,.05,0,3000,'highpass')},
+ start(){[392,523,659].forEach((f,i)=>tone(f,.12,'square',.04,i*.07));noise(.3,.04,.2,900)},
+ cd(){tone(220,.08,'square',.03)},
+ boss(){tone(70,.8,'sawtooth',.06,0,40);noise(.8,.08,0,200)}};
+function vib(ms){try{navigator.vibrate&&navigator.vibrate(ms)}catch(e){}}
 
-/* ===== 演出 ===== */
-const fx=$('#fx'),fctx=fx.getContext('2d');let PP=[];const DPR=Math.min(2,window.devicePixelRatio||1);
-function fxResize(){fx.width=innerWidth*DPR;fx.height=innerHeight*DPR;fctx.setTransform(DPR,0,0,DPR,0,0)}addEventListener('resize',fxResize);fxResize();
-const GL='◯★＊・＋♪◇';
-function burst(x,y,n){n=RM?5:n;for(let i=0;i<n;i++){const a=Math.random()*Math.PI*2,s=2+Math.random()*5;PP.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s-2,life:1,dec:.016+Math.random()*.02,ch:GL[i%GL.length]})}}
-(function fxLoop(){fctx.clearRect(0,0,innerWidth,innerHeight);PP=PP.filter(p=>p.life>0);const col=getComputedStyle(document.body).color;fctx.font='700 16px "M PLUS 1 Code",monospace';for(const p of PP){p.x+=p.vx;p.y+=p.vy;p.vy+=.18;p.life-=p.dec;fctx.globalAlpha=Math.max(0,p.life);fctx.fillStyle=col;fctx.fillText(p.ch,p.x,p.y)}fctx.globalAlpha=1;requestAnimationFrame(fxLoop)})();
-function pop(x,y,t){const d=document.createElement('div');d.className='pop';d.style.left=x+'px';d.style.top=y+'px';d.textContent=t;document.body.appendChild(d);setTimeout(()=>d.remove(),1300)}
-function banner(t){const b=$('#banner');b.textContent=t;b.classList.remove('on');void b.offsetWidth;b.classList.add('on')}
-function earn(n,why,el){let x=innerWidth/2,y=innerHeight/2;if(el&&el.getBoundingClientRect){const r=el.getBoundingClientRect();x=r.left+r.width/2;y=r.top}
- let got=0;try{got=window.Zukan&&Zukan.earn?Zukan.earn(n,why,{koma:KOMA,x,y})||0:0}catch(e){}if(got)sfx.coin();return got}
-function once(k){if(S.paid[k])return false;S.paid[k]=1;save();return true}
+/* ===== canvas（高解像度対応） ===== */
+const cv=$('#cv'),cx=cv.getContext('2d');let W=390,H=844,DPR=1;const L={port:true};const PAT={};
+function dotPat(s,r,col){const c=document.createElement('canvas');c.width=c.height=Math.max(2,Math.round(s*DPR));const x=c.getContext('2d');x.scale(DPR,DPR);x.fillStyle=col;[[s/4,s/4],[s*3/4,s*3/4]].forEach(p=>{x.beginPath();x.arc(p[0],p[1],r,0,7);x.fill()});const p=cx.createPattern(c,'repeat');try{p.setTransform(new DOMMatrix().scale(1/DPR))}catch(e){}return p}
+function mkPat(){PAT.n=dotPat(10,1.7,'rgba(29,53,87,.16)');PAT.k=dotPat(7,1.7,'rgba(0,0,0,.28)');PAT.w=dotPat(8,1.6,'rgba(255,255,255,.55)');PAT.r=dotPat(9,2.3,'rgba(230,57,70,.30)');PAT.y=dotPat(9,2.4,'rgba(255,201,20,.5)');PAT.b=dotPat(8,1.8,'rgba(91,192,235,.45)');PAT.o=dotPat(8,2,'rgba(255,140,66,.45)');PAT.s=dotPat(12,1.2,'rgba(255,255,255,.35)')}
+function resize(){DPR=Math.min(2.5,window.devicePixelRatio||1);W=innerWidth;H=innerHeight;cv.width=Math.round(W*DPR);cv.height=Math.round(H*DPR);cv.style.width=W+'px';cv.style.height=H+'px';cx.setTransform(DPR,0,0,DPR,0,0);mkPat();layout();mkTray()}
+addEventListener('resize',()=>{resize()});
+function layout(){const port=H>W*1.02;L.port=port;document.body.classList.toggle('port',port);const n=G?G.n:1;
+ if(!port){L.top=70;L.bot=124;L.cw=(W-24)/(UMAX-UMIN);L.fx0=12;const av=H-L.top-L.bot-36;L.lh=Math.min(av/n,L.cw*1.4,200);L.fy0=L.top+30+(av-L.lh*n)/2;
+  const iw=Math.min(250,W*.2);L.ins={x:10,y:H-L.bot+6,w:iw,h:L.bot-14}}
+ else{L.top=150;L.bot=112;const av=H-L.top-L.bot;L.cw=av/(UMAX-UMIN);L.fy0=L.top;const aw=W-16;L.lh=Math.min(aw/n,L.cw*2.6,250);L.fx0=8+(aw-L.lh*n)/2;
+  const iw=Math.min(190,W*.44);L.ins={x:W-iw-8,y:58,w:iw,h:88}}
+ L.sz=Math.min(L.cw,L.lh)}
+function P(u,l){if(!L.port)return{x:L.fx0+(u-UMIN)*L.cw,y:L.fy0+(l+.5)*L.lh};const n=G?G.n:1;return{x:L.fx0+(n-1-l+.5)*L.lh,y:L.fy0+(u-UMIN)*L.cw}}
+function inv(x,y){const n=G?G.n:1;if(!L.port)return{u:UMIN+(x-L.fx0)/L.cw,l:Math.floor((y-L.fy0)/L.lh)};return{u:UMIN+(y-L.fy0)/L.cw,l:n-1-Math.floor((x-L.fx0)/L.lh)}}
+function R(u0,u1,l,fr){const a=P(u0,l),b=P(u1,l),th=L.lh*fr;if(!L.port)return{x:a.x,y:a.y-th/2,w:b.x-a.x,h:th};return{x:a.x-th/2,y:a.y,w:th,h:b.y-a.y}}
 
-/* ===== 天気のモデル（模式） =====
-   町は15マスの9番目。温暖前線(xw)・寒冷前線(xc)は1ターン（3時間）に1マスずつ東へ進む。 */
-const TC=9,COLS=15;
-function stAt(xw,xc,col){if(col<xc)return 'af';if(col===xc)return 'cp';if(col<xw)return 'ws';if(col===xw)return 'wp';const d=col-xw;if(d<=2)return 'wr';if(d===3)return 'alt';if(d===4)return 'cir';return 'fine'}
-const ST={
- fine:{lb:'晴れ。雲はほとんどない',wx:'晴れ',cl:'雲はほとんどない',wd:'東',t:12,p:1013,pt:'→',h:60,eq:'light'},
- cir:{lb:'高い空に、すじ雲・うす雲が広がる',wx:'晴れ（うす雲）',cl:'すじ雲（巻雲）・うす雲（巻層雲）',wd:'東',t:12,p:1010,pt:'↓',h:65,eq:'light'},
- alt:{lb:'雲が低く厚くなり、空一面うす暗い',wx:'くもり',cl:'空一面の灰色の雲（高層雲）',wd:'南東',t:12,p:1007,pt:'↓',h:75,eq:'light'},
- wr:{lb:'弱い雨が降る（しとしと続く）',wx:'雨（弱い）',cl:'低く暗い雲（乱層雲）',wd:'南東',t:12.5,p:1003,pt:'↓',h:95,eq:'umb'},
- wp:{lb:'雨がやみ、南寄りの風で暖かくなる',wx:'くもり→晴れ間',cl:'雲が切れてきた',wd:'南',t:17,p:1000,pt:'↓',h:85,eq:'light'},
- ws:{lb:'南西の風。暖かく、しめっぽいまま',wx:'くもり時々晴れ',cl:'わた雲（積雲）がちらほら',wd:'南西',t:19,p:998,pt:'↓',h:80,eq:'light'},
- cp:{lb:'強い雨と雷。北寄りの風で急に冷える',wx:'雨（強い）・雷',cl:'もくもく高い雲（積乱雲）',wd:'北西',t:11,p:1001,pt:'↑',h:95,eq:'in'},
- af:{lb:'雨がやみ晴れる。北西の風で冷たい',wx:'晴れ',cl:'雲はほとんどない',wd:'北西',t:9,p:1006,pt:'↑',h:55,eq:'coat'}};
-const ORDER=['fine','cir','alt','wr','wp','ws','cp','af'];
-const EQ={light:'👕 身軽に外で用事',umb:'☂ 傘をさして外へ',in:'🏠 建物の中に入る',coat:'🧥 上着を着て外へ'};
-const EQNG={light:{wr:'ずぶぬれ！ 乱層雲の雨は長く続く。',cp:'危ない！ 積乱雲の強い雨と雷。建物へ。',af:'さむい！ 寒冷前線のあとは寒気の中。'},
- umb:{cp:'傘では防げない！ 雷と強い雨は建物の中へ。',af:'雨はやんだ。北西の風で冷える。',light:'',wp:'',ws:''},
- in:{fine:'家にこもって、用事が進まなかった。',cir:'家にこもって、用事が進まなかった。',alt:'家にこもって、用事が進まなかった。',wr:'弱い雨なら傘で外へ出られた。用事が進まなかった。',wp:'雨はやんでいた。用事が進まなかった。',ws:'暖かく晴れ間も。用事が進まなかった。',af:'晴れていた。用事が進まなかった。'},coat:{wr:'ずぶぬれ！ 上着では雨を防げない。',cp:'危ない！ 雷は建物の中へ。',ws:'暑い！ 暖域は暖かい空気の中。',wp:'暑い！ 温暖前線が通って暖かくなった。'}};
-function eqOK(eq,st){const need=ST[st].eq;if(eq===need)return true;if(eq==='umb'&&st==='alt')return true;if(eq==='coat'&&(st==='fine'||st==='cir'||st==='alt'))return true;return false}
-const WHY={fine:'まだ前線は遠い。',cir:'高い空のすじ雲・うす雲は、温暖前線の前ぶれ。前線面の高い所にできる雲が先に見える。',alt:'温暖前線が近づくと、雲はだんだん低く厚くなる。気圧は下がり続ける。',
- wr:'温暖前線の前は乱層雲。弱い雨が長く続く。',wp:'温暖前線が通過！ 町は暖気の中へ。雨がやみ、南寄りの風で暖かくなる。',ws:'2つの前線のあいだ（暖域）。南西の風で暖かく、しめっぽい。',
- cp:'寒冷前線が通過！ 積乱雲の強い雨と雷。北寄りの風に変わり、急に冷える（寒気の中へ）。',af:'寒冷前線のあと。寒気におおわれて晴れる。北西の風で冷たく、気圧は上がっていく。'};
-const TRAP={'wr>cp':'弱い雨の次にいきなり寒冷前線ではない。温暖前線の雨→雨がやんで暖かく→寒冷前線 の順。','wr>af':'雨がやんでも冷えない。温暖前線が通ると暖かくなる。','ws>af':'暖域のあとは寒冷前線の強い雨がはさまる。','alt>wp':'雨を降らせる乱層雲がまだ来ていない。','cir>wr':'雲はまず低く厚くなってから雨になる。'};
-const WA={'東':'←','南東':'↖','南':'↑','南西':'↗','西':'→','北西':'↘','北':'↓','北東':'↙'};
+/* ===== 絵の部品（ポップアート: 太い輪郭・網点・原色） ===== */
+function blob(c,pts,fill,ow,pat){c.save();c.lineWidth=ow*2;c.strokeStyle=INK;pts.forEach(p=>{c.beginPath();c.arc(p[0],p[1],p[2],0,7);c.stroke()});c.fillStyle=fill;pts.forEach(p=>{c.beginPath();c.arc(p[0],p[1],p[2],0,7);c.fill()});
+ if(pat){c.beginPath();pts.forEach(p=>{c.moveTo(p[0]+p[2],p[1]+p[2]*.25);c.arc(p[0],p[1]+p[2]*.25,p[2]*.8,0,7)});c.save();c.clip();c.fillStyle=pat;c.fillRect(-2000,-2000,4000,4000);c.restore()}c.restore()}
+function otext(c,t,x,y,sz,fill,ow,font,al){c.save();c.font=(font||'400 ')+sz+'px '+FH;c.textAlign=al||'center';c.textBaseline='middle';c.lineJoin='round';c.lineWidth=ow||Math.max(3,sz*.18);c.strokeStyle=INK;c.strokeText(t,x,y);c.fillStyle=fill;c.fillText(t,x,y);c.restore()}
+function burstShape(c,x,y,r1,r2,n,rot){c.beginPath();for(let i=0;i<n*2;i++){const a=rot+i*Math.PI/n,r=i%2?r2:r1;c.lineTo(x+Math.cos(a)*r,y+Math.sin(a)*r)}c.closePath()}
+function icon(c,k,x,y,s,jig){c.save();c.translate(x,y);if(jig)c.rotate(jig);c.scale(s/100,s/100);c.lineJoin='round';c.lineCap='round';c.lineWidth=7;c.strokeStyle=INK;
+ if(k==='umb'){c.beginPath();c.arc(0,6,46,Math.PI,0);for(let i=0;i<4;i++){const x1=46-i*23;c.arc(x1-11.5,6,11.5,0,Math.PI,true)}c.closePath();c.fillStyle=RED;c.fill();c.save();c.clip();c.fillStyle='#fff';c.beginPath();c.moveTo(0,-42);c.lineTo(-30,8);c.lineTo(-12,8);c.closePath();c.moveTo(0,-42);c.lineTo(12,8);c.lineTo(30,8);c.closePath();c.fill();c.fillStyle=PAT.k;c.fillRect(-50,-10,100,20);c.restore();c.stroke();
+  c.beginPath();c.moveTo(0,-40);c.lineTo(0,-50);c.moveTo(0,8);c.lineTo(0,38);c.arc(-9,38,9,0,Math.PI,false);c.stroke()}
+ else if(k==='shirt'){c.beginPath();c.moveTo(-18,-40);c.lineTo(-46,-26);c.lineTo(-34,-4);c.lineTo(-25,-10);c.lineTo(-25,42);c.lineTo(25,42);c.lineTo(25,-10);c.lineTo(34,-4);c.lineTo(46,-26);c.lineTo(18,-40);c.quadraticCurveTo(0,-22,-18,-40);c.closePath();c.fillStyle=YEL;c.fill();c.save();c.clip();c.fillStyle=RED;c.fillRect(-50,4,100,12);c.fillStyle=PAT.r;c.fillRect(-50,16,100,30);c.restore();c.stroke()}
+ else if(k==='shut'){c.fillStyle=NAVY;c.beginPath();c.rect(-40,-44,80,88);c.fill();c.save();c.clip();c.strokeStyle='#7FA7D6';c.lineWidth=5;for(let yy=-34;yy<44;yy+=12){c.beginPath();c.moveTo(-40,yy);c.lineTo(40,yy);c.stroke()}c.restore();c.strokeStyle=INK;c.lineWidth=7;c.strokeRect(-40,-44,80,88);c.beginPath();c.moveTo(0,-44);c.lineTo(0,44);c.stroke();c.fillStyle=YEL;c.beginPath();c.arc(8,4,6,0,7);c.fill();c.lineWidth=4;c.stroke()}
+ else if(k==='coat'){c.beginPath();c.moveTo(-16,-42);c.lineTo(-40,-30);c.lineTo(-46,42);c.lineTo(-4,42);c.lineTo(0,-8);c.lineTo(4,42);c.lineTo(46,42);c.lineTo(40,-30);c.lineTo(16,-42);c.lineTo(0,-24);c.closePath();c.fillStyle='#2A9DF4';c.fill();c.save();c.clip();c.fillStyle=PAT.n;c.fillRect(-50,-50,100,100);c.restore();c.stroke();
+  c.fillStyle='#fff';c.beginPath();c.moveTo(-16,-42);c.lineTo(-4,-10);c.lineTo(0,-24);c.closePath();c.moveTo(16,-42);c.lineTo(4,-10);c.lineTo(0,-24);c.closePath();c.fill();c.lineWidth=5;c.stroke();c.fillStyle=YEL;[8,24].forEach(yy=>{c.beginPath();c.arc(-10,yy,5,0,7);c.fill();c.stroke()})}
+ c.restore()}
+function icoCanvas(k,s,kind){const c=document.createElement('canvas');const d=Math.min(2.5,window.devicePixelRatio||1);c.width=c.height=Math.round(s*d);c.style.width=c.style.height=s+'px';const x=c.getContext('2d');x.scale(d,d);if(kind==='stk')stkDraw(x,k,s);else icon(x,k,s/2,s/2,s*.86);return c}
+/* 天気記号（天気図と同じ決まり: 線は風が吹いてくる方位・羽根の数は風力） */
+function wxSym(c,x,y,r,rd,mask){c.save();c.lineWidth=2.2;c.strokeStyle=INK;const showW=!mask||mask.includes('wind'),showX=!mask||mask.includes('wx');
+ if(showW){const a=rd.wd*Math.PI/180,dx=Math.sin(a),dy=-Math.cos(a),len=r*2.7;c.beginPath();c.moveTo(x+dx*r,y+dy*r);c.lineTo(x+dx*(r+len),y+dy*(r+len));c.stroke();
+  for(let i=0;i<Math.min(rd.f,5);i++){const px=x+dx*(r+len-i*r*.45),py=y+dy*(r+len-i*r*.45);const nx=-dy,ny=dx;c.beginPath();c.moveTo(px,py);c.lineTo(px+nx*r*.8-dx*r*.2,py+ny*r*.8-dy*r*.2);c.stroke()}}
+ c.fillStyle='#fff';c.beginPath();c.arc(x,y,r,0,7);c.fill();c.stroke();
+ if(!showX){c.fillStyle='#999';c.font='900 '+(r*1.3)+'px '+FB;c.textAlign='center';c.textBaseline='middle';c.fillText('?',x,y+1)}
+ else if(rd.wx==='hare'){c.beginPath();c.moveTo(x,y-r);c.lineTo(x,y+r);c.stroke()}
+ else if(rd.wx==='kumo'){c.beginPath();c.arc(x,y,r*.5,0,7);c.stroke()}
+ else if(rd.wx==='ame'||rd.wx==='rai'){c.fillStyle=INK;c.beginPath();c.arc(x,y,r,0,7);c.fill();if(rd.wx==='rai'){c.fillStyle=YEL;c.beginPath();c.moveTo(x+r*1.2,y-r*1.4);c.lineTo(x+r*.7,y);c.lineTo(x+r*1.2,y);c.lineTo(x+r*.8,y+r*1.5);c.lineTo(x+r*1.9,y-r*.3);c.lineTo(x+r*1.4,y-r*.3);c.lineTo(x+r*1.8,y-r*1.4);c.closePath();c.fill();c.lineWidth=1.5;c.stroke()}}
+ c.restore()}
 
-/* ===== 通過（ラウンド）の設計 ===== */
-const RUNS=[
- {nm:'はじめての町',ds:'西から低気圧がやってくる。観測を読んで、3時間後を予言しよう。',d0:4,gap:2,hint:1},
- {nm:'晴れた朝から',ds:'きょうは晴れ。でも西から何かが来ている。',d0:5,gap:3,hint:1},
- {nm:'もう暖かい日',ds:'朝から南西の風で暖かい。この先に待つものは？',warmStart:2},
- {nm:'天気図つき',ds:'天気図で町（★）の位置を見ながら読もう。',d0:4,gap:2,map:1},
- {nm:'前線どうしが近い',ds:'寒冷前線が温暖前線に追いつきかけている。',d0:4,gap:1},
- {nm:'夜に通る',ds:'夜は雲が見えない。風・気温・気圧で読め。夜は晴れていても少しずつ冷える。',d0:4,gap:2,night:1},
- {nm:'記録が欠けた日（山場）',ds:'観測機器がいくつか故障中。残った記録で読みきれ。',d0:5,gap:2,missing:1},
- {nm:'ヒントなし',ds:'前ぶれメモは もうない。自分の読みだけで。',rand:1},
- {nm:'5回連続（ボス）',ds:'5つの低気圧が続けてやってくる。♥5つで5回乗り切れ。',boss:1}];
-const BOSSSET=[{d0:3,gap:2},{warmStart:2},{d0:3,gap:1,night:1},{d0:4,gap:2,missing:1},{d0:3,gap:3}];
-function mkRun(spec){let xw,xc;if(spec.warmStart){xw=TC+1;xc=TC-spec.warmStart}else{xw=TC-spec.d0;xc=xw-spec.gap}
- return{xw,xc,turn:0,night:!!spec.night,missing:!!spec.missing,map:!!spec.map,hour:spec.night?18:6,seed:Math.random()*1000,log:[],res:[]}}
+/* ===== ゲーム状態 ===== */
+let G=null,MODE='title',SEL=null,DR=null,TT=0,lastTip=0;
+function fr(g,l,t){const s=g.st,xw=s.w0+s.sw*l+s.v*t;let xc=s.w0-s.gap-s.sc*l+s.v*(s.vc||1)*t;if(xc>xw)xc=xw;return{xw,xc}}
+function span(g,l,b,t){const f=fr(g,l,t),d=b.sys?g.st.second:0,xw=f.xw-d,xc=f.xc-d;
+ switch(b.k){case'omen':return[xw+RW+.4,xw+RW+2.6];case'rain':return[xw,xw+RW];case'warm':return[xc,xw];case'storm':return[xc-SWD,xc];default:return[xc-SWD-CL,xc-SWD]}}
+function mkGame(si){const st=ST[si];const g={si,st,n:st.n,t:0,run:false,items:[],lanes:[],combo:0,maxc:0,score:0,waste:0,tix:0,cd:{},pops:[],parts:[],shake:0,end:0,night:!!st.night,log:[],pred:0,boss:null,ff:1,slow:0,firstRun:!S.stars[si]};
+ for(let l=0;l<g.n;l++){const ln={l,dmg:0,waste:0,bands:[]};const sys=st.second?[0,1]:[0];sys.forEach(sy=>['omen','rain','warm','storm','cold'].forEach(k=>{const b={k,sys:sy,done:false,res:''};const sp=span(g,l,b,0);b.prevE=sp[1];if(sp[1]>=C){b.done=true;b.res='past'}else if(k==='warm'&&sp[1]-sp[0]<.04){b.done=true;b.res='gone'}ln.bands.push(b)}));g.lanes.push(ln)}
+ let need=0;g.lanes.forEach(ln=>ln.bands.forEach(b=>{if(b.k!=='omen'&&!b.done)need++}));g.need=need;g.tix=need+st.spare;
+ if(st.boss){const m=g.lanes.reduce((a,ln)=>a+ln.bands.filter(b=>b.k==='storm'&&!b.done).length,0);g.boss={hp:m,max:m}}
+ return g}
 
-/* ===== 進行 ===== */
-let RN=null,G=null; // RN: いまの通過, G: ラウンドの状態
-function show(id){for(const s of['title','game','clear','test','result'])$('#'+s).classList.toggle('hidden',s!==id);scrollTo(0,0)}
-let clock=null;function startClock(){clearInterval(clock);clock=setInterval(()=>{if(!$('#game').classList.contains('hidden')){S.t++;$('#hT').textContent=fmtT(S.t);if(S.t%5===0)save()}},1000)}
-function fmtT(t){return Math.floor(t/60)+':'+String(t%60).padStart(2,'0')}
-function hud(){$('#hRun').textContent=S.ri<RUNS.length?'通過'+(S.ri+1)+'/9':'完了';$('#hHp').textContent='♥'.repeat(Math.max(0,G?G.hp:3))+'♡'.repeat(Math.max(0,(G?G.max:3)-(G?G.hp:3)));$('#hCb').textContent='連続 '+(G?G.combo:0);$('#hT').textContent=fmtT(S.t)}
-function enterGame(){show('game');try{if(window.Zukan&&Zukan.hud){$('#hZk').innerHTML='';Zukan.hud($('#hZk'))}}catch(e){}if(S.cleared||S.timeUp)return toClear();startClock();if(!S.introDone)intro();else startRound()}
+/* ===== 置く ===== */
+function cellAt(x,y){const q=inv(x,y);if(q.l<0||q.l>=G.n||q.u<0||q.u>=C)return null;return{l:q.l,i:Math.floor(q.u)}}
+function itemAt(l,i){return G.items.find(it=>it.l===l&&it.cell===i&&!it.used)}
+function tryPlace(k,x,y){if(!G||MODE!=='play')return false;const c=cellAt(x,y);if(!c){return false}
+ if(itemAt(c.l,c.i)){tipShow('そのマスには、もう備えがある。',1);sfx.cd();return false}
+ if(G.tix<=0){tipShow('<b>そなえ券がない！</b> ムダにしないように、来る順を読んで置こう。',1);sfx.cd();return false}
+ if(G.run&&(G.cd[k]||0)>0){tipShow('<b>'+IT[k].nm+'</b>は準備中…（あと'+Math.ceil(G.cd[k])+'秒）。先を読んで早めに置こう！',1);sfx.cd();return false}
+ const ln=G.lanes[c.l],u=c.i+.5;let pre=false;if(k==='umb'&&!G.night){const rb=ln.bands.find(b=>b.k==='rain'&&!b.done);if(rb&&span(G,c.l,rb,G.t)[1]<0)pre=true}
+ G.items.push({k,l:c.l,cell:c.i,u,plan:!G.run,used:false,t0:TT,pre});G.tix--;if(G.run)G.cd[k]=CD;sfx.place();vib(8);
+ const p=P(u,c.l);for(let i=0;i<(RM?4:10);i++)G.parts.push({x:p.x,y:p.y,vx:rnd(-3,3),vy:rnd(-4,-1),g:.25,r:rnd(2,5),c:[INK,YEL,'#fff'][i%3],life:1,dec:.05});
+ hud();return true}
+function removeAt(x,y){if(!G||G.run)return false;const c=cellAt(x,y);if(!c)return false;const it=itemAt(c.l,c.i);if(!it)return false;G.items.splice(G.items.indexOf(it),1);G.tix++;sfx.tap();hud();return true}
 
-function curSt(){return stAt(RN.xw,RN.xc,TC)}
-function jit(k){return Math.round((Math.sin(RN.seed+k*12.9898)*.5)*10)/10}
-function obsOf(st,k){const b=ST[st];let t=b.t+jit(k)*1.4;if(RN.night)t-=Math.min(4,RN.turn*.8);const p=Math.round(b.p+jit(k+3)*2);
- const hide=RN.missing?missFor(k):{};return{wx:RN.night&&st!=='cp'&&st!=='wr'?(st==='wp'||st==='ws'?'くもり？（夜）':'（夜で空が見えない）'):b.wx,cl:RN.night?'（夜で見えない）':b.cl,wd:hide.wd?null:b.wd,t:hide.t?null:Math.round(t*10)/10,p:hide.p?null:p,pt:b.pt,h:hide.h?null:b.h,rain:st==='wr'||st==='cp'}}
-function missFor(k){return [{t:1},{t:1,h:1},{wd:1},{wd:1,p:1},{h:1,t:1},{p:1},{wd:1,h:1},{t:1}][k%8]}
-function hourStr(h){h=((h%24)+24)%24;return h+'時'}
+/* ===== 進める ===== */
+function upd(dt){const g=G;if(!g)return;
+ if(g.slow>0){g.slow-=dt;dt*=.3}
+ IK.forEach(k=>{if(g.cd[k]>0)g.cd[k]=Math.max(0,g.cd[k]-dt*(g.ff||1))});
+ if(!g.run)return;const d=dt*(g.ff||1);g.t+=d;S.t+=dt;
+ for(const ln of g.lanes){for(const b of ln.bands){if(b.done)continue;const sp=span(g,ln.l,b,g.t),e=sp[1];
+   if(b.k==='warm'&&sp[1]-sp[0]<.04){b.done=true;b.res='gone';if(!g.ocMsg){g.ocMsg=1;tipShow('寒冷前線が温暖前線に追いついた！ <b>閉塞前線</b>。この通りでは暖気がなくなる。')}continue}
+   if(b.k!=='omen'){const its=g.items.filter(it=>it.l===ln.l&&!it.used&&it.u>b.prevE&&it.u<=e).sort((a,c)=>a.u-c.u);for(const it of its){meet(g,ln,b,it);if(b.done)break}}
+   b.prevE=e;if(!b.done&&e>=C+.05){if(b.k==='omen'){b.done=true;b.res='past'}else houseHit(g,ln,b)}}}
+ if(g.st.nightAt&&!g.night&&g.t>=g.st.nightAt){g.night=true;banner('日がくれた！','b');tipShow('夜になった。雲が見えない！ <b>見張り台の記録</b>で次の天気を読め。')}
+ if(!g.lastLog||g.t-g.lastLog>.4){g.lastLog=g.t;const k=kindAt(g,0,C+.3);g.log.push([g.t,k])}
+ if(!g.end&&g.lanes.every(ln=>ln.bands.every(b=>b.done&&(b.res==='gone'||b.res==='past'||span(g,ln.l,b,g.t)[1]>=C+.3))))g.end=g.t+1.2*(g.ff||1);
+ if(g.end&&g.t>=g.end){g.run=false;stageEnd()}}
+function kindAt(g,l,u){const bs=g.lanes[l].bands;let om=false;for(const b of bs){const sp=span(g,l,b,g.t);if(sp[1]-sp[0]<.04)continue;if(u>=sp[0]&&u<sp[1]){if(b.k==='omen')om=true;else return b.k}}
+ if(om)return'omen';const s0=bs.filter(b=>b.sys===0);const rain=span(g,l,s0.find(b=>b.k==='rain'),g.t);if(u>=rain[1])return'ahead';
+ if(g.st.second){const r1=span(g,l,bs.find(b=>b.sys===1&&b.k==='rain'),g.t);if(u>=r1[1]+2.6)return'after';if(u>=r1[1])return'omen'}return'after'}
+function meet(g,ln,b,it){const p=P(it.u,ln.l);it.used=true;
+ if(IT[it.k].vs===b.k){it.ok=true;b.done=true;b.res='ok';g.combo++;const old=g.maxc;g.maxc=Math.max(g.maxc,g.combo);
+  const mult=g.combo>=10?5:g.combo>=6?3:g.combo>=3?2:1;const pts=100*mult*(it.plan?2:1);g.score+=pts;S.cnt[b.k]=(S.cnt[b.k]||0)+1;
+  juiceHit(p,it,b,mult,pts);if([3,6,10].includes(g.combo)){sfx.tier();banner(g.combo>=10?'SUPER ×5！！':g.combo>=6?'FEVER ×3！':'コンボ ×2！',g.combo>=10?'rb':g.combo>=6?'':'y')}
+  if(it.pre&&!g.pred){g.pred=1;earn(10,'predict','pre'+g.si,p.x,p.y);addStk('ci');tipShow('<b>予兆を読んだ！</b> すじ雲が見えた時点で傘を用意できた。')}
+  if(g.firstRun&&!g.sciShown[b.k]){g.sciShown[b.k]=1;tipShow(BK[b.k].sci)}
+  stkCount(b.k);
+  if(g.boss&&b.k==='storm'){g.boss.hp--;bossHit(p)}
+ }else{it.bad=true;g.waste++;ln.waste++;breakCombo(g);juiceBad(p,it,b);tipShow(BAD[b.k+'|'+it.k]||'合わない備えだった。',1)}
+ hud()}
+function houseHit(g,ln,b){b.done=true;b.res='hit';ln.dmg++;breakCombo(g);const p=P(C+.65,ln.l);sfx.house();vib([30,40,30]);g.shake=RM?0:14;flash('#1D3557',.45);
+ for(let i=0;i<(RM?6:26);i++)g.parts.push({x:p.x,y:p.y,vx:rnd(-6,6),vy:rnd(-7,-1),g:.3,r:rnd(3,7),c:[BK[b.k].col,INK,'#8FA1B6'][i%3],life:1,dec:.025});
+ g.pops.push({x:p.x,y:p.y-L.sz*.6,txt:b.k==='cold'?'ブルブル…':b.k==='warm'?'あつい…':'ビショビショ…',col:'#9fb7cf',t0:TT,dur:1.3,s:.9});
+ tipShow('<b>'+BK[b.k].nm+'</b>が家に！ '+BK[b.k].sci,1);if(g.boss&&b.k==='storm'){banner('大王の笑い声…','b')}hud()}
+function breakCombo(g){if(g.combo>=2){const nx=g.combo<3?3:g.combo<6?6:g.combo<10?10:0;if(nx&&nx-g.combo===1)banner('あと1回で'+(nx===3?'×2':nx===6?'×3':'×5')+'だった！','b')}g.combo=0}
 
-/* 町のテキストアート */
-const TOWN=['山','山','田','木','田','家','木','店','家','＠','家','店','木','田','田'];
-function skyRows(st,col){const r=['','','','',''];
- if(st==='cir'){r[0]='〜'}else if(st==='alt'){r[0]='―';r[1]='＝'}
- else if(st==='wr'){r[1]='＝';r[2]='▒';r[3]='▒';r[4]=col%2?'╎':'╎'}
- else if(st==='wp'){r[2]=col%2?'▒':''}
- else if(st==='ws'){r[2]=col%3===0?'○':''}
- else if(st==='cp'){r[0]='▀';r[1]='█';r[2]='█';r[3]=col%2?'⚡':'█';r[4]='┃'}
- return r}
-const CLS={'〜':'c-cl','―':'c-cl','＝':'c-cl','▒':'c-cl','○':'c-cl','▀':'c-cb','█':'c-cb','╎':'c-rn','┃':'c-rs','⚡':'c-th','░':'c-fg','☀':'c-sun'};
-function drawTown(reveal,hi){let h='';for(let row=0;row<7;row++)for(let c=0;c<COLS;c++){let ch='',cls='';
-  const st=stAt(RN.xw,RN.xc,c),fog=!reveal&&c<TC&&row<5;
-  if(row<5){if(fog){ch=c<2&&row>=3?'':'░'}else{ch=skyRows(st,c)[row]||'';if(RN.night&&!reveal&&row<4&&ch!=='⚡')ch='';if(!ch&&row===0&&c===13&&!RN.night&&(st==='fine'||st==='af'||st==='ws'))ch='☀';if(!ch&&row===0&&c===13&&RN.night&&(st==='fine'||st==='af'))ch='☾'}}
-  else if(row===5){ch=TOWN[c];if(c<2&&!reveal)ch='山'}
-  else{ch='▔';if(reveal&&c===RN.xw)ch='温';if(reveal&&c===RN.xc)ch='寒'}
-  cls=CLS[ch]||'';if(ch==='＠')cls='c-me';if(ch==='温')cls='c-wf';if(ch==='寒')cls='c-cf';if(hi&&c===TC&&row<6)cls+=' c-hi';
-  h+='<div class="'+cls+'">'+(ch||'　')+'</div>'}
- $('#town').innerHTML=h;fitTown()}
-function fitTown(){const w=$('#town').clientWidth-4;$('#town').style.fontSize=Math.max(12,Math.min(26,Math.floor(w/COLS*.86)))+'px'}
-addEventListener('resize',()=>{if(RN)fitTown()});
-function drawObs(){const o=obsOf(curSt(),RN.turn),v=(x,f)=>x==null?'<span class="miss">（故障中）</span>':f(x);
- $('#oCap').textContent='観測 '+hourStr(RN.hour)+(RN.night?' 🌙':'');
- $('#obsIn').innerHTML='<table><tr><td>天気</td><td>'+esc(o.wx)+'</td></tr><tr><td>雲</td><td>'+esc(o.cl)+'</td></tr><tr><td>風向</td><td>'+v(o.wd,x=>x+' '+WA[x]+'<span class="tiny">（'+x+'から吹く）</span>')+'</td></tr><tr><td>気温</td><td>'+v(o.t,x=>x.toFixed(1)+'℃'+trendT(o))+'</td></tr><tr><td>気圧</td><td>'+v(o.p,x=>x+'hPa '+(o.pt==='↓'?'↓下がっている':o.pt==='↑'?'↑上がっている':'→ほぼ同じ'))+'</td></tr><tr><td>湿度</td><td>'+v(o.h,x=>x+'%')+'</td></tr></table>';
- RN.lastObs=o}
-function trendT(o){if(RN.prevT==null||o.t==null)return '';const d=o.t-RN.prevT;return d>=3?' <b>↑急に上がった</b>':d<=-3?' <b>↓急に下がった</b>':''}
-function logLine(o,st){return hourStr(RN.hour)+'｜'+(o.rain?(st==='cp'?'┃強雨':'╎弱雨'):o.wx.slice(0,6))+'｜'+(o.wd||'？')+'｜'+(o.t==null?'？':o.t.toFixed(0)+'℃')+'｜'+(o.p==null?'？':o.p)}
-function drawLog(){$('#logIn').innerHTML=RN.log.slice().reverse().map(l=>'<div>'+esc(l)+'</div>').join('')||'<div class="tiny">（まだない）</div>'}
-function ghostLine(){const k=G.key,gh=S.ghost[k];const me=RN.res.map(x=>x?'◯':'×').join('');return 'きみ　：'+(me||'―')+(gh?'<br>前回　：'+gh.map(x=>x?'◯':'×').join(''):'<br>前回　：（はじめて）')}
+/* ===== 演出（ドーパミン） ===== */
+function juiceHit(p,it,b,mult,pts){const g=G,big=mult>=3;g.shake=RM?0:Math.max(g.shake,big?11:7);flash(big?YEL:'#fff',big?.4:.18);
+ const cols=[RED,YEL,NAVY,'#fff',CYA,ORG];for(let i=0;i<(RM?8:(big?60:34));i++){const a=rnd(0,6.28),s=rnd(2,big?11:8);g.parts.push({x:p.x,y:p.y,vx:Math.cos(a)*s,vy:Math.sin(a)*s-2,g:.22,r:rnd(3,big?9:7),c:cols[i%cols.length],life:1,dec:rnd(.015,.03),star:i%4===0,dot:i%3===0})}
+ g.rings=(g.rings||[]);g.rings.push({x:p.x,y:p.y,t0:TT,col:mult>=5?PUR:mult>=3?RED:YEL});
+ g.pops.push({x:p.x,y:p.y-L.sz*.35,txt:IT[it.k].ono,col:YEL,t0:TT,dur:1.1,s:big?1.5:1.15,burst:1});
+ g.pops.push({x:p.x+L.sz*.5,y:p.y-L.sz*.9,txt:'+'+pts,col:'#fff',t0:TT+.08,dur:1.2,s:big?1.2:.9,rise:1});
+ if(g.combo>=2)g.pops.push({x:W/2,y:L.port?L.top+30:L.top+50,txt:g.combo+' コンボ！',col:mult>=5?'#fff':mult>=3?RED:YEL,t0:TT,dur:.9,s:1+Math.min(g.combo,12)*.07,combo:1});
+ sfx.hit(g.combo);vib(big?[15,30,15]:15);if(b.k==='storm')sfx.thunder()}
+function juiceBad(p,it,b){const g=G;g.shake=RM?0:6;sfx.bad();vib(40);
+ for(let i=0;i<(RM?4:14);i++)g.parts.push({x:p.x,y:p.y,vx:rnd(-5,5),vy:rnd(-6,0),g:.35,r:rnd(3,6),c:IT[it.k].col,life:1,dec:.03,sq:1});
+ g.pops.push({x:p.x,y:p.y-L.sz*.3,txt:it.k==='umb'&&b.k==='storm'?'ボキッ！':'ぐしゃ！',col:'#bbb',t0:TT,dur:1,s:1})}
+function bossHit(p){const g=G;sfx.boss();g.shake=RM?0:18;flash(RED,.5);g.pops.push({x:p.x,y:p.y-L.sz,txt:'ドゴォン！！',col:RED,t0:TT,dur:1.3,s:1.7,burst:1});
+ if(g.boss.hp<=0){g.slow=RM?0:1.2;banner('嵐の大王 撃破！！','rb');sfx.fan();for(let i=0;i<(RM?20:160);i++)g.parts.push({x:rnd(0,W),y:rnd(-H*.3,0),vx:rnd(-1,1),vy:rnd(2,6),g:.05,r:rnd(3,8),c:[RED,YEL,CYA,PUR,'#fff',ORG][i%6],life:1,dec:.006,conf:1})}}
+function flash(col,a){const f=$('#flash');f.style.background=col;f.style.transition='none';f.style.opacity=RM?a*.4:a;requestAnimationFrame(()=>{f.style.transition='opacity .35s';f.style.opacity=0})}
+function banner(t,cls){const d=document.createElement('div');d.className='bnr '+(cls||'');d.textContent=t;$('#app').appendChild(d);setTimeout(()=>d.remove(),1750)}
+let tipTimer=0;function tipShow(h,bad){const t=$('#tip');t.innerHTML=h;t.classList.toggle('bad',!!bad);t.classList.remove('hidden');clearTimeout(tipTimer);tipTimer=setTimeout(()=>t.classList.add('hidden'),bad?5200:6500)}
+function earn(n,why,key,x,y){if(key){if(S.paid[key])return 0;S.paid[key]=1;save()}try{return window.Zukan&&Zukan.earn?Zukan.earn(n,why,{x:x==null?W/2:x,y:y==null?H*.3:y}):0}catch(e){return 0}}
+function addStk(id){if(S.stk[id])return;S.stk[id]=1;save();const s=STK.find(a=>a[0]===id);if(!s)return;setTimeout(()=>{banner('ステッカーGET！ '+s[1],'y');sfx.tier()},400)}
+function stkCount(k){const c=S.cnt;if(k==='rain')addStk('wf');if(k==='storm')addStk('cf');if(k==='rain'&&c.rain>=6)addStk('ns');if(k==='storm'&&c.storm>=6)addStk('cb');if(k==='warm'&&c.warm>=3)addStk('wa');if(k==='cold'&&c.cold>=3)addStk('ca')}
 
-/* 天気図（地図は町の北を低気圧が通る形の模式） */
-function frontSyms(pts,type,step){let path='M'+pts.map(p=>p[0].toFixed(1)+' '+p[1].toFixed(1)).join(' L'),col=type==='cold'?'#2459a8':'#b8322b',sym='';
- const seg=[];let tot=0;for(let i=1;i<pts.length;i++){const d=Math.hypot(pts[i][0]-pts[i-1][0],pts[i][1]-pts[i-1][1]);seg.push(d);tot+=d}
- for(let a=step*.6;a<tot-4;a+=step){let r=a,i=0;while(i<seg.length&&r>seg[i]){r-=seg[i];i++}if(i>=seg.length)break;const p0=pts[i],p1=pts[i+1],f=r/seg[i];const x=p0[0]+(p1[0]-p0[0])*f,y=p0[1]+(p1[1]-p0[1])*f;const tx=(p1[0]-p0[0])/seg[i],ty=(p1[1]-p0[1])/seg[i];let nx=ty,ny=-tx;if(nx<0){nx=-nx;ny=-ny}const r0=5;
-  if(type==='cold')sym+='<path d="M'+(x-tx*r0).toFixed(1)+' '+(y-ty*r0).toFixed(1)+' L'+(x+nx*8).toFixed(1)+' '+(y+ny*8).toFixed(1)+' L'+(x+tx*r0).toFixed(1)+' '+(y+ty*r0).toFixed(1)+'Z" fill="'+col+'"/>';
-  else{const cr=tx*ny-ty*nx;sym+='<path d="M'+(x-tx*r0).toFixed(1)+' '+(y-ty*r0).toFixed(1)+' A'+r0+' '+r0+' 0 0 '+(cr<0?1:0)+' '+(x+tx*r0).toFixed(1)+' '+(y+ty*r0).toFixed(1)+'Z" fill="'+col+'"/>'}}
- return '<path d="'+path+'" fill="none" stroke="'+col+'" stroke-width="2.4"/>'+sym}
-function mapSVG(){const X=c=>14+c*20,ty=118;const wx=X(RN.xw),cxp=X(RN.xc),lx=(wx+cxp)/2-10,ly=40;
- let g='<svg class="fig" viewBox="0 0 320 150"><rect width="320" height="150" fill="#fff"/>';
- [16,32,50].forEach(r=>g+='<ellipse cx="'+lx+'" cy="'+ly+'" rx="'+(r*1.5)+'" ry="'+r+'" fill="none" stroke="#999"/>');
- g+='<path d="M'+lx+' '+ly+' L'+wx+' '+ty+' L'+(wx+14)+' 150 L'+(cxp-12)+' 150 L'+cxp+' '+ty+'Z" fill="rgba(184,50,43,.08)"/>';
- g+=frontSyms([[lx,ly],[wx,ty],[wx+14,150]],'warm',15)+frontSyms([[lx,ly],[cxp,ty],[cxp-12,150]],'cold',15);
- g+='<text x="'+(lx-8)+'" y="'+(ly+6)+'" font-size="16" font-weight="700" fill="#b8322b">低</text>';
- g+='<text x="'+(X(TC)-7)+'" y="'+(ty+5)+'" font-size="15" fill="#1f1f1f">★</text><text x="'+(X(TC)+8)+'" y="'+(ty+16)+'" font-size="10" font-weight="700">町</text>';
- g+='<text x="4" y="12" font-size="10">天気図（'+hourStr(RN.hour)+'）　→ 低気圧は西から東へ</text><text x="298" y="14" font-size="11" font-weight="700">N↑</text></svg>';return g}
-
-/* ===== 導入：1つめの低気圧を見る ===== */
-function intro(){G={hp:3,max:3,combo:0,key:'intro'};RN=mkRun({d0:4,gap:2});hud();
- $('#rCap').textContent='はじめに';$('#rNm').textContent='1つめの低気圧が、町を通りすぎる';$('#rGh').innerHTML='まずは見るだけ。3時間ごとに空と観測が変わる。';
- drawTown(true);drawObs();$('#log').classList.remove('hidden');RN.log=[];drawLog();
- let k=0;const steps=8;
- const step=()=>{const st=curSt();RN.log.push(logLine(obsOf(st,RN.turn),st));drawLog();
-  $('#act').innerHTML='<div class="box"><div class="q">'+hourStr(RN.hour)+'：'+WHY[st]+'</div><div class="row"><button class="btn" id="iNx">'+(k<steps-1?'▶ 3時間すすめる':'▶ 順番をまとめる')+'</button></div></div>';
-  $('#iNx').onclick=()=>{sfx.tap();if(k>=steps-1)return introEnd();k++;RN.prevT=RN.lastObs.t;RN.xw++;RN.xc++;RN.turn++;RN.hour+=3;const ns=curSt();if(ns==='wr')sfx.rain(0);if(ns==='cp'){sfx.rain(1);sfx.thunder()}drawTown(true);drawObs();step()}};
- step()}
-function introEnd(){$('#act').innerHTML='<div class="box"><div class="q">町を通った順番</div><pre class="memo">〜 すじ雲 → ＝ 雲が低く厚く → ╎ 弱い雨（長い）\n── 温暖前線 ── 雨がやみ、南風で暖かい\n── 寒冷前線 ── ┃ 強い雨と雷、北風で急に冷える\n☀ 晴れて北西の風・気圧↑</pre><div class="expl">ここからは、<b>西の空は見えない</b>。観測だけで3時間後を予言し、そなえを選ぶ。</div><div class="row"><button class="btn" id="iGo">▶ 通過1へ</button></div></div>';
- $('#iGo').onclick=()=>{sfx.tap();S.introDone=true;save();startRound()}}
-
-/* ===== ラウンド ===== */
-function startRound(){if(S.ri>=RUNS.length)return toClear();if(S.t>=LIMIT){S.timeUp=true;save();return toClear()}
- const spec=RUNS[S.ri];document.body.classList.remove('night');
- if(spec.boss){G={hp:5,max:5,combo:0,key:'boss',boss:0};startBossLeg()}
- else{G={hp:3,max:3,combo:0,key:'r'+S.ri};let sp=spec;if(spec.rand)sp=shuffle([{d0:4,gap:2},{warmStart:2},{d0:4,gap:1},{d0:5,gap:3}])[0];RN=mkRun(sp);beginRun(spec)}}
-function startBossLeg(){const sp=BOSSSET[G.boss];RN=mkRun(sp);beginRun(Object.assign({nm:'5回連続（ボス）　'+(G.boss+1)+'/5',ds:G.boss===0?RUNS[8].ds:'つぎの低気圧が来た。♥はそのまま。'},sp))}
-function beginRun(spec){document.body.classList.toggle('night',!!RN.night);hud();
- $('#rCap').textContent=S.ri<8?'通過'+(S.ri+1):'ボス';$('#rNm').textContent=spec.nm;$('#rGh').innerHTML=esc(spec.ds)+'<br>'+ghostLine();
- $('#mapw').classList.toggle('hidden',!RN.map);RN.log=[];RN.prevT=null;
- banner(S.ri<8?'通過'+(S.ri+1):'ボス '+(G.boss+1)+'/5');
- drawTown(false);drawObs();RN.log.push(logLine(RN.lastObs,curSt()));drawLog();if(RN.map)$('#mapw').innerHTML=mapSVG();
- predict()}
-function optsFor(cur,next){const set=new Set([next]);const i=ORDER.indexOf(next);
- const cand=[cur,'cp',ORDER[i+1],ORDER[i-1],'wp','af','wr'].filter(x=>x&&x!==next);for(const c of shuffle(cand.slice(0,4)).concat(cand)){if(set.size>=4)break;set.add(c)}
- return shuffle([...set])}
-function predict(){const cur=curSt(),next=stAt(RN.xw+1,RN.xc+1,TC);G.cur=cur;G.next=next;G.pred=null;G.eq=null;
- const spec=RUNS[S.ri];const hint=spec.hint?'<details style="margin-top:8px"><summary class="tiny" style="font-size:14px;min-height:30px">📜 前ぶれメモを見る</summary><pre class="memo">〜すじ雲 → ＝低く厚い雲 → ╎弱い雨（長い）\n→［温暖前線］雨やむ・南風・暖かい\n→［寒冷前線］┃強い雨・雷・北風・急に冷える\n→ 晴れ・北西風・気圧↑</pre></details>':'';
- $('#act').innerHTML='<div class="box"><span class="cap">予言</span><div class="q">3時間後（'+hourStr(RN.hour+3)+'）の町は？</div><div class="opts" id="pOpts">'+optsFor(cur,next).map(k=>'<button data-k="'+k+'">'+ST[k].lb+'</button>').join('')+'</div>'+hint+'</div>';
- document.querySelectorAll('#pOpts button').forEach(b=>b.onclick=()=>{sfx.key();G.pred=b.dataset.k;document.querySelectorAll('#pOpts button').forEach(x=>{x.classList.toggle('sel',x===b);x.disabled=true});equip()})}
-function equip(){const box=document.createElement('div');box.className='box';box.style.marginTop='14px';box.innerHTML='<span class="cap">そなえ</span><div class="q">その空に合う そなえを1つ選ぶ</div><div class="eq">'+Object.keys(EQ).map(k=>'<button data-e="'+k+'">'+EQ[k]+'</button>').join('')+'</div>';
- $('#act').appendChild(box);box.scrollIntoView&&box.scrollIntoView({block:'nearest',behavior:RM?'auto':'smooth'});
- box.querySelectorAll('[data-e]').forEach(b=>b.onclick=()=>{sfx.key();G.eq=b.dataset.e;box.querySelectorAll('[data-e]').forEach(x=>x.disabled=true);b.style.background='var(--ink)';b.style.color='var(--pp)';reveal()})}
-function reveal(){// 西の空が一瞬見える → 1マス進む
- $('#act').insertAdjacentHTML('beforeend','<div class="tiny" style="margin-top:6px">…西の空が見えてきた</div>');
- drawTown(true,true);
- setTimeout(()=>{RN.prevT=RN.lastObs.t;RN.xw++;RN.xc++;RN.turn++;RN.hour+=3;const ns=curSt();if(ns==='wr')sfx.rain(0);if(ns==='cp'){sfx.rain(1);sfx.thunder()}
-  drawTown(true,true);drawObs();if(RN.map)$('#mapw').innerHTML=mapSVG();
-  setTimeout(()=>{drawTown(false);judge(ns)},RM?200:900)},RM?150:750)}
-function judge(ns){const ok=G.pred===ns,eo=eqOK(G.eq,ns);S.preds++;RN.res.push(ok?1:0);
- RN.log.push(logLine(RN.lastObs,ns));drawLog();
- let h='<div class="box"><span class="cap">結果 '+hourStr(RN.hour)+'</span>';
- if(ok){G.combo++;S.hits++;if(G.combo>S.maxCombo)S.maxCombo=G.combo;h+='<div class="big good">的中！'+(G.combo>=2?'　連続 '+G.combo:'')+'</div>'}
- else{G.combo=0;h+='<div class="big bad">はずれ</div><div class="tiny">きみの予言：'+ST[G.pred].lb+'</div>'}
- h+='<div class="expl">'+WHY[ns]+(ok?'':TRAP[G.cur+'>'+G.pred]?'<br>⚠ '+TRAP[G.cur+'>'+G.pred]:'')+'</div>';
- if(!eo){G.hp--;h+='<div class="q bad" style="margin-top:8px">♥−1　'+(EQNG[G.eq]&&EQNG[G.eq][ns]||'そなえが空に合っていなかった。')+'</div>'}
- else h+='<div class="tiny" style="margin-top:6px">そなえ：'+EQ[G.eq]+' … OK</div>';
- const end=ns==='af',caught=G.hp<=0;
- h+='<div class="row"><button class="btn" id="jNx">'+(caught?'↺ つかまった… すぐやり直す':end?'▶ 通過完了':'▶ 次の3時間へ')+'</button></div></div>';
- $('#act').innerHTML=h;hud();
- const el=$('#act .big');
- if(ok){sfx.hit(G.combo);burst(innerWidth/2,el.getBoundingClientRect().top+10,20+G.combo*6);if(G.combo>=3)pop(innerWidth/2,el.getBoundingClientRect().top,'×'+G.combo);earn(G.combo>=3?5:3,'hit',el)}else sfx.miss();
- if(!eo){$('#town').classList.remove('shake');void $('#town').offsetWidth;$('#town').classList.add('shake');sfx.caught()}
- save();
- $('#jNx').onclick=()=>{sfx.tap();if(caught)return retry();if(end)return runEnd();predict()}}
-function retry(){banner('やり直し');if(G.key==='boss'){G.hp=5;G.boss=0;G.combo=0;startBossLeg()}else{const spec=RUNS[S.ri];G.hp=3;G.combo=0;let sp=spec;if(spec.rand)sp=shuffle([{d0:4,gap:2},{warmStart:2},{d0:4,gap:1}])[0];RN=mkRun(sp);beginRun(spec)}}
-function runEnd(){if(G.key!=='boss'){S.ghost[G.key]=RN.res.slice();S.runsCleared++;
-  const allHit=RN.res.every(Boolean);const el=$('#runhd');
-  if(S.ri===0&&once('rule0')){earn(30,'rule',el);banner('順番を見つけた！')}
-  if(S.ri===6&&once('rule6')){earn(30,'rule',el);banner('欠けた記録でも読めた！')}
-  if(allHit&&once('perfect'+S.ri))earn(10,'first-try',el);
-  S.ri++;save();sfx.big();return startRound()}
+/* ===== 描く ===== */
+function draw(){cx.save();cx.setTransform(DPR,0,0,DPR,0,0);
+ if(MODE==='play'&&G){let sx=0,sy=0;if(G.shake>0){sx=rnd(-G.shake,G.shake);sy=rnd(-G.shake,G.shake);G.shake*=.85;if(G.shake<.4)G.shake=0}cx.translate(sx,sy);drawField()}
+ else if(MODE==='title')drawTitle();else drawPage();
+ cx.restore()}
+function rays(x,y,col,n,rot,a){cx.save();cx.globalAlpha=a;cx.fillStyle=col;const R=Math.hypot(W,H);for(let i=0;i<n;i++){const a0=rot+i*Math.PI*2/n;cx.beginPath();cx.moveTo(x,y);cx.lineTo(x+Math.cos(a0)*R,y+Math.sin(a0)*R);cx.lineTo(x+Math.cos(a0+Math.PI/n)*R,y+Math.sin(a0+Math.PI/n)*R);cx.closePath();cx.fill()}cx.restore()}
+function drawTitle(){const t=TT;cx.fillStyle=BG;cx.fillRect(0,0,W,H);rays(W*.5,H*.3,'#FFE08A',22,t*.05,1);cx.fillStyle=PAT.r;cx.fillRect(0,0,W,H*.55);
+ const s=Math.min(W,H);
+ // 巨大な積乱雲（左）
+ const bx=W*(L.port?.22:.18),by=H*.62;const fl=(Math.sin(t*7)>.93||(t%5<.12));
+ blob(cx,[[bx,by-s*.42,s*.1],[bx-s*.13,by-s*.4,s*.08],[bx+s*.14,by-s*.41,s*.09],[bx+s*.25,by-s*.43,s*.06],[bx-s*.24,by-s*.43,s*.06],[bx,by-s*.28,s*.1],[bx-s*.05,by-s*.15,s*.12],[bx+s*.08,by-s*.05,s*.13],[bx-s*.12,by,s*.12],[bx+s*.2,by+s*.03,s*.1]],fl?'#46507a':'#2B2D42',4,PAT.w);
+ cx.save();cx.strokeStyle='rgba(255,255,255,.8)';cx.lineWidth=3;for(let i=0;i<22;i++){const rx=bx-s*.2+i*s*.02,ry=by+s*.1+((t*300+i*47)%(s*.35));cx.beginPath();cx.moveTo(rx,ry);cx.lineTo(rx-8,ry+22);cx.stroke()}cx.restore();
+ if(fl){cx.save();cx.fillStyle=YEL;cx.strokeStyle=INK;cx.lineWidth=4;cx.beginPath();const lx=bx+s*.02,ly=by+s*.05;cx.moveTo(lx,ly);cx.lineTo(lx-s*.05,ly+s*.14);cx.lineTo(lx,ly+s*.13);cx.lineTo(lx-s*.04,ly+s*.28);cx.lineTo(lx+s*.07,ly+s*.09);cx.lineTo(lx+s*.02,ly+s*.1);cx.lineTo(lx+s*.05,ly);cx.closePath();cx.fill();cx.stroke();cx.restore()}
+ // 前線（右上へ）
+ const fy=H*.7;const pts=[];for(let i=0;i<=20;i++){const u=i/20;pts.push({x:W*(.28+u*.7),y:fy-u*H*.26+Math.sin(u*6+t)*6})}
+ frontLine(cx,pts,'c',Math.max(12,s*.028));const pts2=pts.map(p=>({x:p.x+W*.12,y:p.y+H*.06}));frontLine(cx,pts2,'w',Math.max(12,s*.028));
+ // 町（下）
+ const gy=H*.86;cx.fillStyle=NAVY;cx.fillRect(0,gy,W,H-gy);cx.fillStyle=PAT.w;cx.fillRect(0,gy,W,H-gy);
+ const hw=Math.max(56,s*.11);for(let i=0,x=-10;x<W+hw;i++,x+=hw*1.15){house(cx,x+hw/2,gy,hw,i,4,t+i)}
+ for(let i=0;i<5;i++){const ux=(W*.2+i*W*.17+t*20)%(W+80)-40;icon(cx,'umb',ux,gy-hw*1.25-Math.abs(Math.sin(t*3+i))*10,hw*.55,Math.sin(t*2+i)*.2)}
+}
+function drawPage(){cx.fillStyle=NAVY;cx.fillRect(0,0,W,H);rays(W/2,H*.45,'#24406A',18,TT*.03,1);cx.fillStyle=PAT.w;cx.globalAlpha=.25;cx.fillRect(0,0,W,H);cx.globalAlpha=1;
+ const s=Math.min(W,H),hw=Math.max(44,s*.08),gy=H;for(let i=0,x=-10;x<W+hw;i++,x+=hw*1.12){const lit=MODE==='map'?(i%NS)<Object.keys(S.stars).length*1.2:true;house(cx,x+hw/2,gy+hw*.2,hw,i,lit?4:0,TT+i)}}
+function house(c,x,y,w,i,lights,t){const cols=[RED,YEL,CYA,'#FF7AA2',ORG,'#8BD17C'];const h=w*1.05;c.save();c.lineWidth=Math.max(3,w*.06);c.strokeStyle=INK;c.lineJoin='round';
+ c.fillStyle=cols[i%cols.length];c.fillRect(x-w/2,y-h,w,h);c.strokeRect(x-w/2,y-h,w,h);c.fillStyle=PAT.k;c.globalAlpha=.5;c.fillRect(x+w*.1,y-h,w*.4,h);c.globalAlpha=1;
+ c.fillStyle=i%2?NAVY:RED;c.beginPath();c.moveTo(x-w*.62,y-h);c.lineTo(x,y-h-w*.5);c.lineTo(x+w*.62,y-h);c.closePath();c.fill();c.stroke();
+ const ws=w*.26;for(let j=0;j<4;j++){const wx=x-w*.3+(j%2)*w*.34,wy=y-h*.82+Math.floor(j/2)*h*.38;const on=j<lights;c.fillStyle=on?'#FFF3A6':'#3a3f55';c.fillRect(wx,wy,ws,ws);c.lineWidth=Math.max(2,w*.04);c.strokeRect(wx,wy,ws,ws);
+  if(on){c.save();c.globalAlpha=.25+.1*Math.sin(t*3+j);c.fillStyle=YEL;c.beginPath();c.arc(wx+ws/2,wy+ws/2,ws*.9,0,7);c.fill();c.restore()}}c.restore()}
+function frontLine(c,pts,kind,sp,ED){if(pts.length<2)return;const col=kind==='w'?RED:kind==='c'?'#1F6FEB':PUR;c.save();c.lineJoin='round';c.lineCap='round';
+ c.strokeStyle=INK;c.lineWidth=sp*.55;c.beginPath();pts.forEach((p,i)=>i?c.lineTo(p.x,p.y):c.moveTo(p.x,p.y));c.stroke();c.strokeStyle=col;c.lineWidth=sp*.3;c.stroke();
+ let acc=sp*.6,k=0;for(let i=1;i<pts.length;i++){const a=pts[i-1],b=pts[i],dx=b.x-a.x,dy=b.y-a.y,dl=Math.hypot(dx,dy);if(dl<.01)continue;const tx=dx/dl,ty=dy/dl;let nx=-ty,ny=tx;const ed=ED||{x:1,y:0};if(nx*ed.x+ny*ed.y<0){nx=-nx;ny=-ny}
+  let pos=acc;while(pos<dl){const px=a.x+tx*pos,py=a.y+ty*pos;const kk=kind==='o'?(k%2?'w':'c'):kind;c.fillStyle=kk==='w'?RED:'#1F6FEB';if(kind==='o')c.fillStyle=PUR;c.strokeStyle=INK;c.lineWidth=Math.max(1.5,sp*.12);c.beginPath();
+   if(kk==='w'){const a0=Math.atan2(ty,tx);const cw=(-ty*nx+tx*ny)>0;c.arc(px,py,sp*.5,a0,a0+Math.PI,!cw)}else{c.moveTo(px-tx*sp*.5,py-ty*sp*.5);c.lineTo(px+nx*sp*.85,py+ny*sp*.85);c.lineTo(px+tx*sp*.5,py+ty*sp*.5)}
+   c.closePath();c.fill();c.stroke();pos+=sp*1.9;k++}acc=pos-dl}c.restore()}
+function frontPts(g,which,sys,la,lb,fn){const pts=[];const d=sys?g.st.second:0;for(let l=la;l<=lb+1e-6;l+=.08){const s=g.st;let u;const xw=s.w0+s.sw*l+s.v*g.t-d,xcr=s.w0-s.gap-s.sc*l+s.v*(s.vc||1)*g.t-d;u=which==='c'?xcr:xw;pts.push(fn(u,l))}return pts}
+function lowCenter(g){const s=g.st;return -s.gap/(s.sw+s.sc||1)}
+function triple(g){const s=g.st;return(-s.gap+s.v*((s.vc||1)-1)*g.t)/(s.sw+s.sc||1)}
+function drawFronts(c,g,fn,sp,lMax,ed){const lc=Math.max(-6,lowCenter(g));const tp=Math.max(lc,triple(g));const sys=g.st.second?[0,1]:[0];
+ sys.forEach(sy=>{if(tp>lc)frontLine(c,frontPts(g,'w',sy,lc,tp,fn),'o',sp,ed);frontLine(c,frontPts(g,'c',sy,tp,lMax,fn),'c',sp,ed);frontLine(c,frontPts(g,'w',sy,tp,lMax,fn),'w',sp,ed)})}
+function drawField(){const g=G,n=g.n,night=g.night,sz=L.sz;
+ cx.fillStyle=night?'#101B33':BG;cx.fillRect(0,0,W,H);
+ const tier=g.combo>=10?3:g.combo>=6?2:g.combo>=3?1:0;
+ if(tier&&!night){const c=tier===3?`hsl(${(TT*120)%360},90%,70%)`:tier===2?'#FFB3B8':'#FFE08A';rays(W/2,L.port?L.top:H*.45,c,26,TT*.2,RM?.35:.8)}
+ cx.fillStyle=night?PAT.s:PAT.n;cx.fillRect(0,0,W,H);
+ // 方位
+ // 通り
+ for(let l=0;l<n;l++){const r0=R(UMIN,0,l,1);cx.fillStyle=night?'#1B2A4A':'#CDEBF5';cx.fillRect(r0.x,r0.y,r0.w,r0.h);cx.fillStyle=night?PAT.s:PAT.b;cx.fillRect(r0.x,r0.y,r0.w,r0.h);
+  const r1=R(0,UMAX,l,1);cx.fillStyle=night?'#22304F':'#F7E6B5';cx.fillRect(r1.x,r1.y,r1.w,r1.h);
+  for(let i=0;i<C;i++){const q=R(i+.06,i+.94,l,.84);const hl=(SEL||DR)&&!itemAt(l,i)&&G.tix>0;cx.fillStyle=night?(i%2?'#2B3A5E':'#26345A'):(i%2?'#fff':'#FFF9E8');if(hl){cx.fillStyle=night?'#44507a':(Math.sin(TT*6+i+l)>0?'#FFF3A6':'#FFE87A')}cx.fillRect(q.x,q.y,q.w,q.h);cx.lineWidth=2.5;cx.strokeStyle=night?'#56658f':INK;cx.strokeRect(q.x,q.y,q.w,q.h)}
+  if(g.st.guide&&!g.run){const ord=['umb','shirt','shut','coat'];ord.forEach((k,j)=>{if(G.items.some(it=>it.l===l&&it.k===k))return;const p=P(j+1.5,l);cx.save();cx.globalAlpha=.28+.18*Math.sin(TT*5);icon(cx,k,p.x,p.y,sz*.62);cx.restore();otext(cx,String(j+1),p.x-sz*.34,p.y-sz*.3,sz*.22,YEL)})}}
+ cx.lineWidth=4;cx.strokeStyle=INK;for(let l=0;l<=n;l++){const p0=L.port?{x:L.fx0+l*L.lh,y:L.fy0}:{x:L.fx0,y:L.fy0+l*L.lh},p1=L.port?{x:p0.x,y:L.fy0+(UMAX-UMIN)*L.cw}:{x:L.fx0+(UMAX-UMIN)*L.cw,y:p0.y};cx.beginPath();cx.moveTo(p0.x,p0.y);cx.lineTo(p1.x,p1.y);cx.stroke()}
+ // 天気の帯
+ const order=['cold','storm','warm','rain','omen'];
+ for(let l=0;l<n;l++){const ln=g.lanes[l];cx.save();const clip=R(UMIN,C+1.5,l,1);cx.beginPath();cx.rect(clip.x,clip.y,clip.w,clip.h);cx.clip();
+  order.forEach(k=>ln.bands.filter(b=>b.k===k).forEach(b=>{const sp=span(g,l,b,g.t);if(sp[1]-sp[0]<.04||sp[1]<UMIN||sp[0]>C+1.5)return;drawBand(b,sp,l,night)}));cx.restore()}
+ // 前線（昼だけ）
+ if(!night)drawFronts(cx,g,(u,l)=>P(u,l),Math.max(11,sz*.2),n-.5+.35,L.port?{x:0,y:1}:{x:1,y:0});
+ // 低気圧の中心
+ if(!night){const lc=lowCenter(g),f=fr(g,lc,g.t);const pc=P(f.xw,lc);if(pc.x>-40&&pc.y>-40&&pc.x<W+40&&pc.y<H+40){cx.save();burstShape(cx,pc.x,pc.y,sz*.42,sz*.3,10,TT*.5);cx.fillStyle=RED;cx.fill();cx.lineWidth=4;cx.strokeStyle=INK;cx.stroke();cx.restore();otext(cx,'低',pc.x,pc.y,sz*.36,'#fff')}}
+ // 家と見張り台
+ for(let l=0;l<n;l++){const ln=g.lanes[l],p=P(C+.7,l);const hw=Math.min(L.lh*.62,L.cw*.95);const lit=Math.max(0,4-ln.dmg*1.34);house(cx,p.x,p.y+hw*.5,hw,l+g.si,Math.round(lit),TT+l);
+  const ps=P(STA,l);drawStation(ps,l)}
+ // 備え
+ for(const it of g.items){if(it.used)continue;const p=P(it.u,it.l);const k=clamp((TT-it.t0)/.35,0,1);const sc=k<1?(1+Math.sin(k*Math.PI)*.35):1+Math.sin(TT*4+it.cell)*.03;icon(cx,it.k,p.x,p.y,sz*.66*sc,Math.sin(TT*3+it.cell+it.l)*.05);
+  if(it.plan&&!g.run){cx.save();cx.fillStyle=YEL;cx.strokeStyle=INK;cx.lineWidth=2;cx.beginPath();cx.arc(p.x+sz*.33,p.y-sz*.33,sz*.09,0,7);cx.fill();cx.stroke();cx.restore()}}
+ // 帯の顔（先頭のキャラ）
+ for(let l=0;l<n;l++){const ln=g.lanes[l];ln.bands.forEach(b=>{if(b.k==='omen')return;const sp=span(g,l,b,g.t);if(sp[1]-sp[0]<.04||(b.done&&b.res!=='ok'&&b.res!=='hit'))return;if(sp[1]<UMIN-.3||sp[1]>C+1.8)return;drawHead(b,sp,l,night);if(b.res==='ok'){const p=P(sp[1],l),r=L.sz*.16;cx.save();burstShape(cx,p.x+r*1.6,p.y-r*1.6,r*1.2,r*.8,8,TT);cx.fillStyle='#8BD17C';cx.fill();cx.lineWidth=2.5;cx.strokeStyle=INK;cx.stroke();cx.restore();otext(cx,'OK',p.x+r*1.6,p.y-r*1.6,r*.9,'#fff',3)}})}
+ // 見張り台の記録カード
+ for(let l=0;l<n;l++)drawReading(l);
+ // 天気図の小窓
+ drawInset();
  // ボス
- S.runsCleared++;G.boss++;if(G.boss>S.bossBest)S.bossBest=G.boss;S.ghost.boss=(S.ghost.boss||[]);save();
- if(G.boss>=5){S.ghost.boss=RN.res.slice();S.cleared=true;save();sfx.big();return toClear()}
- sfx.big();startBossLeg()}
+ if(g.boss&&g.boss.hp>0&&g.run){const cl=g.lanes[0].bands.find(b=>b.k==='storm'&&!b.done)||g.lanes[0].bands.find(b=>b.k==='storm');const sp=span(g,0,cl,g.t);const lc=L.port?P(sp[1],n-1):P(sp[1],0);const bx=L.port?Math.min(W-30,lc.x+L.lh*.2):lc.x,by=L.port?lc.y:Math.max(L.top+20,lc.y-L.lh*.35);if(!night||true){cx.save();cx.globalAlpha=night?.6:1;const s2=sz*1.2;blob(cx,[[bx,by-s2*.4,s2*.35],[bx-s2*.35,by-s2*.3,s2*.25],[bx+s2*.35,by-s2*.3,s2*.25],[bx,by,s2*.4],[bx-s2*.5,by-s2*.55,s2*.18],[bx+s2*.5,by-s2*.55,s2*.18]],'#2B2D42',4,PAT.w);otext(cx,'大王',bx,by-s2*.2,s2*.3,YEL);cx.restore()}}
+ // ドラッグ中
+ if(DR&&DR.drag){const j=Math.sin(TT*30)*.08;icon(cx,DR.k,DR.x,DR.y-20,sz*.8,j);const c=cellAt(DR.x,DR.y-20);if(c){const q=R(c.i+.04,c.i+.96,c.l,.9);cx.save();cx.strokeStyle=RED;cx.lineWidth=5;cx.setLineDash([8,6]);cx.strokeRect(q.x,q.y,q.w,q.h);cx.restore()}}
+ drawFx()}
+function drawBand(b,sp,l,night){const u0=Math.max(UMIN,sp[0]),u1=Math.min(C+1.5,sp[1]);if(u1<=u0)return;const r=R(u0,u1,l,b.k==='omen'?.26:.96);const t=TT;
+ if(night&&b.k!=='omen'){cx.fillStyle='rgba(8,12,26,.55)';cx.fillRect(r.x,r.y,r.w,r.h);return}
+ cx.save();cx.beginPath();cx.rect(r.x,r.y,r.w,r.h);cx.clip();
+ if(b.k==='omen'){cx.strokeStyle='rgba(255,255,255,.95)';cx.lineWidth=3;const len=Math.max(r.w,r.h);for(let i=0;i<7;i++){const f=(i*37%100)/100;cx.beginPath();if(!L.port){const y=r.y+r.h*(.2+f*.6),x=r.x+((i*61+t*15)%Math.max(1,r.w));cx.moveTo(x,y);cx.quadraticCurveTo(x+30,y-10,x+60,y-4)}else{const x=r.x+r.w*(.2+f*.6),y=r.y+((i*61+t*15)%Math.max(1,r.h));cx.moveTo(x,y);cx.quadraticCurveTo(x-10,y+30,x-4,y+60)}cx.stroke()}}
+ else if(b.k==='rain'){cx.fillStyle='rgba(143,161,182,.55)';cx.fillRect(r.x,r.y,r.w,r.h);cx.fillStyle=PAT.n;cx.fillRect(r.x,r.y,r.w,r.h);cx.strokeStyle='rgba(29,53,87,.55)';cx.lineWidth=2;for(let i=0;i<Math.max(r.w,r.h)/7;i++){const x=r.x+(i*23%Math.max(1,r.w)),y=r.y+((i*37+t*90)%Math.max(1,r.h));cx.beginPath();cx.moveTo(x,y);cx.lineTo(x-3,y+9);cx.stroke()}}
+ else if(b.k==='warm'){cx.fillStyle='rgba(255,140,66,.35)';cx.fillRect(r.x,r.y,r.w,r.h);cx.fillStyle=PAT.o;cx.fillRect(r.x,r.y,r.w,r.h);cx.strokeStyle='rgba(230,57,70,.5)';cx.lineWidth=2.5;for(let i=0;i<6;i++){cx.beginPath();for(let s=0;s<=1;s+=.05){const along=s*(L.port?r.h:r.w),acr=(i+.5)/6*(L.port?r.w:r.h)+Math.sin(s*20+t*4+i)*4;L.port?cx.lineTo(r.x+acr,r.y+along):cx.lineTo(r.x+along,r.y+acr)}cx.stroke()}}
+ else if(b.k==='storm'){cx.fillStyle='rgba(43,45,66,.82)';cx.fillRect(r.x,r.y,r.w,r.h);cx.strokeStyle='rgba(255,255,255,.75)';cx.lineWidth=3;for(let i=0;i<Math.max(r.w,r.h)/4;i++){const x=r.x+(i*17%Math.max(1,r.w)),y=r.y+((i*29+t*260)%Math.max(1,r.h));cx.beginPath();cx.moveTo(x,y);cx.lineTo(x-6,y+16);cx.stroke()}if(Math.sin(t*9+l)>.9){cx.fillStyle='rgba(255,243,166,.45)';cx.fillRect(r.x,r.y,r.w,r.h)}}
+ else if(b.k==='cold'){cx.fillStyle='rgba(91,192,235,.30)';cx.fillRect(r.x,r.y,r.w,r.h);cx.fillStyle=PAT.b;cx.fillRect(r.x,r.y,r.w,r.h);cx.strokeStyle='rgba(255,255,255,.9)';cx.lineWidth=3;for(let i=0;i<5;i++){const f=(i+.5)/5,o=((t*120+i*50)%(Math.max(r.w,r.h)+80))-40;cx.beginPath();if(!L.port){cx.moveTo(r.x+o,r.y+r.h*f);cx.lineTo(r.x+o+40,r.y+r.h*f)}else{cx.moveTo(r.x+r.w*f,r.y+o);cx.lineTo(r.x+r.w*f,r.y+o+40)}cx.stroke()}}
+ cx.restore()}
+function drawHead(b,sp,l,night){const p=P(sp[1],l),s=L.sz*.9,t=TT,x=p.x-(L.port?0:s*.12),y=p.y-(L.port?s*.12:0);
+ if(night){cx.save();blob(cx,[[x,y,s*.34],[x-s*.25,y+s*.05,s*.24],[x+s*.2,y+s*.08,s*.22]],'#2a3350',3);otext(cx,'？',x,y,s*.35,'#8fa1c8');cx.restore();return}
+ if(b.k==='rain'){blob(cx,[[x-s*.28,y,s*.22],[x,y-s*.08,s*.28],[x+s*.26,y+s*.02,s*.2],[x-s*.05,y+s*.12,s*.22]],'#A9B7C8',3,PAT.n);otext(cx,'しとしと',x,y+s*.42,s*.2,'#fff')}
+ else if(b.k==='warm'){cx.save();burstShape(cx,x,y,s*.46,s*.32,12,t);cx.fillStyle=YEL;cx.fill();cx.lineWidth=3;cx.strokeStyle=INK;cx.stroke();cx.restore();blob(cx,[[x,y,s*.26],[x-s*.18,y+s*.08,s*.18],[x+s*.18,y+s*.08,s*.18]],ORG,3,PAT.r);otext(cx,'むわっ',x,y+s*.44,s*.2,ORG)}
+ else if(b.k==='storm'){blob(cx,[[x,y-s*.34,s*.2],[x-s*.26,y-s*.4,s*.14],[x+s*.26,y-s*.4,s*.14],[x,y-s*.08,s*.26],[x-s*.12,y+s*.14,s*.26],[x+s*.16,y+s*.12,s*.22]],'#2B2D42',3,PAT.w);
+  if(Math.sin(t*11+l*3)>.2){cx.save();cx.fillStyle=YEL;cx.strokeStyle=INK;cx.lineWidth=2.5;cx.beginPath();cx.moveTo(x+s*.05,y+s*.1);cx.lineTo(x-s*.1,y+s*.42);cx.lineTo(x+s*.02,y+s*.4);cx.lineTo(x-s*.06,y+s*.66);cx.lineTo(x+s*.18,y+s*.3);cx.lineTo(x+s*.06,y+s*.32);cx.lineTo(x+s*.14,y+s*.1);cx.closePath();cx.fill();cx.stroke();cx.restore()}otext(cx,'ザアアッ',x,y-s*.66,s*.22,'#fff')}
+ else if(b.k==='cold'){cx.save();cx.fillStyle='#fff';cx.strokeStyle=INK;cx.lineWidth=2.5;for(let i=0;i<8;i++){const a=i*Math.PI/4+t;cx.beginPath();cx.moveTo(x+Math.cos(a)*s*.2,y+Math.sin(a)*s*.2);cx.lineTo(x+Math.cos(a+.2)*s*.46,y+Math.sin(a+.2)*s*.46);cx.lineTo(x+Math.cos(a+.4)*s*.2,y+Math.sin(a+.4)*s*.2);cx.fill();cx.stroke()}cx.restore();blob(cx,[[x,y,s*.26],[x-s*.18,y+s*.06,s*.17],[x+s*.18,y+s*.06,s*.17]],CYA,3,PAT.w);otext(cx,'ヒュウウ',x,y+s*.44,s*.2,CYA)}}
+function drawStation(p,l){const s=L.sz,night=G.night;cx.save();cx.strokeStyle=INK;cx.lineWidth=3;cx.fillStyle=night?'#FFE08A':'#fff';const w=s*.22,h=s*.34;cx.fillRect(p.x-w/2,p.y-h/2,w,h);cx.strokeRect(p.x-w/2,p.y-h/2,w,h);cx.fillStyle=RED;cx.beginPath();cx.moveTo(p.x-w*.8,p.y-h/2);cx.lineTo(p.x,p.y-h);cx.lineTo(p.x+w*.8,p.y-h/2);cx.closePath();cx.fill();cx.stroke();cx.restore()}
+function readingOf(l){const k=kindAt(G,l,STA);let rd=RD[k==='omen'&&G.night?'omen':k]||RD.ahead;return{k,rd}}
+function drawReading(l){const g=G;const {rd}=readingOf(l);const mask=g.st.miss?g.st.miss[l]:null;const night=g.night;
+ const small=!night;let bw,bh,bx,by;const s=L.sz;
+ if(!L.port){bw=Math.min(L.cw*1.75,190);bh=Math.min(L.lh*.8,86);const p=P(STA-.28,l);bx=p.x-bw;by=p.y-bh/2}else{bw=Math.min(L.lh*.94,120);bh=Math.min(L.cw*1.62,96);const p=P(STA-.3,l);bx=p.x-bw/2;by=p.y-bh}
+ cx.save();cx.globalAlpha=small?.86:1;cx.fillStyle=night?'#FFFDF2':'#fff';cx.strokeStyle=INK;cx.lineWidth=3;cx.fillRect(bx,by,bw,bh);cx.strokeRect(bx,by,bw,bh);
+ cx.fillStyle=night?RED:NAVY;cx.fillRect(bx,by,bw,Math.min(16,bh*.2));cx.fillStyle='#fff';cx.font='800 '+Math.min(11,bh*.14)+'px '+FB;cx.textAlign='left';cx.textBaseline='middle';cx.fillText('見張り台',bx+4,by+Math.min(8,bh*.1));
+ const r=Math.min(bh*.13,bw*.09,10);const sx=bx+(L.port?bw*.3:bw*.2),sy=by+bh*.58;wxSym(cx,sx,sy,r,rd,mask);
+ const has=f=>!mask||mask.includes(f);cx.fillStyle=INK;const fs=Math.min(13,bh*.16,bw*.12);cx.font='900 '+fs+'px '+FB;cx.textAlign='left';const tx=bx+(L.port?bw*.52:bw*.42);let ty=by+bh*.36;
+ const lines=[has('wx')?rd.wt:'天気 ?',has('wind')?rd.wind+'の風':'風 ?',has('temp')?rd.temp+'℃':'気温 ?',has('pres')?rd.pres+rd.pt:'気圧 ?'];
+ if(L.port){cx.textAlign='center';const tx2=bx+bw*.72;cx.fillText(has('temp')?rd.temp+'℃':'?℃',tx2,by+bh*.45);cx.font='800 '+fs*.85+'px '+FB;cx.fillText(has('pres')?rd.pres+rd.pt:'?',tx2,by+bh*.66);cx.fillText(has('wind')?rd.wind:'風?',bx+bw/2,by+bh*.88)}
+ else lines.forEach((t2,i)=>{cx.fillStyle=t2.includes('?')?'#aaa':INK;cx.fillText(t2,tx,ty+i*fs*1.12)});
+ cx.restore()}
+function drawInset(){const g=G,b=L.ins;if(!b)return;const night=g.night;cx.save();cx.fillStyle=night?'#0B1224':'#fff';cx.strokeStyle=INK;cx.lineWidth=4;cx.fillRect(b.x,b.y,b.w,b.h);cx.strokeRect(b.x,b.y,b.w,b.h);
+ cx.beginPath();cx.rect(b.x+2,b.y+2,b.w-4,b.h-4);cx.clip();
+ if(night){cx.fillStyle='#8fa1c8';cx.font='800 13px '+FB;cx.textAlign='center';cx.textBaseline='middle';cx.fillText('天気図は朝まで届かない',b.x+b.w/2,b.y+b.h/2-8);cx.fillText('→ 見張り台の記録を読め',b.x+b.w/2,b.y+b.h/2+10);cx.restore();return}
+ cx.fillStyle=PAT.n;cx.fillRect(b.x,b.y,b.w,b.h);
+ const u0=-13,u1=11,l0=-5,l1=g.n+4;const sx=b.w/(u1-u0),sy=(b.h)/(l1-l0);const sc=Math.min(sx,sy*1.4);const M=(u,l)=>({x:b.x+(u-u0)*sx,y:b.y+(l-l0)*sy});
+ const lc=lowCenter(g),f=fr(g,lc,g.t),pc=M(f.xw,lc);
+ cx.strokeStyle='rgba(29,53,87,.45)';cx.lineWidth=1.5;for(let i=1;i<=3;i++){cx.beginPath();cx.ellipse(pc.x,pc.y,i*b.w*.1,i*b.h*.13,0,0,7);cx.stroke()}
+ const tl=M(0,0),br=M(C+1,g.n);cx.fillStyle='rgba(255,201,20,.55)';cx.fillRect(tl.x,tl.y,br.x-tl.x,br.y-tl.y);cx.strokeStyle=INK;cx.lineWidth=2;cx.strokeRect(tl.x,tl.y,br.x-tl.x,br.y-tl.y);
+ drawFronts(cx,g,M,Math.max(6,b.h*.07),l1,{x:1,y:0});
+ cx.fillStyle=RED;cx.beginPath();cx.arc(pc.x,pc.y,7,0,7);cx.fill();cx.lineWidth=2;cx.stroke();otext(cx,'低',pc.x,pc.y-1,11,'#fff',2);
+ cx.fillStyle=INK;cx.font='900 11px '+FB;cx.textAlign='center';cx.fillText('町',(tl.x+br.x)/2,br.y+8);cx.textAlign='left';cx.fillText('天気図（北が上）',b.x+5,b.y+10);cx.textAlign='right';cx.fillText('東へ進む →',b.x+b.w-5,b.y+b.h-8);
+ cx.restore()}
+function drawFx(){const g=G;cx.save();
+ if(g.rings)g.rings=g.rings.filter(r=>{const k=(TT-r.t0)/.5;if(k>1)return false;cx.strokeStyle=r.col;cx.lineWidth=10*(1-k);cx.beginPath();cx.arc(r.x,r.y,L.sz*(.3+k*1.3),0,7);cx.stroke();cx.strokeStyle=INK;cx.lineWidth=3*(1-k);cx.stroke();return true});
+ g.parts=g.parts.filter(p=>{p.vx*=.98;p.x+=p.vx;p.y+=p.vy;p.vy+=p.g;p.life-=p.dec;if(p.life<=0||p.y>H+30)return false;cx.globalAlpha=Math.min(1,p.life*2);cx.fillStyle=p.c;cx.strokeStyle=INK;cx.lineWidth=1.5;cx.beginPath();
+  if(p.star){burstShape(cx,p.x,p.y,p.r*1.3,p.r*.55,5,p.life*6)}else if(p.sq||p.conf){cx.rect(p.x-p.r/2,p.y-p.r/2,p.r,p.r*(p.conf?.6:1))}else cx.arc(p.x,p.y,p.r,0,7);cx.fill();if(!p.conf)cx.stroke();return true});
+ cx.globalAlpha=1;
+ g.pops=g.pops.filter(q=>{const k=(TT-q.t0)/q.dur;if(k<0)return true;if(k>1)return false;const sc=k<.15?k/.15*1.3:k<.28?1.3-(k-.15)*2.3:1;const a=k>.75?(1-k)/.25:1;const y=q.y-(q.rise?k*50:k*16);cx.globalAlpha=a;
+  const sz=L.sz*.36*q.s*sc;if(q.burst){cx.save();burstShape(cx,q.x,y,sz*1.9,sz*1.2,12,q.t0);cx.fillStyle=RED;cx.fill();cx.lineWidth=3;cx.strokeStyle=INK;cx.stroke();cx.restore()}
+  otext(cx,q.txt,q.x,y,q.combo?Math.min(W/9,sz*1.2):sz,q.col);return true});
+ cx.restore()}
 
-/* ===== クリア ===== */
-function toClear(){show('clear');clearInterval(clock);document.body.classList.remove('night');
- $('#clrH').textContent=S.cleared?'5回連続、乗り切った！':'25分たったので、ここまで！';
- const rate=S.preds?Math.round(S.hits/S.preds*100):0;
- $('#clrRecs').innerHTML='<div>プレイ時間<b>'+fmtT(S.t)+'</b></div><div>予言の的中<b>'+S.hits+' / '+S.preds+'（'+rate+'%）</b></div><div>最高の連続的中<b>'+S.maxCombo+'</b></div><div>ボス<b>'+(S.cleared?'5/5 突破':S.bossBest+'/5')+'</b></div>';
- sfx.big();burst(innerWidth/2,200,50);zkButtons();
- if(S.cleared&&!S.mainClearShown&&window.Zukan&&Zukan.mainClear){S.mainClearShown=true;save();try{Zukan.mainClear({onClose:()=>{}})}catch(e){}}}
+/* ===== HUD・トレイ ===== */
+function hud(){if(!G)return;$('#tixN').textContent=G.tix;$('#cmbN').textContent=G.combo;const s=G.st;const hr=(s.night?19:s.boss?14:6)+Math.floor(G.t*12/60),mn=Math.floor((G.t*12)%60);
+ $('#cap').innerHTML='第'+(G.si+1)+'話 '+esc(s.nm)+'<small>'+(G.run?(hr%24<12?'午前':'午後')+((hr%12)||12)+'時'+String(mn).padStart(2,'0')+'分':'作戦タイム')+(G.night?' 🌙夜':'')+'</small>';
+ if(G.boss){const b=$('#bossBar');b.classList.remove('hidden');b.innerHTML='嵐の大王 '+Array.from({length:G.boss.max},(_,i)=>'<i class="'+(i<G.boss.hp?'':'off')+'"></i>').join('')}else $('#bossBar').classList.add('hidden');
+ document.querySelectorAll('.card').forEach(c=>{const k=c.dataset.k,cd=G.cd[k]||0;c.querySelector('.cd').style.height=(G.run?cd/CD*100:0)+'%';c.classList.toggle('sel',SEL===k)});
+ $('#bGo').classList.toggle('hidden',G.run);$('#bFF').classList.toggle('hidden',!G.run);$('#bFF').textContent=G.ff>1?'▶ ふつう':'≫ はやおくり'}
+function mkTray(){const tr=$('#tray');tr.innerHTML='';const s=L.port?Math.min(50,(W-40)/4*.55):58;IK.forEach(k=>{const b=document.createElement('button');b.className='card';b.dataset.k=k;b.appendChild(icoCanvas(k,s));b.insertAdjacentHTML('beforeend','<span class="cn">'+IT[k].nm+'</span><span class="cv">→'+IT[k].lab+'</span><span class="cd"></span>');
+  b.addEventListener('pointerdown',e=>{if(!G||MODE!=='play')return;e.preventDefault();ac();DR={k,x:e.clientX,y:e.clientY,sx:e.clientX,sy:e.clientY,drag:false,id:e.pointerId}});tr.appendChild(b)});hud()}
+addEventListener('pointermove',e=>{if(!DR)return;DR.x=e.clientX;DR.y=e.clientY;if(!DR.drag&&Math.hypot(DR.x-DR.sx,DR.y-DR.sy)>10){DR.drag=true;SEL=null;hud()}});
+addEventListener('pointerup',e=>{if(!DR)return;const d=DR;DR=null;if(d.drag){tryPlace(d.k,e.clientX,e.clientY-20)}else{SEL=SEL===d.k?null:d.k;sfx.tap();if(SEL&&G.firstRun&&G.si===0)tipShow('つぎに、置きたい<b>マス</b>をタップ！')}hud()});
+addEventListener('pointercancel',()=>{DR=null});
+cv.addEventListener('pointerdown',e=>{if(MODE!=='play'||!G)return;ac();const x=e.clientX,y=e.clientY;if(SEL){if(tryPlace(SEL,x,y)){if(G.tix<=0)SEL=null}hud();return}if(removeAt(x,y)){tipShow('備えを外した（作戦タイムのあいだは、何度でも置き直せる）');return}
+ const c=cellAt(x,y);if(c&&!G.run)tipShow('下の<b>カード</b>をマスへドラッグ（またはカードをタップ→マスをタップ）。')});
+addEventListener('keydown',e=>{if(MODE!=='play'||!G)return;const n=parseInt(e.key,10);if(n>=1&&n<=4){SEL=IK[n-1];hud()}if(e.key===' '&&!G.run){e.preventDefault();startRun()}});
 
-/* ===== ボタン ===== */
-$('#bStart').onclick=()=>{ac();const nm=$('#nameIn').value.trim()||S.name,snd=S.sound;S=fresh();S.name=nm;S.sound=snd;S.started=true;save();enterGame()};
-$('#bCont').onclick=()=>{ac();const v=$('#nameIn').value.trim();if(v)S.name=v;save();enterGame()};
-const sndT=()=>{S.sound=!S.sound;save();setSnd()};$('#bSnd1').onclick=sndT;$('#bSnd2').onclick=sndT;
-function openBook(){try{window.Zukan&&Zukan.openBook&&Zukan.openBook({unit:'kisho'})}catch(e){}}
-$('#bBook1').onclick=openBook;$('#bBook2').onclick=openBook;$('#bTest').onclick=()=>startTest();
+/* ===== 面の流れ ===== */
+function show(ids){['scTitle','scMap','scPlay','ov','scTest'].forEach(id=>$('#'+id).classList.toggle('hidden',!ids.includes(id)));backBtn()}
+function backBtn(){const b=$('#bBack');const on=MODE==='play'||MODE==='map'||MODE==='test'&&!TEST_ONLY||(MODE==='title'&&INHUB);b.classList.toggle('hidden',!on);b.innerHTML='<b>◀</b> '+(MODE==='title'?'一覧へ':'もどる');$('#bSnd').classList.toggle('hidden',MODE==='title'&&false);$('#bSnd').classList.toggle('off',!S.sound)}
+$('#bBack').onclick=()=>{ac();sfx.tap();if(MODE==='title'){try{window.parent.postMessage({type:'rika-close-game'},'*')}catch(e){}return}
+ const wasRun=G&&G.run;if(G)G.pause=true;
+ ovOpen('<div class="capb">ちょっと待った！</div><h2>もどりますか？<small>'+(MODE==='play'?'進み具合は保存されます（クリアした話と★はそのまま。この話は次にはじめから）。':MODE==='test'?'確認テストは、次はさいしょから。進み具合は保存されています。':'進み具合は保存されます。タイトルにもどります。')+'</small></h2><div class="row" style="margin-top:12px"><button class="pnl y" id="bkNo">つづける</button><button class="pnl r" id="bkGo">'+(MODE==='map'?'タイトルへ':'町の地図へ')+'</button></div>');
+ $('#bkNo').onclick=()=>{sfx.tap();ovClose();if(G)G.pause=false};$('#bkGo').onclick=()=>{sfx.tap();ovClose();if(MODE==='map')toTitle();else toMap()}};
+function ovOpen(h){$('#ovBox').innerHTML=h;$('#ov').classList.remove('hidden');$('#ovBox').scrollTop=0}
+function ovClose(){$('#ov').classList.add('hidden')}
+function toggleSnd(){S.sound=!S.sound;save();if(S.sound){ac();sfx.tap()}backBtn()}
+$('#bSnd').onclick=toggleSnd;
+function toTitle(){MODE='title';G=null;show(['scTitle']);$('#bCont').classList.toggle('hidden',!S.started);zk()}
+function toMap(){MODE='map';G=null;SEL=null;show(['scMap']);renderMap()}
+function renderMap(){const pn=$('#panels');pn.innerHTML='';const port=L.port;pn.style.gridTemplateColumns=port?'repeat(3,1fr)':'repeat(5,1fr)';
+ ST.forEach((st,i)=>{const b=document.createElement('button');const lock=i>S.next;b.className='pan'+(lock?' lock':'')+(i===Math.min(S.next,NS-1)&&!S.stars[i]?' cur':'');
+  const bgc=st.night?'#1D3557':st.boss?'#E63946':['#FFC914','#5BC0EB','#FF8C42','#8BD17C','#FF7AA2'][i%5];b.style.background=bgc;b.style.backgroundImage='radial-gradient(circle,rgba(0,0,0,.18) 1.8px,transparent 2px)';b.style.backgroundSize='9px 9px';
+  const s=S.stars[i]||0;b.innerHTML='<span class="no">第'+(i+1)+'話</span><span class="st">'+'★'.repeat(s)+'</span><span class="nm">'+(lock?'？？？':esc(st.nm))+'</span><span class="sb">'+(lock?'前の話をクリアすると開く':esc(st.sub)+(st.night?'／夜':'')+'　通り×'+st.n)+'</span>';
+  b.onclick=()=>{if(lock){sfx.cd();return}sfx.tap();openBrief(i)};pn.appendChild(b)});
+ const tot=Object.values(S.stars).reduce((a,b)=>a+b,0);$('#mInfo').textContent='守った通り '+S.safe+'本　★'+tot+'/'+(NS*3)+'　最高コンボ '+S.best+(S.cleared?'　🏆全話クリア！':'');
+ $('#bNext').textContent=S.cleared?'確認テストへ！':'第'+(Math.min(S.next,NS-1)+1)+'話へ！';zk()}
+$('#bNext').onclick=()=>{sfx.tap();if(S.cleared){toClear()}else openBrief(Math.min(S.next,NS-1))};
+$('#bStk').onclick=()=>{sfx.tap();stkOpen()};
+function stkOpen(){const got=STK.filter(s=>S.stk[s[0]]).length;ovOpen('<div class="capb">前線ステッカー帳 '+got+'/'+STK.length+'</div><h2>集めたステッカー</h2><div class="stk" id="stkG"></div><div class="row" style="margin-top:12px"><button class="pnl y" id="stkX">とじる</button></div>');
+ const gd=$('#stkG');STK.forEach(s=>{const d=document.createElement('div');const on=!!S.stk[s[0]];d.className=on?'':'off';d.appendChild(icoCanvas(on?s[0]:'lock',70,'stk'));d.insertAdjacentHTML('beforeend','<b>'+(on?s[1]:'？？？')+'</b>'+(on?esc(s[2]):''));gd.appendChild(d)});$('#stkX').onclick=()=>{sfx.tap();ovClose()}}
+function stkDraw(c,id,s){c.save();c.fillStyle=id==='lock'?'#ccc':'#FFF6DA';c.fillRect(0,0,s,s);c.lineWidth=3;c.strokeStyle=INK;c.strokeRect(1.5,1.5,s-3,s-3);const m=s/2;
+ if(id==='lock'){otext(c,'？',m,m,s*.4,'#fff');c.restore();return}
+ const line=(k)=>{const pts=[];for(let i=0;i<=10;i++)pts.push({x:s*.12+i*s*.076,y:m+Math.sin(i*.6)*s*.05});frontLine(c,pts,k,s*.16)};
+ if(id==='wf')line('w');else if(id==='cf')line('c');else if(id==='oc')line('o');
+ else if(id==='low'){burstShape(c,m,m,s*.34,s*.26,10,0);c.fillStyle=RED;c.fill();c.stroke();otext(c,'低',m,m,s*.3,'#fff')}
+ else if(id==='ci'){c.strokeStyle=BLU;c.lineWidth=3;for(let i=0;i<4;i++){c.beginPath();c.moveTo(s*.15,s*.25+i*s*.16);c.quadraticCurveTo(s*.5,s*.1+i*s*.16,s*.85,s*.3+i*s*.16);c.stroke()}}
+ else if(id==='ns'){blob(c,[[m-s*.2,m,s*.16],[m,m-s*.05,s*.2],[m+s*.2,m,s*.15]],'#A9B7C8',2.5,PAT.n)}
+ else if(id==='cb'){blob(c,[[m,m-s*.2,s*.13],[m-s*.1,m,s*.17],[m+s*.1,m+s*.05,s*.16],[m,m+s*.22,s*.14]],'#2B2D42',2.5,PAT.w)}
+ else if(id==='wa'){burstShape(c,m,m,s*.36,s*.24,12,0);c.fillStyle=ORG;c.fill();c.stroke()}
+ else if(id==='ca'){blob(c,[[m,m,s*.22]],CYA,2.5,PAT.w)}
+ else if(id==='night'){c.fillStyle=NAVY;c.fillRect(3,3,s-6,s-6);wxSym(c,m,m,s*.12,RD.warm)}
+ else if(id==='boss'){blob(c,[[m,m-s*.1,s*.2],[m-s*.18,m+s*.05,s*.15],[m+s*.18,m+s*.05,s*.15]],'#2B2D42',2.5);otext(c,'王',m,m,s*.28,YEL)}
+ c.restore()}
+function openBrief(i){const st=ST[i];MODE='play';G=mkGame(i);G.sciShown={};G.pause=true;layout();show(['scPlay','ov']);mkTray();
+ const legend=IK.map(k=>'<span>'+IT[k].nm+' → '+BK[IT[k].vs].nm+'（'+IT[k].lab+'）</span>').join('');
+ ovOpen('<div class="capb">第'+(i+1)+'話</div><h2>'+esc(st.nm)+'<small>'+esc(st.sub)+'　／　通り×'+st.n+'　／　そなえ券×'+G.tix+'</small></h2><p>'+st.tip+'</p>'+(i<2?'<div class="legend">'+legend+'</div>':'')+
+  '<p class="sm">天気の帯は<b>西から</b>進み、<b>最初に出会った備え</b>とぶつかる。合っていれば止まる。合わない備えはこわれる。</p><div class="row"><button class="bam" id="bBr">作戦タイム！</button></div>');
+ $('#bBr').onclick=()=>{sfx.start();ovClose();G.pause=false;hud();if(i===0)tipShow(st.tip)}}
+function startRun(){if(!G||G.run)return;const placed=G.items.length;if(placed===0&&G.si>0){tipShow('まだ何も置いていない！ 天気図を見て、<b>来る順に</b>備えを置こう。',1);return}G.run=true;SEL=null;sfx.start();banner('スタート！');hud()}
+$('#bGo').onclick=()=>{ac();startRun()};
+$('#bFF').onclick=()=>{if(!G)return;G.ff=G.ff>1?1:2.2;sfx.tap();hud()};
+function stageEnd(){const g=G,n=g.n;const safe=g.lanes.filter(ln=>ln.dmg===0).length;const clear=safe>=Math.ceil(n/2)&&(!g.boss||safe>=3);const perfect=safe===n;const stars=clear?(perfect?(g.waste===0?3:2):1):0;
+ S.stars[g.si]=Math.max(S.stars[g.si]||0,stars);if(clear)S.next=Math.max(S.next,g.si+1);S.safe+=safe;S.lanes+=n;S.waste+=g.waste;S.score+=g.score;const newBest=g.maxc>S.best&&g.maxc>=3;S.best=Math.max(S.best,g.maxc);
+ if(clear){g.lanes.forEach(ln=>{if(ln.dmg===0&&ln.waste===0)earn(10,'first-try','ft'+g.si+'-'+ln.l);if(ln.dmg===0&&g.st.night)earn(15,'hit','nt'+g.si+'-'+ln.l)});
+  if(g.si===0){addStk('low');earn(30,'rule','rule1')}if(g.si===3)earn(30,'rule','rule4');if(g.si===4)addStk('night');if(g.si===6)addStk('oc');if(g.boss){addStk('boss');if(g.boss.hp<=0)earn(100,'boss','boss-'+GID)}}
+ save();
+ const graph=tempGraph(g);
+ const body='<div class="capb">第'+(g.si+1)+'話 '+(clear?'町を守った！':'町が水びたし…')+'</div><h2>'+(clear?(perfect?'全部の通りを守った！':'守りきった！'):'もう一度！')+'<small>'+esc(g.st.nm)+'</small></h2><div class="stars"><span>★</span><span>★</span><span>★</span></div>'+
+  '<div class="recs"><div>守った通り<b>'+safe+' / '+n+'</b></div><div>最大コンボ<b>'+g.maxc+'</b></div><div>ムダになった備え<b>'+g.waste+'</b></div><div>町ポイント<b>'+g.score+'</b></div></div>'+
+  (graph?'<div class="graph"><div class="sm">北の通りの家で記録した気温（色＝そのときの天気）</div>'+graph+'</div>':'')+
+  (g.si===0&&clear?'<p><b>わかったこと：</b>温帯低気圧が通ると、天気はいつも同じ順に変わる。</p><div class="seq"><div><b>① 弱い雨</b>温暖前線の前。乱層雲の雨が長く</div><div><b>② 暖かい</b>温暖前線の通過後。南寄りの風</div><div><b>③ 強い雨</b>寒冷前線の通過。積乱雲・雷</div><div><b>④ 寒い</b>寒冷前線の通過後。北寄りの風</div></div>':'')+
+  '<div class="row">'+(clear&&g.si<NS-1?'<button class="bam" id="rNext">つぎの話へ！</button>':'')+(clear&&g.si===NS-1?'<button class="bam" id="rFin">全話クリア！</button>':'')+'<button class="pnl '+(clear?'':'r')+'" id="rAgain">↺ もう一度</button><button class="pnl y" id="rMap">町の地図</button></div>';
+ $('#tip').classList.add('hidden');ovOpen(body);sfx[clear?'fan':'bad']();
+ if(clear)for(let i=0;i<(RM?20:120);i++)g.parts.push({x:rnd(0,W),y:rnd(-H*.4,0),vx:rnd(-1,1),vy:rnd(2,5),g:.04,r:rnd(4,9),c:[RED,YEL,CYA,NAVY,'#fff',ORG][i%6],life:1,dec:.004,conf:1});
+ const sp=[...document.querySelectorAll('.stars span')];sp.forEach((e,j)=>setTimeout(()=>{e.classList.add(j<stars?'on':'off');if(j<stars){sfx.don();vib(20);document.body.classList.add('shake');setTimeout(()=>document.body.classList.remove('shake'),300)}},450+j*420));
+ if(newBest)setTimeout(()=>{banner('最高コンボ 新記録！','rb');sfx.tier()},1900);
+ $('#rAgain').onclick=()=>{sfx.tap();ovClose();openBrief(g.si)};$('#rMap').onclick=()=>{sfx.tap();ovClose();toMap()};
+ if($('#rNext'))$('#rNext').onclick=()=>{sfx.tap();ovClose();openBrief(g.si+1)};
+ if($('#rFin'))$('#rFin').onclick=()=>{sfx.tap();ovClose();S.cleared=true;save();toClear()}}
+function tempGraph(g){if(!g.log||g.log.length<4)return'';const T0=g.log[0][0],T1=g.log[g.log.length-1][0]||1;const w=600,h=130,px=36,py=12;const X=t=>px+(t-T0)/(T1-T0||1)*(w-px-8),Y=v=>py+(22-v)/(22-4)*(h-py-24);
+ const col={ahead:'#fff',omen:'#fff',rain:'#C7D1DD',warm:'#FFD1B0',storm:'#9A9CB0',cold:'#CBEFFC',after:'#E3F6FD'};let s='<svg viewBox="0 0 '+w+' '+h+'" xmlns="http://www.w3.org/2000/svg" font-family="sans-serif" font-size="12">';
+ for(let i=1;i<g.log.length;i++){const a=g.log[i-1],b=g.log[i];s+='<rect x="'+X(a[0])+'" y="'+py+'" width="'+(X(b[0])-X(a[0])+.5)+'" height="'+(h-py-24)+'" fill="'+col[a[1]]+'"/>'}
+ let d='';g.log.forEach((a,i)=>{const v=(RD[a[1]]||RD.ahead).temp;d+=(i?'L':'M')+X(a[0]).toFixed(1)+' '+Y(v).toFixed(1)});s+='<path d="'+d+'" fill="none" stroke="#E63946" stroke-width="4" stroke-linejoin="round"/>';
+ [5,10,15,20].forEach(v=>{s+='<text x="4" y="'+(Y(v)+4)+'">'+v+'℃</text><line x1="'+px+'" x2="'+(w-8)+'" y1="'+Y(v)+'" y2="'+Y(v)+'" stroke="#111" stroke-opacity=".15"/>'});
+ let prev=null;g.log.forEach(a=>{if(prev==='rain'&&a[1]==='warm')s+='<text x="'+X(a[0])+'" y="'+(py+14)+'" text-anchor="middle" fill="#E63946" font-weight="bold">温暖前線 通過</text>';if(prev==='warm'&&(a[1]==='storm'||a[1]==='cold'))s+='<text x="'+X(a[0])+'" y="'+(h-6)+'" text-anchor="middle" fill="#1F6FEB" font-weight="bold">寒冷前線 通過</text>';prev=a[1]});
+ s+='<rect x="'+px+'" y="'+py+'" width="'+(w-px-8)+'" height="'+(h-py-24)+'" fill="none" stroke="#111" stroke-width="2"/></svg>';return s}
+function toClear(){MODE='map';show(['scMap']);renderMap();
+ const tot=Object.values(S.stars).reduce((a,b)=>a+b,0);
+ const body='<div class="capb">全9話 クリア！</div><h2>🏆 町の明かりは消えなかった！<small>'+esc(GTITLE)+'</small></h2><div class="recs"><div>プレイ時間<b>'+fmtT(S.t)+'</b></div><div>守った通り<b>'+S.safe+'/'+S.lanes+'</b></div><div>最高コンボ<b>'+S.best+'</b></div><div>★<b>'+tot+'/'+(NS*3)+'</b></div></div>'+
+  '<div class="seq"><div><b>① 弱い雨</b>温暖前線の前</div><div><b>② 暖かい</b>南寄りの風</div><div><b>③ 強い雨</b>寒冷前線</div><div><b>④ 寒い</b>北寄りの風</div></div><div class="row"><button class="bam" id="cTest">確認テストへ！</button></div><div class="row" style="margin-top:10px"><button class="pnl s y zk" id="cGacha">ガチャ</button><button class="pnl s zk" id="cBook">📖 図鑑</button><button class="pnl s c" id="cStk">ステッカー帳</button><button class="pnl s" id="cMap">地図</button></div>';
+ const openC=()=>{ovOpen(body);sfx.fan();$('#cTest').onclick=()=>{ovClose();startTest()};$('#cGacha').onclick=openGacha;$('#cBook').onclick=openBook;$('#cStk').onclick=stkOpen;$('#cMap').onclick=()=>{sfx.tap();ovClose()};zk()};
+ if(!S.mc&&window.Zukan&&Zukan.mainClear){S.mc=true;save();try{Zukan.mainClear({onClose:openC})}catch(e){openC()}}else openC()}
+function fmtT(t){t=Math.round(t);return Math.floor(t/60)+'分'+String(t%60).padStart(2,'0')+'秒'}
 
 /* ===== 確認テスト ===== */
-let T=null;function playerName(){return window.PLAYER_NAME||S.name||''}
-function startTest(){if(!window.Quiz)return;T={qs:Quiz.test(),i:0,ans:[]};show('test');renderQ()}
-function renderQ(){const q=T.qs[T.i],box=$('#tbox');
- box.innerHTML='<div class="tno">📝 確認テスト　第'+(T.i+1)+'問 / '+T.qs.length+'</div><div class="prog">'+T.qs.map((_,i)=>'<i class="'+(i<T.i?'on':'')+'"></i>').join('')+'</div><div class="tq">'+q.q+'</div>'+(q.fig?'<div class="fig2">'+q.fig+'</div>':'')+'<div id="ta"></div>';
+let TS=null;function playerName(){return window.PLAYER_NAME||S.name||''}
+function startTest(){if(!window.Quiz)return;MODE='test';G=null;TS={qs:Quiz.test(),i:0,ans:[]};show(['scTest']);renderQ()}
+function renderQ(){const q=TS.qs[TS.i],box=$('#tbox');
+ box.innerHTML='<span class="tno">確認テスト　第'+(TS.i+1)+'問 / '+TS.qs.length+'</span><div class="prog">'+TS.qs.map((_,i)=>'<i class="'+(i<TS.i?'on':'')+'"></i>').join('')+'</div><div class="tq">'+q.q+'</div>'+(q.fig?'<div class="fig2">'+q.fig+'</div>':'')+'<div id="ta"></div>';
  const ta=$('#ta');
- if(q.t==='choice'){const d=document.createElement('div');d.className='ch';q.shown.forEach((c,i)=>{const b=document.createElement('button');b.innerHTML=c;b.onclick=()=>ans(q.shown[i]);d.appendChild(b)});ta.appendChild(d)}
- else if(q.t==='num'){ta.innerHTML='<div class="numrow"><input id="numIn" inputmode="decimal" autocomplete="off" placeholder="数を入力"><b>'+esc(q.unit||'')+'</b><button class="btn" id="numOk">決定</button></div>';$('#numOk').onclick=()=>{const v=$('#numIn').value.trim();if(v)ans(v)}}
- else{const picked=[];ta.innerHTML='<div class="tiny">正しい順にタップしよう</div><div class="ord" id="ordBox"></div><div class="ch" id="ordPool"></div><div style="display:flex;gap:8px;margin-top:10px"><button class="btn sub" id="ordRe">やり直す</button><button class="btn" id="ordOk" disabled>決定</button></div>';
+ if(q.t==='choice'){const d=document.createElement('div');d.className='ch';q.shown.forEach(c=>{const b=document.createElement('button');b.innerHTML=c;b.onclick=()=>ans(c);d.appendChild(b)});ta.appendChild(d)}
+ else if(q.t==='num'){ta.innerHTML='<div class="numrow"><input id="numIn" inputmode="decimal" autocomplete="off" placeholder="数を入力"><b>'+esc(q.unit||'')+'</b><button class="pnl r" id="numOk">決定</button></div>';$('#numOk').onclick=()=>{const v=$('#numIn').value.trim();if(v==='')return;ans(v)}}
+ else{const picked=[];ta.innerHTML='<div class="sm">正しい順にタップしよう</div><div class="ord" id="ordBox"></div><div class="ch" id="ordPool"></div><div class="row" style="margin-top:10px"><button class="pnl s" id="ordRe">やり直す</button><button class="pnl r" id="ordOk" disabled>決定</button></div>';
   const drawO=()=>{$('#ordBox').innerHTML=picked.map((t,i)=>'<div>'+(i+1)+'. '+t+'</div>').join('');const pool=$('#ordPool');pool.innerHTML='';q.shown.forEach(t=>{if(picked.includes(t))return;const b=document.createElement('button');b.innerHTML=t;b.onclick=()=>{picked.push(t);sfx.tap();drawO()};pool.appendChild(b)});$('#ordOk').disabled=picked.length!==q.shown.length};
-  drawO();$('#ordRe').onclick=()=>{picked.length=0;drawO()};$('#ordOk').onclick=()=>ans(picked.slice())}}
-function ans(v){T.ans.push(v);sfx.tap();T.i++;if(T.i<T.qs.length)renderQ();else finishTest()}
-function finishTest(){const qs=T.qs,review=Quiz.review(qs,T.ans),marks=review.map(r=>r.ok),score=marks.filter(Boolean).length;sfx.big();burst(innerWidth/2,220,40);
- const rate=S.preds?Math.round(S.hits/S.preds*100):0;
- const recs=TEST_ONLY?[['モード','確認テストだけ']]:[['プレイ時間',fmtT(S.t)],['予言の的中',S.hits+' / '+S.preds+'（'+rate+'%）'],['最高の連続的中',String(S.maxCombo)],['ボス（5回連続）',S.cleared?'突破':S.bossBest+'/5まで']];
- T.card=SubmitCard.show({gameId:GID,grade:'chu2',koma:[KOMA],unit:UNIT,game:GTITLE+(TEST_ONLY?'（確認テストのみ）':''),name:playerName(),score,total:qs.length,marks,records:recs,review},showRes);showRes()}
-function showRes(){show('result');const r=T.card||{};
- $('#rbox').innerHTML='<h3 style="font-size:22px;margin:0">テストの結果</h3><p style="font-size:22px;font-weight:700">'+(r.score||0)+' / '+(r.total||0)+' 点</p><div class="col"><button class="btn" id="rCard">📝 提出カードをもう一度見る</button><button class="btn sub" id="rAgain">↺ テストをもう一度</button>'+(TEST_ONLY?'':'<button class="btn sub" id="rTitle">🏠 タイトルへ</button>')+'<button class="btn sub zk hidden" id="rBook">📖 図鑑</button></div>';
- $('#rCard').onclick=()=>SubmitCard.reopen(T.card,()=>{});$('#rAgain').onclick=()=>startTest();if($('#rTitle'))$('#rTitle').onclick=()=>toTitle();$('#rBook').onclick=openBook;zkButtons()}
-function zkButtons(){const has=!!(window.Zukan&&Zukan.openBook);document.querySelectorAll('.zk').forEach(b=>b.classList.toggle('hidden',!has))}
-function toTitle(){show('title');$('#bCont').classList.toggle('hidden',!S.started);zkButtons()}
-(function(){const xw=12,xc=6;let h='';for(let row=0;row<7;row++)for(let c=0;c<COLS;c++){let ch='';const st=stAt(xw,xc,c);if(row<5)ch=skyRows(st,c)[row]||'';else if(row===5)ch=TOWN[c];else ch=c===xw?'温':c===xc?'寒':'▔';let cls=CLS[ch]||'';if(ch==='＠')cls='c-me';if(ch==='温')cls='c-wf';if(ch==='寒')cls='c-cf';h+='<div class="'+cls+'">'+(ch||'　')+'</div>'}$('#tArt').innerHTML=h})();
-setSnd();
+  drawO();$('#ordRe').onclick=()=>{picked.length=0;drawO()};$('#ordOk').onclick=()=>ans(picked.slice())}
+ $('#tbox').scrollTop=0}
+function ans(v){TS.ans.push(v);sfx.tap();TS.i++;if(TS.i<TS.qs.length)renderQ();else finishTest()}
+function finishTest(){const qs=TS.qs,review=Quiz.review(qs,TS.ans),marks=review.map(r=>r.ok),score=marks.filter(Boolean).length;sfx.fan();
+ const tot=Object.values(S.stars).reduce((a,b)=>a+b,0);
+ const recs=TEST_ONLY?[['モード','確認テストだけ']]:[['クリアタイム',fmtT(S.t)],['守った通り',S.safe+' / '+S.lanes+'本'],['最高コンボ',S.best+'コンボ'],['★',tot+' / '+(NS*3)]];
+ TS.card=SubmitCard.show({gameId:GID,grade:'chu2',koma:[KOMA],unit:UNIT,game:GTITLE+(TEST_ONLY?'（確認テストのみ）':''),name:playerName(),score,total:qs.length,marks,records:recs,review},showTestResult);showTestResult()}
+function showTestResult(){const r=TS.card||{};$('#tbox').innerHTML='<div class="capb">テストの結果</div><h2 style="font-size:44px">'+(r.score||0)+' / '+(r.total||0)+' 点</h2><div style="display:flex;flex-direction:column;gap:12px"><button class="pnl y" id="rCard">提出カードをもう一度見る</button><button class="pnl" id="rAgainT">↺ テストをもう一度</button>'+(TEST_ONLY?'':'<button class="pnl s" id="rTitle">タイトルへ</button>')+'<button class="pnl s zk" id="rBook">📖 図鑑</button></div>';
+ $('#rCard').onclick=()=>SubmitCard.reopen(TS.card,()=>{});$('#rAgainT').onclick=()=>startTest();if($('#rTitle'))$('#rTitle').onclick=()=>toTitle();$('#rBook').onclick=openBook;zk()}
+
+/* ===== 図鑑 ===== */
+function zk(){const has=!!(window.Zukan&&Zukan.openBook);document.querySelectorAll('.zk').forEach(b=>b.classList.toggle('hidden',!has));try{if(has&&Zukan.state)$('#kkM').textContent='かけら '+(Zukan.state().kakera||0)}catch(e){}}
+function openBook(){try{window.Zukan&&Zukan.openBook&&Zukan.openBook({unit:'kisho'})}catch(e){}}
+function openGacha(){try{window.Zukan&&Zukan.openGacha&&Zukan.openGacha({box:'kisho'})}catch(e){}}
+$('#bBookT').onclick=openBook;$('#bBookM').onclick=openBook;$('#bGacha').onclick=openGacha;
+$('#bStart').onclick=()=>{ac();sfx.start();const nm=$('#nameIn').value.trim()||S.name,snd=S.sound;S=fresh();S.name=nm;S.sound=snd;S.started=true;save();openBrief(0)};
+$('#bCont').onclick=()=>{ac();sfx.tap();const v=$('#nameIn').value.trim();if(v)S.name=v;save();toMap()};
+
+/* ===== ループ ===== */
+let last=performance.now();
+function loop(now){const dt=Math.min(.05,(now-last)/1000);last=now;TT+=dt;if(MODE==='play'&&G&&!G.pause)upd(dt);if(MODE==='play'&&G&&G.run&&Math.floor(TT*4)!==Math.floor((TT-dt)*4))hud();draw();requestAnimationFrame(loop)}
+resize();
+try{window.Zukan&&Zukan.setup&&Zukan.setup({game:GID,koma:[KOMA]})}catch(e){}
 if(window.PLAYER_NAME){$('#nameIn').value=window.PLAYER_NAME;$('#nameRow').classList.add('hidden')}else if(S.name)$('#nameIn').value=S.name;
-window.__game={state:()=>S,G:()=>G,RN:()=>RN,ST,EQ};
-if(TEST_ONLY){$('#title').classList.add('hidden');startTest()}else toTitle();
+/* 自動テスト用の窓口 */
+function solve(emptyOnly){const g=G;g.lanes.forEach(ln=>{if(emptyOnly&&g.items.some(it=>it.l===ln.l&&!it.used))return;const need=[];ln.bands.forEach(b=>{if(b.k==='omen'||b.done)return;need.push(b)});const placed=[];
+ need.forEach(b=>{const e=span(g,ln.l,b,g.t)[1];const k=BK[b.k].need;for(let i=0;i<C;i++){const u=i+.5;if(u<=e||g.items.some(it=>it.l===ln.l&&it.cell===i&&!it.used))continue;
+   const ok=placed.every(pp=>{const e2=span(g,ln.l,pp.b,g.t)[1];return u<e2||u>pp.u});if(!ok)continue;
+   g.items.push({k,l:ln.l,cell:i,u,plan:true,used:false,t0:TT});g.tix--;placed.push({b,u});break}})});hud()}
+window.__game={S:()=>S,G:()=>G,mode:()=>MODE,openBrief,startRun,solve,toMap,startTest,step:dt=>{for(let i=0;i<dt*30;i++)upd(1/30)},solveRun:()=>solve(true),tryPlace,P,cellP:(l,i)=>P(i+.5,l),closeOv:ovClose,ff:v=>{G.ff=v}};
+if(TEST_ONLY){startTest()}else toTitle();
+requestAnimationFrame(loop);
 </script>
-</body>
-</html>
+</body></html>

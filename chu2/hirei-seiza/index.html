@@ -1,142 +1,91 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#F7F7F2">
 <title>比例の星座 ～金属と酸素の質量のグラフ～</title>
+<!--
+  ゲームID: hirei-seiza ／ コマID: chu2-kagaku-31（化学変化と原子・分子 第31回・確認用〔実験の結果をグラフにする場面〕）
+  ねらい: 金属の質量と、結び付く酸素の質量（の限度）は比例する（原点を通る直線）。銅：酸素≒4：1、マグネシウム：酸素≒3：2
+
+  【6. 別の世界】画風＝染付（白磁に呉須の藍で描いた皿）
+   1 世界とメタファー: 染付の大皿に描いた星図。皿の見込み（内側）が方眼のグラフ＝夜空。
+     測定の札（短冊）の値から「結び付いた酸素＝加熱後−加熱前」を出し、パチンコ（スリングショット）で星を皿に打ち込む。
+     星がそろうと、筆で原点から1本の線を引き、星座（比例のグラフ）が焼き上がる。夜ごとに皿の縁の文様（青海波・唐草・梅…）が変わる。
+   2 配色: 白磁 #F7F7F2 ／ 呉須の藍 #1F3F8F（濃淡のだみ）／ 差し＝銅の色 #C8773C。落款の朱 #B8432F、金彩 #C9A24A は節目だけ。
+   3 書体: Kaisei Tokumin（見出し・札・数字。明朝の筆の抜き）
+   4 画面: 全画面canvas。横長＝左に横長の角皿（グラフ）、右に札の掛け台。パチンコは皿の横軸の上を左右に動き、下へ引いて放つ。
+     縦長＝上に札、下に縦長の角皿。下の余白が引きしろ。
+   5 HUD: もどる＝左上の白磁の札（藍の縁）。夜の名＝短冊。かけら＝藍の小皿。音＝小さな札。コンボ＝皿の右上に藍の大きな数字。
+   6 音: 磁器を打つ「チーン」（非整数倍音のサイン波）・琴の爪弾き（都節音階）・太鼓（焼き上がり）
+  【7. 動かす遊び】スリングショット（引っぱって放つ）
+   パチンコをつかむ → 左右に動かして「横＝金属の質量」 → 下へ引く長さで「縦＝結び付いた酸素の質量」 → はなすと星が飛んで皿に刺さる。
+   引き算をまちがえる／加熱後の質量をそのまま打つ／加熱の途中の値を使う と、星は違う所に刺さって欠け、本当のずれ（あと何g）が出る。
+   星がそろったら、筆で1本の線を引く。原点を通り、ばらつきの真ん中を通る線だけが星座になる（折れ線・原点を外す線・外れ値に引っぱられた線は×）。
+  30分: 8夜（一の夜＝導入3星 → 二の夜で銅座完成・コマ30の封印と照らす → 三の夜 皿ごとの質量 → 四の夜 加熱の記録と外れ値 →
+       五の夜 山場：マグネシウム（線の傾きを先に予想）→ 六の夜 二つの星座 → 七の夜 星座で予言 → 八の夜 時間つきの一発勝負）
+  ハマる仕組み: 主② 星座の帳（8枚の皿を焼いて埋める・一発で焼けば金彩）／副⑦ あと何gの本当のずれ／副⑤ 一発正解の連続（連）
+  封印: localStorage rika-zukan:chu2:seal:chu2-kagaku-30（keikaku-rocket が書く {pred,predT,shape,shapeT,reason:{id,t},pts:[[銅g,酸素g]…]}）を開けて、
+       描いた予想の線（pts）を銅の皿に重ね、二の夜の終わりに星座と照らす。無ければその場で線を描いて予想する。
+-->
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@500;700;900&family=Zen+Old+Mincho:wght@700;900&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Kaisei+Tokumin:wght@500;700;800&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#060a18;--bg2:#0e1530;--line:#27305a;--gold:#f3cf7a;--gold2:#a8842e;--txt:#f3f1ea;--sub:#a3a9c4;--cu:#C8773C;--mg:#B9C6D4;--ok:#5fd39a;--ng:#ef5a5f;
- --f:'Zen Kaku Gothic New','Hiragino Sans','Meiryo',sans-serif;--min:'Zen Old Mincho','Hiragino Mincho ProN','Yu Mincho',serif}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{margin:0;height:100%}
-body{background:var(--bg);color:var(--txt);font-family:var(--f);overflow-x:hidden;-webkit-user-select:none;user-select:none;touch-action:manipulation;
- background-image:radial-gradient(1px 1px at 12% 18%,#fff9 50%,transparent 51%),radial-gradient(1px 1px at 72% 8%,#fff8 50%,transparent 51%),radial-gradient(1.5px 1.5px at 40% 36%,#fff6 50%,transparent 51%),radial-gradient(1px 1px at 88% 44%,#fff7 50%,transparent 51%),radial-gradient(1px 1px at 22% 70%,#fff5 50%,transparent 51%),radial-gradient(1.5px 1.5px at 62% 82%,#fff5 50%,transparent 51%),radial-gradient(ellipse 90% 50% at 50% 110%,#1b2146 0,transparent 70%)}
-button{font-family:inherit;cursor:pointer;color:inherit}
+html,body{margin:0;height:100%;background:#F7F7F2;overflow:hidden;overscroll-behavior:none;-webkit-user-select:none;user-select:none;
+  font-family:"Kaisei Tokumin","Hiragino Mincho ProN","Yu Mincho",serif;color:#1F3F8F;-webkit-text-size-adjust:100%}
+#cv{position:fixed;left:0;top:0;width:100%;height:100%;display:block;touch-action:none}
 .hidden{display:none!important}
-.scr{position:fixed;inset:0;overflow-y:auto;overflow-x:hidden}
-.wrap{width:100%;max-width:560px;margin:0 auto;padding:8px 12px 30px}
-.btn{min-height:50px;border:none;border-radius:12px;padding:10px 18px;font-size:18px;font-weight:900;background:#1b2448;color:#fff;box-shadow:0 4px 0 #03050d}
-.btn:active{transform:translateY(3px);box-shadow:0 1px 0 #03050d}
-.btn.gold{background:var(--gold);color:#241a00;box-shadow:0 4px 0 var(--gold2)}
-.btn.ghost{background:transparent;border:2px solid var(--line);box-shadow:none}
-.btn.wide{width:100%}
-.btn:disabled{opacity:.4}
-.small{font-size:13px;color:var(--sub)}
-.tbtns{display:grid;gap:10px;margin-top:12px}
-.ribbon{display:inline-block;font-size:13px;letter-spacing:.3em;color:var(--gold);border-top:1px solid var(--gold);border-bottom:1px solid var(--gold);padding:3px 12px}
-.logo{font-family:var(--min);font-weight:900;font-size:clamp(38px,12vw,56px);line-height:1.1;margin:10px 0 4px;letter-spacing:.08em;text-shadow:0 0 18px #f3cf7a55}
-.subt{font-size:16px;color:var(--gold);margin-bottom:6px;font-weight:700}
-.namein{width:100%;font:inherit;font-size:18px;padding:10px;border-radius:8px;border:2px solid var(--line);background:#03060f;color:#fff;margin-top:6px}
-.hero{margin:8px 0}
-.hero svg{display:block;width:100%;height:auto}
-/* HUD */
-.hudw{position:sticky;top:0;z-index:5;background:#060a18ee;padding-bottom:4px;margin-bottom:6px;box-shadow:0 6px 10px -6px #000}
-.hud{display:flex;align-items:center;gap:6px;padding:6px 0 2px}
-.hud .ib{width:44px;height:44px;border-radius:10px;border:2px solid var(--line);background:var(--bg2);font-size:20px;flex:none}
-.hud .mid{flex:1;min-width:0;text-align:center;line-height:1.25}
-.hud .mid b{font-size:16px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:var(--min)}
-.hud .mid span{font-size:12px;color:var(--sub)}
-.hud2{display:flex;align-items:center;justify-content:space-between;gap:6px;font-size:12px;color:var(--sub)}
-.hud2 b{font-size:17px;color:var(--gold);margin-left:4px}
-/* 星図 */
-.dome{position:relative;border-radius:18px 18px 12px 12px;overflow:hidden;border:2px solid var(--line);background:radial-gradient(ellipse at 50% 0%,#141d44,#060a18 75%)}
-.dome svg{display:block;width:100%;height:auto;touch-action:none}
-.dome .nm{position:absolute;left:0;right:0;top:6px;text-align:center;font-family:var(--min);color:var(--gold);font-size:15px;letter-spacing:.2em;pointer-events:none}
-.panel{background:var(--bg2);border:2px solid var(--line);border-radius:12px;padding:12px;margin-top:10px}
-.panel h3{margin:0 0 6px;font-size:17px}
-.msg{font-size:16px;line-height:1.6;margin:4px 0 8px}
-.msg b{color:var(--gold)}
-.row2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.chips{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}
-.chips span{font-size:14px;background:#050815;border:1px solid var(--line);border-radius:6px;padding:3px 8px;font-variant-numeric:tabular-nums}
-.chips span.eq{border-color:var(--ok);color:var(--ok)}
-.choice{display:block;width:100%;min-height:52px;text-align:left;background:#131b3a;border:2px solid var(--line);border-radius:10px;padding:10px 12px;margin:8px 0;font-size:16px;line-height:1.45;color:#fff}
-.choice.ok{border-color:var(--ok);background:#0f2a22}.choice.ng{border-color:var(--ng);opacity:.55}
-.why{background:#2a1416;border:2px solid #6d1a1c;border-radius:10px;padding:10px 12px;font-size:15px;line-height:1.6;margin-top:8px}
-.good{background:#0f2a22;border:2px solid #1f6b43;border-radius:10px;padding:10px 12px;font-size:15px;line-height:1.6;margin-top:8px}
-.good b,.why b{color:var(--gold)}
-.fine{display:grid;grid-template-columns:64px 1fr 64px;gap:8px;align-items:center;margin:6px 0}
-.fine button{min-height:52px;font-size:22px;border-radius:10px;border:2px solid var(--line);background:#131b3a}
-.readout{text-align:center;font-size:15px;line-height:1.5}
-.readout b{font-size:22px;color:var(--gold);font-variant-numeric:tabular-nums}
-.lab svg{display:block;width:100%;height:auto}
-.mini{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
-.mini button{background:#f6f2e6;border:3px solid transparent;border-radius:10px;padding:4px;color:#222;font-size:13px;font-weight:700;min-height:44px}
-.mini svg{display:block;width:100%;height:auto}
-.env{position:relative;margin:14px auto;width:230px;height:150px;background:linear-gradient(#e9dcc0,#d6c39b);border-radius:8px;box-shadow:0 8px 20px #000a;color:#3a2a10;overflow:hidden}
-.env .flap{position:absolute;left:0;right:0;top:0;height:78px;background:linear-gradient(#d9c69f,#c9b384);clip-path:polygon(0 0,100% 0,50% 100%);transform-origin:top;transition:transform .6s}
-.env.open .flap{transform:rotateX(180deg)}
-.env .stamp{position:absolute;left:50%;top:48px;margin-left:-26px;width:52px;height:52px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#ff6b61,#a3151c);color:#fff;font-weight:900;display:flex;align-items:center;justify-content:center;font-size:22px;transition:opacity .4s}
-.env.open .stamp{opacity:0}
-.env .in{position:absolute;left:12px;right:12px;bottom:10px;font-size:13px;line-height:1.5;font-weight:700;opacity:0;transition:opacity .5s .4s}
-.env.open .in{opacity:1}
-.keys{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.keys button{min-height:50px;font-size:22px;border-radius:10px;border:2px solid var(--line);background:#131b3a}
-.numshow{font-size:30px;text-align:center;background:#03060f;border-radius:10px;padding:6px;margin:6px 0;font-variant-numeric:tabular-nums}
-.numshow.on{outline:2px solid var(--gold)}
-/* 演出 */
-#fx{position:fixed;inset:0;pointer-events:none;z-index:60}
-.pop{position:fixed;z-index:61;font-weight:900;font-size:20px;color:var(--gold);pointer-events:none;text-shadow:0 2px 0 #000;animation:up 1s ease-out forwards}
-@keyframes up{to{transform:translateY(-50px);opacity:0}}
-.banner{position:fixed;left:50%;top:32%;transform:translate(-50%,-50%);z-index:62;background:#060a18ee;border:2px solid var(--gold);border-radius:14px;padding:14px 22px;text-align:center;font-size:26px;font-weight:900;color:var(--gold);pointer-events:none;animation:bn 1.9s ease forwards;white-space:nowrap;font-family:var(--min)}
-.banner small{display:block;font-size:14px;color:#fff;font-weight:700;margin-top:4px;white-space:normal;font-family:var(--f)}
-@keyframes bn{0%{transform:translate(-50%,-50%) scale(.5);opacity:0}12%{transform:translate(-50%,-50%) scale(1.08);opacity:1}20%{transform:translate(-50%,-50%) scale(1)}85%{opacity:1}100%{opacity:0}}
-.tw{animation:tw 1.2s ease-in-out infinite alternate}
-@keyframes tw{to{opacity:.55}}
-.newstar{animation:ns .8s cubic-bezier(.2,1.6,.4,1)}
-@keyframes ns{from{transform:scale(3);opacity:0}}
-.ov{position:fixed;inset:0;background:#000b;z-index:40;display:flex;align-items:flex-end;justify-content:center}
-.ovc{width:100%;max-width:560px;max-height:92vh;overflow-y:auto;background:var(--bg2);border:2px solid var(--line);border-radius:16px 16px 0 0;padding:14px 14px 22px}
-.ovc h2{margin:4px 0 8px;font-size:20px;font-family:var(--min)}
-.card{background:#f5efe0;color:#2a2418;border-radius:10px;padding:12px;margin:10px 0;font-size:14px;line-height:1.65}
-.stat{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0}
-.stat div{background:#131b3a;border-radius:10px;padding:8px;font-size:13px;color:var(--sub)}
-.stat b{display:block;font-size:22px;color:#fff}
-.tq{font-size:18px;font-weight:700;line-height:1.6;margin:12px 0}
-.tfig{background:#f6f2e6;border-radius:10px;padding:6px;margin-bottom:8px;color:#222}
-.tfig svg{display:block;max-width:100%;height:auto;margin:0 auto}
-.prog{display:flex;gap:4px;margin:8px 0}.prog i{flex:1;height:6px;border-radius:3px;background:var(--line)}.prog i.on{background:var(--gold)}
-.ordsel div{background:#2b2616;border:2px solid var(--gold);border-radius:8px;padding:8px;margin:4px 0;font-size:15px}
-.menu{display:grid;gap:8px;margin-top:10px}
-.menu button{display:flex;justify-content:space-between;align-items:center;min-height:52px;text-align:left;background:#131b3a;border:2px solid var(--line);border-radius:10px;padding:8px 12px;font-size:15px;color:#fff}
-.menu button span{color:var(--sub);font-size:12px}
-@media (prefers-reduced-motion:reduce){*{animation-duration:.01s!important;transition-duration:.01s!important}}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+#dlg{position:fixed;inset:0;z-index:20;background:rgba(19,42,99,.45);display:flex;align-items:center;justify-content:center;padding:16px}
+#dlg .box{width:min(520px,100%);max-height:88vh;overflow-y:auto;background:#FCFCF8;border-radius:6px;padding:22px 22px 18px;
+  border:3px solid #1F3F8F;outline:1px solid #1F3F8F;outline-offset:-9px;box-shadow:0 18px 40px rgba(19,42,99,.35);font-size:19px;line-height:1.7;color:#132a63}
+#dlg .box small{display:block;font-size:15px;margin-top:4px;color:#3f5da3}
+#dlg input{display:block;width:100%;margin-top:10px;height:52px;font:20px "Kaisei Tokumin",serif;text-align:center;border:2px solid #1F3F8F;border-radius:4px;background:#fff;color:#132a63;-webkit-user-select:text;user-select:text}
+#dlg .row{display:flex;gap:12px;justify-content:center;margin-top:16px;flex-wrap:wrap}
+.pbtn{min-height:52px;min-width:120px;padding:6px 22px;border-radius:4px;border:2px solid #1F3F8F;background:#FCFCF8;color:#1F3F8F;
+  font:700 18px "Kaisei Tokumin",serif;cursor:pointer;box-shadow:0 5px 0 #1F3F8F;transition:transform .06s}
+.pbtn.go{background:#1F3F8F;color:#FCFCF8;box-shadow:0 5px 0 #0d1e48}
+.pbtn:active{transform:translateY(4px);box-shadow:0 1px 0 #1F3F8F}
+#test{position:fixed;inset:0;z-index:10;background:#F7F7F2;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:max(12px,env(safe-area-inset-top)) 12px 28px;
+  background-image:radial-gradient(circle at 12% 10%,rgba(31,63,143,.08),transparent 38%),radial-gradient(circle at 90% 92%,rgba(200,119,60,.08),transparent 40%)}
+#test .top{display:flex;align-items:center;gap:10px;max-width:980px;margin:0 auto 12px;color:#1F3F8F}
+#test .top .ttl{flex:1;font-size:18px;font-weight:800;letter-spacing:.06em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#test .top .no{font-size:22px;font-weight:800;color:#C8773C}
+#test .paper{max-width:980px;margin:0 auto;background:#FCFCF8;border-radius:6px;padding:22px 22px 26px;border:3px solid #1F3F8F;outline:1px solid #1F3F8F;outline-offset:-10px;
+  box-shadow:0 14px 30px rgba(19,42,99,.18)}
+#tQ{font-size:19px;line-height:1.8;color:#132a63}
+#tFig{margin:10px 0;text-align:center}
+#tFig svg{max-width:100%;height:auto;background:#fff;border-radius:4px;border:1px solid #9fb0d8}
+#tA{display:grid;gap:12px;margin-top:14px}
+@media (min-width:760px){#tA.ch{grid-template-columns:1fr 1fr}}
+.tag{min-height:56px;text-align:left;padding:10px 16px;border:2px solid #1F3F8F;border-radius:4px;background:#fff;color:#132a63;
+  font:17px "Kaisei Tokumin",serif;line-height:1.55;cursor:pointer;box-shadow:0 4px 0 #9fb0d8}
+.tag:active{transform:translateY(3px);box-shadow:0 1px 0 #9fb0d8}
+.tag.ok{background:#1F3F8F;color:#fff}
+.tag.ng{background:#C8773C;color:#fff}
+.tag.pickd{opacity:.35}
+.tag:disabled{cursor:default}
+.numrow{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.numrow input{width:150px;height:56px;font:24px "Kaisei Tokumin",serif;text-align:center;border:2px solid #1F3F8F;background:#fff;color:#132a63;border-radius:4px;-webkit-user-select:text;user-select:text}
+.ord{display:grid;gap:6px;margin:6px 0}
+.ord div{padding:6px 12px;border-left:6px solid #C8773C;background:#fff;border-radius:3px}
+#tFb{margin-top:16px;font-size:17px;line-height:1.65}
+#tFb .mk{font-size:34px;margin-right:8px;vertical-align:middle;color:#B8432F}
+#tFb .ex{display:block;margin-top:4px;color:#3f5da3}
+@media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
 <body>
-<canvas id="fx"></canvas>
-
-<div id="title" class="scr"><div class="wrap" style="text-align:center;padding-top:14px">
- <div class="ribbon">PLANETARIUM</div>
- <div class="logo">比例の星座</div>
- <div class="subt">～金属と酸素の質量のグラフ～</div>
- <div class="hero" id="hero"></div>
- <p style="font-size:15px;line-height:1.6;margin:6px 0">1回の測定が、1つの星になる。<br>星のあいだに、ほんとうの線を引こう。</p>
- <div id="nameBox"><input id="nameIn" class="namein" maxlength="20" placeholder="なまえ（空でも遊べる）"></div>
- <div class="tbtns">
-  <button class="btn gold wide" id="bStart">はじめる</button>
-  <button class="btn ghost wide hidden" id="bCont">つづきから</button>
-  <button class="btn ghost wide zk hidden" id="bBook1">📖 図鑑</button>
-  <button class="btn ghost wide" id="bMute1">🔊 音：オン</button>
- </div>
-</div></div>
-
-<div id="intro" class="scr hidden"><div class="wrap" id="introBox"></div></div>
-
-<div id="game" class="scr hidden"><div class="wrap">
- <div class="hudw"><div class="hud"><button class="ib" id="bHome" aria-label="タイトルへ">🏠</button>
-  <div class="mid"><b id="hName"></b><span id="hSub"></span></div>
-  <button class="ib" id="bMute" aria-label="音">🔊</button></div>
-  <div class="hud2"><span>星の光<b id="hScore">0</b></span><span id="hCombo"></span><span id="zkHud"></span></div></div>
- <div class="dome"><div class="nm" id="skyName"></div><div id="sky"></div></div>
- <div class="panel" id="ctrl"></div>
-</div></div>
-
-<div id="clear" class="scr hidden"><div class="wrap" id="clearBox"></div></div>
-<div id="test" class="scr hidden"><div class="wrap" id="tBox"></div></div>
-<div id="ov" class="ov hidden"><div class="ovc" id="ovc"></div></div>
-
+<canvas id="cv" aria-label="染付の大皿に描いた星図"></canvas>
+<div class="sr" aria-live="polite">比例の星座 ～金属と酸素の質量のグラフ～。測定の札から結び付いた酸素の質量を求め、パチンコで星を皿のグラフに打ち込む。星がそろったら原点を通る1本の線を引いて星座を完成させる。</div>
+<div id="dlg" class="hidden"><div class="box"><div id="dlgT"></div><div class="row" id="dlgR"></div></div></div>
+<div id="test" class="hidden">
+  <div class="top"><span class="ttl">星図の確認テスト</span><span class="no" id="tNo"></span></div>
+  <div class="paper"><div id="tQ"></div><div id="tFig"></div><div id="tA"></div><div id="tFb"></div></div>
+</div>
 <script>/*@SUBMIT_CARD_BEGIN*/
 /* ==========================================================
    提出カード（全ゲーム共通） v2
@@ -350,7 +299,7 @@ button{font-family:inherit;cursor:pointer;color:inherit}
   window.Quiz=Quiz;
 })();
 
-window.QUIZ={"v": 1, "grade": "chu2", "unit": "kagaku", "game": "hirei-seiza", "koma": ["chu2-kagaku-31"], "testCount": 10, "questions": [{"id": "chu2-hirei-seiza-q001", "koma": "chu2-kagaku-31", "t": "choice", "q": "銅の質量を変えて、反応しきるまで加熱した。グラフは、銅の質量と結び付いた酸素の質量の関係である。この関係を何というか。", "fig": "\u003csvg viewBox=\"0 0 320 214\" width=\"320\">\u003cpath d=\"M50,180 L310,180 M50,180 L50,14\" stroke=\"#333\" stroke-width=\"2\"/>\u003cpath d=\"M50,180 L50,20\" stroke=\"#0001\"/>\u003ctext x=\"50\" y=\"194\" font-size=\"10\" text-anchor=\"middle\" font-family=\"sans-serif\">0.0\u003c/text>\u003cpath d=\"M114,180 L114,20\" stroke=\"#0001\"/>\u003ctext x=\"114\" y=\"194\" font-size=\"10\" text-anchor=\"middle\" font-family=\"sans-serif\">0.4\u003c/text>\u003cpath d=\"M178,180 L178,20\" stroke=\"#0001\"/>\u003ctext x=\"178\" y=\"194\" font-size=\"10\" text-anchor=\"middle\" font-family=\"sans-serif\">0.8\u003c/text>\u003cpath d=\"M242,180 L242,20\" stroke=\"#0001\"/>\u003ctext x=\"242\" y=\"194\" font-size=\"10\" text-anchor=\"middle\" font-family=\"sans-serif\">1.2\u003c/text>\u003cpath d=\"M306,180 L306,20\" stroke=\"#0001\"/>\u003ctext x=\"306\" y=\"194\" font-size=\"10\" text-anchor=\"middle\" font-family=\"sans-serif\">1.6\u003c/text>\u003cpath d=\"M50,180 L306,180\" stroke=\"#0001\"/>\u003ctext x=\"46\" y=\"184\" font-size=\"10\" text-anchor=\"end\" font-family=\"sans-serif\">0.0\u003c/text>\u003cpath d=\"M50,148 L306,148\" stroke=\"#0001\"/>\u003ctext x=\"46\" y=\"152\" font-size=\"10\" text-anchor=\"end\" font-family=\"sans-serif\">0.2\u003c/text>\u003cpath d=\"M50,116 L306,116\" stroke=\"#0001\"/>\u003ctext x=\"46\" y=\"120\" font-size=\"10\" text-anchor=\"end\" font-family=\"sans-serif\">0.4\u003c/text>\u003cpath d=\"M50,84 L306,84\" stroke=\"#0001\"/>\u003ctext x=\"46\" y=\"88\" font-size=\"10\" text-anchor=\"end\" font-family=\"sans-serif\">0.6\u003c/text>\u003cpath d=\"M50,52 L306,52\" stroke=\"#0001\"/>\u003ctext x=\"46\" y=\"56\" font-size=\"10\" text-anchor=\"end\" font-family=\"sans-serif\">0.8\u003c/text>\u003cpath d=\"M50,20 L306,20\" stroke=\"#0001\"/>\u003ctext x=\"46\" y=\"24\" font-size=\"10\" text-anchor=\"end\" font-family=\"sans-serif\">1.0\u003c/text>\u003cpath d=\"M50.0,180.0 L306,116\" stroke=\"#C8773C\" stroke-width=\"2.5\"/>\u003ccircle cx=\"114\" cy=\"164\" r=\"4\" fill=\"#C8773C\"/>\u003ccircle cx=\"178\" cy=\"146\" r=\"4\" fill=\"#C8773C\"/>\u003ccircle cx=\"242\" cy=\"134\" r=\"4\" fill=\"#C8773C\"/>\u003ccircle cx=\"274\" cy=\"124\" r=\"4\" fill=\"#C8773C\"/>\u003ccircle cx=\"146\" cy=\"156\" r=\"4\" fill=\"#C8773C\"/>\u003ctext x=\"178\" y=\"211\" font-size=\"11\" text-anchor=\"middle\" font-family=\"sans-serif\">金属の質量〔g〕\u003c/text>\u003ctext x=\"12\" y=\"100\" font-size=\"11\" text-anchor=\"middle\" font-family=\"sans-serif\" transform=\"rotate(-90 12 100)\">結び付いた酸素の質量〔g〕\u003c/text>\u003c/svg>", "choices": ["比例", "反比例", "質量保存", "限度"], "ex": "原点を通る直線のグラフなので、銅の質量と結び付く酸素の質量は比例する。", "kind": "term", "level": 1}, {"id": "chu2-hirei-seiza-q002", "koma": "chu2-kagaku-31", "t": "num", "q": "グラフから、銅1.20 gと結び付く酸素の質量を読み取ると何gか。", "fig": "\u003csvg viewBox=\"0 0 320 214\" width=\"320\">\u003cpath d=\"M50,180 L310,180 M50,180 L50,14\" stroke=\"#333\" stroke-width=\"2\"/>\u003cpath d=\"M50,180 L50,20\" stroke=\"#0001\"/>\u003ctext x=\"50\" y=\"194\" font-size=\"10\" text-anchor=\"middle\" font-family=\"sans-serif\">0.0\u003c/text>\u003cpath d=\"M114,180 L114,20\" stroke=\"#0001\"/>\u003ctext x=\"114\" y=\"194\" font-size=\"10\" text-anchor=\"middle\" font-family=\"sans-serif\">0.4\u003c/text>\u003cpath d=\"M178,180 L178,20\" stroke=\"#0001\"/>\u003ctext x=\"178\" y=\"194\" font-size=\"10\" text-anchor=\"middle\" font-family=\"sans-serif\">0.8\u003c/text>\u003cpath d=\"M242,180 L242,20\" stroke=\"#0001\"/>\u003ctext x=\"242\" y=\"194\" font-size=\"10\" text-anchor=\"middle\" font-family=\"sans-serif\">1.2\u003c/text>\u003cpath d=\"M306,180 L306,20\" stroke=\"#0001\"/>\u003ctext x=\"306\" y=\"194\" font-size=\"10\" text-anchor=\"middle\" font-family=\"sans-serif\">1.6\u003c/text>\u003cpath d=\"M50,180 L306,180\" stroke=\"#0001\"/>\u003ctext x=\"46\" y=\"184\" font-size=\"10\" text-anchor=\"end\" font-family=\"sans-serif\">0.0\u003c/text>\u003cpath d=\"M50,148 L306,148\" stroke=\"#0001\"/>\u003ctext x=\"46\" y=\"152\" font-size=\"10\" text-anchor=\"end\" font-family=\"sans-serif\">0.2\u003c/text>\u003cpath d=\"M50,116 L306,116\" stroke=\"#0001\"/>\u003ctext x=\"46\" y=\"120\" font-size=\"10\" text-anchor=\"end\" font-family=\"sans-serif\">0.4\u003c/text>\u003cpath d=\"M50,84 L306,84\" stroke=\"#0001\"/>\u003ctext x=\"46\" y=\"88\" font-size=\"10\" text-anchor=\"end\" font-family=\"sans-serif\">0.6\u003c/text>\u003cpath d=\"M50,52 L306,52\" stroke=\"#0001\"/>\u003ctext x=\"46\" y=\"56\" font-size=\"10\" text-anchor=\"end\" font-family=\"sans-serif\">0.8\u003c/text>\u003cpath d=\"M50,20 L306,20\" stroke=\"#0001\"/>\u003ctext x=\"46\" y=\"24\" font-size=\"10\" text-anchor=\"end\" font-family=\"sans-serif\">1.0\u003c/text>\u003cpath d=\"M50.0,180.0 L306,116\" stroke=\"#C8773C\" stroke-width=\"2.5\"/>\u003ctext x=\"302\" y=\"110\" font-size=\"12\" text-anchor=\"end\" fill=\"#C8773C\" font-family=\"sans-serif\" font-weight=\"700\">銅\u003c/text>\u003ctext x=\"178\" y=\"211\" font-size=\"11\" text-anchor=\"middle\" font-family=\"sans-serif\">金属の質量〔g〕\u003c/text>\u003ctext x=\"12\" y=\"100\" font-size=\"11\" text-anchor=\"middle\" font-family=\"sans-serif\" transform=\"rotate(-90 12 100)\">結び付いた酸素の質量〔g〕\u003c/text>\u003c/svg>", "ans": 0.3, "unit": "g", "tol": 0.011, "ex": "グラフの直線で横軸1.20 gのとき、縦軸は0.30 g。", "kind": "graph", "level": 1}, {"id": "chu2-hirei-seiza-q003", "koma": "chu2-kagaku-31", "t": "choice", "q": "グラフから分かる、銅の質量と結び付く酸素の質量の比（銅：酸素）はどれか。", "fig": "\u003csvg viewBox=\"0 0 320 214\" width=\"320\">\u003cpath d=\"M50,180 L310,180 M50,180 L50,14\" stroke=\"#333\" stroke-width=\"2\"/>\u003cpath d=\"M50,180 L50,20\" stroke=\"#0001\"/>\u003ctext x=\"50\" y=\"194\" font-size=\"10\" text-anchor=\"middle\" font-family=\"sans-serif\">0.0\u003c/text>\u003cpath d=\"M114,180 L114,20\" stroke=\"#0001\"/>\u003ctext x=\"114\" y=\"194\" font-size=\"10\" text-anchor=\"middle\" font-family=\"sans-serif\">0.4\u003c/text>\u003cpath d=\"M178,180 L178,20\" stroke=\"#0001\"/>\u003ctext x=\"178\" y=\"194\" font-size=\"10\" text-anchor=\"middle\" font-family=\"sans-serif\">0.8\u003c/text>\u003cpath d=\"M242,180 L242,20\" stroke=\"#0001\"/>\u003ctext x=\"242\" y=\"194\" font-size=\"10\" text-anchor=\"middle\" font-family=\"sans-serif\">1.2\u003c/text>\u003cpath d=\"M306,180 L306,20\" stroke=\"#0001\"/>\u003ctext x=\"306\" y=\"194\" font-size=\"10\" text-anchor=\"middle\" font-family=\"sans-serif\">1.6\u003c/text>\u003cpath d=\"M50,180 L306,180\" stroke=\"#0001\"/>\u003ctext x=\"46\" y=\"184\" font-size=\"10\" text-anchor=\"end\" font-family=\"sans-serif\">0.0\u003c/text>\u003cpath d=\"M50,148 L306,148\" stroke=\"#0001\"/>\u003ctext x=\"46\" y=\"152\" font-size=\"10\" text-anchor=\"end\" font-family=\"sans-serif\">0.2\u003c/text>\u003cpath d=\"M50,116 L306,116\" stroke=\"#0001\"/>\u003ctext x=\"46\" y=\"120\" font-size=\"10\" text-anchor=\"end\" font-family=\"sans-serif\">0.4\u003c/text>\u003cpath d=\"M50,84 L306,84\" stroke=\"#0001\"/>\u003ctext x=\"46\" y=\"88\" font-size=\"10\" text-anchor=\"end\" font-family=\"sans-serif\">0.6\u003c/text>\u003cpath d=\"M50,52 L306,52\" stroke=\"#0001\"/>\u003ctext x=\"46\" y=\"56\" font-size=\"10\" text-anchor=\"end\" font-family=\"sans-serif\">0.8\u003c/text>\u003cpath d=\"M50,20 L306,20\" stroke=\"#0001\"/>\u003ctext x=\"46\" y=\"24\" font-size=\"10\" text-anchor=\"end\" font-family=\"sans-serif\">1.0\u003c/text>\u003cpath d=\"M50.0,180.0 L306,116\" stroke=\"#C8773C\" stroke-width=\"2.5\"/>\u003ctext x=\"302\" y=\"110\" font-size=\"12\" text-anchor=\"end\" fill=\"#C8773C\" font-family=\"sans-serif\" font-weight=\"700\">銅\u003c/text>\u003ctext x=\"178\" y=\"211\" font-size=\"11\" text-anchor=\"middle\" font-family=\"sans-serif\">金属の質量〔g〕\u003c/text>\u003ctext x=\"12\" y=\"100\" font-size=\"11\" text-anchor=\"middle\" font-family=\"sans-serif\" transform=\"rotate(-90 12 100)\">結び付いた酸素の質量〔g〕\u003c/text>\u003c/svg>", "choices": ["4：1", "1：4", "5：1", "5：4"], "ex": "銅0.80 gに酸素0.20 gが結び付く。0.80：0.20＝4：1。", "kind": "graph", "level": 1}, {"id": "chu2-hirei-seiza-q004", "koma": "chu2-kagaku-31", "t": "num", "q": "銅と酸素は4：1の質量の比で結び付く。銅2.40 gを反応しきるまで加熱すると、結び付く酸素は何gか。", "ans": 0.6, "unit": "g", "tol": 0.005, "ex": "2.40÷4＝0.60 g。銅の質量に比例する。", "kind": "calc", "level": 1, "fig": null}, {"id": "chu2-hirei-seiza-q005", "koma": "chu2-kagaku-31", "t": "num", "q": "銅2.00 gを反応しきるまで加熱すると、できる酸化銅は何gか（銅：酸素＝4：1）。", "ans": 2.5, "unit": "g", "tol": 0.005, "ex": "結び付く酸素は2.00÷4＝0.50 g。酸化銅＝2.00＋0.50＝2.50 g。", "kind": "calc", "level": 2, "fig": null}, {"id": "chu2-hirei-seiza-q006", "koma": "chu2-kagaku-31", "t": "choice", "q": "グラフの2本の直線は、銅とマグネシウムについて、金属の質量と結び付いた酸素の質量の関係を表している。マグネシウムの直線はどちらで、そう言える理由は何か。", "fig": "\u003csvg viewBox=\"0 0 320 214\" width=\"320\">\u003cpath d=\"M50,180 L310,180 M50,180 L50,14\" stroke=\"#333\" stroke-width=\"2\"/>\u003cpath d=\"M50,180 L50,20\" stroke=\"#0001\"/>\u003ctext x=\"50\" y=\"194\" font-size=\"10\" text-anchor=\"middle\" font-family=\"sans-serif\">0.0\u003c/text>\u003cpath d=\"M114,180 L114,20\" stroke=\"#0001\"/>\u003ctext x=\"114\" y=\"194\" font-size=\"10\" text-anchor=\"middle\" font-family=\"sans-serif\">0.4\u003c/text>\u003cpath d=\"M178,180 L178,20\" stroke=\"#0001\"/>\u003ctext x=\"178\" y=\"194\" font-size=\"10\" text-anchor=\"middle\" font-family=\"sans-serif\">0.8\u003c/text>\u003cpath d=\"M242,180 L242,20\" stroke=\"#0001\"/>\u003ctext x=\"242\" y=\"194\" font-size=\"10\" text-anchor=\"middle\" font-family=\"sans-serif\">1.2\u003c/text>\u003cpath d=\"M306,180 L306,20\" stroke=\"#0001\"/>\u003ctext x=\"306\" y=\"194\" font-size=\"10\" text-anchor=\"middle\" font-family=\"sans-serif\">1.6\u003c/text>\u003cpath d=\"M50,180 L306,180\" stroke=\"#0001\"/>\u003ctext x=\"46\" y=\"184\" font-size=\"10\" text-anchor=\"end\" font-family=\"sans-serif\">0.0\u003c/text>\u003cpath d=\"M50,148 L306,148\" stroke=\"#0001\"/>\u003ctext x=\"46\" y=\"152\" font-size=\"10\" text-anchor=\"end\" font-family=\"sans-serif\">0.2\u003c/text>\u003cpath d=\"M50,116 L306,116\" stroke=\"#0001\"/>\u003ctext x=\"46\" y=\"120\" font-size=\"10\" text-anchor=\"end\" font-family=\"sans-serif\">0.4\u003c/text>\u003cpath d=\"M50,84 L306,84\" stroke=\"#0001\"/>\u003ctext x=\"46\" y=\"88\" font-size=\"10\" text-anchor=\"end\" font-family=\"sans-serif\">0.6\u003c/text>\u003cpath d=\"M50,52 L306,52\" stroke=\"#0001\"/>\u003ctext x=\"46\" y=\"56\" font-size=\"10\" text-anchor=\"end\" font-family=\"sans-serif\">0.8\u003c/text>\u003cpath d=\"M50,20 L306,20\" stroke=\"#0001\"/>\u003ctext x=\"46\" y=\"24\" font-size=\"10\" text-anchor=\"end\" font-family=\"sans-serif\">1.0\u003c/text>\u003cpath d=\"M50.0,180.0 L306,116\" stroke=\"#C8773C\" stroke-width=\"2.5\"/>\u003ctext x=\"302\" y=\"110\" font-size=\"12\" text-anchor=\"end\" fill=\"#C8773C\" font-family=\"sans-serif\" font-weight=\"700\">ア\u003c/text>\u003cpath d=\"M50.0,180.0 L290,20\" stroke=\"#5a6b80\" stroke-width=\"2.5\"/>\u003ctext x=\"286\" y=\"14\" font-size=\"12\" text-anchor=\"end\" fill=\"#5a6b80\" font-family=\"sans-serif\" font-weight=\"700\">イ\u003c/text>\u003ctext x=\"178\" y=\"211\" font-size=\"11\" text-anchor=\"middle\" font-family=\"sans-serif\">金属の質量〔g〕\u003c/text>\u003ctext x=\"12\" y=\"100\" font-size=\"11\" text-anchor=\"middle\" font-family=\"sans-serif\" transform=\"rotate(-90 12 100)\">結び付いた酸素の質量〔g〕\u003c/text>\u003c/svg>", "choices": ["イ：同じ質量のとき、マグネシウムのほうが多くの酸素と結び付くから", "ア：同じ質量のとき、マグネシウムのほうが少ない酸素と結び付くから", "イ：マグネシウムのほうが加熱しやすいから", "どちらとも言えない：どちらも原点を通るから"], "ex": "マグネシウム：酸素＝3：2、銅：酸素＝4：1。同じ質量ならマグネシウムのほうが酸素が多く、直線が急になる。", "kind": "graph", "level": 2}, {"id": "chu2-hirei-seiza-q007", "koma": "chu2-kagaku-31", "t": "num", "q": "マグネシウム0.90 gを反応しきるまで加熱した。結び付く酸素は何gか（マグネシウム：酸素＝3：2）。", "ans": 0.6, "unit": "g", "tol": 0.005, "ex": "0.90×2/3＝0.60 g。", "kind": "calc", "level": 2, "fig": null}, {"id": "chu2-hirei-seiza-q008", "koma": "chu2-kagaku-31", "t": "choice", "q": "実験の結果を点で表したら、少しばらついた。グラフの線の引き方として正しいものはどれか。", "choices": ["点のばらつきの真ん中を通る直線を引く", "点を順番に折れ線でつなぐ", "すべての点を必ず通る曲線を引く", "いちばん外れた点を通る直線を引く"], "ex": "測定値には誤差がある。すべての点を通そうとせず、点のばらつきの中心を通るように引く。", "kind": "method", "level": 1, "fig": null}, {"id": "chu2-hirei-seiza-q009", "koma": "chu2-kagaku-31", "t": "choice", "q": "このグラフの線が原点（0，0）を通る理由として、最も適切なものはどれか。", "choices": ["金属が0 gなら、結び付く相手がなく、酸素も0 gだから", "グラフはいつも原点から書き始める決まりだから", "酸素は空気中にいくらでもあるから", "0 gの金属を加熱すると、酸素が0.10 g結び付くから"], "ex": "金属が無ければ酸素は結び付かない。だから線は原点を通る。", "kind": "judge", "level": 2, "fig": null}, {"id": "chu2-hirei-seiza-q010", "koma": "chu2-kagaku-31", "t": "choice", "q": "表は、班ごとに銅の質量を変えて、反応しきるまで加熱した結果である。表の中で、ほかの班と比べて明らかに外れている班はどれか。", "fig": "\u003csvg viewBox=\"0 0 320 88\" width=\"320\">\u003crect x=\"4\" y=\"4\" width=\"312\" height=\"24\" fill=\"#ece6d6\"/>\u003ctext x=\"12\" y=\"21\" font-size=\"12\" text-anchor=\"start\" font-family=\"sans-serif\">班\u003c/text>\u003ctext x=\"122\" y=\"21\" font-size=\"12\" text-anchor=\"middle\" font-family=\"sans-serif\">1\u003c/text>\u003ctext x=\"166\" y=\"21\" font-size=\"12\" text-anchor=\"middle\" font-family=\"sans-serif\">2\u003c/text>\u003ctext x=\"210\" y=\"21\" font-size=\"12\" text-anchor=\"middle\" font-family=\"sans-serif\">3\u003c/text>\u003ctext x=\"254\" y=\"21\" font-size=\"12\" text-anchor=\"middle\" font-family=\"sans-serif\">4\u003c/text>\u003ctext x=\"298\" y=\"21\" font-size=\"12\" text-anchor=\"middle\" font-family=\"sans-serif\">5\u003c/text>\u003crect x=\"4\" y=\"30\" width=\"312\" height=\"24\" fill=\"#fff\"/>\u003ctext x=\"12\" y=\"47\" font-size=\"12\" text-anchor=\"start\" font-family=\"sans-serif\">銅〔g〕\u003c/text>\u003ctext x=\"122\" y=\"47\" font-size=\"12\" text-anchor=\"middle\" font-family=\"sans-serif\">0.40\u003c/text>\u003ctext x=\"166\" y=\"47\" font-size=\"12\" text-anchor=\"middle\" font-family=\"sans-serif\">0.80\u003c/text>\u003ctext x=\"210\" y=\"47\" font-size=\"12\" text-anchor=\"middle\" font-family=\"sans-serif\">1.20\u003c/text>\u003ctext x=\"254\" y=\"47\" font-size=\"12\" text-anchor=\"middle\" font-family=\"sans-serif\">1.60\u003c/text>\u003ctext x=\"298\" y=\"47\" font-size=\"12\" text-anchor=\"middle\" font-family=\"sans-serif\">2.00\u003c/text>\u003crect x=\"4\" y=\"56\" width=\"312\" height=\"24\" fill=\"#f6f2e6\"/>\u003ctext x=\"12\" y=\"73\" font-size=\"12\" text-anchor=\"start\" font-family=\"sans-serif\">酸素〔g〕\u003c/text>\u003ctext x=\"122\" y=\"73\" font-size=\"12\" text-anchor=\"middle\" font-family=\"sans-serif\">0.10\u003c/text>\u003ctext x=\"166\" y=\"73\" font-size=\"12\" text-anchor=\"middle\" font-family=\"sans-serif\">0.20\u003c/text>\u003ctext x=\"210\" y=\"73\" font-size=\"12\" text-anchor=\"middle\" font-family=\"sans-serif\">0.19\u003c/text>\u003ctext x=\"254\" y=\"73\" font-size=\"12\" text-anchor=\"middle\" font-family=\"sans-serif\">0.40\u003c/text>\u003ctext x=\"298\" y=\"73\" font-size=\"12\" text-anchor=\"middle\" font-family=\"sans-serif\">0.50\u003c/text>\u003c/svg>", "choices": ["3班", "1班", "5班", "外れている班はない"], "ex": "銅：酸素＝4：1なら、1.20 gの銅には0.30 g。3班の0.19 gは加熱不足などが考えられる。", "kind": "judge", "level": 2}, {"id": "chu2-hirei-seiza-q011", "koma": "chu2-kagaku-31", "t": "choice", "q": "銅の質量を2倍にして、反応しきるまで加熱した。結び付く酸素の質量はどうなるか。", "choices": ["2倍になる", "変わらない", "4倍になる", "半分になる"], "ex": "金属の質量と結び付く酸素の質量は比例するので、2倍になる。", "kind": "judge", "level": 1, "fig": null}, {"id": "chu2-hirei-seiza-q012", "koma": "chu2-kagaku-31", "t": "num", "q": "銅の質量と加熱後の物質の質量の表がある。銅0.40 gは加熱後0.50 gになった。このとき結び付いた酸素は何gか。", "ans": 0.1, "unit": "g", "tol": 0.005, "ex": "0.50−0.40＝0.10 g。増えた分が結び付いた酸素。", "kind": "calc", "level": 1, "fig": null}, {"id": "chu2-hirei-seiza-q013", "koma": "chu2-kagaku-31", "t": "choice", "q": "銅の質量（横軸）と、できた酸化銅の質量（縦軸）のグラフの形として正しいものはどれか。", "choices": ["原点を通る直線", "横軸に平行な直線", "途中から横ばいになる線", "原点を通らない直線"], "ex": "酸化銅＝銅＋酸素で、銅：酸化銅＝4：5。これも比例なので原点を通る直線になる。", "kind": "graph", "level": 3, "fig": null}, {"id": "chu2-hirei-seiza-q014", "koma": "chu2-kagaku-31", "t": "order", "q": "金属の質量と結び付く酸素の質量の関係を、グラフから見いだす手順を正しい順に並べよう。", "items": ["金属の質量を変えて、反応しきるまで加熱して測る", "結び付いた酸素の質量を計算する", "横軸に金属の質量、縦軸に酸素の質量をとって点を打つ", "点のばらつきの真ん中を通る線を引く", "線の形から、関係を読み取る"], "ex": "測定→計算→点を打つ→線を引く→関係を読む。", "kind": "method", "level": 2, "fig": null}]};
+window.QUIZ={"v": 1, "grade": "chu2", "unit": "kagaku", "game": "hirei-seiza", "koma": ["chu2-kagaku-31"], "testCount": 10, "questions": [{"id": "chu2-hirei-seiza-q001", "koma": "chu2-kagaku-31", "t": "choice", "q": "銅の質量を変えて、反応しきるまで加熱した。グラフは、銅の質量と結び付いた酸素の質量の関係である。この関係を何というか。", "fig": "\u003csvg viewBox=\"0 0 320 214\" width=\"320\">\u003cpath d=\"M50,180 L310,180 M50,180 L50,14\" stroke=\"#333\" stroke-width=\"2\"/>\u003cpath d=\"M50,180 L50,20\" stroke=\"#0001\"/>\u003ctext x=\"50\" y=\"194\" font-size=\"10\" text-anchor=\"middle\" font-family=\"sans-serif\">0.0\u003c/text>\u003cpath d=\"M114,180 L114,20\" stroke=\"#0001\"/>\u003ctext x=\"114\" y=\"194\" font-size=\"10\" text-anchor=\"middle\" font-family=\"sans-serif\">0.4\u003c/text>\u003cpath d=\"M178,180 L178,20\" stroke=\"#0001\"/>\u003ctext x=\"178\" y=\"194\" font-size=\"10\" text-anchor=\"middle\" font-family=\"sans-serif\">0.8\u003c/text>\u003cpath d=\"M242,180 L242,20\" stroke=\"#0001\"/>\u003ctext x=\"242\" y=\"194\" font-size=\"10\" text-anchor=\"middle\" font-family=\"sans-serif\">1.2\u003c/text>\u003cpath d=\"M306,180 L306,20\" stroke=\"#0001\"/>\u003ctext x=\"306\" y=\"194\" font-size=\"10\" text-anchor=\"middle\" font-family=\"sans-serif\">1.6\u003c/text>\u003cpath d=\"M50,180 L306,180\" stroke=\"#0001\"/>\u003ctext x=\"46\" y=\"184\" font-size=\"10\" text-anchor=\"end\" font-family=\"sans-serif\">0.0\u003c/text>\u003cpath d=\"M50,148 L306,148\" stroke=\"#0001\"/>\u003ctext x=\"46\" y=\"152\" font-size=\"10\" text-anchor=\"end\" font-family=\"sans-serif\">0.2\u003c/text>\u003cpath d=\"M50,116 L306,116\" stroke=\"#0001\"/>\u003ctext x=\"46\" y=\"120\" font-size=\"10\" text-anchor=\"end\" font-family=\"sans-serif\">0.4\u003c/text>\u003cpath d=\"M50,84 L306,84\" stroke=\"#0001\"/>\u003ctext x=\"46\" y=\"88\" font-size=\"10\" text-anchor=\"end\" font-family=\"sans-serif\">0.6\u003c/text>\u003cpath d=\"M50,52 L306,52\" stroke=\"#0001\"/>\u003ctext x=\"46\" y=\"56\" font-size=\"10\" text-anchor=\"end\" font-family=\"sans-serif\">0.8\u003c/text>\u003cpath d=\"M50,20 L306,20\" stroke=\"#0001\"/>\u003ctext x=\"46\" y=\"24\" font-size=\"10\" text-anchor=\"end\" font-family=\"sans-serif\">1.0\u003c/text>\u003cpath d=\"M50.0,180.0 L306,116\" stroke=\"#C8773C\" stroke-width=\"2.5\"/>\u003ccircle cx=\"114\" cy=\"164\" r=\"4\" fill=\"#C8773C\"/>\u003ccircle cx=\"178\" cy=\"146\" r=\"4\" fill=\"#C8773C\"/>\u003ccircle cx=\"242\" cy=\"134\" r=\"4\" fill=\"#C8773C\"/>\u003ccircle cx=\"274\" cy=\"124\" r=\"4\" fill=\"#C8773C\"/>\u003ccircle cx=\"146\" cy=\"156\" r=\"4\" fill=\"#C8773C\"/>\u003ctext x=\"178\" y=\"211\" font-size=\"11\" text-anchor=\"middle\" font-family=\"sans-serif\">金属の質量〔g〕\u003c/text>\u003ctext x=\"12\" y=\"100\" font-size=\"11\" text-anchor=\"middle\" font-family=\"sans-serif\" transform=\"rotate(-90 12 100)\">結び付いた酸素の質量〔g〕\u003c/text>\u003c/svg>", "choices": ["比例", "反比例", "質量保存", "限度"], "ex": "原点を通る直線のグラフなので、銅の質量と結び付く酸素の質量は比例する。", "kind": "term", "level": 1}, {"id": "chu2-hirei-seiza-q002", "koma": "chu2-kagaku-31", "t": "num", "q": "グラフから、銅1.20 gと結び付く酸素の質量を読み取ると何gか。", "fig": "\u003csvg viewBox=\"0 0 320 214\" width=\"320\">\u003cpath d=\"M50,180 L310,180 M50,180 L50,14\" stroke=\"#333\" stroke-width=\"2\"/>\u003cpath d=\"M50,180 L50,20\" stroke=\"#0001\"/>\u003ctext x=\"50\" y=\"194\" font-size=\"10\" text-anchor=\"middle\" font-family=\"sans-serif\">0.0\u003c/text>\u003cpath d=\"M114,180 L114,20\" stroke=\"#0001\"/>\u003ctext x=\"114\" y=\"194\" font-size=\"10\" text-anchor=\"middle\" font-family=\"sans-serif\">0.4\u003c/text>\u003cpath d=\"M178,180 L178,20\" stroke=\"#0001\"/>\u003ctext x=\"178\" y=\"194\" font-size=\"10\" text-anchor=\"middle\" font-family=\"sans-serif\">0.8\u003c/text>\u003cpath d=\"M242,180 L242,20\" stroke=\"#0001\"/>\u003ctext x=\"242\" y=\"194\" font-size=\"10\" text-anchor=\"middle\" font-family=\"sans-serif\">1.2\u003c/text>\u003cpath d=\"M306,180 L306,20\" stroke=\"#0001\"/>\u003ctext x=\"306\" y=\"194\" font-size=\"10\" text-anchor=\"middle\" font-family=\"sans-serif\">1.6\u003c/text>\u003cpath d=\"M50,180 L306,180\" stroke=\"#0001\"/>\u003ctext x=\"46\" y=\"184\" font-size=\"10\" text-anchor=\"end\" font-family=\"sans-serif\">0.0\u003c/text>\u003cpath d=\"M50,148 L306,148\" stroke=\"#0001\"/>\u003ctext x=\"46\" y=\"152\" font-size=\"10\" text-anchor=\"end\" font-family=\"sans-serif\">0.2\u003c/text>\u003cpath d=\"M50,116 L306,116\" stroke=\"#0001\"/>\u003ctext x=\"46\" y=\"120\" font-size=\"10\" text-anchor=\"end\" font-family=\"sans-serif\">0.4\u003c/text>\u003cpath d=\"M50,84 L306,84\" stroke=\"#0001\"/>\u003ctext x=\"46\" y=\"88\" font-size=\"10\" text-anchor=\"end\" font-family=\"sans-serif\">0.6\u003c/text>\u003cpath d=\"M50,52 L306,52\" stroke=\"#0001\"/>\u003ctext x=\"46\" y=\"56\" font-size=\"10\" text-anchor=\"end\" font-family=\"sans-serif\">0.8\u003c/text>\u003cpath d=\"M50,20 L306,20\" stroke=\"#0001\"/>\u003ctext x=\"46\" y=\"24\" font-size=\"10\" text-anchor=\"end\" font-family=\"sans-serif\">1.0\u003c/text>\u003cpath d=\"M50.0,180.0 L306,116\" stroke=\"#C8773C\" stroke-width=\"2.5\"/>\u003ctext x=\"302\" y=\"110\" font-size=\"12\" text-anchor=\"end\" fill=\"#C8773C\" font-family=\"sans-serif\" font-weight=\"700\">銅\u003c/text>\u003ctext x=\"178\" y=\"211\" font-size=\"11\" text-anchor=\"middle\" font-family=\"sans-serif\">金属の質量〔g〕\u003c/text>\u003ctext x=\"12\" y=\"100\" font-size=\"11\" text-anchor=\"middle\" font-family=\"sans-serif\" transform=\"rotate(-90 12 100)\">結び付いた酸素の質量〔g〕\u003c/text>\u003c/svg>", "ans": 0.3, "unit": "g", "tol": 0.011, "ex": "グラフの直線で横軸1.20 gのとき、縦軸は0.30 g。", "kind": "graph", "level": 1}, {"id": "chu2-hirei-seiza-q003", "koma": "chu2-kagaku-31", "t": "choice", "q": "グラフから分かる、銅の質量と結び付く酸素の質量の比（銅：酸素）はどれか。", "fig": "\u003csvg viewBox=\"0 0 320 214\" width=\"320\">\u003cpath d=\"M50,180 L310,180 M50,180 L50,14\" stroke=\"#333\" stroke-width=\"2\"/>\u003cpath d=\"M50,180 L50,20\" stroke=\"#0001\"/>\u003ctext x=\"50\" y=\"194\" font-size=\"10\" text-anchor=\"middle\" font-family=\"sans-serif\">0.0\u003c/text>\u003cpath d=\"M114,180 L114,20\" stroke=\"#0001\"/>\u003ctext x=\"114\" y=\"194\" font-size=\"10\" text-anchor=\"middle\" font-family=\"sans-serif\">0.4\u003c/text>\u003cpath d=\"M178,180 L178,20\" stroke=\"#0001\"/>\u003ctext x=\"178\" y=\"194\" font-size=\"10\" text-anchor=\"middle\" font-family=\"sans-serif\">0.8\u003c/text>\u003cpath d=\"M242,180 L242,20\" stroke=\"#0001\"/>\u003ctext x=\"242\" y=\"194\" font-size=\"10\" text-anchor=\"middle\" font-family=\"sans-serif\">1.2\u003c/text>\u003cpath d=\"M306,180 L306,20\" stroke=\"#0001\"/>\u003ctext x=\"306\" y=\"194\" font-size=\"10\" text-anchor=\"middle\" font-family=\"sans-serif\">1.6\u003c/text>\u003cpath d=\"M50,180 L306,180\" stroke=\"#0001\"/>\u003ctext x=\"46\" y=\"184\" font-size=\"10\" text-anchor=\"end\" font-family=\"sans-serif\">0.0\u003c/text>\u003cpath d=\"M50,148 L306,148\" stroke=\"#0001\"/>\u003ctext x=\"46\" y=\"152\" font-size=\"10\" text-anchor=\"end\" font-family=\"sans-serif\">0.2\u003c/text>\u003cpath d=\"M50,116 L306,116\" stroke=\"#0001\"/>\u003ctext x=\"46\" y=\"120\" font-size=\"10\" text-anchor=\"end\" font-family=\"sans-serif\">0.4\u003c/text>\u003cpath d=\"M50,84 L306,84\" stroke=\"#0001\"/>\u003ctext x=\"46\" y=\"88\" font-size=\"10\" text-anchor=\"end\" font-family=\"sans-serif\">0.6\u003c/text>\u003cpath d=\"M50,52 L306,52\" stroke=\"#0001\"/>\u003ctext x=\"46\" y=\"56\" font-size=\"10\" text-anchor=\"end\" font-family=\"sans-serif\">0.8\u003c/text>\u003cpath d=\"M50,20 L306,20\" stroke=\"#0001\"/>\u003ctext x=\"46\" y=\"24\" font-size=\"10\" text-anchor=\"end\" font-family=\"sans-serif\">1.0\u003c/text>\u003cpath d=\"M50.0,180.0 L306,116\" stroke=\"#C8773C\" stroke-width=\"2.5\"/>\u003ctext x=\"302\" y=\"110\" font-size=\"12\" text-anchor=\"end\" fill=\"#C8773C\" font-family=\"sans-serif\" font-weight=\"700\">銅\u003c/text>\u003ctext x=\"178\" y=\"211\" font-size=\"11\" text-anchor=\"middle\" font-family=\"sans-serif\">金属の質量〔g〕\u003c/text>\u003ctext x=\"12\" y=\"100\" font-size=\"11\" text-anchor=\"middle\" font-family=\"sans-serif\" transform=\"rotate(-90 12 100)\">結び付いた酸素の質量〔g〕\u003c/text>\u003c/svg>", "choices": ["4：1", "1：4", "5：1", "5：4"], "ex": "銅0.80 gに酸素0.20 gが結び付く。0.80：0.20＝4：1。", "kind": "graph", "level": 1}, {"id": "chu2-hirei-seiza-q004", "koma": "chu2-kagaku-31", "t": "num", "q": "銅と酸素は4：1の質量の比で結び付く。銅2.40 gを反応しきるまで加熱すると、結び付く酸素は何gか。", "ans": 0.6, "unit": "g", "tol": 0.005, "ex": "2.40÷4＝0.60 g。銅の質量に比例する。", "kind": "calc", "level": 1, "fig": null}, {"id": "chu2-hirei-seiza-q005", "koma": "chu2-kagaku-31", "t": "num", "q": "銅2.00 gを反応しきるまで加熱すると、できる酸化銅は何gか（銅：酸素＝4：1）。", "ans": 2.5, "unit": "g", "tol": 0.005, "ex": "結び付く酸素は2.00÷4＝0.50 g。酸化銅＝2.00＋0.50＝2.50 g。", "kind": "calc", "level": 2, "fig": null}, {"id": "chu2-hirei-seiza-q006", "koma": "chu2-kagaku-31", "t": "choice", "q": "グラフの2本の直線は、銅とマグネシウムについて、金属の質量と結び付いた酸素の質量の関係を表している。マグネシウムの直線はどちらで、そう言える理由は何か。", "fig": "\u003csvg viewBox=\"0 0 320 214\" width=\"320\">\u003cpath d=\"M50,180 L310,180 M50,180 L50,14\" stroke=\"#333\" stroke-width=\"2\"/>\u003cpath d=\"M50,180 L50,20\" stroke=\"#0001\"/>\u003ctext x=\"50\" y=\"194\" font-size=\"10\" text-anchor=\"middle\" font-family=\"sans-serif\">0.0\u003c/text>\u003cpath d=\"M114,180 L114,20\" stroke=\"#0001\"/>\u003ctext x=\"114\" y=\"194\" font-size=\"10\" text-anchor=\"middle\" font-family=\"sans-serif\">0.4\u003c/text>\u003cpath d=\"M178,180 L178,20\" stroke=\"#0001\"/>\u003ctext x=\"178\" y=\"194\" font-size=\"10\" text-anchor=\"middle\" font-family=\"sans-serif\">0.8\u003c/text>\u003cpath d=\"M242,180 L242,20\" stroke=\"#0001\"/>\u003ctext x=\"242\" y=\"194\" font-size=\"10\" text-anchor=\"middle\" font-family=\"sans-serif\">1.2\u003c/text>\u003cpath d=\"M306,180 L306,20\" stroke=\"#0001\"/>\u003ctext x=\"306\" y=\"194\" font-size=\"10\" text-anchor=\"middle\" font-family=\"sans-serif\">1.6\u003c/text>\u003cpath d=\"M50,180 L306,180\" stroke=\"#0001\"/>\u003ctext x=\"46\" y=\"184\" font-size=\"10\" text-anchor=\"end\" font-family=\"sans-serif\">0.0\u003c/text>\u003cpath d=\"M50,148 L306,148\" stroke=\"#0001\"/>\u003ctext x=\"46\" y=\"152\" font-size=\"10\" text-anchor=\"end\" font-family=\"sans-serif\">0.2\u003c/text>\u003cpath d=\"M50,116 L306,116\" stroke=\"#0001\"/>\u003ctext x=\"46\" y=\"120\" font-size=\"10\" text-anchor=\"end\" font-family=\"sans-serif\">0.4\u003c/text>\u003cpath d=\"M50,84 L306,84\" stroke=\"#0001\"/>\u003ctext x=\"46\" y=\"88\" font-size=\"10\" text-anchor=\"end\" font-family=\"sans-serif\">0.6\u003c/text>\u003cpath d=\"M50,52 L306,52\" stroke=\"#0001\"/>\u003ctext x=\"46\" y=\"56\" font-size=\"10\" text-anchor=\"end\" font-family=\"sans-serif\">0.8\u003c/text>\u003cpath d=\"M50,20 L306,20\" stroke=\"#0001\"/>\u003ctext x=\"46\" y=\"24\" font-size=\"10\" text-anchor=\"end\" font-family=\"sans-serif\">1.0\u003c/text>\u003cpath d=\"M50.0,180.0 L306,116\" stroke=\"#C8773C\" stroke-width=\"2.5\"/>\u003ctext x=\"302\" y=\"110\" font-size=\"12\" text-anchor=\"end\" fill=\"#C8773C\" font-family=\"sans-serif\" font-weight=\"700\">ア\u003c/text>\u003cpath d=\"M50.0,180.0 L290,20\" stroke=\"#5a6b80\" stroke-width=\"2.5\"/>\u003ctext x=\"286\" y=\"14\" font-size=\"12\" text-anchor=\"end\" fill=\"#5a6b80\" font-family=\"sans-serif\" font-weight=\"700\">イ\u003c/text>\u003ctext x=\"178\" y=\"211\" font-size=\"11\" text-anchor=\"middle\" font-family=\"sans-serif\">金属の質量〔g〕\u003c/text>\u003ctext x=\"12\" y=\"100\" font-size=\"11\" text-anchor=\"middle\" font-family=\"sans-serif\" transform=\"rotate(-90 12 100)\">結び付いた酸素の質量〔g〕\u003c/text>\u003c/svg>", "choices": ["イ：同じ質量のとき、マグネシウムのほうが多くの酸素と結び付くから", "ア：同じ質量のとき、マグネシウムのほうが少ない酸素と結び付くから", "イ：マグネシウムのほうが加熱しやすいから", "どちらとも言えない：どちらも原点を通るから"], "ex": "マグネシウム：酸素＝3：2、銅：酸素＝4：1。同じ質量ならマグネシウムのほうが酸素が多く、直線が急になる。", "kind": "graph", "level": 2}, {"id": "chu2-hirei-seiza-q007", "koma": "chu2-kagaku-31", "t": "num", "q": "マグネシウム0.90 gを反応しきるまで加熱した。結び付く酸素は何gか（マグネシウム：酸素＝3：2）。", "ans": 0.6, "unit": "g", "tol": 0.005, "ex": "0.90×2/3＝0.60 g。", "kind": "calc", "level": 2, "fig": null}, {"id": "chu2-hirei-seiza-q008", "koma": "chu2-kagaku-31", "t": "choice", "q": "実験の結果を点で表したら、少しばらついた。グラフの線の引き方として正しいものはどれか。", "choices": ["点のばらつきの真ん中を通る直線を引く", "点を順番に折れ線でつなぐ", "すべての点を必ず通る曲線を引く", "いちばん外れた点を通る直線を引く"], "ex": "測定値には誤差がある。すべての点を通そうとせず、点のばらつきの中心を通るように引く。", "kind": "method", "level": 1, "fig": null}, {"id": "chu2-hirei-seiza-q009", "koma": "chu2-kagaku-31", "t": "choice", "q": "このグラフの線が原点（0，0）を通る理由として、最も適切なものはどれか。", "choices": ["金属が0 gなら、結び付く相手がなく、酸素も0 gだから", "グラフはいつも原点から書き始める決まりだから", "酸素は空気中にいくらでもあるから", "0 gの金属を加熱すると、酸素が0.10 g結び付くから"], "ex": "金属が無ければ酸素は結び付かない。だから線は原点を通る。", "kind": "judge", "level": 2, "fig": null}, {"id": "chu2-hirei-seiza-q010", "koma": "chu2-kagaku-31", "t": "choice", "q": "表は、班ごとに銅の質量を変えて、反応しきるまで加熱した結果である。表の中で、ほかの班と比べて明らかに外れている班はどれか。", "fig": "\u003csvg viewBox=\"0 0 320 88\" width=\"320\">\u003crect x=\"4\" y=\"4\" width=\"312\" height=\"24\" fill=\"#ece6d6\"/>\u003ctext x=\"12\" y=\"21\" font-size=\"12\" text-anchor=\"start\" font-family=\"sans-serif\">班\u003c/text>\u003ctext x=\"122\" y=\"21\" font-size=\"12\" text-anchor=\"middle\" font-family=\"sans-serif\">1\u003c/text>\u003ctext x=\"166\" y=\"21\" font-size=\"12\" text-anchor=\"middle\" font-family=\"sans-serif\">2\u003c/text>\u003ctext x=\"210\" y=\"21\" font-size=\"12\" text-anchor=\"middle\" font-family=\"sans-serif\">3\u003c/text>\u003ctext x=\"254\" y=\"21\" font-size=\"12\" text-anchor=\"middle\" font-family=\"sans-serif\">4\u003c/text>\u003ctext x=\"298\" y=\"21\" font-size=\"12\" text-anchor=\"middle\" font-family=\"sans-serif\">5\u003c/text>\u003crect x=\"4\" y=\"30\" width=\"312\" height=\"24\" fill=\"#fff\"/>\u003ctext x=\"12\" y=\"47\" font-size=\"12\" text-anchor=\"start\" font-family=\"sans-serif\">銅〔g〕\u003c/text>\u003ctext x=\"122\" y=\"47\" font-size=\"12\" text-anchor=\"middle\" font-family=\"sans-serif\">0.40\u003c/text>\u003ctext x=\"166\" y=\"47\" font-size=\"12\" text-anchor=\"middle\" font-family=\"sans-serif\">0.80\u003c/text>\u003ctext x=\"210\" y=\"47\" font-size=\"12\" text-anchor=\"middle\" font-family=\"sans-serif\">1.20\u003c/text>\u003ctext x=\"254\" y=\"47\" font-size=\"12\" text-anchor=\"middle\" font-family=\"sans-serif\">1.60\u003c/text>\u003ctext x=\"298\" y=\"47\" font-size=\"12\" text-anchor=\"middle\" font-family=\"sans-serif\">2.00\u003c/text>\u003crect x=\"4\" y=\"56\" width=\"312\" height=\"24\" fill=\"#f6f2e6\"/>\u003ctext x=\"12\" y=\"73\" font-size=\"12\" text-anchor=\"start\" font-family=\"sans-serif\">酸素〔g〕\u003c/text>\u003ctext x=\"122\" y=\"73\" font-size=\"12\" text-anchor=\"middle\" font-family=\"sans-serif\">0.10\u003c/text>\u003ctext x=\"166\" y=\"73\" font-size=\"12\" text-anchor=\"middle\" font-family=\"sans-serif\">0.20\u003c/text>\u003ctext x=\"210\" y=\"73\" font-size=\"12\" text-anchor=\"middle\" font-family=\"sans-serif\">0.19\u003c/text>\u003ctext x=\"254\" y=\"73\" font-size=\"12\" text-anchor=\"middle\" font-family=\"sans-serif\">0.40\u003c/text>\u003ctext x=\"298\" y=\"73\" font-size=\"12\" text-anchor=\"middle\" font-family=\"sans-serif\">0.50\u003c/text>\u003c/svg>", "choices": ["3班", "1班", "5班", "外れている班はない"], "ex": "銅：酸素＝4：1なら、1.20 gの銅には0.30 g。3班の0.19 gは加熱不足などが考えられる。", "kind": "judge", "level": 2}, {"id": "chu2-hirei-seiza-q011", "koma": "chu2-kagaku-31", "t": "choice", "q": "銅の質量を2倍にして、反応しきるまで加熱した。結び付く酸素の質量はどうなるか。", "choices": ["2倍になる", "変わらない", "4倍になる", "半分になる"], "ex": "金属の質量と結び付く酸素の質量は比例するので、2倍になる。", "kind": "judge", "level": 1, "fig": null}, {"id": "chu2-hirei-seiza-q012", "koma": "chu2-kagaku-31", "t": "num", "q": "銅の質量と加熱後の物質の質量の表がある。銅0.40 gは加熱後0.50 gになった。このとき結び付いた酸素は何gか。", "ans": 0.1, "unit": "g", "tol": 0.005, "ex": "0.50−0.40＝0.10 g。増えた分が結び付いた酸素。", "kind": "calc", "level": 1, "fig": null}, {"id": "chu2-hirei-seiza-q013", "koma": "chu2-kagaku-31", "t": "choice", "q": "銅の質量（横軸）と、できた酸化銅の質量（縦軸）のグラフの形として正しいものはどれか。", "choices": ["原点を通る直線", "横軸に平行な直線", "途中から横ばいになる線", "原点を通らない直線"], "ex": "酸化銅＝銅＋酸素で、銅：酸化銅＝4：5。これも比例なので原点を通る直線になる。", "kind": "graph", "level": 3, "fig": null}, {"id": "chu2-hirei-seiza-q014", "koma": "chu2-kagaku-31", "t": "order", "q": "金属の質量と結び付く酸素の質量の関係を、グラフから見いだす手順を正しい順に並べよう。", "items": ["金属の質量を変えて、反応しきるまで加熱して測る", "結び付いた酸素の質量を計算する", "横軸に金属の質量、縦軸に酸素の質量をとって点を打つ", "点のばらつきの真ん中を通る線を引く", "線の形から、関係を読み取る"], "ex": "測定→計算→点を打つ→線を引く→関係を読む。", "kind": "method", "level": 2, "fig": null}, {"id": "chu2-hirei-seiza-q015", "koma": "chu2-kagaku-31", "t": "num", "q": "ステンレス皿だけの質量は12.30 g、皿に銅をのせると12.70 g、質量が変わらなくなるまで加熱して冷ますと12.80 gだった。銅に結び付いた酸素は何gか。", "ans": 0.1, "unit": "g", "tol": 0.005, "ex": "加熱後12.80 − 加熱前12.70 ＝ 0.10 g。皿の質量は前後で同じなので、差がそのまま結び付いた酸素。", "kind": "calc", "level": 2, "fig": null}]};
 /*@QUIZ_END*/</script>
 <script>/*@ZUKAN_BEGIN*/
 window.ZUKAN_UPDATES={"v": 1, "updates": []};
@@ -1374,382 +1323,725 @@ window.ZUKAN_CARDS={"v": 1, "grade": "chu2", "name": "中2理科図鑑", "econom
 <script>
 (function(){
 'use strict';
-const GAME_ID='hirei-seiza',KOMA='chu2-kagaku-31',PREV_KOMA='chu2-kagaku-30';
-const SAVE_KEY='rika-zukan:chu2:game:'+GAME_ID+':v1',SEAL_KEY='rika-zukan:chu2:seal:'+PREV_KOMA;
-const TEST_ONLY=window.GAME_MODE==='test';
-const RM=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
-const $=id=>document.getElementById(id);
-const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
-const fmtT=s=>String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');
-const f2=v=>(Math.round(v*100)/100).toFixed(2);
-const wait=ms=>new Promise(r=>setTimeout(r,RM?Math.min(ms,120):ms));
-window.Zukan&&Zukan.setup&&Zukan.setup({game:GAME_ID,koma:[KOMA]});
+var GID='hirei-seiza',KOMA='chu2-kagaku-31',PREV='chu2-kagaku-30';
+var SKEY='rika-zukan:chu2:game:hirei-seiza:v1',SEAL_KEY='rika-zukan:chu2:seal:'+PREV,MKEY='rika-zukan:chu2:game:hirei-seiza:mute';
+var TEST=window.GAME_MODE==='test';
+var RM=!!(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches);
+var INHUB=!!window.COLLECTION_NAME||(function(){try{return window.parent!==window}catch(e){return true}})();
+var $=function(id){return document.getElementById(id)};
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+function clamp(v,a,b){return v<a?a:v>b?b:v}
+function f2(v){return (Math.round(v*100)/100).toFixed(2)}
+function r2(v){return Math.round(v*100)/100}
+function hash(i){var x=Math.sin(i*127.1+11.7)*43758.5453;return x-Math.floor(x)}
+function fmtT(s){s=Math.round(s||0);return Math.floor(s/60)+'分'+('0'+s%60).slice(-2)+'秒'}
+var KAN=['〇','一','二','三','四','五','六','七','八','九','十'];
+function kan(n){if(n<=10)return KAN[n];if(n<20)return '十'+(n%10?KAN[n%10]:'');return KAN[Math.floor(n/10)]+'十'+(n%10?KAN[n%10]:'')}
+var C={bg:'#F7F7F2',paper:'#FCFCF8',ai:'#1F3F8F',aiD:'#132a63',aiM:'#3f5da3',aiL:'#9fb0d8',cu:'#C8773C',cuD:'#8a4a1f',mg:'#B9C6D4',mgD:'#5d7088',shu:'#B8432F',gold:'#C9A24A'};
+var FF='"Kaisei Tokumin","Hiragino Mincho ProN","Yu Mincho","Noto Serif JP",serif';
 
-/* ===== 原子の色（全ゲーム共通） ===== */
-const EL={Cu:['#C8773C','#fff','#7a3f14'],O:['#E4572E','#fff','#8f2a10'],Mg:['#B9C6D4','#1f2a36','#6f7f92']};
-function gradDefs(){return `<defs>${Object.keys(EL).map(k=>`<radialGradient id="g${k}" cx="35%" cy="30%" r="75%"><stop offset="0" stop-color="#fff" stop-opacity=".95"/><stop offset=".18" stop-color="${EL[k][0]}"/><stop offset="1" stop-color="${EL[k][2]}"/></radialGradient>`).join('')}<radialGradient id="glow"><stop offset="0" stop-color="#fff6d8" stop-opacity=".9"/><stop offset="1" stop-color="#f3cf7a" stop-opacity="0"/></radialGradient></defs>`}
-function atomS(x,y,r,e){return `<g><circle cx="${x}" cy="${y}" r="${r}" fill="url(#g${e})" stroke="#0004"/><text x="${x}" y="${y+r*.36}" font-size="${r*.9}" text-anchor="middle" font-weight="900" fill="${EL[e][1]}" font-family="sans-serif">${e}</text></g>`}
-const METAL={Cu:{nm:'銅',ox:'酸化銅',k:0.25,c:'#C8773C',sc:'#ffb27a',oxc:'#2a2522',sky:'銅座',ratio:'4：1'},Mg:{nm:'マグネシウム',ox:'酸化マグネシウム',k:2/3,c:'#B9C6D4',sc:'#e6f0ff',oxc:'#f4f4ef',sky:'マグネシウム座',ratio:'3：2'}};
-
-/* ===== 周（1周＝1つの測定値）: 値は _素材.md の比にそろえる ===== */
-const ROUNDS=[
- {id:'c1',mt:'Cu',m:0.40,o:0.10,nm:'第1夜　最初の星',origin:1},
- {id:'c2',mt:'Cu',m:0.80,o:0.21,nm:'第2夜　2つ目の星'},
- {id:'c3',mt:'Cu',m:1.20,o:0.29,nm:'第3夜　線の引き方',trap:1},
- {id:'c4',mt:'Cu',m:0.60,o:0.15,nm:'第4夜　すき間の星'},
- {id:'c5',mt:'Cu',m:1.40,o:0.35,nm:'第5夜　銅座の完成',fin:'Cu'},
- {id:'m1',mt:'Mg',m:0.30,o:0.20,nm:'第6夜　新しい星',mgPred:1},
- {id:'m2',mt:'Mg',m:0.60,o:0.39,nm:'第7夜　銀の星'},
- {id:'m3',mt:'Mg',m:0.90,o:0.61,nm:'第8夜　傾きくらべ'},
- {id:'m4',mt:'Mg',m:1.20,o:0.80,nm:'第9夜　マグネシウム座の完成',fin:'Mg'},
- {id:'b1',mt:'Cu',boss:1,nm:'第10夜　一発勝負（銅）'},
- {id:'b2',mt:'Mg',boss:1,nm:'第11夜　一発勝負（マグネシウム）'}
+/* ================= 理科のデータ（銅：酸素＝4：1、マグネシウム：酸素＝3：2） ================= */
+var MT={Cu:{nm:'銅',ox:'酸化銅',k:.25,sym:'Cu',col:C.cu,dk:C.cuD,tx:'#fff',sky:'銅座',ratio:'4：1'},
+        Mg:{nm:'マグネシウム',ox:'酸化マグネシウム',k:2/3,sym:'Mg',col:C.mg,dk:C.mgD,tx:'#1f2a36',sky:'マグネシウム座',ratio:'3：2'}};
+var XMAX=1.8;
+var NIGHTS=[
+ {nm:'一の夜',sub:'はじめての星',ymax:.5,motif:'seigaiha',lines:['Cu'],intro:1,
+  tags:[{mt:'Cu',k:'std',m:.40,M:.50},{mt:'Cu',k:'std',m:.80,M:1.00},{mt:'Cu',k:'std',m:1.20,M:1.50}]},
+ {nm:'二の夜',sub:'銅座の完成',ymax:.5,motif:'karakusa',lines:['Cu'],seal:1,
+  tags:[{mt:'Cu',k:'std',m:.60,M:.75},{mt:'Cu',k:'std',m:1.00,M:1.24},{mt:'Cu',k:'std',m:.20,M:.25},{mt:'Cu',k:'std',m:1.40,M:1.76},{mt:'Cu',k:'std',m:1.20,M:1.51}]},
+ {nm:'三の夜',sub:'皿ごとはかる',ymax:.5,motif:'ume',lines:['Cu'],
+  tags:[{mt:'Cu',k:'dish',d:12.30,m:.40,o:.10},{mt:'Cu',k:'dish',d:11.85,m:.80,o:.20},{mt:'Cu',k:'dish',d:12.14,m:1.20,o:.29},{mt:'Cu',k:'dish',d:12.46,m:1.40,o:.35}]},
+ {nm:'四の夜',sub:'加熱の記録と外れた星',ymax:.5,motif:'asanoha',lines:['Cu'],
+  tags:[{mt:'Cu',k:'hist',m:1.00,h:[1.18,1.21,1.24,1.25,1.25]},{mt:'Cu',k:'hist',m:.60,h:[.71,.74,.75,.75]},{mt:'Cu',k:'out',m:.80,M:.92},
+        {mt:'Cu',k:'hist',m:1.40,h:[1.62,1.70,1.74,1.75,1.75]},{mt:'Cu',k:'std',m:.40,M:.50}]},
+ {nm:'五の夜',sub:'マグネシウムの星',ymax:1.2,motif:'tsuki',lines:['Mg'],predMg:1,
+  tags:[{mt:'Mg',k:'std',m:.30,M:.50},{mt:'Mg',k:'std',m:.60,M:1.00},{mt:'Mg',k:'std',m:.90,M:1.49},{mt:'Mg',k:'std',m:1.20,M:2.00},{mt:'Mg',k:'std',m:1.50,M:2.50}]},
+ {nm:'六の夜',sub:'二つの星座',ymax:1.2,motif:'chidori',lines:['Cu','Mg'],cmp2:1,
+  tags:[{mt:'Cu',k:'std',m:.40,M:.50},{mt:'Mg',k:'std',m:.45,M:.75},{mt:'Cu',k:'dish',d:12.02,m:1.20,o:.30},{mt:'Mg',k:'dish',d:11.90,m:.75,o:.50},
+        {mt:'Cu',k:'std',m:.80,M:1.00},{mt:'Mg',k:'std',m:1.05,M:1.75}]},
+ {nm:'七の夜',sub:'星座で予言',ymax:1.2,motif:'kiku',lines:[],known:['Cu','Mg'],
+  tags:[{mt:'Cu',k:'askO',m:1.60},{mt:'Mg',k:'askO',m:.75},{mt:'Cu',k:'askM',o:.30},{mt:'Mg',k:'askM',o:.80},{mt:'Cu',k:'ox',X:1.00},{mt:'Mg',k:'ox',X:1.50}]},
+ {nm:'八の夜',sub:'一発勝負',ymax:1.2,motif:'shippo',lines:['Cu','Mg'],boss:1,time:240,
+  tags:[{mt:'Cu',k:'dish',d:12.20,m:.60,o:.15},{mt:'Mg',k:'hist',m:.60,h:[.88,.96,1.00,1.00]},{mt:'Cu',k:'out',m:1.20,M:1.38},{mt:'Mg',k:'std',m:1.20,M:2.00},
+        {mt:'Cu',k:'hist',m:1.60,h:[1.86,1.95,2.00,2.00]},{mt:'Mg',k:'out',m:.90,M:1.30},{mt:'Cu',k:'std',m:1.00,M:1.25},{mt:'Mg',k:'dish',d:11.75,m:.30,o:.20}]}
 ];
-const FR=[[.62,.86,.96,1],[.58,.84,.95,1],[.66,.9,.97,1],[.6,.88,1],[.55,.8,.93,.98,1]];
+function truth(g){var M=MT[g.mt];
+ if(g.k==='std'||g.k==='out')return {x:g.m,y:r2(g.M-g.m)};
+ if(g.k==='dish')return {x:g.m,y:g.o};
+ if(g.k==='hist')return {x:g.m,y:r2(g.h[g.h.length-1]-g.m)};
+ if(g.k==='askO')return {x:g.m,y:r2(g.m*M.k)};
+ if(g.k==='askM')return {x:r2(g.o/M.k),y:g.o};
+ if(g.k==='ox'){var m=g.mt==='Cu'?g.X*.8:g.X*.6;return {x:r2(m),y:r2(g.X-m)}}
+ return {x:0,y:0}}
+function tagLines(g){var M=MT[g.mt],n=M.nm;
+ if(g.k==='std')return [n+' '+f2(g.m)+' g を加熱','加熱後の物質 '+f2(g.M)+' g'];
+ if(g.k==='out')return [n+' '+f2(g.m)+' g を1回だけ加熱','加熱後の物質 '+f2(g.M)+' g'];
+ if(g.k==='dish')return ['皿だけ '+f2(g.d)+' g','皿＋'+n+' '+f2(g.d+g.m)+' g','皿＋加熱後 '+f2(g.d+g.m+g.o)+' g'];
+ if(g.k==='hist')return [n+' '+f2(g.m)+' g を加熱した記録',g.h.map(function(v,i){return KAN[i+1]+'回目 '+f2(v)}).join('／')+' g'];
+ if(g.k==='askO')return [n+' '+f2(g.m)+' g を反応しきるまで加熱','酸素は何 g 結び付く？ 線で読んで打て'];
+ if(g.k==='askM')return ['酸素 '+f2(g.o)+' g が結び付いた',n+'は何 g だった？ 線で読んで打て'];
+ if(g.k==='ox')return [M.ox+' '+f2(g.X)+' g ができた',n+'と酸素の質量に分けて打て'];
+ return []}
+function calcHint(g){var t=truth(g),M=MT[g.mt];
+ if(g.k==='std'||g.k==='out')return '結び付いた酸素 ＝ '+f2(g.M)+' − '+f2(g.m)+' ＝ '+f2(t.y)+' g';
+ if(g.k==='dish')return M.nm+' ＝ '+f2(g.d+g.m)+' − '+f2(g.d)+' ＝ '+f2(g.m)+' g／酸素 ＝ '+f2(g.d+g.m+g.o)+' − '+f2(g.d+g.m)+' ＝ '+f2(g.o)+' g';
+ if(g.k==='hist')return '変わらなくなった値 '+f2(g.h[g.h.length-1])+' を使う → '+f2(g.h[g.h.length-1])+' − '+f2(g.m)+' ＝ '+f2(t.y)+' g';
+ if(g.k==='askO')return M.nm+'：酸素＝'+M.ratio+' → '+f2(g.m)+' × '+(g.mt==='Cu'?'1/4':'2/3')+' ＝ '+f2(t.y)+' g';
+ if(g.k==='askM')return M.nm+'：酸素＝'+M.ratio+' → '+f2(g.o)+' × '+(g.mt==='Cu'?'4':'3/2')+' ＝ '+f2(t.x)+' g';
+ if(g.k==='ox')return M.ox+' ＝ '+M.nm+'＋酸素（'+(g.mt==='Cu'?'4：1 → 5つに分けて4と1':'3：2 → 5つに分けて3と2')+'）→ '+f2(t.x)+' g と '+f2(t.y)+' g';
+ return ''}
+function wrongs(g){var t=truth(g),M=MT[g.mt],o=g.mt==='Cu'?'Mg':'Cu',out=[];
+ var HV='縦軸に「加熱後の質量」を打った。縦は ふえた分＝結び付いた酸素（加熱後−加熱前）';
+ if(g.k==='std'||g.k==='out'){out.push({x:g.m,y:g.M,t:HV});out.push({x:g.M,y:t.y,t:'横軸は加熱「前」の'+M.nm+'の質量'})}
+ if(g.k==='dish'){out.push({x:g.m,y:g.m+g.o,t:HV});out.push({x:g.m+g.o,y:g.o,t:'横は加熱前の'+M.nm+'（皿＋'+M.nm+' − 皿）'})}
+ if(g.k==='hist'){var L=g.h[g.h.length-1];g.h.forEach(function(v,i){if(v<L-.001)out.push({x:g.m,y:r2(v-g.m),t:KAN[i+1]+'回目の値は、まだ質量がふえている途中。変わらなくなった値（'+f2(L)+' g）を使う'})});out.push({x:g.m,y:L,t:HV})}
+ if(g.k==='askO'){out.push({x:g.m,y:r2(g.m*MT[o].k),t:'それは'+MT[o].nm+'の線。'+M.nm+'の線（'+M.sky+'）で読む'})}
+ if(g.k==='askM'){out.push({x:g.o,y:g.o,t:'横軸は'+M.nm+'の質量。酸素 '+f2(g.o)+' g の高さで、線とぶつかる所'});out.push({x:r2(g.o/MT[o].k),y:g.o,t:'それは'+MT[o].nm+'の線。'+M.sky+'で読む'})}
+ if(g.k==='ox'){out.push({x:g.X,y:r2(g.X*M.k),t:M.ox+'の質量は '+M.nm+'＋酸素。まず'+M.nm+'の分を出す（'+M.ratio+'）'})}
+ return out}
 
-/* ===== セーブ ===== */
-function fresh(){return{v:1,name:'',started:false,ph:'intro',r:0,step:'measure',stars:{Cu:[],Mg:[]},k:{Cu:null,Mg:null},score:0,combo:0,maxCombo:0,firstDone:{},firsts:0,perfect:0,seal:null,sealHit:null,mgPred:null,mgHit:null,ruleCu:false,ruleMg:false,team:null,boss:{},cleared:false,mainDone:false,t:0,test:null}}
-let S=fresh();try{const o=JSON.parse(localStorage.getItem(SAVE_KEY)||'null');if(o&&o.v===1)S=Object.assign(fresh(),o)}catch(e){}
-function save(){try{localStorage.setItem(SAVE_KEY,JSON.stringify(S))}catch(e){}}
+/* ================= 音（磁器の音・琴・太鼓） ================= */
+var AU={c:null,mute:false,
+ init:function(){if(this.c){if(this.c.state==='suspended')try{this.c.resume()}catch(e){}return}try{var A=window.AudioContext||window.webkitAudioContext;if(A)this.c=new A()}catch(e){}},
+ tone:function(f,d,v,type,when,f2){if(this.mute||!this.c)return;var c=this.c,t=c.currentTime+(when||0),o=c.createOscillator(),g=c.createGain();o.type=type||'sine';o.frequency.setValueAtTime(f,t);
+  if(f2)o.frequency.exponentialRampToValueAtTime(f2,t+d);g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(v||.05,t+.006);g.gain.exponentialRampToValueAtTime(.0006,t+d);o.connect(g);g.connect(c.destination);o.start(t);o.stop(t+d+.05)},
+ noise:function(d,v,lp,when){if(this.mute||!this.c)return;var c=this.c,t=c.currentTime+(when||0),n=Math.floor(c.sampleRate*d),b=c.createBuffer(1,n,c.sampleRate),a=b.getChannelData(0);for(var i=0;i<n;i++)a[i]=(Math.random()*2-1)*Math.pow(1-i/n,2);
+  var s=c.createBufferSource();s.buffer=b;var f=c.createBiquadFilter();f.type='lowpass';f.frequency.value=lp||1200;var g=c.createGain();g.gain.value=v||.1;s.connect(f);f.connect(g);g.connect(c.destination);s.start(t)}
+};
+var MIYAKO=[293.7,311.1,392,440,466.2,587.3,622.3,784,880,932.3,1174.7,1244.5,1568];
+function chime(f,v,w){AU.tone(f,1.4,v||.05,'sine',w);AU.tone(f*2.76,.7,(v||.05)*.35,'sine',w);AU.tone(f*5.4,.35,(v||.05)*.18,'sine',w)}
+function koto(f,v,w){AU.tone(f,.9,v||.05,'triangle',w,f*.995);AU.tone(f*2,.25,(v||.05)*.4,'sine',w);AU.noise(.03,.03,4000,w)}
+var SFX={
+ tap:function(){koto(880,.03)},
+ grab:function(){AU.tone(520,.08,.04,'triangle')},
+ pull:function(k){AU.tone(300+k*500,.04,.012,'triangle')},
+ fire:function(){AU.noise(.18,.1,2400);AU.tone(700,.25,.04,'sine',0,1400)},
+ hit:function(n){var i=Math.min(n,MIYAKO.length-4);chime(MIYAKO[i+3]*2,.06);koto(MIYAKO[i],.05,.04);if(n>=3)koto(MIYAKO[i+2],.04,.1);if(n>=5)chime(MIYAKO[i+5]*2,.03,.16)},
+ crack:function(){AU.noise(.22,.16,5000);AU.tone(1900,.12,.03,'square',0,600)},
+ miss:function(){koto(233,.05);koto(220,.05,.12)},
+ brush:function(){AU.noise(.5,.06,1600)},
+ line:function(){[0,2,3,5,7].forEach(function(k,i){koto(MIYAKO[k+2],.045,i*.09)});chime(1568,.04,.5)},
+ taiko:function(){AU.tone(95,.5,.2,'sine',0,55);AU.noise(.12,.12,300)},
+ stamp:function(i){AU.tone(120,.3,.16,'sine',0,70);AU.noise(.08,.1,700);chime(MIYAKO[5+i*2]*2,.04,.05)},
+ fanfare:function(){[0,3,5,7,10,12].forEach(function(k,i){koto(MIYAKO[Math.min(k,12)],.05,i*.1)});[0,.6].forEach(function(w){chime(1174.7,.05,.7+w)})},
+ gold:function(){for(var i=0;i<8;i++)chime(MIYAKO[4+i%8]*2,.03,i*.07)},
+ open:function(){AU.noise(.35,.12,3000);[5,7,9,12].forEach(function(k,i){chime(MIYAKO[k],.04,.15+i*.1)})},
+ tick:function(){AU.tone(1800,.03,.02,'square')}
+};
+var TOUCHED=false;function vib(ms){if(!TOUCHED)return;try{if(navigator.vibrate)navigator.vibrate(ms)}catch(e){}}
+/* 流れる琴の音（連が続くほど音が増える） */
+var BGM={t:0,step:0,tick:function(dt){if(AU.mute||!AU.c||scene!=='play')return;this.t+=dt;var bt=.46;if(this.t<bt)return;this.t-=bt;this.step++;var s=this.step,cb=COMBO;
+ if(s%8===0||(s%8===5&&hash(s)<.5))koto(MIYAKO[[0,2,3,1][(s>>3)%4]]/2,.03);
+ if(hash(s*3.1)<.35)koto(MIYAKO[Math.floor(hash(s*7.7)*7)+2],.018);
+ if(cb>=3&&s%4===0)AU.tone(80,.25,.07,'sine',0,55);
+ if(cb>=5&&s%2===1)chime(MIYAKO[5+Math.floor(hash(s)*6)]*2,.012);
+ if(cb>=8&&s%4===2)koto(MIYAKO[10],.025)}};
 
-/* ===== 音 ===== */
-let MUTE=false;try{MUTE=JSON.parse(localStorage.getItem('rika-zukan:profile:v1')||'{}').mute===true}catch(e){}
-let AC=null;function ac(){if(!AC){try{AC=new(window.AudioContext||window.webkitAudioContext)()}catch(e){}}if(AC&&AC.state==='suspended')AC.resume();return AC}
-function tone(f,d,type,vol,when,slide){if(MUTE)return;const a=ac();if(!a)return;const t=a.currentTime+(when||0);const o=a.createOscillator(),g=a.createGain();o.type=type||'sine';o.frequency.setValueAtTime(f,t);if(slide)o.frequency.exponentialRampToValueAtTime(slide,t+d);g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol||.1,t+.008);g.gain.exponentialRampToValueAtTime(.0008,t+d);o.connect(g);g.connect(a.destination);o.start(t);o.stop(t+d+.02)}
-function noise(d,vol,lp){if(MUTE)return;const a=ac();if(!a)return;const n=Math.floor(a.sampleRate*d),b=a.createBuffer(1,n,a.sampleRate),x=b.getChannelData(0);for(let i=0;i<n;i++)x[i]=(Math.random()*2-1)*Math.pow(1-i/n,1.5);const s=a.createBufferSource(),g=a.createGain();s.buffer=b;g.gain.value=vol||.1;if(lp){const f=a.createBiquadFilter();f.type='lowpass';f.frequency.value=lp;s.connect(f);f.connect(g)}else s.connect(g);g.connect(a.destination);s.start()}
-const PENTA=[523,587,659,784,880,1047,1175,1319,1568,1760];
-const sfx={tap:()=>tone(880,.05,'triangle',.05),
- pick:()=>{tone(660,.06,'sine',.05);tone(990,.08,'sine',.04,.05)},
- fire:()=>noise(.5,.12,700),
- star:i=>{const f=PENTA[Math.min(i,9)];tone(f,.5,'sine',.08);tone(f*2,.4,'sine',.03,.05)},
- ok:c=>{[0,2,4].forEach((k,i)=>tone(PENTA[Math.min(k+c,9)],.28,'sine',.07,i*.07));tone(PENTA[Math.min(6+c,9)]*2,.6,'triangle',.03,.2)},
- no:()=>{tone(300,.16,'triangle',.07);tone(240,.2,'triangle',.06,.1)},
- chime:()=>{PENTA.forEach((f,i)=>tone(f,.6,'sine',.05,i*.06))},
- jingle:()=>{[523,659,784,1047].forEach((f,i)=>tone(f,.18,'triangle',.07,i*.09));tone(1319,.5,'triangle',.06,.36)},
- tear:()=>noise(.35,.14,1800),tick:()=>tone(1500,.02,'square',.02)};
-function setMute(m){MUTE=m;try{const p=JSON.parse(localStorage.getItem('rika-zukan:profile:v1')||'{}');p.mute=m;localStorage.setItem('rika-zukan:profile:v1',JSON.stringify(p))}catch(e){}$('bMute').textContent=m?'🔇':'🔊';$('bMute1').textContent=m?'🔇 音：オフ':'🔊 音：オン'}
-function earn(n,why,el){let x=innerWidth/2,y=innerHeight/3;if(el&&el.getBoundingClientRect){const b=el.getBoundingClientRect();x=b.left+b.width/2;y=b.top}try{return window.Zukan&&Zukan.earn?Zukan.earn(n,why,{koma:KOMA,x,y})||0:0}catch(e){return 0}}
+/* ================= 保存 ================= */
+var S=null,NAME=(window.PLAYER_NAME||'').trim();
+function fresh(){return {v:1,name:'',n:0,res:[],seal:null,sealCmp:null,mgPred:null,mgHit:null,t:0,cleared:0,firsts:0,shots:0,maxCombo:0,lum:0,lines1:0,cur:null,opened:0}}
+function load(){try{var o=JSON.parse(localStorage.getItem(SKEY)||'null');return o&&o.v===1?o:null}catch(e){return null}}
+function save(){if(!S||TEST)return;try{localStorage.setItem(SKEY,JSON.stringify(S))}catch(e){}}
+function readSeal(){try{var o=JSON.parse(localStorage.getItem(SEAL_KEY)||'null');return o&&(o.pred||o.pts)?o:null}catch(e){return null}}
+var PREDT={x2:'約2倍になる',same:'変わらない（同じ）',less:'増えるが、2倍よりずっと少ない',x4:'約4倍になる'};
+var SHAPET={line0:'原点を通る直線',flat:'横ばい',bend:'途中から横ばい',lineoff:'原点を通らない直線'};
 
-/* ===== 演出 ===== */
-const fx=$('fx'),fc=fx.getContext('2d');let P=[],raf=0;
-function fxSize(){const d=Math.min(2,devicePixelRatio||1);fx.width=innerWidth*d;fx.height=innerHeight*d;fc.setTransform(d,0,0,d,0,0)}fxSize();addEventListener('resize',fxSize);
-function loop(){fc.clearRect(0,0,innerWidth,innerHeight);for(let i=P.length-1;i>=0;i--){const p=P[i];p.t++;p.x+=p.vx;p.y+=p.vy;if(p.g)p.vy+=p.g;fc.globalAlpha=Math.max(0,1-p.t/(p.life||90));fc.fillStyle=p.c;fc.beginPath();fc.arc(p.x,p.y,p.s,0,6.3);fc.fill();if(p.t>(p.life||90))P.splice(i,1)}fc.globalAlpha=1;raf=P.length?requestAnimationFrame(loop):0}
-function kick(){if(!raf)raf=requestAnimationFrame(loop)}
-function sparks(x,y,n,col){if(RM)n=4;for(let i=0;i<n;i++){const a=Math.random()*6.28,v=1+Math.random()*3.5;P.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,c:col||'#f3cf7a',t:0,s:1+Math.random()*2.2,life:50+Math.random()*40})}kick()}
-function shower(n){if(RM)n=8;for(let i=0;i<n;i++)P.push({x:Math.random()*innerWidth,y:-10-Math.random()*60,vx:(Math.random()-.5)*1.2,vy:2+Math.random()*3,c:['#f3cf7a','#fff','#ffb27a','#e6f0ff'][i%4],t:0,s:1.2+Math.random()*2,life:140});kick()}
-function pop(txt,el,col){let x=innerWidth/2,y=innerHeight/2;if(el){const b=el.getBoundingClientRect();x=b.left+b.width/2;y=b.top}const d=document.createElement('div');d.className='pop';d.textContent=txt;d.style.left=Math.min(innerWidth-90,Math.max(4,x-30))+'px';d.style.top=(y-6)+'px';if(col)d.style.color=col;document.body.appendChild(d);setTimeout(()=>d.remove(),1000)}
-function banner(t,sub){const e=document.createElement('div');e.className='banner';e.innerHTML=t+(sub?'<small>'+sub+'</small>':'');document.body.appendChild(e);setTimeout(()=>e.remove(),1900)}
-function show(id){['title','intro','game','clear','test'].forEach(x=>$(x).classList.toggle('hidden',x!==id));document.querySelectorAll('.scr').forEach(s=>s.scrollTop=0)}
-function overlay(h){$('ovc').innerHTML=h;$('ov').classList.remove('hidden');$('ovc').scrollTop=0}
-function closeOv(){$('ov').classList.add('hidden');$('ovc').innerHTML=''}
-function zkBtns(){document.querySelectorAll('.zk').forEach(b=>b.classList.toggle('hidden',!(window.Zukan&&Zukan.openBook)))}
-function addScore(n,el){S.score+=n;pop('+'+n,el);hudUp()}
-function comboUp(){S.combo++;S.maxCombo=Math.max(S.maxCombo,S.combo);hudUp()}
-function comboReset(){S.combo=0;hudUp()}
+/* ================= 画面 ================= */
+var cv=$('cv'),ctx=cv.getContext('2d'),W=0,H=0,DPR=1,LAND=false,L={},BG=null,BGKEY='';
+var ZST={t:-1,v:null},scene='title',TT=0,HIT=[],PRESS=null,SHK=0,FLASH=0,FLASHC='#fff',MSG={t:'',life:0},EV=null,PT=[],COMBO=0,POST={t0:-1,landed:0};
+function layout(){
+ W=Math.max(300,innerWidth);H=Math.max(300,innerHeight);DPR=Math.min(3,window.devicePixelRatio||1);
+ cv.width=Math.round(W*DPR);cv.height=Math.round(H*DPR);cv.style.width=W+'px';cv.style.height=H+'px';ctx.setTransform(DPR,0,0,DPR,0,0);
+ LAND=W>=H*1.1&&W>=640;var top=Math.max(64,Math.min(76,H*.08));L.top=top;
+ L.back={x:10,y:10,w:Math.min(128,W*.3),h:48};L.snd={x:W-10-60,y:10,w:60,h:48};L.kk={x:L.snd.x-10-104,y:12,w:104,h:44};
+ if(LAND){var sw=Math.min(400,Math.max(300,W*.29));L.side={x:W-sw-14,y:top,w:sw,h:H-top-14};L.pl={x:14,y:top,w:W-sw-42,h:H-top-14}}
+ else{var th=Math.min(168,Math.max(128,H*.19));L.side={x:10,y:top,w:W-20,h:th};L.pl={x:8,y:top+th+8,w:W-16,h:H-(top+th+8)-8}}
+ var P=L.pl,rim=clamp(Math.min(P.w,P.h)*.045,16,34);L.rim=rim;
+ var lm=clamp(P.w*.07,48,70),pz=LAND?clamp(P.h*.22,120,190):clamp(P.h*.24,120,180);L.pz=pz;
+ L.g={x:P.x+rim+lm,y:P.y+rim+30,w:P.w-2*rim-lm-24,h:P.h-2*rim-30-40-pz};
+ L.rail=L.g.y+L.g.h;L.pull={y0:L.g.y+L.g.h+34,y1:P.y+P.h-rim-6};L.pullLen=Math.max(90,L.pull.y1-L.rail-6);
+ BGKEY=''}
+function gX(v){return L.g.x+v/XMAX*L.g.w}
+function gY(v,ym){return L.g.y+L.g.h*(1-v/ym)}
+function iX(px){return (px-L.g.x)/L.g.w*XMAX}
+function iY(py,ym){return (1-(py-L.g.y)/L.g.h)*ym}
+function font(sz,w){return (w||700)+' '+Math.max(8,sz)+'px '+FF}
+function txt(s,x,y,sz,o){o=o||{};ctx.font=font(sz,o.w);ctx.textAlign=o.al||'left';ctx.textBaseline=o.bl||'middle';
+ if(o.stroke){ctx.lineJoin='round';ctx.lineWidth=o.sw||Math.max(3,sz*.16);ctx.strokeStyle=o.stroke;ctx.strokeText(s,x,y)}
+ ctx.fillStyle=o.col||C.aiD;ctx.fillText(s,x,y)}
+function fit(s,maxW,sz,w){ctx.font=font(sz,w);var m=ctx.measureText(s).width;return m>maxW?Math.max(8,sz*maxW/m):sz}
+function wrapT(s,maxW,sz){ctx.font=font(sz);var out=[];String(s).split('\n').forEach(function(pt){var line='';for(var i=0;i<pt.length;i++){var t=line+pt[i];if(ctx.measureText(t).width>maxW&&line){out.push(line);line=pt[i]}else line=t}out.push(line)});return out}
+function para(s,x,y,maxW,sz,o){var ls=wrapT(s,maxW,sz);ls.forEach(function(l,i){txt(l,x,y+i*sz*1.45,sz,o)});return ls.length*sz*1.45}
+function rr(x,y,w,h,r){r=Math.max(0,Math.min(r,w/2,h/2));ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath()}
+function inR(p,r){return p&&p.x>=r.x-4&&p.x<=r.x+r.w+4&&p.y>=r.y-4&&p.y<=r.y+r.h+4}
 
-/* ===== 星図（グラフ） ===== */
-const GX0=52,GY0=270,GW=280,GH=236,XMAX=1.6,YMAX=1.0;
-const px=x=>GX0+x/XMAX*GW,py=y=>GY0-y/YMAX*GH;
-function starPath(cx,cy,r){let d='';for(let i=0;i<10;i++){const a=-Math.PI/2+i*Math.PI/5,rr=i%2?r*.45:r;d+=(i?'L':'M')+(cx+Math.cos(a)*rr).toFixed(1)+','+(cy+Math.sin(a)*rr).toFixed(1)}return d+'Z'}
-function starG(x,y,mt,o){o=o||{};const M=METAL[mt],r=o.r||9;
- return `<g class="${o.cls||''}" ${o.data||''} style="transform-origin:${x}px ${y}px"><circle cx="${x}" cy="${y}" r="${r*2.2}" fill="url(#glow)" opacity="${o.out?.25:.55}"/><path d="${starPath(x,y,r)}" fill="${o.out?'none':M.sc}" stroke="${o.out?'#ef5a5f':M.c}" stroke-width="${o.out?2:1.2}"/>${o.team?`<circle cx="${x}" cy="${y}" r="${r+5}" fill="none" stroke="#7fb4ff" stroke-width="2" stroke-dasharray="3 2"/>`:''}${o.label?`<text x="${x+10}" y="${y-10}" font-size="11" fill="#fff" font-weight="700">${o.label}</text>`:''}</g>`}
-function lineSeg(k,col,w,dash,op){const xe=Math.min(XMAX,YMAX/Math.max(k,1e-6));return `<path d="M${px(0)},${py(0)} L${px(xe)},${py(k*xe)}" stroke="${col}" stroke-width="${w}" ${dash?`stroke-dasharray="${dash}"`:''} opacity="${op||1}" stroke-linecap="round"/>`}
-let SKY={k:null,mt:'Cu',hl:null,showStars:true,extra:null,pick:null,newIdx:-1,poly:null};
-function skySVG(){let s=`<svg viewBox="0 0 360 300" id="skySvg">${gradDefs()}`;
- // 格子
- for(let x=0;x<=XMAX+1e-9;x+=0.2){s+=`<path d="M${px(x)},${py(0)} L${px(x)},${py(YMAX)}" stroke="#f3cf7a" stroke-opacity="${Math.abs(x%0.4)<1e-6||Math.abs(x%0.4-0.4)<1e-6?.16:.07}"/>`;s+=`<text x="${px(x)}" y="${py(0)+14}" font-size="10" fill="#c9cde0" text-anchor="middle">${x.toFixed(1)}</text>`}
- for(let y=0;y<=YMAX+1e-9;y+=0.1){s+=`<path d="M${px(0)},${py(y)} L${px(XMAX)},${py(y)}" stroke="#f3cf7a" stroke-opacity="${Math.round(y*10)%2===0?.16:.07}"/>`;if(Math.round(y*10)%2===0)s+=`<text x="${px(0)-5}" y="${py(y)+3.5}" font-size="10" fill="#c9cde0" text-anchor="end">${y.toFixed(1)}</text>`}
- s+=`<path d="M${px(0)},${py(0)} L${px(XMAX)+6},${py(0)} M${px(0)},${py(0)} L${px(0)},${py(YMAX)-6}" stroke="#e8e2cc" stroke-width="1.6"/>`;
- s+=`<text x="${px(0.8)}" y="298" font-size="11.5" fill="#e8e2cc" text-anchor="middle" font-weight="700">金属の質量〔g〕</text><text x="13" y="${py(0.5)}" font-size="11.5" fill="#e8e2cc" text-anchor="middle" font-weight="700" transform="rotate(-90 13 ${py(0.5)})">結び付いた酸素の質量〔g〕</text>`;
- // 完成した星座の線
- ['Cu','Mg'].forEach(mt=>{if(S.k[mt]!=null&&!(SKY.mt===mt&&SKY.k!=null&&SKY.editing))s+=lineSeg(S.k[mt],METAL[mt].c,2.5,null,.9)+`<text x="${px(Math.min(XMAX,YMAX/S.k[mt]))-4}" y="${py(Math.min(YMAX,S.k[mt]*XMAX))+(mt==='Cu'?-8:16)}" font-size="12" fill="${METAL[mt].sc}" text-anchor="end" font-family="serif" font-weight="700">${METAL[mt].sky}</text>`});
- if(SKY.poly)s+=SKY.poly;
- // 調整中の線
- if(SKY.editing&&SKY.k!=null)s+=lineSeg(SKY.k,'#fff6d8',3,'7 5');
- // 原点の星
- if(S.originLit)s+=`<circle cx="${px(0)}" cy="${py(0)}" r="6" fill="#fff6d8"/><circle cx="${px(0)}" cy="${py(0)}" r="13" fill="url(#glow)"/>`;
- // 星
- const list=SKY.extra||[].concat(S.stars.Cu.map((st,i)=>({...st,mt:'Cu',i})),S.stars.Mg.map((st,i)=>({...st,mt:'Mg',i})));
- list.forEach((st,j)=>{s+=starG(px(st.m),py(st.o),st.mt,{out:st.out,team:st.team,cls:(j===SKY.newIdx?'newstar ':'')+'tw',data:SKY.pick?`data-st="${j}"`:'',r:SKY.pick?11:9})});
- if(SKY.readX!=null&&SKY.k!=null){const x=SKY.readX,y=SKY.k*x;s+=`<path d="M${px(x)},${py(0)} L${px(x)},${py(y)} L${px(0)},${py(y)}" stroke="#7fb4ff" stroke-dasharray="4 3" fill="none"/>`}
- return s+'</svg>'}
-function drawSky(){$('sky').innerHTML=skySVG();$('skyName').textContent=SKY.name||'';bindSky()}
-function bindSky(){const svg=$('skySvg');if(!svg)return;
- if(SKY.editing){const mv=e=>{const b=svg.getBoundingClientRect();const x=((e.clientX-b.left)/b.width*360-GX0)/GW*XMAX,y=(GY0-(e.clientY-b.top)/b.height*300)/GH*YMAX;if(x<0.08)return;SKY.k=Math.max(0.02,Math.min(1.5,y/x));redrawLine()};
-  let down=false;svg.onpointerdown=e=>{down=true;svg.setPointerCapture&&svg.setPointerCapture(e.pointerId);ac();mv(e)};svg.onpointermove=e=>{if(down)mv(e)};svg.onpointerup=svg.onpointercancel=()=>{down=false}}
- if(SKY.pick)svg.querySelectorAll('[data-st]').forEach(g=>g.addEventListener('pointerdown',e=>{e.stopPropagation();SKY.pick(+g.dataset.st,g)}))}
-let lastTick=0;function redrawLine(){drawSky();const r=$('readK');if(r)r.innerHTML=readoutTxt();const n=performance.now();if(n-lastTick>60){sfx.tick();lastTick=n}}
+/* ---------- 筆の線（藍のにじみ） ---------- */
+function brushLine(c,x1,y1,x2,y2,w,col,al,seed){c.save();c.lineCap='round';c.strokeStyle=col;var n=3;for(var i=0;i<n;i++){var j=(hash((seed||1)*9+i)-.5)*w*.35;c.globalAlpha=(al||1)*(i?0.35:0.9);c.lineWidth=w*(i?1.35-i*.2:1);
+ c.beginPath();c.moveTo(x1+j,y1-j*.5);var mx=(x1+x2)/2+j*.8,my=(y1+y2)/2+j;c.quadraticCurveTo(mx,my,x2-j*.4,y2+j*.3);c.stroke()}c.restore()}
+function starPath(c,x,y,r,rot){c.beginPath();for(var i=0;i<10;i++){var a=-Math.PI/2+(rot||0)+i*Math.PI/5,q=i%2?r*.44:r;c[i?'lineTo':'moveTo'](x+Math.cos(a)*q,y+Math.sin(a)*q)}c.closePath()}
+function drawStar(x,y,r,mt,o){o=o||{};var M=MT[mt]||MT.Cu,c=ctx;c.save();
+ var gl=c.createRadialGradient(x,y,0,x,y,r*2.4);gl.addColorStop(0,'rgba(31,63,143,'+(o.glow||.22)+')');gl.addColorStop(1,'rgba(31,63,143,0)');c.fillStyle=gl;c.beginPath();c.arc(x,y,r*2.4,0,7);c.fill();
+ starPath(c,x,y,r,o.rot);var g=c.createRadialGradient(x-r*.3,y-r*.35,r*.1,x,y,r);g.addColorStop(0,'#fff');g.addColorStop(.35,M.col);g.addColorStop(1,M.dk);c.fillStyle=o.out?'rgba(255,255,255,.7)':g;c.fill();
+ c.lineJoin='round';c.lineWidth=Math.max(1.5,r*.16);c.strokeStyle=o.out?C.shu:C.ai;if(o.out)c.setLineDash([3,3]);c.stroke();c.setLineDash([]);
+ if(o.sym){txt(M.sym,x,y+r*.06,r*.62,{al:'center',col:o.out?C.shu:M.tx,w:800})}c.restore()}
+function atomBall(x,y,r,mt){var M=MT[mt];var g=ctx.createRadialGradient(x-r*.35,y-r*.4,r*.1,x,y,r);g.addColorStop(0,'#fff');g.addColorStop(.3,M.col);g.addColorStop(1,M.dk);ctx.beginPath();ctx.arc(x,y,r,0,7);ctx.fillStyle=g;ctx.fill();ctx.lineWidth=1.5;ctx.strokeStyle=C.aiD;ctx.stroke();txt(M.sym,x,y+1,r*.9,{al:'center',col:M.tx,w:800})}
 
-/* ===== 導入：封印を開ける ===== */
-const PREDT={x2:'約2倍になる',same:'変わらない（同じ）',less:'増えるが、2倍よりずっと少ない',x4:'約4倍になる'};
-const SHAPET={line0:'原点を通る直線',flat:'横ばい',bend:'途中から横ばい',lineoff:'原点を通らない直線'};
-function readSeal(){try{const o=JSON.parse(localStorage.getItem(SEAL_KEY)||'null');return o&&o.pred&&PREDT[o.pred]?o:null}catch(e){return null}}
-function intro(){S.ph='intro';S.started=true;save();show('intro');const sl=readSeal();
- if(sl){S.seal={pred:sl.pred,shape:sl.shape,reason:sl.reason?sl.reason.t:'',from:'seal'};save();
-  $('introBox').innerHTML=`<div style="text-align:center;margin-top:12px"><span class="ribbon">開封</span><p style="font-size:18px;font-weight:700;line-height:1.6">「実験計画ロケット」で封印した<br>予想のカプセルが届いています。</p>
-   <div class="env" id="env"><div class="flap"></div><div class="stamp">封</div><div class="in">銅2倍 → 酸素：${esc(PREDT[sl.pred])}<br>グラフ：${esc(SHAPET[sl.shape]||'')}</div></div>
-   <p class="small" id="rs" style="visibility:hidden">根拠：${esc(sl.reason?sl.reason.t:'')}</p>
-   <button class="btn gold wide" id="bOpen">✂️ 封を切る</button></div>`;
-  $('bOpen').onclick=()=>{ac();sfx.tear();$('env').classList.add('open');$('rs').style.visibility='visible';$('bOpen').textContent='星を打って、確かめる ▶';$('bOpen').onclick=()=>{sfx.tap();teamAsk()}}}
- else{$('introBox').innerHTML=`<div style="text-align:center;margin-top:12px"><span class="ribbon">開封</span><p style="font-size:18px;font-weight:700;line-height:1.6">この端末に、封印した予想が<br>見つかりません。</p><p>星を打つ前に、<b style="color:var(--gold)">いまここで予想</b>しよう。</p></div>
-  <p style="font-size:17px;font-weight:700;line-height:1.6">銅の質量を<b style="color:var(--gold)">2倍</b>にすると、結び付く酸素の質量（反応しきったとき）は？</p>
-  ${Object.keys(PREDT).map(k=>`<button class="choice" data-p="${k}">${PREDT[k]}</button>`).join('')}`;
-  document.querySelectorAll('[data-p]').forEach(b=>b.onclick=()=>{ac();sfx.pick();S.seal={pred:b.dataset.p,shape:null,from:'now'};save();teamAsk()})}}
-function teamAsk(){$('introBox').innerHTML=`<div style="margin-top:14px"><span class="ribbon">観測の準備</span>
- <p style="font-size:17px;font-weight:700;line-height:1.6">学校で、銅を加熱する実験はもうやった？</p>
- <button class="choice" id="tY">やった（班の結果を1つ、星にする）</button><button class="choice" id="tN">まだ／数値を覚えていない（模擬の測定で進める）</button>
- <p class="small">どちらを選んでも、ゲームの中の測定で星座は完成できる。</p></div>`;
- $('tY').onclick=()=>{sfx.tap();teamInput()};$('tN').onclick=()=>{sfx.tap();S.team=null;save();startRound(0)}}
-function teamInput(){let fld='a',v={a:'',b:''};
- const draw=()=>{$('introBox').innerHTML=`<div style="margin-top:12px"><span class="ribbon">班の星</span>
-  <p style="font-size:16px;line-height:1.6">班の<b style="color:var(--gold)">銅の質量</b>と、質量が変わらなくなった<b style="color:var(--gold)">後の物質の質量</b>を入れよう（皿の質量は引いた値）。</p>
-  <div class="row2"><div><div class="small">銅の質量〔g〕</div><div class="numshow ${fld==='a'?'on':''}" id="fa">${v.a||'　'}</div></div><div><div class="small">加熱後の物質〔g〕</div><div class="numshow ${fld==='b'?'on':''}" id="fb">${v.b||'　'}</div></div></div>
-  <div class="keys">${['7','8','9','4','5','6','1','2','3','0','.','⌫'].map(k=>`<button data-n="${k}">${k}</button>`).join('')}</div>
-  <div id="tMsg"></div><button class="btn gold wide" id="tOk" style="margin-top:10px">この値で星にする</button><button class="btn ghost wide" id="tSkip" style="margin-top:8px">やめて模擬の測定で進める</button></div>`;
-  $('fa').onclick=()=>{fld='a';draw()};$('fb').onclick=()=>{fld='b';draw()};
-  document.querySelectorAll('[data-n]').forEach(b=>b.onclick=()=>{sfx.tap();const k=b.dataset.n;if(k==='⌫')v[fld]=v[fld].slice(0,-1);else if(v[fld].length<5)v[fld]+=k;draw()});
-  $('tSkip').onclick=()=>{sfx.tap();S.team=null;save();startRound(0)};
-  $('tOk').onclick=()=>{const a=parseFloat(v.a),b=parseFloat(v.b);
-   if(!(a>0.05&&a<=1.6)||!(b>a)||b-a>1){$('tMsg').innerHTML='<div class="why">銅は0.1〜1.6 gくらい、加熱後の物質は銅より少し重い値を入れよう。</div>';sfx.no();return}
-   const o=Math.round((b-a)*100)/100,out=Math.abs(o/a-.25)>.05;S.team={m:a,o,out};save();sfx.star(4);
-   $('introBox').innerHTML=`<div class="panel" style="text-align:center"><h3>班の星</h3><p style="font-size:16px;line-height:1.6">結び付いた酸素 ＝ ${f2(b)} − ${f2(a)} ＝ <b style="color:var(--gold);font-size:22px">${f2(o)} g</b></p>
-    ${out?'<div class="why">この星は、ほかの班の星（理論の値）から<b>少し外れる</b>かもしれない。加熱不足や、粉がこぼれたなどの原因が考えられる。外れた星のことは、次の回で考えよう。</div>':'<div class="good">いい測定！ この星は銅の星座に加わる。</div>'}
-    <button class="btn gold wide" id="tGo" style="margin-top:10px">観測を始める ▶</button></div>`;$('tGo').onclick=()=>{sfx.tap();startRound(0)}}};
- draw()}
+/* ---------- 文様（皿の縁） ---------- */
+function unit(c,kind,x,y,s,i){c.save();c.translate(x,y);c.strokeStyle=C.ai;c.fillStyle='rgba(31,63,143,.16)';c.lineWidth=Math.max(1,s*.07);c.lineCap='round';
+ if(kind==='seigaiha'){for(var k=3;k>=1;k--){c.beginPath();c.arc(0,s*.3,s*.52*k/3,Math.PI,0);c.fillStyle=k%2?'rgba(31,63,143,.18)':'#FCFCF8';c.fill();c.stroke()}}
+ else if(kind==='karakusa'){c.beginPath();for(var t=0;t<14;t++){var a=t*.5+(i%2?Math.PI:0),rr2=s*.05+t*s*.03;c[t?'lineTo':'moveTo'](Math.cos(a)*rr2,Math.sin(a)*rr2)}c.stroke();c.beginPath();c.ellipse(s*.3,-s*.18,s*.12,s*.06,.6,0,7);c.fill();c.stroke()}
+ else if(kind==='ume'){for(var p=0;p<5;p++){var a2=p*Math.PI*2/5-Math.PI/2;c.beginPath();c.arc(Math.cos(a2)*s*.2,Math.sin(a2)*s*.2,s*.15,0,7);c.fill();c.stroke()}c.beginPath();c.arc(0,0,s*.06,0,7);c.fillStyle=C.ai;c.fill()}
+ else if(kind==='asanoha'){c.beginPath();for(var p2=0;p2<6;p2++){var a3=p2*Math.PI/3;c.moveTo(0,0);c.lineTo(Math.cos(a3)*s*.42,Math.sin(a3)*s*.42)}for(p2=0;p2<6;p2++){var b1=p2*Math.PI/3,b2=b1+Math.PI/3;c.moveTo(Math.cos(b1)*s*.42,Math.sin(b1)*s*.42);c.lineTo(Math.cos(b1+Math.PI/6)*s*.2,Math.sin(b1+Math.PI/6)*s*.2);c.lineTo(Math.cos(b2)*s*.42,Math.sin(b2)*s*.42)}c.stroke()}
+ else if(kind==='tsuki'){if(i%3===0){c.beginPath();c.arc(0,0,s*.26,0,7);c.fillStyle='rgba(31,63,143,.25)';c.fill();c.stroke()}else{c.beginPath();c.arc(-s*.15,0,s*.13,Math.PI*.9,Math.PI*2.1);c.arc(s*.1,-s*.05,s*.17,Math.PI,Math.PI*2.05);c.arc(s*.3,0,s*.1,Math.PI*1.1,Math.PI*2.2);c.stroke()}}
+ else if(kind==='chidori'){c.beginPath();c.moveTo(-s*.3,0);c.quadraticCurveTo(-s*.15,-s*.28,0,-s*.05);c.quadraticCurveTo(s*.15,-s*.28,s*.3,-s*.02);c.moveTo(-s*.05,-s*.06);c.quadraticCurveTo(0,s*.12,s*.08,s*.02);c.lineWidth=Math.max(1.4,s*.1);c.stroke()}
+ else if(kind==='kiku'){for(var p3=0;p3<12;p3++){var a4=p3*Math.PI/6;c.beginPath();c.ellipse(Math.cos(a4)*s*.2,Math.sin(a4)*s*.2,s*.12,s*.045,a4,0,7);c.fill();c.stroke()}c.beginPath();c.arc(0,0,s*.07,0,7);c.fillStyle=C.ai;c.fill()}
+ else if(kind==='shippo'){[[1,0],[-1,0],[0,1],[0,-1]].forEach(function(d){c.beginPath();c.arc(d[0]*s*.18,d[1]*s*.18,s*.25,0,7);c.stroke()});c.beginPath();c.arc(0,0,s*.08,0,7);c.fill()}
+ c.restore()}
+function rimRect(c,x,y,w,h,t,kind){/* 縁の帯に文様を並べる */
+ c.save();c.beginPath();c.rect(x,y,w,h);c.rect(x+t,y+t,w-2*t,h-2*t);c.clip('evenodd');var s=t*.82,sp=t*.95,i=0;
+ for(var px=x+sp/2;px<x+w;px+=sp){unit(c,kind,px,y+t/2,s,i++);unit(c,kind,px,y+h-t/2,s,i++)}for(var py=y+sp*1.5;py<y+h-sp;py+=sp){unit(c,kind,x+t/2,py,s,i++);unit(c,kind,x+w-t/2,py,s,i++)}c.restore()}
+function rimCircle(c,cx,cy,r,t,kind){c.save();c.beginPath();c.arc(cx,cy,r,0,7);c.arc(cx,cy,r-t,0,7,true);c.clip();var n=Math.max(10,Math.floor(Math.PI*2*(r-t/2)/(t*.95)));
+ for(var i=0;i<n;i++){var a=i/n*Math.PI*2;unit(c,kind,cx+Math.cos(a)*(r-t/2),cy+Math.sin(a)*(r-t/2),t*.8,i)}c.restore()}
 
-/* ===== 本編 ===== */
-let RD=null,MS=null;
-function hudUp(){if(!RD)return;$('hName').textContent=RD.nm;$('hSub').textContent=`観測 ${S.r+1} / ${ROUNDS.length}`;$('hScore').textContent=S.score.toLocaleString();$('hCombo').textContent=S.combo>=2?`✦ 連続 ${S.combo}`:'';
- if(window.Zukan&&Zukan.hud&&!$('zkHud').dataset.on){try{Zukan.hud($('zkHud'));$('zkHud').dataset.on=1}catch(e){}}}
-function startRound(i){i=Math.max(0,Math.min(i,ROUNDS.length-1));S.r=i;S.ph='play';RD=ROUNDS[i];save();show('game');
- SKY={k:null,mt:RD.mt,editing:false,name:(RD.mt==='Cu'?'銅座':'マグネシウム座')+'をさがせ',newIdx:-1};
- if(S.team&&!S.teamPlaced&&RD.mt==='Cu'){S.stars.Cu.push({m:S.team.m,o:S.team.o,team:1,out:S.team.out});S.teamPlaced=true;save()}
- hudUp();drawSky();
- if(RD.boss)return bossStart();
- if(RD.mgPred&&S.mgPred==null)return mgPredict();
- measure()}
-/* 測定：加熱→冷ます→はかる をくり返す */
-function labSVG(frac,heating){const M=METAL[RD.mt];const col=frac<=0?M.c:mix(M.c,M.oxc,Math.min(1,frac));
- let s=`<svg viewBox="0 0 340 120">${gradDefs()}<rect width="340" height="120" rx="10" fill="#f5efe0"/>`;
- s+=`<g stroke="#5c5c5c" stroke-width="3"><path d="M40,64 L30,112 M110,64 L120,112"/></g><rect x="32" y="60" width="86" height="5" rx="2" fill="#6d6d6d"/><ellipse cx="75" cy="56" rx="38" ry="7" fill="#bcc4cc" stroke="#7e8993" stroke-width="2"/><ellipse cx="75" cy="53.5" rx="30" ry="3.2" fill="${col}"/>`;
- s+=`<rect x="67" y="90" width="16" height="22" fill="#4f5a6b"/>${heating?`<path d="M75,90 Q64,76 75,62 Q86,76 75,90Z" fill="#4f8dff" opacity=".9"/><path d="M75,90 Q71,80 75,70 Q79,80 75,90Z" fill="#cfe6ff"/>`:''}`;
- // 原子の目
- const nm=6,no=Math.round(nm*Math.min(1,frac));s+=`<rect x="138" y="14" width="74" height="92" rx="8" fill="#fff" stroke="#d8cdb2"/><text x="175" y="28" font-size="9" text-anchor="middle" fill="#6b5a3a">原子の目</text>`;
- for(let i=0;i<nm;i++){const x=158+(i%2)*34,y=46+Math.floor(i/2)*22;s+=atomS(x,y,8,RD.mt);if(i<no)s+=atomS(x+10,y-7,5.5,'O')}
- // てんびん
- const val=MS?MS.cur:RD.m;s+=`<rect x="226" y="62" width="104" height="40" rx="6" fill="#e3e6ea" stroke="#8a929c" stroke-width="2"/><rect x="236" y="72" width="66" height="20" rx="2" fill="#1d2a22"/><text x="298" y="87" font-size="15" text-anchor="end" fill="#7cf0a0" font-family="monospace">${f2(val)}</text><text x="316" y="87" font-size="12" fill="#333">g</text><rect x="246" y="54" width="64" height="7" rx="2" fill="#aab2b9"/><text x="278" y="116" font-size="9" text-anchor="middle" fill="#6b5a3a">皿の質量を引いた値</text>`;
- return s+'</svg>'}
-function mix(a,b,t){const h=c=>[1,3,5].map(i=>parseInt(c.substr(i,2),16));const A=h(a),B=h(b);return '#'+A.map((v,i)=>Math.round(v+(B[i]-v)*t).toString(16).padStart(2,'0')).join('')}
-function measure(){S.step='measure';save();const fr=FR[S.r%FR.length];MS={k:0,reads:[],cur:RD.m,fr,miss:false};
- SKY.name=(RD.mt==='Cu'?'銅座':'マグネシウム座')+'をさがせ';drawSky();renderMeasure()}
-function renderMeasure(msg){const M=METAL[RD.mt];const frac=MS.k?MS.fr[Math.min(MS.k,MS.fr.length)-1]:0;
- $('ctrl').innerHTML=`<h3>🔭 観測：${M.nm} ${f2(RD.m)} g</h3><div class="lab">${labSVG(frac,false)}</div>
-  <div class="chips"><span>加熱前 ${f2(RD.m)}</span>${MS.reads.map((v,i)=>`<span class="${i>0&&v===MS.reads[i-1]?'eq':''}">${i+1}回目 ${f2(v)}</span>`).join('')}</div>
-  <div class="msg">${msg||`加熱して、冷ましてからはかる。<b>質量が変わらなくなったら</b>「反応しきった」を押す。`}</div>
-  <div class="row2"><button class="btn" id="bHeat">🔥 加熱してはかる</button><button class="btn gold" id="bDone">✔ 反応しきった</button></div>`;
- $('bHeat').onclick=heatOnce;$('bDone').onclick=doneMeasure}
-async function heatOnce(){ac();const b=$('bHeat');b.disabled=true;$('bDone').disabled=true;sfx.fire();
- const lab=$('ctrl').querySelector('.lab');const nk=MS.k+1;const frac=MS.fr[Math.min(nk,MS.fr.length)-1];lab.innerHTML=labSVG(Math.max(0,frac-.1),true);await wait(650);
- MS.k=nk;const v=Math.round((RD.m+RD.o*frac)*100)/100;MS.reads.push(v);MS.cur=v;sfx.pick();
- const eq=MS.reads.length>1&&v===MS.reads[MS.reads.length-2];renderMeasure(eq?`<b>前回と同じ ${f2(v)} g</b>。もう変わらない？`:`${f2(v)} g。前回より <b>${MS.reads.length>1?'+'+f2(v-MS.reads[MS.reads.length-2]):'+'+f2(v-RD.m)} g</b> 増えた。`)}
-function doneMeasure(){ac();const n=MS.reads.length,last=MS.reads[n-1];
- const confirmed=n>=2&&last===MS.reads[n-2];
- if(!confirmed){MS.miss=true;comboReset();sfx.no();
-  return renderMeasure(`<div class="why">${n===0?'まだ1回も加熱していない。':n===1?'1回はかっただけでは、まだ増えるかどうか分からない。':'前回より<b>まだ増えている</b>。'}反応しきったと言えるのは、<b>前回と質量が変わらなくなったとき</b>。</div>`)}
- const extra=n-1-MS.reads.findIndex((v,i)=>i>0&&v===MS.reads[i-1]);
- if(!MS.miss){S.perfect++;comboUp();addScore(100+20*S.combo,$('bDone'));sfx.ok(Math.min(S.combo,4))}
- calcStep(last,extra>0)}
-function calcStep(after,over){S.step='calc';save();const o=Math.round((after-RD.m)*100)/100;let miss=false;
- const ops=shuffle([{t:f2(o)+' g',ok:1},{t:f2(after)+' g'},{t:f2(RD.m)+' g'},{t:f2(after+RD.m)+' g'}]);
- $('ctrl').innerHTML=`<h3>🧮 酸素はどれだけ結び付いた？</h3><div class="msg">${METAL[RD.mt].nm} ${f2(RD.m)} g → 反応しきった後 ${f2(after)} g${over?'<br><span class="small">（変わらなくなった後の加熱は、しなくてもよかった）</span>':''}</div>`+ops.map((o,i)=>`<button class="choice" data-i="${i}">${o.t}</button>`).join('')+'<div id="cMsg"></div>';
- document.querySelectorAll('[data-i]').forEach(b=>b.onclick=()=>{const op=ops[+b.dataset.i];if(op.ok){b.classList.add('ok');document.querySelectorAll('[data-i]').forEach(x=>x.disabled=true);if(!miss){comboUp();addScore(80+20*S.combo,b)}sfx.ok(2);
-   $('cMsg').innerHTML=`<div class="good">結び付いた酸素 ＝ ${f2(after)} − ${f2(RD.m)} ＝ <b>${f2(o)} g</b></div>`;setTimeout(()=>placeStar(o),RM?200:900)}
-  else{miss=true;b.classList.add('ng');b.disabled=true;comboReset();sfx.no();$('cMsg').innerHTML=`<div class="why">結び付いた酸素は、<b>増えた分</b>。（加熱後）−（加熱前）で求める。</div>`}})}
-async function placeStar(o){const st={m:RD.m,o};S.stars[RD.mt].push(st);save();
- const all=S.stars.Cu.length+(RD.mt==='Mg'?S.stars.Mg.length:0);SKY.newIdx=(RD.mt==='Cu'?S.stars.Cu.length-1:S.stars.Cu.length+S.stars.Mg.length-1);drawSky();sfx.star(all);
- const svg=$('skySvg').getBoundingClientRect();sparks(svg.left+px(st.m)/360*svg.width,svg.top+py(st.o)/300*svg.height,30,METAL[RD.mt].sc);
- $('ctrl').innerHTML=`<h3>✨ 星がともった</h3><div class="msg">（${METAL[RD.mt].nm} ${f2(st.m)} g，酸素 ${f2(o)} g）の位置に星。</div>`;
- await wait(900);SKY.newIdx=-1;
- if(RD.origin&&!S.originLit)return originStep();
- if(RD.trap)return trapStep();
- lineStep()}
-function originStep(){S.step='origin';save();let miss=false;const ops=shuffle(['0 g','0.10 g','分からない（はかれない）']);
- $('ctrl').innerHTML=`<h3>🌌 もう1つの星</h3><div class="msg">金属の質量が <b>0 g</b> なら、結び付く酸素の質量は？</div>`+ops.map((t,i)=>`<button class="choice" data-i="${i}">${t}</button>`).join('')+'<div id="cMsg"></div>';
- document.querySelectorAll('[data-i]').forEach(b=>b.onclick=()=>{const t=ops[+b.dataset.i];if(t==='0 g'){b.classList.add('ok');document.querySelectorAll('[data-i]').forEach(x=>x.disabled=true);S.originLit=true;save();drawSky();sfx.star(0);if(!miss){comboUp();addScore(100,b)}
-   $('cMsg').innerHTML='<div class="good">結び付く相手（金属）がなければ、酸素は結び付かない。<b>原点（0，0）</b>も星座の星だ。これからは、線は原点から引く。</div><button class="btn gold wide" id="oGo" style="margin-top:10px">線を引く ▶</button>';$('oGo').onclick=()=>{sfx.tap();lineStep()}}
-  else{miss=true;b.classList.add('ng');b.disabled=true;comboReset();sfx.no();$('cMsg').innerHTML='<div class="why">金属が 0 g なら、結び付く相手がいない。</div>'}})}
-function trapStep(){S.step='trap';save();const st=S.stars.Cu.filter(s=>!s.out&&!s.team).sort((a,b)=>a.m-b.m);
- const mk=kind=>{let s=`<svg viewBox="0 0 110 80"><path d="M8,72 L106,72 M8,72 L8,4" stroke="#333" stroke-width="1.5"/>`;const X=x=>8+x/1.4*95,Y=y=>72-y/.35*64;const pts=[[0,0]].concat(st.map(s=>[s.m,s.o]));
-  if(kind==='zig')s+=`<polyline points="${pts.map(p=>X(p[0])+','+Y(p[1])).join(' ')}" fill="none" stroke="#2549C9" stroke-width="2"/>`;
-  else if(kind==='line')s+=`<path d="M${X(0)},${Y(0)} L${X(1.4)},${Y(0.35)}" stroke="#2549C9" stroke-width="2"/>`;
-  else s+=`<path d="M${X(0)},${Y(0)} Q${X(0.5)},${Y(0.2)} ${X(1.4)},${Y(0.33)}" fill="none" stroke="#2549C9" stroke-width="2"/>`;
-  return s+pts.map(p=>`<circle cx="${X(p[0])}" cy="${Y(p[1])}" r="3" fill="#C8773C"/>`).join('')+'</svg>'};
- const ops=shuffle([{id:'zig',t:'星を順番に折れ線でつなぐ'},{id:'line',t:'星のばらつきの真ん中を通る直線'},{id:'curve',t:'全部の星を通るなめらかな曲線'}]);let miss=false;
- $('ctrl').innerHTML=`<h3>🖋️ 星座の線の引き方</h3><div class="msg">星がふえてきた。少しずつ<b>ばらついて</b>いる。どう線を引く？</div><div class="mini">${ops.map((o,i)=>`<button data-i="${i}">${mk(o.id)}${o.t}</button>`).join('')}</div><div id="cMsg"></div>`;
- document.querySelectorAll('.mini [data-i]').forEach(b=>b.onclick=()=>{const o=ops[+b.dataset.i];if(o.id==='line'){b.style.borderColor='var(--ok)';document.querySelectorAll('.mini [data-i]').forEach(x=>x.disabled=true);sfx.ok(3);if(!miss){comboUp();addScore(150,b)}
-   $('cMsg').innerHTML='<div class="good">測定値には<b>誤差</b>がある。全部の点を通そうとせず、<b>点のばらつきの真ん中</b>を通る線を引く。点が直線にならんでいれば直線をえらぶ。</div><button class="btn gold wide" id="oGo" style="margin-top:10px">線を引く ▶</button>';$('oGo').onclick=()=>{sfx.tap();lineStep()}}
-  else{miss=true;b.style.opacity=.45;b.disabled=true;comboReset();sfx.no();$('cMsg').innerHTML=`<div class="why">${o.id==='zig'?'折れ線でつなぐと、測定の小さなずれまで「関係」だと思いこんでしまう。':'全部の点を無理に通すと、誤差のぶれまで線に入ってしまう。'}</div>`}})}
-function fitK(mt,list){const L=(list||S.stars[mt]).filter(s=>!s.out);let a=0,b=0;L.forEach(s=>{a+=s.m*s.o;b+=s.m*s.m});return b?a/b:METAL[mt].k}
-function readoutTxt(){return `この線だと ${METAL[SKY.mt].nm} <b>1.00 g</b> → 酸素 <b>${f2(SKY.k*1)}</b> g`}
-function lineStep(opt){opt=opt||{};S.step='line';save();SKY.editing=true;SKY.mt=opt.mt||RD.mt;SKY.k=SKY.k==null?(SKY.mt==='Cu'?0.5:0.35):SKY.k;SKY.readX=1;SKY.name='線を引こう';drawSky();let tries=0;
- $('ctrl').innerHTML=`<h3>✍️ 星座の線</h3><div class="msg">星図を<b>指でなぞって</b>、原点から引く線の傾きを決めよう。${opt.hint||'星の<b>ばらつきの真ん中</b>を通るように。'}</div>
-  <div class="fine"><button id="kD" aria-label="ゆるやかに">◀</button><div class="readout" id="readK">${readoutTxt()}</div><button id="kU" aria-label="急に">▶</button></div>
-  <button class="btn gold wide" id="kOk">${opt.one?'一発勝負！ この線で決定':'この線で決定'}</button><div id="cMsg"></div>`;
- const step=d=>{SKY.k=Math.max(0.02,Math.min(1.5,Math.round((SKY.k+d)*1000)/1000));redrawLine()};
- $('kD').onclick=()=>step(-0.005);$('kU').onclick=()=>step(0.005);
- $('kOk').onclick=()=>{ac();tries++;const fk=opt.fit!=null?opt.fit:fitK(SKY.mt);const err=(SKY.k-fk)/fk;
-  if(Math.abs(err)<=0.06){SKY.editing=false;const k=SKY.k;$('kOk').disabled=true;(opt.onOk||lineOk)(k,tries===1,fk)}
-  else{comboReset();sfx.no();const list=(opt.list||S.stars[SKY.mt]).filter(s=>!s.out);const above=list.filter(s=>s.o>SKY.k*s.m+.004).length,below=list.filter(s=>s.o<SKY.k*s.m-.004).length;
-   const mh=`<div class="why">線より上の星 <b>${above}</b>・下の星 <b>${below}</b>。${err<0?'線を<b>もう少し急</b>に':'線を<b>もう少しゆるやか</b>に'}（ずれ ${Math.round(Math.abs(err)*100)}%）。</div>`;
-   if(opt.one&&opt.onFail)return opt.onFail(mh);$('cMsg').innerHTML=mh}}}
-function lineOk(k,first,fk){const mt=SKY.mt;S.k[mt]=Math.round(fk*1000)/1000;save();
- SKY.k=null;SKY.readX=null;drawSky();sfx.chime();
- const svg=$('skySvg').getBoundingClientRect();S.stars[mt].forEach(s=>sparks(svg.left+px(s.m)/360*svg.width,svg.top+py(s.o)/300*svg.height,10,METAL[mt].sc));
- let g=0;if(first){comboUp();addScore(200+30*S.combo,$('sky'));if(!S.firstDone[RD.id]){S.firstDone[RD.id]=1;S.firsts++;g=earn(10,'first-try',$('sky'))}}
- save();
- $('ctrl').innerHTML=`<h3>🌟 線がつながった</h3><div class="good">${first?'<b>一発で</b>ばらつきの真ん中を通せた！ ':''}原点から、星のあいだをまっすぐ通る線。${g?`<br>✨ かけら +${g}`:''}</div><button class="btn gold wide" id="nx" style="margin-top:10px">${RD.fin?'星座を読む ▶':'次の観測へ ▶'}</button>`;
- $('nx').onclick=()=>{sfx.tap();if(RD.fin)finale(RD.fin);else startRound(S.r+1)}}
+/* ---------- 背景と皿（キャッシュ） ---------- */
+function makeCanvas(){var c=document.createElement('canvas');c.width=Math.round(W*DPR);c.height=Math.round(H*DPR);var x=c.getContext('2d');x.setTransform(DPR,0,0,DPR,0,0);return [c,x]}
+function paintGround(c){c.fillStyle=C.bg;c.fillRect(0,0,W,H);
+ /* 白磁の地の貫入（細いひび）と唐草の地紋 */
+ c.save();c.strokeStyle='rgba(31,63,143,.05)';c.lineWidth=1;for(var i=0;i<60;i++){var x=hash(i)*W,y=hash(i+99)*H;c.beginPath();c.moveTo(x,y);for(var k=0;k<4;k++){x+=(hash(i*7+k)-.5)*90;y+=(hash(i*5+k+3)-.5)*90;c.lineTo(x,y)}c.stroke()}
+ c.restore();c.save();c.globalAlpha=.12;var s2=26;for(var yy=H-s2*.3,row=0;row<2;row++,yy-=s2*.5){for(var xx=(row%2)*s2/2;xx<W+s2;xx+=s2)unit(c,'seigaiha',xx,yy,s2,0)}c.restore();
+ c.save();c.strokeStyle='rgba(31,63,143,.25)';c.lineWidth=1;c.strokeRect(6,6,W-12,H-12);c.restore()}
+function nightKey(){var n=S&&S.cur?S.cur.n:0;return scene+':'+n+':'+W+'x'+H+':'+DPR+(scene==='shelf'&&S?':'+S.n+JSON.stringify(S.res):'')}
+function buildPlateBG(){var n=S&&S.cur?S.cur.n:0,N=NIGHTS[n],a=makeCanvas(),c=a[1],P=L.pl,t=L.rim,G=L.g,ym=N.ymax;paintGround(c);
+ /* 影 */
+ c.save();c.shadowColor='rgba(19,42,99,.28)';c.shadowBlur=26;c.shadowOffsetY=12;c.fillStyle='#FDFDFA';c.beginPath();c.roundRect?c.roundRect(P.x,P.y,P.w,P.h,t*1.2):c.rect(P.x,P.y,P.w,P.h);c.fill();c.restore();
+ var gg=c.createLinearGradient(P.x,P.y,P.x+P.w,P.y+P.h);gg.addColorStop(0,'#FFFFFF');gg.addColorStop(.5,'#F9FAF6');gg.addColorStop(1,'#EEF0EA');c.fillStyle=gg;c.fillRect(P.x,P.y,P.w,P.h);
+ rimRect(c,P.x,P.y,P.w,P.h,t,N.motif);
+ c.strokeStyle=C.ai;c.lineWidth=2.5;c.strokeRect(P.x+1.5,P.y+1.5,P.w-3,P.h-3);c.lineWidth=1.5;c.strokeRect(P.x+t,P.y+t,P.w-2*t,P.h-2*t);c.lineWidth=1;c.strokeRect(P.x+t+5,P.y+t+5,P.w-2*t-10,P.h-2*t-10);
+ /* 見込みのだみ（うすい藍） */
+ var wg=c.createRadialGradient(G.x+G.w*.5,G.y+G.h*.4,10,G.x+G.w*.5,G.y+G.h*.5,Math.max(G.w,G.h)*.8);wg.addColorStop(0,'rgba(31,63,143,0)');wg.addColorStop(1,'rgba(31,63,143,.07)');c.fillStyle=wg;c.fillRect(G.x,G.y,G.w,G.h);
+ /* 方眼 */
+ var dy=ym<=.5?.05:.1;for(var v=0;v<=XMAX+1e-6;v+=.1){var X=gX(v),maj=Math.round(v*10)%2===0;c.strokeStyle=maj?'rgba(31,63,143,.28)':'rgba(31,63,143,.12)';c.lineWidth=maj?1.2:1;c.beginPath();c.moveTo(X,G.y);c.lineTo(X,G.y+G.h);c.stroke()}
+ for(v=0;v<=ym+1e-6;v+=dy){var Y=gY(v,ym),maj2=Math.round(v/dy)%2===0;c.strokeStyle=maj2?'rgba(31,63,143,.28)':'rgba(31,63,143,.12)';c.lineWidth=maj2?1.2:1;c.beginPath();c.moveTo(G.x,Y);c.lineTo(G.x+G.w,Y);c.stroke()}
+ brushLine(c,G.x,G.y+G.h,G.x+G.w+10,G.y+G.h,4,C.ai,1,3);brushLine(c,G.x,G.y+G.h,G.x,G.y-10,4,C.ai,1,4);
+ var fs=clamp(G.w*.024,11,15);c.font=font(fs);c.fillStyle=C.aiD;c.textBaseline='middle';
+ c.textAlign='center';for(v=0;v<=XMAX+1e-6;v+=.2)c.fillText(v.toFixed(1),gX(v),G.y+G.h+13);
+ c.textAlign='right';for(v=0;v<=ym+1e-6;v+=dy*2)c.fillText(v.toFixed(ym<=.5?1:1),G.x-7,gY(v,ym));
+ if(ym<=.5){for(v=dy;v<=ym;v+=dy*2){c.globalAlpha=.55;c.font=font(fs*.8);c.fillText(v.toFixed(2),G.x-7,gY(v,ym));c.globalAlpha=1}c.font=font(fs)}
+ c.textAlign='right';c.font=font(fs*1.05,800);c.fillText('金属の質量〔g〕',G.x+G.w,G.y+G.h+29);
+ c.save();c.translate(G.x-clamp(G.w*.07,40,54),G.y+G.h/2);c.rotate(-Math.PI/2);c.textAlign='center';c.fillText('結び付いた酸素の質量〔g〕',0,0);c.restore();
+ /* 引きしろ（パチンコの台） */
+ var py=L.pull.y0,ph=L.pull.y1-py;c.save();c.globalAlpha=.9;c.setLineDash([2,6]);c.strokeStyle='rgba(31,63,143,.35)';c.lineWidth=1.5;c.strokeRect(G.x,py,G.w,ph);c.setLineDash([]);
+ c.font=font(clamp(fs,11,14));c.fillStyle='rgba(31,63,143,.5)';c.textAlign='right';c.fillText('↓ 引くほど高く（縦）　↔ 左右で横',G.x+G.w-8,py+14);c.restore();
+ c.save();c.beginPath();c.rect(G.x,py,G.w,ph);c.clip();c.globalAlpha=.55;var ws=Math.max(26,G.w/22);for(var r=0;r<3;r++){var wy=py+ph-6-r*ws*.42;for(var wx=G.x-ws+(r%2)*ws/2;wx<G.x+G.w+ws;wx+=ws)unit(c,'seigaiha',wx,wy,ws,0)}
+ c.globalAlpha=.35;c.strokeStyle=C.ai;c.lineWidth=2;for(var m=0;m<3;m++){var mx=G.x+G.w*(.15+m*.33),my=py+ph-ws*1.3;c.beginPath();c.moveTo(mx-ws*1.6,my);c.quadraticCurveTo(mx-ws*.4,my-ws*(1+m%2*.5),mx,my-ws*(1.1+m%2*.5));c.quadraticCurveTo(mx+ws*.5,my-ws*(1+m%2*.5),mx+ws*1.8,my);c.stroke()}c.restore();
+ BG=a[0];BGKEY=nightKey()}
+function buildGroundBG(){var a=makeCanvas();paintGround(a[1]);BG=a[0];BGKEY=nightKey()}
 
-/* 星座を読む（比・読み取り・予想と照らす） */
-function ask(h,ops,okId,onOk,why){let miss=false;
- $('ctrl').innerHTML=h+ops.map((o,i)=>`<button class="choice" data-i="${i}">${o.t}</button>`).join('')+'<div id="cMsg"></div>';
- document.querySelectorAll('#ctrl [data-i]').forEach(b=>b.onclick=()=>{const o=ops[+b.dataset.i];if(o.id===okId){b.classList.add('ok');document.querySelectorAll('#ctrl [data-i]').forEach(x=>x.disabled=true);sfx.ok(3);onOk(!miss,b)}
-  else{miss=true;b.classList.add('ng');b.disabled=true;comboReset();sfx.no();$('cMsg').innerHTML=`<div class="why">${why(o.id)}</div>`}})}
-function finale(mt){S.step='fin';save();const M=METAL[mt];SKY.readX=null;SKY.name=M.sky;drawSky();
- const tbl=S.stars[mt].filter(s=>!s.out&&!s.team).sort((a,b)=>a.m-b.m).map(s=>`${f2(s.m)}→${f2(s.o)}`).join('　');
- const ops=mt==='Cu'?[{id:'41',t:'4：1'},{id:'14',t:'1：4'},{id:'51',t:'5：1'},{id:'32',t:'3：2'}]:[{id:'32',t:'3：2'},{id:'23',t:'2：3'},{id:'41',t:'4：1'},{id:'52',t:'5：2'}];
- ask(`<h3>📐 ${M.sky}を読む</h3><div class="msg">星（${M.nm}→酸素 g）：<br><span class="small">${tbl}</span><br>どの星も、<b>${M.nm}の質量：酸素の質量</b> がほぼ同じ比。その比は？</div>`,shuffle(ops),mt==='Cu'?'41':'32',(first,b)=>{
-   let g=0;if(first){comboUp();addScore(300,b);if(mt==='Cu'&&!S.ruleCu){S.ruleCu=true;g=earn(30,'rule',b)}if(mt==='Mg'&&!S.ruleMg){S.ruleMg=true;g=earn(30,'rule',b)}}save();
-   banner(M.sky+' 完成！',`${M.nm}：酸素 ＝ ${M.ratio}　比例`);shower(90);sfx.chime();
-   $('cMsg').innerHTML=`<div class="good">${M.nm}の質量が2倍、3倍…になると、結び付く酸素も2倍、3倍…。<b>原点を通る直線</b>＝<b>比例</b>。質量の比はいつも <b>${M.ratio}</b>。${g?`<br>✨ かけら +${g}（決まりを発見）`:''}</div><button class="btn gold wide" id="nx" style="margin-top:10px">次へ ▶</button>`;
-   $('nx').onclick=()=>{sfx.tap();mt==='Cu'?readStep():mgJudge()}},
-  id=>id==='14'||id==='23'?'順番に注意。前が金属、後ろが酸素。酸素のほうが少ない（銅）／多い（マグネシウム）？':'星の値で、金属の質量を酸素の質量でわってみよう（例：0.80÷0.20）。')}
-function readStep(){const ops=shuffle([{id:'a',t:'0.50 g'},{id:'b',t:'0.40 g'},{id:'c',t:'2.00 g'},{id:'d',t:'0.25 g'}]);
- ask(`<h3>🔮 星座で予言</h3><div class="msg">この星座を使うと、銅 <b>2.00 g</b> を反応しきるまで加熱したときに結び付く酸素は？</div>`,ops,'a',(first,b)=>{if(first){comboUp();addScore(200,b)}save();
-  $('cMsg').innerHTML=`<div class="good">銅：酸素＝4：1 なので、2.00 g の銅には <b>0.50 g</b> の酸素。できる酸化銅は 2.50 g。</div><button class="btn gold wide" id="nx" style="margin-top:10px">封印した予想と照らす ▶</button>`;$('nx').onclick=()=>{sfx.tap();sealJudge()}},
-  id=>id==='d'?'それは銅 1.00 g のとき。2.00 g なら？':id==='c'?'それは銅の質量。結び付く酸素は銅の4分の1。':'比例：銅が2倍なら酸素も2倍。')}
-function sealJudge(){const sl=S.seal||{};const hitP=sl.pred==='x2',hitS=sl.shape?sl.shape==='line0':null;let g=0;
- if(S.sealHit==null){S.sealHit=hitP;if(hitP){g=earn(15,'hit',$('ctrl'))}save()}
- if(hitP){shower(120);sfx.jingle();banner('大当たり！','封印した予想が、星座と一致')}else sfx.no();
- $('ctrl').innerHTML=`<h3>📜 封印した予想 vs 星座</h3><div class="card"><b>予想</b>：銅2倍 → 酸素 ${esc(PREDT[sl.pred]||'―')}${sl.shape?`／グラフ ${esc(SHAPET[sl.shape])}`:''}${sl.from==='now'?'（その場で予想）':''}<br><b>星座</b>：銅 0.40 g→酸素 0.10 g、0.80 g→0.21 g ＝ 約<b>2倍</b>／<b>原点を通る直線</b></div>
-  ${hitP?`<div class="good">予想どおり！${hitS===false?' ただしグラフの形はちがった。どこがちがったか見てみよう。':''}${g?`<br>✨ かけら +${g}`:''}</div>`:`<div class="why">予想とズレた。${sl.pred==='same'?'酸素は空気中にたくさんあっても、<b>結び付く相手の金属</b>が2倍なら、結び付く酸素も2倍になった。':sl.pred==='less'?'うすく広げて反応しきるまで加熱すれば、金属が多くても、酸素はその分だけ結び付いた。':'増え方は4倍ではなく、<b>ちょうど2倍</b>だった。'}ズレた所こそ、いちばん記憶に残る発見。</div>`}
-  <button class="btn gold wide" id="nx" style="margin-top:10px">次の観測へ ▶</button>`;$('nx').onclick=()=>{sfx.tap();startRound(S.r+1)}}
-function mgPredict(){S.step='mgpred';save();const ops=[{id:'steep',t:'銅の線より 急になる'},{id:'same',t:'銅の線と 同じになる'},{id:'gentle',t:'銅の線より ゆるやかになる'}];
- $('ctrl').innerHTML=`<h3>🌠 新しい星がやってくる</h3><div class="msg">こんどは<b>マグネシウム</b>。星を打つ前に予想しよう。マグネシウムの星座の線は？</div>${ops.map(o=>`<button class="choice" data-p="${o.id}">${o.t}</button>`).join('')}<p class="small">当たり外れは、マグネシウム座が完成したときに分かる。</p>`;
- document.querySelectorAll('[data-p]').forEach(b=>b.onclick=()=>{sfx.pick();S.mgPred=b.dataset.p;save();measure()})}
-function mgJudge(){const hit=S.mgPred==='steep';let g=0;if(S.mgHit==null){S.mgHit=hit;if(hit)g=earn(15,'hit',$('ctrl'));save()}
- if(hit){sfx.jingle();shower(80)}else sfx.no();drawSky();
- $('ctrl').innerHTML=`<h3>⚖️ 2つの星座をくらべる</h3><div class="card">予想：マグネシウムの線は銅の線より <b>${{steep:'急',same:'同じ',gentle:'ゆるやか'}[S.mgPred]||'―'}</b><br>結果：マグネシウム座の線のほうが <b>急</b></div>
- <div class="${hit?'good':'why'}">${hit?'予想が当たった！ ':''}同じ質量の金属でも、マグネシウムには銅より<b>多くの酸素</b>が結び付く（銅 1.00 g→0.25 g、マグネシウム 1.00 g→約0.67 g）。金属の種類がちがうと、<b>比はちがう</b>。でも、どちらも<b>比例</b>。${g?`<br>✨ かけら +${g}`:''}</div>
- <button class="btn gold wide" id="nx" style="margin-top:10px">最後の一発勝負へ ▶</button>`;$('nx').onclick=()=>{sfx.tap();startRound(S.r+1)}}
+/* ================= 入力の部品 ================= */
+function btn(r,label,kind,fn,id,o){o=o||{};var k=kind||'white',dn=PRESS===id,off=k==='off',sh=off?0:5,y=r.y+(dn?4:0),pul=o.pulse&&!RM?1+.035*Math.sin(TT*5):1;
+ ctx.save();ctx.translate(r.x+r.w/2,y+r.h/2);ctx.scale(pul,pul);var x0=-r.w/2,y0=-r.h/2;
+ var fill=k==='ai'?C.ai:k==='shu'?C.shu:k==='cu'?C.cu:off?'#ecece6':'#FCFCF8',edge=k==='shu'?'#7d2618':k==='cu'?C.cuD:C.aiD,tc=(k==='ai'||k==='shu'||k==='cu')?'#FCFCF8':off?'#a9b0c2':C.aiD;
+ if(!dn&&sh){rr(x0,y0+sh,r.w,r.h,5);ctx.fillStyle=off?'#d7d9d2':edge;ctx.fill()}
+ rr(x0,y0,r.w,r.h,5);ctx.fillStyle=fill;ctx.fill();ctx.lineWidth=2;ctx.strokeStyle=off?'#c9ccd6':edge;ctx.stroke();
+ if(k==='white'){rr(x0+4,y0+4,r.w-8,r.h-8,3);ctx.lineWidth=1;ctx.strokeStyle='rgba(31,63,143,.5)';ctx.stroke()}
+ var fs=fit(label,r.w-18,o.fs||Math.min(21,r.h*.42),800);txt(label,0,1,fs,{al:'center',col:tc,w:800});ctx.restore();
+ if(!off)HIT.push({id:id,x:r.x,y:r.y,w:r.w,h:r.h+sh,down:function(){PRESS=id;SFX.tap()},up:function(p){PRESS=null;if(inR(p,r))fn()}})}
+function hud(title){/* もどる・夜の名・かけら・音 */
+ btn(L.back,'◀ もどる','white',onBack,'back',{fs:19});
+ if(title){var tw=Math.min(W-L.back.w-L.kk.w-L.snd.w-60,420),tx=L.back.x+L.back.w+14;if(tw>120){ctx.save();rr(tx,14,tw,40,3);ctx.fillStyle='rgba(252,252,248,.94)';ctx.fill();ctx.lineWidth=1.5;ctx.strokeStyle=C.ai;ctx.stroke();
+  ctx.fillStyle=C.ai;ctx.fillRect(tx,14,8,40);txt(title,tx+18,34,fit(title,tw-28,18,800),{col:C.aiD,w:800});ctx.restore()}}
+ if(TT-ZST.t>.5||ZST.t<0){ZST.t=TT;try{ZST.v=window.Zukan&&Zukan.state?Zukan.state():null}catch(e){ZST.v=null}}var z=ZST.v,kk=L.kk;if(z){ctx.save();ctx.beginPath();ctx.ellipse(kk.x+kk.w/2,kk.y+kk.h/2,kk.w/2,kk.h/2,0,0,7);ctx.fillStyle='#FCFCF8';ctx.fill();ctx.lineWidth=2;ctx.strokeStyle=C.ai;ctx.stroke();
+  ctx.beginPath();ctx.ellipse(kk.x+kk.w/2,kk.y+kk.h/2,kk.w/2-5,kk.h/2-5,0,0,7);ctx.lineWidth=1;ctx.stroke();drawStar(kk.x+22,kk.y+kk.h/2,9,'Cu',{glow:.1});txt(String(z.kakera||0),kk.x+kk.w-16,kk.y+kk.h/2+1,17,{al:'right',col:C.aiD,w:800});ctx.restore()}
+ btn(L.snd,AU.mute?'音×':'音','white',function(){AU.init();AU.mute=!AU.mute;try{localStorage.setItem(MKEY,AU.mute?'1':'')}catch(e){}},'snd',{fs:17})}
 
-/* 一発勝負：外れた星にまどわされずに線を引く */
-function bossStars(mt){const k=METAL[mt].k,ms=mt==='Cu'?[0.30,0.50,0.70,0.90,1.10,1.30]:[0.20,0.40,0.60,0.80,1.00,1.20];const noise=[.01,-.01,0,.01,-.005,0];const oi=1+Math.floor(Math.random()*5);
- return ms.map((m,i)=>({m,o:Math.round((k*m+(i===oi?-k*m*.38:noise[i]*(mt==='Cu'?1:1.5)))*100)/100,bad:i===oi,mt}))}
-function bossStart(){S.step='boss';save();const mt=RD.mt;const list=bossStars(mt);let missPick=false;
- SKY.extra=list;SKY.name='星空の試験　'+METAL[mt].sky;SKY.mt=mt;SKY.k=null;const kept=S.k[mt];if(kept!=null){S.kHide=kept;S.k[mt]=null;save()}
- SKY.pick=(j,g)=>{const st=list[j];if(st.bad){SKY.pick=null;st.out=true;drawSky();sfx.ok(3);if(!missPick){comboUp();addScore(200,g)}
-   $('ctrl').innerHTML=`<div class="good">この星だけ、ほかの星のならびから<b>下に外れている</b>。加熱不足などで、酸素が結び付ききっていないのかもしれない。線を引くときは<b>外して</b>考える。</div><button class="btn gold wide" id="nx" style="margin-top:10px">一発勝負の線を引く ▶</button>`;
-   $('nx').onclick=()=>{sfx.tap();const good=list.filter(s=>!s.bad);lineStep({mt,one:1,list,fit:fitK(mt,good),hint:'外れた星に<b>まどわされず</b>に。チャンスは1回。',onOk:(k,first)=>bossOk(mt,first),onFail:mh=>bossFail(mt,mh)})}}
-  else{missPick=true;comboReset();sfx.no();pop('ならびの中',g,'#ef5a5f')}};
- drawSky();
- $('ctrl').innerHTML=`<h3>🎯 ${esc(RD.nm)}</h3><div class="msg">6つの星のうち、<b>1つだけ外れた星</b>がある。その星をタップしよう。</div><p class="small">（${METAL[mt].nm}の測定。${kept?'前に完成した星座の線は、いまは隠してある。':''}）</p>`;
-}
-function bossFail(mt,mh){if(S.kHide!=null){S.k[mt]=S.kHide;S.kHide=null}SKY.editing=false;SKY.extra=null;SKY.pick=null;drawSky();
- $('ctrl').innerHTML=`<h3>☁️ 雲がかかった</h3>${mh||''}<div class="why">一発勝負はやり直し。新しい星空で、もう一度。</div><button class="btn gold wide" id="nx" style="margin-top:10px">もう一度 ▶</button>`;$('nx').onclick=()=>{sfx.tap();startRound(S.r)}}
-function bossOk(mt,first){if(S.kHide!=null){S.k[mt]=S.kHide;S.kHide=null}SKY.editing=false;SKY.k=null;SKY.readX=null;SKY.extra=null;SKY.pick=null;drawSky();sfx.chime();shower(100);
- let g=0;S.boss[mt]=1;comboUp();addScore(500,$('sky'));if(!S.firstDone[RD.id]){S.firstDone[RD.id]=1;S.firsts++;g=earn(10,'first-try',$('sky'))}save();
- banner('一発成功！','外れた星にまどわされなかった');
- $('ctrl').innerHTML=`<h3>🏆 星空の試験　合格</h3><div class="good">外れた星を外し、残りの星の真ん中を通る線を一発で引けた。${g?`<br>✨ かけら +${g}`:''}</div><button class="btn gold wide" id="nx" style="margin-top:10px">${S.r+1<ROUNDS.length?'次の一発勝負へ ▶':'観測を終える ▶'}</button>`;
- $('nx').onclick=()=>{sfx.tap();if(S.r+1<ROUNDS.length)startRound(S.r+1);else finishMain()}}
+/* ================= 演出 ================= */
+function ink(x,y,n,col){if(RM)n=Math.min(n,8);for(var i=0;i<n;i++){var a=Math.random()*6.28,v=80+Math.random()*320;PT.push({k:'ink',x:x,y:y,vx:Math.cos(a)*v,vy:Math.sin(a)*v-60,g:420,r:2+Math.random()*5,col:col||C.ai,a:0,life:.7+Math.random()*.5})}}
+function gold(x,y,n){if(RM)n=Math.min(n,6);for(var i=0;i<n;i++){var a=Math.random()*6.28,v=60+Math.random()*260;PT.push({k:'gold',x:x,y:y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,g:120,r:2+Math.random()*3,rot:Math.random()*6,vr:(Math.random()-.5)*14,a:0,life:.9+Math.random()*.6})}}
+function ring(x,y,r,col,life){PT.push({k:'ring',x:x,y:y,r:r,col:col||C.ai,a:0,life:life||.6})}
+function pop(x,y,t,col,sz){PT.push({k:'num',x:x,y:y,t:t,col:col||C.ai,sz:sz||30,a:0,life:1.2,vy:-50})}
+function petals(n){if(RM)n=Math.min(n,20);for(var i=0;i<n;i++)PT.push({k:'petal',x:Math.random()*W,y:-20-Math.random()*H*.4,vx:(Math.random()-.5)*60,vy:90+Math.random()*120,rot:Math.random()*6,vr:(Math.random()-.5)*5,r:6+Math.random()*7,col:[C.ai,C.aiM,C.cu,C.gold,'#FCFCF8'][i%5],a:0,life:4})}
+function shards(x,y,col){for(var i=0;i<7;i++){var a=Math.random()*6.28;PT.push({k:'shard',x:x,y:y,vx:Math.cos(a)*120,vy:-80-Math.random()*120,g:700,rot:Math.random()*6,vr:(Math.random()-.5)*16,r:4+Math.random()*6,col:col,a:0,life:1.1})}}
+function msg(t,l){MSG={t:t,life:l||4}}
+function ev(a,b,d,col,big){EV={a:a,b:b||'',t:0,d:d||1.6,col:col||C.ai,big:big}}
+function shake(v){if(!RM)SHK=Math.max(SHK,v)}
+function flash(v,c){FLASH=RM?Math.min(v,.15):v;FLASHC=c||'#fff'}
+function drawFX(dt){PT=PT.filter(function(p){p.a+=dt;if(p.a<0)return true;p.x+=(p.vx||0)*dt;p.y+=(p.vy||0)*dt;if(p.g)p.vy+=p.g*dt;if(p.vr)p.rot+=p.vr*dt;return p.a<p.life});
+ PT.forEach(function(p){if(p.a<0)return;var k=1-p.a/p.life;ctx.save();ctx.globalAlpha=clamp(k*1.4,0,1);
+  if(p.k==='ink'){ctx.fillStyle=p.col;ctx.beginPath();ctx.arc(p.x,p.y,p.r*(.6+k*.4),0,7);ctx.fill()}
+  else if(p.k==='gold'){ctx.translate(p.x,p.y);ctx.rotate(p.rot);ctx.fillStyle=C.gold;ctx.fillRect(-p.r,-p.r*.4,p.r*2,p.r*.8)}
+  else if(p.k==='ring'){ctx.strokeStyle=p.col;ctx.lineWidth=4*k;ctx.beginPath();ctx.arc(p.x,p.y,p.r*(1+(1-k)*2.2),0,7);ctx.stroke()}
+  else if(p.k==='num'){var e=p.a<.25?1+Math.sin(p.a/.25*Math.PI)*.5:1;txt(p.t,p.x,p.y,p.sz*e,{al:'center',col:p.col,stroke:'#FCFCF8',sw:6,w:800})}
+  else if(p.k==='petal'){ctx.translate(p.x,p.y);ctx.rotate(p.rot);ctx.fillStyle=p.col;ctx.beginPath();ctx.ellipse(0,0,p.r,p.r*.45,0,0,7);ctx.fill();ctx.strokeStyle=C.ai;ctx.lineWidth=.8;ctx.stroke()}
+  else if(p.k==='shard'){ctx.translate(p.x,p.y);ctx.rotate(p.rot);ctx.fillStyle=p.col;ctx.beginPath();ctx.moveTo(0,-p.r);ctx.lineTo(p.r*.8,p.r*.6);ctx.lineTo(-p.r*.6,p.r*.3);ctx.closePath();ctx.fill();ctx.strokeStyle=C.ai;ctx.lineWidth=1;ctx.stroke()}
+  ctx.restore()})}
+function drawEV(dt){if(!EV)return;EV.t+=dt;var t=EV.t,d=EV.d;if(t>d){EV=null;return}var k=t<.25?easeBack(t/.25):1,al=t>d-.3?(d-t)/.3:1;
+ ctx.save();ctx.globalAlpha=al;var cy=LAND?H*.42:H*.46,sz=(EV.big?Math.min(W*.13,110):Math.min(W*.09,64))*k;
+ ctx.fillStyle='rgba(252,252,248,.82)';ctx.fillRect(0,cy-sz*.95,W,sz*1.9+(EV.b?30:0));ctx.fillStyle=EV.col;ctx.fillRect(0,cy-sz*.95,W,4);ctx.fillRect(0,cy+sz*.95+(EV.b?30:0)-4,W,4);
+ txt(EV.a,W/2,cy,fit(EV.a,W*.9,sz,800),{al:'center',col:EV.col,stroke:'#FCFCF8',sw:8,w:800});if(EV.b)txt(EV.b,W/2,cy+sz*.7+8,fit(EV.b,W*.9,Math.min(22,W*.05)),{al:'center',col:C.aiD});ctx.restore()}
+function easeBack(k){var s=1.9;k=k-1;return k*k*((s+1)*k+s)+1}
+function easeOut(k){return 1-Math.pow(1-k,3)}
 
-/* ===== クリア ===== */
-function finishMain(){S.cleared=true;S.ph='clear';save();sfx.jingle();shower(140);
- const go=()=>{renderClear();show('clear')};
- if(window.Zukan&&Zukan.mainClear&&!S.mainDone){S.mainDone=true;save();setTimeout(()=>{try{Zukan.mainClear({onClose:go})}catch(e){go()}},600)}else go()}
-function rankName(){const f=S.firsts;return f>=10?'星座博士':f>=8?'一等星の観測者':f>=5?'二等星の観測者':f>=3?'見習い観測者':'星空の旅人'}
-function renderClear(){SKY={k:null,mt:'Cu',editing:false,name:'',newIdx:-1};
- $('clearBox').innerHTML=`<div style="text-align:center;margin-top:14px"><span class="ribbon">観測完了</span><div class="logo" style="font-size:32px">${rankName()}</div></div>
- <div class="dome" style="margin-top:10px"><div class="nm">銅座とマグネシウム座</div><div>${skySVG()}</div></div>
- <div class="stat"><div>一発で引けた線<b>${S.firsts} / ${ROUNDS.length}</b></div><div>星の光<b>${S.score.toLocaleString()}</b></div><div>ぴったり止めた測定<b>${S.perfect}</b></div><div>最大の連続<b>${S.maxCombo}</b></div></div>
- <div class="card"><b>星座図鑑</b><br>🟠 銅座：銅：酸素＝<b>4：1</b>（原点を通る直線）<br>⚪ マグネシウム座：マグネシウム：酸素＝<b>3：2</b>（銅より急な直線）${S.team?`<br>🔵 班の星：銅 ${f2(S.team.m)} g → 酸素 ${f2(S.team.o)} g${S.team.out?'（外れ星）':''}`:''}<br>✦ 外れた星は外して、ばらつきの真ん中に線を引く</div>
- ${S.seal?`<div class="card"><b>封印した予想</b>：銅2倍 → 酸素 ${esc(PREDT[S.seal.pred]||'―')} ${S.sealHit?'→ <b>的中</b>':'→ ズレ（発見）'}</div>`:''}
- <div class="tbtns"><button class="btn gold wide" id="cT">📝 確認テストへ</button><button class="btn ghost wide zk hidden" id="cB">📖 図鑑</button><button class="btn ghost wide" id="cS">観測をえらんで遊ぶ</button><button class="btn ghost wide" id="cH">🏠 タイトルへ</button></div>`;
- zkBtns();$('cT').onclick=()=>{sfx.tap();startTest()};$('cB').onclick=()=>window.Zukan&&Zukan.openBook&&Zukan.openBook();$('cS').onclick=()=>{sfx.tap();stageMenu()};$('cH').onclick=()=>{sfx.tap();initTitle()}}
-function stageMenu(){overlay(`<h2>観測をえらぶ</h2><p class="small">えらんだ夜から、星を打ち直す（それより後の星は消える）。</p><div class="menu">${ROUNDS.map((R,i)=>`<button data-r="${i}">${esc(R.nm)}<span>${S.firstDone[R.id]?'一発✓':''}</span></button>`).join('')}</div><button class="btn ghost wide" id="oX" style="margin-top:10px">とじる</button>`);
- document.querySelectorAll('.menu [data-r]').forEach(b=>b.onclick=()=>{sfx.tap();closeOv();replayFrom(+b.dataset.r)});$('oX').onclick=()=>{sfx.tap();closeOv()}}
-function replayFrom(i){const cu=ROUNDS.slice(0,i).filter(R=>R.mt==='Cu'&&!R.boss).length,mg=ROUNDS.slice(0,i).filter(R=>R.mt==='Mg'&&!R.boss).length;
- S.stars.Cu=S.stars.Cu.filter(s=>s.team).concat(S.stars.Cu.filter(s=>!s.team).slice(0,cu));S.stars.Mg=S.stars.Mg.slice(0,mg);
- if(i<=4)S.k.Cu=null;if(i<=8)S.k.Mg=null;if(i===0)S.originLit=false;if(i<=5)S.mgPred=null;save();startRound(i)}
-setInterval(()=>{if(!$('game').classList.contains('hidden')&&document.visibilityState==='visible'&&!S.cleared){S.t++;if(S.t%5===0)save()}},1000);
+/* ================= 本編 ================= */
+function N_(){return NIGHTS[S.cur.n]}
+function newCur(n){return {n:n,i:0,stars:[],miss:0,tmiss:0,ph:NIGHTS[n].predMg?'pred':'aim',li:0,fits:{},first:0,time:NIGHTS[n].time||0,drawn:{}}}
+var AIM=null,FLY=null,STROKE=null,LANIM=null,CMP=null,DONE=null,HINT=0,KB={x:.4,y:.1,on:false};
+function curTag(){var c=S.cur;return N_().tags[c.i]}
+function startNight(n){S.cur=newCur(n);scene='play';AIM=FLY=STROKE=LANIM=CMP=DONE=null;COMBO=COMBO||0;BGKEY='';var N=NIGHTS[n];
+ ev(N.nm,N.sub,2.2,N.boss?C.shu:C.ai,1);SFX.taiko();
+ if(N.predMg){msg('星を打つ前に予想：マグネシウムの星座の線は どんな傾き？ 原点から筆で引いてみよう',8)}
+ else if(N.intro){msg('札の値から「結び付いた酸素」を出して、パチンコで星を打て',6)}
+ else if(N.known)msg('星座の線はもう見えている。線で読んで、予言の星を打て',6);
+ else if(N.boss)msg('時間つき。札を読み、星を打ち、2本の線を引け',6);
+ else msg(N.sub+'：札を読んで星を打て',5);
+ save()}
+function fitK(mt){var sx=0,sy=0;S.cur.stars.forEach(function(s){if(s.mt===mt&&!s.out){sx+=s.x*s.x;sy+=s.x*s.y}});return sx>0?sy/sx:MT[mt].k}
+function fireAt(x,y){var c=S.cur,g=curTag();if(!g||c.ph!=='aim')return;FLY={x:x,y:y,t:0,dur:RM?.15:.45,mt:g.mt};SFX.fire();S.shots++;AIM=null}
+function land(){var c=S.cur,g=curTag(),N=N_(),t=truth(g),ym=N.ymax,tolX=.06,tolY=.06*ym,x=FLY.x,y=FLY.y,dx=x-t.x,dy=y-t.y,px=gX(x),py=gY(y,ym);FLY=null;
+ if(Math.abs(dx)<=tolX&&Math.abs(dy)<=tolY){var first=c.tmiss===0;c.stars.push({mt:g.mt,x:t.x,y:t.y,out:g.k==='out'?1:0,born:TT,first:first});
+  COMBO=first?COMBO+1:0;S.maxCombo=Math.max(S.maxCombo,COMBO);if(first){c.first++;S.firsts++;var got=window.Zukan&&Zukan.earn?Zukan.earn(10,'first-try',{x:gX(t.x),y:gY(t.y,ym)-30}):0}
+  var lum=10*(first?Math.max(1,COMBO):1);S.lum+=lum;
+  shake(.25+Math.min(COMBO,8)*.04);flash(.22,'#fff');ink(gX(t.x),gY(t.y,ym),18+COMBO*3);gold(gX(t.x),gY(t.y,ym),6+COMBO*2);ring(gX(t.x),gY(t.y,ym),14,MT[g.mt].col,.7);ring(gX(t.x),gY(t.y,ym),24,C.ai,.9);
+  pop(gX(t.x),gY(t.y,ym)-26,'酸素 '+f2(t.y)+' g',C.ai,24);PT.push({k:'num',x:gX(t.x)+40,y:gY(t.y,ym)-62,t:'+'+lum,col:C.cu,sz:32,a:-.12,life:1.2,vy:-60});
+  SFX.hit(COMBO);vib(first?[18,30,18]:15);
+  if(first&&(COMBO===3||COMBO===5||COMBO===8||COMBO===12)){ev(kan(COMBO)+'連！',COMBO>=8?'星が止まらない':COMBO>=5?'計算も読み取りも一発':'一発正解が続いている',1.4,COMBO>=8?C.gold:COMBO>=5?C.shu:C.cu,1);flash(.4,COMBO>=5?'#ffe9c2':'#fff');petals(16+COMBO*3);SFX.gold()}
+  if(g.k==='out')msg('この班は1回しか加熱していない。星はほかより低い所に光った（加熱不足）',6);
+  else if(g.k==='askO'||g.k==='askM'||g.k==='ox')msg('実験で確かめると… '+MT[g.mt].nm+' '+f2(t.x)+' g に酸素 '+f2(t.y)+' g。予言どおり！',4.5);
+  else msg(first?'ぴたり！ '+MT[g.mt].nm+' '+f2(t.x)+' g → 酸素 '+f2(t.y)+' g':'刺さった！ '+calcHint(g),3.5);
+  c.i++;c.tmiss=0;HINT=0;
+  if(c.i>=N.tags.length){if(N.lines.length){setTimeout(function(){if(scene==='play'&&S.cur===c){c.ph='line';c.li=0;msg(lineMsg(),8);SFX.brush()}},RM?100:900)}else setTimeout(function(){if(scene==='play'&&S.cur===c)nightDone()},RM?100:1200)}
+  save();return}
+ /* はずれ */
+ c.tmiss++;c.miss++;var hadCombo=COMBO;COMBO=0;shards(px,py,MT[g.mt].col);SFX.crack();shake(.2);vib(40);
+ var d=null;wrongs(g).forEach(function(w){if(!d&&Math.abs(x-w.x)<=tolX*1.4&&Math.abs(y-w.y)<=tolY*1.4)d=w});
+ var near=Math.abs(dx)<=tolX*3&&Math.abs(dy)<=tolY*3,dir=[];if(Math.abs(dx)>tolX)dir.push((dx>0?'左へ ':'右へ ')+f2(Math.abs(dx))+' g');if(Math.abs(dy)>tolY)dir.push((dy>0?'下へ ':'上へ ')+f2(Math.abs(dy))+' g');
+ var m=d?d.t:(near?'あと少し！ '+dir.join('・'):'星が欠けた。'+dir.join('・')+' ずれている');
+ if(hadCombo>=2)m+='（'+kan(hadCombo)+'連で止まった。あと1回で'+kan(hadCombo+1)+'連だった）';
+ if(c.tmiss>=2){HINT=1;m+='\n'+calcHint(g)}
+ msg(m,7);pop(px,py-20,near&&!d?'あと少し':'欠けた',C.shu,22);save()}
+function lineMsg(){var c=S.cur,N=N_(),mt=N.lines[c.li];return '筆で'+MT[mt].sky+'の線を1本引こう：原点を通り、'+MT[mt].nm+'の星のばらつきの真ん中を通る直線'}
 
-/* ===== 確認テスト ===== */
-let T=null;
-function startTest(){if(!window.Quiz){alert('問題データが読み込まれていません');return}T={qs:Quiz.test(),i:0,ans:[],cur:null};show('test');renderTest()}
-function renderTest(){
- const q=T.qs[T.i];T.cur=q.t==='order'?[]:'';
- let h=`<div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px"><span class="ribbon">確認テスト</span><b>第 ${T.i+1} 問 / ${T.qs.length}</b></div>
-  <div class="prog">${T.qs.map((_,i)=>`<i class="${i<T.i?'on':''}"></i>`).join('')}</div><div class="tq">${q.q}</div>${q.fig?`<div class="tfig">${q.fig}</div>`:''}`;
- if(q.t==='choice')h+=q.shown.map((c,k)=>`<button class="choice" data-k="${k}">${c}</button>`).join('');
- else if(q.t==='num')h+=`<div class="numshow"><span id="numv">　</span> <small>${esc(q.unit||'')}</small></div><div class="keys">${['7','8','9','4','5','6','1','2','3','0','.','⌫'].map(k=>`<button data-n="${k}">${k}</button>`).join('')}</div><button class="btn gold wide" style="margin-top:10px" id="tOk">決定</button>`;
- else h+=`<p class="small">上から順になるように、タップして並べよう（もう一度タップで外す）</p><div class="ordsel" id="ordSel"></div>${q.shown.map((c,k)=>`<button class="choice" data-o="${k}">${c}</button>`).join('')}<button class="btn gold wide" style="margin-top:8px" id="tOk" disabled>決定</button>`;
- $('tBox').innerHTML=h;
- const next=a=>{T.ans.push(a);sfx.tap();setTimeout(()=>{T.i++;if(T.i<T.qs.length)renderTest();else finishTest()},180)};
- if(q.t==='choice')document.querySelectorAll('#tBox .choice').forEach(b=>b.onclick=()=>{document.querySelectorAll('#tBox .choice').forEach(x=>x.disabled=true);b.style.borderColor='var(--gold)';next(q.shown[+b.dataset.k])});
- else if(q.t==='num'){document.querySelectorAll('[data-n]').forEach(b=>b.onclick=()=>{sfx.tap();const k=b.dataset.n;if(k==='⌫')T.cur=T.cur.slice(0,-1);else if(T.cur.length<8)T.cur+=k;$('numv').textContent=T.cur||'　'});$('tOk').onclick=()=>{if(!T.cur)return;next(T.cur)}}
- else{const upd=()=>{$('ordSel').innerHTML=T.cur.map((k,n)=>`<div data-r="${n}">${n+1}. ${q.shown[k]}</div>`).join('');
-   document.querySelectorAll('[data-o]').forEach(b=>b.style.display=T.cur.includes(+b.dataset.o)?'none':'block');
-   document.querySelectorAll('[data-r]').forEach(d=>d.onclick=()=>{T.cur.splice(+d.dataset.r);upd()});$('tOk').disabled=T.cur.length!==q.shown.length};
-  document.querySelectorAll('[data-o]').forEach(b=>b.onclick=()=>{sfx.tap();T.cur.push(+b.dataset.o);upd()});$('tOk').onclick=()=>{if(T.cur.length!==q.shown.length)return;next(T.cur.map(k=>q.shown[k]))};upd()}
-}
-function finishTest(){
- const qs=T.qs,answers=T.ans;const review=Quiz.review(qs,answers),marks=review.map(r=>r.ok),score=marks.filter(Boolean).length;
- const name=S.name||window.PLAYER_NAME||'';
- const sealTxt=S.seal?(PREDT[S.seal.pred]||'―')+(S.seal.from==='now'?'（その場で予想）':'')+(S.sealHit?' → 的中':S.sealHit===false?' → ズレ':''):'―';
- const records=TEST_ONLY?[['モード','確認テストだけ']]:[['クリアタイム',fmtT(S.t)],['一発で引けた線',S.firsts+' / '+ROUNDS.length],['見つけた比','銅：酸素＝4：1／Mg：酸素＝3：2'],['封印した予想',sealTxt]];
- sfx.jingle();
- const rec=SubmitCard.show({gameId:GAME_ID,grade:'chu2',koma:[KOMA],unit:'中2理科　化学変化と原子・分子　第31回',game:'比例の星座 ～金属と酸素の質量のグラフ～'+(TEST_ONLY?'（確認テストのみ）':''),name,score,total:qs.length,marks,records,review},()=>renderResult(score,qs.length));
- T.rec=rec;if(!TEST_ONLY){S.test={score,total:qs.length};save()}renderResult(score,qs.length);
-}
-function renderResult(score,total){show('test');
- $('tBox').innerHTML=`<div class="panel" style="text-align:center;margin-top:16px"><span class="ribbon">確認テスト</span><div style="font-size:58px;color:var(--gold);font-family:var(--min)">${score}<span style="font-size:22px"> / ${total}</span></div>
-  <p style="font-size:16px">${score===total?'満点！ 星座博士だ。':score>=Math.ceil(total*.7)?'合格ライン突破！':'解説を読んで、もう一度ためそう。'}</p>
-  <div class="tbtns"><button class="btn gold wide" id="rCard">📝 提出カードを表示</button><button class="btn ghost wide" id="rRetry">もう一度テストを解く</button>
-  ${TEST_ONLY?'':'<button class="btn ghost wide zk hidden" id="rB">📖 図鑑</button><button class="btn ghost wide" id="rT">🏠 タイトルへ</button>'}</div></div>`;zkBtns();
- $('rCard').onclick=()=>{if(T&&T.rec&&SubmitCard.reopen)SubmitCard.reopen(T.rec)};$('rRetry').onclick=()=>startTest();
- if(!TEST_ONLY){$('rB').onclick=()=>window.Zukan&&Zukan.openBook&&Zukan.openBook();$('rT').onclick=()=>initTitle()}}
+/* ---------- 筆の線の判定 ---------- */
+function strokeFit(pts){/* 画面上の点 → 最小二乗の直線（主成分） */
+ var n=pts.length,mx=0,my=0;pts.forEach(function(p){mx+=p.x;my+=p.y});mx/=n;my/=n;var sxx=0,syy=0,sxy=0;pts.forEach(function(p){var a=p.x-mx,b=p.y-my;sxx+=a*a;syy+=b*b;sxy+=a*b});
+ var th=.5*Math.atan2(2*sxy,sxx-syy),ux=Math.cos(th),uy=Math.sin(th),dev=0,mn=1e9,mxp=-1e9;pts.forEach(function(p){var a=p.x-mx,b=p.y-my,d=Math.abs(-uy*a+ux*b),s=a*ux+b*uy;dev=Math.max(dev,d);mn=Math.min(mn,s);mxp=Math.max(mxp,s)});
+ return {mx:mx,my:my,ux:ux,uy:uy,dev:dev,len:mxp-mn}}
+function judgeLine(){var c=S.cur,N=N_(),mt=N.lines[c.li],ym=N.ymax,pts=STROKE;STROKE=null;if(!pts||pts.length<4){return}
+ var F=strokeFit(pts),ox=gX(0),oy=gY(0,ym),dO=Math.abs(-F.uy*(ox-F.mx)+F.ux*(oy-F.my)),kT=fitK(mt),stars=c.stars.filter(function(s){return s.mt===mt});
+ var fail=null,near=false;
+ if(F.len<L.g.w*.3)fail='もっと長く、星の並び全体にかかる1本の線を';
+ else if(F.dev>Math.max(16,L.g.h*.05)){var touch=0;stars.forEach(function(s){var sx=gX(s.x),sy=gY(s.y,ym);if(pts.some(function(p){return Math.hypot(p.x-sx,p.y-sy)<14}))touch++});
+  fail=touch>=3?'星を折れ線でつながない。ばらつきの真ん中を通る「1本の直線」を引く':'まっすぐ1本の線を引こう（曲がっている）'}
+ else if(dO>Math.max(18,L.g.w*.028))fail='線が原点を通っていない。'+MT[mt].nm+'が0 gなら、結び付く酸素も0 g';
+ if(!fail){/* 傾き（値の世界） */var dxp=F.ux,dyp=F.uy;if(Math.abs(dxp)<1e-3)fail='縦にまっすぐではなく、右上がりの線';else{var kx=(-dyp/L.g.h*ym)/(dxp/L.g.w*XMAX);if(kx<0)fail='右上がりの線になるはず';else{var e=(kx-kT)/kT;
+   var ab=0,be=0;stars.forEach(function(s){if(s.out)return;if(s.y>kx*s.x+.004)ab++;else if(s.y<kx*s.x-.004)be++});
+   if(Math.abs(e)>.1){near=Math.abs(e)<=.22;fail=(near?'あと少し！ ':'')+'線を'+(e>0?'もう少しゆるやかに':'もう少し急に')+'（線より上の星 '+ab+'個・下の星 '+be+'個）';
+    var outS=stars.filter(function(s){return s.out})[0];if(outS&&e<0&&Math.abs(outS.y-kx*outS.x)<.03)fail='外れた星（加熱不足）に線が引っぱられている。その星は線からはずして考える'}}}}
+ if(fail){c.miss++;var hc=COMBO;COMBO=0;c.drawn[mt]=(c.drawn[mt]||0)+1;msg(fail+(hc>=2?'（'+kan(hc)+'連で止まった）':''),7);SFX.miss();shake(.15);LANIM={mt:mt,t:0,fail:1,F:F};save();return}
+ /* 成功 */
+ var first=!c.drawn[mt];c.drawn[mt]=(c.drawn[mt]||0)+1;c.fits[mt]=kT;COMBO=first?COMBO+1:0;S.maxCombo=Math.max(S.maxCombo,COMBO);S.lines1+=first?1:0;
+ LANIM={mt:mt,t:0,ok:1};SFX.line();shake(.35);flash(.35,'#fff');petals(24);
+ var ex=Math.min(XMAX,ym/kT),mid={x:gX(ex*.6),y:gY(kT*ex*.6,ym)};gold(mid.x,mid.y,20);ink(mid.x,mid.y,20);
+ var g=0;if(window.Zukan&&Zukan.earn){g=Zukan.earn(30,'rule',{x:mid.x,y:mid.y-30})}
+ ev(MT[mt].sky+' 結ばれる','原点を通る直線＝比例（'+MT[mt].nm+'：酸素＝'+MT[mt].ratio+'）',2.2,mt==='Cu'?C.cu:C.ai,1);
+ c.li++;if(c.li>=N.lines.length)c.ph='wait';save();
+ setTimeout(function(){if(scene!=='play'||S.cur!==c)return;if(c.li<N.lines.length){msg(lineMsg(),8);return}
+  if(N.seal){c.ph='cmp';CMP={t:0,go:0};msg('コマ30で封印した予想の線と、星座を照らし合わせよう',8);save()}
+  else if(N.predMg){mgJudge()}
+  else if(N.cmp2){c.ph='cmp2';msg('同じ 1.00 g でも、マグネシウムには銅より多くの酸素が結び付く（銅 0.25 g・マグネシウム 約0.67 g）。金属の種類で比はちがうが、どちらも比例',9);ev('二つの星座','マグネシウムの線のほうが急',2.4,C.ai,1);setTimeout(function(){if(S.cur===c&&scene==='play')nightDone()},RM?300:3200)}
+  else nightDone()},RM?300:1600)}
+/* ---------- 予想（封印が無いとき・マグネシウム） ---------- */
+function classifyPts(pts){if(!pts||pts.length<2)return null;var P=pts.slice().sort(function(a,b){return a[0]-b[0]});function yAt(x){if(x<=P[0][0])return P[0][1];for(var i=1;i<P.length;i++)if(x<=P[i][0]){var k=(x-P[i-1][0])/Math.max(1e-6,P[i][0]-P[i-1][0]);return P[i-1][1]+(P[i][1]-P[i-1][1])*k}return P[P.length-1][1]}
+ var y2=yAt(.2),y4=yAt(.4),y8=yAt(.8),y12=yAt(1.2),s1=(yAt(.6)-y2)/.4,s2=(y12-y8)/.4,shape;
+ if(Math.abs(y12-y2)<.035)shape='flat';else if(s1>.02&&s2<s1*.4)shape='bend';else{var icp=y4-(y8-y4);shape=Math.abs(icp)<.035?'line0':'lineoff'}
+ var r=y4>.004?y8/y4:(y8>.02?9:1),pred=shape==='flat'?'same':r>=2.6?'x4':r>=1.6?'x2':r>=1.2?'less':'same';return {shape:shape,pred:pred,yAt:yAt}}
+function strokeToVals(pts,ym){return pts.map(function(p){return [r2(clamp(iX(p.x),0,XMAX)),Math.round(clamp(iY(p.y,ym),0,ym)*1000)/1000]})}
+function finishPredStroke(kind){var pts=STROKE;STROKE=null;if(!pts||pts.length<4)return;var ym=kind==='seal'?.5:1.2,v=strokeToVals(pts,ym),xs=v.map(function(q){return q[0]}),span=Math.max.apply(null,xs)-Math.min.apply(null,xs);
+ if(span<.6){msg('横に長く（0から1.2 gあたりまで）描いてね',4);SFX.miss();return}
+ if(kind==='seal'){var cl=classifyPts(v);S.seal={from:'now',pts:v,shape:cl.shape,shapeT:SHAPET[cl.shape],pred:cl.pred,predT:PREDT[cl.pred]};SFX.open();ink(W/2,H/2,20);save();SEALS.step=3;
+  if(window.Zukan&&Zukan.earn)Zukan.earn(10,'predict',{x:W/2,y:H/2});return}
+ /* マグネシウムの傾きの予想（原点を通る線として傾きを読む） */
+ var sx=0,sy=0;v.forEach(function(q){sx+=q[0]*q[0];sy+=q[0]*q[1]});var k=sx>0?sy/sx:0;S.mgPred={pts:v,k:k};var c=S.cur;c.ph='aim';
+ msg('予想の線を皿に残した。マグネシウムの札を読んで、星を打て',5);SFX.open();gold(W/2,H/2,14);if(window.Zukan&&Zukan.earn)Zukan.earn(10,'predict',{x:W/2,y:H*.4});save()}
+function mgJudge(){var c=S.cur,p=S.mgPred,kCu=.25,kMg=c.fits.Mg||2/3,hit=p&&p.k>kCu*1.4;
+ if(S.mgHit==null){S.mgHit=!!hit;if(hit&&window.Zukan&&Zukan.earn)Zukan.earn(15,'hit',{x:W/2,y:H*.4})}
+ if(hit){ev('予想的中！','マグネシウムの線は銅より急',2.4,C.shu,1);SFX.gold();petals(40);flash(.4,'#ffe9c2')}else{SFX.miss()}
+ msg((hit?'当たり！ ':'予想とズレた。')+'同じ質量でも、マグネシウムには銅より多くの酸素が結び付く（1.00 g あたり 銅 0.25 g・マグネシウム 約0.67 g）。線の傾きがちがっても、どちらも原点を通る直線＝比例',10);
+ c.ph='cmp2';setTimeout(function(){if(S.cur===c&&scene==='play')nightDone()},RM?300:3600)}
+/* ---------- 封印と照らす（二の夜の終わり） ---------- */
+function sealCompare(){var c=S.cur,sl=S.seal;CMP.go=1;CMP.t=0;var hit=false,err=null;
+ if(sl&&sl.pts&&sl.pts.length>1){var cl=classifyPts(sl.pts),tot=0,n=0;for(var x=.2;x<=1.21;x+=.1){tot+=Math.abs(cl.yAt(x)-.25*x);n++}err=tot/n;hit=(sl.pred==='x2'&&sl.shape==='line0')||err<=.035}
+ else if(sl)hit=sl.pred==='x2';
+ CMP.hit=hit;CMP.err=err;if(S.sealCmp==null){S.sealCmp={hit:hit,err:err};if(hit&&window.Zukan&&Zukan.earn)Zukan.earn(15,'hit',{x:W/2,y:H*.35})}
+ setTimeout(function(){if(!CMP||S.cur!==c)return;CMP.show=1;if(hit){ev('封印の予想、的中！','銅2倍 → 酸素も2倍。原点を通る直線',2.6,C.shu,1);SFX.gold();petals(50);flash(.5,'#ffe9c2');shake(.4)}else{SFX.miss();ev('予想とズレた','ズレた所こそ、いちばん記憶に残る発見',2.4,C.ai)}},RM?200:1400)}
+function sealWhy(){var sl=S.seal||{};if(CMP&&CMP.hit)return '予想どおり、銅が2倍・3倍になると、結び付く酸素も2倍・3倍。グラフは原点を通る直線＝比例。';
+ return {same:'空気中に酸素がたっぷりあっても、結び付く量を決めるのは相手の銅の量。銅が2倍なら酸素も2倍になった。',flat:'空気中に酸素がたっぷりあっても、結び付く量を決めるのは相手の銅の量。銅が2倍なら酸素も2倍になった。',
+  less:'うすく広げて反応しきるまで加熱すれば、銅が多くても、その分だけ酸素が結び付いた。',bend:'うすく広げて反応しきるまで加熱すれば、銅が多くても、その分だけ酸素が結び付いた。途中で横ばいにはならない。',
+  x4:'増え方は4倍ではなく、ちょうど2倍（比例）。',lineoff:'銅が0 gなら酸素も0 g。線は原点を通る。'}[sl.shape==='flat'||sl.shape==='bend'||sl.shape==='lineoff'?sl.shape:sl.pred]||'星座は原点を通る直線（比例）だった。'}
+/* ---------- 夜の終わり ---------- */
+function nightDone(){var c=S.cur,N=N_();c.ph='done';var st=c.miss===0?3:c.miss<=2?2:1,gd=c.miss===0;var prev=S.res[c.n];
+ S.res[c.n]={st:Math.max(st,prev?prev.st:0),gold:gd||(prev&&prev.gold)?1:0,first:c.first};S.n=Math.max(S.n,Math.min(NIGHTS.length-1,c.n+1));DONE={t:0,st:st,gold:gd};save();SFX.fanfare();petals(60);flash(.5,'#fff');
+ if(gd){setTimeout(function(){if(DONE){SFX.gold();ev('金彩の皿！','一度もまちがえずに焼き上げた',2.6,C.gold,1);flash(.6,'#fff1c9');petals(60)}},RM?100:1700)}
+ if(N.boss&&window.Zukan&&Zukan.earn)Zukan.earn(100,'boss',{id:GID+':boss',x:W/2,y:H*.4})}
+function afterNight(){var n=S.cur.n;S.cur=null;DONE=null;if(n>=NIGHTS.length-1){finishMain();return}save();toShelf()}
 
-/* ===== タイトル ===== */
-function heroSVG(){let s=`<svg viewBox="0 0 360 170"><defs><radialGradient id="hg"><stop offset="0" stop-color="#fff6d8" stop-opacity=".9"/><stop offset="1" stop-color="#f3cf7a" stop-opacity="0"/></radialGradient></defs><path d="M10,160 Q180,-40 350,160" fill="none" stroke="#27305a" stroke-width="2"/>`;
- const cu=[[.4,.1],[.6,.15],[.8,.2],[1.2,.3],[1.4,.35]],mg=[[.3,.2],[.6,.4],[.9,.6],[1.2,.8]];const X=x=>40+x*190,Y=y=>150-y*150;
- s+=`<path d="M${X(0)},${Y(0)} L${X(1.5)},${Y(.375)}" stroke="#C8773C" stroke-width="1.5" opacity=".8"/><path d="M${X(0)},${Y(0)} L${X(1.35)},${Y(.9)}" stroke="#B9C6D4" stroke-width="1.5" opacity=".8"/>`;
- cu.forEach(([x,y])=>s+=`<circle cx="${X(x)}" cy="${Y(y)}" r="14" fill="url(#hg)"/><path d="${starPath(X(x),Y(y),7)}" fill="#ffb27a"/>`);mg.forEach(([x,y])=>s+=`<circle cx="${X(x)}" cy="${Y(y)}" r="14" fill="url(#hg)"/><path d="${starPath(X(x),Y(y),7)}" fill="#e6f0ff"/>`);
- return s+`<circle cx="${X(0)}" cy="${Y(0)}" r="5" fill="#fff6d8"/><text x="${X(1.5)}" y="${Y(.375)+16}" font-size="12" fill="#ffb27a" text-anchor="end" font-family="serif">銅座</text><text x="${X(1.2)}" y="${Y(.9)-6}" font-size="12" fill="#e6f0ff" text-anchor="end" font-family="serif">マグネシウム座</text></svg>`}
-function initTitle(){show('title');zkBtns();$('hero').innerHTML=heroSVG();$('nameIn').value=S.name||window.PLAYER_NAME||'';if(window.PLAYER_NAME)$('nameBox').classList.add('hidden');
- $('bCont').classList.toggle('hidden',!S.started);$('bCont').textContent=S.cleared?'つづきから（確認テスト・星座図鑑）':S.ph==='intro'?'つづきから（開封）':`つづきから（${ROUNDS[Math.min(S.r,ROUNDS.length-1)].nm}）`}
-function takeName(){const v=$('nameIn').value.trim();S.name=v||window.PLAYER_NAME||S.name||'';save()}
-$('bStart').onclick=()=>{ac();sfx.tap();takeName();if(S.started&&!confirm('はじめから観測しますか？（打った星は消えます）'))return;
- const keep={name:S.name,firstDone:S.firstDone,mainDone:S.mainDone,ruleCu:S.ruleCu,ruleMg:S.ruleMg,sealHit:S.sealHit,mgHit:S.mgHit};S=Object.assign(fresh(),keep);save();intro()};
-$('bCont').onclick=()=>{ac();sfx.tap();takeName();
- if(S.cleared){overlay(`<h2>どこから？</h2><div class="tbtns"><button class="btn gold wide" id="oT">📝 確認テスト</button><button class="btn ghost wide" id="oC">🌌 星座図鑑を見る</button><button class="btn ghost wide" id="oS">観測をえらぶ</button><button class="btn ghost wide" id="oX">とじる</button></div>`);
-  $('oT').onclick=()=>{closeOv();startTest()};$('oC').onclick=()=>{closeOv();renderClear();show('clear')};$('oS').onclick=()=>{closeOv();stageMenu()};$('oX').onclick=closeOv}
- else if(S.ph==='intro')intro();else resumeRound()};
-function resumeRound(){const i=S.r;const R=ROUNDS[i];
- // 途中の周は、その周の星を消してからやり直す
- if(!R.boss){const cu=ROUNDS.slice(0,i).filter(x=>x.mt==='Cu'&&!x.boss).length,mg=ROUNDS.slice(0,i).filter(x=>x.mt==='Mg'&&!x.boss).length;
-  if(S.step!=='fin'){S.stars.Cu=S.stars.Cu.filter(s=>s.team).concat(S.stars.Cu.filter(s=>!s.team).slice(0,cu));S.stars.Mg=S.stars.Mg.slice(0,mg)}
-  else{RD=R;show('game');SKY={k:null,mt:R.mt,editing:false,name:METAL[R.mt].sky,newIdx:-1};hudUp();drawSky();return finale(R.fin)}}
- if(S.kHide!=null){S.k[R.mt]=S.kHide;S.kHide=null}
- startRound(i)}
-$('bBook1').onclick=()=>window.Zukan&&Zukan.openBook&&Zukan.openBook();
-$('bMute1').onclick=()=>{setMute(!MUTE);if(!MUTE){ac();sfx.tap()}};$('bMute').onclick=()=>{setMute(!MUTE);if(!MUTE){ac();sfx.tap()}};
-$('bHome').onclick=()=>{sfx.tap();save();initTitle()};
-$('ov').addEventListener('pointerdown',e=>{if(e.target===$('ov')&&$('ovc').querySelector('#oX'))closeOv()});
-document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')save()});
-setMute(MUTE);if(window.PLAYER_NAME&&!S.name)S.name=window.PLAYER_NAME;
-if(TEST_ONLY){S.name=window.PLAYER_NAME||S.name||'';startTest()}else initTitle();
-window.__HS={S:()=>S,RD:()=>RD,SKY:()=>SKY,MS:()=>MS,fitK,start:startRound,test:startTest,setK:k=>{SKY.k=k;redrawLine()}};
+/* ================= 描画：本編 ================= */
+function drawPlay(dt){var c=S.cur,N=N_(),ym=N.ymax,G=L.g;if(BGKEY!==nightKey())buildPlateBG();ctx.drawImage(BG,0,0,W,H);
+ /* 封印の予想の線（一・二の夜）／マグネシウムの予想 */
+ if(S.seal&&S.seal.pts&&c.n<=1&&ym<=.5){drawPredLine(S.seal.pts,ym,C.cu,'封印した予想')}
+ if(S.mgPred&&c.n===4){drawPredLine(S.mgPred.pts,ym,C.shu,'マグネシウムの予想')}
+ /* 知っている線（七の夜） */
+ (N.known||[]).forEach(function(mt){drawConLine(mt,MT[mt].k,ym,1,.85)});
+ /* できた星座の線 */
+ N.lines.forEach(function(mt,i){if(c.fits[mt]!=null){var k=LANIM&&LANIM.ok&&LANIM.mt===mt?easeOut(clamp(LANIM.t/.9,0,1)):1;drawConLine(mt,c.fits[mt],ym,k,1)}});
+ if(LANIM){LANIM.t+=dt;if(LANIM.fail){var F=LANIM.F,a=1-LANIM.t/1.2;if(a>0){ctx.save();ctx.globalAlpha=a;ctx.strokeStyle=C.shu;ctx.lineWidth=4;ctx.setLineDash([8,6]);ctx.beginPath();ctx.moveTo(F.mx-F.ux*F.len*.6,F.my-F.uy*F.len*.6);ctx.lineTo(F.mx+F.ux*F.len*.6,F.my+F.uy*F.len*.6);ctx.stroke();ctx.restore()}else LANIM=null}else if(LANIM.t>2)LANIM=null}
+ /* 原点の星 */
+ var o0={x:gX(0),y:gY(0,ym)},tw=RM?1:1+.15*Math.sin(TT*3);drawStar(o0.x,o0.y,8*tw,'Cu',{glow:.35});
+ if(c.n===0&&c.i===0&&c.stars.length===0){txt('原点：金属0 g → 酸素0 g',o0.x+14,o0.y-18,fit('原点：金属0 g → 酸素0 g',G.w*.6,14),{col:C.aiM})}
+ /* 星 */
+ c.stars.forEach(function(s,i){var x=gX(s.x),y=gY(s.y,ym),age=TT-(s.born||0),k=age<.4?easeBack(clamp(age/.4,0,1)):1,r=Math.max(9,Math.min(15,G.w*.02))*(RM?1:1+.06*Math.sin(TT*2.4+i));drawStar(x,y,r*k,s.mt,{out:s.out,sym:1,rot:RM?0:Math.sin(TT*.8+i)*.1})});
+ /* ヒントの輪 */
+ var g=curTag();if(g&&c.ph==='aim'&&HINT&&c.tmiss>=3){var t=truth(g);ctx.save();ctx.setLineDash([4,5]);ctx.strokeStyle='rgba(184,67,47,.6)';ctx.lineWidth=2;ctx.beginPath();ctx.arc(gX(t.x),gY(t.y,ym),20+4*Math.sin(TT*5),0,7);ctx.stroke();ctx.restore()}
+ /* パチンコ */
+ if(c.ph==='aim'||FLY)drawSling(g,ym);
+ if(FLY){FLY.t+=dt;var k2=clamp(FLY.t/FLY.dur,0,1),e=easeOut(k2),fx=gX(FLY.x),y0=L.rail,y1=gY(FLY.y,ym),fy=y0+(y1-y0)*e;
+  for(var j=0;j<6;j++){var tt=clamp(e-j*.06,0,1);ctx.globalAlpha=.25*(1-j/6);drawStar(fx,y0+(y1-y0)*tt,12-j,FLY.mt,{glow:.05});ctx.globalAlpha=1}
+  drawStar(fx,fy,14,FLY.mt,{rot:TT*12,sym:0});if(!RM&&Math.random()<.6)PT.push({k:'ink',x:fx+(Math.random()-.5)*8,y:fy+10,vx:(Math.random()-.5)*30,vy:40,g:0,r:2+Math.random()*2,col:C.aiM,a:0,life:.4});
+  if(k2>=1)land()}
+ /* 筆（線を引いている途中） */
+ if(STROKE&&STROKE.length>1){ctx.save();ctx.lineCap='round';ctx.lineJoin='round';ctx.strokeStyle=C.ai;ctx.globalAlpha=.85;ctx.lineWidth=5;ctx.beginPath();STROKE.forEach(function(p,i){ctx[i?'lineTo':'moveTo'](p.x,p.y)});ctx.stroke();ctx.globalAlpha=.25;ctx.lineWidth=11;ctx.stroke();ctx.restore()}
+ if(c.ph==='line'||c.ph==='pred'){var inG={x:G.x-10,y:G.y-10,w:G.w+20,h:G.h+20};HIT.push({id:'stroke',x:inG.x,y:inG.y,w:inG.w,h:inG.h,down:function(p){STROKE=[p];SFX.brush()},drag:function(p){if(STROKE){var l=STROKE[STROKE.length-1];if(Math.hypot(p.x-l.x,p.y-l.y)>3)STROKE.push(p)}},up:function(){if(c.ph==='line')judgeLine();else finishPredStroke('mg')}});
+  if(!STROKE){var bl=.5+.5*Math.sin(TT*4);ctx.save();ctx.globalAlpha=.35+.35*bl;txt('筆',o0.x+18,o0.y-26,24,{col:C.shu,w:800});ctx.strokeStyle=C.shu;ctx.setLineDash([3,6]);ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(o0.x,o0.y);ctx.lineTo(o0.x+G.w*.3,o0.y-G.h*.3);ctx.stroke();ctx.restore()}}
+ /* コンボ */
+ if(COMBO>=2){var cx=G.x+14,cy=G.y+22,sz=clamp(26+COMBO*3,26,64)*(RM?1:1+.06*Math.sin(TT*8)),col=COMBO>=8?C.gold:COMBO>=5?C.shu:COMBO>=3?C.cu:C.ai;
+  txt(kan(COMBO)+'連',cx,cy+sz*.3,sz,{al:'left',col:col,stroke:'#FCFCF8',sw:7,w:800})}
+ drawSide(dt);
+ if(c.ph==='cmp')drawCompare(dt);
+ if(c.ph==='done'&&DONE)drawDone(dt);
+ if(N.boss&&c.ph!=='done'&&c.ph!=='cmp'&&c.ph!=='cmp2'&&!EV){c.time-=dt;if(c.time<=0){c.time=0;timeUp()}}
+ hud(N.nm+'　'+N.sub)}
+function drawPredLine(pts,ym,col,label){if(!pts||pts.length<2)return;ctx.save();ctx.setLineDash([7,6]);ctx.lineCap='round';ctx.strokeStyle=col;ctx.globalAlpha=.8;ctx.lineWidth=3.5;ctx.beginPath();
+ pts.forEach(function(q,i){ctx[i?'lineTo':'moveTo'](gX(q[0]),gY(Math.min(q[1],ym),ym))});ctx.stroke();ctx.setLineDash([]);var l=pts[pts.length-1];txt(label,gX(l[0])-4,gY(Math.min(l[1],ym),ym)-14,13,{al:'right',col:col,stroke:'#FCFCF8',sw:4});ctx.restore()}
+function drawConLine(mt,k,ym,prog,al){var ex=Math.min(XMAX,ym/k)*prog,x1=gX(0),y1=gY(0,ym),x2=gX(ex),y2=gY(k*ex,ym);ctx.save();ctx.globalAlpha=al;
+ brushLine(ctx,x1,y1,x2,y2,6,C.ai,.95,mt==='Cu'?7:9);ctx.strokeStyle=MT[mt].col;ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();
+ if(prog>=1){var lx=x2-6,ly=y2+(mt==='Cu'?-16:18);txt(MT[mt].sky+'（'+MT[mt].ratio+'）',lx,ly,clamp(L.g.w*.028,12,17),{al:'right',col:mt==='Cu'?C.cuD:C.aiD,stroke:'#FCFCF8',sw:5,w:800})}ctx.restore()}
+function drawSling(g,ym){var G=L.g,x=AIM?AIM.px:(KB.on?gX(KB.x):gX(g?truthHintX(g):.4)),ry=L.rail,base=L.pull.y0+Math.min(40,(L.pull.y1-L.pull.y0)*.35);
+ if(AIM)x=AIM.px;x=clamp(x,G.x,G.x+G.w);
+ /* 狙いの線 */
+ if(AIM&&AIM.pull>6||KB.on){var y=AIM?AIM.v:KB.y,yy=gY(y,ym);ctx.save();ctx.setLineDash([3,5]);ctx.strokeStyle='rgba(31,63,143,.55)';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(G.x,yy);ctx.lineTo(x,yy);ctx.lineTo(x,ry);ctx.stroke();ctx.setLineDash([]);
+  ctx.beginPath();ctx.arc(x,yy,13,0,7);ctx.strokeStyle=C.ai;ctx.lineWidth=2;ctx.stroke();ctx.beginPath();ctx.moveTo(x-19,yy);ctx.lineTo(x-7,yy);ctx.moveTo(x+7,yy);ctx.lineTo(x+19,yy);ctx.moveTo(x,yy-19);ctx.lineTo(x,yy-7);ctx.moveTo(x,yy+7);ctx.lineTo(x,yy+19);ctx.stroke();
+  /* 軸の目盛りに印（数は出さない：目盛りを読む） */
+  ctx.fillStyle=C.shu;ctx.beginPath();ctx.moveTo(G.x-2,yy);ctx.lineTo(G.x-10,yy-5);ctx.lineTo(G.x-10,yy+5);ctx.fill();ctx.beginPath();ctx.moveTo(x,ry+2);ctx.lineTo(x-5,ry+10);ctx.lineTo(x+5,ry+10);ctx.fill();ctx.restore()}
+ /* 台と二股 */
+ var fh=Math.min(56,(L.pull.y1-ry)*.5),fy=ry+8;ctx.save();ctx.lineCap='round';
+ brushLine(ctx,x,fy+fh,x,fy+fh*.45,7,C.aiD,1,2);brushLine(ctx,x,fy+fh*.45,x-16,fy,6,C.aiD,1,3);brushLine(ctx,x,fy+fh*.45,x+16,fy,6,C.aiD,1,5);
+ var hy=AIM?Math.min(ry+AIM.pull,L.pull.y1+40):fy+4;ctx.strokeStyle=C.cu;ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(x-16,fy);ctx.lineTo(x,hy);ctx.lineTo(x+16,fy);ctx.stroke();
+ if(g&&!FLY)drawStar(x,hy,13,g.mt,{sym:1,rot:AIM?Math.sin(TT*30)*.08*(AIM.pull/80):0});
+ if(!AIM&&!FLY&&S.cur.stars.length===0&&S.cur.n===0){var k=(TT*.7)%1;ctx.globalAlpha=1-k;txt('つかんで ↓引く',x+22,fy+16+k*30,16,{col:C.shu,w:800});ctx.globalAlpha=1}
+ ctx.restore();
+ L.sl={x:x,y:fy,r:48}}
+function truthHintX(g){return S.cur.lastX!=null?S.cur.lastX:.4}
+function drawBalance(x,y,w,h,val,powder,label,q){/* 電子てんびん（染付の線で） */
+ var bw=w,bh=h*.34,by=y+h-bh;ctx.save();ctx.lineWidth=2;ctx.strokeStyle=C.ai;
+ ctx.beginPath();ctx.moveTo(x+bw*.06,by);ctx.lineTo(x+bw*.94,by);ctx.lineTo(x+bw,by+bh);ctx.lineTo(x,by+bh);ctx.closePath();ctx.fillStyle='#FDFDF9';ctx.fill();ctx.stroke();
+ var lw=bw*.62,lx=x+(bw-lw)/2,ly=by+bh*.22,lh=bh*.56;rr(lx,ly,lw,lh,3);ctx.fillStyle=C.aiD;ctx.fill();
+ txt(q?'？':f2(val)+' g',lx+lw-6,ly+lh/2+1,fit(q?'？':f2(val)+' g',lw-10,lh*.72,800),{al:'right',col:'#dfe8ff',w:800});
+ /* 皿 */
+ var px=x+bw/2,py=by-6,pw=bw*.38;ctx.fillStyle=C.aiL;ctx.fillRect(px-3,py,6,6);ctx.beginPath();ctx.ellipse(px,py,pw,pw*.2,0,0,7);ctx.fillStyle='#e9edf5';ctx.fill();ctx.stroke();
+ if(powder){ctx.beginPath();ctx.ellipse(px,py-2,pw*.72,pw*.1,0,Math.PI,0);ctx.fillStyle=powder;ctx.fill();for(var i=0;i<14;i++){ctx.fillStyle=powder;ctx.beginPath();ctx.arc(px+(hash(i+y)-.5)*pw*1.3,py-2-hash(i*3+x)*pw*.1,1.6,0,7);ctx.fill()}}
+ txt(label,x+bw/2,py-pw*.2-14,fit(label,bw,14,800),{al:'center',col:C.aiM,w:800});ctx.restore()}
+function drawFig(g,x,y,w,h){var M=MT[g.mt],pre=g.mt==='Cu'?C.cu:'#c9d0d8',post=g.mt==='Cu'?'#2a2522':'#f2f2ee';
+ ctx.save();rr(x,y,w,h,4);ctx.fillStyle='rgba(31,63,143,.05)';ctx.fill();ctx.strokeStyle='rgba(31,63,143,.35)';ctx.lineWidth=1;ctx.stroke();
+ var bw=Math.min(w*.4,170),bh=h-18,y0=y+8;
+ if(g.k==='hist'){/* 加熱のたびの質量（折れ線） */var gx=x+44,gy=y+26,gw=w-60,gh=h-58,v0=g.m,v1=g.h[g.h.length-1]+.02,n=g.h.length;
+  txt('加熱のたびの質量〔g〕',x+10,y+13,13,{col:C.aiM,w:800});ctx.strokeStyle=C.ai;ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(gx,gy);ctx.lineTo(gx,gy+gh);ctx.lineTo(gx+gw,gy+gh);ctx.stroke();
+  var pts=[v0].concat(g.h);ctx.beginPath();pts.forEach(function(v,i){var X=gx+gw*i/n,Y=gy+gh*(1-(v-v0)/(v1-v0));ctx[i?'lineTo':'moveTo'](X,Y)});ctx.strokeStyle=M.col;ctx.lineWidth=2.5;ctx.stroke();
+  pts.forEach(function(v,i){var X=gx+gw*i/n,Y=gy+gh*(1-(v-v0)/(v1-v0));ctx.beginPath();ctx.arc(X,Y,4,0,7);ctx.fillStyle=i&&i>=n-1?C.shu:C.ai;ctx.fill();txt(i?KAN[i]:'前',X,gy+gh+12,11,{al:'center',col:C.aiD})});
+  txt(f2(v0),gx-4,gy+gh,11,{al:'right',col:C.aiD});txt(f2(g.h[n-1]),gx-4,gy+gh*(1-(g.h[n-1]-v0)/(v1-v0)),11,{al:'right',col:C.shu});ctx.restore();return}
+ if(g.k==='askO'||g.k==='askM'||g.k==='ox'){
+  if(g.k==='askO')drawBalance(x+10,y0,bw,bh,g.m,pre,'加熱前の'+M.nm,false);else if(g.k==='askM')drawBalance(x+10,y0,bw,bh,0,pre,'加熱前の'+M.nm,true);else drawBalance(x+10,y0,bw,bh,g.X,post,M.ox,false);
+  var cx=x+w*.72,cy=y+h/2;txt(g.k==='askM'?'酸素 '+f2(g.o)+' g':g.k==='ox'?M.nm+'？＋酸素？':'酸素？',cx,cy-10,fit('酸素 0.00 g',w*.45,17,800),{al:'center',col:C.shu,w:800});txt('星座の線で読む',cx,cy+16,13,{al:'center',col:C.aiM});ctx.restore();return}
+ var before=g.k==='dish'?g.d+g.m:g.m,after=g.k==='dish'?g.d+g.m+g.o:g.M;
+ drawBalance(x+10,y0,bw,bh,before,pre,g.k==='dish'?'皿＋'+M.nm:'加熱前',false);drawBalance(x+w-10-bw,y0,bw,bh,after,post,g.k==='dish'?'皿＋加熱後':'加熱後',false);
+ /* 炎の矢印 */var ax=x+w/2,ay=y0+bh*.62;ctx.strokeStyle=C.shu;ctx.lineWidth=2.5;ctx.beginPath();ctx.moveTo(ax-w*.08,ay);ctx.lineTo(ax+w*.08,ay);ctx.lineTo(ax+w*.08-7,ay-6);ctx.moveTo(ax+w*.08,ay);ctx.lineTo(ax+w*.08-7,ay+6);ctx.stroke();
+ var fl=RM?0:Math.sin(TT*9)*2;ctx.beginPath();ctx.moveTo(ax,ay-30-fl);ctx.quadraticCurveTo(ax+10,ay-14,ax,ay-8);ctx.quadraticCurveTo(ax-10,ay-14,ax,ay-30-fl);ctx.fillStyle='rgba(31,63,143,.75)';ctx.fill();
+ txt(g.k==='out'?'1回だけ加熱':'加熱',ax,ay+16,12,{al:'center',col:g.k==='out'?C.shu:C.aiM,w:800});
+ if(g.k==='dish')txt('皿だけ '+f2(g.d)+' g',x+w/2,y+h-8,12,{al:'center',col:C.aiM});ctx.restore()}
+function drawMsgBox(x,y,w,h,fs){if(!(MSG.life>0&&MSG.t))return;var ls=wrapT(MSG.t,w-20,fs);while(ls.length*fs*1.42+16>h&&fs>11){fs-=1;ls=wrapT(MSG.t,w-20,fs)}var bh=ls.length*fs*1.42+16;
+ ctx.save();ctx.globalAlpha=clamp(MSG.life*2,0,1);rr(x,y,w,bh,4);ctx.fillStyle='rgba(252,252,248,.96)';ctx.fill();ctx.strokeStyle=C.ai;ctx.lineWidth=1.5;ctx.stroke();ctx.fillStyle=C.shu;ctx.fillRect(x,y,5,bh);
+ ls.forEach(function(l,i){txt(l,x+14,y+8+fs*.72+i*fs*1.42,fs,{col:C.aiD})});ctx.restore()}
+function tagBox(g,x,y,w,h,fs,dots){var c=S.cur,N=N_(),swing=RM?0:Math.sin(TT*1.6)*.01;ctx.save();ctx.translate(x+w/2,y);ctx.rotate(swing);ctx.translate(-(x+w/2),-y);
+ rr(x+4,y+6,w-4,h,4);ctx.fillStyle='rgba(19,42,99,.16)';ctx.fill();rr(x,y,w-4,h,4);ctx.fillStyle='#FDFDF9';ctx.fill();ctx.lineWidth=2;ctx.strokeStyle=C.ai;ctx.stroke();
+ ctx.fillStyle=MT[g.mt].col;ctx.fillRect(x,y,8,h);atomBall(x+32,y+28,18,g.mt);
+ var head=g.k==='askO'||g.k==='askM'||g.k==='ox'?'予言の札':g.k==='out'?'ある班の札':g.k==='hist'?'加熱の記録':g.k==='dish'?'皿ごとの札':'測定の札';
+ txt(head+'（'+MT[g.mt].nm+'）',x+58,y+22,fit(head+'（'+MT[g.mt].nm+'）',w-150,fs*.85),{col:C.aiM,w:800});
+ if(dots){for(var i=0;i<N.tags.length;i++){ctx.beginPath();ctx.arc(x+w-18-(N.tags.length-1-i)*15,y+20,5,0,7);ctx.fillStyle=i<c.i?C.ai:i===c.i?C.shu:'#FCFCF8';ctx.fill();ctx.strokeStyle=C.ai;ctx.lineWidth=1.2;ctx.stroke()}}
+ var yy=y+52,maxw=w-72,lx=x+58;tagLines(g).forEach(function(s){var sz=fs,wl=wrapT(s,maxw,sz);while(wl.length>2&&sz>11){sz-=1;wl=wrapT(s,maxw,sz)}wl.forEach(function(l){txt(l,lx,yy,sz,{col:C.aiD,w:800});yy+=sz*1.38})});
+ if(HINT&&c.tmiss>=2){var hs=fs*.74,hl=wrapT(calcHint(g),maxw,hs);hl.slice(0,3).forEach(function(l){txt(l,lx,yy,hs,{col:C.shu});yy+=hs*1.35})}
+ else if(c.n===0&&c.i===0&&c.tmiss===0){txt('加熱後 − 加熱前 ＝ 結び付いた酸素',lx,yy,fs*.74,{col:C.shu});yy+=fs}
+ ctx.restore();return yy-y+8}
+function tagNeed(g,w,fs){var n=0,maxw=w-72;tagLines(g).forEach(function(s){n+=Math.min(2,wrapT(s,maxw,fs).length)});var extra=(HINT&&S.cur.tmiss>=2)?Math.min(3,wrapT(calcHint(g),maxw,fs*.74).length)*fs*.74*1.35:(S.cur.n===0&&S.cur.i===0?fs:0);return 52+n*fs*1.38+extra+6}
+var MSGIN=0;
+function drawSide(dt){var c=S.cur,N=N_(),sd=L.side,g=curTag();ctx.save();MSGIN=0;
+ var fs=LAND?clamp(sd.w*.058,15,21):clamp(sd.w*.047,14,19),ty=LAND?sd.y+4:sd.y,bottom=LAND?sd.y+sd.h-70:sd.y+sd.h;
+ if(c.ph==='aim'&&g){
+  if(LAND){var th=Math.max(120,tagNeed(g,sd.w,fs));tagBox(g,sd.x,ty,sd.w,th,fs,1);var fy=ty+th+14,fh=clamp((bottom-fy)*.5,110,200);drawFig(g,sd.x,fy,sd.w-4,fh);drawMsgBox(sd.x,fy+fh+12,sd.w-4,bottom-(fy+fh+12),fs*.82)}
+  else{var used=tagBox(g,sd.x,ty,sd.w,sd.h-6,fs,1),room=sd.h-10-used;if(room>=40&&MSG.life>0){drawMsgBox(sd.x+50,ty+used-4,sd.w-60,room,clamp(W*.034,12,15));MSGIN=1}}}
+ else if(c.ph==='line'||c.ph==='pred'||c.ph==='wait'||c.ph==='cmp2'||(c.ph==='aim'&&!g)){var ph=LAND?Math.min(sd.h*.34,230):sd.h-6;rr(sd.x,ty,sd.w-4,ph,4);ctx.fillStyle='#FDFDF9';ctx.fill();ctx.lineWidth=2;ctx.strokeStyle=C.ai;ctx.stroke();ctx.fillStyle=C.shu;ctx.fillRect(sd.x,ty,8,ph);
+  var mt=c.ph==='pred'?'Mg':N.lines[Math.min(c.li,N.lines.length-1)]||'Cu';txt(c.ph==='pred'?'予想の線を引く':'星座の線を引く',sd.x+20,ty+24,fs*1.05,{col:C.shu,w:800});
+  para(c.ph==='pred'?'銅座の線（1.00 g で 0.25 g）と比べて、マグネシウムの線は どんな傾き？ 原点から筆で引こう':'原点を通り、'+MT[mt].nm+'の星のばらつきの真ん中を通る直線を、筆で1本',sd.x+20,ty+54,sd.w-40,fs*.9,{col:C.aiD});
+  if(LAND)drawMsgBox(sd.x,ty+ph+12,sd.w-4,bottom-(ty+ph+12),fs*.82)}
+ else if(c.ph==='done'&&DONE&&LAND){var dh=Math.min(sd.h*.5,300);rr(sd.x,ty,sd.w-4,dh,4);ctx.fillStyle='#FDFDF9';ctx.fill();ctx.lineWidth=2;ctx.strokeStyle=DONE.gold?C.gold:C.ai;ctx.stroke();
+  txt(N.nm+'の皿 焼き上がり',sd.x+16,ty+26,fs*1.05,{col:C.shu,w:800});var yy=ty+58;
+  yy+=para('一発で刺さった星 '+c.first+' / '+N.tags.length+'　まちがい '+c.miss+' 回',sd.x+16,yy,sd.w-36,fs*.85,{col:C.aiD})+6;
+  var ls=N.lines.length?N.lines:(N.known||[]);ls.forEach(function(mt){yy+=para(MT[mt].sky+'：'+MT[mt].nm+'が2倍 → 酸素も2倍（'+MT[mt].nm+'：酸素＝'+MT[mt].ratio+'）',sd.x+16,yy,sd.w-36,fs*.8,{col:C.aiM})+4});
+  drawMsgBox(sd.x,ty+dh+12,sd.w-4,bottom-150-(ty+dh+12),fs*.8)}
+ if(!LAND&&!AIM&&c.ph!=='cmp'&&!MSGIN){var P=L.pl,mw=P.w-2*L.rim-20,mh=Math.min(90,L.pull.y1-L.pull.y0-50);drawMsgBox(P.x+L.rim+10,L.pull.y1-mh,mw,mh,clamp(W*.036,12,15))}
+ if(LAND){var ry=sd.y+sd.h-58;ctx.strokeStyle='rgba(31,63,143,.3)';ctx.beginPath();ctx.moveTo(sd.x,ry-8);ctx.lineTo(sd.x+sd.w,ry-8);ctx.stroke();
+  txt('星明かり '+S.lum,sd.x+6,ry+12,fs*.9,{col:C.cuD,w:800});txt('一発で刺さった星 '+S.firsts,sd.x+6,ry+38,fs*.8,{col:C.aiM});
+  if(N.boss){var tl=Math.ceil(c.time);txt('のこり '+Math.floor(tl/60)+':'+('0'+tl%60).slice(-2),sd.x+sd.w-6,ry+24,fs*1.3,{al:'right',col:tl<30?C.shu:C.aiD,w:800})}}
+ else if(N.boss){var tl2=Math.ceil(c.time);txt('のこり '+Math.floor(tl2/60)+':'+('0'+tl2%60).slice(-2),L.g.x+L.g.w-6,L.g.y+L.g.h-16,17,{al:'right',col:tl2<30?C.shu:C.aiD,w:800,stroke:'#FCFCF8',sw:4})}
+ ctx.restore()}
+function drawCompare(dt){var sd=L.side,sl=S.seal||{};CMP.t+=dt;var ov=LAND?{x:sd.x,y:sd.y+34,w:sd.w-4,h:sd.h-100}:{x:L.pl.x+L.rim+6,y:L.pl.y+L.rim+4,w:L.pl.w-2*L.rim-12,h:Math.min(L.pl.h*.52,330)};
+ rr(ov.x,ov.y,ov.w,ov.h,4);ctx.fillStyle='rgba(253,253,249,.97)';ctx.fill();ctx.lineWidth=2.5;ctx.strokeStyle=C.shu;ctx.stroke();
+ var fs=clamp(ov.w*.05,14,19),y=ov.y+26;txt('封印した予想 と 星座',ov.x+14,y,fs*1.1,{col:C.shu,w:800});y+=fs*1.6;
+ var t1=sl.from==='now'?'（この回の最初に描いた予想）':'（コマ30「実験計画ロケット」で封印）';y+=para(t1,ov.x+14,y,ov.w-28,fs*.78,{col:C.aiM});
+ y+=para('予想：銅2倍 → 酸素 '+(sl.predT||PREDT[sl.pred]||'―')+'／グラフ '+(sl.shapeT||SHAPET[sl.shape]||'―'),ov.x+14,y+4,ov.w-28,fs*.9,{col:C.aiD})+8;
+ if(sl.reason&&sl.reason.t)y+=para('根拠：'+sl.reason.t,ov.x+14,y,ov.w-28,fs*.75,{col:C.aiM})+6;
+ if(!CMP.go){btn({x:ov.x+14,y:ov.y+ov.h-66,w:ov.w-28,h:54},'照らし合わせる','shu',function(){sealCompare()},'cmpgo',{pulse:1});return}
+ if(!CMP.show){var k=(CMP.t*2)%1;ctx.globalAlpha=1-k;txt('照らしています…',ov.x+14,y+14,fs,{col:C.shu});ctx.globalAlpha=1;return}
+ y+=para((CMP.hit?'◎ 的中　':'△ ズレ　')+sealWhy()+(CMP.err!=null?'（予想の線と星座の差 平均 '+f2(CMP.err)+' g）':''),ov.x+14,y+4,ov.w-28,fs*.85,{col:CMP.hit?C.shu:C.aiD});
+ btn({x:ov.x+14,y:ov.y+ov.h-66,w:ov.w-28,h:54},'皿を焼き上げる ▶','ai',function(){CMP=null;nightDone()},'cmpnx',{pulse:1})}
+function drawDone(dt){DONE.t+=dt;var P=L.pl,t=DONE.t;
+ /* 窯の光 */
+ var gl=clamp(1-t/1.2,0,1);if(gl>0){ctx.save();ctx.globalAlpha=gl*.5;ctx.fillStyle='#fff3dc';ctx.fillRect(P.x,P.y,P.w,P.h);ctx.restore()}
+ if(DONE.gold){ctx.save();ctx.globalAlpha=.8;ctx.strokeStyle=C.gold;ctx.lineWidth=5;ctx.strokeRect(P.x+4,P.y+4,P.w-8,P.h-8);ctx.strokeRect(P.x+L.rim-4,P.y+L.rim-4,P.w-2*L.rim+8,P.h-2*L.rim+8);ctx.restore();
+  if(!RM&&t>1.6&&t<3.4){ctx.save();var a=Math.sin((t-1.6)/1.8*Math.PI);var gg=ctx.createLinearGradient(W/2-80,0,W/2+80,0);['rgba(255,0,0,0)','rgba(255,160,60,.35)','rgba(255,240,120,.45)','rgba(90,200,140,.35)','rgba(80,120,255,.35)','rgba(160,90,255,0)'].forEach(function(cc,i){gg.addColorStop(i/5,cc)});ctx.globalAlpha=a;ctx.fillStyle=gg;ctx.fillRect(W/2-80,0,160,H);ctx.restore()}}
+ /* 落款（★）を ドン・ドン・ドン */
+ var sz=clamp(Math.min(P.w,P.h)*.11,44,78),sx=P.x+P.w-L.rim-sz*3.4,sy=P.y+P.h-L.rim-sz-16;
+ for(var i=0;i<3;i++){var ti=t-.5-i*.38;if(ti<0)continue;if(!DONE['s'+i]){DONE['s'+i]=1;if(i<DONE.st){SFX.stamp(i);shake(.35);vib(30);ink(sx+i*sz*1.15+sz/2,sy+sz/2,10,C.shu)}else SFX.tap()}
+  var k=ti<.18?1.8-ti/.18*.8:1,x=sx+i*sz*1.15+sz/2,y=sy+sz/2;ctx.save();ctx.translate(x,y);ctx.scale(k,k);ctx.rotate(-.06+i*.04);
+  if(i<DONE.st){rr(-sz/2,-sz/2,sz,sz,4);ctx.fillStyle=C.shu;ctx.globalAlpha=.92;ctx.fill();ctx.globalAlpha=1;ctx.strokeStyle='#FCFCF8';ctx.lineWidth=2;rr(-sz/2+5,-sz/2+5,sz-10,sz-10,2);ctx.stroke();txt('星',0,2,sz*.58,{al:'center',col:'#FCFCF8',w:800})}
+  else{rr(-sz/2,-sz/2,sz,sz,4);ctx.strokeStyle='rgba(184,67,47,.4)';ctx.setLineDash([4,4]);ctx.lineWidth=2;ctx.stroke()}ctx.restore()}
+ if(t>1.9){var bw=Math.min(300,P.w*.6),bx=LAND?L.side.x:P.x+(P.w-bw)/2,by=LAND?L.side.y+L.side.h-130:P.y+L.rim+20;if(LAND)bw=L.side.w-4;
+  var tx=S.cur.n>=NIGHTS.length-1?'星座の帳を閉じる ▶':'星座の帳へ ▶';btn({x:bx,y:by,w:bw,h:60},tx,'ai',afterNight,'donenx',{pulse:1})}}
+function timeUp(){var c=S.cur;SFX.miss();ev('時間切れ','札は棚にもどった。もう一度',2.2,C.shu,1);var n=c.n;setTimeout(function(){if(scene==='play'&&S.cur===c){startNight(n)}},RM?300:2000)}
+
+/* ================= 表紙 ================= */
+function posterGeo(){var land=W>=H*1.05,R=land?Math.min(H*.42,W*.29):Math.min(W*.46,H*.3),cx=land?W*.69:W*.5,cy=land?H*.54:H*.6,rim=R*.13,ir=R-rim-10;
+ return {land:land,R:R,cx:cx,cy:cy,rim:rim,ir:ir,ox:cx-ir*.62,oy:cy+ir*.55,gw:ir*1.3,gh:ir*1.15}}
+function buildPosterBG(){var a=makeCanvas(),c=a[1],P=posterGeo(),cx=P.cx,cy=P.cy,R=P.R,rim=P.rim;paintGround(c);
+ c.save();c.shadowColor='rgba(19,42,99,.3)';c.shadowBlur=40;c.shadowOffsetY=18;c.beginPath();c.arc(cx,cy,R,0,7);c.fillStyle='#FDFDFA';c.fill();c.restore();
+ var gg=c.createRadialGradient(cx-R*.3,cy-R*.35,R*.1,cx,cy,R);gg.addColorStop(0,'#fff');gg.addColorStop(1,'#E9ECE5');c.beginPath();c.arc(cx,cy,R,0,7);c.fillStyle=gg;c.fill();
+ rimCircle(c,cx,cy,R,rim,'seigaiha');c.strokeStyle=C.ai;c.lineWidth=3;c.beginPath();c.arc(cx,cy,R-1.5,0,7);c.stroke();c.lineWidth=1.5;c.beginPath();c.arc(cx,cy,R-rim,0,7);c.stroke();c.beginPath();c.arc(cx,cy,R-rim-6,0,7);c.stroke();
+ c.save();c.beginPath();c.arc(cx,cy,P.ir,0,7);c.clip();c.fillStyle='rgba(31,63,143,.06)';c.fillRect(cx-P.ir,cy-P.ir,P.ir*2,P.ir*2);
+ /* 見込みの山と波（染付の景色） */
+ c.globalAlpha=.5;var ws=R*.09;for(var r=0;r<3;r++){var wy=cy+P.ir*.95-r*ws*.42;for(var wx=cx-P.ir;wx<cx+P.ir;wx+=ws)unit(c,'seigaiha',wx+(r%2)*ws/2,wy,ws,0)}c.globalAlpha=1;
+ c.strokeStyle='rgba(31,63,143,.18)';c.lineWidth=1;for(var i=0;i<=8;i++){c.beginPath();c.moveTo(P.ox+P.gw*i/8,P.oy);c.lineTo(P.ox+P.gw*i/8,P.oy-P.gh);c.stroke();c.beginPath();c.moveTo(P.ox,P.oy-P.gh*i/8);c.lineTo(P.ox+P.gw,P.oy-P.gh*i/8);c.stroke()}
+ brushLine(c,P.ox,P.oy,P.ox+P.gw,P.oy,4,C.ai,1,1);brushLine(c,P.ox,P.oy,P.ox,P.oy-P.gh,4,C.ai,1,2);c.restore();BG=a[0];BGKEY=nightKey()}
+function drawPoster(dt){if(POST.t0<0)POST.t0=TT;var t=TT-POST.t0,P=posterGeo(),land=P.land;if(BGKEY!==nightKey())buildPosterBG();ctx.drawImage(BG,0,0,W,H);
+ var R=P.R,cx=P.cx,cy=P.cy,ox=P.ox,oy=P.oy,gw=P.gw,gh=P.gh,i;
+ ctx.save();ctx.beginPath();ctx.arc(cx,cy,P.ir,0,7);ctx.clip();
+ var lk=RM?1:clamp((t-.6)/1.2,0,1);[['Cu',.28],['Mg',.72]].forEach(function(q,j){var k=q[1],ex=Math.min(1,1/k/1.05)*lk;brushLine(ctx,ox,oy,ox+gw*ex,oy-gh*k*ex,6,C.ai,.9,j+3);ctx.strokeStyle=MT[q[0]].col;ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(ox,oy);ctx.lineTo(ox+gw*ex,oy-gh*k*ex);ctx.stroke();
+  for(var s=1;s<=5;s++){var fx=s/5.4;if(k*fx>1)continue;var sx=ox+gw*fx,sy=oy-gh*(k*fx+(hash(s+j*9)-.5)*.03);drawStar(sx,sy,R*.045*(RM?1:1+.12*Math.sin(TT*2+s+j)),q[0],{sym:1})}});
+ drawStar(ox,oy,R*.03,'Cu',{glow:.4});
+ if(!RM){var fk=(TT*.35)%1;var sx2=ox+gw*.5,sy2=cy+R-(R*1.2)*easeOut(fk);ctx.globalAlpha=1-fk;drawStar(sx2,sy2,R*.05,'Mg',{rot:TT*8});ctx.globalAlpha=1}
+ ctx.restore();
+ for(i=0;i<16;i++){var a=hash(i)*6.28+(RM?0:TT*.1),rr2=R*(1.05+hash(i+3)*.3);ctx.globalAlpha=.35+.35*Math.sin(TT*2+i);ctx.fillStyle=i%3?C.ai:C.gold;ctx.beginPath();ctx.arc(cx+Math.cos(a)*rr2,cy+Math.sin(a)*rr2,2+hash(i+7)*2.5,0,7);ctx.fill()}ctx.globalAlpha=1;
+ var lx=land?W*.25:W*.5,ly=land?H*.3:H*.16,lw=land?W*.4:W*.9,k2=RM?1:clamp(t/.8,0,1),drop=(1-easeBounce(k2))*(-ly-160);if(k2>=1&&!POST.landed){POST.landed=1;SFX.taiko();chime(1174.7,.06,.05);shake(.3)}
+ ctx.save();ctx.translate(lx,ly+drop);var fs=Math.min(lw/5.2,land?112:96);
+ ctx.fillStyle='rgba(31,63,143,.1)';ctx.beginPath();ctx.ellipse(0,fs*.1,lw*.52,fs*.95,-.05,0,7);ctx.fill();
+ txt('比例の星座',0,0,fs,{al:'center',col:C.ai,stroke:'#FCFCF8',sw:fs*.16,w:800});ctx.save();ctx.beginPath();ctx.rect(-lw/2,-fs*.5,lw,fs*.28);ctx.clip();txt('比例の星座',0,0,fs,{al:'center',col:C.aiM,w:800});ctx.restore();
+ var st='～金属と酸素の質量のグラフ～',f3=Math.min(fs*.26,lw/12);txt(st,0,fs*.82,f3,{al:'center',col:C.cuD,w:800});
+ ctx.save();ctx.translate(lw*.4,-fs*.72);ctx.rotate(.08);rr(-fs*.26,-fs*.26,fs*.52,fs*.52,3);ctx.fillStyle=C.shu;ctx.fill();txt('理',0,2,fs*.32,{al:'center',col:'#FCFCF8',w:800});ctx.restore();
+ txt('中2理科　化学　第31回',0,-fs*.78,f3*.8,{al:'center',col:C.aiM});ctx.restore();
+ var sv=load(),bw=land?Math.min(380,W*.3):Math.min(340,W*.82),bh=land?76:68,bx=lx-bw/2,by=land?H*.56:H*.83,ka=clamp((t-.7)/.4,0,1);
+ if(!land){by=Math.min(by,H-bh-80)}
+ ctx.save();ctx.globalAlpha=ka;if(!RM){var gr=(TT*1.1)%1;ctx.strokeStyle='rgba(31,63,143,'+(.6*(1-gr))+')';ctx.lineWidth=3;rr(bx-gr*14,by-gr*14,bw+gr*28,bh+gr*28,6+gr*6);ctx.stroke()}
+ btn({x:bx,y:by,w:bw,h:bh},POST.armed?'もう一度で はじめから':(sv?'はじめから':'はじめる'),'ai',titleStart,'pStart',{pulse:1,fs:bh*.38});
+ var sw=(bw-12)/2,sy=by+bh+14;btn({x:bx,y:sy,w:sw,h:54},'つづきから',sv?'white':'off',titleCont,'pc');btn({x:bx+sw+12,y:sy,w:sw,h:54},'図鑑',window.Zukan&&Zukan.openBook?'white':'off',function(){window.Zukan&&Zukan.openBook()},'pz');ctx.restore();
+ if(INHUB)btn({x:10,y:10,w:124,h:48},'◀ 一覧へ','white',onBack,'pb',{fs:18});
+ btn(L.snd,AU.mute?'音×':'音','white',function(){AU.init();AU.mute=!AU.mute;try{localStorage.setItem(MKEY,AU.mute?'1':'')}catch(e){}},'ps',{fs:17})}
+function easeBounce(k){if(k<1/2.75)return 7.5625*k*k;if(k<2/2.75){k-=1.5/2.75;return 7.5625*k*k+.75}if(k<2.5/2.75){k-=2.25/2.75;return 7.5625*k*k+.9375}k-=2.625/2.75;return 7.5625*k*k+.984375}
+
+/* ================= 帳（8枚の皿の棚） ================= */
+var MOTIFNM={seigaiha:'青海波',karakusa:'唐草',ume:'梅',asanoha:'麻の葉',tsuki:'月と雲',chidori:'千鳥',kiku:'菊',shippo:'七宝'};
+function shelfGeo(){var top=L.top+8,cols=LAND?4:2,rows=Math.ceil(NIGHTS.length/cols),bot=LAND?100:150,cw=(W-40)/cols,ch=(H-top-bot-30)/rows,R=Math.min(cw,ch)*.38;
+ return NIGHTS.map(function(N,i){var col=i%cols,row=Math.floor(i/cols);return {cx:20+cw*(col+.5),cy:top+34+ch*(row+.5)-8,R:R,cw:cw}})}
+function buildShelfBG(){var a=makeCanvas(),c=a[1],GE=shelfGeo();paintGround(c);var sv=ctx;ctx=c;
+ txt('星座の帳',LAND?24:W/2,L.top+14,LAND?26:22,{al:LAND?'left':'center',col:C.ai,w:800});
+ NIGHTS.forEach(function(N,i){var q=GE[i],cx=q.cx,cy=q.cy,R=q.R,rs=S.res[i],cur=i===S.n&&!rs,lock=i>S.n&&!rs;
+  c.save();c.shadowColor='rgba(19,42,99,.22)';c.shadowBlur=14;c.shadowOffsetY=6;c.beginPath();c.arc(cx,cy,R,0,7);c.fillStyle=lock?'#F1F1EC':'#FDFDFA';c.fill();c.restore();
+  if(lock){c.save();c.setLineDash([4,5]);c.strokeStyle='rgba(31,63,143,.35)';c.lineWidth=1.5;c.beginPath();c.arc(cx,cy,R-2,0,7);c.stroke();c.restore();txt('？',cx,cy,R*.5,{al:'center',col:'rgba(31,63,143,.3)'})}
+  else{rimCircle(c,cx,cy,R,R*.2,N.motif);c.strokeStyle=rs&&rs.gold?C.gold:C.ai;c.lineWidth=rs&&rs.gold?5:2;c.beginPath();c.arc(cx,cy,R-1,0,7);c.stroke();c.lineWidth=1;c.strokeStyle=C.ai;c.beginPath();c.arc(cx,cy,R*.8,0,7);c.stroke();
+   if(rs){var ir=R*.62,ox=cx-ir*.6,oy=cy+ir*.5;c.strokeStyle=C.ai;c.lineWidth=2;c.beginPath();c.moveTo(ox,oy-ir*1.1);c.lineTo(ox,oy);c.lineTo(ox+ir*1.3,oy);c.stroke();(N.lines.length?N.lines:N.known).forEach(function(mt){var k=MT[mt].k*(N.ymax<=.5?1.5:.9);c.strokeStyle=C.ai;c.lineWidth=2.5;c.beginPath();c.moveTo(ox,oy);c.lineTo(ox+ir*1.2,oy-ir*1.2*k);c.stroke();
+     for(var s2=1;s2<=4;s2++){drawStar(ox+ir*1.2*s2/4.4,oy-ir*1.2*k*s2/4.4,R*.07,mt,{glow:.1})}});
+    for(var q2=0;q2<3;q2++){c.fillStyle=q2<rs.st?C.shu:'rgba(184,67,47,.18)';c.fillRect(cx-R*.3+q2*R*.22,cy+R*.6,R*.16,R*.16)}
+    if(rs.gold)txt('金彩',cx+R*.7,cy-R*.75,R*.2,{al:'center',col:C.gold,w:800,stroke:'#FCFCF8',sw:4})}
+   else{txt(N.nm,cx,cy-R*.12,R*.3,{al:'center',col:C.ai,w:800});txt(MOTIFNM[N.motif]+'の皿',cx,cy+R*.25,R*.15,{al:'center',col:C.aiM})}}
+  txt(N.nm+'　'+N.sub,cx,cy+R+15,fit(N.nm+'　'+N.sub,q.cw-8,clamp(R*.2,12,17)),{al:'center',col:cur?C.shu:C.aiD,w:800})});
+ ctx=sv;BG=a[0];BGKEY=nightKey()}
+function drawShelf(dt){if(BGKEY!==nightKey())buildShelfBG();ctx.drawImage(BG,0,0,W,H);var GE=shelfGeo();
+ NIGHTS.forEach(function(N,i){var q=GE[i],rs=S.res[i],cur=i===S.n&&!rs;
+  if(cur){ctx.save();ctx.strokeStyle=C.shu;ctx.lineWidth=3;ctx.globalAlpha=.5+.5*Math.sin(TT*4);ctx.beginPath();ctx.arc(q.cx,q.cy,q.R+7+(RM?0:2*Math.sin(TT*4)),0,7);ctx.stroke();ctx.restore()}
+  if(i<=S.n||rs)HIT.push({id:'pl'+i,x:q.cx-q.R,y:q.cy-q.R,w:q.R*2,h:q.R*2,down:function(){SFX.tap()},up:function(p){if(Math.hypot(p.x-q.cx,p.y-q.cy)<q.R+10)startNight(i)}})});
+ var bw=Math.min(340,W-40),by=H-(LAND?84:138),done=S.res.filter(Boolean).length;
+ if(S.cleared||done>=NIGHTS.length){btn({x:(W-bw)/2,y:by,w:bw,h:62},'確認テストへ ▶','shu',startTest,'shT',{pulse:1})}
+ else btn({x:(W-bw)/2,y:by,w:bw,h:62},S.n===0&&!S.res[0]?'一の夜をはじめる ▶':NIGHTS[S.n].nm+'へ ▶','ai',function(){startNight(S.n)},'shGo',{pulse:1});
+ if(!LAND)btn({x:(W-bw)/2,y:by+70,w:bw,h:52},'図鑑',window.Zukan&&Zukan.openBook?'white':'off',function(){window.Zukan&&Zukan.openBook()},'shZ');
+ else btn({x:W-160,y:H-76,w:140,h:52},'図鑑',window.Zukan&&Zukan.openBook?'white':'off',function(){window.Zukan&&Zukan.openBook()},'shZ');
+ hud('星座の帳　'+done+' / '+NIGHTS.length+' 枚')}
+
+/* ================= 開封（コマ30の封印） ================= */
+var SEALS=null;
+function drawSealScene(dt){var D=SEALS;D.t+=dt;var sl=D.sl;if(BGKEY!==nightKey())buildGroundBG();ctx.drawImage(BG,0,0,W,H);
+ var land=LAND,cx=land?W*.32:W*.5,cy=land?H*.55:H*.33,R=land?Math.min(H*.28,W*.18):Math.min(W*.3,H*.16);
+ if(sl&&D.step<3){/* 蓋物（ふたもの） */
+  var op=D.step>=2?easeOut(Math.min(1,(D.t-D.t2)/.6)):0,lift=op*R*.75;
+  if(op>0){/* 口から立ちのぼる光と星 */var gl=ctx.createRadialGradient(cx,cy,5,cx,cy-R*.6,R*1.6);gl.addColorStop(0,'rgba(255,241,201,'+(.9*op)+')');gl.addColorStop(1,'rgba(255,241,201,0)');ctx.fillStyle=gl;ctx.beginPath();ctx.moveTo(cx-R*.9,cy);ctx.lineTo(cx-R*1.6,cy-R*2);ctx.lineTo(cx+R*1.6,cy-R*2);ctx.lineTo(cx+R*.9,cy);ctx.fill();
+   for(var q=0;q<7;q++){var ph=((D.t*.35+hash(q))%1),sx=cx+(hash(q+4)-.5)*R*1.4,sy=cy-ph*R*1.8;ctx.globalAlpha=1-ph;drawStar(sx,sy,R*.07,q%2?'Cu':'Mg',{rot:D.t*2+q});ctx.globalAlpha=1}}
+  ctx.save();ctx.shadowColor='rgba(19,42,99,.3)';ctx.shadowBlur=24;ctx.shadowOffsetY=10;ctx.beginPath();ctx.moveTo(cx-R,cy);ctx.bezierCurveTo(cx-R*1.12,cy+R*.9,cx-R*.6,cy+R*1.25,cx-R*.45,cy+R*1.3);ctx.lineTo(cx+R*.45,cy+R*1.3);ctx.bezierCurveTo(cx+R*.6,cy+R*1.25,cx+R*1.12,cy+R*.9,cx+R,cy);ctx.closePath();ctx.fillStyle='#FDFDFA';ctx.fill();ctx.restore();
+  ctx.save();ctx.beginPath();ctx.moveTo(cx-R,cy);ctx.bezierCurveTo(cx-R*1.12,cy+R*.9,cx-R*.6,cy+R*1.25,cx-R*.45,cy+R*1.3);ctx.lineTo(cx+R*.45,cy+R*1.3);ctx.bezierCurveTo(cx+R*.6,cy+R*1.25,cx+R*1.12,cy+R*.9,cx+R,cy);ctx.closePath();
+  var bg2=ctx.createLinearGradient(cx-R,0,cx+R,0);bg2.addColorStop(0,'#E9ECE5');bg2.addColorStop(.35,'#FFFFFF');bg2.addColorStop(1,'#E4E8E0');ctx.fillStyle=bg2;ctx.fill();ctx.clip();
+  ctx.fillStyle='rgba(31,63,143,.9)';ctx.fillRect(cx-R*1.2,cy+R*.08,R*2.4,R*.04);ctx.fillRect(cx-R*1.2,cy+R*.5,R*2.4,R*.03);
+  for(var i=0;i<9;i++)unit(ctx,'karakusa',cx-R+i*R*.26,cy+R*.3,R*.26,i);
+  var ws=R*.24;for(var r=0;r<3;r++)for(var wx=cx-R*1.1+(r%2)*ws/2;wx<cx+R*1.1;wx+=ws)unit(ctx,'seigaiha',wx,cy+R*1.28-r*ws*.42,ws,0);
+  ctx.restore();ctx.strokeStyle=C.ai;ctx.lineWidth=2.5;ctx.beginPath();ctx.moveTo(cx-R,cy);ctx.bezierCurveTo(cx-R*1.12,cy+R*.9,cx-R*.6,cy+R*1.25,cx-R*.45,cy+R*1.3);ctx.lineTo(cx+R*.45,cy+R*1.3);ctx.bezierCurveTo(cx+R*.6,cy+R*1.25,cx+R*1.12,cy+R*.9,cx+R,cy);ctx.stroke();
+  /* 蓋 */ctx.save();ctx.translate(cx-op*R*.55,cy-lift);ctx.rotate(-op*.35);ctx.beginPath();ctx.ellipse(0,0,R*1.06,R*.36,0,Math.PI,0);ctx.lineTo(R*1.06,6);ctx.lineTo(-R*1.06,6);ctx.closePath();ctx.fillStyle='#FDFDFA';ctx.fill();ctx.strokeStyle=C.ai;ctx.lineWidth=2.5;ctx.stroke();
+  ctx.save();ctx.clip();for(i=0;i<8;i++)unit(ctx,'ume',-R*.9+i*R*.26,-R*.12,R*.2,i);ctx.restore();ctx.beginPath();ctx.arc(0,-R*.4,R*.15,0,7);ctx.fillStyle=C.ai;ctx.fill();ctx.beginPath();ctx.arc(-R*.04,-R*.44,R*.05,0,7);ctx.fillStyle='rgba(255,255,255,.6)';ctx.fill();ctx.restore();
+  if(D.step<2){/* 封（朱の紙） */var cut=D.cut;ctx.save();ctx.fillStyle='#fff';ctx.fillRect(cx-R*.2,cy-R*.35,R*.4,R*.9);ctx.strokeStyle=C.shu;ctx.lineWidth=2;ctx.strokeRect(cx-R*.2,cy-R*.35,R*.4,R*.9);txt('封',cx,cy+R*.1,R*.3,{al:'center',col:C.shu,w:800});
+   if(cut>0){ctx.strokeStyle=C.aiD;ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(cx-R*.5,cy+R*.05);ctx.lineTo(cx-R*.5+R*cut,cy+R*.05);ctx.stroke()}ctx.restore();
+   var hint=(TT*.8)%1;ctx.globalAlpha=1-hint;txt('→',cx-R*.5+R*hint,cy+R*.28,R*.25,{al:'center',col:C.shu,w:800});ctx.globalAlpha=1;
+   HIT.push({id:'cut',x:cx-R*1.2,y:cy-R*.6,w:R*2.4,h:R*1.3,down:function(p){D.sx=p.x;SFX.tap()},drag:function(p){D.cut=clamp((p.x-D.sx)/R,0,1);if(Math.random()<.4)SFX.pull(D.cut)},up:function(){if(D.cut>.75){D.step=2;D.t2=D.t;SFX.open();ink(cx,cy,24);gold(cx,cy,20);shake(.3);flash(.35);vib(40);S.opened=1;save()}else D.cut=0}})}
+  var px=land?W*.56:20,pw=land?W*.4:W-40,py=land?L.top+30:cy+R*1.35,fs=clamp(pw*.045,15,20);
+  if(D.step<2){para('コマ30「実験計画ロケット」で封印した予想のカプセルが届いている。\n封を横に引いて、切ろう。',px,py,pw,fs,{col:C.aiD})}
+  else{var k=clamp((D.t-D.t2-.4)/.5,0,1);ctx.globalAlpha=k;var y=py;y+=para('あなたの予想（'+(sl.name?'封印した日の記録':'封印の記録')+'）',px,y,pw,fs*.9,{col:C.shu})+6;
+   y+=para('銅の質量を2倍にすると、結び付く酸素は「'+(sl.predT||PREDT[sl.pred]||'―')+'」',px,y,pw,fs,{col:C.aiD})+4;y+=para('グラフの形：'+(sl.shapeT||SHAPET[sl.shape]||'―'),px,y,pw,fs,{col:C.aiD})+4;
+   if(sl.reason&&sl.reason.t)y+=para('根拠：'+sl.reason.t,px,y,pw,fs*.82,{col:C.aiM})+6;
+   if(sl.pts&&sl.pts.length>1){var gw=Math.min(pw,320),gh=gw*.5,gx=px,gy=y+8;ctx.fillStyle='#FDFDF9';ctx.fillRect(gx,gy,gw,gh);ctx.strokeStyle=C.ai;ctx.lineWidth=1.5;ctx.strokeRect(gx,gy,gw,gh);
+    ctx.strokeStyle=C.cu;ctx.lineWidth=3;ctx.setLineDash([6,5]);ctx.beginPath();sl.pts.forEach(function(q,i){var X=gx+q[0]/1.4*gw,Y=gy+gh-q[1]/.4*gh;ctx[i?'lineTo':'moveTo'](X,Y)});ctx.stroke();ctx.setLineDash([]);txt('描いた予想の線',gx+6,gy+14,13,{col:C.cuD});y=gy+gh+10}
+   ctx.globalAlpha=1;if(k>=1){var bw=Math.min(340,pw);btn({x:px,y:Math.min(H-80,y+10),w:bw,h:60},'星を打って確かめる ▶','ai',function(){SEALS=null;toShelf()},'sgo',{pulse:1})}}}
+ else{/* 封印が無い／その場で予想 */
+  if(D.step<3){var box=LAND?{x:W*.08,y:L.top+20,w:W*.5,h:H-L.top-60}:{x:14,y:L.top+120,w:W-28,h:Math.min(H*.5,H-L.top-200)};
+   var fs2=clamp(W*.022,15,20),tx=LAND?W*.62:20,tw=LAND?W*.34:W-40,ty=LAND?L.top+40:L.top+14;
+   para('この端末には、コマ30で封印した予想が見つからない。\n星を打つ前に、いまここで予想しよう。\n銅の質量を0〜1.2 gと変えたら、結び付く酸素の質量のグラフはどんな形？ 指で線を描こう。',tx,ty,tw,fs2*(LAND?1:.85),{col:C.aiD});
+   ctx.fillStyle='#FDFDF9';ctx.fillRect(box.x,box.y,box.w,box.h);ctx.strokeStyle=C.ai;ctx.lineWidth=2;ctx.strokeRect(box.x,box.y,box.w,box.h);
+   var g0={x:box.x+46,y:box.y+14,w:box.w-60,h:box.h-54};var saveG=L.g;L.g=g0;
+   ctx.strokeStyle='rgba(31,63,143,.18)';ctx.lineWidth=1;for(var v=0;v<=XMAX+1e-6;v+=.2){ctx.beginPath();ctx.moveTo(gX(v),g0.y);ctx.lineTo(gX(v),g0.y+g0.h);ctx.stroke();txt(v.toFixed(1),gX(v),g0.y+g0.h+12,11,{al:'center',col:C.aiD})}
+   for(v=0;v<=.5001;v+=.1){ctx.beginPath();ctx.moveTo(g0.x,gY(v,.5));ctx.lineTo(g0.x+g0.w,gY(v,.5));ctx.stroke();txt(v.toFixed(1),g0.x-6,gY(v,.5),11,{al:'right',col:C.aiD})}
+   brushLine(ctx,g0.x,g0.y+g0.h,g0.x+g0.w,g0.y+g0.h,3,C.ai,1,1);brushLine(ctx,g0.x,g0.y+g0.h,g0.x,g0.y,3,C.ai,1,2);txt('銅の質量〔g〕',g0.x+g0.w,g0.y+g0.h+28,13,{al:'right'});
+   if(STROKE&&STROKE.length>1){ctx.strokeStyle=C.cu;ctx.lineWidth=4;ctx.lineCap='round';ctx.beginPath();STROKE.forEach(function(p,i){ctx[i?'lineTo':'moveTo'](p.x,p.y)});ctx.stroke()}
+   HIT.push({id:'pdraw',x:g0.x-10,y:g0.y-10,w:g0.w+20,h:g0.h+20,down:function(p){STROKE=[p]},drag:function(p){if(STROKE)STROKE.push(p)},up:function(){var sg=L.g;L.g=g0;finishPredStroke('seal');L.g=sg}});
+   L.g=saveG}
+  else{var s2=S.seal;var fs3=clamp(W*.024,15,20),x3=LAND?W*.2:20,w3=LAND?W*.6:W-40,y3=L.top+60;
+   y3+=para('予想を封印した。',x3,y3,w3,fs3*1.2,{col:C.shu})+8;y3+=para('グラフの形：'+SHAPET[s2.shape]+'／銅2倍 → 酸素 '+PREDT[s2.pred],x3,y3,w3,fs3,{col:C.aiD})+8;
+   y3+=para('銅の星を打っていくと、この予想が当たっているか分かる。二の夜の終わりに照らし合わせよう。',x3,y3,w3,fs3*.9,{col:C.aiM})+16;
+   btn({x:x3,y:y3,w:Math.min(340,w3),h:60},'星を打ちに行く ▶','ai',function(){SEALS=null;toShelf()},'sgo2',{pulse:1})}}
+ if(MSG.life>0&&MSG.t){ctx.globalAlpha=clamp(MSG.life*2,0,1);txt(MSG.t,W/2,H-30,fit(MSG.t,W-30,17),{al:'center',col:C.shu,w:800});ctx.globalAlpha=1}
+ hud('封印を開ける')}
+
+/* ================= クリア ================= */
+function drawClear(dt){if(BGKEY!==nightKey())buildGroundBG();ctx.drawImage(BG,0,0,W,H);var w=Math.min(680,W-24),x=(W-w)/2,y=L.top+6,h=H-y-12;
+ ctx.save();ctx.shadowColor='rgba(19,42,99,.25)';ctx.shadowBlur=20;ctx.shadowOffsetY=8;rr(x,y,w,h,6);ctx.fillStyle='#FDFDF9';ctx.fill();ctx.restore();rimRect(ctx,x,y,w,h,18,'shippo');ctx.strokeStyle=C.ai;ctx.lineWidth=2;ctx.strokeRect(x,y,w,h);ctx.strokeRect(x+18,y+18,w-36,h-36);
+ var fs=clamp(w/28,14,20),yy=y+52;txt('星座の帳、完成',x+w/2,yy,fit('星座の帳、完成',w-80,34,800),{al:'center',col:C.ai,w:800});yy+=44;
+ var gold=S.res.filter(function(r){return r&&r.gold}).length;
+ var rec=[['クリアタイム',fmtT(S.t)],['一発で刺さった星',S.firsts+' / '+S.shots+' 発'],['金彩の皿',gold+' / '+NIGHTS.length+' 枚'],['最高の連',kan(S.maxCombo||0)+'連'],['封印した予想',S.sealCmp?(S.sealCmp.hit?'的中':'ズレ（発見）'):'―']];
+ rec.forEach(function(q){txt(q[0],x+40,yy,fs,{col:C.aiM});txt(q[1],x+w-40,yy,fit(q[1],w*.45,fs,800),{al:'right',col:C.aiD,w:800});yy+=fs*1.8});
+ yy+=6;yy+=para('見つけたこと：金属の質量が2倍・3倍になると、結び付く酸素の質量も2倍・3倍（原点を通る直線＝比例）。銅：酸素＝4：1、マグネシウム：酸素＝3：2。金属の種類で比はちがう。',x+40,yy,w-80,fs*.9,{col:C.aiD});
+ var bw=(w-80-24)/3,by=Math.max(yy+14,y+h-86);btn({x:x+40,y:by,w:bw,h:58},'確認テスト','shu',startTest,'ct',{pulse:1});btn({x:x+52+bw,y:by,w:bw,h:58},'図鑑',window.Zukan&&Zukan.openBook?'white':'off',function(){window.Zukan&&Zukan.openBook()},'cz');btn({x:x+64+bw*2,y:by,w:bw,h:58},'帳を見る','white',toShelf,'csh');
+ hud('')}
+
+/* ================= 入力 ================= */
+var PTR=null;
+function hitAt(x,y){for(var i=HIT.length-1;i>=0;i--){var h=HIT[i];if(x>=h.x&&x<=h.x+h.w&&y>=h.y&&y<=h.y+h.h)return h}return null}
+function onDown(e){TOUCHED=true;if(!$('dlg').classList.contains('hidden')||scene==='test')return;AU.init();var p={x:e.clientX,y:e.clientY};
+ if(scene==='play'&&S.cur&&S.cur.ph==='aim'&&!FLY&&!EV_BLOCK()){var h0=hitAt(p.x,p.y);if(!h0||h0.id==='stroke'){if(L.sl&&(Math.hypot(p.x-L.sl.x,p.y-L.sl.y)<L.sl.r+10||(p.y>L.rail+4&&p.y<L.pull.y1+30&&p.x>L.g.x-30&&p.x<L.g.x+L.g.w+30))){e.preventDefault();AIM={px:clamp(p.x,L.g.x,L.g.x+L.g.w),pull:0,v:0,y0:p.y};KB.on=false;SFX.grab();PTR={id:e.pointerId,aim:1};try{cv.setPointerCapture(e.pointerId)}catch(er){}return}}}
+ var h=hitAt(p.x,p.y);if(!h)return;e.preventDefault();PTR={id:e.pointerId,h:h};try{cv.setPointerCapture(e.pointerId)}catch(er){}h.down&&h.down(p)}
+function EV_BLOCK(){return false}
+function onMove(e){if(!PTR||PTR.id!==e.pointerId)return;var p={x:e.clientX,y:e.clientY};
+ if(PTR.aim&&AIM){var N=N_();AIM.px=clamp(p.x,L.g.x,L.g.x+L.g.w);var pl=clamp(p.y-L.rail,0,L.pullLen);var old=AIM.pull;AIM.pull=pl;AIM.v=pl/L.pullLen*N.ymax;if(Math.abs(pl-old)>8)SFX.pull(pl/L.pullLen);return}
+ PTR.h.drag&&PTR.h.drag(p)}
+function onUp(e){if(!PTR||PTR.id!==e.pointerId)return;var p={x:e.clientX,y:e.clientY};
+ if(PTR.aim){PTR=null;if(AIM&&AIM.pull>10){var x=iX(AIM.px);S.cur.lastX=x;fireAt(x,AIM.v)}else{AIM=null;msg('つかんだまま 下へ引いて、はなすと飛ぶ',3)}return}
+ var h=PTR.h;PTR=null;PRESS=null;h.up&&h.up(p)}
+addEventListener('keydown',function(e){if(scene!=='play'||!S||!S.cur||S.cur.ph!=='aim'||FLY||!$('dlg').classList.contains('hidden'))return;var N=N_(),st=e.shiftKey?.05:.01;
+ if(/^Arrow/.test(e.key)){e.preventDefault();if(!KB.on){KB.on=true;KB.x=S.cur.lastX||.4;KB.y=0}AU.init();
+  if(e.key==='ArrowLeft')KB.x=clamp(KB.x-st,0,XMAX);if(e.key==='ArrowRight')KB.x=clamp(KB.x+st,0,XMAX);if(e.key==='ArrowUp')KB.y=clamp(KB.y+st*N.ymax*2,0,N.ymax);if(e.key==='ArrowDown')KB.y=clamp(KB.y-st*N.ymax*2,0,N.ymax);SFX.pull(KB.y/N.ymax)}
+ if((e.key===' '||e.key==='Enter')&&KB.on){e.preventDefault();KB.on=false;S.cur.lastX=KB.x;fireAt(KB.x,KB.y)}});
+
+/* ================= 進行 ================= */
+function hideAll(){$('test').classList.add('hidden');$('dlg').classList.add('hidden')}
+function toTitle(){scene='title';POST.t0=-1;POST.landed=0;POST.armed=0;BGKEY='';hideAll()}
+function toShelf(){scene='shelf';BGKEY='';hideAll();save()}
+function titleStart(){if(load()&&!POST.armed){POST.armed=1;return}if(!NAME&&!TEST&&!POST.asked){POST.asked=1;askName(titleStart);return}
+ S=fresh();S.name=NAME;var sl=readSeal();if(sl)S.seal=sl;SEALS={t:0,step:0,cut:0,sl:sl};scene='seal';BGKEY='';save()}
+function titleCont(){S=load();if(!S){titleStart();return}if(!NAME)NAME=S.name||'';hideAll();if(S.cleared){scene='clear';BGKEY='';return}
+ if(!S.opened&&!S.seal){SEALS={t:0,step:0,cut:0,sl:readSeal()};if(SEALS.sl)S.seal=SEALS.sl;scene='seal';BGKEY='';return}
+ if(S.cur&&S.cur.ph!=='done'){scene='play';BGKEY='';AIM=FLY=STROKE=LANIM=DONE=null;if(S.cur.ph==='cmp')CMP={t:0,go:0};if(S.cur.ph==='wait'&&NIGHTS[S.cur.n].seal&&!S.sealCmp){S.cur.ph='cmp';CMP={t:0,go:0}}else if(S.cur.ph==='cmp2'||S.cur.ph==='wait'){nightDone();return}msg('つづきから：'+NIGHTS[S.cur.n].nm,3);return}
+ S.cur=null;toShelf()}
+function askName(cb){dialog('なまえ<small>提出カードにのる名前（空でもOK）</small><input id="dlgName" maxlength="16" autocomplete="off" placeholder="なまえ">',[['OK',function(){var el=$('dlgName');if(el&&el.value.trim())NAME=el.value.trim();cb()},1]]);setTimeout(function(){try{$('dlgName').focus()}catch(e){}},60)}
+function finishMain(){S.cleared=1;S.cur=null;save();scene='clear';BGKEY='';petals(80);SFX.fanfare();if(window.Zukan&&Zukan.mainClear){try{Zukan.mainClear({onClose:function(){scene='clear'}})}catch(e){}}}
+function onBack(){AU.init();
+ if(scene==='title'){try{window.parent.postMessage({type:'rika-close-game'},'*')}catch(e){}return}
+ var t=scene==='test'?'確認テストをやめて、タイトルにもどる？<small>テストは次はさいしょから。星座の帳は保存されています。</small>':'タイトルにもどる？<small>進み具合は保存されます。「つづきから」で、この夜の続きから遊べます。</small>';
+ dialog(t,[['つづける',null],['もどる',function(){AIM=FLY=STROKE=null;save();toTitle()},1]])}
+function dialog(html,btns){$('dlgT').innerHTML=html;var R=$('dlgR');R.innerHTML='';btns.forEach(function(b){var el=document.createElement('button');el.className='pbtn'+(b[2]?' go':'');el.textContent=b[0];
+ el.onclick=function(){$('dlg').classList.add('hidden');if(b[1])b[1]()};R.appendChild(el)});$('dlg').classList.remove('hidden')}
+
+/* ================= 確認テスト ================= */
+var TQ=[],TA=[],TI=0;
+function startTest(){scene='test';hideAll();$('test').classList.remove('hidden');TQ=window.Quiz?Quiz.test():[];TA=[];TI=0;
+ if(!$('tBack')){var b=document.createElement('button');b.id='tBack';b.className='pbtn';b.style.minWidth='0';b.textContent='◀ もどる';b.onclick=onBack;$('test').querySelector('.top').insertBefore(b,$('test').querySelector('.ttl'))}
+ showQ()}
+function showQ(){var q=TQ[TI];if(!q){finishTest();return}$('test').scrollTop=0;
+ $('tNo').textContent=(TI+1)+' / '+TQ.length;$('tQ').textContent=q.q;$('tFig').innerHTML=q.fig||'';$('tFb').innerHTML='';var Ad=$('tA');Ad.innerHTML='';Ad.className=q.t==='choice'?'ch':'';
+ if(q.t==='choice'){q.shown.forEach(function(c){var b=document.createElement('button');b.className='tag';b.textContent=c;b.onclick=function(){answer(c,b)};Ad.appendChild(b)})}
+ else if(q.t==='num'){var row=document.createElement('div');row.className='numrow';row.innerHTML='<input id="numIn" inputmode="decimal" autocomplete="off"><span style="font-size:19px">'+esc(q.unit||'')+'</span>';
+  var b=document.createElement('button');b.className='pbtn go';b.textContent='けってい';row.appendChild(b);Ad.appendChild(row);b.onclick=function(){var v=$('numIn').value.trim();if(!v)return;answer(v)}}
+ else if(q.t==='order'){var sel=[],box=document.createElement('div');box.className='ord';Ad.appendChild(box);var btns=[];
+  q.shown.forEach(function(c){var bt=document.createElement('button');bt.className='tag';bt.textContent=c;bt.onclick=function(){if(bt.classList.contains('pickd'))return;sel.push(c);bt.classList.add('pickd');
+   var d=document.createElement('div');d.textContent=sel.length+'. '+c;box.appendChild(d);if(sel.length===q.shown.length)answer(sel.slice())};Ad.appendChild(bt);btns.push(bt)});
+  var rs=document.createElement('button');rs.className='pbtn';rs.textContent='やり直す';rs.onclick=function(){sel=[];box.innerHTML='';btns.forEach(function(x){x.classList.remove('pickd')})};Ad.appendChild(rs)}}
+function answer(v,btn2){var q=TQ[TI];if(TA[TI]!==undefined)return;TA[TI]=v;var ok=Quiz.check(q,v);AU.init();if(ok)SFX.hit(2);else SFX.miss();
+ [].forEach.call($('tA').querySelectorAll('button,input'),function(b){b.disabled=true;if(q.t==='choice'&&b.textContent===q.choices[0])b.classList.add('ok')});
+ if(btn2&&!ok)btn2.classList.add('ng');
+ $('tFb').innerHTML='<span class="mk">'+(ok?'◎':'×')+'</span>'+(ok?'正解':'正解は「'+esc(Quiz.answer(q))+'」')+'<span class="ex">'+esc(q.ex||'')+'</span>';
+ var nx=document.createElement('button');nx.className='pbtn go';nx.textContent=TI+1<TQ.length?'つぎへ':'結果を見る';nx.style.marginTop='12px';nx.onclick=function(){TI++;showQ()};
+ $('tFb').appendChild(document.createElement('br'));$('tFb').appendChild(nx);setTimeout(function(){try{nx.scrollIntoView({block:'nearest',behavior:RM?'auto':'smooth'})}catch(e){}},50)}
+function finishTest(){var qs=TQ,review=Quiz.review(qs,TA),marks=review.map(function(r){return r.ok}),score=marks.filter(Boolean).length;
+ var sv=S||load(),nm=(NAME||(sv&&sv.name)||'').trim();
+ var gold=sv?sv.res.filter(function(r){return r&&r.gold}).length:0;
+ var recs=TEST?[['モード','確認テストだけ']]:[['クリアタイム',fmtT(sv?sv.t:0)],['一発で刺さった星',(sv?sv.firsts:0)+' / '+(sv?sv.shots:0)+' 発'],['金彩の皿',gold+' / '+NIGHTS.length+' 枚'],['封印した予想',sv&&sv.sealCmp?(sv.sealCmp.hit?'的中（原点を通る直線）':'ズレ → 比例を発見'):'―']];
+ SubmitCard.show({gameId:GID,grade:'chu2',koma:[KOMA],unit:'中2理科　化学変化と原子・分子　第31回',game:'比例の星座 ～金属と酸素の質量のグラフ～'+(TEST?'（確認テストのみ）':''),
+  name:nm,score:score,total:qs.length,marks:marks,records:recs,review:review},function(){if(TEST)startTest();else{$('test').classList.add('hidden');scene=S&&S.cleared?'clear':'shelf';BGKEY=''}})}
+
+/* ================= ループ ================= */
+var last=performance.now(),saveT=0;
+function frame(t){var dt=Math.min(.05,(t-last)/1000);last=t;TT+=dt;HIT=[];
+ if(S&&(scene==='play'||scene==='seal'))S.t+=dt;
+ if(SHK>0)SHK=Math.max(0,SHK-dt*1.8);if(FLASH>0)FLASH=Math.max(0,FLASH-dt*1.5);if(MSG.life>0)MSG.life-=dt;
+ BGM.tick(dt);
+ ctx.save();if(SHK>0&&!RM){var a=SHK*14;ctx.translate((Math.random()-.5)*a,(Math.random()-.5)*a)}
+ if(scene==='title')drawPoster(dt);else if(scene==='shelf')drawShelf(dt);else if(scene==='seal'&&SEALS)drawSealScene(dt);else if(scene==='play'&&S&&S.cur)drawPlay(dt);else if(scene==='clear')drawClear(dt);else if(scene==='test'){ctx.fillStyle=C.bg;ctx.fillRect(0,0,W,H)}
+ drawFX(dt);drawEV(dt);ctx.restore();
+ if(FLASH>0){ctx.save();ctx.globalAlpha=Math.min(.7,FLASH);ctx.fillStyle=FLASHC;ctx.fillRect(0,0,W,H);ctx.restore()}
+ saveT+=dt;if(saveT>5){saveT=0;if(scene==='play')save()}
+ requestAnimationFrame(frame)}
+
+/* ================= 起動 ================= */
+cv.addEventListener('pointerdown',onDown);addEventListener('pointermove',onMove);addEventListener('pointerup',onUp);addEventListener('pointercancel',onUp);
+cv.addEventListener('contextmenu',function(e){e.preventDefault()});
+addEventListener('resize',layout);
+try{AU.mute=localStorage.getItem(MKEY)==='1'}catch(e){}
+window.Zukan&&Zukan.setup&&Zukan.setup({game:GID,koma:[KOMA]});
+if(document.fonts&&document.fonts.ready)document.fonts.ready.then(function(){BGKEY=''});
+layout();
+if(TEST)startTest();else toTitle();
+requestAnimationFrame(frame);
+window.__HS={get S(){return S},get scene(){return scene},get L(){return L},NIGHTS:NIGHTS,truth:truth,fireAt:fireAt,titleStart:titleStart,startNight:startNight,toShelf:toShelf,
+ setS:function(o){S=o},fresh:fresh,judgeLineK:function(k){var c=S.cur,N=N_(),ym=N.ymax,ex=Math.min(XMAX,ym/k)*.95;STROKE=[];for(var i=0;i<=20;i++){var x=ex*i/20;STROKE.push({x:gX(x),y:gY(k*x,ym)})}judgeLine()},
+ predK:function(k){var N=N_(),ym=N.ymax;STROKE=[];for(var i=0;i<=20;i++){var x=1.4*i/20;STROKE.push({x:gX(x),y:gY(Math.min(ym,k*x),ym)})}finishPredStroke('mg')},
+ sealCompare:function(){sealCompare()},nightDone:nightDone,afterNight:afterNight,get CMP(){return CMP},set CMP(v){CMP=v},get SEALS(){return SEALS},
+ setAim:function(x,v){AIM={px:gX(x),pull:v/N_().ymax*L.pullLen,v:v}},clearAim:function(){AIM=null},combo:function(n){COMBO=n}};
 })();
 </script>
 </body>
