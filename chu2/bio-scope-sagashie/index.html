@@ -161,6 +161,15 @@ body.land .pan{font-size:21px;min-height:72px}
 #dlg .box{max-width:440px;width:100%;padding:24px 22px 18px;text-align:center;font-size:18px;line-height:1.6;background:var(--bg);box-shadow:inset 0 0 0 4px var(--ink),6px 6px 0 rgba(231,111,81,.5);animation:pop .25s both}
 #dlg .box b{font-family:var(--head);font-weight:900;font-size:23px}
 #dlg .row{display:flex;gap:12px;justify-content:center;margin-top:16px;flex-wrap:wrap}
+/* 仕上げ 2026-09-27：押すと沈む・★のドン・ドン・ドン・？ボタン */
+.rv{transition:transform .1s}.rv:active{transform:translateY(2px) scale(.93)}.rv.on:active{transform:translateY(-1px) scale(.95)}
+.topr .gd-hbtn{flex:none}
+#stars{position:fixed;z-index:15;left:0;top:0;transform:translate(-50%,-50%);pointer-events:none;text-align:center;font-family:var(--head);font-weight:900;white-space:nowrap}
+#stars .k{display:inline-block;font-size:18px;color:#FBF7EF;background:var(--ink);padding:3px 12px;letter-spacing:.12em;margin-bottom:6px}
+#stars .st{font-size:clamp(50px,7vmin,78px);line-height:1;letter-spacing:.06em}
+#stars .st i{font-style:normal;display:inline-block;opacity:0;transform:scale(3) rotate(-25deg);color:#E9C46A;-webkit-text-stroke:3px #264653;text-shadow:5px 5px 0 rgba(231,111,81,.55)}
+#stars .st i.off{color:#FBF7EF;text-shadow:none}
+#stars .st i.on{opacity:1;transform:none;transition:transform .3s cubic-bezier(.2,1.9,.4,1),opacity .08s}
 @media (prefers-reduced-motion: reduce){*{animation-duration:.01s!important;transition:none!important}}
 </style>
 </head>
@@ -176,6 +185,7 @@ body.land .pan{font-size:21px;min-height:72px}
   <div class="tbtns">
    <button id="btnStart" class="db big red">はじめる</button>
    <button id="btnCont" class="db ink" hidden>つづきから</button>
+   <button id="btnHow" class="db teal sm">あそびかた</button>
    <button id="btnBookT" class="db sm">📖 図鑑</button>
    <button id="btnHub" class="db sm" hidden>一覧へ</button>
   </div>
@@ -206,6 +216,7 @@ body.land .pan{font-size:21px;min-height:72px}
 </section>
 <div id="topbar"><button id="btnBack" class="db ink" hidden><svg viewBox="0 0 30 30"><path d="M18 6 L8 15 L18 24 M9 15 H26" fill="none" stroke="#FBF7EF" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg>もどる</button>
  <div class="topr"><span id="kk" hidden>かけら <b id="kkN">0</b></span><button id="btnMute" class="db" aria-label="音"></button></div></div>
+<div id="stars" hidden><div class="k" id="starsK"></div><div class="st" id="starsS"></div></div>
 <div id="dlg" hidden></div>
 </div>
 <script>/*@SUBMIT_CARD_BEGIN*/
@@ -1607,7 +1618,7 @@ window.ZUKAN_CARDS={"v": 1, "grade": "chu2", "name": "中2理科図鑑", "econom
 '.gd-root button.gd-b:focus-visible{outline:3px solid var(--gd-ac);outline-offset:2px}',
 /* cheer */
 '.gd-cheer{position:fixed;left:0;top:0;z-index:'+(Z+30)+';pointer-events:none;transform:translate(-50%,-50%);white-space:nowrap;font-family:var(--gd-font);font-weight:900;color:var(--gd-ac);font-size:calc(clamp(26px,5.6vmin,58px) * var(--sz,1));line-height:1;letter-spacing:.02em;text-shadow:0 3px 0 var(--gd-ol),2px 0 0 var(--gd-ol),-2px 0 0 var(--gd-ol),0 2px 0 var(--gd-ol),0 -2px 0 var(--gd-ol),2px 2px 0 var(--gd-ol),-2px 2px 0 var(--gd-ol),2px -2px 0 var(--gd-ol),-2px -2px 0 var(--gd-ol),0 6px 14px rgba(0,0,0,.35);animation:gd-cheerout var(--dur,1.3s) ease-in both}',
-'.gd-cheer .ch{display:inline-block;animation:gd-hop .55s cubic-bezier(.3,1.5,.5,1) both}',
+'.gd-cheer .gd-chr{display:inline-block;animation:gd-hop .55s cubic-bezier(.3,1.5,.5,1) both}',
 '.gd-spk{position:fixed;left:0;top:0;z-index:'+(Z+29)+';pointer-events:none;width:var(--s,10px);height:var(--s,10px);background:var(--c);clip-path:polygon(50% 0,62% 38%,100% 50%,62% 62%,50% 100%,38% 62%,0 50%,38% 38%);animation:gd-spark .8s cubic-bezier(.15,.7,.35,1) both}',
 /* れんしゅう */
 '.gd-band{position:fixed;left:50%;top:max(10px,env(safe-area-inset-top));z-index:'+(Z+6)+';pointer-events:none;transform:translateX(-50%);display:flex;align-items:center;gap:.6em;padding:.35em 1.1em .4em;font-family:var(--gd-font);font-size:clamp(14px,2.2vmin,19px);font-weight:700;letter-spacing:.14em;white-space:nowrap;animation:gd-bandin .45s cubic-bezier(.2,1.4,.4,1) both}',
@@ -1615,6 +1626,8 @@ window.ZUKAN_CARDS={"v": 1, "grade": "chu2", "name": "中2理科図鑑", "econom
 '.gd-band.bye{animation:gd-out .25s ease-in both}',
 '.gd-band.bot{top:auto;bottom:max(10px,env(safe-area-inset-bottom))}',
 '.gd-conf{position:fixed;left:0;top:0;z-index:'+(Z+28)+';pointer-events:none;width:var(--w);height:var(--h);background:var(--c);animation:gd-fall var(--t) cubic-bezier(.3,.2,.6,1) both}',
+'@media (max-width:560px){.gd-band{font-size:12px;padding:.22em .8em .26em;letter-spacing:.08em;animation:gd-bandin .45s cubic-bezier(.2,1.4,.4,1) both,gd-dim .6s 2.6s ease forwards}}',
+'@keyframes gd-dim{to{opacity:.38}}',
 '@keyframes gd-bandin{from{opacity:0;transform:translate(-50%,-140%)}to{opacity:1;transform:translate(-50%,0)}}',
 '@keyframes gd-fall{0%{opacity:1;transform:translate(0,-20px) rotate(0)}85%{opacity:1}100%{opacity:0;transform:translate(var(--dx),calc(100vh + 20px)) rotate(var(--rot))}}',
 /* 動き */
@@ -2099,7 +2112,7 @@ window.ZUKAN_CARDS={"v": 1, "grade": "chu2", "name": "中2理科図鑑", "econom
     if(o.color)d.style.color=o.color;if(o.size)d.style.setProperty('--sz',o.size);
     var dur=o.dur||1300;d.style.setProperty('--dur',dur+'ms');
     var chars=Array.from?Array.from(String(text)):String(text).split('');
-    d.innerHTML=chars.map(function(c,i){return '<span class="ch" style="animation-delay:'+(i*38)+'ms">'+(c===' '?'&nbsp;':esc(c))+'</span>'}).join('');
+    d.innerHTML=chars.map(function(c,i){return '<span class="gd-chr" style="animation-delay:'+(i*38)+'ms">'+(c===' '?'&nbsp;':esc(c))+'</span>'}).join('');
     d.setAttribute('role','status');
     document.body.appendChild(d);
     var w=d.offsetWidth,h=d.offsetHeight;if(w>W()-20){d.style.setProperty('--sz',((o.size||1)*(W()-20)/w).toFixed(3));w=d.offsetWidth;h=d.offsetHeight}x=Math.max(w/2+8,Math.min(W()-w/2-8,x));y=Math.max(h/2+8,Math.min(H()-h/2-8,y));
@@ -2305,7 +2318,7 @@ function bell(f,t0,d,v){const a=ac();if(!a||SV.mute)return;const t=a.currentTime
  g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(v||.16,t+.005);g.gain.exponentialRampToValueAtTime(.0005,t+(d||.6));o.connect(g);g.connect(a.destination);o.start(t);m.start(t);o.stop(t+(d||.6)+.05);m.stop(t+(d||.6)+.05)}
 let NB=null;function noise(d,f,q,v,t0){const a=ac();if(!a||SV.mute)return;if(!NB){NB=a.createBuffer(1,a.sampleRate,a.sampleRate);const x=NB.getChannelData(0);for(let i=0;i<x.length;i++)x[i]=Math.random()*2-1}const t=a.currentTime+(t0||0),s=a.createBufferSource();s.buffer=NB;const bp=a.createBiquadFilter();bp.type='bandpass';bp.frequency.value=f;bp.Q.value=q;const g=a.createGain();g.gain.setValueAtTime(v,t);g.gain.exponentialRampToValueAtTime(.0005,t+d);s.connect(bp);bp.connect(g);g.connect(a.destination);s.start(t,Math.random()*.5);s.stop(t+d+.05)}
 const SFX={click(){noise(.05,3500,3,.25);noise(.08,1200,4,.18,.03)},pip(){bell(1760,0,.15,.08)},
- find(){for(let i=0;i<14;i++)bell(880*Math.pow(2,((i*5)%12)/12)*(i%3?2:1),i*.035,.35,.07);bell(523.25,0,1.2,.14)},
+ find(c){const up=Math.pow(2,Math.min(12,(c||0)*2)/12);for(let i=0;i<14;i++)bell(880*up*Math.pow(2,((i*5)%12)/12)*(i%3?2:1),i*.035,.35,.07);bell(523.25*up,0,1.2,.14)},
  miss(){bell(220,0,.4,.14);bell(207,0.08,.4,.12)},lost(){bell(392,0,.25,.1);bell(330,.12,.25,.1);bell(262,.24,.45,.1)},
  clear(){[523.25,659.25,783.99,1046.5,1318.5,1567.98].forEach((f,i)=>bell(f,i*.09,.9,.13));for(let i=0;i<20;i++)bell(1500+Math.random()*2500,.5+i*.03,.2,.03)},
  stamp(){noise(.25,200,.7,.4);bell(196,0,.5,.15)},tick(){bell(2400,0,.05,.04)}};
@@ -2332,9 +2345,9 @@ function bakeBG(){bgC.width=cv.width;bgC.height=cv.height;const g=bgC.getContext
  g.globalAlpha=1;if(scene==='play'&&L&&!(G&&G.S&&G.S.seal)){const f=L.field;g.fillStyle=INK;g.beginPath();g.arc(f.cx,f.cy,f.D/2+18,0,TAU);g.fill();for(let i=0;i<500;i++){const a=r()*TAU,rr=f.D/2+2+r()*16;g.globalAlpha=.6;g.fillStyle=cols[(r()*5)|0];g.beginPath();g.arc(f.cx+Math.cos(a)*rr,f.cy+Math.sin(a)*rr,1+r()*2,0,TAU);g.fill()}g.globalAlpha=1}}
 
 /* ================= あそぶ ================= */
-let G=null;
-function startStage(i){ac();const S=STAGES[i];scene='play';showScene('play');
- G={i,S,st:null,mi:0,disp:DIA[0],anim:null,vx:0,vy:0,tgt:0,found:[],proc:{},misses:0,ops:0,properN:0,focus:.5,fT:.5,t:0,fx:[],parts:[],msgT:0,done:false,hold:0,seenLow:{},lostShown:0,idle:0};
+let G=null;let HELP=null,PRACTICE=null,CB=0,PAUSE=false;const GD=window.Guide||null;
+function startStage(i,o){ac();o=o||{};const S=STAGES[i];scene='play';showScene('play');$('stars').hidden=true;CB=0;
+ G={i,S,prac:!!o.prac,flash:0,st:null,mi:0,disp:DIA[0],anim:null,vx:0,vy:0,tgt:0,found:[],proc:{},misses:0,ops:0,properN:0,focus:.5,fT:.5,t:0,fx:[],parts:[],msgT:0,done:false,hold:0,seenLow:{},lostShown:0,idle:0};
  if(S.seal){initSeal();return}
  G.st=buildStage(i);G.mi=S.startMag||0;G.disp=DIA[G.mi];
  const t0=curT();const r=RNG(55+i);let sx,sy;for(let k=0;k<40;k++){sx=1.5+r()*(S.W-3);sy=1.2+r()*(S.H-2.4);if(Math.hypot(sx-t0.x,sy-t0.y)>DIA[0]*.75)break}G.vx=sx;G.vy=sy;
@@ -2393,14 +2406,20 @@ function tapField(sx,sy){if(G.done||G.anim)return;const [mx,my]=toMM(sx,sy);cons
   if(blur()>.2){ring(sx,sy,'#E9C46A');setMsg('ぼやけて よくわからない。<b>調節ねじ</b>で ピントを合わせよう。',[]);pulse('knob');return}
   found(t,sx,sy);return}
  if(best&&best.type!=='bubble'||best&&best.type==='bubble'){const B=TY[best.type];if(G.mi<(B.req>2?0:B.req)&&best.type!=='bubble'){ring(sx,sy,'#8AB17D');setMsg('小さな点。これだけでは 何か わからない。',[]);return}
-  G.misses++;SV.misses++;save();SFX.miss();ring(sx,sy,RED);const d=t?Math.hypot(t.x-mx,t.y-my):0;
+  if(!G.prac){G.misses++;SV.misses++;save();breakCombo()}SFX.miss();ring(sx,sy,RED);vib([12,40,12]);const d=t?Math.hypot(t.x-mx,t.y-my):0;
   const why=best.type==='bubble'?'それは <b>気泡</b>（空気のあわ）。ふちが黒く太い。':best.type==='hane'&&t&&t.type==='mika'?'それは <b>ハネケイソウ</b>。まっすぐな舟形で しま模様。ミカヅキモは 三日月形。':best.type==='mika'&&t&&t.type==='hane'?'それは <b>ミカヅキモ</b>（三日月形）。ハネケイソウは まっすぐ。':best.type==='kunsho'&&t&&t.type==='midori'?'それは <b>クンショウモ</b>。ミドリムシは 細長く、赤い点（眼点）がある。':best.type==='L下'&&t&&t.type==='L上'?'それは <b>「下」</b>の字！ 像が 逆さまなので 「上」に見えた？':'それは <b>'+B.nm+'</b>。';
   setMsg('ちがう。'+why+(t?' 目当てまで <b>あと '+fmm(d)+'mm</b>。':''),[],true);return}
  ring(sx,sy,'rgba(38,70,83,.5)')}
 function ring(x,y,col){G.fx.push({k:'ring',x,y,t:0,col})}
+function shake(px){if(RM)return;try{cv.animate([{transform:'translate(0,0)'},{transform:'translate('+px+'px,'+(-px*.6)+'px)'},{transform:'translate('+(-px)+'px,'+(px*.4)+'px)'},{transform:'translate('+(px*.5)+'px,0)'},{transform:'translate(0,0)'}],{duration:280})}catch(e){}}
+function vib(p){try{if(navigator.vibrate&&!SV.mute)navigator.vibrate(p)}catch(e){}}
+const TIERS=[2,3,5,8];
+function breakCombo(){const n=CB;CB=0;if(n<1)return;const nx=TIERS.find(v=>v>n);const f=L.field;if(GD&&nx&&nx-n<=2)GD.cheer('あと'+(nx-n)+'回で れんぞく×'+nx+'だった！',{x:f.cx,y:f.cy-f.D*.28,size:.8,sound:false})}
 function pulse(id){const el=$(id);el.animate([{transform:'scale(1)'},{transform:'scale(1.15)'},{transform:'scale(1)'}],{duration:450,iterations:2})}
 function found(t,sx,sy){const T=TY[t.type],proper=T.req===0?!(G.S.startMag&&!G.proc[G.tgt]&&G.mi>0)&&true:!!G.proc[G.tgt];G.found.push({type:t.type,proper});t.foundAt=G.t;SV.finds++;if(proper){SV.proper++;G.properN++}SV.found[t.type]=1;save();
- SFX.find();for(let i=0;i<(RM?10:70);i++){const a=Math.random()*TAU,v=60+Math.random()*320;G.parts.push({x:sx,y:sy,vx:Math.cos(a)*v,vy:Math.sin(a)*v,t:0,life:.8+Math.random()*.6,col:['#E76F51','#E9C46A','#2A9D8F','#F4A261','#8AB17D'][(Math.random()*5)|0],s:2+Math.random()*5})}
+ if(proper)CB++;else breakCombo();SFX.find(CB);shake(proper?7:4);G.flash=RM?0:(proper?.55:.35);vib(proper?[20,30,20]:15);
+ if(GD){GD.cheer(proper?'発見！ 低→高 ◎':'発見！',{x:sx,y:sy-40,size:proper?1.25:1,sound:false});if(proper&&TIERS.indexOf(CB)>=0)setTimeout(()=>{if(G)GD.cheer('れんぞく ×'+CB+'！',{x:L.field.cx,y:L.field.cy-L.field.D*.3,size:1+TIERS.indexOf(CB)*.2,sound:false});bell(1046.5*Math.pow(2,CB/12),0,.6,.1)},420)}
+ for(let i=0;i<(RM?10:70+CB*15);i++){const a=Math.random()*TAU,v=60+Math.random()*320;G.parts.push({x:sx,y:sy,vx:Math.cos(a)*v,vy:Math.sin(a)*v,t:0,life:.8+Math.random()*.6,col:['#E76F51','#E9C46A','#2A9D8F','#F4A261','#8AB17D'][(Math.random()*5)|0],s:2+Math.random()*5})}
  G.fx.push({k:'found',x:sx,y:sy,t:0});
  const key='p_'+G.S.id+'_'+G.tgt;if(proper&&!SV.firsts[key]){SV.firsts[key]=1;save();earn(10,'first-try',sx,sy)}
  setMsg('<b>発見！ '+T.nm+'</b>（'+MAGN[G.mi]+'）'+(proper?' 手順：<b>低→高</b> ◎':' ……でも 手順は △（低い倍率で中央に入れてから 上げると 確実）')+'<br>'+esc(T.info),[]);
@@ -2411,12 +2430,17 @@ function stageClear(){if(!G)return;const S=G.S,n=S.targets.length;let st=G.prope
  if((S.id==='c'||S.id==='g')&&!SV.firsts['rule_'+S.id]&&G.properN>0){SV.firsts['rule_'+S.id]=1;save();setTimeout(()=>earn(30,'rule'),600)}
  const f=L.field;for(let i=0;i<(RM?10:120);i++){const a=Math.random()*TAU,v=100+Math.random()*420;G.parts.push({x:f.cx,y:f.cy,vx:Math.cos(a)*v,vy:Math.sin(a)*v-80,t:0,life:1+Math.random(),col:['#E76F51','#E9C46A','#2A9D8F','#F4A261','#8AB17D','#264653'][(Math.random()*6)|0],s:3+Math.random()*6})}
  const rule={a:'低い倍率は 見える範囲が広い。小さいものは 倍率を上げると見分けられる。',b:'形の特徴で 見分ける（三日月・舟形・緑の粒の球）。',c:'<b>きまり：</b>倍率を上げると 見える範囲は せまくなる。だから 低い倍率で探して、中央に入れてから 上げる。',d:'倍率を変えたら ピントを合わせ直す。',e:'0.07mm の生きものは ×400 で やっと見分けられる。',f:'顕微鏡の像は 上下左右が逆。見たいものが右上にあれば、プレパラートを右上へ動かすと 中央に来る。',g:'<b>きまり：</b>高い倍率から探すと 見つからない。低→中央→高 の順が いちばん近道。',h:'低→高 の手順が 身についた！'}[S.id]||'';
- G.cleared=true;bakeOver();setMsg('<b>区画 '+(G.i+1)+' 完成！ '+'★'.repeat(st)+'☆'.repeat(3-st)+'</b>'+extra+'<br>'+rule,[{t:G.i+1<NS?'つぎの区画へ':'ポスターへ',cls:'red',f:()=>{G.i+1<NS?startStage(G.i+1):openMap()}},{t:'ポスター',f:openMap}])}
+ G.cleared=true;bakeOver();stampStars(st,G.i);if(G.prac&&GD){G.prac=false;setTimeout(()=>GD.tutorialClear(),RM?300:1700)}
+ setMsg('<b>区画 '+(G.i+1)+' 完成！ '+'★'.repeat(st)+'☆'.repeat(3-st)+'</b>'+extra+'<br>'+rule,[{t:G.i+1<NS?'つぎの区画へ':'ポスターへ',cls:'red',f:()=>{G.i+1<NS?startStage(G.i+1):openMap()}},{t:'ポスター',f:openMap}])}
+function stampStars(st,i){const f=L.field,e=$('stars');e.style.left=f.cx+'px';e.style.top=(f.cy-f.D*.05)+'px';$('starsK').textContent='区画 '+(i+1)+' 完成！';
+ $('starsS').innerHTML=[0,1,2].map(k=>'<i class="'+(k<st?'':'off')+'">★</i>').join('');e.hidden=false;if(GD&&!G.prac)GD.celebrate('区画 '+(i+1)+' 完成！',{y:f.cy-f.D*.32});
+ [].forEach.call($('starsS').children,(el,k)=>setTimeout(()=>{el.classList.add('on');if(k<st){SFX.stamp();bell(783.99*Math.pow(1.26,k),0,.5,.12);shake(6);vib(25);if(G)G.flash=.3}else SFX.tick()},600+k*380));
+ setTimeout(()=>{if(G&&G.i===i)e.hidden=true},RM?1500:3600)}
 function earn(n,why,x,y){const z=Z();if(!z||!z.earn)return;try{z.earn(n,why,{x:x==null?L.field.cx:x,y:y==null?L.field.cy-L.field.D*.3:y})}catch(e){}updKK()}
 function updKK(){const z=Z();if(z&&z.state){try{$('kkN').textContent=z.state().kakera;$('kk').hidden=false}catch(e){}}}
 
 /* ================= 描く ================= */
-function update(dt){if(!G)return;G.t+=dt;G.idle+=dt;if(G.hold>0)G.hold-=dt;
+function update(dt){if(!G)return;G.t+=dt;G.flash=Math.max(0,(G.flash||0)-dt*1.8);G.idle+=dt;if(G.hold>0)G.hold-=dt;
  if(G.anim){G.anim.t+=dt/(RM?.08:.38);const e=ease(G.anim.t);G.disp=Math.exp(lerp(Math.log(G.anim.from),Math.log(G.anim.to),e));if(G.anim.t>=1){G.disp=G.anim.to;G.anim=null}}
  if(G.st){const S=G.S;G.st.objs.forEach(o=>{if(!o.vx&&!o.vy)return;if(o.foundAt!=null)return;o.x+=o.vx*dt;o.y+=o.vy*dt;if(o.x<.4||o.x>S.W-.4){o.vx*=-1}if(o.y<.4||o.y>S.H-.4){o.vy*=-1}if(Math.random()<dt*.3){const a=Math.atan2(o.vy,o.vx)+(Math.random()-.5)*1.2,sp=Math.hypot(o.vx,o.vy);o.vx=Math.cos(a)*sp;o.vy=Math.sin(a)*sp}o.rot=Math.atan2(o.vy,o.vx)});
   const t=curT();if(t&&!G.done&&G.idle>14&&G.hold<=0){G.idle=0;const d=distT(t);if(d<R(G.mi))setMsg('目当ては いまの視野の中に いる。'+(G.mi<TY[t.type].req?' 中央に寄せて 倍率を上げると 見分けられる。':' よく見て タップ！'),[]);else setMsg('ヒント：いまの視野から <b>あと '+fmm(d-R(G.mi))+'mm</b>。'+(G.mi>0?' 倍率を下げると 広く探せる。':''),[])}}
@@ -2485,7 +2509,7 @@ function drawTitle(dt){TT.t+=dt;if(!TT.st){TT.st=buildStage(1);TT.st.S=Object.as
  try{drawField()}catch(e){console.error(e)}G=sG;L=saved;if(L&&fv.width!==Math.round(L.field.D*DPR)&&scene!=='title')fv=mk(L.field.D*DPR,L.field.D*DPR)}
 
 /* ================= 画面の切りかえ ================= */
-function showScene(s){scene=s;['scTitle','scMap','scTest'].forEach(id=>$(id).hidden=true);$('play').hidden=true;
+function showScene(s){scene=s;if(HELP){if(s==='play'||s==='map')HELP.show();else HELP.hide()}if(s!=='play')$('stars').hidden=true;['scTitle','scMap','scTest'].forEach(id=>$(id).hidden=true);$('play').hidden=true;
  if(s==='title')$('scTitle').hidden=false;else if(s==='map')$('scMap').hidden=false;else if(s==='test')$('scTest').hidden=false;else if(s==='play')$('play').hidden=false;
  $('btnBack').hidden=s==='title';updKK();if(L&&s!=='title'&&fv.width!==Math.round(L.field.D*DPR))fv=mk(L.field.D*DPR,L.field.D*DPR);bakeBG()}
 function openTitle(){G=null;showScene('title');initTitle()}
@@ -2502,7 +2526,7 @@ function renderMap(){const grid=$('mapGrid');grid.innerHTML='';STAGES.forEach((S
 function initTitle(){if(window.PLAYER_NAME)$('nameIn').value=window.PLAYER_NAME;else if(SV.name)$('nameIn').value=SV.name;const cont=hadSave&&SV.unl>0;$('btnCont').hidden=!cont;$('btnStart').textContent=cont?'はじめから':'はじめる';$('btnBookT').hidden=!Z();$('btnHub').hidden=!(window.parent&&window.parent!==window)}
 let startArm=false;
 $('btnStart').onclick=()=>{ac();SV.name=$('nameIn').value.trim();const cont=hadSave&&SV.unl>0;if(cont&&!startArm){startArm=true;$('btnStart').textContent='本当に はじめから？';setTimeout(()=>{startArm=false;initTitle()},3500);return}
- if(startArm){const nm=SV.name,mu=SV.mute;SV=fresh();SV.name=nm;SV.mute=mu;startArm=false}hadSave=true;save();SFX.clear();startStage(0)};
+ if(startArm){const nm=SV.name,mu=SV.mute;SV=fresh();SV.name=nm;SV.mute=mu;startArm=false}hadSave=true;save();SFX.clear();beginFirst()};
 $('btnCont').onclick=()=>{ac();SV.name=$('nameIn').value.trim()||SV.name;save();SFX.pip();openMap()};
 $('btnBookT').onclick=$('btnBookM').onclick=()=>{try{Z().openBook()}catch(e){}};
 $('btnHub').onclick=()=>{try{window.parent.postMessage({type:'rika-close-game'},'*')}catch(e){}};
@@ -2537,16 +2561,50 @@ function finishTest(){const qs=T.qs,answers=T.ans;const review=Quiz.review(qs,an
 let last=performance.now();
 function frame(now){const dt=Math.min(.05,Math.max(0,(now-last)/1000));last=now;
  try{const g=cx;g.setTransform(1,0,0,1,0,0);if(bgC.width===cv.width)g.drawImage(bgC,0,0);else{g.fillStyle=BG;g.fillRect(0,0,cv.width,cv.height)}
-  if(scene==='title')drawTitle(dt);else if(scene==='play'&&G){if(G.S.seal){if(G.stampT!=null)G.stampT+=dt;drawSeal()}else{update(dt);drawField();drawPoster();drawParts()}}}catch(e){console.error(e)}
+  if(scene==='title')drawTitle(dt);else if(scene==='play'&&G){if(G.S.seal){if(G.stampT!=null)G.stampT+=dt;drawSeal()}else{if(!PAUSE)update(dt);drawField();drawPoster();drawParts()}}}catch(e){console.error(e)}
  requestAnimationFrame(frame)}
-function drawParts(){const g=cx;g.setTransform(DPR,0,0,DPR,0,0);G.parts.forEach(p=>{g.globalAlpha=clamp(1-p.t/p.life,0,1);g.fillStyle=p.col;g.beginPath();g.arc(p.x,p.y,p.s,0,TAU);g.fill()});g.globalAlpha=1}
+function drawParts(){const g=cx;g.setTransform(DPR,0,0,DPR,0,0);if(G.flash>0){const f=L.field;g.fillStyle='rgba(255,250,232,'+(G.flash*.6).toFixed(3)+')';g.beginPath();g.arc(f.cx,f.cy,f.D/2,0,TAU);g.fill()}G.parts.forEach(p=>{g.globalAlpha=clamp(1-p.t/p.life,0,1);g.fillStyle=p.col;g.beginPath();g.arc(p.x,p.y,p.s,0,TAU);g.fill()});g.globalAlpha=1}
 window.GAME_ID=GAME_ID;
 try{window.Zukan&&Zukan.setup({game:GAME_ID,koma:[KOMA]})}catch(e){}
 muteIcon();layout();addEventListener('resize',()=>{layout();if(scene==='map')renderMap()});
 if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>{for(const k in GLYPH)delete GLYPH[k];for(const k in SPR)delete SPR[k];layout();if(G&&G.i!=null)updOdai()});
-window.__scope={get G(){return G},get SV(){return SV},startStage,startTest,openMap,setMag,L:()=>L,toScr,tapField,
+window.__scope={get G(){return G},get PAUSE(){return PAUSE},curT:()=>G&&G.st?curT():null,get SV(){return SV},startStage,startTest,openMap,setMag,L:()=>L,toScr,tapField,
  center(){const t=curT();G.vx=t.x+(Math.random()-.5)*.05;G.vy=t.y+(Math.random()-.5)*.05},focusOK(){G.focus=G.fT},
  solveOne(){if(!G||G.done||!G.st)return false;const t=curT();if(!t)return false;G.vx=t.x+.02;G.vy=t.y+.02;const req=TY[t.type].req;if(G.mi<req){setMag(G.mi+1);return true}if(G.anim)return true;G.focus=G.fT;const [sx,sy]=toScr(t.x,t.y);tapField(sx,sy);return true}};
+/* ================= 遊び方案内（Guide）仕上げ 2026-09-27 ================= */
+function tgtOf(type){return G&&G.st?G.st.objs.find(o=>o.target&&o.type===type):null}
+function scrOf(type,r){const t=tgtOf(type);if(!t||!L)return null;const q=toScr(t.x,t.y);return{x:q[0],y:q[1],r:r||Math.max(30,t.sz*pxmm()*.7)}}
+function fieldC(){const f=L.field;return{x:f.cx,y:f.cy,r:36}}
+function dragTo(type){const t=tgtOf(type);if(!t)return null;const f=L.field;const dx=t.x-G.vx,dy=t.y-G.vy,d=Math.hypot(dx,dy)||1;const k=Math.min(f.D*.36,d*pxmm());return{x:f.cx+dx/d*k,y:f.cy+dy/d*k,r:30}}
+function fieldArea(){const f=L.field;return{x:f.cx,y:f.cy,r:f.D/2}}
+const INTRO={title:'プレパラート探し絵',learn:'倍率を上げると **大きく見えるが、見える範囲はせまく** なる。だから **低い倍率で探して中央へ → 倍率を上げる**',
+ how:'視野を **ドラッグ** で動かし、**×40→×100** に切りかえて、お題を **タップ**',gesture:'drag'};
+function beginFirst(){if(!GD){startStage(0);return}GD.intro(INTRO).then(()=>GD.tutorial(PRACTICE))}
+if(GD){
+ GD.setup({theme:{bg:'#FBF7EF',fg:INK,accent:RED,accentText:'#fff',font:'"M PLUS 2",sans-serif',bodyFont:'"Zen Kaku Gothic Antique",sans-serif',
+   radius:3,texture:'dots',line:INK,dim:'rgba(38,70,83,.5)',shadow:'6px 6px 0 rgba(231,111,81,.45)',outline:'#FBF7EF',hand:'#FBF7EF',handLine:INK},
+  sfx:k=>({step:()=>bell(1318.5,0,.3,.1),done:()=>SFX.find(3),clear:SFX.clear,open:SFX.pip,close:SFX.click,cheer:SFX.pip,nudge:SFX.tick}[k]||SFX.pip)(),
+  muted:()=>SV.mute});
+ PRACTICE={label:'れんしゅう中　─ 区画1',clearText:'れんしゅうクリア！',clearOn:'manual',
+  start:()=>{$('dlg').hidden=true;startStage(0,{prac:true})},
+  steps:[
+   {gesture:'drag',label:'ドラッグ',target:fieldC,to:()=>dragTo('mijinko'),area:fieldArea,until:()=>{const t=tgtOf('mijinko');return !t||t.foundAt!=null||distT(t)<R(G.mi)*.75},
+    text:'お題は **ミジンコ**。視野を **ドラッグ** して プレパラートを動かそう',praise:'見えた！'},
+   {gesture:'tap',label:'タップ',target:()=>scrOf('mijinko'),until:()=>G&&G.found.length>=1,text:'大きいミジンコは ×40 でわかる。**タップ** で発見！',praise:false},
+   {gesture:'drag',label:'中央へ',target:fieldC,to:()=>dragTo('zouri'),area:fieldArea,until:()=>{const t=tgtOf('zouri');return !t||t.foundAt!=null||distT(t)<R(1)*.7},
+    text:'つぎは小さい **ゾウリムシ**。まず ×40 で探して、**点線の円の中** まで ドラッグ',praise:'中央に来た！'},
+   {gesture:'tap',label:'倍率',target:()=>document.querySelectorAll('#rev .rv')[1],until:()=>G&&G.mi>=1&&!G.anim,text:'**×100** をタップして 倍率を上げる（ピンチでもよい）',praise:'大きく見えた！'},
+   {gesture:'tap',label:'タップ',target:()=>scrOf('zouri'),until:()=>G&&G.found.length>=2,text:'ゾウリムシを **タップ**！ 低→高 の手順なら ◎',praise:false}],
+  onExit:res=>{if(G&&!res.cleared)G.prac=false}};
+ HELP=GD.help({title:'プレパラート探し絵',gesture:'drag',
+  rules:['視野の円を **ドラッグ** ＝ プレパラートを動かす（区画6からは 下の「プレパラートを動かす」で。像は逆に動く）',
+   '**×40・×100・×400** のボタン（ピンチ・ホイールでも）で 倍率を切りかえ。点線の円＝上げたとき見える範囲',
+   '小さいものは 倍率を上げないと 見分けられない。**低い倍率で見つけて中央へ → 倍率を上げて タップ** で ◎と★',
+   '区画4からは **調節ねじ** を回して ピントを合わせる',
+   'まちがった物をタップすると ★が減り、れんぞくが切れる'],
+  onOpen:()=>{PAUSE=true},onClose:()=>{PAUSE=false},replay:'tutorial',mount:document.querySelector('.topr'),size:48,attention:true,show:false});
+ GD.tutorialButton('#btnHow',()=>{ac();SFX.pip();SV.name=$('nameIn').value.trim()||SV.name;hadSave=true;save();GD.tutorial(PRACTICE)});
+}else $('btnHow').hidden=true;
 if(window.GAME_MODE==='test'){startTest()}else{showScene('title');initTitle()}
 requestAnimationFrame(frame);
 })();
