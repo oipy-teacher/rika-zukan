@@ -208,6 +208,14 @@ button{font:inherit;color:inherit;cursor:pointer;touch-action:manipulation;borde
 #end p{font-size:22px;margin:0}
 #end .btns{display:flex;flex-wrap:wrap;gap:12px;justify-content:center}
 #flash{position:fixed;inset:0;pointer-events:none;z-index:55;background:#fff;opacity:0}
+/* 仕上げ 2026-09-28: 判子のドン・？の場所・はじめるの脈 */
+.clip .stamp{animation:gpstamp .45s cubic-bezier(.2,1.9,.4,1) .25s both}
+@keyframes gpstamp{0%{transform:scale(3) rotate(-20deg);opacity:0}100%{transform:rotate(12deg);opacity:.9}}
+.mkak{padding-right:134px}
+@media (orientation:portrait),(max-aspect-ratio:1/1){.mkak{padding-right:64px}}
+#bStart{animation:gppulse 1.6s ease-in-out infinite}
+@keyframes gppulse{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
+@media (prefers-reduced-motion:reduce){.clip .stamp,#bStart{animation:none}}
 </style>
 </head>
 <body class="news">
@@ -228,6 +236,7 @@ button{font:inherit;color:inherit;cursor:pointer;touch-action:manipulation;borde
     <div class="btns">
      <button class="tag red big" id="bStart">取材をはじめる</button>
      <button class="tag line" id="bCont">つづきから</button>
+     <button class="tag line sm" id="bHow">✎ あそびかた</button>
      <button class="tag line sm" id="bBook">📖 図鑑</button>
     </div>
    </div>
@@ -298,7 +307,7 @@ button{font:inherit;color:inherit;cursor:pointer;touch-action:manipulation;borde
 </div>
 <button id="bBack" class="hide">◀ もどる</button>
 <button id="bMute">音</button>
-<div id="ov"><div class="clip news" id="mc"></div></div>
+<div id="ov" data-gd-pass><div class="clip news" id="mc"></div></div>
 <div id="flash"></div>
 
 <script>/*@SUBMIT_CARD_BEGIN*/
@@ -1595,6 +1604,9 @@ window.ZUKAN_CARDS={"v": 1, "grade": "chu2", "name": "中2理科図鑑", "econom
       if(PASS_RE.test(String(t.id||''))||PASS_RE.test(typeof t.className==='string'?t.className:''))return true;
       if((t.tagName==='BUTTON'||t.tagName==='A'||t.getAttribute('role')==='button')&&/^\s*[◀←＜<]?\s*(もどる|戻る|一覧へ|とじる|閉じる|はい|いいえ|やめる|キャンセル|おと|音)/.test(t.textContent||''))return true}
       t=t.parentNode}return false}
+  /* 手ほどき中は、もどる等（passThru に当たる fixed/absolute のボタン）を暗幕・吹き出しより上へ出す。終わったら元に戻す */
+  function liftPass(){var out=[];try{var els=document.querySelectorAll('button,a,[role=button],[data-gd-pass]');for(var i=0;i<els.length;i++){var e=els[i];if(e.closest&&e.closest('.gd-root'))continue;if(e.classList&&e.classList.contains('gd-hbtn'))continue;if(!passThru(e))continue;var cs=getComputedStyle(e);if(cs.position!=='fixed'&&cs.position!=='absolute')continue;if(cs.display==='none'||cs.visibility==='hidden')continue;out.push([e,e.style.zIndex]);e.style.zIndex=String(Z+1)}}catch(_){}
+    return function(){for(var i=0;i<out.length;i++){out[i][0].style.zIndex=out[i][1]}}}
   function inGuide(t){if(passThru(t))return true;while(t&&t!==document){if(t.classList&&(t.classList.contains('gd-root')||t.classList.contains('gd-hbtn')))return true;t=t.parentNode}return false}
   function hexRGB(c){c=String(c||'').trim();var m;
     if((m=c.match(/^#([0-9a-f]{3})$/i)))return [0,1,2].map(function(i){return parseInt(m[1][i]+m[1][i],16)});
@@ -1935,7 +1947,7 @@ window.ZUKAN_CARDS={"v": 1, "grade": "chu2", "name": "中2理科図鑑", "econom
     if(!steps||!steps.length){resolveP({done:true,steps:0});return p}
     if(opt.key&&!opt.force&&sget('coach:'+opt.key)){resolveP({already:true});return p}
 
-    var root=mkRoot('gd-coach',opt.theme);root.setAttribute('aria-live','polite');
+    var root=mkRoot('gd-coach',opt.theme);root.setAttribute('aria-live','polite');var unlift=liftPass();
     var uid='gdm'+Math.random().toString(36).slice(2,8);
     root.innerHTML='<svg class="dim" aria-hidden="true"><defs><mask id="'+uid+'" maskUnits="userSpaceOnUse"><rect x="-10" y="-10" width="200%" height="200%" fill="#fff"/><g class="holes"></g></mask></defs>'+
       '<rect class="shade" x="-10" y="-10" width="200%" height="200%" style="fill:var(--gd-dim)" mask="url(#'+uid+')"/><g class="halos"></g><path class="arw"/><path class="arh"/><circle class="dest" r="0"/></svg>';
@@ -1983,6 +1995,7 @@ window.ZUKAN_CARDS={"v": 1, "grade": "chu2", "name": "中2理科図鑑", "econom
     };
     st.finish=function(res){
       if(st.finished)return;st.finished=true;
+      try{unlift()}catch(_){}
       if(st.evOff)st.evOff();
       delTick(tick);popLayer(layer);offPtr();window.removeEventListener('resize',onRs);
       if(res.done&&opt.key)sset('coach:'+opt.key,'1');
@@ -2296,6 +2309,7 @@ window.ZUKAN_CARDS={"v": 1, "grade": "chu2", "name": "中2理科図鑑", "econom
 <script>
 (function(){
 'use strict';
+/* gp-finish-2026-09-28 */
 const GAME='bio-suction-gp',KOMA='chu2-seibutsu-12',KEY='rika-zukan:chu2:game:'+GAME+':v1',SEAL_KEY='rika-zukan:chu2:seal:'+KOMA;
 const TEST_ONLY=window.GAME_MODE==='test';
 const RM=!!(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches);
@@ -2398,20 +2412,21 @@ function earn(n,why,x,y){let got=0;try{if(Z())got=Zukan.earn(n,why,{koma:KOMA,x,
 function mkLane(spec){const n=spec.init.L;const lv=[];for(let i=0;i<n;i++){const c=spec.init.coat?1:0;lv.push({f:c,b:c,id:i})}
  if(spec.init.miss){const m=spec.init.miss;lv[m[0]][m[1]]=0}
  return{leaves:lv,thick:spec.init.thick!=null?spec.init.thick:1,oil:0,stem:0,tgt:spec.tgt,pred:null,got:0,stampT:0,ok:null,fall:[]}}
-function startHeat(i){
- const H=HEATS[i];G={hi:i,H,lanes:H.lanes.map(mkLane),phase:'prep',tool:null,zoom:null,trace:null,fails:0,gateTries:0,box:null,raceT:0,parts:[],floats:[],shake:0,seen:{}};
+function startHeat(i,TH){
+ const H=TH||HEATS[i];G={hi:i,H,lanes:H.lanes.map(mkLane),phase:'prep',tool:null,zoom:null,trace:null,fails:0,gateTries:0,box:null,raceT:0,parts:[],floats:[],shake:0,seen:{},tut:!!TH,tutStep:0};
  setScene('game');fillCard();setTool(null);updUI();layout();
+ if(G.tut){tick('れんしゅう：道具の使い方を 1つずつ ためそう。');SFX.press();return}
  tick(H.final?'決勝の枝が そろった。予想の線は 封印され、レースは理科室で行われる。':'出場枝が準備台に到着。出場条件をそろえて 審査へ。');
  SFX.press();
 }
 
 /* ================= 画面 ================= */
-function setScene(s){scene=s;['title','game','sched','test','end'].forEach(id=>$(id).classList.toggle('on',id===s));
+function setScene(s){scene=s;['title','game','sched','test','end'].forEach(id=>$(id).classList.toggle('on',id===s));if(HELP){if(s==='game'||s==='sched')HELP.show();else HELP.hide()}
  const b=$('bBack');b.classList.toggle('hide',s==='title'&&!INHUB);b.textContent=s==='title'?'◀ 一覧へ':'◀ もどる';refreshKak();pbar()}
 function pbar(){['pbar','pbar2'].forEach(id=>{const e=$(id);if(!e)return;let h='';for(let k=0;k<NH+2;k++){const on=k<2+Math.min(SV.heat,NH);h+='<i class="'+(on?(k>=NH+1&&SV.cleared?'red':'on'):'')+'"></i>'}e.innerHTML=h})}
 function fillCard(){
  const H=G.H;$('gStage').textContent=H.st;$('gSub').textContent='吸い上げグランプリ　第'+(G.hi+1)+'面';
- $('gVh').innerHTML=H.final?'決勝<small>予想封印</small>':(G.hi<4?'予選':'本選')+'<small>'+H.st.replace(/.*第/,'第')+'</small>';
+ $('gVh').innerHTML=G.tut?'練習<small>れんしゅう</small>':H.final?'決勝<small>予想封印</small>':(G.hi<4?'予選':'本選')+'<small>'+H.st.replace(/.*第/,'第')+'</small>';
  $('cKick').textContent=H.st;$('cTitle').textContent=H.t;
  $('cVs').innerHTML=H.vs.map(v=>'<div><b>'+v[0]+'</b>'+v[1]+'</div>').join('');
  $('cTasks').innerHTML=H.tasks.map(t=>'<li>'+t+'</li>').join('');
@@ -2420,7 +2435,7 @@ function fillCard(){
 function tick(s){$('tkT').innerHTML=s}
 function setTool(t){if(G)G.tool=t;document.querySelectorAll('#tools .tag').forEach(b=>b.classList.toggle('sel',b.dataset.t===t));
  if(G&&G.phase==='prep'){const m={pin:'ピンセット：とりたい葉をタップ',vas:'ワセリン：ぬりたい葉（または茎）をタップ',oil:'油：メスシリンダーをタップ',thk:'枝をかえる：枝をタップするたびに 細→中→太'};$('bCap').textContent='写真＝準備台　'+(m[t]||'道具を選んでから 枝をタップ')}}
-document.querySelectorAll('#tools .tag').forEach(b=>b.addEventListener('click',()=>{AU.init();if(!G||G.phase!=='prep'||G.zoom)return;SFX.tap();setTool(G.tool===b.dataset.t?null:b.dataset.t)}));
+document.querySelectorAll('#tools .tag').forEach(b=>b.addEventListener('click',()=>{AU.init();if(!G||G.phase!=='prep'||G.zoom)return;SFX.tap();buzz(8);setTool(G.tool===b.dataset.t?null:b.dataset.t)}));
 function updUI(){
  if(!G)return;const H=G.H,ph=G.phase;
  $('tools').classList.toggle('hide',ph!=='prep');
@@ -2431,7 +2446,7 @@ function updUI(){
  else if(ph==='box')a=`<div style="font-weight:900">出場決定！ 出場枝の箱を タップして割ろう</div>`;
  $('act').innerHTML=a;
  if(ph!=='prep')$('bCap').textContent={pred:'写真＝スタート前　赤い線＝わたしの予想',race:'写真＝レース中　葉から出ていく水蒸気（H₂O）と下がる水位',box:'写真＝出場枝の箱（審査合格の賞品）',result:'写真＝ゴール　青い水面＝本当の減り',sealed:'写真＝決勝の枝　予想の線は封印された'}[ph]||'';
- if($('aGate'))$('aGate').onclick=()=>{AU.init();gate()};
+ if($('aGate'))$('aGate').onclick=()=>{AU.init();if(G.tut&&G.tutStep<8){floatT('先に 光っている所から',BW/2,BH*.12,RED,Math.min(22,BW/18));return}gate()};
  if($('aGo'))$('aGo').onclick=()=>{AU.init();H.final?finalSeal():race()};
  $('entry').innerHTML=G.lanes.map((l,i)=>{const n=l.leaves.length,cf=l.leaves.filter(x=>x.f).length,cb=l.leaves.filter(x=>x.b).length;
   return `<div><b>${AB[i]}</b>葉${n}枚・${THK[l.thick]}${n?'・表'+cf+'/裏'+cb+'ぬり':''}${l.stem?'・茎ぬり':''}・${l.oil?'油あり':'油なし'}${l.pred!=null?'・予想 −'+l.pred.toFixed(1)+'mL':''}</div>`}).join('');
@@ -2527,20 +2542,22 @@ function newTrace(){
  if(z.kind==='leaf'){poly=leafPts(z.len,z.wid,40).map(p=>[z.x+p[0],z.y+p[1]]);tol=Math.max(14,z.len*.035)}
  else if(z.kind==='stem'){const x0=z.x-z.w/2,x1=z.x+z.w/2,y0=z.y,y1=z.y+z.h;poly=[];const N=24;for(let k=0;k<N;k++)poly.push([x0,y1-(y1-y0)*k/N]);for(let k=0;k<6;k++)poly.push([x0+(x1-x0)*k/6,y0]);for(let k=0;k<N;k++)poly.push([x1,y0+(y1-y0)*k/N]);for(let k=0;k<6;k++)poly.push([x1-(x1-x0)*k/6,y1]);tol=Math.max(12,z.w*.22)}
  else{poly=[];const N=30;for(let k=0;k<=N;k++)poly.push([z.x0+(z.x1-z.x0)*k/N,z.y]);closed=false;tol=Math.max(10,BH*.022)}
- G.trace={poly,closed,tol,vis:new Array(poly.length).fill(0),down:false,err:0,dev:0,devS:0,devN:0,warn:0,broke:0,last:null,ink:[]};
+ if(G.tut)tol*=1.7;
+ G.trace={poly,closed,tol,step:0,vis:new Array(poly.length).fill(0),down:false,err:0,dev:0,devS:0,devN:0,warn:0,broke:0,last:null,ink:[]};
 }
 function nearest(tr,x,y){let best=1e9,bi=0;const P=tr.poly,n=P.length,m=tr.closed?n:n-1;for(let k=0;k<m;k++){const a=P[k],b=P[(k+1)%n];const dx=b[0]-a[0],dy=b[1]-a[1];const L2=dx*dx+dy*dy||1;let t=((x-a[0])*dx+(y-a[1])*dy)/L2;t=Math.max(0,Math.min(1,t));const px=a[0]+dx*t,py=a[1]+dy*t;const d=Math.hypot(x-px,y-py);if(d<best){best=d;bi=t<.5?k:(k+1)%n}}return[best,bi]}
 function traceMove(x,y){
  const tr=G.trace;if(!tr||!tr.down)return;const[d,i]=nearest(tr,x,y);tr.dev=d;
  if(d<=tr.tol){tr.vis[i]=1;const n=tr.poly.length;if(tr.last!=null){let a=tr.last,b=i;const gap=tr.closed?Math.min((b-a+n)%n,(a-b+n)%n):Math.abs(b-a);if(gap<=4){if(tr.closed){const fw=(b-a+n)%n;if(fw<=4)for(let k=0;k<=fw;k++)tr.vis[(a+k)%n]=1;else for(let k=0;k<=(a-b+n)%n;k++)tr.vis[(b+k)%n]=1}else{for(let k=Math.min(a,b);k<=Math.max(a,b);k++)tr.vis[k]=1}}}
   tr.last=i;tr.devS+=d;tr.devN++;tr.ink.push([x,y]);if(tr.ink.length%5===0)SFX.smear()}
- else if(d>tr.tol*1.7){breakTrace(d)}
+ else if(d>tr.tol*1.7&&!G.tut){breakTrace(d)}
  else{tr.warn=NOW;tr.ink.push(null)}
- const pr=prog(tr);if(pr>=.96)finishTrace();
+ const pr=prog(tr);const stp=Math.floor(pr*10);if(stp>tr.step&&pr<.96){tr.step=stp;AU.tone(392*Math.pow(2,stp*2/12),.09,'triangle',.05);if(stp%3===0)buzz(6)}
+ if(pr>=.96)finishTrace();
 }
 function prog(tr){return tr.vis.reduce((a,b)=>a+b,0)/tr.vis.length}
 function breakTrace(d){const tr=G.trace;const pr=prog(tr);if(pr<.04){tr.down=false;tr.last=null;return}
- SFX.crack();G.shake=RM?0:.3;const z=G.zoom;const rem=Math.round((1-pr)*100);
+ SFX.crack();G.shake=RM?0:.3;buzz([12,40,12]);comboBreak(NM);NM=0;const z=G.zoom;const rem=Math.round((1-pr)*100);
  floatT(rem<=15?'はみ出し！ あと'+rem+'%で完成だった':'はみ出し！（'+Math.round(pr*100)+'%で 型がわれた）',BW/2,BH*.2,RED,Math.min(28,BW/16));
  if(rem<=15)SFX.near();
  G.fails++;tr.vis.fill(0);tr.down=false;tr.last=null;tr.ink=[];tr.broke=NOW;
@@ -2550,7 +2567,7 @@ function finishTrace(){
  const avg=tr.devN?tr.devS/tr.devN:0,acc=Math.max(0,Math.round(100-avg/tr.tol*60));
  if(Zm.kind==='leaf')l.leaves[Zm.li][Zm.side]=1;else if(Zm.kind==='stem')l.stem=1;else{l.oil=1;SFX.oil()}
  SFX.coat();for(let k=0;k<(RM?6:36);k++){const p=tr.poly[(Math.random()*tr.poly.length)|0];G.parts.push({x:p[0],y:p[1],vx:(Math.random()-.5)*160,vy:-40-Math.random()*120,t:0,life:.8,col:Zm.kind==='oil'?'#e9c233':'#fff6c8',r:2+Math.random()*3})}
- floatT((acc>=90?'ぴったり！ ':'')+'ぬれた（平均のずれ '+(avg*.26).toFixed(1)+'mm）',BW/2,BH*.18,acc>=90?RED:INK,Math.min(26,BW/16));
+ floatT((acc>=90?'ぴったり！ ':'')+'ぬれた（平均のずれ '+(avg*.26).toFixed(1)+'mm）',BW/2,BH*.18,acc>=90?RED:INK,Math.min(26,BW/16));traceFx(acc,Zm.kind);
  const zk=Zm.kind;setTimeout(()=>{if(!G||!G.zoom)return;
   if(zk==='leaf'){const lf=l.leaves[Zm.li];const need=l.tgt;const other=Zm.side==='f'?'b':'f';
    if(need[other]&&!lf[other]){Zm.side=other;Zm.flipT=NOW;tick('裏返して、反対の面もぬろう。');newTrace();zbar();return}
@@ -2570,13 +2587,15 @@ cv.addEventListener('pointerdown',e=>{AU.init();if(!G)return;const[x,y]=pxy(e);t
  if(G.phase!=='prep')return;
  const n=G.lanes.length;const i=Math.max(0,Math.min(n-1,Math.floor(x/(BW/n))));const l=G.lanes[i],g=laneGeom(i,n);
  if(!G.tool){floatT('先に 右の道具を選ぼう',BW/2,BH*.1,INK,Math.min(20,BW/20));return}
+ if(G.tut&&G.tool==='thk'){floatT('れんしゅうでは 太さはそのまま',g.x,g.top-8,INK,18);return}
  if(G.tool==='thk'){l.thick=(l.thick+1)%3;SFX.tap();floatT('枝'+AB[i]+'：'+THK[l.thick],g.x,g.top-8,INK,18);updUI();return}
  if(G.tool==='oil'){if(y>g.top-20&&y<g.bot+10){openZoom('oil',i)}else floatT('メスシリンダーをタップ',g.x,g.top,INK,16);return}
  // 葉をさがす
  let best=-1,bd=1e9;l.leaves.forEach((f,k)=>{const p=leafPos(g,k,l.leaves.length);const mx=p.x+Math.sin(p.ang)*p.len*.5,my=p.y-Math.cos(p.ang)*p.len*.5;const d=Math.hypot(x-mx,y-my);if(d<bd){bd=d;best=k}});
  const near=best>=0&&bd<Math.max(34,g.lw*.3);
- if(G.tool==='pin'){if(near){const f=l.leaves[best];const p=leafPos(g,best,l.leaves.length);l.fall.push({x:p.x,y:p.y,len:p.len,wid:p.wid,ang:p.ang,t:0,s:p.ang>0?1:-1});l.leaves.splice(best,1);SFX.pluck();updUI()}else floatT('葉をタップ',g.x,g.top-20,INK,16);return}
- if(G.tool==='vas'){if(near){openZoom('leaf',i,best)}else if(Math.abs(x-g.x)<g.lw*.25&&y<g.top){openZoom('stem',i)}else floatT('葉（または茎）をタップ',g.x,g.top-20,INK,16);return}
+ if(G.tool==='pin'&&G.tut&&l.leaves.length<=1){floatT('葉は1枚のこそう',g.x,g.top-20,RED,18);return}
+ if(G.tool==='pin'){if(near){const f=l.leaves[best];buzz(10);const p=leafPos(g,best,l.leaves.length);l.fall.push({x:p.x,y:p.y,len:p.len,wid:p.wid,ang:p.ang,t:0,s:p.ang>0?1:-1});l.leaves.splice(best,1);SFX.pluck();updUI()}else floatT('葉をタップ',g.x,g.top-20,INK,16);return}
+ if(G.tool==='vas'){if(near){openZoom('leaf',i,best)}else if(Math.abs(x-g.x)<g.lw*.25&&y<g.top&&!G.tut){openZoom('stem',i)}else floatT('葉（または茎）をタップ',g.x,g.top-20,INK,16);return}
 });
 cv.addEventListener('pointermove',e=>{if(!G)return;const[x,y]=pxy(e);if(G.trace&&G.trace.down)traceMove(x,y);else if(G.phase==='pred'&&G.pdrag!=null)predAt(x,y,false)});
 const up=()=>{if(!G)return;if(G.trace){G.trace.down=false;G.trace.last=null}if(G.pdrag!=null){G.pdrag=null;updUI()}};
@@ -2607,16 +2626,16 @@ function gate(){
  G.lanes.forEach((l,i)=>{l.ok=!errs[i];l.stampT=NOW+i*220});setTimeout(()=>SFX.stamp(),220);
  if(errs.some(e=>e)){SFX.bad();const msg=errs.filter(e=>e);tick('審査：失格あり。'+msg[0]);
   setTimeout(()=>{openClip(`<div class="stamp">失格</div><div class="kick">エントリー審査</div><h2>出場 <em>見送り</em></h2><p>${msg.map(m=>'・'+esc(m)).join('<br>')}</p><p class="note">比べたいこと以外の条件は そろえる。油・枝の太さ・葉の枚数も 出場条件。</p><div class="go"><button class="tag red" id="gF">準備台へもどる</button></div>`);$('gF').onclick=()=>{closeClip();G.lanes.forEach(l=>l.ok=null)}},700);return}
- tick('審査：全枝 合格！ 出場枝の箱が届いた。');SFX.crowd(.08);
- if(G.gateTries===1&&!SV.asked['gate'+G.hi]){SV.asked['gate'+G.hi]=1;save();earn(10,'first-try',innerWidth/2,innerHeight*.3)}
+ tick('審査：全枝 合格！ 出場枝の箱が届いた。');SFX.crowd(.08);buzz([16,30,16]);if(GD)setTimeout(()=>GD.cheer(G.lanes.length>1?'全枝 合格！':'合格！',{target:cv,size:1,color:RED,sparks:20,sound:false}),260);
+ if(!G.tut&&G.gateTries===1&&!SV.asked['gate'+G.hi]){SV.asked['gate'+G.hi]=1;save();earn(10,'first-try',innerWidth/2,innerHeight*.3)}
  setTimeout(()=>{G.phase='box';G.box={hp:3,t:NOW,cr:0};G.lanes.forEach(l=>l.ok=null);updUI()},900);
 }
 function boxGeom(){const s=Math.min(BW,BH)*.34;return{x:BW/2,y:BH*.5,s}}
 function hitBox(x,y){const b=boxGeom(),B=G.box;if(!B||B.open)return;if(Math.abs(x-b.x)>b.s*.7||Math.abs(y-b.y)>b.s*.7)return;
- B.hp--;B.cr=NOW;SFX.box();G.shake=RM?0:.15;for(let k=0;k<(RM?3:14);k++)G.parts.push({x:b.x+(Math.random()-.5)*b.s,y:b.y-b.s*.4,vx:(Math.random()-.5)*300,vy:-100-Math.random()*200,t:0,life:.7,col:k%2?RED:INK,r:2+Math.random()*3});
+ B.hp--;B.cr=NOW;SFX.box();AU.tone(520*Math.pow(1.26,3-B.hp),.12,'square',.04,0,null,1800);buzz(12);G.shake=RM?0:.15+(3-B.hp)*.08;for(let k=0;k<(RM?3:14);k++)G.parts.push({x:b.x+(Math.random()-.5)*b.s,y:b.y-b.s*.4,vx:(Math.random()-.5)*300,vy:-100-Math.random()*200,t:0,life:.7,col:k%2?RED:INK,r:2+Math.random()*3});
  if(B.hp<=0){B.open=NOW;SFX.open();flash();
-  const own=Object.keys(SV.cards).map(Number);const pool=SPEC.map((_,k)=>k).filter(k=>own.indexOf(k)<0);const k=pool.length?pool[(Math.random()*pool.length)|0]:(Math.random()*SPEC.length|0);B.sp=k;const nw=!SV.cards[k];SV.cards[k]=(SV.cards[k]||0)+1;save();
-  tick('出場枝は…「'+SPEC[k][0]+'」！ '+(nw?'名鑑に新しく登録。':'（もう名鑑にいる）'));
+  const own=Object.keys(SV.cards).map(Number);const pool=SPEC.map((_,k)=>k).filter(k=>own.indexOf(k)<0);const k=pool.length?pool[(Math.random()*pool.length)|0]:(Math.random()*SPEC.length|0);B.sp=k;const nw=!G.tut&&!SV.cards[k];if(!G.tut){SV.cards[k]=(SV.cards[k]||0)+1;save()}buzz([20,40,30]);if(GD)GD.cheer(SPEC[k][0]+'！',{target:cv,size:1.1,color:RED,sparks:26,sound:false});
+  tick('出場枝は…「'+SPEC[k][0]+'」！ '+(G.tut?'（れんしゅうなので 名鑑には入らない）':nw?'名鑑に新しく登録。':'（もう名鑑にいる）'));
   setTimeout(()=>{G.phase='pred';G.box=null;G.lanes.forEach(l=>l.pred=null);updUI();tick(G.H.final?'決勝の予想：4本の目盛り管に 2時間後の水位の線を引いて 封印する。':'予想：目盛り管を 指でなぞって 2時間後の水位に線を引く。');},1700)}}
 
 /* ================= レース ================= */
@@ -2628,6 +2647,7 @@ function race(){
 }
 function raceEnd(){
  G.phase='result';updUI();
+ if(G.tut){SFX.crowd(.14);flash();buzz([20,40,30]);const g=laneGeom(0,1);floatT('2時間で −'+G.act[0].toFixed(1)+'mL 吸い上げた！',BW/2,BH*.2,RED,Math.min(28,BW/16));tick('ゴール！ 表をふさいでも、裏の気孔から蒸散して 吸い上げる。');G.over=true;if(GD)setTimeout(()=>GD.tutorialClear(),1200);return}
  const H=G.H,act=G.act,pred=G.lanes.map(l=>l.pred);
  let order=true;for(let a=0;a<act.length;a++)for(let b=a+1;b<act.length;b++){if(Math.abs(act[a]-act[b])<0.3)continue;if(Math.sign(act[a]-act[b])!==Math.sign(pred[a]-pred[b]))order=false}
  const errs=act.map((v,i)=>Math.abs(v-pred[i]));const close=errs.every(e=>e<=0.5);
@@ -2635,7 +2655,7 @@ function raceEnd(){
  const r=SV.res[G.hi]||{};SV.res[G.hi]={hit:r.hit||order,close:r.close||close,act:act.map(v=>Math.round(v*10)/10)};SV.heat=Math.max(SV.heat,G.hi+1);save();pbar();
  let got=0;if(order)got+=earn(15,'hit',innerWidth/2,innerHeight*.3);if(order&&close&&!SV.asked['cl'+G.hi]){SV.asked['cl'+G.hi]=1;got+=earn(10,'predict',innerWidth/2,innerHeight*.35)}
  if(H.rule&&order&&!SV.asked['rule'+G.hi]){SV.asked['rule'+G.hi]=1;got+=earn(30,'rule',innerWidth/2,innerHeight*.4)}
- order?(SFX.fan(),flash()):SFX.bad();SFX.crowd(order?.16:.06);SFX.press();
+ order?((GD?GD.celebrate(SV.streak>1?SV.streak+'連続 的中！':'順位 的中！'):SFX.fan()),flash(),buzz([20,40,30])):(SFX.bad(),comboBreakHit());SFX.crowd(order?.16:.06);SFX.press();
  const mx=Math.max(...act,...pred,1);
  const rows=G.lanes.map((l,i)=>{const e=errs[i];const nm=e<=0.05?'<b style="color:var(--red)">ぴったり</b>':e<=0.5?'あと'+e.toFixed(1)+'mL（ニアミス）':'ずれ '+e.toFixed(1)+'mL';
   return `<tr><td><b>${AB[i]}</b> ${esc(H.vs[i][1])}</td><td style="width:40%"><div class="bar" style="width:${act[i]/mx*100}%"></div><div class="pb" style="width:${pred[i]/mx*100}%"></div></td><td><b>${act[i].toFixed(1)}</b>mL<br><span style="font-size:13px">予想 ${pred[i].toFixed(1)}・${nm}</span></td></tr>`}).join('');
@@ -2786,7 +2806,10 @@ const TPARTS=[];
 function openClip(h){$('mc').innerHTML=h;$('ov').classList.add('on');$('mc').scrollTop=0}
 function closeClip(){$('ov').classList.remove('on')}
 function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
-$('bBack').onclick=()=>{AU.init();SFX.tap();
+$('bBack').onclick=()=>{AU.init();SFX.tap();buzz(8);
+ if(scene==='game'&&G&&G.tut){tutStop();
+  openClip(`<div class="kick">お知らせ</div><h2>れんしゅうを やめる？</h2><p>れんしゅうは、表紙の「あそびかた」や「？」から いつでもできます。</p><div class="go"><button class="tag red" id="bkY">日程へ</button><button class="tag line" id="bkN">れんしゅうを つづける</button></div>`);
+  $('bkY').onclick=()=>{closeClip();G=null;openSched()};$('bkN').onclick=()=>{closeClip();if(GD)GD.tutorial(PRACTICE)};return}
  if(scene==='title'){try{window.parent.postMessage({type:'rika-close-game'},'*')}catch(e){}return}
  if(scene==='sched'){initTitle();return}
  if(scene==='end'){openSched();return}
@@ -2794,12 +2817,12 @@ $('bBack').onclick=()=>{AU.init();SFX.tap();
  openClip(`<div class="kick">お知らせ</div><h2>日程に もどる？</h2><p>${msg}</p><div class="go"><button class="tag red" id="bkY">日程へ</button><button class="tag line" id="bkN">つづける</button></div>`);
  $('bkY').onclick=()=>{closeClip();if(TEST_ONLY&&scene==='test'){initTitle();return}G=null;openSched()};$('bkN').onclick=()=>closeClip();
 };
-function initTitle(){G=null;setScene('title');layout();$('nameIn').value=window.PLAYER_NAME||SV.name||'';$('bCont').classList.toggle('hide',SV.heat<=0);$('bBook').classList.toggle('hide',!Z())}
+function initTitle(){tutStop();G=null;setScene('title');layout();$('nameIn').value=window.PLAYER_NAME||SV.name||'';$('bCont').classList.toggle('hide',SV.heat<=0);$('bBook').classList.toggle('hide',!Z())}
 function takeName(){const v=$('nameIn').value.trim();if(v)SV.name=v;save()}
-$('bStart').onclick=()=>{AU.init();takeName();SFX.press();openSched();if(SV.heat===0)intro(0)};
+$('bStart').onclick=()=>{AU.init();takeName();SFX.press();buzz(10);if(SV.heat===0&&GD){startWithGuide();return}openSched();if(SV.heat===0)intro(0)};
 $('bCont').onclick=()=>{AU.init();takeName();SFX.press();openSched()};
 $('bBook').onclick=()=>{try{Zukan.openBook()}catch(e){}};$('bBookS').onclick=$('bBook').onclick;$('bEndBook').onclick=$('bBook').onclick;
-function openSched(){G=null;closeClip();setScene('sched');
+function openSched(){tutStop();G=null;closeClip();setScene('sched');
  const P=$('prog');P.innerHTML='';HEATS.forEach((H,i)=>{const b=document.createElement('button');const lock=i>SV.heat;const r=SV.res[i];
   b.className=(lock?'lock':'')+(i===Math.min(SV.heat,NH-1)&&!SV.cleared?' next':'');
   b.innerHTML=`<span class="st">${esc(H.st)}</span><span>${esc(H.t)}</span><span class="rs">${lock?'―':H.final?(SV.seal?'封印済':'未'):r?(r.hit?'的中':'はずれ')+(r.close?'◎':''):'未'}</span>`;
@@ -2813,7 +2836,7 @@ function intro(i){const H=HEATS[i];
  openClip(`<div class="kick">${esc(H.st)}　対戦カード</div><h2 class="ink">${esc(H.t)}</h2>
   <p>${H.vs.map(v=>'<b style="background:#111;color:#F3EFE4;padding:0 6px">'+v[0]+'</b> '+esc(v[1])).join('　')}</p>
   <div class="cols"><p>${H.tasks.map((t,k)=>(k+1)+'. '+t).join('<br>')}</p>
-  <p>${i===0?'<b>遊び方</b>：道具を選んでから、写真の中の枝をタップ。ワセリンと油は、点線の輪郭を<b>はみ出さずになぞる</b>（型抜き）。準備ができたら「審査へ」。':H.final?'決勝のレースは <b>理科室の実験</b>で行う。ここでは準備と予想の線まで。予想は封印される。':'はみ出さずにぬれたら、予想の線を引いてレースへ。予想と本当の減り方の差は、本当のmLで出る。'}</p></div>
+  <p>${i===0&&!SV.asked.tut?'<b>遊び方</b>：道具を選んでから、写真の中の枝をタップ。ワセリンと油は、点線の輪郭を<b>はみ出さずになぞる</b>（型抜き）。準備ができたら「審査へ」。':H.final?'決勝のレースは <b>理科室の実験</b>で行う。ここでは準備と予想の線まで。予想は封印される。':'はみ出さずにぬれたら、予想の線を引いてレースへ。予想と本当の減り方の差は、本当のmLで出る。'}</p></div>
   <div class="go"><button class="tag red big" id="iGo">準備台へ</button></div>`);
  $('iGo').onclick=()=>{closeClip();startHeat(i)};
 }
@@ -2854,7 +2877,7 @@ $('bEndS').onclick=()=>openSched();$('bEndTest').onclick=()=>startTest();$('bEnd
 let last=performance.now(),acc=0,kt=0;
 function frame(now){const dt=Math.min(.05,Math.max(0,(now-last)/1000));last=now;NOW=now;
  try{
-  if(scene==='game'&&G){const r=cv.getBoundingClientRect();if(Math.abs(r.width-BW)>1||Math.abs(r.height-BH)>1){layout();if(G.zoom)newTrace()}drawBench(dt)}
+  if(scene==='game'&&G){const r=cv.getBoundingClientRect();if(Math.abs(r.width-BW)>1||Math.abs(r.height-BH)>1){layout();if(G.zoom)newTrace()}drawBench(HPAUSE?0:dt)}
   else if(scene==='title'){const r=tcv.getBoundingClientRect();if(Math.abs(r.width-TW)>1||Math.abs(r.height-TH)>1)layout();drawTitle(dt)}
   if(scene==='game'&&!document.hidden){acc+=dt;if(acc>=1){acc-=1;SV.elapsed++;if(SV.elapsed%10===0)save()}}
   kt+=dt;if(kt>3){kt=0;refreshKak()}
@@ -2862,7 +2885,77 @@ function frame(now){const dt=Math.min(.05,Math.max(0,(now-last)/1000));last=now;
  requestAnimationFrame(frame)}
 if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>{PAT={}});
 refreshKak();pbar();
-window.__gp={get G(){return G},get SV(){return SV},startHeat,startTest,openSched,gate,race,finalSeal,openZoom,finishTrace,hitBox,laneGeom,leafPos,get BW(){return BW},get BH(){return BH}};
+
+/* ===== ご褒美の演出（ルール11／仕上げ 2026-09-28 gp-finish） ===== */
+let NM=0;const CSTG=[3,5,8];
+function buzz(p){try{navigator.vibrate&&navigator.vibrate(p)}catch(e){}}
+function traceFx(acc,kind){NM++;G.shake=RM?0:.12+Math.min(NM,8)*.02;buzz(acc>=90?[18,30,18]:14);
+ if(acc>=90){flash()}
+ if(!GD)return;const r=cv.getBoundingClientRect();const x=r.left+r.width/2,y=r.top+r.height*.32;
+ if(NM>=2){const big=NM>=CSTG[1],mid=NM>=CSTG[0];const word=NM>=CSTG[2]?'　神の手！':big?'　職人技！':mid?'　いい手つき！':'';
+  GD.cheer('ノーミス ×'+NM+word,{x,y,size:.7+Math.min(NM,8)*.08,color:big||mid?RED:INK,sparks:mid?24:12,sound:false});
+  if(CSTG.includes(NM))setTimeout(()=>SFX.open(),200)}
+ else GD.cheer(acc>=90?'ぴったり！':'ぬれた！',{x,y,size:.9,color:RED,sparks:16,sound:false})}
+function comboBreak(c){if(!G||G.tut||c<1)return;const nx=CSTG.find(k=>k>c);if(!nx||nx-c>2)return;setTimeout(()=>floatT('あと'+(nx-c)+'回で ノーミス×'+nx+' だった！',BW/2,BH*.3,RED,Math.min(24,BW/18)),700)}
+function comboBreakHit(){}
+
+/* ===== 遊び方案内（Guide・制作ルール13／仕上げ 2026-09-28） ===== */
+var GD=window.Guide||null,HELP=null,PRACTICE=null,HPAUSE=false;
+function tutStop(){if(G&&G.tut){G.tut=false;G.tutStep=-1;if(GD)GD.tutorialEnd()}}
+const TUTH={st:'れんしゅう',t:'道具の使い方',vs:[['A','葉1枚・表にワセリン・油あり']],
+ lanes:[{init:{L:2},tgt:{L:1,f:1,b:0,oil:1}}],
+ tasks:['ピンセットで 葉を1枚とる','ワセリンで 葉の表の輪郭をなぞる','油で 水面をなぞる','審査 → 箱 → 予想の線 → スタート'],head:'',note:''};
+function isPort(){return innerWidth<=innerHeight}
+function hOff(){return isPort()?{x:0,y:64}:{x:72}}
+function lg(){return laneGeom(0,G.lanes.length)}
+function leafC(k){const g=lg(),l=G.lanes[0];if(!l.leaves[k])k=0;const p=leafPos(g,k,l.leaves.length);return {x:p.x+Math.sin(p.ang)*p.len*.5,y:p.y-Math.cos(p.ang)*p.len*.5,r:Math.max(30,p.len*.45),el:cv}}
+function cylC(){const g=lg();return {x:g.x,y:(g.top+g.bot)/2,w:g.tw+34,h:g.bot-g.top+20,el:cv}}
+function traceC(){const z=zoomGeom();if(z.kind==='leaf')return {x:z.x,y:z.y-z.len/2,w:z.wid*2+50,h:z.len+40,el:cv};return {x:(z.x0+z.x1)/2,y:z.y,w:z.w+40,h:80,el:cv}}
+function tracePath(){if(!G||!G.trace)return [];const P=G.trace.poly,out=[];const stp=Math.max(1,Math.floor(P.length/24));for(let k=0;k<P.length;k+=stp)out.push({x:P[k][0],y:P[k][1],el:cv});if(G.trace.closed)out.push({x:P[0][0],y:P[0][1],el:cv});else out.push({x:P[P.length-1][0],y:P[P.length-1][1],el:cv});return out}
+function boxC(){const b=boxGeom();return {x:b.x,y:b.y,w:b.s*1.1,h:b.s*1.1,el:cv}}
+function predA(){const g=lg();return {x:g.x,y:yOf(g,9.5),r:26,el:cv}}
+function predB(){const g=lg();return {x:g.x,y:yOf(g,8),r:26,el:cv}}
+if(GD){
+ GD.setup({theme:{bg:'#F3EFE4',fg:'#111111',accent:'#D62828',accentText:'#fff',font:'"Zen Old Mincho",serif',bodyFont:'"Zen Old Mincho",serif',
+   radius:0,texture:'grain',line:'#111111',dim:'rgba(17,17,17,.42)',shadow:'6px 6px 0 rgba(17,17,17,.35)',outline:'#F3EFE4',hand:'#F3EFE4',handLine:'#111111'},
+  sfx:k=>{AU.init();({step:()=>SFX.tap(),done:()=>SFX.coat(),clear:()=>SFX.fan(),open:()=>SFX.press(),close:()=>SFX.tap(),cheer:()=>SFX.open(),nudge:()=>SFX.tap()}[k]||(()=>SFX.tap()))()},
+  muted:()=>!AU.on});
+ const on=()=>scene==='game'&&G&&G.tut;const L0=()=>G.lanes[0];
+ const S=n=>()=>{if(G)G.tutStep=n};
+ PRACTICE={label:'れんしゅう中',clearText:'れんしゅうクリア！',clearOn:'manual',get bandAt(){return isPort()?'bottom':'top'},
+  start:()=>{closeClip();startHeat(0,TUTH)},
+  steps:[
+   {gesture:'tap',label:'道具',target:'#tools [data-t="pin"]',onEnter:S(0),until:()=>on()&&G.tool==='pin',text:'道具の **ピンセット** をタップ',praise:false},
+   {gesture:'tap',label:'葉をとる',target:()=>leafC(1),onEnter:S(1),until:()=>on()&&L0().leaves.length===1,text:'**葉をタップ** して1枚とる（葉の枚数も 出場条件）'},
+   {gesture:'tap',label:'道具',target:'#tools [data-t="vas"]',onEnter:S(2),until:()=>on()&&G.tool==='vas',text:'つぎは **ワセリン** をタップ',praise:false},
+   {gesture:'tap',label:'ぬる葉',target:()=>leafC(0),onEnter:S(3),until:()=>on()&&G.zoom&&G.zoom.kind==='leaf',text:'のこった **葉をタップ** すると大きくなる',praise:false},
+   {gesture:'draw',label:'型抜き',target:traceC,path:tracePath,onEnter:S(4),until:()=>on()&&L0().leaves[0]&&L0().leaves[0].f===1,text:'点線の輪郭を **はみ出さずに1周なぞる**。ワセリンが **気孔をふさぐ**',praise:false},
+   {gesture:'tap',label:'道具',target:'#tools [data-t="oil"]',onEnter:S(5),until:()=>on()&&!G.zoom&&G.tool==='oil',text:'つぎは **油** をタップ',praise:false},
+   {gesture:'tap',label:'水面',target:cylC,onEnter:S(6),until:()=>on()&&G.zoom&&G.zoom.kind==='oil',text:'**メスシリンダーをタップ**',praise:false},
+   {gesture:'draw',label:'油',target:traceC,path:tracePath,onEnter:S(7),until:()=>on()&&L0().oil===1,text:'水面の線を **左から右へなぞる**。油のふたで 水面からの蒸発を止める',praise:false},
+   {gesture:'tap',label:'審査',target:'#aGate',onEnter:S(8),until:()=>on()&&(G.phase==='box'||G.phase==='pred'),text:'準備OK。**「審査へ」** をタップ',praise:false},
+   {gesture:'tap',label:'箱',target:boxC,onEnter:S(9),until:()=>on()&&G.phase==='pred',text:'出場枝の箱を **3回タップ** で割る',praise:false},
+   {gesture:'drag',label:'予想',target:predA,to:predB,onEnter:S(10),until:()=>on()&&G.phase==='pred'&&L0().pred!=null&&G.pdrag==null,text:'目盛り管を **上下になぞって**、2時間後の水位に 赤い線を引く',praise:'予想した！'},
+   {gesture:'tap',label:'スタート',target:'#aGo',onEnter:S(11),until:()=>on()&&G.phase==='race',text:'**スタート** をタップ。レースの結果は 本当の mL で出る',praise:false}
+  ],
+  onClear:()=>{if(!SV.asked.tut){SV.asked.tut=1;save();earn(10,'first-try',innerWidth/2,innerHeight*.4)}},
+  onExit:res=>{if(res.replaced||res.stopped)return;if(G&&G.tut)G.tut=false;G=null;openSched();if(SV.heat===0)intro(0)}};
+ HELP=GD.help({title:'吸い上げグランプリ',
+  rules:['**道具を選んで**、写真の枝をタップ（ピンセット＝葉をとる／枝をかえる＝太さ）',
+   'ワセリン・油は、点線の輪郭を **はみ出さずになぞる**（型抜き）',
+   '出場条件（葉の枚数・ぬる面・**油**・**枝の太さ**）をそろえて「審査へ」',
+   '目盛り管を **上下になぞって** 2時間後の水位を予想 → レース',
+   '気孔は葉の **裏** に多い。ふさがれていない気孔が多い枝ほど よく吸う'],
+  onOpen:()=>{HPAUSE=true},onClose:()=>{HPAUSE=false},
+  replay:'tutorial',offset:hOff(),show:false,attention:true});
+ addEventListener('resize',()=>{if(HELP)HELP.update({offset:hOff()})});
+ GD.tutorialButton('#bHow',()=>{AU.init();takeName();SFX.press();GD.tutorial(PRACTICE)});
+}else{$('bHow').classList.add('hide')}
+function startWithGuide(){
+ GD.intro({title:'第12回　吸い上げグランプリ',
+  learn:'葉から水が出ていく（**蒸散**）ほど、茎から水を **吸い上げる**（吸水）',
+  how:'ワセリン・油は輪郭を **はみ出さずになぞる**。予想の線を引いて **レース**',gesture:'draw'}).then(()=>GD.tutorial(PRACTICE))}
+window.__gp={leafC,cylC,traceC,tracePath,boxC,predA,predB,get scene(){return scene},get G(){return G},get SV(){return SV},startHeat,startTest,openSched,gate,race,finalSeal,openZoom,finishTrace,hitBox,laneGeom,leafPos,get BW(){return BW},get BH(){return BH}};
 if(TEST_ONLY){startTest()}else{initTitle()}
 requestAnimationFrame(frame);
 })();

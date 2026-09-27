@@ -157,6 +157,13 @@ button{font:inherit;color:inherit;cursor:pointer;touch-action:manipulation;borde
 #end p{font-size:22px;margin:0}
 #end .btns{display:flex;flex-wrap:wrap;gap:12px;justify-content:center}
 #flash{position:fixed;inset:0;pointer-events:none;z-index:55;background:#fff;opacity:0}
+/* 仕上げ 2026-09-28: ★のドン・はじめるの脈 */
+.memo .stars i{font-style:normal;display:inline-block;opacity:.3}
+.memo .stars i.on{opacity:1;animation:plstamp .4s cubic-bezier(.2,1.9,.4,1) both}
+@keyframes plstamp{0%{transform:scale(2.8) rotate(-25deg)}100%{transform:scale(1) rotate(0)}}
+#bStart,#bStart2{animation:plpulse 1.6s ease-in-out infinite}
+@keyframes plpulse{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
+@media (prefers-reduced-motion:reduce){.memo .stars i.on,#bStart,#bStart2{animation:none}}
 @media (prefers-reduced-motion:reduce){.memo{transform:none}}
 </style>
 </head>
@@ -177,6 +184,7 @@ button{font:inherit;color:inherit;cursor:pointer;touch-action:manipulation;borde
    <div class="btns inTx">
     <button class="pb blue big" id="bStart"><span>はじめる</span></button>
     <button class="pb" id="bCont"><span>つづきから</span></button>
+    <button class="pb sm" id="bHow"><span>✎ あそびかた</span></button>
     <button class="pb sm" id="bBook"><span>📖 図鑑</span></button>
    </div>
   </div>
@@ -184,6 +192,7 @@ button{font:inherit;color:inherit;cursor:pointer;touch-action:manipulation;borde
    <div class="btns">
     <button class="pb blue big" id="bStart2"><span>はじめる</span></button>
     <button class="pb" id="bCont2"><span>つづきから</span></button>
+    <button class="pb sm" id="bHow2"><span>✎ あそびかた</span></button>
     <button class="pb sm" id="bBook2"><span>📖 図鑑</span></button>
    </div>
   </div>
@@ -231,7 +240,7 @@ button{font:inherit;color:inherit;cursor:pointer;touch-action:manipulation;borde
 </div>
 <button id="bBack" class="hide"><b>◀</b> もどる</button>
 <button id="bMute">♪ 音</button>
-<div id="ov"><div class="memo grid" id="mc"></div></div>
+<div id="ov" data-gd-pass><div class="memo grid" id="mc"></div></div>
 <div id="flash"></div>
 
 <script>/*@SUBMIT_CARD_BEGIN*/
@@ -1528,6 +1537,9 @@ window.ZUKAN_CARDS={"v": 1, "grade": "chu2", "name": "中2理科図鑑", "econom
       if(PASS_RE.test(String(t.id||''))||PASS_RE.test(typeof t.className==='string'?t.className:''))return true;
       if((t.tagName==='BUTTON'||t.tagName==='A'||t.getAttribute('role')==='button')&&/^\s*[◀←＜<]?\s*(もどる|戻る|一覧へ|とじる|閉じる|はい|いいえ|やめる|キャンセル|おと|音)/.test(t.textContent||''))return true}
       t=t.parentNode}return false}
+  /* 手ほどき中は、もどる等（passThru に当たる fixed/absolute のボタン）を暗幕・吹き出しより上へ出す。終わったら元に戻す */
+  function liftPass(){var out=[];try{var els=document.querySelectorAll('button,a,[role=button],[data-gd-pass]');for(var i=0;i<els.length;i++){var e=els[i];if(e.closest&&e.closest('.gd-root'))continue;if(e.classList&&e.classList.contains('gd-hbtn'))continue;if(!passThru(e))continue;var cs=getComputedStyle(e);if(cs.position!=='fixed'&&cs.position!=='absolute')continue;if(cs.display==='none'||cs.visibility==='hidden')continue;out.push([e,e.style.zIndex]);e.style.zIndex=String(Z+1)}}catch(_){}
+    return function(){for(var i=0;i<out.length;i++){out[i][0].style.zIndex=out[i][1]}}}
   function inGuide(t){if(passThru(t))return true;while(t&&t!==document){if(t.classList&&(t.classList.contains('gd-root')||t.classList.contains('gd-hbtn')))return true;t=t.parentNode}return false}
   function hexRGB(c){c=String(c||'').trim();var m;
     if((m=c.match(/^#([0-9a-f]{3})$/i)))return [0,1,2].map(function(i){return parseInt(m[1][i]+m[1][i],16)});
@@ -1868,7 +1880,7 @@ window.ZUKAN_CARDS={"v": 1, "grade": "chu2", "name": "中2理科図鑑", "econom
     if(!steps||!steps.length){resolveP({done:true,steps:0});return p}
     if(opt.key&&!opt.force&&sget('coach:'+opt.key)){resolveP({already:true});return p}
 
-    var root=mkRoot('gd-coach',opt.theme);root.setAttribute('aria-live','polite');
+    var root=mkRoot('gd-coach',opt.theme);root.setAttribute('aria-live','polite');var unlift=liftPass();
     var uid='gdm'+Math.random().toString(36).slice(2,8);
     root.innerHTML='<svg class="dim" aria-hidden="true"><defs><mask id="'+uid+'" maskUnits="userSpaceOnUse"><rect x="-10" y="-10" width="200%" height="200%" fill="#fff"/><g class="holes"></g></mask></defs>'+
       '<rect class="shade" x="-10" y="-10" width="200%" height="200%" style="fill:var(--gd-dim)" mask="url(#'+uid+')"/><g class="halos"></g><path class="arw"/><path class="arh"/><circle class="dest" r="0"/></svg>';
@@ -1916,6 +1928,7 @@ window.ZUKAN_CARDS={"v": 1, "grade": "chu2", "name": "中2理科図鑑", "econom
     };
     st.finish=function(res){
       if(st.finished)return;st.finished=true;
+      try{unlift()}catch(_){}
       if(st.evOff)st.evOff();
       delTick(tick);popLayer(layer);offPtr();window.removeEventListener('resize',onRs);
       if(res.done&&opt.key)sset('coach:'+opt.key,'1');
@@ -2229,6 +2242,7 @@ window.ZUKAN_CARDS={"v": 1, "grade": "chu2", "name": "中2理科図鑑", "econom
 <script>
 (function(){
 'use strict';
+/* pl-finish-2026-09-28 */
 const GAME='bio-plan-lab',KOMA='chu2-seibutsu-11',KEY='rika-zukan:chu2:game:'+GAME+':v1',SEAL_KEY='rika-zukan:chu2:seal:'+KOMA;
 const TEST_ONLY=window.GAME_MODE==='test';
 const RM=!!(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches);
@@ -2285,7 +2299,7 @@ const FK=['light','water','temp','co2','size','dark','plant','color'];
 const METHOD='前の日に暗い所に置く→条件を変えて光に数時間→葉をあたためたエタノールで脱色→ヨウ素液';
 const PAGES=[
  {t:'はじめての計画',cols:['light','water','temp'],rows:5,goal:4,shapes:['1','1','2h','2v','3h','Γ'],trap:0,
-  intro:['1行が、鉢Aと鉢Bの<b>1組の実験</b>。','<b class="blue">≠</b> のタイル＝その条件だけ鉢Bを変える。<b>＝</b> のタイル＝そろえる。','行がうまって <b class="blue">ちがいがちょうど1つ</b> なら、「分かる計画」になって消える。'],rule:'変えるのは 1つだけ。ほかは そろえる。'},
+  intro:['1行が、鉢Aと鉢Bの<b>1組の実験</b>。<b class="blue">≠</b>＝鉢Bだけ変える／<b>＝</b>＝そろえる。','<b class="blue">ちがいがちょうど1つ</b> の行を 4行 作ろう。'],rule:'変えるのは 1つだけ。ほかは そろえる。'},
  {t:'二酸化炭素も材料？',cols:['light','water','temp','co2'],rows:6,goal:4,shapes:['1','2h','2v','3h','3v','Γ','7','L'],trap:.06,
   intro:['小学校で調べた「光」「水」に、<b>二酸化炭素</b>の列がふえた。','ちがい（≠）が2つある行は、どちらのせいか言えないので<b class="red">消えずに残る</b>。'],rule:'ちがいが2つ → どちらのせいか 決められない。'},
  {t:'ちがいゼロの罠',cols:['light','water','temp','co2','size'],rows:6,goal:4,shapes:['1','2h','3h','3v','Γ','7','L','J','O'],trap:.08,
@@ -2416,14 +2430,15 @@ let KAK=0,kakT=0;
 function refreshKak(){try{KAK=Z()?Zukan.state().kakera:0}catch(e){KAK=0}}
 function earn(n,why,x,y){let got=0;try{if(Z())got=Zukan.earn(n,why,{koma:KOMA,x:x,y:y})||0}catch(e){}refreshKak();return got}
 
-function startPage(i){
- const P=PAGES[i];const C=P.cols.length;
+function startPage(i,TP){
+ const P=TP||PAGES[i];const C=P.cols.length;
  G={pi:i,P,C,R:P.rows,cols:P.cols,grid:[],stuck:[],clearing:[],tray:[null,null,null],drag:null,erasers:P.erasers||(i>=3?2:0),bots:P.final?0:3,
-  combo:0,idle:0,cleared:0,stuckN:0,maxCombo:0,score:0,over:false,t:0,time:P.timer||0,plans:[],eraseMode:false,shake:0,coach:i===0&&!SV.asked.coach,firstStuck:{},hover:null,seniorFixed:0,seniorN:0,sets:0};
+  combo:0,idle:0,cleared:0,stuckN:0,maxCombo:0,score:0,over:false,t:0,time:P.timer||0,plans:[],eraseMode:false,shake:0,coach:!TP&&i===0&&!SV.asked.coach,tut:!!TP,tutN:0,firstStuck:{},hover:null,seniorFixed:0,seniorN:0,sets:0};
  for(let r=0;r<G.R;r++){G.grid.push(new Array(C).fill(null));G.stuck.push(null)}
  if(P.senior)seniorFill();
+ if(TP&&TP.pre)TP.pre();
  layout();
- if(P.final)G.tray=[mkPiece('1',[[0,0,1]]),mkPiece('3h',[[0,0,0],[1,0,0],[2,0,0]]),mkPiece('4h',[[0,0,0],[1,0,0],[2,0,0],[3,0,0]])];
+ if(TP)G.tray=TP.tray();else if(P.final)G.tray=[mkPiece('1',[[0,0,1]]),mkPiece('3h',[[0,0,0],[1,0,0],[2,0,0]]),mkPiece('4h',[[0,0,0],[1,0,0],[2,0,0],[3,0,0]])];
  else refill();
  setScene('play');
 }
@@ -2470,18 +2485,18 @@ function place(pc,r0,c0,slot){
  if(nClear){G.combo++;G.lastC=NOW;G.idle=0;G.maxCombo=Math.max(G.maxCombo,G.combo);
   const mult=G.combo*(nClear>1?2:1);const pts=10*nClear*mult;G.score+=pts;
   cl2.forEach((r,j)=>{const f=G.cols[G.grid[r].findIndex(x=>x.k)];G.clearing.push({r,t:NOW,f,d:j*120})});
-  SFX.clear(G.combo);if(G.combo>=2)setTimeout(()=>SFX.combo(G.combo),220);
+  SFX.clear(G.combo);if(G.combo>=2)setTimeout(()=>SFX.combo(G.combo),220);if(G.tut)G.tutN+=nClear;hitFx(cl2,nClear);
   const y=L.gy+(cl2[0]+.5)*L.cell;floatT((nClear>1?nClear+'行同時！ ':'')+'+'+pts,L.gx+L.cell*G.C/2,y,BLUE,Math.min(46,L.cell*.62));
   if(G.combo>=2)floatT(G.combo+' れんさ！',L.gx+L.cell*G.C/2,y-L.cell*.7,INK,Math.min(40,L.cell*.55));
   if((G.combo%3===0||nClear>=2)&&G.erasers<5&&!G.P.final){G.erasers++;floatT('消しゴム +1',L.er.x+L.er.w/2,L.er.y,BLUE,20)}
   if(nClear>=2&&!G.P.final){G.bots=Math.min(5,G.bots+1)}
- }else{G.idle++;if(G.idle>=3&&G.combo){G.combo=0;floatT('れんさ おわり',L.gx+L.cell*G.C/2,L.gy-8,GRL,18)}}
+ }else{G.idle++;if(G.idle>=3&&G.combo){comboBreak(G.combo);G.combo=0;floatT('れんさ おわり',L.gx+L.cell*G.C/2,L.gy-8,GRL,18)}}
  if(nStuck){G.stuckN+=nStuck;SV.stuck+=nStuck;const had=G.combo;G.combo=0;G.idle=0;SFX.stuck();G.shake=RM?0:.35;
   rows.filter(r=>G.stuck[r]&&G.stuck[r].t===NOW).forEach(r=>{const s=G.stuck[r];const y=L.gy+(r+.5)*L.cell;
    floatT(s.why==='two'?'ちがい'+s.n+'つ → 言えない':'ちがい0 → 何も分からない',L.gx+L.cell*G.C/2,y,RED,Math.min(30,L.cell*.45));
    if(!G.firstStuck[s.why]&&!SV.asked['st_'+s.why]){G.firstStuck[s.why]=1;SV.asked['st_'+s.why]=1;save();setTimeout(()=>lesson(s.why,s.n),650)}});
-  if(had)floatT('れんさ リセット',L.gx+L.cell*G.C/2,L.gy-8,RED,18)}
- if(G.tray.every(x=>!x)&&!G.P.final)refill();
+  buzz([12,40,12]);if(had){floatT('れんさ リセット',L.gx+L.cell*G.C/2,L.gy-8,RED,18);comboBreak(had)}}
+ if(G.tray.every(x=>!x)&&!G.P.final&&!G.tut)refill();
  setTimeout(()=>{if(G&&!G.over)checkFail()},700);
 }
 function lesson(why,n){
@@ -2504,7 +2519,7 @@ function eraseAt(r,c){
 }
 function discard(slot){
  const pc=G.tray[slot];if(!pc||G.bots<=0)return;G.tray[slot]=null;G.bots--;SFX.scratch();
- if(G.combo){floatT('れんさ リセット',LY.bot.x+LY.bot.w/2,LY.bot.y-6,RED,18)}G.combo=0;G.idle=0;
+ buzz(14);if(G.combo){floatT('れんさ リセット',LY.bot.x+LY.bot.w/2,LY.bot.y-6,RED,18);comboBreak(G.combo)}G.combo=0;G.idle=0;
  const hasTrap=pc.cells.some(a=>a[2]&&pc.cells.some(b=>b!==a&&b[2]&&b[1]===a[1]));
  if(hasTrap&&!SV.asked.trapBot){SV.asked.trapBot=1;save();floatT('よく見た！ 同じ行に≠が2つのピース',LY.bot.x+LY.bot.w/2,LY.bot.y-30,BLUE,18);earn(5,'first-try',LY.bot.x,LY.bot.y)}
  if(G.tray.every(x=>!x))refill();
@@ -2512,7 +2527,7 @@ function discard(slot){
 }
 function checkFail(){
  if(!G||G.over||G.paused||G.clearing.length)return;
- if(G.P.final)return;
+ if(G.P.final||G.tut)return;
  const can=G.tray.some(p=>p&&anyFit(p));
  if(can)return;
  if(G.erasers>0||(G.bots>0&&G.tray.some(p=>p))){if(NOW-(G.msgT||-9e9)>4000){G.msgT=NOW;const m=G.bots>0&&G.tray.some(p=>p)?(G.erasers>0?'置けない！ 消しゴムかボツ箱を使おう':'置けない！ ピースをボツ箱へ'):'置けない！ 消しゴムで場所をあけよう';floatT(m,LY.gx+LY.cell*G.C/2-LY.cell*.95,LY.gy+LY.cell*G.R/2,RED,Math.min(24,W/20))}return}
@@ -2524,6 +2539,7 @@ function fail(why){
   $('fR').onclick=()=>{closeMemo();SFX.flip();startPage(G.pi)};$('fI').onclick=()=>{closeMemo();openIndex()}},700);
 }
 function pageClear(){
+ if(G.tut){G.over=true;SV.asked.coach=1;save();if(GD)GD.tutorialClear();return}
  G.over=true;const i=G.pi;
  const st=1+(G.stuckN===0?1:0)+(G.maxCombo>=3?1:0);
  SV.stars[i]=Math.max(SV.stars[i]||0,st);SV.page=Math.max(SV.page,i+1);SV.clears+=G.cleared;SV.maxCombo=Math.max(SV.maxCombo,G.maxCombo);SV.score+=G.score;save();
@@ -2531,14 +2547,15 @@ function pageClear(){
  if(G.P.senior&&G.seniorFixed>=3&&!SV.asked.ruleSen){SV.asked.ruleSen=1;earn(30,'rule',W/2,H*.4)}
  if(i===5&&!SV.asked.rulePlant){SV.asked.rulePlant=1;earn(30,'rule',W/2,H*.4)}
  save();
- setTimeout(()=>{SFX.fan();flash();
-  openMemo(`<h2>p.${i+1} 書けた！ <small>${G.P.t}</small></h2><div class="stars">${'★'.repeat(st)}${'☆'.repeat(3-st)}</div>
+ setTimeout(()=>{if(GD)GD.celebrate('p.'+(i+1)+' 書けた！');else SFX.fan();flash();buzz([20,40,30]);
+  openMemo(`<h2>p.${i+1} 書けた！ <small>${G.P.t}</small></h2><div class="stars" id="pcS"><i>☆</i><i>☆</i><i>☆</i></div>
   <div class="rec"><span>分かる計画</span><b>${G.cleared} 行</b><span>言えない行（赤）</span><b>${G.stuckN} 行</b><span>最高れんさ</span><b>${G.maxCombo}</b>${G.P.senior?'<span>直した先輩の行</span><b>'+G.seniorFixed+' / '+G.seniorN+'</b>':''}</div>
   <p style="text-align:center;font-size:15px">★1 書けた ／ ★2 赤い行を作らない ／ ★3 3れんさ以上</p>
   <div class="rule">${G.P.rule}</div>
   <div class="go"><button class="pb blue big" id="pcN"><span>${i+1<NP?'次のページへ':'もくじへ'}</span></button><button class="pb sm" id="pcA"><span>もう一度</span></button><button class="pb sm" id="pcI"><span>もくじ</span></button></div>`);
   $('pcN').onclick=()=>{closeMemo();SFX.flip();if(i+1<NP)intro(i+1);else openIndex()};
-  $('pcA').onclick=()=>{closeMemo();SFX.flip();intro(i)};$('pcI').onclick=()=>{closeMemo();openIndex()}},900);
+  $('pcA').onclick=()=>{closeMemo();SFX.flip();intro(i)};$('pcI').onclick=()=>{closeMemo();openIndex()};
+  [...$('pcS').children].forEach((e,k)=>{if(k<st)setTimeout(()=>{e.textContent='★';e.classList.add('on');SFX.stamp();AU.tone(880*Math.pow(1.26,k),.3,'sine',.07);buzz(18);if(GD)GD.cheer('★',{target:e,size:.7,sound:false,sparks:14})},700+k*430)})},900);
 }
 
 /* ================= 配置（レイアウト） ================= */
@@ -2579,20 +2596,29 @@ cv.addEventListener('pointerdown',e=>{
  AU.init();const[x,y]=pxy(e);
  if(scene==='seal'){sealDown(x,y,e);return}
  if(scene!=='play'||!G||G.over||G.paused)return;
- if(inR(x,y,LY.er)&&G.erasers>0&&!G.P.final){G.eraseMode=!G.eraseMode;SFX.pick();return}
+ if(G.tut&&G.tutStep!==2&&G.tutStep!==3&&inR(x,y,LY.er)){floatT(G.tutStep<2?'消しゴムは あとで つかうよ':'',LY.er.x+LY.er.w/2,LY.er.y-6,BLUE,18);return}
+ if(inR(x,y,LY.er)&&G.erasers>0&&!G.P.final){G.eraseMode=!G.eraseMode;SFX.pick();buzz(8);return}
  if(G.P.final&&inR(x,y,LY.er)){startPage(G.pi);SFX.flip();return}
- if(G.eraseMode){const c=Math.floor((x-LY.gx)/LY.cell),r=Math.floor((y-LY.gy)/LY.cell);if(r>=0&&r<G.R&&c>=0&&c<G.C&&G.grid[r][c]){eraseAt(r,c);return}G.eraseMode=false;}
+ if(G.eraseMode){const c=Math.floor((x-LY.gx)/LY.cell),r=Math.floor((y-LY.gy)/LY.cell);if(r>=0&&r<G.R&&c>=0&&c<G.C&&G.grid[r][c]){if(G.tut&&!G.grid[r][c].k){floatT('≠ のタイルを消そう',LY.gx+LY.cell*G.C/2,LY.gy-8,BLUE,20);return}eraseAt(r,c);return}if(G.tut)return;G.eraseMode=false;}
  for(let i=0;i<3;i++){const b=LY.trays[i];if(G.tray[i]&&inR(x,y,b)){const pc=G.tray[i];
-  G.drag={i,pc,x,y,lift:(e.pointerType==='mouse')?0:LY.cell*1.25,sx:x,sy:y,t:NOW};SFX.pick();try{cv.setPointerCapture(e.pointerId)}catch(_){}return}}
+  if(G.tut&&i!==G.tutSlot){floatT('光っているピースから',b.x+b.w/2,b.y-6,BLUE,18);return}
+  G.drag={i,pc,x,y,lift:(e.pointerType==='mouse')?0:LY.cell*1.25,sx:x,sy:y,t:NOW};SFX.pick();buzz(8);try{cv.setPointerCapture(e.pointerId)}catch(_){}return}}
 });
 cv.addEventListener('pointermove',e=>{const[x,y]=pxy(e);if(scene==='seal'){sealMove(x,y);return}PT=[x,y];if(G&&G.drag){G.drag.x=x;G.drag.y=y}});
 cv.addEventListener('pointerup',e=>{const[x,y]=pxy(e);if(scene==='seal'){sealUp();return}
  if(!G||!G.drag)return;const d=G.drag;G.drag=null;
- if(inR(x,y,LY.bot)&&!G.P.final){discard(d.i);return}
- const sn=snap(d,x,y);if(sn&&fits(d.pc,sn[0],sn[1]))place(d.pc,sn[0],sn[1],d.i);
+ if(inR(x,y,LY.bot)&&!G.P.final){if(G.tut&&G.tutStep!==1){floatT('これは 盤へ置こう',LY.bot.x+LY.bot.w/2,LY.bot.y-6,BLUE,18);return}discard(d.i);return}
+ if(G.tut&&G.tutStep===1){floatT('≠が2つ → ボツ箱へ！',LY.bot.x+LY.bot.w/2,LY.bot.y-6,RED,20);return}
+ const sn=snapFit(d,x,y);if(sn&&fits(d.pc,sn[0],sn[1]))place(d.pc,sn[0],sn[1],d.i);
 });
 cv.addEventListener('pointercancel',()=>{if(G)G.drag=null;if(scene==='seal')sealUp()});
 function snap(d,x,y){const c=LY.cell;const px=x-d.pc.w*c/2,py=y-d.lift-d.pc.h*c/2;return[Math.round((py-LY.gy)/c),Math.round((px-LY.gx)/c)]}
+/* れんしゅう中は、指の真下あたりの置ける所へ吸いつく（絶対に失敗しない） */
+function tutOK(r,c){return !(G.tut&&G.tutStep===4&&r!==1)}
+function snapFit(d,x,y){const sn=snap(d,x,y);if(!G.tut||(fits(d.pc,sn[0],sn[1])&&tutOK(sn[0],sn[1])))return sn;
+ const c=LY.cell,fx=(x-LY.gx)/c-d.pc.w/2,fy=(y-LY.gy)/c-d.pc.h/2;let best=null,bd=9e9;
+ for(let r=0;r<G.R;r++)for(let k=0;k<G.C;k++){if(!fits(d.pc,r,k)||!tutOK(r,k))continue;const dd=Math.hypot(k-fx,(r-fy)*.8);if(dd<bd){bd=dd;best=[r,k]}}
+ return best&&bd<2.6?best:sn}
 
 /* ================= 演出 ================= */
 function floatT(s,x,y,col,sz){FLOAT.push({s,x,y,col,sz:sz||24,t:0,life:1.4})}
@@ -2610,7 +2636,7 @@ function drawPlay(dt){
    const tx=L.panel?L.panel.x+L.panel.w/2:W/2,ty=L.panel?L.panel.y+170:(L.strip?L.strip.y+L.strip.h/2:H/2);
    TAGS.push({f:q.f,x0:L.mx+cell*.95,y0:L.gy+(q.r+.5)*cell,x1:tx,y1:ty,t:0});
    if(first){setTimeout(()=>{floatT('見本帳に追加：「'+F[q.f].s+'」だけ変える計画',W/2,L.gy-14,BLUE,Math.min(24,W/26));SFX.good()},400)}
-   earn(2,'control',L.gx+cell*G.C/2,L.gy+(q.r+.5)*cell);
+   if(!G.tut)earn(2,'control',L.gx+cell*G.C/2,L.gy+(q.r+.5)*cell);
    if(G.P.final){G.over=true;setTimeout(()=>openSeal(q.f),700)}
    else if(G.cleared>=G.P.goal)pageClear();
   }}
@@ -2633,7 +2659,7 @@ function drawPlay(dt){
  txt(c,'鉢A｜鉢B',x0+cell*.95,y0+cell*.66,Math.min(20,cell*.27),INK,'center','middle');
  // ドラッグ中の影
  let ghost=null;
- if(G.drag){const sn=snap(G.drag,G.drag.x,G.drag.y);if(sn&&fits(G.drag.pc,sn[0],sn[1]))ghost={r:sn[0],c:sn[1],pc:G.drag.pc}}
+ if(G.drag){const sn=snapFit(G.drag,G.drag.x,G.drag.y);if(sn&&fits(G.drag.pc,sn[0],sn[1]))ghost={r:sn[0],c:sn[1],pc:G.drag.pc}}
  const gmap={};if(ghost)ghost.pc.cells.forEach(cl=>{gmap[(ghost.r+cl[1])+','+(ghost.c+cl[0])]=cl[2]});
  // 行ごと
  for(let r=0;r<G.R;r++){
@@ -2674,10 +2700,10 @@ function drawPlay(dt){
 function drawHead(){
  const c=cx,L=LY,pi=G.pi,P=G.P;
  if(L.land){const p=L.panel;
-  txt(c,'p.'+(pi+1),p.x+6,p.y+44,46,BLUE,'left','alphabetic');fitTxt(c,P.t,p.x+84,p.y+40,26,p.w-84,INK,'left','alphabetic');
+  txt(c,G.tut?'✎':'p.'+(pi+1),p.x+6,p.y+44,46,BLUE,'left','alphabetic');fitTxt(c,P.t,p.x+84,p.y+40,26,p.w-84,INK,'left','alphabetic');
   wl(c,p.x,p.y+56,p.x+p.w,p.y+56,77,GR,1.4,2);
  }else{
-  fitTxt(c,'p.'+(pi+1)+'  '+P.t,14,82,22,W*.64,INK,'left','middle');
+  fitTxt(c,(G.tut?'✎ ':'p.'+(pi+1)+'  ')+P.t,14,82,22,W*.64,INK,'left','middle');
  }
 }
 function goalDots(x,y,r,gap){const c=cx;for(let i=0;i<G.P.goal;i++){const px=x+i*gap;c.strokeStyle=GR;c.lineWidth=1.6;c.beginPath();c.arc(px,y,r,0,7);c.stroke();if(i<G.cleared){c.fillStyle=BLUE;c.beginPath();c.arc(px+.5,y+.5,r*.72,0,7);c.fill()}}}
@@ -2855,14 +2881,17 @@ function sealMemo(fromClear,got){
 function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
 
 /* ================= 画面の切りかえ ================= */
-function setScene(s){scene=s;FLOAT.length=0;TAGS.length=0;
+function setScene(s){scene=s;FLOAT.length=0;TAGS.length=0;if(HELP){if(s==='play'||s==='seal'||s==='index')HELP.show();else HELP.hide()}
  ['title','index','test','end'].forEach(id=>$(id).classList.toggle('on',id===s));
  $('sealBar').classList.toggle('on',s==='seal');
  const b=$('bBack');const show=s!=='title'||INHUB;b.classList.toggle('hide',!show);b.innerHTML=s==='title'?'<b>◀</b> 一覧へ':'<b>◀</b> もどる';
 }
 function openMemo(h){$('mc').innerHTML=h;$('ov').classList.add('on');$('mc').scrollTop=0}
 function closeMemo(){$('ov').classList.remove('on')}
-$('bBack').onclick=()=>{AU.init();SFX.pick();
+$('bBack').onclick=()=>{AU.init();SFX.pick();buzz(8);
+ if(scene==='play'&&G&&G.tut){tutStop();G.paused=true;
+  openMemo(`<h2>れんしゅうを やめる？</h2><p>れんしゅうは、表紙の「あそびかた」や「？」から いつでもできます。</p><div class="go"><button class="pb blue" id="bkY"><span>もくじへ</span></button><button class="pb" id="bkN"><span>れんしゅうを つづける</span></button></div>`);
+  $('bkY').onclick=()=>{closeMemo();G=null;openIndex()};$('bkN').onclick=()=>{closeMemo();if(GD)GD.tutorial(PRACTICE)};return}
  if(scene==='title'){try{window.parent.postMessage({type:'rika-close-game'},'*')}catch(e){}return}
  if(scene==='index'){setScene('title');initTitle();return}
  if(scene==='intro'){openIndex();return}
@@ -2876,20 +2905,20 @@ $('bBack').onclick=()=>{AU.init();SFX.pick();
 
 /* ---------- タイトル ---------- */
 function initTitle(){
- setScene('title');
+ tutStop();setScene('title');
  const nm=$('nameIn');nm.value=window.PLAYER_NAME||SV.name||'';
  const has=SV.page>0;['bCont','bCont2'].forEach(id=>$(id).classList.toggle('hide',!has));
  ['bBook','bBook2'].forEach(id=>$(id).classList.toggle('hide',!Z()));
 }
 function takeName(){const v=$('nameIn').value.trim();if(v)SV.name=v;save()}
-function onStart(){AU.init();takeName();SFX.flip();if(SV.page===0)intro(0);else openIndex()}
+function onStart(){AU.init();takeName();SFX.flip();buzz(10);if(SV.page===0){if(GD)startWithGuide();else intro(0)}else openIndex()}
 $('bStart').onclick=onStart;$('bStart2').onclick=onStart;
 $('bCont').onclick=()=>{AU.init();takeName();SFX.flip();openIndex()};$('bCont2').onclick=$('bCont').onclick;
 $('bBook').onclick=()=>{try{Zukan.openBook()}catch(e){}};$('bBook2').onclick=$('bBook').onclick;$('bBookI').onclick=$('bBook').onclick;$('bEndBook').onclick=$('bBook').onclick;
 
 /* ---------- もくじ ---------- */
 function openIndex(){
- G=null;closeMemo();setScene('index');
+ tutStop();G=null;closeMemo();setScene('index');
  const toc=$('toc');toc.innerHTML='';
  PAGES.forEach((P,i)=>{const b=document.createElement('button');const lock=i>SV.page;const st=SV.stars[i]||0;
   b.className=(lock?'lock':'')+(i===Math.min(SV.page,NP-1)&&!SV.cleared?' next':'');
@@ -2910,7 +2939,7 @@ function intro(i){
  openMemo(`<h2>p.${i+1} ${esc(P.t)} <small>${P.final?'さいごのページ':'分かる計画を '+P.goal+' 行 書こう'+(P.timer?'（'+P.timer+'秒）':'')}</small></h2>
   <canvas class="ic" id="inC" width="440" height="150"></canvas>
   ${P.intro.map(s=>'<p>'+s+'</p>').join('')}
-  ${i===0?'<p style="font-size:16px">ピースは盤へ<b>ひっぱって</b>置く。置けないピースは<b>ボツ箱</b>へ（あと3回・れんさは切れる）。</p>':''}
+  ${i===0&&!SV.asked.tut?'<p style="font-size:16px">ピースは盤へ<b>ひっぱって</b>置く。置けないピースは<b>ボツ箱</b>へ（あと3回・れんさは切れる）。</p>':''}
   ${i===3?'<p style="font-size:16px">消しゴムがつかえるようになった。タップしてから、消したいタイルをタップ。</p>':''}
   <div class="go"><button class="pb blue big" id="inGo"><span>書きはじめる</span></button></div>`);
  const ic=$('inC');const d=Math.min(2,DPR);ic.width=440*d;ic.height=150*d;ic.style.width='min(440px,100%)';const g=ic.getContext('2d');g.setTransform(d,0,0,d,0,0);
@@ -2982,7 +3011,71 @@ function frame(now){
 addEventListener('resize',resize);
 if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>{SPR={}});
 resize();refreshKak();
-window.__plan={get G(){return G},get SV(){return SV},startPage,openSeal,startTest,openIndex,place,fits,discard,eraseAt,anyFit,get LY(){return LY}};
+
+/* ===== ご褒美の演出（ルール11／仕上げ 2026-09-28 pl-finish） ===== */
+const CSTG=[3,5,8];
+function buzz(p){try{navigator.vibrate&&navigator.vibrate(p)}catch(e){}}
+function hitFx(rows,n){const L=LY;buzz(n>1?[20,30,20,30,30]:[16,30,16]);G.shake=RM?0:Math.min(.5,.18+G.combo*.05);
+ rows.forEach(r=>{const y=L.gy+(r+.5)*L.cell;for(let k=0;k<G.C;k++)dust(L.gx+(k+.5)*L.cell,y,k%2?BLUE:'#E9C46A',RM?2:12)});
+ const x=L.gx+L.cell*G.C/2,y=L.gy+(rows[0]+.5)*L.cell;
+ if(!GD)return;
+ if(G.tut&&G.tutN<=1){GD.cheer('分かる計画！',{x,y:y-L.cell*.9,size:.9,sound:false,sparks:18});return}
+ const c=G.combo;if(c<2)return;const big=c>=CSTG[1],mid=c>=CSTG[0];
+ const word=c>=CSTG[2]?'　大研究者！':big?'　名コンビ実験！':mid?'　いい計画！':'';
+ GD.cheer(c+' れんさ'+word,{x,y:y-L.cell*1.2,size:.75+Math.min(c,8)*.09,color:big?RED:mid?BLUE:INK,sparks:mid?24:12,sound:false});
+ if(CSTG.includes(c)){flash();setTimeout(()=>{SFX.fan();for(let i=0;i<(RM?4:40);i++)dust(x,y,i%3?BLUE:'#E9C46A',1)},260)}}
+function comboBreak(c){if(!G||G.tut||c<1)return;const nx=CSTG.find(k=>k>c);if(!nx||nx-c>2)return;
+ setTimeout(()=>{if(LY)floatT('あと'+(nx-c)+'回で '+nx+'れんさ だった！',LY.gx+LY.cell*G.C/2,LY.gy+LY.cell*G.R*.45,RED,Math.min(28,LY.cell*.42))},650)}
+
+/* ===== 遊び方案内（Guide・制作ルール13／仕上げ 2026-09-28） ===== */
+var GD=window.Guide||null,HELP=null,PRACTICE=null,HPREV=false;
+function tutStop(){if(G&&G.tut){G.tut=false;G.tutStep=-1;if(GD)GD.tutorialEnd()}}
+const TUTP={t:'れんしゅう',cols:['light','water','temp'],rows:2,goal:2,shapes:['1'],trap:0,erasers:1,rule:'変えるのは 1つだけ。ほかは そろえる。',
+ pre:()=>{G.grid[1]=[{k:1,t:0},{k:1,t:0},{k:0,t:0}];G.stuck[1]={why:'two',t:-9,n:2}},
+ tray:()=>[mkPiece('3h',[[0,0,1],[1,0,0],[2,0,0]]),mkPiece('3h',[[0,0,1],[1,0,1],[2,0,0]]),mkPiece('1',[[0,0,0]])]};
+function trayC(i){const b=LY.trays[i];return {x:b.x+b.w/2,y:b.y+b.h/2,w:b.w,h:b.h}}
+function cellC(r,c,w){w=w||1;return {x:LY.gx+(c+w/2)*LY.cell,y:LY.gy+(r+.5)*LY.cell,w:LY.cell*w+10,h:LY.cell+10}}
+function boxC(b){return {x:b.x+b.w/2,y:b.y+b.h/2,w:b.w,h:b.h}}
+function gapC(){const k=G.grid[1].findIndex(x=>!x);return cellC(1,k<0?0:k,1)}
+if(GD){
+ GD.setup({theme:{bg:'#FFFDF4',fg:'#40434E',accent:'#2E86AB',accentText:'#fff',font:'Yomogi,"Zen Kurenaido",sans-serif',bodyFont:'"Zen Kurenaido",Yomogi,sans-serif',
+   radius:5,texture:'grid',line:'rgba(64,67,78,.8)',dim:'rgba(64,67,78,.30)',shadow:'3px 5px 0 rgba(64,67,78,.18)',outline:'#F6F4EC',hand:'#FFFDF4',handLine:'#40434E'},
+  sfx:k=>{AU.init();({step:()=>SFX.place(),done:()=>SFX.good(),clear:()=>SFX.fan(),open:()=>SFX.flip(),close:()=>SFX.pick(),cheer:()=>SFX.combo(1),nudge:()=>SFX.tick()}[k]||(()=>SFX.pick()))()},
+  muted:()=>!AU.on});
+ const on=()=>scene==='play'&&G&&G.tut;
+ const st=n=>()=>{if(G)G.tutStep=n};
+ PRACTICE={label:'れんしゅう中',clearText:'れんしゅうクリア！',clearOn:'manual',
+  start:()=>{closeMemo();startPage(0,TUTP);G.tutSlot=0;G.tutStep=0},
+  steps:[
+   {gesture:'drag',label:'置く',target:()=>trayC(0),to:()=>cellC(0,0,3),onEnter:()=>{if(G){G.tutStep=0;G.tutSlot=0}},until:()=>on()&&G.tutN>=1,
+    text:'ピースを計画表の **1行目へドラッグ**。ちがい（**≠**）が **ちょうど1つ** の行は「分かる計画」になって消える',praise:false},
+   {gesture:'drag',label:'ボツ箱',target:()=>trayC(1),to:()=>boxC(LY.bot),onEnter:()=>{if(G){G.tutStep=1;G.tutSlot=1}},until:()=>on()&&!G.tray[1],
+    text:'このピースは **≠ が2つ**（光も水も変える）。どちらのせいか言えないので **ボツ箱へドラッグ**',praise:'よく見た！'},
+   {gesture:'tap',label:'消しゴム',target:()=>boxC(LY.er),onEnter:()=>{if(G){G.tutStep=2;G.tutSlot=-1}},until:()=>on()&&(G.eraseMode||G.erasers<1),
+    text:'2行目は ≠ が2つで **消えずに残った行**。**消しゴムをタップ** して直そう',praise:false},
+   {gesture:'tap',label:'消す',target:()=>cellC(1,0,1),onEnter:()=>{if(G){G.tutStep=3;G.tutSlot=-1}},until:()=>on()&&G.grid[1].some(x=>!x),
+    text:'**≠ のタイルをタップ** して消す',praise:'けずった！'},
+   {gesture:'drag',label:'置く',target:()=>trayC(2),to:gapC,onEnter:()=>{if(G){G.tutStep=4;G.tutSlot=2}},until:()=>on()&&G.tutN>=2,
+    text:'あいた所へ **＝ のタイルをドラッグ**。ちがいが1つになれば消える！',praise:false}
+  ],
+  onClear:()=>{if(!SV.asked.tut){SV.asked.tut=1;save();earn(10,'first-try',W/2,H*.4)}},
+  onExit:res=>{if(res.replaced||res.stopped)return;if(G&&G.tut){G.tut=false;G=null}SV.asked.coach=1;save();if(SV.page===0)intro(0);else openIndex()}};
+ HELP=GD.help({title:'条件そろえラボ',
+  rules:['ピースを計画表へ **ドラッグ** して置く（1行＝鉢Aと鉢Bの1組の実験）',
+   '**≠**＝その条件だけ鉢Bを変える／**＝**＝そろえる',
+   '行がうまって **ちがいがちょうど1つ** → 分かる計画になって消える。続けると **れんさ**',
+   'ちがい2つ以上・0の行は **赤えんぴつ** で残る → **消しゴム** をタップ→タイルをタップで直す',
+   '置けないピースは **ボツ箱へドラッグ**（れんさは切れる）'],
+  onOpen:()=>{HPREV=!!(G&&G.paused);if(G)G.paused=true},onClose:()=>{if(G)G.paused=HPREV},
+  replay:'tutorial',offset:{x:74},show:false,attention:true});
+ const how=()=>{AU.init();takeName();SFX.flip();GD.tutorial(PRACTICE)};
+ GD.tutorialButton('#bHow',how);GD.tutorialButton('#bHow2',how);
+}else{$('bHow').classList.add('hide');$('bHow2').classList.add('hide')}
+function startWithGuide(){
+ GD.intro({title:'第11回　条件そろえラボ',
+  learn:'**変える条件を1つだけ** にして、ほかは **そろえる**。そうすれば、光合成に何が関係するか分かる',
+  how:'タイルを計画表へ **ドラッグ**。ちがい（≠）が **ちょうど1つ** の行が消える',gesture:'drag'}).then(()=>GD.tutorial(PRACTICE))}
+window.__plan={trayC,cellC,boxC,gapC,get scene(){return scene},get G(){return G},get SV(){return SV},startPage,openSeal,startTest,openIndex,place,fits,discard,eraseAt,anyFit,get LY(){return LY}};
 if(TEST_ONLY){startTest()}else{initTitle()}
 requestAnimationFrame(frame);
 })();

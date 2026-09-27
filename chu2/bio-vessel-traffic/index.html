@@ -154,7 +154,16 @@ body.land #testIn{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
 #qfb .mk.o{color:var(--bl)}
 #qfb .ex{font-size:18px;line-height:1.7;font-weight:700;max-width:680px;margin:10px 0 18px}
 #qfb .ex b{background:var(--ye)}
-@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+/* 仕上げ 2026-09-28: ご褒美の演出 */
+#vflash{position:fixed;inset:0;pointer-events:none;z-index:48;background:#FFB400;opacity:0}
+#cv.shk{animation:vtshk .28s linear}
+@keyframes vtshk{0%,100%{transform:translate(0,0)}25%{transform:translate(-5px,2px)}50%{transform:translate(5px,-2px)}75%{transform:translate(-2px,3px)}}
+.stars i{font-style:normal;display:inline-block;color:#eee}
+.stars i.on{color:var(--ye);animation:vtstamp .4s cubic-bezier(.2,1.9,.4,1) both}
+@keyframes vtstamp{0%{transform:scale(2.8) rotate(-25deg)}100%{transform:scale(1) rotate(0)}}
+#btnStart{animation:vtpulse 1.6s ease-in-out infinite}
+@keyframes vtpulse{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}#cv.shk,.stars i.on,#btnStart{animation:none}}
 </style>
 </head>
 <body class="port">
@@ -166,6 +175,7 @@ body.land #testIn{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
    <div class="tBtns">
     <button class="sg" id="btnStart">はじめる</button>
     <button class="sg w" id="btnCont" hidden>つづきから</button>
+    <button class="sg y sm noar" id="btnHow">あそびかた</button>
     <button class="sg k sm noar" id="btnBookT" hidden>📖 図鑑</button>
    </div>
   </div>
@@ -198,7 +208,8 @@ body.land #testIn{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
  <button id="back">← もどる</button>
  <button id="mute">音 ON</button>
  <div id="telop"></div>
- <div id="ov" hidden><div id="ovIn"></div></div>
+ <div id="ov" hidden data-gd-pass><div id="ovIn"></div></div>
+ <div id="vflash"></div>
 </div>
 <script>/*@SUBMIT_CARD_BEGIN*/
 /* ==========================================================
@@ -1494,6 +1505,9 @@ window.ZUKAN_CARDS={"v": 1, "grade": "chu2", "name": "中2理科図鑑", "econom
       if(PASS_RE.test(String(t.id||''))||PASS_RE.test(typeof t.className==='string'?t.className:''))return true;
       if((t.tagName==='BUTTON'||t.tagName==='A'||t.getAttribute('role')==='button')&&/^\s*[◀←＜<]?\s*(もどる|戻る|一覧へ|とじる|閉じる|はい|いいえ|やめる|キャンセル|おと|音)/.test(t.textContent||''))return true}
       t=t.parentNode}return false}
+  /* 手ほどき中は、もどる等（passThru に当たる fixed/absolute のボタン）を暗幕・吹き出しより上へ出す。終わったら元に戻す */
+  function liftPass(){var out=[];try{var els=document.querySelectorAll('button,a,[role=button],[data-gd-pass]');for(var i=0;i<els.length;i++){var e=els[i];if(e.closest&&e.closest('.gd-root'))continue;if(e.classList&&e.classList.contains('gd-hbtn'))continue;if(!passThru(e))continue;var cs=getComputedStyle(e);if(cs.position!=='fixed'&&cs.position!=='absolute')continue;if(cs.display==='none'||cs.visibility==='hidden')continue;out.push([e,e.style.zIndex]);e.style.zIndex=String(Z+1)}}catch(_){}
+    return function(){for(var i=0;i<out.length;i++){out[i][0].style.zIndex=out[i][1]}}}
   function inGuide(t){if(passThru(t))return true;while(t&&t!==document){if(t.classList&&(t.classList.contains('gd-root')||t.classList.contains('gd-hbtn')))return true;t=t.parentNode}return false}
   function hexRGB(c){c=String(c||'').trim();var m;
     if((m=c.match(/^#([0-9a-f]{3})$/i)))return [0,1,2].map(function(i){return parseInt(m[1][i]+m[1][i],16)});
@@ -1834,7 +1848,7 @@ window.ZUKAN_CARDS={"v": 1, "grade": "chu2", "name": "中2理科図鑑", "econom
     if(!steps||!steps.length){resolveP({done:true,steps:0});return p}
     if(opt.key&&!opt.force&&sget('coach:'+opt.key)){resolveP({already:true});return p}
 
-    var root=mkRoot('gd-coach',opt.theme);root.setAttribute('aria-live','polite');
+    var root=mkRoot('gd-coach',opt.theme);root.setAttribute('aria-live','polite');var unlift=liftPass();
     var uid='gdm'+Math.random().toString(36).slice(2,8);
     root.innerHTML='<svg class="dim" aria-hidden="true"><defs><mask id="'+uid+'" maskUnits="userSpaceOnUse"><rect x="-10" y="-10" width="200%" height="200%" fill="#fff"/><g class="holes"></g></mask></defs>'+
       '<rect class="shade" x="-10" y="-10" width="200%" height="200%" style="fill:var(--gd-dim)" mask="url(#'+uid+')"/><g class="halos"></g><path class="arw"/><path class="arh"/><circle class="dest" r="0"/></svg>';
@@ -1882,6 +1896,7 @@ window.ZUKAN_CARDS={"v": 1, "grade": "chu2", "name": "中2理科図鑑", "econom
     };
     st.finish=function(res){
       if(st.finished)return;st.finished=true;
+      try{unlift()}catch(_){}
       if(st.evOff)st.evOff();
       delTick(tick);popLayer(layer);offPtr();window.removeEventListener('resize',onRs);
       if(res.done&&opt.key)sset('coach:'+opt.key,'1');
@@ -2195,6 +2210,7 @@ window.ZUKAN_CARDS={"v": 1, "grade": "chu2", "name": "中2理科図鑑", "econom
 <script>
 (function(){
 'use strict';
+/* vt-finish-2026-09-28 */
 const GAME_ID='bio-vessel-traffic',KOMA='chu2-seibutsu-14',SKEY='rika-zukan:chu2:game:'+GAME_ID+':v1';
 const $=id=>document.getElementById(id);
 const RM=!!(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches);
@@ -2284,7 +2300,7 @@ let W=0,H=0,DPR=1,LAND=false;
 function orient(){W=innerWidth;H=innerHeight;LAND=W>H*1.05;document.body.classList.toggle('land',LAND);document.body.classList.toggle('port',!LAND)}
 const dprNow=()=>Math.min(2.5,window.devicePixelRatio||1);
 let scene='title';
-function show(id){['scTitle','scMap','scPlay','scTest'].forEach(k=>$(k).hidden=k!==id);scene={scTitle:'title',scMap:'map',scPlay:'play',scTest:'test'}[id];if(id!=='scPlay')document.body.classList.remove('night');setBack()}
+function show(id){['scTitle','scMap','scPlay','scTest'].forEach(k=>$(k).hidden=k!==id);scene={scTitle:'title',scMap:'map',scPlay:'play',scTest:'test'}[id];if(id!=='scPlay')document.body.classList.remove('night');setBack();if(HELP){if(scene==='play'||scene==='map')HELP.show();else HELP.hide()}}
 function setBack(){const b=$('back');b.classList.toggle('hide',!(scene!=='title'||INHUB)||(scene==='test'&&window.GAME_MODE==='test'&&!INHUB));b.textContent=scene==='title'?'← 一覧へ':'← もどる'}
 function ovOpen(h){$('ovIn').innerHTML=h;$('ov').hidden=false;$('ovIn').scrollTop=0}
 function ovClose(){$('ov').hidden=true}
@@ -2294,6 +2310,7 @@ function setMute(){$('mute').textContent=SV.mute?'音 OFF':'音 ON'}
 $('mute').onclick=()=>{actx();SV.mute=!SV.mute;save();setMute();SFX.tick()};
 $('back').onclick=()=>{actx();SFX.tick();
  if(scene==='title'){try{window.parent.postMessage({type:'rika-close-game'},'*')}catch(e){}return}
+ if(scene==='play'&&G&&G.tut){tutStop();G.paused=true;ovOpen('<h3 class="oh">れんしゅうを やめる？</h3><p class="op">れんしゅうは、表紙の「あそびかた」や「？」から いつでもできます。</p><div class="oBtns"><button class="sg" id="bkY">路線表へ</button><button class="sg w noar" id="bkN">れんしゅうを つづける</button></div>');$('bkY').onclick=()=>{ovClose();G=null;openMap()};$('bkN').onclick=()=>{ovClose();if(GD)GD.tutorial(PRACTICE)};return}
  if(scene==='play'){if(G)G.paused=true;ovOpen('<h3 class="oh">路線表へ もどる</h3><p class="op">進み具合（ポイント・投資・クリアした区）は保存されます。<br>いまの区は、次は はじめからになります。</p><div class="oBtns"><button class="sg" id="bkY">路線表へ</button><button class="sg w noar" id="bkN">つづける</button></div>');$('bkY').onclick=()=>{ovClose();G=null;openMap()};$('bkN').onclick=()=>{ovClose();if(G)G.paused=false};return}
  if(scene==='test'){if(window.GAME_MODE==='test'){try{window.parent.postMessage({type:'rika-close-game'},'*')}catch(e){}return}ovOpen('<h3 class="oh">路線表へ もどる</h3><p class="op">確認テストの答えは まだ提出されていません。</p><div class="oBtns"><button class="sg" id="bkY">路線表へ</button><button class="sg w noar" id="bkN">つづける</button></div>');$('bkY').onclick=()=>{ovClose();T=null;const f=$('qfb');if(f)f.remove();openMap()};$('bkN').onclick=ovClose;return}
  if(scene==='map'){show('scTitle');initTitle()}};
@@ -2337,17 +2354,17 @@ function drawTitle(){const c=tctx;c.setTransform(DPR,0,0,DPR,0,0);c.fillStyle='#
  c.textBaseline='alphabetic';
 }
 function titleFrame(dt){if(RM)return;TT+=dt;titleFrame.a=(titleFrame.a||0)+dt;if(titleFrame.a>.05){titleFrame.a=0;drawTitle()}}
-function initTitle(){if(window.PLAYER_NAME){$('nameIn').value=window.PLAYER_NAME;$('nameRow').hidden=true}else if(SV.name)$('nameIn').value=SV.name;
+function initTitle(){tutStop();if(window.PLAYER_NAME){$('nameIn').value=window.PLAYER_NAME;$('nameRow').hidden=true}else if(SV.name)$('nameIn').value=SV.name;
  const any=hasSave()&&(SV.round>0||SV.clr.some(Boolean));$('btnCont').hidden=!any;$('btnBookT').hidden=!Z();$('btnStart').textContent=any?'はじめから':'はじめる';titleResize()}
 let startArm=false;
 $('btnStart').onclick=()=>{actx();SFX.sw();SV.name=$('nameIn').value.trim();const any=hasSave()&&(SV.round>0||SV.clr.some(Boolean));
  if(any&&!startArm){startArm=true;$('btnStart').textContent='本当に はじめから？';setTimeout(()=>{startArm=false;if(scene==='title')initTitle()},3500);return}
- if(startArm){const nm=SV.name,mu=SV.mute;SV=fresh();SV.name=nm;SV.mute=mu;startArm=false}save();startRound(0)};
+ if(startArm){const nm=SV.name,mu=SV.mute;SV=fresh();SV.name=nm;SV.mute=mu;startArm=false}save();buzz(10);if(GD)startWithGuide();else startRound(0)};
 $('btnCont').onclick=()=>{actx();SFX.sw();SV.name=$('nameIn').value.trim()||SV.name;save();openMap()};
 $('btnBookT').onclick=()=>{try{Z().openBook()}catch(e){}};
 
 /* ================= 路線表 ================= */
-function openMap(){show('scMap');G=null;
+function openMap(){tutStop();show('scMap');G=null;
  $('mPt').textContent=SV.pt;$('mDel').textContent=SV.del;$('mStar').textContent=SV.stars.reduce((a,b)=>a+b,0);
  let ka='';const z=Z();if(z&&z.state){try{ka='<div><small>図鑑のかけら</small><br><b>'+z.state().kakera+'</b></div>'}catch(e){}}$('mKa').innerHTML=ka;
  const d=$('days');d.innerHTML='';
@@ -2382,13 +2399,13 @@ function openShop(next){if(G)G.paused=true;
 /* ================= 本編 ================= */
 const cv=$('cv'),ctx=cv.getContext('2d');
 let G=null,TID=0;
-function startRound(i){const r=RD[i];show('scPlay');ovClose();document.body.classList.toggle('night',!!r.night);
+function startRound(i,TP){const r=TP||RD[i];show('scPlay');ovClose();document.body.classList.toggle('night',!!r.night);
  const st={};r.st.forEach(k=>{const s=STN[k];st[k]={k,s,q:[],tmr:1.5+Math.random(),sw:0,w:.7,g:0,prod:1+Math.random()*2,starch:s.kind==='leaf'?2+SV.upg.store:0,wilted:false,growT:0}});
  // 最初の標識は わざと ちがう向き（最初の判断）
- if(st.root)st.root.sw=i===0?1:0;
+ if(st.root)st.root.sw=(i===0||TP)?1:0;
  Object.values(st).forEach(o=>{if(o.s.kind==='leaf')o.sw=i===1?2:0});
- G={i,r,st,trucks:[],t:0,paused:false,over:false,endT:-1,combo:0,maxCombo:0,pt:0,del:0,mis:0,jam:0,lost:0,rootT:1,wilt:false,parts:[],floats:[],signR:[],rushT:0,firstSwitch:false,chipR:[],byK:{w:0,f:0,s:0,d:0}};
- layout();SFX.sig();telop(pad2(i+1)+'　'+r.day+'日目　'+r.tod,r.tip,2800);
+ G={i,r,st,trucks:[],t:0,paused:false,over:false,endT:-1,combo:0,maxCombo:0,pt:0,del:0,mis:0,jam:0,lost:0,rootT:1,wilt:false,parts:[],floats:[],signR:[],rushT:0,firstSwitch:false,chipR:[],byK:{w:0,f:0,s:0,d:0},tut:!!TP};
+ layout();SFX.sig();if(!TP)telop(pad2(i+1)+'　'+r.day+'日目　'+r.tod,r.tip,2800);
 }
 /* 座標 */
 let MAP={};
@@ -2409,16 +2426,18 @@ function pickSink(from){const ks=Object.keys(G.st).filter(k=>SINKS.indexOf(k)>=0
  const w=ks.map(k=>1/(1+G.st[k].g*.25)*(k==='root'?1.1:1.25));let s=w.reduce((a,b)=>a+b,0)*Math.random();for(let i=0;i<ks.length;i++){s-=w[i];if(s<=0)return ks[i]}return ks[0]}
 function pickLeaf(){const ls=Object.values(G.st).filter(o=>o.s.kind==='leaf');ls.sort((a,b)=>a.w-b.w);return (Math.random()<.7?ls[0]:ls[Math.floor(Math.random()*ls.length)]).k}
 function depart(o){const tr=o.q[0];const sw=states(o)[o.sw];
+ if(G.tut&&wrongLane(Object.assign({},tr,{lane:sw}))){o.flash=.4;SFX.tick();msg('<b>標識をタップ</b>して、'+(tr.cargo==='w'?'水は <b>道管↑</b>':'養分は <b>師管</b>（'+(G.st[tr.dest].s.u>o.s.u?'上り↑':'下り↓')+'）')+' に合わせてから出発');return}
+ if(G.tut&&(sw==='pu'||sw==='pd')&&tr.cargo==='s'){const d=G.st[tr.dest];const du=d.s.kind==='root'?0:d.s.u;if((du-(o.s.kind==='root'?0:o.s.u))*LANE[sw].dir<0){o.flash=.4;SFX.tick();msg('<b>向きがちがう</b>　'+esc(d.s.name)+'は '+(du>o.s.u?'上':'下')+'。標識をタップして '+(du>o.s.u?'<b>師管↑</b>':'<b>師管↓</b>')+' に');return}}
  if(sw==='cv'){o.q.shift();if(tr.cargo==='d'){G.trucks.push({...tr,from:o.k,ph:'conv',t:0,st:o});SFX.conv()}else{mistake(o.s,'<b>糖は そのまま師管へ</b>。変換がいるのは水にとけにくいデンプンだけ',false);o.q.unshift(tr)}return}
  const L=LANE[sw];const eu=clamp((o.s.kind==='root'?0:o.s.u)+L.dir*.4,.3,9.7);
  if(G.trucks.some(t=>(t.ph==='lane'||t.ph==='jam')&&t.lane===sw&&Math.abs(t.u-eu)<.5))return;
  o.q.shift();G.trucks.push({...tr,from:o.k,lane:sw,ph:'in',t:0,u:eu});SFX.go();
 }
 function wrongLane(tr){if(tr.cargo==='w'||tr.cargo==='f')return tr.lane!=='x';if(tr.cargo==='d')return true;return tr.lane==='x'}
-function mistake(at,h,jam){G.mis++;G.combo=0;if(jam){G.jam++;SFX.horn()}else SFX.lost();msg(h);const p=P(at.u!=null?at.u:0,at.v!=null?at.v:0);G.floats.push({x:p.x,y:p.y,t:0,txt:jam?'渋滞':'誤配',c:'#111',bg:YE})}
+function mistake(at,h,jam){G.mis++;comboBreak(G.combo);G.combo=0;buzz([12,40,12]);if(jam){G.jam++;SFX.horn()}else SFX.lost();msg(h);const p=P(at.u!=null?at.u:0,at.v!=null?at.v:0);G.floats.push({x:p.x,y:p.y,t:0,txt:jam?'渋滞':'誤配',c:'#111',bg:YE})}
 function jamMsg(tr){const c=tr.cargo;if(c==='w')return '<b>取り違え！</b>　水は<b>道管</b>を上る。師管は葉でつくられた養分の通り道';if(c==='f')return '<b>取り違え！</b>　肥料分は水にとけて、水といっしょに<b>道管</b>を上る';if(c==='d')return '<b>立ち往生！</b>　デンプンは水にとけにくい。先に<b>変換</b>（水にとけやすい物質へ）';return '<b>取り違え！</b>　葉でできた養分は<b>師管</b>。道管は水の上り道'}
 function deliver(tr,o){G.del++;G.combo++;G.maxCombo=Math.max(G.maxCombo,G.combo);const mult=1+Math.min(G.combo,10)*.1;const pts=Math.round(2*mult);G.pt+=pts;G.byK[tr.cargo]++;
- SFX.del(G.combo);const p=P(o.s.u,o.s.v);
+ SFX.del(G.combo);const p=P(o.s.u,o.s.v);delFx(p,G.combo);if(G.tut&&G.del>=3&&GD)setTimeout(()=>{if(G&&G.tut)GD.tutorialClear()},500);
  for(let k=0;k<14;k++){const a=Math.random()*Math.PI*2;G.parts.push({x:p.x,y:p.y,vx:Math.cos(a)*170,vy:Math.sin(a)*170,t:0,life:.6,c:tr.cargo==='w'||tr.cargo==='f'?BL:YE,s:4+Math.random()*4})}
  G.floats.push({x:p.x,y:p.y,t:0,txt:'+'+pts+(G.combo>2?'  ×'+mult.toFixed(1):''),c:'#fff',bg:tr.cargo==='w'||tr.cargo==='f'?BL:'#111'});
  if(tr.cargo==='w'||tr.cargo==='f'){o.w=Math.min(1,o.w+.24);o.growT=.5;if(tr.cargo==='w'){if(!SV.firsts.w){SV.firsts.w=1;earn(10,'first-try')}getSign('k1')}else{if(!SV.firsts.f){SV.firsts.f=1;earn(30,'rule');telop('肥料分も 道管','水にとけて、水といっしょに上る',2000)}getSign('k4')}}
@@ -2434,15 +2453,15 @@ function update(dt){const g=G,r=g.r;g.t+=dt;
  // 時刻による光
  let light=r.light;if(r.rush&&g.t>r.dur*.35&&g.t<r.dur*.75){light=1.9;if(!g.rushOn){g.rushOn=1;telop('日ざしが強い！','光合成がさかん → 養分トラックがどっと出る',2200);SFX.sig()}}
  // 生成
- if(run){g.rootT-=dt;const wr=(r.night?4.2:2.9)/(1+.25*SV.upg.hair)*(1+(Object.keys(g.st).length>4?-.15:0));
+ if(run&&!g.tut){g.rootT-=dt;const wr=(r.night?4.2:2.9)/(1+.25*SV.upg.hair)*(1+(Object.keys(g.st).length>4?-.15:0));
   if(g.rootT<=0){g.rootT=wr*(.8+Math.random()*.4);const f=Math.random()<r.fert;const dest=f&&g.st.shoot&&Math.random()<.4?'shoot':pickLeaf();spawn(g.st.root,f?'f':'w',dest)}
   Object.values(g.st).forEach(o=>{if(o.s.kind!=='leaf')return;
-   o.w=Math.max(0,o.w-dt*(r.night?.004:.009+.009*r.light));o.wilted=o.w<.2;if(o.wilted)g.wilt=true;
+   if(!g.tut)o.w=Math.max(0,o.w-dt*(r.night?.004:.009+.009*r.light));o.wilted=o.w<.2;if(o.wilted)g.wilt=true;
    if(!r.night){if(o.wilted||light<=0||r.wonly)return;o.prod-=dt*light*(1+.25*SV.upg.leaf)*(.6+.6*o.w);if(o.prod<=0){o.prod=5.2*(.8+Math.random()*.4);spawn(o,'s',pickSink(o.k))}}
    else{o.prod-=dt;if(o.prod<=0&&o.starch>0){o.prod=5*(.8+Math.random()*.4);if(spawn(o,Math.random()<.75?'d':'s',pickSink(o.k)))o.starch--}if(o.starch<=0&&!o.q.length&&g.t>r.dur*.4){o.starch=1+SV.upg.store}}})}
  // 出発
  const dep=Math.max(1.5,2.6-g.i*.1);
- Object.values(g.st).forEach(o=>{if(!o.q.length){o.tmr=dep;return}o.tmr-=dt;if(o.tmr<=0){o.tmr=dep;depart(o)}o.growT=Math.max(0,o.growT-dt)});
+ Object.values(g.st).forEach(o=>{if(g.tut){o.growT=Math.max(0,o.growT-dt);o.tmr=dep;return}if(!o.q.length){o.tmr=dep;return}o.tmr-=dt;if(o.tmr<=0){o.tmr=dep;depart(o)}o.growT=Math.max(0,o.growT-dt)});
  // 動き
  const spd=1.45;
  g.trucks.forEach(tr=>{
@@ -2464,7 +2483,7 @@ function update(dt){const g=G,r=g.r;g.t+=dt;
  if(!run&&g.endT<0){g.endT=0;telop('区の終わり','走っている車を 待っています',1500)}
  if(g.endT>=0){g.endT+=dt;if(!g.over&&(g.trucks.length===0||g.endT>6)){g.over=true;setTimeout(roundEnd,500)}}
 }
-function roundEnd(){const g=G;if(!g)return;const i=g.i,r=g.r;SFX.fan();$('telop').classList.remove('on');
+function roundEnd(){const g=G;if(!g)return;const i=g.i,r=g.r;if(GD)GD.celebrate(pad2(i+1)+'区　完走！');else SFX.fan();vflash();buzz([20,40,30]);$('telop').classList.remove('on');
  const got=r.tk==='w'?g.byK.w:g.byK.s;const s1=got>=r.target,s2=g.mis<=1,s3=!g.wilt;const stars=1+(s1?1:0)+(s2?1:0)+(s3?1:0)-1+ (s1||s2||s3?0:1);
  const st=Math.max(1,(s1?1:0)+(s2?1:0)+(s3?1:0));
  SV.pt+=g.pt;SV.del+=g.del;SV.mis+=g.mis;SV.maxCombo=Math.max(SV.maxCombo,g.maxCombo);SV.clr[i]=1;SV.stars[i]=Math.max(SV.stars[i],st);SV.best[i]=Math.max(SV.best[i],g.pt);if(SV.round<=i)SV.round=Math.min(RD.length-1,i+1);
@@ -2472,10 +2491,11 @@ function roundEnd(){const g=G;if(!g)return;const i=g.i,r=g.r;SFX.fan();$('telop'
  if(r.final){SV.done=true;if(g.mis<=1)earn(80,'boss',{id:GAME_ID+'-rush'})}
  save();
  const sinks=Object.values(g.st).filter(o=>SINKS.indexOf(o.k)>=0).map(o=>esc(o.s.name)+' '+o.g).join('　');
- ovOpen('<h3 class="oh">'+pad2(i+1)+'　'+r.day+'日目 '+r.tod+'　終了</h3><div class="stars">'+'★'.repeat(st)+'<s>'+'★'.repeat(3-st)+'</s></div>'+
+ ovOpen('<h3 class="oh">'+pad2(i+1)+'　'+r.day+'日目 '+r.tod+'　終了</h3><div class="stars" id="vtS"><i>★</i><i>★</i><i>★</i></div>'+
   '<div class="stats"><div><small>届けた台数</small><b>'+g.del+'</b></div><div><small>'+(r.tk==='w'?'水':'養分')+'の目標</small><b>'+got+'</b> / '+r.target+'</div><div><small>渋滞・誤配</small><b>'+g.mis+'</b></div><div><small>最高連続</small><b>'+g.maxCombo+'</b></div><div><small>輸送ポイント</small><b>+'+g.pt+'</b></div></div>'+
   '<p class="op">届いた養分：'+sinks+'</p><p class="op" style="font-size:13px">★ '+(r.tk==='w'?'水':'養分')+'を目標の台数　★ 渋滞・誤配 1回まで　★ 葉をしおれさせない</p>'+
   '<div class="oBtns">'+(r.final?'<button class="sg" id="reT">さいごの確認テストへ</button>':'<button class="sg y" id="reS">投資して 次の区へ</button><button class="sg" id="reN">そのまま次の区へ</button>')+'<button class="sg w noar sm" id="reM">路線表へ</button>'+(Z()?'<button class="sg k noar sm" id="reG">図鑑ガチャ</button>':'')+'</div>');
+ [...$('vtS').children].forEach((e,k)=>{if(k<st)setTimeout(()=>{e.classList.add('on');tone(660*Math.pow(1.26,k),.3,'triangle',.07);tone(110,.2,'sine',.12);buzz(18);if(GD)GD.cheer('★',{target:e,size:.7,sound:false,sparks:12})},500+k*420)});
  const b=(id,f)=>{const e=$(id);if(e)e.onclick=f};
  b('reS',()=>openShop(i+1));b('reN',()=>{ovClose();startRound(i+1)});b('reM',()=>{ovClose();openMap()});b('reG',()=>{try{Z().openGacha()}catch(e){}});
  b('reT',()=>{ovClose();goClear()});G.paused=true}
@@ -2483,9 +2503,9 @@ function goClear(){const z=Z();if(z&&z.mainClear){try{z.mainClear({onClose:start
 
 /* ---- 入力（標識のタップ） ---- */
 cv.addEventListener('pointerdown',e=>{actx();if(!G||G.paused||G.over)return;e.preventDefault();const x=e.clientX,y=e.clientY;
- for(const s of G.signR){if(x>=s.x-8&&x<=s.x+s.w+8&&y>=s.y-8&&y<=s.y+s.h+8){const o=G.st[s.k];const n=states(o).length;o.sw=(o.sw+1)%n;SFX.sw();G.firstSwitch=true;o.flash=.3;return}}
+ for(const s of G.signR){if(x>=s.x-8&&x<=s.x+s.w+8&&y>=s.y-8&&y<=s.y+s.h+8){const o=G.st[s.k];const n=states(o).length;o.sw=(o.sw+1)%n;SFX.sw();buzz(8);G.firstSwitch=true;o.flash=.3;return}}
  // 先頭の車をタップ＝すぐ出発
- for(const s of G.chipR){if(x>=s.x-6&&x<=s.x+s.w+6&&y>=s.y-6&&y<=s.y+s.h+6){const o=G.st[s.k];if(o.q.length){o.tmr=0}return}}});
+ for(const s of G.chipR){if(x>=s.x-6&&x<=s.x+s.w+6&&y>=s.y-6&&y<=s.y+s.h+6){const o=G.st[s.k];if(o.q.length){if(G.tut)depart(o);else o.tmr=0;buzz(8)}return}}});
 
 /* ---- 描画 ---- */
 function render(){const g=G,c=ctx,r=g.r;const night=!!r.night;const fg=night?'#fff':'#111',bg=night?'#111':'#fff';
@@ -2493,10 +2513,10 @@ function render(){const g=G,c=ctx,r=g.r;const night=!!r.night;const fg=night?'#f
  const m=Math.min(W,H),su=MAP.su,sv=MAP.sv;const lw=Math.max(7,Math.min(sv*.2,16));
  // 巨大な区番号と見出し
  c.textBaseline='top';c.textAlign='left';
- if(LAND){c.fillStyle=fg;c.font='700 '+Math.min(MAP.Pw*.62,H*.24)+'px '+NUM;c.fillText(pad2(g.i+1),22,64);
-  const y2=64+Math.min(MAP.Pw*.62,H*.24)*1.0;c.font='900 '+Math.min(40,MAP.Pw*.14)+'px '+JP;c.fillText(r.day+'日目　'+r.tod,24,y2);
+ if(LAND){c.fillStyle=fg;c.font='700 '+Math.min(MAP.Pw*.62,H*.24)+'px '+NUM;c.fillText(g.tut?'00':pad2(g.i+1),22,64);
+  const y2=64+Math.min(MAP.Pw*.62,H*.24)*1.0;c.font='900 '+Math.min(40,MAP.Pw*.14)+'px '+JP;c.fillText(g.tut?r.tod:r.day+'日目　'+r.tod,24,y2);
   c.textBaseline='alphabetic';hudLand(c,y2+60,fg)}
- else{c.fillStyle=fg;c.font='700 58px '+NUM;c.textAlign='right';c.fillText(pad2(g.i+1),W-84,6);c.textAlign='left';c.font='900 22px '+JP;c.fillText(r.day+'日目 '+r.tod,14,64);c.textBaseline='alphabetic';hudPort(c,fg)}
+ else{c.fillStyle=fg;c.font='700 58px '+NUM;c.textAlign='right';c.fillText(g.tut?'':pad2(g.i+1),W-(GD?146:84),6);c.textAlign='left';c.font='900 22px '+JP;c.fillText(g.tut?r.tod:r.day+'日目 '+r.tod,14,64);c.textBaseline='alphabetic';hudPort(c,fg)}
  c.textBaseline='alphabetic';
  // 幹線
  const lane=(k)=>{const L=LANE[k];const a=P(.3,L.v),b=P(9.7,L.v);c.strokeStyle=L.col;c.lineWidth=lw;c.lineCap='butt';c.beginPath();c.moveTo(a.x,a.y);c.lineTo(b.x,b.y);c.stroke()};
@@ -2528,7 +2548,7 @@ function render(){const g=G,c=ctx,r=g.r;const night=!!r.night;const fg=night?'#f
  g.parts.forEach(p=>{c.globalAlpha=1-p.t/p.life;c.fillStyle=p.c;c.fillRect(p.x-p.s/2,p.y-p.s/2,p.s,p.s)});c.globalAlpha=1;
  g.floats.forEach(f=>{const a=Math.min(1,(1.3-f.t)*3);c.globalAlpha=a;c.font='900 17px '+JP;c.textAlign='center';const w=c.measureText(f.txt).width+14;const y=f.y-30-f.t*34;c.fillStyle=f.bg;c.fillRect(f.x-w/2,y-17,w,24);c.fillStyle=f.c;c.fillText(f.txt,f.x,y+1)});c.globalAlpha=1;
  // 手引き
- if(g.i<=1&&!g.firstSwitch){const k=g.i===0?'root':'A';const s=g.signR.find(q=>q.k===k);if(s){const pu=RM?0:(Math.sin(g.t*6)+1)*4;c.strokeStyle=YE;c.lineWidth=5;c.strokeRect(s.x-6-pu,s.y-6-pu,s.w+12+pu*2,s.h+12+pu*2);c.fillStyle='#111';c.font='900 15px '+JP;c.textAlign='left';const tx='タップで切りかえ';const w=c.measureText(tx).width+14;const x=clamp(s.x,8,W-w-8),y=s.y+s.h+14;c.fillStyle=YE;c.fillRect(x,y,w,26);c.fillStyle='#111';c.fillText(tx,x+7,y+19)}}
+ if(g.i<=1&&!g.firstSwitch&&!g.tut){const k=g.i===0?'root':'A';const s=g.signR.find(q=>q.k===k);if(s){const pu=RM?0:(Math.sin(g.t*6)+1)*4;c.strokeStyle=YE;c.lineWidth=5;c.strokeRect(s.x-6-pu,s.y-6-pu,s.w+12+pu*2,s.h+12+pu*2);c.fillStyle='#111';c.font='900 15px '+JP;c.textAlign='left';const tx='タップで切りかえ';const w=c.measureText(tx).width+14;const x=clamp(s.x,8,W-w-8),y=s.y+s.h+14;c.fillStyle=YE;c.fillRect(x,y,w,26);c.fillStyle='#111';c.fillText(tx,x+7,y+19)}}
 }
 function drawStation(c,o,fg,bg,lw){const s=o.s,p=P(s.kind==='root'?0:s.u,s.v);const m=Math.min(W,H);const R=Math.max(16,Math.min(MAP.sv*.42,34));
  c.save();c.translate(p.x,p.y);
@@ -2639,14 +2659,68 @@ function finishTest(){const qs=T.qs,answers=T.ans;const review=Quiz.review(qs,an
 /* ================= ループ ================= */
 let last=performance.now();
 function frame(now){const dt=Math.min(.05,Math.max(0,(now-last)/1000));last=now;
- try{if(scene==='play'&&G){const k=window.__vtSpeed||1;for(let s=0;s<k&&G&&!G.paused;s++)update(dt);if(G)render()}else if(scene==='title')titleFrame(dt)}catch(e){console.error(e)}
+ try{if(scene==='play'&&G){const k=HPAUSE?0:(window.__vtSpeed||1);for(let s=0;s<k&&G&&!G.paused;s++)update(dt);if(G)render()}else if(scene==='title')titleFrame(dt)}catch(e){console.error(e)}
  requestAnimationFrame(frame)}
 let rsT=null;addEventListener('resize',()=>{clearTimeout(rsT);rsT=setTimeout(()=>{orient();if(scene==='title')titleResize();else if(scene==='play'&&G)layout()},120)});
 if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>{if(scene==='title')drawTitle()});
 window.GAME_ID=GAME_ID;
 try{window.Zukan&&Zukan.setup({game:GAME_ID,koma:[KOMA]})}catch(e){}
 orient();setMute();
-window.__vt={get G(){return G},get SV(){return SV},startRound,startTest,openMap,openShop,states,
+
+/* ===== ご褒美の演出（ルール11／仕上げ 2026-09-28 vt-finish） ===== */
+const CSTG=[3,5,8,12];
+function buzz(p){try{navigator.vibrate&&navigator.vibrate(p)}catch(e){}}
+function vflash(){if(RM)return;const f=$('vflash');f.style.transition='none';f.style.opacity=.45;requestAnimationFrame(()=>{f.style.transition='opacity .6s';f.style.opacity=0})}
+function shake(){if(RM)return;const c=$('cv');c.classList.remove('shk');void c.offsetWidth;c.classList.add('shk')}
+function delFx(p,c){shake();buzz(c>2?[14,24,14]:12);if(!GD)return;
+ if(G.tut&&G.del===1){GD.cheer('配達成功！',{x:p.x,y:p.y-50,size:.9,sparks:18,sound:false});return}
+ if(c<2)return;const big=c>=CSTG[1],mid=c>=CSTG[0];const word=c>=CSTG[3]?'　伝説の管制官！':c>=CSTG[2]?'　完璧な交通整理！':big?'　名管制！':mid?'　スムーズ！':'';
+ GD.cheer(c+' 連続'+word,{x:p.x,y:p.y-60,size:.7+Math.min(c,10)*.07,color:big?'#FFB400':'#0057B8',sparks:mid?22:10,sound:false});
+ if(CSTG.includes(c)){vflash();setTimeout(()=>SFX.fan(),200)}}
+function comboBreak(c){if(!G||c<1)return;const nx=CSTG.find(k=>k>c);if(!nx||nx-c>2)return;setTimeout(()=>{if(G)G.floats.push({x:W/2,y:H*.45,t:0,txt:'あと'+(nx-c)+'台で '+nx+'連続 だった！',c:'#111',bg:'#FFB400'})},600)}
+
+/* ===== 遊び方案内（Guide・制作ルール13／仕上げ 2026-09-28） ===== */
+var GD=window.Guide||null,HELP=null,PRACTICE=null,HPAUSE=false;
+function tutStop(){if(G&&G.tut){G.tut=false;if(GD)GD.tutorialEnd()}}
+const TUTR={day:0,tod:'れんしゅう',dur:9999,st:['root','A','bud'],light:0,fert:0,target:3,tk:'s',tip:''};
+function signC(k){const s=G&&G.signR.find(q=>q.k===k);return s?{x:s.x+s.w/2,y:s.y+s.h/2,w:s.w+18,h:s.h+18}:{x:W/2,y:H/2,r:30}}
+function chipC(k){const s=G&&G.chipR.find(q=>q.k===k);if(s)return {x:s.x+s.w/2,y:s.y+s.h/2,w:s.w+14,h:s.h+14};return signC(k)}
+if(GD){
+ GD.setup({theme:{bg:'#FFFFFF',fg:'#111111',accent:'#0057B8',accentText:'#FFFFFF',font:'"Zen Kaku Gothic New",sans-serif',bodyFont:'"Zen Kaku Gothic New",sans-serif',
+   radius:3,texture:'none',line:'#111111',dim:'rgba(17,17,17,.45)',shadow:'0 0 0 4px #FFB400',outline:'#FFFFFF',hand:'#FFB400',handLine:'#111111'},
+  sfx:k=>{actx();({step:()=>SFX.sw(),done:()=>SFX.buy(),clear:()=>SFX.fan(),open:()=>SFX.sig(),close:()=>SFX.tick(),cheer:()=>SFX.del(3),nudge:()=>SFX.tick()}[k]||(()=>SFX.tick()))()},
+  muted:()=>SV.mute});
+ const on=()=>scene==='play'&&G&&G.tut;const ST=k=>G.st[k];const cur=k=>states(ST(k))[ST(k).sw];
+ PRACTICE={label:'れんしゅう中',clearText:'れんしゅうクリア！',clearOn:'manual',
+  start:()=>{ovClose();startRound(0,TUTR)},
+  steps:[
+   {gesture:'tap',label:'標識',target:()=>signC('root'),onEnter:()=>{if(on()&&!ST('root').q.length&&!G.del){spawn(ST('root'),'w','A');ST('root').sw=1}},until:()=>on()&&cur('root')==='x',
+    text:'根から **水** のトラック。根の **標識をタップ** して **道管↑**（青）に切りかえる',praise:'道管へ！'},
+   {gesture:'tap',label:'出発',target:()=>chipC('root'),until:()=>on()&&!ST('root').q.length,text:'行列の **先頭の札をタップ** すると すぐ出発',praise:false},
+   {gesture:'tap',label:'下り',target:()=>signC('A'),onEnter:()=>{if(on()&&!ST('A').q.length&&G.del<2){spawn(ST('A'),'s','root');ST('A').sw=2}},until:()=>on()&&cur('A')==='pd',
+    text:'葉Aで光合成した **養分**（糖）が **根** へ。根は下なので、標識をタップして **師管↓**（黄）',praise:'下り線！'},
+   {gesture:'tap',label:'出発',target:()=>chipC('A'),until:()=>on()&&!ST('A').q.length,text:'**札をタップ** して出発',praise:false},
+   {gesture:'tap',label:'上り',target:()=>signC('A'),onEnter:()=>{if(on()&&!ST('A').q.length&&G.del<3)spawn(ST('A'),'s','bud')},until:()=>on()&&cur('A')==='pu',
+    text:'こんどは **つぼみ**（上）へ。養分は師管で **上にも下にも** 運ばれる。**師管↑** に',praise:'上り線！'},
+   {gesture:'tap',label:'出発',target:()=>chipC('A'),until:()=>on()&&!ST('A').q.length,text:'**札をタップ**。正しく届くと 根・つぼみ・実が ふくらむ',praise:false}
+  ],
+  onClear:()=>{if(!SV.firsts.tut){SV.firsts.tut=1;save()}},
+  onExit:res=>{if(res.replaced||res.stopped)return;if(G&&G.tut)G.tut=false;G=null;if(SV.round===0&&!SV.clr[0])startRound(0);else openMap()}};
+ HELP=GD.help({title:'維管束インターチェンジ',
+  rules:['根と葉の **標識をタップ** すると、トラックの行き先の管が切りかわる',
+   '**水・肥料分** → **道管↑**（青・上りだけ）',
+   '葉でできた **養分** → **師管**（黄）。届け先が上なら ↑、下なら ↓',
+   '夜の **デンプン** は、先に **変換**（水にとけやすい物質に）してから師管へ',
+   '行列の **先頭の札をタップ** ですぐ出発。区の間に「効く所」へ投資'],
+  onOpen:()=>{HPAUSE=true},onClose:()=>{HPAUSE=false},
+  replay:'tutorial',offset:{x:84},show:false,attention:true});
+ GD.tutorialButton('#btnHow',()=>{actx();SFX.sw();SV.name=$('nameIn').value.trim()||SV.name;save();GD.tutorial(PRACTICE)});
+}else{$('btnHow').hidden=true}
+function startWithGuide(){
+ GD.intro({title:'第14回　維管束インターチェンジ',
+  learn:'水・肥料分は **道管** を上へ。葉でできた養分は **師管** で 上にも下にも',
+  how:'**標識をタップ** して、トラックを正しい管へ流す',gesture:'tap'}).then(()=>GD.tutorial(PRACTICE))}
+window.__vt={signC,chipC,get scene(){return scene},get G(){return G},get SV(){return SV},startRound,startTest,openMap,openShop,states,
  // 自動の交通整理（テスト用）: 先頭の車に合う向きへ標識を合わせる
  auto(){if(!G)return;Object.values(G.st).forEach(o=>{const ss=states(o);if(!ss.length||!o.q.length)return;const tr=o.q[0];let want;
   if(tr.cargo==='w'||tr.cargo==='f')want='x';else if(tr.cargo==='d')want='cv';else{const d=G.st[tr.dest];const du=d.s.kind==='root'?0:d.s.u;want=du>o.s.u?'pu':'pd'}

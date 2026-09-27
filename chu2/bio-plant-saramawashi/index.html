@@ -170,7 +170,13 @@ body.land .pbtn{flex-direction:row;justify-content:center;flex-wrap:wrap}
 .qfb .pp{text-align:center}
 .qfb .mk{font-family:var(--head);font-size:96px;line-height:1}
 .qfb .ex{font-size:16px;line-height:1.65;text-align:left;margin:8px 0}
-@media (prefers-reduced-motion: reduce){.tel,.stars .on{animation-duration:.01s}}
+/* 仕上げ 2026-09-28: ご褒美の演出 */
+#sflash{position:fixed;inset:0;pointer-events:none;z-index:6;background:#FF5C8A;mix-blend-mode:multiply;opacity:0}
+#cv.shk{animation:srshk .3s linear}
+@keyframes srshk{0%,100%{transform:translate(0,0)}25%{transform:translate(-6px,3px)}50%{transform:translate(6px,-3px)}75%{transform:translate(-3px,2px)}}
+#btnStart{animation:srpulse 1.6s ease-in-out infinite}
+@keyframes srpulse{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
+@media (prefers-reduced-motion: reduce){.tel,.stars .on{animation-duration:.01s}#cv.shk,#btnStart{animation:none}}
 </style>
 </head>
 <body>
@@ -187,9 +193,10 @@ body.land .pbtn{flex-direction:row;justify-content:center;flex-wrap:wrap}
  <div class="tt-b">
   <button class="tk" id="btnStart">はじめる</button>
   <button class="tk gr" id="btnCont" hidden>つづきから</button>
+  <button class="tk ln sm" id="btnHow">あそびかた</button>
   <button class="tk ln sm" id="btnBookT" hidden>📖 図鑑</button>
  </div>
- <div class="tt-f">根・茎・葉の3まいの皿を回し続けて、株に花を咲かせよう。<br>1まいだけ速く回しても、ほかが止まれば株はしおれる。</div>
+ <div class="tt-f">根・茎・葉の皿を回し続けて、花を咲かせよう。</div>
 </section>
 
 <!-- ============ 演目表 ============ -->
@@ -218,8 +225,9 @@ body.land .pbtn{flex-direction:row;justify-content:center;flex-wrap:wrap}
 </section>
 
 <button class="tk bl" id="bBack" hidden>◀ もどる</button>
-<div id="ov" hidden><div class="pp" id="ovBody"></div></div>
-<div id="scrBack" hidden><div class="pp"><h2 style="font-size:32px">もどりますか？</h2><p class="ps" id="bkSub" style="font-size:15px">進み具合は保存されます。</p>
+<div id="ov" hidden data-gd-pass><div class="pp" id="ovBody"></div></div>
+<div id="sflash"></div>
+<div id="scrBack" hidden data-gd-pass><div class="pp"><h2 style="font-size:32px">もどりますか？</h2><p class="ps" id="bkSub" style="font-size:15px">進み具合は保存されます。</p>
  <div class="pbtn"><button class="tk gr" id="bkNo">つづける</button><button class="tk" id="bkGo">もどる</button></div></div></div>
 </div>
 
@@ -1517,6 +1525,9 @@ window.ZUKAN_CARDS={"v": 1, "grade": "chu2", "name": "中2理科図鑑", "econom
       if(PASS_RE.test(String(t.id||''))||PASS_RE.test(typeof t.className==='string'?t.className:''))return true;
       if((t.tagName==='BUTTON'||t.tagName==='A'||t.getAttribute('role')==='button')&&/^\s*[◀←＜<]?\s*(もどる|戻る|一覧へ|とじる|閉じる|はい|いいえ|やめる|キャンセル|おと|音)/.test(t.textContent||''))return true}
       t=t.parentNode}return false}
+  /* 手ほどき中は、もどる等（passThru に当たる fixed/absolute のボタン）を暗幕・吹き出しより上へ出す。終わったら元に戻す */
+  function liftPass(){var out=[];try{var els=document.querySelectorAll('button,a,[role=button],[data-gd-pass]');for(var i=0;i<els.length;i++){var e=els[i];if(e.closest&&e.closest('.gd-root'))continue;if(e.classList&&e.classList.contains('gd-hbtn'))continue;if(!passThru(e))continue;var cs=getComputedStyle(e);if(cs.position!=='fixed'&&cs.position!=='absolute')continue;if(cs.display==='none'||cs.visibility==='hidden')continue;out.push([e,e.style.zIndex]);e.style.zIndex=String(Z+1)}}catch(_){}
+    return function(){for(var i=0;i<out.length;i++){out[i][0].style.zIndex=out[i][1]}}}
   function inGuide(t){if(passThru(t))return true;while(t&&t!==document){if(t.classList&&(t.classList.contains('gd-root')||t.classList.contains('gd-hbtn')))return true;t=t.parentNode}return false}
   function hexRGB(c){c=String(c||'').trim();var m;
     if((m=c.match(/^#([0-9a-f]{3})$/i)))return [0,1,2].map(function(i){return parseInt(m[1][i]+m[1][i],16)});
@@ -1857,7 +1868,7 @@ window.ZUKAN_CARDS={"v": 1, "grade": "chu2", "name": "中2理科図鑑", "econom
     if(!steps||!steps.length){resolveP({done:true,steps:0});return p}
     if(opt.key&&!opt.force&&sget('coach:'+opt.key)){resolveP({already:true});return p}
 
-    var root=mkRoot('gd-coach',opt.theme);root.setAttribute('aria-live','polite');
+    var root=mkRoot('gd-coach',opt.theme);root.setAttribute('aria-live','polite');var unlift=liftPass();
     var uid='gdm'+Math.random().toString(36).slice(2,8);
     root.innerHTML='<svg class="dim" aria-hidden="true"><defs><mask id="'+uid+'" maskUnits="userSpaceOnUse"><rect x="-10" y="-10" width="200%" height="200%" fill="#fff"/><g class="holes"></g></mask></defs>'+
       '<rect class="shade" x="-10" y="-10" width="200%" height="200%" style="fill:var(--gd-dim)" mask="url(#'+uid+')"/><g class="halos"></g><path class="arw"/><path class="arh"/><circle class="dest" r="0"/></svg>';
@@ -1905,6 +1916,7 @@ window.ZUKAN_CARDS={"v": 1, "grade": "chu2", "name": "中2理科図鑑", "econom
     };
     st.finish=function(res){
       if(st.finished)return;st.finished=true;
+      try{unlift()}catch(_){}
       if(st.evOff)st.evOff();
       delTick(tick);popLayer(layer);offPtr();window.removeEventListener('resize',onRs);
       if(res.done&&opt.key)sset('coach:'+opt.key,'1');
@@ -2218,6 +2230,7 @@ window.ZUKAN_CARDS={"v": 1, "grade": "chu2", "name": "中2理科図鑑", "econom
 <script>
 (function(){
 'use strict';
+/* sr-finish-2026-09-28 */
 const GAME_ID='bio-plant-saramawashi',KOMA='chu2-seibutsu-15',SKEY='rika-zukan:chu2:game:'+GAME_ID+':v1';
 const $=id=>document.getElementById(id);
 const RM=!!(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches);
@@ -2350,7 +2363,7 @@ function startStage(si){
  G.state='intro';G.introT=first?0:2.2;
  telop(stName(si),S.name+'　─ '+S.sub,true);SFX.taiko(0);SFX.taiko(.3);SFX.clack();
  cap(S.tip,5000);
- if(first)tutorial();
+ if(first&&!GD)tutorial();
 }
 function tutorial(){
  G.tut=1;G.state='tut';
@@ -2423,10 +2436,10 @@ function startEvent(k){
  if(ok){G.stat.read++;SV.read++;G.grow+=1.6;G.bloom+=1.6;G.dayGrow+=1.6;G.audJump=1;G.flash=.5;
   bs.forEach(x=>{G.P[x].glow=1.2;burst(G.P[x].x,G.P[x].y,26)});
   const got=earn(15,'hit',pp.x,pp.y);
-  telop('読み当て！',W1.n+'の日に '+bs.map(x=>PL[x].n).join('・')+'の皿が回っていた'+(got?'　かけら+'+got:''),true);SFX.read();
+  telop('読み当て！',W1.n+'の日に '+bs.map(x=>PL[x].n).join('・')+'の皿が回っていた'+(got?'　かけら+'+got:''),true);SFX.read();readFx(pp,true);
   if(!SV.rules[w]){SV.rules[w]=1;earn(30,'rule',pp.x,pp.y);save()}
  }else{
-  telop(W1.n+'！',PL[bs[0]].n+'の皿が 急に落ちはじめる',false);SFX.taiko(0);SFX.warn();
+  telop(W1.n+'！',PL[bs[0]].n+'の皿が 急に落ちはじめる',false);SFX.taiko(0);SFX.warn();readFx(pp,false);
  }
  cap(W1.n+'：'+W1.why+' → <b>'+bs.map(x=>PL[x].n).join('・')+'の皿</b>が落ちやすい',4200);
 }
@@ -2441,7 +2454,7 @@ function dayAdvance(){G.day++;G.t=0;G.wea='sun';
  updDay();G.state='run';save()}
 function plateFall(k){
  const p=G.P[k];p.fallen=0;p.spin=0;G.state='diag';G.stat.wilts++;SV.wilts++;G.wilt=1;
- SFX.crash();burst(p.x,p.y,34,true);
+ SFX.crash();burst(p.x,p.y,34,true);shake();buzz([30,40,30]);
  for(let i=0;i<7;i++)G.parts.push({x:p.x,y:p.y,vx:rnd(-160,160),vy:rnd(-260,-60),g:900,life:1.6,sh:1,col:pick(['p','g','b']),r:rnd(6,16)*R/60,rot:rnd(0,TAU),vr:rnd(-8,8)});
  G.diag={k,t:0};
  telop('株がしおれた！','足りなかった働きの皿を はじいて立て直せ',true);
@@ -2457,7 +2470,7 @@ function diagAnswer(k){
  cap(EXPL[c],5200);
  P.spin=.72;P.low=0;G.wilt=.6;
  for(const x in G.P){if(G.P[x].spin<.45)G.P[x].spin=.5}
- G.diag=null;G.state='intro';G.introT=1.2;save();
+ G.diag=null;if(G.gtut){G.state='tut';G.tutFixed=1;shake();sflash();buzz([20,40,30]);capOff();setTimeout(()=>{if(G&&G.gtut&&GD)GD.tutorialClear()},900);return}G.state='intro';G.introT=1.2;save();
 }
 function stageClear(){
  G.state='clear';const g=G,S=G.S,si=G.si;
@@ -2469,7 +2482,7 @@ function stageClear(){
  SV.stage=Math.max(SV.stage,si+1);
  const last=si===STAGES.length-1;if(last)SV.done=true;save();
  G.audJump=1.5;for(let i=0;i<90;i++)confetti();
- SFX.bloom();
+ SFX.bloom();sflash();buzz([20,40,30]);if(GD)setTimeout(()=>GD.celebrate(FL[si].n+'が咲いた！'),400);
  setTimeout(()=>{
   const G=g,nr=G.stat.tries?G.stat.read+' / '+G.stat.tries:'―';
   ovOpen(`<h2>${esc(f.n)}が咲いた！</h2><div class="ps">${stName(si)}「${esc(S.name)}」　終演</div>
@@ -2480,6 +2493,7 @@ function stageClear(){
    <div class="lesson">${lessonOf(si)}</div>
    <div class="pbtn"><button class="tk" id="clNext">${last?'千秋楽のあいさつへ':'演目表へ'}</button><button class="tk ln sm" id="clAgain">もう一度この演目</button></div>`);
   drawFlowerCard($('flCv'),si,true);
+  [...document.querySelectorAll('#ovBody .stars span.on')].forEach((e,k)=>setTimeout(()=>{SFX.taiko(0);SFX.kane(0);buzz(18)},k*180+120));
   $('clNext').onclick=()=>{ovClose();SFX.click();if(last){const z=Z();if(z){try{z.mainClear({onClose:()=>{openMap();}})}catch(e){openMap()}}else openMap();SFX.fanfare()}else{openMap()}};
   $('clAgain').onclick=()=>{ovClose();startStage(si)};
  },RM?300:1300);
@@ -2496,6 +2510,7 @@ function lessonOf(si){return ['根が吸った水は葉へ、葉がつくった�
 /* ================= チュートリアル（最初の1分） ================= */
 function tutUpdate(dt){
  G.tutT=(G.tutT||0)+dt;
+ if(G.gtut){physics(dt,.3);for(const k in G.P){const p=G.P[k];if(!p.fallen&&G.state==='tut')p.spin=Math.max(p.spin,.35)}return}
  // ゆっくり落ちる。両方を1回ずつはじいたら次へ
  physics(dt,.55);
  if(G.state!=='tut')return;
@@ -2510,7 +2525,7 @@ function hitPlate(x,y){let best=null,bd=1e9;for(const k in G.P){const p=G.P[k];c
   if(d<1.35&&d<bd){bd=d;best=k}}return best}
 cv.addEventListener('pointerdown',e=>{actx();if(scene==='title'||!G)return;const x=e.clientX,y=e.clientY;
  const k=hitPlate(x,y);if(!k)return;e.preventDefault();
- if(G.state==='diag'){diagAnswer(k);return}
+ if(G.state==='diag'){if(G.gtut&&G.diag&&k!==G.diag.k){telopSmall('そこは回っている。止まった皿は？',x,y-40);SFX.nohand();return}diagAnswer(k);return}
  if(G.state!=='run'&&G.state!=='tut'&&G.state!=='intro')return;
  if(!pushPlate(k,x,y))return;
  ptr[e.pointerId]={k,x0:x,y0:y,bonus:0};
@@ -2520,11 +2535,12 @@ function pushPlate(k,x,y){
  if(G.hands<=0){SFX.nohand();telopSmall('手がいっぱい！',x,y-40);return false}
  G.hands--;G.pushes=(G.pushes||0)+1;
  const before=p.spin;p.spin=Math.min(1.1,p.spin+.23);p.pushT=.25;p.glow=Math.max(p.glow,.35);
- SFX.push(PL[k].ord);sparks(p.x,p.y,6);
+ const nw=performance.now();G.chain=(nw-(G.chainT||0)<900)?(G.chain||0)+1:0;G.chainT=nw;tone([330,392,440,523][PL[k].ord]*Math.pow(2,Math.min(G.chain,10)/12),.12,{type:'triangle',vol:.04,at:.05});
+ SFX.push(PL[k].ord);sparks(p.x,p.y,6+Math.min(G.chain,8));buzz(8);
  if(before>.95)telopSmall('回しすぎ（むだ）',p.x,p.y-R*.9);
  return true}
 cv.addEventListener('pointermove',e=>{const q=ptr[e.pointerId];if(!q||!G)return;const d=Math.hypot(e.clientX-q.x0,e.clientY-q.y0);
- if(!q.bonus&&d>R*.6){q.bonus=1;const p=G.P[q.k];if(p&&!p.fallen){p.spin=Math.min(1.1,p.spin+.12);sparks(p.x,p.y,8)}}});
+ if(!q.bonus&&d>R*.6){q.bonus=1;const p=G.P[q.k];if(p&&!p.fallen){p.spin=Math.min(1.1,p.spin+.12);sparks(p.x,p.y,14);G.swiped=(G.swiped||0)+1;tone(880,.12,{type:'triangle',vol:.05,to:1320});buzz(12);if(GD&&G.swiped===1)GD.cheer('スワイプで 加速！',{x:p.x,y:p.y-R,size:.7,sparks:12,sound:false})}}});
 const up=e=>{delete ptr[e.pointerId]};cv.addEventListener('pointerup',up);cv.addEventListener('pointercancel',up);
 addEventListener('keydown',e=>{if(!G||scene!=='play')return;const ks=G.S.plates;const m={'1':0,'2':1,'3':2,'4':3,ArrowLeft:0,ArrowUp:1,ArrowRight:2,ArrowDown:3};if(e.key in m&&ks[m[e.key]]){const p=G.P[ks[m[e.key]]];const ev={clientX:p.x,clientY:p.y,pointerId:99,preventDefault(){}};cv.dispatchEvent(new PointerEvent('pointerdown',{clientX:p.x,clientY:p.y,pointerId:99,bubbles:true}));up({pointerId:99})}});
 
@@ -2565,7 +2581,7 @@ function drawBackdrop(t){
  ink('p',()=>{cx.fillRect(0,FLOOR,W,7)},.9);
 }
 function drawWeather(t){
- const nw=(G.state==='run'||G.state==='intro'||G.state==='dayend')?nextWea():null;const cw=G.wea;G.omenK=nw?nw.w:null;
+ const nw=(G.state==='run'||G.state==='intro'||G.state==='dayend')?nextWea():(G.gtut&&G.tutOmen?{w:'dry',k:0,lead:G.tutOmen}:null);const cw=G.wea;G.omenK=nw?nw.w:null;
  const show=(w,a)=>{if(a<=0)return;
   if(w==='dry'){ // 大きな太陽とかげろう
    const sx=W*.8,sy=TOP+30+(LAND?20:10),sr=(LAND?64:44)*(1+a*.3);
@@ -2756,21 +2772,24 @@ function showScene(s){scene=s;['scTitle','scMap','hud','scTest'].forEach(id=>$(i
  if(s==='title')$('scTitle').hidden=false;else if(s==='map')$('scMap').hidden=false;else if(s==='play')$('hud').hidden=false;else if(s==='test')$('scTest').hidden=false;
  const b=$('bBack');const on=s==='play'||s==='map'||s==='test'||(s==='title'&&INHUB);b.hidden=!on||(s==='test'&&window.GAME_MODE==='test');b.textContent=s==='title'?'◀ 一覧へ':'◀ もどる';
  $('bMute').textContent=SV.mute?'消音':'音';$('bMute').classList.toggle('off',SV.mute);capOff();
+ if(HELP){if(s==='play'||s==='map')HELP.show();else HELP.hide()}
 }
 function ovOpen(h){$('ovBody').innerHTML=h;$('ov').hidden=false;$('ovBody').scrollTop=0}
 function ovClose(){$('ov').hidden=true}
 let backFrom=null,backPrev=null;
 $('bBack').onclick=()=>{actx();SFX.click();
  if(scene==='title'){try{window.parent.postMessage({type:'rika-close-game'},'*')}catch(e){}return}
+ if(scene==='play'&&G&&G.gtut){tutStop();backFrom='tut';backPrev='tut';G.state='pause';$('bkSub').textContent='れんしゅうは、表紙の「あそびかた」や「？」から いつでもできます。';$('bkGo').textContent='演目表へ';$('bkNo').textContent='れんしゅうを つづける';$('scrBack').hidden=false;return}
+ $('bkNo').textContent='つづける';
  backFrom=scene;if(scene==='play'&&G){backPrev=G.state;G.state='pause'}
  $('bkSub').textContent=scene==='test'?'確認テストは、次はさいしょから。演目の進み具合は保存されています。':scene==='map'?'進み具合は保存されます。表紙にもどります。':'進み具合は保存されます（終わった演目と花はそのまま。この演目は次にはじめから）。';
  $('bkGo').textContent=scene==='map'?'表紙へ':'演目表へ';$('scrBack').hidden=false};
-$('bkNo').onclick=()=>{$('scrBack').hidden=true;if(backFrom==='play'&&G&&G.state==='pause')G.state=backPrev||'run'};
+$('bkNo').onclick=()=>{$('scrBack').hidden=true;if(backFrom==='tut'){if(GD)GD.tutorial(PRACTICE);return}if(backFrom==='play'&&G&&G.state==='pause')G.state=backPrev||'run'};
 $('bkGo').onclick=()=>{$('scrBack').hidden=true;ovClose();if(backFrom==='map'){showScene('title');initTitle()}else{G=null;T=null;openMap()}};
 $('bMute').onclick=()=>{SV.mute=!SV.mute;save();$('bMute').textContent=SV.mute?'消音':'音';$('bMute').classList.toggle('off',SV.mute)};
 
 /* ================= 演目表 ================= */
-function openMap(){G=null;showScene('map');
+function openMap(){tutStop();G=null;showScene('map');
  const nx=Math.min(SV.stage,STAGES.length-1);
  $('billSub').textContent='全8演目・30日　咲いた花 '+Object.keys(SV.flowers).length+' / 8　★ '+SV.stars.reduce((a,b)=>a+b,0)+' / 24';
  $('acts').innerHTML=STAGES.map((s,i)=>{const lock=i>SV.stage,st=SV.stars[i];
@@ -2795,14 +2814,14 @@ function drawFlowerCard(c,i,big){const g=c.getContext('2d');const w=c.width,h=c.
  }finally{cx=CX0}}
 
 /* ================= 表紙 ================= */
-function initTitle(){if(window.PLAYER_NAME)$('nameIn').value=window.PLAYER_NAME;else if(SV.name)$('nameIn').value=SV.name;
+function initTitle(){tutStop();if(window.PLAYER_NAME)$('nameIn').value=window.PLAYER_NAME;else if(SV.name)$('nameIn').value=SV.name;
  $('btnCont').hidden=!(hasSave()&&(SV.stage>0||SV.tut));$('btnBookT').hidden=!Z();
  $('btnStart').textContent=(hasSave()&&SV.stage>0)?'はじめから':'はじめる'}
 let startArm=false;
 $('btnStart').onclick=()=>{actx();SV.name=$('nameIn').value.trim();
  if(hasSave()&&SV.stage>0&&!startArm){startArm=true;$('btnStart').textContent='本当に はじめから？（記録が消える）';setTimeout(()=>{startArm=false;initTitle()},3500);return}
  if(startArm){const nm=SV.name,mu=SV.mute;SV=fresh();SV.name=nm;SV.mute=mu}
- save();SFX.taiko(0);SFX.clack();startStage(0)};
+ save();SFX.taiko(0);SFX.clack();buzz(10);if(GD)startWithGuide();else startStage(0)};
 $('btnCont').onclick=()=>{actx();SV.name=$('nameIn').value.trim()||SV.name;save();SFX.click();openMap()};
 $('btnBookT').onclick=()=>{try{Z().openBook()}catch(e){}};
 
@@ -2836,12 +2855,63 @@ function finishTest(){const qs=T.qs,answers=T.ans;const review=Quiz.review(qs,an
 /* ================= ループ ================= */
 let last=performance.now();
 function frame(now){const dt=Math.min(.05,Math.max(0,(now-last)/1000));last=now;
- try{if(scene==='play'&&G){if(G.state!=='pause')update(dt);render(dt,now)}else if(scene==='title'||scene==='map'||scene==='test')renderTitle(now/1000,scene!=='title')}catch(e){console.error(e)}
+ try{if(scene==='play'&&G){if(G.state!=='pause'&&!HPAUSE)update(dt);render(dt,now)}else if(scene==='title'||scene==='map'||scene==='test')renderTitle(now/1000,scene!=='title')}catch(e){console.error(e)}
  requestAnimationFrame(frame)}
 window.GAME_ID=GAME_ID;
 layout();fitTitle();
 try{window.Zukan&&Zukan.setup({game:GAME_ID,koma:[KOMA]})}catch(e){}
-window.__sara={step:dt=>update(dt),push:k=>{if(G&&G.state==='diag'){diagAnswer(k);return}if(G&&(G.state==='run'||G.state==='tut'||G.state==='intro'))pushPlate(k,0,0)},get G(){return G},get SV(){return SV},startStage,startTest,openMap,diagAnswer,get R(){return R}};
+
+/* ===== ご褒美の演出（ルール11／仕上げ 2026-09-28 sr-finish） ===== */
+let RS=0;const CSTG=[2,3,5];
+function buzz(p){try{navigator.vibrate&&navigator.vibrate(p)}catch(e){}}
+function sflash(){if(RM)return;const f=$('sflash');f.style.transition='none';f.style.opacity=.5;requestAnimationFrame(()=>{f.style.transition='opacity .7s';f.style.opacity=0})}
+function shake(){if(RM)return;cv.classList.remove('shk');void cv.offsetWidth;cv.classList.add('shk')}
+function readFx(pp,ok){if(!ok){if(RS>=1){const nx=CSTG.find(k=>k>RS);if(nx&&nx-RS<=1)setTimeout(()=>telopSmall('あと1回で 読み当て×'+nx+' だった！',W/2,H*.52),900)}RS=0;return}
+ RS++;shake();sflash();buzz([20,30,20,30,30]);
+ if(GD&&RS>=2){const big=RS>=CSTG[1];GD.cheer('読み当て ×'+RS+(RS>=CSTG[2]?'　名人芸！':big?'　大当たり！':'　連続！'),{x:pp.x,y:pp.y-R*1.4,size:.8+Math.min(RS,6)*.1,color:big?'#FF5C8A':'#009B72',sparks:24,sound:false});setTimeout(()=>SFX.fanfare(),300)}}
+
+/* ===== 遊び方案内（Guide・制作ルール13／仕上げ 2026-09-28） ===== */
+var GD=window.Guide||null,HELP=null,PRACTICE=null,HPAUSE=false;
+function tutStop(){if(G&&G.gtut){G.gtut=0;if(GD)GD.tutorialEnd()}}
+function plC(k){const p=G&&G.P[k];return p?{x:p.x,y:p.y,r:Math.max(40,R*1.15)}:{x:W/2,y:H/2,r:40}}
+function plC2(k){const p=G&&G.P[k];return p?{x:p.x+R*1.3,y:p.y,r:30}:{x:W/2,y:H/2,r:30}}
+function tutRead(){const p=G.P.root;G.tutOmen=0;G.tutRead=1;G.audJump=1;G.grow+=1.6;G.bloom+=1.6;p.glow=1.2;burst(p.x,p.y,26);SFX.read();telop('読み当て！','日照りの日に 根の皿が回っていた',true);RS=0;readFx(p,true);cap(WEA.dry.why+' → 先に回した<b>根の皿</b>が水を吸い続けた',4200)}
+if(GD){
+ GD.setup({theme:{bg:'#FFF3E0',fg:'#1E3D55',accent:'#FF5C8A',accentText:'#FFF3E0',font:'"BIZ UDPGothic",sans-serif',bodyFont:'"BIZ UDPGothic",sans-serif',
+   radius:0,texture:'grain',line:'#3255A4',dim:'rgba(30,61,85,.34)',shadow:'6px 5px 0 rgba(0,155,114,.75)',outline:'#FFF3E0',hand:'#FFF3E0',handLine:'#3255A4'},
+  sfx:k=>{actx();({step:()=>SFX.clack(),done:()=>SFX.ok(),clear:()=>SFX.fanfare(),open:()=>SFX.taiko(0),close:()=>SFX.click(),cheer:()=>SFX.kane(0),nudge:()=>SFX.click()}[k]||(()=>SFX.click()))()},
+  muted:()=>SV.mute});
+ const on=()=>scene==='play'&&G&&G.gtut;
+ PRACTICE={label:'れんしゅう中',clearText:'れんしゅうクリア！',clearOn:'manual',bandAt:'bottom',
+  start:()=>{ovClose();startStage(0);G.gtut=1;G.state='tut';G.pushes=0;G.swiped=0;capOff();for(const k in G.P)G.P[k].spin=.5},
+  steps:[
+   {gesture:'tap',label:'はじく',target:()=>plC('root'),until:()=>on()&&G.pushes>=1,text:'**根の皿をタップ** ではじく。皿の回転＝働きの強さ（根＝**水を吸う**）',praise:'回った！'},
+   {gesture:'tap',label:'はじく',target:()=>plC('leaf'),until:()=>on()&&G.pushes>=2&&G.P.leaf.spin>.6,text:'**葉の皿** も。綱の **青い粒＝水**（根→葉）、**ピンクの粒＝養分**（葉→根）',praise:'つながった！'},
+   {gesture:'swipe',label:'スワイプ',target:()=>plC('leaf'),dir:'right',dist:120,until:()=>on()&&G.swiped>=1,text:'皿の上で **スワイプ** すると、タップより 速く回る',praise:false},
+   {gesture:'tap',label:'予兆',target:()=>plC('root'),onEnter:()=>{if(on()){G.tutOmen=1.2;G.P.root.spin=Math.min(G.P.root.spin,.5)}},until:()=>on()&&(G.P.root.spin>=READ||G.tutRead),
+    text:'大きな太陽＝**日照り** の予兆。土がかわいて **根** が水を吸いにくくなる。先に **根の皿** を 赤い線より上まで回す',praise:false},
+   {gesture:'tap',label:'立て直し',target:()=>plC('leaf'),onEnter:()=>{if(on()){if(!G.tutRead)tutRead();setTimeout(()=>{if(on()&&G.state==='tut'){plateFall('leaf');G.tutFell=1}},2200)}},until:()=>on()&&G.tutFixed,
+    text:'皿が落ちると 株がしおれる。**止まった皿（葉）をタップ** して立て直す',praise:false}
+  ],
+  onClear:()=>{if(!SV.tut){SV.tut=1;save()}},
+  onExit:res=>{if(res.replaced||res.stopped)return;if(G)G.gtut=0;SV.tut=1;save();if(SV.stage===0)startStage(0);else openMap()}};
+ HELP=GD.help({title:'みどりの皿回し',
+  rules:['皿を **タップ／スワイプ** ではじいて回す（指2本で同時にもOK）。手の判子を使い切ると 少し待つ',
+   '根＝**水を吸う**、茎＝**運ぶ**（道管・師管）、葉＝**養分をつくる**。成長は いちばん弱い働きで決まる',
+   '1まいだけ速く回しても、材料が届かずに すぐ落ちる',
+   '予兆を読む：**ひび・太陽**＝日照り→根／**雲**＝日かげ→葉／**つぼみ**→茎。赤い線より上に回しておくと「読み当て」',
+   '皿が落ちたら、**足りなかった働きの皿** をタップして立て直す'],
+  onOpen:()=>{HPAUSE=true},onClose:()=>{HPAUSE=false},
+  replay:'tutorial',offset:hOff(),show:false,attention:true});
+ addEventListener('resize',()=>{if(HELP)HELP.update({offset:hOff()})});
+ GD.tutorialButton('#btnHow',()=>{actx();SV.name=$('nameIn').value.trim()||SV.name;save();SFX.taiko(0);GD.tutorial(PRACTICE)});
+}else{$('btnHow').hidden=true}
+function hOff(){return innerWidth>innerHeight*1.05?{x:128}:{x:0,y:62}}
+function startWithGuide(){
+ GD.intro({title:'第15回　みどりの皿回し',
+  learn:'葉・茎・根の働きは **つながっている**。どれか1つだけ強めても、植物全体は生きられない',
+  how:'根・茎・葉の皿を **タップ** ではじいて、どれも落とさずに回し続ける',gesture:'tap'}).then(()=>GD.tutorial(PRACTICE))}
+window.__sara={plC,get scene(){return scene},step:dt=>update(dt),push:k=>{if(G&&G.state==='diag'){diagAnswer(k);return}if(G&&(G.state==='run'||G.state==='tut'||G.state==='intro'))pushPlate(k,0,0)},get G(){return G},get SV(){return SV},startStage,startTest,openMap,diagAnswer,get R(){return R}};
 if(window.GAME_MODE==='test'){startTest()}else{showScene('title');initTitle()}
 if(document.fonts&&document.fonts.load){document.fonts.load('30px "Train One"').catch(()=>{})}
 requestAnimationFrame(frame);

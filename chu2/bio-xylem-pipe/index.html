@@ -174,7 +174,17 @@ body.land #testIn{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
 #qfb .mk{width:120px;height:120px}
 #qfb .ex{font-size:17px;line-height:1.7;max-width:560px;margin:8px 0 16px}
 #qfb .ex b{color:var(--red);font-weight:400}
-@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+/* 仕上げ 2026-09-28: ご褒美の演出 */
+body.port #timeBox{white-space:normal;line-height:1.3}
+#xflash{position:fixed;inset:0;pointer-events:none;z-index:48;background:#FBF7EA;opacity:0}
+#cv.shk{animation:xpshk .32s linear}
+@keyframes xpshk{0%,100%{transform:translate(0,0)}20%{transform:translate(-5px,3px)}40%{transform:translate(5px,-3px)}60%{transform:translate(-3px,-2px)}80%{transform:translate(3px,2px)}}
+.stars i{font-style:normal;display:inline-block;opacity:.25}
+.stars i.on{opacity:1;animation:xpstamp .4s cubic-bezier(.2,1.9,.4,1) both}
+@keyframes xpstamp{0%{transform:scale(2.8) rotate(-25deg)}100%{transform:scale(1) rotate(0)}}
+#btnStart{animation:xppulse 1.6s ease-in-out infinite}
+@keyframes xppulse{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}#cv.shk,.stars i.on,#btnStart{animation:none}}
 </style>
 </head>
 <body class="port">
@@ -190,6 +200,7 @@ body.land #testIn{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
    <div class="tBtns">
     <button class="lab red" id="btnStart">はじめる</button>
     <button class="lab" id="btnCont" hidden>つづきから</button>
+    <button class="lab sm" id="btnHow">あそびかた</button>
     <button class="lab sm" id="btnBookT" hidden>📖 図鑑</button>
    </div>
   </div>
@@ -235,7 +246,8 @@ body.land #testIn{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
  <button class="lab" id="back">もどる</button>
  <button id="mute">音 あり</button>
  <div id="telop"></div>
- <div id="ov" hidden><div id="ovIn"></div></div>
+ <div id="ov" hidden data-gd-pass><div id="ovIn"></div></div>
+ <div id="xflash"></div>
 </div>
 <script>/*@SUBMIT_CARD_BEGIN*/
 /* ==========================================================
@@ -1531,6 +1543,9 @@ window.ZUKAN_CARDS={"v": 1, "grade": "chu2", "name": "中2理科図鑑", "econom
       if(PASS_RE.test(String(t.id||''))||PASS_RE.test(typeof t.className==='string'?t.className:''))return true;
       if((t.tagName==='BUTTON'||t.tagName==='A'||t.getAttribute('role')==='button')&&/^\s*[◀←＜<]?\s*(もどる|戻る|一覧へ|とじる|閉じる|はい|いいえ|やめる|キャンセル|おと|音)/.test(t.textContent||''))return true}
       t=t.parentNode}return false}
+  /* 手ほどき中は、もどる等（passThru に当たる fixed/absolute のボタン）を暗幕・吹き出しより上へ出す。終わったら元に戻す */
+  function liftPass(){var out=[];try{var els=document.querySelectorAll('button,a,[role=button],[data-gd-pass]');for(var i=0;i<els.length;i++){var e=els[i];if(e.closest&&e.closest('.gd-root'))continue;if(e.classList&&e.classList.contains('gd-hbtn'))continue;if(!passThru(e))continue;var cs=getComputedStyle(e);if(cs.position!=='fixed'&&cs.position!=='absolute')continue;if(cs.display==='none'||cs.visibility==='hidden')continue;out.push([e,e.style.zIndex]);e.style.zIndex=String(Z+1)}}catch(_){}
+    return function(){for(var i=0;i<out.length;i++){out[i][0].style.zIndex=out[i][1]}}}
   function inGuide(t){if(passThru(t))return true;while(t&&t!==document){if(t.classList&&(t.classList.contains('gd-root')||t.classList.contains('gd-hbtn')))return true;t=t.parentNode}return false}
   function hexRGB(c){c=String(c||'').trim();var m;
     if((m=c.match(/^#([0-9a-f]{3})$/i)))return [0,1,2].map(function(i){return parseInt(m[1][i]+m[1][i],16)});
@@ -1871,7 +1886,7 @@ window.ZUKAN_CARDS={"v": 1, "grade": "chu2", "name": "中2理科図鑑", "econom
     if(!steps||!steps.length){resolveP({done:true,steps:0});return p}
     if(opt.key&&!opt.force&&sget('coach:'+opt.key)){resolveP({already:true});return p}
 
-    var root=mkRoot('gd-coach',opt.theme);root.setAttribute('aria-live','polite');
+    var root=mkRoot('gd-coach',opt.theme);root.setAttribute('aria-live','polite');var unlift=liftPass();
     var uid='gdm'+Math.random().toString(36).slice(2,8);
     root.innerHTML='<svg class="dim" aria-hidden="true"><defs><mask id="'+uid+'" maskUnits="userSpaceOnUse"><rect x="-10" y="-10" width="200%" height="200%" fill="#fff"/><g class="holes"></g></mask></defs>'+
       '<rect class="shade" x="-10" y="-10" width="200%" height="200%" style="fill:var(--gd-dim)" mask="url(#'+uid+')"/><g class="halos"></g><path class="arw"/><path class="arh"/><circle class="dest" r="0"/></svg>';
@@ -1919,6 +1934,7 @@ window.ZUKAN_CARDS={"v": 1, "grade": "chu2", "name": "中2理科図鑑", "econom
     };
     st.finish=function(res){
       if(st.finished)return;st.finished=true;
+      try{unlift()}catch(_){}
       if(st.evOff)st.evOff();
       delTick(tick);popLayer(layer);offPtr();window.removeEventListener('resize',onRs);
       if(res.done&&opt.key)sset('coach:'+opt.key,'1');
@@ -2232,6 +2248,7 @@ window.ZUKAN_CARDS={"v": 1, "grade": "chu2", "name": "中2理科図鑑", "econom
 <script>
 (function(){
 'use strict';
+/* xp-finish-2026-09-28 */
 const GAME_ID='bio-xylem-pipe',KOMA='chu2-seibutsu-13',SKEY='rika-zukan:chu2:game:'+GAME_ID+':v1';
 const $=id=>document.getElementById(id);
 const RM=!!(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches);
@@ -2505,7 +2522,7 @@ function hitZone(zs,x,y){let best=null,bd=1e9;for(const z of zs){if(z.rect){if(x
 
 /* ================= 画面切りかえ ================= */
 let scene='title';
-function show(id){['scTitle','scMap','scPlay','scTest'].forEach(k=>$(k).hidden=k!==id);scene={scTitle:'title',scMap:'map',scPlay:'play',scTest:'test'}[id];setBack()}
+function show(id){['scTitle','scMap','scPlay','scTest'].forEach(k=>$(k).hidden=k!==id);scene={scTitle:'title',scMap:'map',scPlay:'play',scTest:'test'}[id];setBack();if(HELP){if(scene==='play'||scene==='map')HELP.show();else HELP.hide()}}
 function setBack(){const b=$('back');const on=scene!=='title'||INHUB;b.classList.toggle('hide',!on||(scene==='test'&&window.GAME_MODE==='test'&&!INHUB));b.textContent=scene==='title'?'◀ 一覧へ':'◀ もどる'}
 function ovOpen(h){$('ovIn').innerHTML=h;$('ov').hidden=false;$('ovIn').scrollTop=0}
 function ovClose(){$('ov').hidden=true}
@@ -2514,6 +2531,7 @@ function setMute(){$('mute').textContent=SV.mute?'音 なし':'音 あり'}
 $('mute').onclick=()=>{actx();SV.mute=!SV.mute;save();setMute();SFX.tick()};
 $('back').onclick=()=>{actx();SFX.tick();
  if(scene==='title'){try{window.parent.postMessage({type:'rika-close-game'},'*')}catch(e){}return}
+ if(scene==='play'&&G&&G.tut){tutStop();G.paused=true;ovOpen('<h3 class="oh">れんしゅうを やめる？</h3><p class="op">れんしゅうは、表紙の「あそびかた」や「？」から いつでもできます。</p><div class="oBtns"><button class="lab red" id="bkY">目次へ</button><button class="lab" id="bkN">れんしゅうを つづける</button></div>');$('bkY').onclick=()=>{ovClose();G=null;openMap()};$('bkN').onclick=()=>{ovClose();if(GD)GD.tutorial(PRACTICE)};return}
  if(scene==='play'){if(G)G.paused=true;ovOpen('<h3 class="oh">目次へもどる</h3><p class="op">進み具合は保存されます。<br>いま掘っている図版は、次は はじめからになります。</p><div class="oBtns"><button class="lab red" id="bkY">目次へ</button><button class="lab" id="bkN">つづける</button></div>');$('bkY').onclick=()=>{ovClose();G=null;openMap()};$('bkN').onclick=()=>{ovClose();if(G)G.paused=false};return}
  if(scene==='test'){if(window.GAME_MODE==='test'){try{window.parent.postMessage({type:'rika-close-game'},'*')}catch(e){}return}ovOpen('<h3 class="oh">目次へもどる</h3><p class="op">確認テストの答えは まだ提出されていません。<br>進み具合（図版）は保存されています。</p><div class="oBtns"><button class="lab red" id="bkY">目次へ</button><button class="lab" id="bkN">つづける</button></div>');$('bkY').onclick=()=>{ovClose();T=null;$('qfb')&&$('qfb').remove();openMap()};$('bkN').onclick=ovClose;return}
  if(scene==='map'){show('scTitle');initTitle();return}};
@@ -2563,7 +2581,7 @@ function drawTitle(){const c=tctx;c.setTransform(DPR,0,0,DPR,0,0);const rs=mulbe
  c.fillStyle=COL.ink;c.font='italic 15px '+FONT;c.textAlign='right';c.fillText('Impatiens balsamina',W-28,H-26);c.font='13px '+FONT;c.fillText('図版 第十三　赤インクで染めた道管',W-28,H-46);
 }
 function titleFrame(dt){if(RM)return;TT+=dt;titleFrame.acc=(titleFrame.acc||0)+dt;if(titleFrame.acc>.08){titleFrame.acc=0;drawTitle()}}
-function initTitle(){if(window.PLAYER_NAME){$('nameIn').value=window.PLAYER_NAME;$('nameRow').hidden=true}else if(SV.name)$('nameIn').value=SV.name;
+function initTitle(){tutStop();if(window.PLAYER_NAME){$('nameIn').value=window.PLAYER_NAME;$('nameRow').hidden=true}else if(SV.name)$('nameIn').value=SV.name;
  const any=hasSave()&&(SV.clr.some(x=>x)||SV.stage>0);$('btnCont').hidden=!any;$('btnBookT').hidden=!Z();
  $('btnStart').textContent=any?'はじめから':'はじめる';titleResize()}
 let startArm=false;
@@ -2571,13 +2589,13 @@ $('btnStart').onclick=()=>{actx();SFX.page();SV.name=$('nameIn').value.trim();
  const any=hasSave()&&(SV.clr.some(x=>x)||SV.stage>0);
  if(any&&!startArm){startArm=true;$('btnStart').textContent='本当に はじめから？（記録が消える）';setTimeout(()=>{startArm=false;if(scene==='title')initTitle()},3500);return}
  if(startArm){const nm=SV.name,mu=SV.mute;SV=fresh();SV.name=nm;SV.mute=mu;startArm=false}
- save();startStage(0)};
+ save();buzz(10);if(GD)startWithGuide();else startStage(0)};
 $('btnCont').onclick=()=>{actx();SFX.page();SV.name=$('nameIn').value.trim()||SV.name;save();openMap()};
 $('btnBookT').onclick=()=>{try{Z().openBook()}catch(e){}};
 
 /* ================= 目次 ================= */
 function paperURL(){orient();const key=W+'x'+H;if(paperURL.k===key)return;paperURL.k=key;const d=DPR;DPR=1;const c=mkCanvas(W,H);paperRaw(c.getContext('2d'),W,H,21);DPR=d;const u='url('+c.toDataURL('image/jpeg',.85)+')';['scMap','scTest'].forEach(k=>{$(k).style.backgroundImage=u;$(k).style.backgroundSize='100% 100%';$(k).style.backgroundAttachment='local'})}
-function openMap(){show('scMap');G=null;paperURL();
+function openMap(){tutStop();show('scMap');G=null;paperURL();
  const lv=totalLeaves();$('mLeaves').textContent=lv;$('mScale').style.width=(lv/40*100)+'%';
  const box=$('plates');box.innerHTML='';
  STG.forEach((s,i)=>{const b=document.createElement('button');const lock=i>SV.stage;b.className='plate'+(lock?' lock':'')+(i===SV.stage&&!SV.clr[i]?' next':'');
@@ -2606,17 +2624,17 @@ function openSectBook(){
 
 /* ================= 本編 ================= */
 let G=null;
-function startStage(i){
+function startStage(i,tut){
  const s=STG[i];show('scPlay');ovClose();
  const specs=s.multi?s.multi.map(m=>Object.assign({wilt:s.wilt,inkMul:s.inkMul},m)):[s];
  const plants=specs.map((sp,k)=>build(sp,i*10+k+1));
  let ink=0;plants.forEach(pl=>{const st=steiner(pl);pl.opt=st;ink+=Math.ceil(st.total*(s.inkMul||1.4))+3});
- G={i,s,plants,cur:0,ink,ink0:ink,t:0,paused:false,over:false,combo:0,flowAcc:0,nearT:0,near:-1,trapT:0,parts:[],floats:[],idle:0,sect:null,dripT:0,bonkT:0,clearT:-1,firstDig:false,traps:0,score:0};
+ G={i,s,plants,cur:0,ink,ink0:ink,t:0,paused:false,over:false,combo:0,flowAcc:0,nearT:0,near:-1,trapT:0,parts:[],floats:[],idle:0,sect:null,dripT:0,bonkT:0,clearT:-1,firstDig:false,traps:0,score:0,tut:!!tut};
  $('tabs').hidden=!s.multi;$('sectBar').hidden=true;$('scPlay').classList.remove('sectOn');$('btnRedo').hidden=false;
  if(s.multi){$('tabs').innerHTML=plants.map((pl,k)=>'<button data-k="'+k+'">'+esc(pl.spec.name)+'</button>').join('');$('tabs').querySelectorAll('button').forEach(b=>b.onclick=()=>{G.cur=+b.dataset.k;SFX.page();layoutPlay();updTabs()})}
  $('capNo').textContent='第'+KAN[i]+'図';$('capName').textContent=(!LAND&&s.final)?'三株いっしょに':s.name;$('capSci').innerHTML=(s.final?'':'<i>'+esc(s.sci)+'</i>　')+esc(s.kind);
  layoutPlay();updHud();
- SFX.page();telop('第'+KAN[i]+'図　'+esc(s.name),s.tip,2600);
+ SFX.page();if(!tut)telop('第'+KAN[i]+'図　'+esc(s.name),s.tip,2600);
 }
 function curPl(){return G.plants[G.cur]}
 /* レイアウト */
@@ -2636,7 +2654,7 @@ function layoutPlay(){orient();DPR=dprNow();cv.width=Math.round(W*DPR);cv.height
   PL.panel=Pw;
  }else{const top=L.top,bot=L.bot;
   box($('capBox'),148,16,W-148-80);const iw=Math.max(70,Math.min((L.spare-34)/.9,W*.3,150));box($('insetBox'),10,top+2,iw+10);
-  box($('meter'),iw+28,top+4,W-iw-36);box($('noteBox'),iw+28,top+60,W-iw-36);
+  box($('meter'),iw+28,top+4,W-iw-36-(window.Guide?62:0));box($('noteBox'),iw+28,top+60,W-iw-36);
   box($('progBox'),12,H-bot+6,W-150);box($('btnRedo'),W-128,H-bot+10);box($('tabs'),12,H-54,W-24);$('tabs').style.flexDirection='row';
   $('trapMsg').style.top=(L.oy+L.fieldH*.5)+'px';$('trapMsg').style.left=(W/2)+'px';$('sectBar').style.top='64px';$('sectBar').style.left=(W/2)+'px';
   PL.panel=0;
@@ -2755,7 +2773,7 @@ function digAt(x,y){if(!G||G.paused||G.over||G.sect||G.clearT>=0)return;const pl
  let ok=false;for(const d of N8){const uu=u+d[0],vv=v+d[1];if(uu<0||vv<0||uu>=pl.NU||vv>=pl.NV)continue;const j=uu*pl.NV+vv;if(pl.dug[j]||pl.T[j]===WA){ok=true;break}}
  if(!ok)return;
  if(G.ink<=0){if(G.bonkT<=0){G.bonkT=.6;SFX.trap();showMsg('<b>墨が切れた</b>。「やり直す」で図版を はじめから')}return}
- pl.dug[i]=1;G.ink--;G.idle=0;G.firstDig=true;SFX.dig();
+ pl.dug[i]=1;if(!G.tut)G.ink--;G.idle=0;G.firstDig=true;SFX.dig();
  const p=toScr(pl,v+.5,u+.5);for(let k=0;k<4;k++)G.parts.push({x:p.x,y:p.y,vx:(Math.random()-.5)*90,vy:(Math.random()-.5)*90-30,t:0,life:.45,c:u<pl.S?'#8a7a55':COL.ink,r:1.5+Math.random()*1.5});
  G.nearT=0;updHud();
 }
@@ -2773,13 +2791,13 @@ function onWet(pl,n){const NV=pl.NV,u=(n/NV)|0,v=n%NV,t=pl.T[n];
  if(t===RH&&!SV.firsts.rh){SV.firsts.rh=1;save();ruleTelop('水は 根毛から入った','根毛は 根の先の近くにある細い毛')}
  if(t===LE){const lf=pl.leaves.find(l=>l.u===u&&l.v===v);if(lf&&!lf.watered)leafDone(pl,lf)}
  if(G.dripT<=0){SFX.drip();G.dripT=.11}}
-function trapAt(pl,n,msg){pl.trap[n]=1;pl.traps++;G.traps++;SV.traps++;save();G.combo=0;SFX.trap();
+function trapAt(pl,n,msg){pl.trap[n]=1;pl.traps++;G.traps++;SV.traps++;save();comboBreak(G.combo);G.combo=0;SFX.trap();buzz([12,40,12]);
  const u=(n/pl.NV)|0,v=n%pl.NV;const p=toScr(pl,v+.5,u+.5);G.floats.push({x:p.x,y:p.y-14,t:0,txt:'✕ '+msg[0],c:COL.red,s:15});
  showMsg('<b>'+msg[0]+'</b>　'+msg[1]);if(G.s.i===4||G.s.yama){}}
 function showMsg(h){const m=$('trapMsg');m.innerHTML=h;m.classList.add('on');clearTimeout(showMsg.h);showMsg.h=setTimeout(()=>m.classList.remove('on'),3600)}
 function ruleTelop(a,b){telop(a,b,2200);SFX.blot()}
 function leafDone(pl,lf){lf.watered=true;lf.wt=0;G.combo++;SV.maxCombo=Math.max(SV.maxCombo,G.combo);const pts=10*(1+Math.min(G.combo-1,5)*.5);G.score+=pts;
- SFX.leaf();const p=toScr(pl,lf.v+.5,lf.u+.5);
+ SFX.leaf();const p=toScr(pl,lf.v+.5,lf.u+.5);leafFx(p,G.combo);
  for(let k=0;k<16;k++){const a=Math.random()*Math.PI*2;G.parts.push({x:p.x,y:p.y,vx:Math.cos(a)*140,vy:Math.sin(a)*140,t:0,life:.8,c:k%3?COL.red:'#8FA870',r:2+Math.random()*2})}
  for(let k=0;k<3;k++)G.parts.push({x:p.x,y:p.y,vx:(k-1)*16,vy:-40-k*10,t:0,life:1.6,vap:1,r:5});
  G.floats.push({x:p.x,y:p.y-26,t:0,txt:'葉に届いた！'+(G.combo>1?'　連続×'+G.combo:''),c:COL.red,s:18});
@@ -2821,7 +2839,7 @@ function fail(pl,why){G.over=true;SFX.trap();const r=remain(pl);
 $('btnRedo').onclick=()=>{if(!G||G.sect)return;actx();SFX.page();if(G.clearT>=0)return;startStage(G.i)};
 
 /* ---- クリアと切片 ---- */
-function stageClear(){const g=G,i=g.i;SFX.fan();
+function stageClear(){const g=G,i=g.i;if(GD)GD.celebrate(g.tut?'葉まで とどいた！':'第'+KAN[i]+'図　完成！');else SFX.fan();xflash();buzz([20,40,30]);
  const traps=g.traps,inkL=g.ink/g.ink0;const stars=1+(traps===0?1:0)+(inkL>=.25?1:0);
  telop('全部の葉に 水が届いた！',traps===0?'むだなく一度も止めずに':'',2000);
  if(traps===0){earn(10,'first-try')}
@@ -2839,17 +2857,19 @@ function sectTap(x,y){const s=G.sect;if(s.rev>=0||s.marks.length>=s.need)return;
  s.marks.push({x,y,k:z?z.k:'o'});SFX.pin();if(s.marks.length>=s.need)setTimeout(()=>{if(G&&G.sect===s){s.rev=0;SFX.cut()}},450)}
 function sectUpdate(dt){const s=G.sect;s.t+=dt;if(s.rev>=0){const was=s.rev;s.rev+=dt;
  if(was<1.3&&s.rev>=1.3){const ok=s.marks.filter(m=>m.k==='x').length;const all=ok===s.need;
-  if(all){SFX.fan();earn(15,'hit')}else SFX.blot();
+  if(all){SFX.fan();earn(15,'hit');xflash();if(GD)GD.cheer('予想どおり！',{x:W/2,y:H*.3,size:1.1,sparks:24,sound:false})}else SFX.blot();
+  if(G.tut&&GD)setTimeout(()=>GD.tutorialClear(),700);
   SV.sect[G.i]=1;save();
   $('sectBar').innerHTML='<div style="background:var(--paper2);display:inline-block;padding:6px 12px;border:1px solid var(--red)">'+(all?'<b>予想どおり！</b>　':'<b>'+ok+' / '+s.need+'</b> 当たり。')+SECTINFO[s.type].res+'</div>';
   setTimeout(()=>{if(G&&G.sect===s)resultCard()},2300)}}}
 function resultCard(){const g=G,r=g.res,i=g.i;const s=g.sect;const ok=s?s.marks.filter(m=>m.k==='x').length:0;
- ovOpen('<h3 class="oh">第'+KAN[i]+'図　'+esc(g.s.name)+'　採集</h3><div class="stars">'+'★'.repeat(r.stars)+'<s>'+'★'.repeat(3-r.stars)+'</s></div>'+
+ ovOpen('<h3 class="oh">第'+KAN[i]+'図　'+esc(g.s.name)+'　採集</h3><div class="stars" id="xpS"><i>★</i><i>★</i><i>★</i></div>'+
   '<div class="oStats"><span>葉に届いた</span><span>'+LEAVES_PER[i]+'枚 ／ 全部</span><span>止まった所</span><span>'+r.traps+'か所'+(r.traps?'':'（なし）')+'</span><span>墨の残り</span><span>'+Math.round(r.inkL*100)+'%</span><span>切片の予想</span><span>'+ok+' / '+(s?s.need:0)+'</span><span>採集点</span><span>'+r.score+'</span></div>'+
   '<p class="op" style="font-size:14px">★ 全部の葉に届けた　★ 一度も止めなかった　★ 墨を4分の1以上のこした</p><canvas id="rcv" style="width:100%;max-width:360px;display:block;margin:6px auto"></canvas>'+
   '<div class="oBtns"><button class="lab red" id="rN">次の図版へ</button><button class="lab sm" id="rM">目次へ</button>'+(Z()?'<button class="lab sm" id="rGa">図鑑ガチャ</button>':'')+'</div>');
  const cn=$('rcv');const w=Math.min(360,innerWidth*.8),h=w*.6;cn.style.height=h+'px';cn.width=w*DPR;cn.height=h*DPR;const c=cn.getContext('2d');c.setTransform(DPR,0,0,DPR,0,0);c.fillStyle=COL.paper;c.fillRect(0,0,w,h);const t=g.s.sect;
  if(t==='leafP'||t==='leafN')drawSec(c,t,w/2,h/2,w*.36,{red:1,labels:1});else if(t==='long')drawSec(c,t,w/2,h/2+6,h*.3,{red:1,labels:1});else drawSec(c,t,w/2,h/2,h*.42,{red:1,line:t==='scatter'?[-.55,.1,.6]:null});
+ [...$('xpS').children].forEach((e,k)=>{if(k<r.stars)setTimeout(()=>{e.classList.add('on');harp(523*Math.pow(1.26,k),0,.06);tone(90,.2,'sine',.12);buzz(18);if(GD)GD.cheer('★',{target:e,size:.7,sound:false,sparks:12})},500+k*420)});
  $('rN').onclick=()=>{ovClose();startStage(Math.min(i+1,STG.length-1))};$('rM').onclick=()=>{ovClose();openMap()};const ga=$('rGa');if(ga)ga.onclick=()=>{try{Z().openGacha()}catch(e){}};
  G.paused=true}
 function finalClear(){SV.done=true;save();const g=G;g.paused=true;
@@ -2946,14 +2966,74 @@ function finishTest(){const qs=T.qs,answers=T.ans;const review=Quiz.review(qs,an
 /* ================= ループ ================= */
 let last=performance.now();
 function frame(now){const dt=Math.min(.05,Math.max(0,(now-last)/1000));last=now;
- try{if(scene==='play'&&G){if(!G.paused&&!(G.over&&!G.sect))update(dt);else if(G.over&&G.clearT>=0)update(dt);render()}else if(scene==='title')titleFrame(dt)}catch(e){console.error(e)}
+ try{if(scene==='play'&&G){if(HPAUSE){}else if(!G.paused&&!(G.over&&!G.sect))update(dt);else if(G.over&&G.clearT>=0)update(dt);render()}else if(scene==='title')titleFrame(dt)}catch(e){console.error(e)}
  requestAnimationFrame(frame)}
 let rsT=null;addEventListener('resize',()=>{clearTimeout(rsT);rsT=setTimeout(()=>{orient();if(scene==='title')titleResize();else if(scene==='play'&&G)layoutPlay()},120)});
 /* ================= はじまり ================= */
 window.GAME_ID=GAME_ID;
 try{window.Zukan&&Zukan.setup({game:GAME_ID,koma:[KOMA]})}catch(e){}
 orient();setMute();
-window.__xp={get G(){return G},get SV(){return SV},startStage,startTest,openMap,steiner,remain,
+
+/* ===== ご褒美の演出（ルール11／仕上げ 2026-09-28 xp-finish） ===== */
+const CSTG=[3,5,8];
+function buzz(p){try{navigator.vibrate&&navigator.vibrate(p)}catch(e){}}
+function xflash(){if(RM)return;const f=$('xflash');f.style.transition='none';f.style.opacity=.6;requestAnimationFrame(()=>{f.style.transition='opacity .7s';f.style.opacity=0})}
+function shake(){if(RM)return;const c=$('cv');c.classList.remove('shk');void c.offsetWidth;c.classList.add('shk')}
+function leafFx(p,c){shake();buzz(c>1?[18,30,18,30,18]:[16,30,16]);const f=Math.pow(2,Math.min(c-1,8)*2/12);[784,988,1175].forEach((x,k)=>tone(x*f,.35,'triangle',.05,.25+k*.06));
+ if(!GD)return;const big=c>=CSTG[1],mid=c>=CSTG[0];
+ GD.cheer(c>1?'連続 ×'+c+(c>=CSTG[2]?'　名園丁！':big?'　見事な通り道！':mid?'　いい流れ！':''):'とどいた！',{x:p.x,y:p.y-60,size:.8+Math.min(c,8)*.08,sparks:mid?24:14,sound:false});
+ if(CSTG.includes(c)){xflash();setTimeout(()=>SFX.fan(),200)}}
+function comboBreak(c){if(!G||c<1)return;const nx=CSTG.find(k=>k>c);if(!nx||nx-c>2)return;setTimeout(()=>{if(G)G.floats.push({x:W/2,y:H*.5,t:0,txt:'あと'+(nx-c)+'枚で 連続×'+nx+' だった！',c:COL.red,s:18})},500)}
+
+/* ===== 遊び方案内（Guide・制作ルール13／仕上げ 2026-09-28） ===== */
+var GD=window.Guide||null,HELP=null,PRACTICE=null,HPAUSE=false;
+function tutStop(){if(G&&G.tut){G.tut=false;if(GD)GD.tutorialEnd()}}
+/* 第一図のいちばん短い通り道を 4つの区切りに分けて、1手ずつ見せる */
+function tutSeg(k){if(!G)return [];const pl=G.plants[0],NV=pl.NV,p0=pl.opt.paths[0]||[],p1=pl.opt.paths[1]||[];
+ const iRH=p0.findIndex(i=>pl.T[i]===RH),lf=pl.leaves.find(l=>l.u*NV+l.v===p0[p0.length-1]);const iBr=lf?p0.findIndex(i=>((i/NV)|0)===lf.u):p0.length-1;
+ const seg=k===0?p0.slice(0,iRH+1):k===1?p0.slice(Math.max(0,iRH),iBr+1):k===2?p0.slice(Math.max(0,iBr)):p1;return seg}
+function segPts(k){if(!G)return [];const pl=G.plants[0],NV=pl.NV;let seg=tutSeg(k);
+ if(k===0){const w=(pl.spec.pockets||[])[0];if(w)seg=[w[1]*NV+w[3]].concat(seg)}
+ if(k===3&&seg.length){const c=seg[0],cu=(c/NV)|0,cv=c%NV;let prev=-1;for(const d of N8){const j=(cu+d[0])*NV+cv+d[1];if(pl.dug[j]){prev=j;break}}if(prev>=0)seg=[prev].concat(seg)}
+ return seg.map(i=>{const p=toScr(pl,i%NV+.5,((i/NV)|0)+.5);return {x:p.x,y:p.y}})}
+function segEnd(k){const P=segPts(k);const q=P[P.length-1]||{x:W/2,y:H/2};return {x:q.x,y:q.y,r:Math.max(24,G?G.plants[0].lay.cs*.9:24)}}
+function segHead(k){const P=segPts(k);const q=P[0]||{x:W/2,y:H/2};return {x:q.x,y:q.y,r:Math.max(24,G?G.plants[0].lay.cs*.9:24)}}
+function segWet(k){if(!G)return false;const pl=G.plants[0],seg=tutSeg(k);return seg.length>0&&!!pl.wet[seg[seg.length-1]]}
+function sectZone(){const s=G&&G.sect;if(!s||!s.zones||!s.zones.length)return {x:W/2,y:H/2,r:40};const xs=s.zones.filter(z=>z.k==='x'&&!s.marks.some(m=>Math.hypot(m.x-z.x,m.y-z.y)<z.r));const z=xs[0]||s.zones[0];return {x:z.x,y:z.y,r:Math.max(22,z.r*1.3)}}
+if(GD){
+ GD.setup({theme:{bg:'#FBF7EA',fg:'#3E4A3D',accent:'#C0392B',accentText:'#FBF7EA',font:'"Sawarabi Mincho",serif',bodyFont:'"Sawarabi Mincho",serif',
+   radius:0,texture:'paper',line:'#3E4A3D',dim:'rgba(62,74,61,.34)',shadow:'4px 6px 0 rgba(62,74,61,.15)',outline:'#FBF7EA',hand:'#FBF7EA',handLine:'#3E4A3D'},
+  sfx:k=>{actx();({step:()=>SFX.pin(),done:()=>SFX.blot(),clear:()=>SFX.fan(),open:()=>SFX.page(),close:()=>SFX.tick(),cheer:()=>SFX.pin(),nudge:()=>SFX.tick()}[k]||(()=>SFX.tick()))()},
+  muted:()=>SV.mute});
+ const on=()=>scene==='play'&&G&&G.tut;
+ PRACTICE={label:'れんしゅう中',clearText:'れんしゅうクリア！',clearOn:'manual',
+  start:()=>{ovClose();startStage(0,true)},
+  steps:[
+   {gesture:'draw',label:'掘る',target:()=>segHead(0),path:()=>segPts(0),until:()=>on()&&segWet(0),text:'赤い色水の水たまりから **根毛** まで、指で **なぞって掘る**。水は根毛から入る',praise:'根毛に入った！'},
+   {gesture:'draw',label:'道管',target:()=>segHead(1),path:()=>segPts(1),until:()=>on()&&segWet(1),text:'根の中心の **道管** をたどって、茎の道管（**水色**の管）を上へ掘る',praise:'茎を上がった！'},
+   {gesture:'draw',label:'葉へ',target:()=>segHead(2),path:()=>segPts(2),until:()=>on()&&segWet(2),text:'葉のつけ根で横へ。葉脈の **表側** の道管を通って **葉まで**',praise:false},
+   {gesture:'draw',label:'もう1枚',target:()=>segHead(3),path:()=>segPts(3),until:()=>on()&&G.plants[0].leaves.every(l=>l.watered),text:'反対側の葉にも。**掘った道の途中から** 分かれてよい',praise:false},
+   {gesture:'tap',label:'切片',target:sectZone,until:()=>on()&&G.sect&&G.sect.marks.length>=G.sect.need,text:'色水を吸った茎を輪切りにした。赤く染まる **道管** だと思う所を **タップ** して しるし',praise:false}
+  ],
+  onClear:()=>{if(!SV.firsts.tut){SV.firsts.tut=1;save()}},
+  onExit:res=>{if(G&&!res.cleared&&!res.stopped&&!res.replaced)G.tut=false}};
+ HELP=GD.help({title:'道管パイプライン',
+  rules:['指で **なぞって** 土や植物の体を掘る。色水は掘った所だけを流れる',
+   '水の入り口は **根毛**（根の先の近く）。茎の表面からは入らない',
+   '通れるのは **道管** だけ。茎では維管束の **中心側**、葉脈では **表側**',
+   '師管・茎の中心・根毛の無い所を掘ると、そこで水が止まる（✕）',
+   '墨（掘れる量）が切れる前に、しおれる前に、全部の葉へ'],
+  onOpen:()=>{HPAUSE=true},onClose:()=>{HPAUSE=false},
+  replay:'tutorial',offset:hOff(),show:false,attention:true});
+ addEventListener('resize',()=>{if(HELP)HELP.update({offset:hOff()})});
+ GD.tutorialButton('#btnHow',()=>{actx();SFX.page();SV.name=$('nameIn').value.trim()||SV.name;save();GD.tutorial(PRACTICE)});
+}else{$('btnHow').hidden=true}
+function hOff(){return innerWidth>innerHeight*1.05?{x:86}:{x:0,y:56}}
+function startWithGuide(){
+ GD.intro({title:'第13回　道管パイプライン',
+  learn:'水は **根毛** から入り、根・茎・葉の **道管** だけを通って葉まで上がる',
+  how:'指で **なぞって掘り**、赤い色水を葉まで届ける',gesture:'draw'}).then(()=>GD.tutorial(PRACTICE))}
+window.__xp={segPts,segHead,segWet,sectZone,get scene(){return scene},get G(){return G},get SV(){return SV},startStage,startTest,openMap,steiner,remain,
  cellXY(u,v,k){const pl=G.plants[k==null?G.cur:k];return toScr(pl,v+.5,u+.5)},
  path(k){const pl=G.plants[k==null?G.cur:k];return pl.opt.paths.map(p=>p.map(i=>[(i/pl.NV)|0,i%pl.NV]))},
  solve(){G.plants.forEach(pl=>{pl.opt.paths.flat().forEach(i=>{pl.dug[i]=1})})}};

@@ -191,6 +191,21 @@ body.port #map .mtop{left:12px;top:calc(62px + env(safe-area-inset-top))}
 .pop.r{color:var(--r);text-shadow:0 0 8px rgba(255,122,85,.5),0 0 2px #000;font-size:22px}
 .pop.huge{font-size:52px}
 @keyframes pop{0%{transform:translate(-50%,-30%) scale(.6);opacity:0}12%{transform:translate(-50%,-50%) scale(1.08);opacity:1}25%{transform:translate(-50%,-50%) scale(1)}80%{opacity:1}100%{transform:translate(-50%,-120%);opacity:0}}
+/* 仕上げ 2026-09-28（kn7-finish-2026-09-28）: 手ざわり・フラッシュ・弾む数字・★のドン */
+.b{transition:transform .07s}
+.b:active{transform:translateY(2px) scale(.96)}
+#bPlace:active{transform:translateY(2px) scale(.97)}
+#flash{position:absolute;inset:0;pointer-events:none;z-index:26;background:#9BFFB0;opacity:0;mix-blend-mode:screen}
+.ptx{position:absolute;z-index:27;transform:translate(-50%,-50%);pointer-events:none;font:700 36px var(--fm);color:var(--a);text-shadow:0 0 12px rgba(255,176,0,.8),0 0 2px #000;animation:ptx 1.15s cubic-bezier(.2,1.6,.4,1) forwards;white-space:nowrap}
+@keyframes ptx{0%{opacity:0;transform:translate(-50%,-30%) scale(.3)}18%{opacity:1;transform:translate(-50%,-80%) scale(1.5)}32%{transform:translate(-50%,-90%) scale(1)}100%{opacity:0;transform:translate(-50%,-220%) scale(1)}}
+.stp{display:inline-block;font-style:normal;opacity:0;transform:scale(2.6) rotate(-18deg);color:rgba(155,255,176,.25)}
+.stp.in{opacity:1;transform:none;transition:transform .3s cubic-bezier(.2,1.9,.4,1),opacity .1s}
+.stp.in.got{color:var(--a);text-shadow:0 0 14px rgba(255,176,0,.9)}
+body.gdhold .gd-coach,body.gdhold .gd-band{visibility:hidden}
+body:has(.gd-band) #bBack{z-index:2147482608!important} /* れんしゅう中も「もどる」は吹き出しより上 */
+body.port .gd-band{top:calc(98px + env(safe-area-inset-top))!important}
+#stats .gd-hbtn{--gd-hs:40px!important}
+@media (prefers-reduced-motion:reduce){.stp{opacity:1;transform:none}.ptx{animation:pf 1.4s forwards}}
 @media (prefers-reduced-motion:reduce){.pop{animation:pf 1.8s forwards}@keyframes pf{0%,80%{opacity:1}100%{opacity:0}}#tele .rec{animation:none}}
 </style></head><body>
 <div id="app">
@@ -207,6 +222,7 @@ body.port #map .mtop{left:12px;top:calc(62px + env(safe-area-inset-top))}
       <label class="namer" id="nameRow"><span>パイロット名</span><input id="nameIn" maxlength="16" placeholder="（空でも飛べる）" autocomplete="off"></label>
       <button class="b a big" id="bStart">▶ 離陸する（はじめる）</button>
       <button class="b hidden" id="bCont">▶ つづきから</button>
+      <button class="b" id="bHow">▶ あそびかた（れんしゅう）</button>
       <div class="row"><button class="b s" id="bSnd1">音 ON</button><button class="b s" id="bCat1">観測器図鑑</button><button class="b s zk" id="bBook1">📖 図鑑</button></div>
     </div>
   </div>
@@ -243,6 +259,7 @@ body.port #map .mtop{left:12px;top:calc(62px + env(safe-area-inset-top))}
   <div id="conf" class="scr hidden pe"><div class="pnw"><div class="pnh">RTH ▸ RETURN TO HOME</div><h2 id="cfH">もどりますか？</h2><p id="cfP">進み具合は保存されます。</p><div class="btns"><button class="b a" id="cfGo">もどる</button><button class="b" id="cfNo">つづける</button></div></div></div>
   <div id="test" class="scr hidden"><div class="pnw"><div id="tbox"></div></div></div>
   <div id="pops"></div>
+  <div id="flash"></div>
 </div>
 
 <script>/*@SUBMIT_CARD_BEGIN*/
@@ -1532,7 +1549,17 @@ window.ZUKAN_CARDS={"v": 1, "grade": "chu2", "name": "中2理科図鑑", "econom
   function vib(ms){try{if(navigator.vibrate)navigator.vibrate(ms)}catch(e){}}
   function el(tag,cls,html){var d=document.createElement(tag);if(cls)d.className=cls;if(html!=null)d.innerHTML=html;return d}
   function rm(d){if(d&&d.parentNode)d.parentNode.removeChild(d)}
-  function inGuide(t){while(t&&t!==document){if(t.classList&&(t.classList.contains('gd-root')||t.classList.contains('gd-hbtn')))return true;t=t.parentNode}return false}
+  /* れんしゅう中の「指以外は押せない」でも、もどる・確認ダイアログ・音量などは常に押せるようにする（2026-09-28・ルール10）
+     ゲーム側で確実に通したい要素には data-gd-pass を付ける */
+  var PASS_RE=/(^|[-_\s])(back|modoru|return|home|exit|mute|sound|confirm|dialog|modal)([-_\s]|$)/i;
+  function passThru(t){var n=0;while(t&&t!==document&&n<8){n++;if(t.nodeType===1){if(t.hasAttribute('data-gd-pass')||t.tagName==='DIALOG'||t.getAttribute('role')==='dialog'||t.getAttribute('aria-modal')==='true')return true;
+      if(PASS_RE.test(String(t.id||''))||PASS_RE.test(typeof t.className==='string'?t.className:''))return true;
+      if((t.tagName==='BUTTON'||t.tagName==='A'||t.getAttribute('role')==='button')&&/^\s*[◀←＜<]?\s*(もどる|戻る|一覧へ|とじる|閉じる|はい|いいえ|やめる|キャンセル|おと|音)/.test(t.textContent||''))return true}
+      t=t.parentNode}return false}
+  /* 手ほどき中は、もどる等（passThru に当たる fixed/absolute のボタン）を暗幕・吹き出しより上へ出す。終わったら元に戻す */
+  function liftPass(){var out=[];try{var els=document.querySelectorAll('button,a,[role=button],[data-gd-pass]');for(var i=0;i<els.length;i++){var e=els[i];if(e.closest&&e.closest('.gd-root'))continue;if(e.classList&&e.classList.contains('gd-hbtn'))continue;if(!passThru(e))continue;var cs=getComputedStyle(e);if(cs.position!=='fixed'&&cs.position!=='absolute')continue;if(cs.display==='none'||cs.visibility==='hidden')continue;out.push([e,e.style.zIndex]);e.style.zIndex=String(Z+1)}}catch(_){}
+    return function(){for(var i=0;i<out.length;i++){out[i][0].style.zIndex=out[i][1]}}}
+  function inGuide(t){if(passThru(t))return true;while(t&&t!==document){if(t.classList&&(t.classList.contains('gd-root')||t.classList.contains('gd-hbtn')))return true;t=t.parentNode}return false}
   function hexRGB(c){c=String(c||'').trim();var m;
     if((m=c.match(/^#([0-9a-f]{3})$/i)))return [0,1,2].map(function(i){return parseInt(m[1][i]+m[1][i],16)});
     if((m=c.match(/^#([0-9a-f]{6})/i)))return [0,2,4].map(function(i){return parseInt(m[1].substr(i,2),16)});
@@ -1872,7 +1899,7 @@ window.ZUKAN_CARDS={"v": 1, "grade": "chu2", "name": "中2理科図鑑", "econom
     if(!steps||!steps.length){resolveP({done:true,steps:0});return p}
     if(opt.key&&!opt.force&&sget('coach:'+opt.key)){resolveP({already:true});return p}
 
-    var root=mkRoot('gd-coach',opt.theme);root.setAttribute('aria-live','polite');
+    var root=mkRoot('gd-coach',opt.theme);root.setAttribute('aria-live','polite');var unlift=liftPass();
     var uid='gdm'+Math.random().toString(36).slice(2,8);
     root.innerHTML='<svg class="dim" aria-hidden="true"><defs><mask id="'+uid+'" maskUnits="userSpaceOnUse"><rect x="-10" y="-10" width="200%" height="200%" fill="#fff"/><g class="holes"></g></mask></defs>'+
       '<rect class="shade" x="-10" y="-10" width="200%" height="200%" style="fill:var(--gd-dim)" mask="url(#'+uid+')"/><g class="halos"></g><path class="arw"/><path class="arh"/><circle class="dest" r="0"/></svg>';
@@ -1920,6 +1947,7 @@ window.ZUKAN_CARDS={"v": 1, "grade": "chu2", "name": "中2理科図鑑", "econom
     };
     st.finish=function(res){
       if(st.finished)return;st.finished=true;
+      try{unlift()}catch(_){}
       if(st.evOff)st.evOff();
       delTick(tick);popLayer(layer);offPtr();window.removeEventListener('resize',onRs);
       if(res.done&&opt.key)sset('coach:'+opt.key,'1');
@@ -2232,6 +2260,7 @@ window.ZUKAN_CARDS={"v": 1, "grade": "chu2", "name": "中2理科図鑑", "econom
 /*@ZUKAN_END*/</script>
 <script>
 'use strict';
+/* kn7-finish-2026-09-28 */
 const GID='kisho-kansokujo',KOMA='chu2-kisho-07',SKEY='rika-zukan:chu2:game:'+GID+':v1',SEAL_KEY='rika-zukan:chu2:seal:'+KOMA;
 const UNIT='中2理科　気象とその変化　第7回',GTITLE='観測ドローン ～観測の計画～';
 const TEST_ONLY=window.GAME_MODE==='test';
@@ -2488,13 +2517,13 @@ function nextStep(){if(!M)return;const st=M.def.steps[M.si++];M.step=st;pClose()
 function tele(){if(!M){$('#tele').innerHTML='';return}const d=M.def;$('#tele').innerHTML='<span class="no">依頼'+d.no+'</span> ｜ '+esc(d.name)+' ｜ <span id="clk">'+fmtT(M.run&&M.run.t!=null?M.run.t%24:tView)+'</span> <span class="rec">● REC</span>'}
 function starsOf(){const x=M.tries;return x===0?3:x<=2?2:1}
 const STEP={
- brief(){const d=M.def;M.graph=null;panel('REQUEST '+d.no+' ▸ 依頼人: '+esc(d.cl),'<h2>'+esc(d.name)+'</h2><p>'+d.ask+'</p><p class="tip">'+d.tip+'</p>'+(d.guide?'<p class="sm">操作: 左下のスティックで移動／右の<b>高さのつまみ</b>を上下／止まって<b>「設置」を長押し</b>。キーボードなら 矢印・R/F（高さ）・スペース。</p>':''),[['▶ 受ける','a big',()=>nextStep()]])},
+ brief(){const d=M.def;M.graph=null;panel('REQUEST '+d.no+' ▸ 依頼人: '+esc(d.cl),'<h2>'+esc(d.name)+'</h2><p>'+d.ask+'</p><p class="tip">'+d.tip+'</p>'+(d.guide&&!GD?'<p class="sm">操作: 左下のスティックで移動／右の<b>高さのつまみ</b>を上下／止まって<b>「設置」を長押し</b>。キーボードなら 矢印・R/F（高さ）・スペース。</p>':''),[['▶ 受ける','a big',()=>nextStep()]])},
  trap(){M.graph={type:'trap'};panel('DELIVERY ▸ さっきの記録','<h2>この記録を納品する？</h2><p>依頼01で測った<b>10:00の1回</b>だけの記録（'+f1(Tsun(10))+'℃）。</p>',[['▶ 納品してみる','a',()=>{sfx.stamp();M.graph.stamp='差し戻し';setTimeout(()=>{sfx.reject();panel('DELIVERY ▸ 差し戻し','<h2>差し戻されました</h2><p class="tip">点が1つでは、気温が<b>いつ・どう変わったか</b>は分からない。<br>決めた間隔で、決めた期間、<b>測り続ける</b>計画が要る。</p>',[['▶ 計画を立てる','a big',()=>nextStep()]])},500)}]])},
  shop(){const need=(M.def.need||[]).filter(id=>!S.owned[id]);if(!need.length){nextStep();return}openShop(need,()=>nextStep())},
  equip(){openEquip()},
  dial(){openDial(M.def.dial||M.purp.dial,res=>{if(res.ok)nextStep()})},
  place(){M.pi=0;M.graph=null;if(!D.carry)D.carry=M.def.place[0].inst||M.carryList&&M.carryList[0]||'thermo';if(M.def.final)D.carry='thermo';
-  hudOn(true);setHint();if(M.def.guide){log('スティックで移動。右の<b>つまみ</b>で高さを決める');log('日かげで、高さ1.5mにして「設置」を長押し','a')}},
+  hudOn(true);setHint();if(M.def.guide&&!M.tut){log('スティックで移動。右の<b>つまみ</b>で高さを決める');log('日かげで、高さ1.5mにして「設置」を長押し','a')}},
  spot(){M.graph={type:'old',marks:{}};panel('DATA ▸ 前の係の記録','<h2>不自然な点をタップ</h2><p>晴れの日に1時間ごとに測った気温。<b>前後とつながらない点</b>を、グラフの上でタップしよう。</p>',[])},
  run(){startRun()},
  deliver(){deliver()},
@@ -2536,7 +2565,7 @@ function openEquip(){const def=M.def,e=def.equip,ids=Object.keys(S.owned).filter
 
 /* ===== 時計（間隔と期間） ===== */
 let DL=null;
-function openDial(rule,cb){DL={rule,cb,iv:3,pe:1,drag:null,firstFail:false};$('#dial').classList.remove('hidden');$('#dialQ').innerHTML=M.def.final?esc(M.purp.t):esc(M.def.name);drawDial()}
+function openDial(rule,cb){DL={rule,cb,iv:3,pe:1,drag:null,firstFail:false};$('#dial').classList.remove('hidden');$('#dialQ').innerHTML=M.def.final?esc(M.purp.t):esc(M.def.name);drawDial();if(GD)setTimeout(dialCoach,350)}
 const IVA=i=>(-135+i*54)*D2R,PEA=i=>(-150+i*50)*D2R;
 function drawDial(){const s=$('#dsv');let h='<circle r="210" fill="rgba(7,17,12,.92)" stroke="#9BFFB0" stroke-opacity=".5"/><circle r="206" fill="none" stroke="#9BFFB0" stroke-opacity=".2" stroke-dasharray="2 6"/>';
  for(let i=0;i<60;i++){const a=i/60*TAU,r1=i%5?122:114;h+='<line x1="'+Math.sin(a)*r1+'" y1="'+-Math.cos(a)*r1+'" x2="'+Math.sin(a)*128+'" y2="'+-Math.cos(a)*128+'" stroke="#4f9e69"/>'}
@@ -2550,12 +2579,12 @@ function dialPick(e){const s=$('#dsv'),r=s.getBoundingClientRect(),x=(e.clientX-
 $('#dsv').addEventListener('pointerdown',e=>{if(!DL)return;const p=dialPick(e);DL.drag=p.rad>130?'pe':'iv';$('#dsv').setPointerCapture(e.pointerId);dialMove(e)});
 $('#dsv').addEventListener('pointermove',e=>{if(DL&&DL.drag)dialMove(e)});
 $('#dsv').addEventListener('pointerup',()=>{if(DL)DL.drag=null});
-function dialMove(e){const p=dialPick(e);let best=0,bd=1e9;const arr=DL.drag==='pe'?PE:IV,fa=DL.drag==='pe'?PEA:IVA;arr.forEach((_,i)=>{let d=Math.abs(((p.ang-fa(i))+Math.PI*3)%TAU-Math.PI);if(d<bd){bd=d;best=i}});if(DL[DL.drag]!==best){DL[DL.drag]=best;sfx.dial();drawDial()}}
-$('#bDialOk').onclick=()=>{if(!DL)return;ac();const r=DL.rule,iv=IV[DL.iv].id,pe=PE[DL.pe].id,F=[],Pp=[];
+function dialMove(e){const p=dialPick(e);if(DL.drag==='iv')DL.ivM=1;else DL.peM=1;let best=0,bd=1e9;const arr=DL.drag==='pe'?PE:IV,fa=DL.drag==='pe'?PEA:IVA;arr.forEach((_,i)=>{let d=Math.abs(((p.ang-fa(i))+Math.PI*3)%TAU-Math.PI);if(d<bd){bd=d;best=i}});if(DL[DL.drag]!==best){DL[DL.drag]=best;sfx.dial();drawDial()}}
+$('#bDialOk').onclick=()=>{if(!DL)return;ac();DL.tried=1;const r=DL.rule,iv=IV[DL.iv].id,pe=PE[DL.pe].id,F=[],Pp=[];
  if(r.iv.ok.includes(iv))Pp.push('間隔 '+ivT(iv));else F.push('間隔 '+ivT(iv)+': '+(r.iv.ng[iv]||'調べたいことに合わない'));
  if(r.pe.ok.includes(pe))Pp.push('期間 '+peT(pe));else F.push('期間 '+peT(pe)+': '+(r.pe.ng[pe]||'調べたいことに合わない'));
  if(F.length){DL.firstFail=true;M.tries++;sfx.ng();nearMiss('計画を見直そう',F,Pp);return}
- M.plan={iv,pe};sfx.ok();$('#nm').classList.add('hidden');const r2=$('#dsv').getBoundingClientRect();popAt(r2.left+r2.width/2,r2.top+r2.height/2,'計画OK！<small>'+ivT(iv)+'・'+peT(pe)+'</small>','g');
+ M.plan={iv,pe};sfx.ok();$('#nm').classList.add('hidden');const r2=$('#dsv').getBoundingClientRect();fx(r2.left+r2.width/2,r2.top+r2.height/2,DL.firstFail?0:10,{shake:4,flash:.3,vib:20});popAt(r2.left+r2.width/2,r2.top+r2.height/2,'計画OK！<small>'+ivT(iv)+'・'+peT(pe)+'</small>','g');
  if(!DL.firstFail)earn(10,'first-try','dial-'+M.def.no,r2.left+r2.width/2,r2.top+r2.height*.3);
  const cb=DL.cb;DL=null;$('#dial').classList.add('hidden');log('計画: '+ivT(iv)+'・'+peT(pe),'a');cb({ok:true})};
 
@@ -2584,7 +2613,7 @@ function evalPlace(inst,pl,x,y,z,rot){const m=world,sz=surfZ(m,x,y),agl=z-sz,gt=
  else if(inst==='amedas'){const ms=m.mast;if(!ms)F.push('この地図にアメダスはない');else{const d=Math.hypot(x-ms.x,y-ms.y);if(d>5||z>16)F.push('アメダスの柱に近づいて（あと '+f1(Math.max(0,d-5))+' m）');else Pp.push('アメダスの記録を受信')}}
  return{ok:!F.length,F,P:Pp}}
 function tryPlace(){if(!M||M.step!=='place')return;const pl=M.def.place[M.pi];if(!pl)return;const inst=M.def.final?'stake':D.carry;const r=evalPlace(inst,pl,D.x,D.y,D.z,D.rot);M.hold=0;
- if(!r.ok){M.tries++;M.failedHere=true;sfx.ng();nearMiss('あと少し！ ここでは受理されない',r.F,r.P);popW(D.x,D.y,D.z,'✕ やり直し','r');return}
+ if(!r.ok){if(!M.tut){M.tries++;M.failedHere=true}sfx.ng();buzz([10,40,10]);nearMiss('あと少し！ ここでは受理されない',r.F,r.P);popW(D.x,D.y,D.z,'✕ やり直し','r');return}
  $('#nm').classList.add('hidden');const sz=surfZ(world,D.x,D.y),q=P(D.x,D.y,D.z);
  const stn={map:world===MAPS.town?'town':'school',inst,x:D.x,y:D.y,z:D.z,rot:D.rot,agl:D.z-sz,id:'s'+Date.now()};
  if(inst==='hyaku'||inst==='wind'){if(inst==='hyaku'&&stn.map==='school')S.stations=S.stations.filter(s=>!(s.map==='school'&&s.inst==='hyaku'));S.stations.push(stn)}
@@ -2593,7 +2622,7 @@ function tryPlace(){if(!M||M.step!=='place')return;const pl=M.def.place[M.pi];if
  if(M.def.no==='04')M.st=M.st.filter(s=>!s.old);
  if(M.def.final){M.stake={t:r.hy?'百葉箱のそば':'校庭の日かげ・地上'+f2(D.z-sz)+' m',x:+D.x.toFixed(1),y:+D.y.toFixed(1),h:+(D.z-sz).toFixed(2)}}
  save();ring(stn.x,stn.y,stn.map&&inst==='amedas'?0:sz,true);for(let i=0;i<26;i++)parts.push({x:D.x,y:D.y,z:D.z,vx:rnd(-5,5),vy:rnd(-5,5),vz:rnd(0,6),l:1,c:i%2?'#FFB000':'#9BFFB0'});
- sfx.place();const firstTry=!M.failedHere;popW(D.x,D.y,D.z+1,(inst==='amedas'?'受信！':'設置OK！')+'<small>'+r.P.slice(0,2).join(' ／ ')+'</small>');log(r.P.join('・'),'a');
+ sfx.place();fx(q?q[0]:W/2,q?q[1]:H*.4,M.failedHere?0:10,{shake:7,flash:.35,vib:[20,30,20]});if(GD)setTimeout(()=>GD.cheer(inst==='amedas'?'受信！':'設置OK！',{x:q?q[0]:W/2,y:(q?q[1]:H*.4)-110,size:.85,sound:false}),200);const firstTry=!M.failedHere;popW(D.x,D.y,D.z+1,(inst==='amedas'?'受信！':'設置OK！')+'<small>'+r.P.slice(0,2).join(' ／ ')+'</small>');log(r.P.join('・'),'a');
  if(firstTry&&!M.def.final)earn(10,'first-try','place-'+M.def.no+(M.def.place.length>1?'':''),q?q[0]:W/2,q?q[1]-70:H*.3);M.failedHere=false;
  if(M.def.place[M.pi]&&M.def.place[M.pi].inst==='hyaku'&&M.pi===0)M.firstZ=D.z-sz;
  M.pi++;if(M.carryList&&M.carryList.length>1&&M.pi<M.carryList.length)D.carry=M.carryList[M.pi];
@@ -2616,8 +2645,8 @@ function readValue(t,st){let v=Tsun(t)+nz(Math.round(t*4))*.25;if(sunlit(world,[
 function updateRun(dt){const R=M.run;if(!R)return;
  if(R.manual){R.t+=dt*R.spd;const st=R.st;const hd=Math.hypot(D.x-st.x,D.y-st.y),near=hd<3.6&&D.z-surfZ(world,D.x,D.y)<4.5;
   const next=R.sched.find(s=>!R.got[s]&&!R.miss[s]);
-  if(next!=null){if(R.t>next+R.win){R.miss[next]=1;sfx.warn();log(fmtT(next)+' の読みそびれ。グラフが途切れる','r');popW(st.x,st.y,st.z+2,'✕ '+fmtT(next)+' 読みそびれ','r')}
-   else if(Math.abs(R.t-next)<=R.win){if(near){R.scan+=dt;if(R.scan>=.35){const v=readValue(next,st);R.got[next]=v;R.scan=0;sfx.read();ring(st.x,st.y,0,false);popW(st.x,st.y,st.z+2,fmtT(next)+'　'+f1(v)+'℃','g')}}else R.scan=0}}
+  if(next!=null){if(R.t>next+R.win){R.miss[next]=1;comboBreak(R.combo||0);R.combo=0;sfx.warn();buzz([10,40,10]);log(fmtT(next)+' の読みそびれ。グラフが途切れる','r');popW(st.x,st.y,st.z+2,'✕ '+fmtT(next)+' 読みそびれ','r')}
+   else if(Math.abs(R.t-next)<=R.win){if(near){R.scan+=dt;if(R.scan>=.35){const v=readValue(next,st);R.got[next]=v;R.scan=0;R.combo=(R.combo||0)+1;readFx(st,R.combo);ring(st.x,st.y,0,false);popW(st.x,st.y,st.z+2,fmtT(next)+'　'+f1(v)+'℃','g')}}else R.scan=0}}
   if(R.t>=R.t1+R.win+.05){M.run.done=1;setTimeout(()=>{if(M&&M.step==='run')nextStep()},300);R.manual=0}
   const pad=world.pad,onPad=Math.hypot(D.x-pad.x,D.y-pad.y)<3.2&&D.z<.9;const drain=S.owned.bat?.9:1.7;
   if(onPad){D.bat=Math.min(100,D.bat+dt*38)}else if(D.z>.5){D.bat=Math.max(0,D.bat-dt*drain)}
@@ -2670,7 +2699,7 @@ cv.addEventListener('pointerdown',e=>{if(!M)return;const r=cv.getBoundingClientR
  if(M.step==='spot'&&GMAP&&GMAP.o.pick){let best=null,bd=30;GMAP.o.s[0].p.forEach(p=>{const d=Math.hypot(GMAP.X(p[0])-x,GMAP.Y(p[1])-y);if(d<bd){bd=d;best=p}});if(!best)return;ac();spotPick(best);return}
  if(M.step==='predict'&&PR){predDown(x,y,e)}});
 function spotPick(p){const t=p[0],st={x:M.def.old.x,y:M.def.old.y,z:M.def.old.z},bad=sunlit(world,[st.x,st.y,st.z],t);M.graph.marks[t]=bad;
- if(bad){sfx.ok();const q=GMAP;popAt(q.X(t),q.Y(p[1])-24,'不自然！<small>'+t+'時 '+f1(p[1])+'℃</small>');if(!M.spotFail)earn(15,'hit','spot-04',q.X(t),q.Y(p[1])-60);
+ if(bad){sfx.ok();const q=GMAP;fx(q.X(t),q.Y(p[1]),M.spotFail?0:15,{shake:5,flash:.3,vib:20});popAt(q.X(t),q.Y(p[1])-24,'不自然！<small>'+t+'時 '+f1(p[1])+'℃</small>');if(!M.spotFail)earn(15,'hit','spot-04',q.X(t),q.Y(p[1])-60);
   M.spotOK=(M.spotOK||0)+1;setTimeout(()=>{if(M.step!=='spot')return;panel('DATA ▸ 原因をさがす','<h2>'+t+'時ごろだけ、なぜ高い？</h2><p>前後の時刻とくらべて急に高く、すぐに元にもどっている。本当に気温が上がったのではなく、<b>測り方の問題</b>が考えられる。</p><p class="tip">カメラの<b>「影の予報」</b>で時刻を動かし、前の係の温度計（赤い点線）に<b>'+t+'時ごろ日光が当たる</b>かを見よう。見えたら、1日じゅう日かげの所へ<b>置き直す</b>。</p>',[['▶ 置き直しに行く','a big',()=>{nextStep()}]])},900)}
  else{M.spotFail=1;M.tries++;sfx.ng();popAt(GMAP.X(t),GMAP.Y(p[1])-24,'前後とつながっている','r')}}
 
@@ -2706,18 +2735,18 @@ function deliver(){const R=M.run,def=M.def;let ok=true,why=[],npt=0;
  else if(R.type==='single')npt=1;else npt=12;
  M.graph={type:R.type==='manual'?'manual':R.type,stamp:null};
  if(!ok){M.tries++;sfx.stamp();M.graph.stamp='差し戻し';setTimeout(()=>{sfx.reject();panel('DELIVERY ▸ 差し戻し','<h2>差し戻されました</h2>'+why.map(w=>'<p class="tip">'+w+'</p>').join('')+'<p>温度計は置いたまま。もう一度、1日を測り直そう（電池の残りに気をつけて、読む時刻の前に近くで待つ）。</p>',[['▶ 測り直す','a big',()=>{M.si=M.def.steps.indexOf('run');nextStep()}]])},450);return}
- const st=starsOf(),gain=def.pt+st*10+npt*2;S.pt+=gain;S.stars[def.no]=Math.max(S.stars[def.no]||0,st);S.done[def.no]=1;save();
- setTimeout(()=>{sfx.stamp();M.graph.stamp='受理';for(let i=0;i<40;i++){const R2=gRect(true);parts.push({sx:R2.x+R2.w*.72,sy:R2.y+R2.h*.5,vx:rnd(-260,260),vy:rnd(-260,200),l:1,c:i%2?'#FFB000':'#9BFFB0',scr:1})}},250);
+ const st=starsOf(),gain=def.pt+st*10+npt*2,again=M.tut&&S.done[def.no];if(!again)S.pt+=gain;S.stars[def.no]=Math.max(S.stars[def.no]||0,st);S.done[def.no]=1;save();
+ setTimeout(()=>{sfx.stamp();M.graph.stamp='受理';fx(W/2,H*.4,0,{shake:9,flash:.45,vib:[30,40,30]});if(GD)GD.celebrate('受理！');for(let i=0;i<40;i++){const R2=gRect(true);parts.push({sx:R2.x+R2.w*.72,sy:R2.y+R2.h*.5,vx:rnd(-260,260),vy:rnd(-260,200),l:1,c:i%2?'#FFB000':'#9BFFB0',scr:1})}},250);
  if(def.no==='02'||def.no==='09')setTimeout(()=>earn(30,'rule','rule-'+def.no,W/2,H*.3),900);
  const note={'01':'いまの気温 '+f1(R.pts?R.pts[0][1]:Tsun(10))+'℃。1回の値は「いま」だけを表す。','02':'朝から上がり、<b>14時ごろ</b>にいちばん高くなって、夕方に下がる。正午より少し遅れる。','03':'同じ場所・同じ時刻にそろえたから、<b>天気によるちがい</b>を比べられる。晴れの日の朝は高め、雨の日は低め。',
   '04':'日かげに置き直すと、13時の山が消えた。<b>温度計に日光が当たる</b>と、気温より高く出てしまう。','05':'気温がいちばん低くなるのは<b>日の出前（明け方）</b>。自記温度計なら夜もとぎれない。','06':'晴れの日は、気温が上がる昼に湿度が…？ 2本のグラフの<b>向き</b>を見くらべよう（次の回で調べる）。',
   '07':'最高気温は<b>夏に高く冬に低い</b>。季節の変化には、毎日1回・1年分の記録がいる。','08':'条件をそろえたので、差は<b>場所のちがい</b>によるものと言える。駅前がいちばん高い。','09':'2日目15時ごろ、気温が<b>急に下がり</b>、風向が<b>南寄りから北寄り</b>に変わり、気圧は下がりきってから上がった。'}[def.no]||'';
- setTimeout(()=>{sfx.ok();panel('DELIVERY ▸ 受理','<h2>受理！ ★'+'★'.repeat(st-1)+'<span style="opacity:.25">'+'★'.repeat(3-st)+'</span></h2><p>'+note+'</p><p class="sm">実績 +'+gain+' pt（依頼 '+def.pt+'／★ '+st*10+'／データ点 '+npt*2+'）</p><p class="tip">観測所にパラシュートで<b>機材コンテナ</b>が届く。ドローンで近づいて開けよう。</p>',[['▶ コンテナを取りに行く','a big',()=>nextStep()]])},1100)}
+ setTimeout(()=>{sfx.ok();panel('DELIVERY ▸ 受理','<h2>受理！ <span class="stars3">'+[0,1,2].map(k=>'<i class="stp'+(k<st?' got':'')+'">★</i>').join('')+'</span></h2><p>'+note+'</p><p class="sm">実績 +'+gain+' pt（依頼 '+def.pt+'／★ '+st*10+'／データ点 '+npt*2+'）</p><p class="tip">観測所にパラシュートで<b>機材コンテナ</b>が届く。ドローンで近づいて開けよう。</p>',[['▶ コンテナを取りに行く','a big',()=>nextStep()]]);M.delivT=performance.now();stampStars(st);if(!again)setTimeout(()=>ptxAt('+'+gain+' pt',W/2,H*.3),1500)},1100)}
 let CR=null;
 function spawnCrate(){pClose();M.graph=null;const p=world.pad;CR={x:p.x+(LAND?7:4),y:p.y-(LAND?3:7),z:26,land:false,open:false};if(D.z<1.2){D.zt=3;setAltKnob()}hudOn(true);$('#rotRow').classList.add('hidden');log('コンテナが降りてくる。近づくと開く','a')}
 function updateCrate(dt){if(!CR)return;if(!CR.land){CR.z-=dt*6;if(CR.z<=0){CR.z=0;CR.land=true;ring(CR.x,CR.y,0,true);sfx.stamp()}}
  else if(!CR.open&&Math.hypot(D.x-CR.x,D.y-CR.y)<4&&D.z<6){CR.open=true;openCrate()}}
-function openCrate(){const id=M.def.crate,c=CAT.find(x=>x.id===id),isNew=!S.cat[id];S.cat[id]=1;if(M.def.no==='09')S.cat.wind=1;save();sfx.crate();
+function openCrate(){const id=M.def.crate,c=CAT.find(x=>x.id===id),isNew=!S.cat[id];S.cat[id]=1;if(M.def.no==='09')S.cat.wind=1;save();sfx.crate();{const q=P(CR.x,CR.y,1);fx(q?q[0]:W/2,q?q[1]:H*.4,0,{shake:8,flash:.5,vib:[30,40,30]})}if(M.tut){M.tut=false;if(GD)setTimeout(()=>GD.tutorialClear(),500)}
  for(let i=0;i<50;i++)parts.push({x:CR.x,y:CR.y,z:1,vx:rnd(-7,7),vy:rnd(-7,7),vz:rnd(3,12),l:1.4,c:i%3?'#FFB000':'#9BFFB0'});popW(CR.x,CR.y,3,(isNew?'NEW！':'')+'<small>'+c.n+'</small>','huge');
  setTimeout(()=>{panel('CRATE ▸ 観測器の図鑑に追加','<div style="display:flex;gap:14px;align-items:center"><div style="width:96px;height:96px;flex:0 0 96px;color:#FFB000">'+icon(id)+'</div><div><h2 style="margin:0">'+c.n+'</h2><p class="sm">'+(isNew?'はじめて手に入れた！':'もう持っている')+'　（'+Object.keys(S.cat).length+' / '+CAT.length+'）</p></div></div><p>'+c.d+'</p>',[['▶ 観測網マップへ','a big',()=>finishMission()]])},1000)}
 function finishMission(){const i=M.i;S.m=Math.max(S.m,i+1);save();CR=null;M=null;toMap()}
@@ -2732,7 +2761,7 @@ const ALTMAX=30,altU=z=>Math.pow(clamp((z-.3)/(ALTMAX-.3),0,1),1/2.3),altZ=u=>.3
 function buildTicks(){const el=$('#altTicks');if(!el)return;el.innerHTML=[0.3,1,1.5,2,3,5,10,15,20,30].map(z=>'<div style="bottom:'+(altU(z)*100)+'%"'+(z===1.5&&M&&M.def.guide?' class="t15"':'')+'>'+(z===.3?'0':z)+'</div>').join('')}
 function setAltKnob(){const k=$('#altKnob');k.style.bottom=(altU(D.zt)*100)+'%';k.textContent=f1(D.zt)}
 const alt=$('#alt');let altId=null;
-function altSet(e){const r=alt.getBoundingClientRect();const u=1-(e.clientY-r.top)/r.height;D.zt=Math.round(altZ(u)*20)/20;if(D.zt<.35)D.zt=.3;setAltKnob()}
+function altSet(e){const r=alt.getBoundingClientRect();const u=1-(e.clientY-r.top)/r.height;D.zt=Math.round(altZ(u)*20)/20;if(D.zt<.35)D.zt=.3;if(M&&M.tut&&M.step==='place'&&Math.abs(D.zt-1.5)<.45)D.zt=1.5;setAltKnob()}
 alt.addEventListener('pointerdown',e=>{ac();altId=e.pointerId;alt.setPointerCapture(e.pointerId);altSet(e)});
 alt.addEventListener('pointermove',e=>{if(e.pointerId===altId)altSet(e)});
 alt.addEventListener('pointerup',e=>{if(e.pointerId===altId)altId=null});
@@ -2751,6 +2780,7 @@ function updateDrone(dt){const K=inp.k;let ix=inp.sx+((K.arrowright||K.d)?1:0)-(
  const hx=Math.sin(CAM.yaw),hy=Math.cos(CAM.yaw),rx=Math.cos(CAM.yaw),ry=-Math.sin(CAM.yaw);let vmax=D.z<3?5:9;
  let tvx=(rx*ix+hx*iy)*vmax,tvy=(ry*ix+hy*iy)*vmax,zt=D.zt;
  if(D.rth){const p=world.pad,dx=p.x-D.x,dy=p.y-D.y,d=Math.hypot(dx,dy);if(d>1){tvx=dx/d*4;tvy=dy/d*4;zt=Math.max(D.z,surfZ(world,D.x,D.y)+2)}else{tvx=tvy=0;zt=.3}if(d<1&&D.z<.6){D.zt=.3;setAltKnob()}}
+ if(M&&M.tut&&M.step==='place'&&TUTT&&!ix&&!iy){const dx=TUTT.x-D.x,dy=TUTT.y-D.y;if(Math.hypot(dx,dy)<3.2){D.x+=dx*Math.min(1,dt*3);D.y+=dy*Math.min(1,dt*3);tvx=tvy=0}}
  const k=Math.min(1,dt*3.2);D.vx+=(tvx-D.vx)*k;D.vy+=(tvy-D.vy)*k;
  let nx=D.x+D.vx*dt,ny=D.y+D.vy*dt;nx=clamp(nx,1,world.w-1);ny=clamp(ny,1,world.h-1);
  const blk=(x,y)=>world.b.some(b=>!b.shed&&x>=b.x0-.6&&x<=b.x1+.6&&y>=b.y0-.6&&y<=b.y1+.6&&D.z<b.h+.4);
@@ -2845,7 +2875,7 @@ function drawMap(){const L=LAND;let bs,bt;
   if(done&&!RM){const rr=(TT*14+i*7)%40;cx.beginPath();cx.arc(x,y,r+rr,0,TAU);cx.strokeStyle='rgba(255,176,0,'+(1-rr/40)*.5+')';cx.lineWidth=1;cx.stroke()}
   cx.font='700 '+(BIG?13:11)+'px IBM Plex Mono,monospace';cx.fillStyle=done?AC2:cur?GC:'#4f9e69';cx.textAlign='center';cx.fillText(d.no,x,y+4);
   const lab=d.name.replace('【大口】','');cx.font='700 '+(BIG?13:11)+'px IBM Plex Sans JP,sans-serif';const tw=cx.measureText(lab).width;cx.fillStyle='rgba(7,17,12,.8)';cx.fillRect(x-tw/2-4,y+r+(BIG?5:3),tw+8,BIG?18:15);cx.fillStyle=done?AC2:cur?GC:'#6fbf8a';cx.fillText(lab,x,y+r+(BIG?18:14));if(S.stars[d.no]){cx.fillStyle=AC2;cx.fillText('★'.repeat(S.stars[d.no]),x,y-r-5)}})}
-function toMap(){MODE='map';M=null;CR=null;world=MAPS.school;hum(0,0);show(['map']);const n=Object.keys(S.done).filter(k=>k!=='★').length;
+function toMap(){tutStop();MODE='map';M=null;CR=null;world=MAPS.school;hum(0,0);show(['map']);const n=Object.keys(S.done).filter(k=>k!=='★').length;
  $('#mapInfo').innerHTML='受理 '+n+' / 9 ｜ 実績 '+S.pt+' pt ｜ 観測器の図鑑 '+Object.keys(S.cat).length+' / '+CAT.length+(S.seal?' ｜ 計画は封印ずみ':'');
  $('#bNext').textContent=S.m>=MIS.length?'▶ 確認テストへ':'▶ 依頼'+MIS[S.m].no+'「'+MIS[S.m].name.replace('【大口】','')+'」';zkButtons()}
 $('#bNext').onclick=()=>{ac();sfx.tap();if(S.m>=MIS.length)startTest();else startMission(S.m)};
@@ -2857,14 +2887,14 @@ $('#bCat1').onclick=()=>{ac();openCat()};$('#bCat2').onclick=()=>{ac();openCat()
 /* ===== もどる ===== */
 let backFrom=null;
 $('#bBack').onclick=()=>{ac();sfx.tap();if(MODE==='title'){try{window.parent.postMessage({type:'rika-close-game'},'*')}catch(e){}return}
- backFrom=MODE;$('#cfH').textContent=MODE==='mis'?'観測網マップへもどる？':MODE==='map'?'タイトルへもどる？':'確認テストをやめる？';
+ backFrom=MODE;document.body.classList.add('gdhold');$('#cfH').textContent=MODE==='mis'?'観測網マップへもどる？':MODE==='map'?'タイトルへもどる？':'確認テストをやめる？';
  $('#cfP').textContent=MODE==='mis'?'進み具合は保存されます（受理した依頼・機材・図鑑はそのまま。この依頼は次にはじめから）。':MODE==='map'?'進み具合は保存されます。':'確認テストは、次はさいしょから。本編の進み具合は保存されています。';$('#conf').classList.remove('hidden')};
-$('#cfNo').onclick=()=>{sfx.tap();$('#conf').classList.add('hidden')};
+$('#cfNo').onclick=()=>{sfx.tap();$('#conf').classList.add('hidden');document.body.classList.remove('gdhold')};
 $('#cfGo').onclick=()=>{sfx.tap();$('#conf').classList.add('hidden');if(backFrom==='mis'){M=null;CR=null;PR=null;DL=null;toMap()}else if(backFrom==='test'){if(TEST_ONLY){try{window.parent.postMessage({type:'rika-close-game'},'*')}catch(e){}}else toTitle()}else toTitle()};
 
 /* ===== 確認テスト ===== */
 let TS=null;function playerName(){return window.PLAYER_NAME||S.name||''}
-function startTest(){if(!window.Quiz)return;MODE='test';M=null;hum(0,0);TS={qs:Quiz.test(),i:0,ans:[]};show(['test']);renderQ()}
+function startTest(){if(!window.Quiz)return;tutStop();MODE='test';M=null;hum(0,0);TS={qs:Quiz.test(),i:0,ans:[]};show(['test']);renderQ()}
 function renderQ(){const q=TS.qs[TS.i],box=$('#tbox');
  box.innerHTML='<div class="pnh">CHECK ▸ 確認テスト　第'+(TS.i+1)+'問 / '+TS.qs.length+'</div><div class="prog">'+TS.qs.map((_,i)=>'<i class="'+(i<TS.i?'on':'')+'"></i>').join('')+'</div><div class="tq">'+q.q+'</div>'+(q.fig?'<div class="fig2">'+q.fig+'</div>':'')+'<div id="ta"></div>';
  const ta=$('#ta');
@@ -2887,8 +2917,8 @@ function showTestResult(){const r=TS.card||{};$('#tbox').innerHTML='<div class="
 function zkButtons(){const has=!!(window.Zukan&&Zukan.openBook);document.querySelectorAll('.zk').forEach(b=>b.classList.toggle('hidden',!has))}
 function openBook(){try{window.Zukan&&Zukan.openBook&&Zukan.openBook({unit:'kisho'})}catch(e){}}
 function openGacha(){try{window.Zukan&&Zukan.openGacha&&Zukan.openGacha({box:'kisho'})}catch(e){}}
-function toTitle(){MODE='title';M=null;CR=null;world=MAPS.school;tView=10;show(['title']);$('#bCont').classList.toggle('hidden',!S.started);zkButtons();hum(0,0)}
-$('#bStart').onclick=()=>{ac();sfx.tap();const nm=$('#nameIn').value.trim()||S.name,snd=S.sound;if(S.started&&!confirmReset())return;S=fresh();S.name=nm;S.sound=snd;S.started=true;save();startMission(0)};
+function toTitle(){tutStop();MODE='title';M=null;CR=null;world=MAPS.school;tView=10;show(['title']);$('#bCont').classList.toggle('hidden',!S.started);zkButtons();hum(0,0)}
+$('#bStart').onclick=()=>{ac();sfx.tap();const nm=$('#nameIn').value.trim()||S.name,snd=S.sound;if(S.started&&!confirmReset())return;S=fresh();S.name=nm;S.sound=snd;S.started=true;save();if(GD){startWithGuide();return}startMission(0)};
 function confirmReset(){if($('#bStart').dataset.sure==='1')return true;$('#bStart').dataset.sure='1';$('#bStart').textContent='▶ はじめから（もう一度押す）';setTimeout(()=>{$('#bStart').dataset.sure='';$('#bStart').textContent='▶ 離陸する（はじめる）'},3000);return false}
 $('#bCont').onclick=()=>{ac();sfx.tap();const v=$('#nameIn').value.trim();if(v)S.name=v;save();toMap()};
 $('#bSnd1').onclick=toggleSnd;$('#bSnd2').onclick=toggleSnd;$('#bSnd').onclick=toggleSnd;
@@ -2913,7 +2943,7 @@ function render(dt){cx.setTransform(DPR,0,0,DPR,0,0);cx.fillStyle='#07110C';cx.f
  const ccx=LAND?(gBig?(panelOpen?W*.61:W*.76):panelOpen?W*.36:W*.5):W*.5,ccy=LAND?H*.56:(gBig?H*.62:panelOpen?H*.3:H*.46);
  const tx=M.step==='spot'?M.def.old.x:D.x,ty=M.step==='spot'?M.def.old.y:D.y;CAM._tx=lerp(CAM._tx==null?tx:CAM._tx,tx,Math.min(1,dt*3));CAM._ty=lerp(CAM._ty==null?ty:CAM._ty,ty,Math.min(1,dt*3));
  const vw=LAND?(W/H>1.5?84:74):52;camSet(CAM._tx,CAM._ty,LAND?0:Math.PI/2,1.36,210,vw,ccx,ccy);
- drawWorld(dt);const fly=['place','run','crate'].includes(M.step)&&!(M.run&&M.run.auto&&M.step==='run');if(fly)drawReticle();if(!gBig)drawCompass();drawFrame();
+ drawWorld(dt);drawTutMark();const fly=['place','run','crate'].includes(M.step)&&!(M.run&&M.run.auto&&M.step==='run');if(fly)drawReticle();if(!gBig)drawCompass();drawFrame();
  let gk=null;if(M.graph){gk=M.graph.type}if(M.step==='run'&&M.run){gk=M.run.manual?'live':M.run.auto?M.run.type:null}
  if(gk){let o=null,up=null;if(gk==='pred'||gk==='sealed')o=predGraph();else o=graphData(gk==='manual'?'live':gk);if(M.step==='run'&&M.run&&M.run.auto)up=M.run.p;
   if(o){const R=gRect(gk!=='live');drawGraph(R,o,up,M.graph&&M.graph.stamp);if(up!=null&&up<1)drawDrum(o,up,R)}}
@@ -2938,7 +2968,75 @@ resize();
 try{window.Zukan&&Zukan.setup&&Zukan.setup({game:GID,koma:[KOMA]})}catch(e){}
 setSnd();setAltKnob();
 if(window.PLAYER_NAME){$('#nameIn').value=window.PLAYER_NAME;$('#nameRow').classList.add('hidden')}else if(S.name)$('#nameIn').value=S.name;
-window.__game={S:()=>S,M:()=>M,D,startMission,nextStep,tryPlace,toMap,startTest,world:()=>world,evalPlace,sunHours,sunlit,MAPS,
+
+/* ===== ご褒美の演出（ルール11／仕上げ 2026-09-28） ===== */
+const STAGES=[3,5,8];
+function buzz(p){try{navigator.vibrate&&navigator.vibrate(p)}catch(e){}}
+function ptxAt(t,x,y){if(!isFinite(x)||!isFinite(y))return;const d=document.createElement('div');d.className='ptx';d.textContent=t;d.style.left=clamp(x,50,W-50)+'px';d.style.top=clamp(y,80,H-40)+'px';$('#pops').appendChild(d);setTimeout(()=>d.remove(),1250)}
+function fx(x,y,pts,o){o=o||{};if(o.vib)buzz(o.vib);if(pts)setTimeout(()=>ptxAt('+'+pts,x+40,y-26),150);if(RM)return;
+ if(o.shake)cv.animate([{transform:'translate(0,0)'},{transform:'translate('+o.shake+'px,'+(-o.shake*.6)+'px)'},{transform:'translate('+(-o.shake*.8)+'px,'+(o.shake*.5)+'px)'},{transform:'translate('+(o.shake*.4)+'px,'+(o.shake*.3)+'px)'},{transform:'translate(0,0)'}],{duration:260});
+ if(o.flash)$('#flash').animate([{opacity:o.flash*.55},{opacity:0}],{duration:380,easing:'ease-out'})}
+function readFx(st,c){const q=P(st.x,st.y,st.z+2);const x=q?q[0]:W/2,y=q?q[1]:H*.4;const up=Math.pow(2,Math.min(c-1,8)*2/12);tone(2093*up,.05,'sine',.06);tone(2637*up,.08,'sine',.05,0,.05);if(c>=3)tone(3136*up,.1,'sine',.04,0,.1);
+ fx(x,y,0,{shake:c>=3?4:2,flash:.2,vib:15});
+ if(c>=2&&GD){const big=c>=STAGES[1],mid=c>=STAGES[0];const w=c>=STAGES[2]?'観測の達人！':big?'とぎれない！':mid?'いいリズム！':'';
+  GD.cheer('×'+c+' 連続読み取り'+(w?'　'+w:''),{x:W/2,y:H*(LAND?.24:.3),size:.6+Math.min(c,8)*.08,color:big?'#FFB000':mid?'#9BFFB0':'#b8dcc3',sparks:mid?20:8,sound:false});
+  if(STAGES.includes(c)){ring(st.x,st.y,0,true);ring(st.x,st.y,0,true);sfx.crate()}}}
+function comboBreak(c){if(c<2||!GD)return;const nx=STAGES.find(k=>k>c)||c+1;setTimeout(()=>GD.cheer('あと'+(nx-c)+'回で ×'+nx+' だった！',{x:W/2,y:H*(LAND?.3:.36),size:.55,color:'#ff7a55',sparks:false,sound:false}),400)}
+function stampStars(st){document.querySelectorAll('#pnb .stp').forEach((e,k)=>setTimeout(()=>{e.classList.add('in');if(k<st){sfx.stamp();tone([988,1175,1568][k],.12,'triangle',.06,0,.03);buzz(18);const r=e.getBoundingClientRect();for(let i=0;i<14;i++)parts.push({sx:r.left+r.width/2,sy:r.top+r.height/2,vx:rnd(-200,200),vy:rnd(-220,120),l:.9,c:i%2?'#FFB000':'#9BFFB0',scr:1})}else sfx.tap()},350+k*380))}
+
+/* ===== 遊び方案内（Guide・制作ルール13／仕上げ 2026-09-28） ===== */
+const GD=window.Guide||null;let HELP=null,PRACTICE=null,TUTT=null;
+function tutStop(){document.body.classList.remove('gdhold');TUTT=null;if(GD&&M&&M.tut){M.tut=false;GD.tutorialEnd()}}
+// れんしゅうの置き場所：いま日かげ・壁から離れた校庭の土の上で、観測所にいちばん近い所
+function tutSpot(){const m=MAPS.school,p=m.pad;let best=null,bd=1e9;for(let x=6;x<=62;x+=1)for(let y=10;y<=43;y+=1){const d=Math.hypot(x-p.x,y-p.y);if(d>=bd)continue;
+  if(!evalPlace('thermo',{shade:[10,10]},x,y,1.5,180).ok)continue;let ok=true;for(const[a,b]of[[1,0],[-1,0],[0,1],[0,-1]])if(!evalPlace('thermo',{shade:[10,10]},x+a*.8,y+b*.8,1.5,180).ok)ok=false;if(ok){best={x,y};bd=d}}return best}
+function drawTutMark(){if(!M||!M.tut||!TUTT||M.step!=='place')return;const a=.55+.45*Math.sin(TT*6);cx.beginPath();path3(circ3(TUTT.x,TUTT.y,0,1.6,32),true);glow('#FFB000',2,a);
+ cx.beginPath();path3([[TUTT.x,TUTT.y,0],[TUTT.x,TUTT.y,1.5]]);glow('#FFB000',1.5,.8);const q=P(TUTT.x,TUTT.y,1.5);if(q){cx.font='700 '+(BIG?15:13)+'px IBM Plex Sans JP,sans-serif';cx.textAlign='center';const t='ここ（日かげ）';const w=cx.measureText(t).width+14;cx.fillStyle='rgba(7,17,12,.85)';cx.fillRect(q[0]-w/2,q[1]-40,w,22);cx.fillStyle='#FFB000';cx.fillText(t,q[0],q[1]-24)}}
+function stickTo(tx,ty){const r=$('#stick').getBoundingClientRect(),c={x:r.left+r.width/2,y:r.top+r.height/2};const a=P(D.x,D.y,0),b=P(tx,ty,0);if(!a||!b)return null;let dx=b[0]-a[0],dy=b[1]-a[1];const l=Math.hypot(dx,dy)||1,R=r.width/2-20;return {x:c.x+dx/l*R,y:c.y+dy/l*R,r:22}}
+function svgPt(a,rad){const s=$('#dsv').getBoundingClientRect();return {x:s.left+(Math.sin(a)*rad+220)/440*s.width,y:s.top+(-Math.cos(a)*rad+220)/440*s.height,r:26}}
+function dialCoach(){if(!DL||!GD||(M&&M.tut))return;
+ GD.coach([
+  {gesture:'drag',label:'間隔',target:()=>DL?svgPt(IVA(DL.iv),62):null,to:()=>DL?svgPt(IVA(DL.iv>=4?DL.iv-1:DL.iv+1),86):null,until:()=>!DL||DL.ivM,text:'内側の **針** をドラッグ ＝ **何分（何時間）ごと** に測るか'},
+  {gesture:'drag',label:'期間',target:()=>DL?svgPt(PEA(DL.pe),172):null,to:()=>DL?svgPt(PEA(DL.pe>=5?DL.pe-1:DL.pe+1),172):null,until:()=>!DL||DL.peM,text:'外側の **輪** をドラッグ ＝ **何日（何か月）続けるか**'},
+  {gesture:'tap',label:'決定',target:'#bDialOk',until:()=>!DL||DL.tried,text:'調べたいことに合ったら **決定**。合わないと理由が出る'}
+ ],{key:'kisho-07-dial',finish:'計画の時計、ばっちり！'})}
+if(GD){
+ GD.setup({
+  theme:{bg:'#06100b',fg:'#eafff0',accent:'#FFB000',accentText:'#07110C',font:'"IBM Plex Sans JP","Hiragino Sans",sans-serif',bodyFont:'"IBM Plex Sans JP","Hiragino Sans",sans-serif',
+   radius:0,texture:'scan',line:'#9BFFB0',dim:'rgba(3,8,5,.62)',shadow:'0 0 0 1px #9BFFB0,0 0 22px rgba(155,255,176,.28)',outline:'#07110C',hand:'#07110C',handLine:'#9BFFB0'},
+  sfx:k=>{ac();({step:()=>sfx.read(),done:()=>sfx.ok(),clear:()=>sfx.crate(),open:()=>sfx.dial(),close:()=>sfx.tap(),cheer:()=>sfx.read(),nudge:()=>sfx.warn()}[k]||sfx.tap)()},
+  muted:()=>!S.sound});
+ const on=()=>MODE==='mis'&&M&&M.tut;
+ const btn0=()=>{const b=document.querySelector('#pn:not(.hidden) #pnb .btns .b');return b&&b.getBoundingClientRect().width?b:null};
+ const altTo=()=>{const r=$('#alt').getBoundingClientRect(),k=$('#altKnob').getBoundingClientRect();return {x:k.left+k.width/2,y:r.bottom-altU(1.5)*r.height,r:20}};
+ PRACTICE={label:'れんしゅう中（依頼01）',clearText:'れんしゅうクリア！',clearOn:'manual',
+  start:()=>{$('#conf').classList.add('hidden');DL=null;startMission(0);M.tut=true;TUTT=tutSpot()},
+  steps:[
+   {gesture:'tap',label:'依頼を受ける',target:btn0,until:()=>on()&&M.step!=='brief',text:'依頼が来た！ 「いまの校庭の気温」を測る。**▶ 受ける** をタップ'},
+   {gesture:'tap',label:'器具をえらぶ',target:'#eqC .card[data-id="thermo"]',until:()=>on()&&!!document.querySelector('#eqC .card.sel'),text:'ドローンに積む器具をえらぶ。**棒状温度計** をタップ'},
+   {gesture:'tap',label:'積みこむ',target:btn0,until:()=>on()&&M.step==='place',text:'**▶ 積みこむ** で出発'},
+   {gesture:'drag',label:'移動',target:'#knob',to:()=>on()&&TUTT?stickTo(TUTT.x,TUTT.y):null,until:()=>on()&&TUTT&&Math.hypot(D.x-TUTT.x,D.y-TUTT.y)<1.2,
+    text:'左下の **スティック** をドラッグして、光る **「ここ（日かげ）」** まで飛ぼう。気温は **風通しのよい日かげ** で測る',praise:'到着！'},
+   {gesture:'drag',label:'高さ',target:'#altKnob',to:altTo,until:()=>on()&&Math.abs(D.z-1.5)<=.25,text:'右の **高さのつまみ** を下げて **1.5m** に。気温は **地上約1.5m** で測る決まり',praise:'1.5m！'},
+   {gesture:'hold',label:'設置',target:'#bPlace',until:()=>on()&&M.pi>=1,text:'止まったまま **「設置」を長押し**',praise:false},
+   {gesture:'tap',label:'納品',target:()=>on()&&M.delivT&&performance.now()-M.delivT>1800?btn0():null,until:()=>on()&&M.step==='crate',dim:false,place:'below',text:'受理された！ ★を見たら **▶ コンテナを取りに行く**'},
+   {gesture:'drag',label:'コンテナ',target:'#knob',to:()=>on()&&CR?stickTo(CR.x,CR.y):null,until:()=>!M||!M.tut||(CR&&CR.open),text:'パラシュートで届いた **コンテナ** に、スティックで近づくと開く'}
+  ],
+  onExit:res=>{TUTT=null;if(M&&M.tut&&res.skipped)M.tut=false}};
+ HELP=GD.help({title:'観測ドローン',
+  rules:['左下の **スティック** で移動、右の **高さのつまみ** で上下（矢印キー・R/F）',
+   '止まって **「設置」を長押し**。正しい場所・高さのときだけ受理される',
+   '温度計は **地上約1.5m・風通しのよい日かげ**。百葉箱は **しばふ・開けた所・とびらは北**',
+   '**時計**：内側の針＝測る間隔、外側の輪＝続ける期間。調べたいことに合わせる',
+   '効かない機材に投資すると実績ptが減るだけ'],
+  replay:'tutorial',mount:$('#stats'),attention:true});
+ GD.tutorialButton('#bHow',()=>{ac();sfx.tap();if(!S.started){S.name=$('#nameIn').value.trim()||S.name;S.started=true;save()}GD.tutorial(PRACTICE)});
+}else{$('#bHow').classList.add('hidden')}
+function startWithGuide(){
+ GD.intro({title:'第7回　観測ドローン',
+  learn:'気温は **地上約1.5m・風通しのよい日かげ** で、**調べたいことに合う間隔・期間** で測る',
+  how:'ドローンを **スティックで操縦** し、観測器を正しい場所・高さに **長押しで設置**',gesture:'drag'}).then(()=>GD.tutorial(PRACTICE))}
+window.__game={tutT:()=>TUTT,cr:()=>CR,scr:(x,y,z)=>P(x,y,z||0),S:()=>S,M:()=>M,D,startMission,nextStep,tryPlace,toMap,startTest,world:()=>world,evalPlace,sunHours,sunlit,MAPS,
  goto:(x,y,z,rot)=>{D.x=x;D.y=y;D.z=z;D.zt=z;if(rot!=null)D.rot=rot;setAltKnob()},dial:(iv,pe)=>{DL.iv=IV.findIndex(v=>v.id===iv);DL.pe=PE.findIndex(v=>v.id===pe);drawDial();$('#bDialOk').click()},
  pickEquip:ids=>{ids.forEach(id=>{const el=document.querySelector('#eqC .card[data-id="'+id+'"]');el&&el.click()});const b=[...document.querySelectorAll('#pnb .btns .b')][0];b&&b.click()},
  panelBtn:i=>{const b=[...document.querySelectorAll('#pnb .btns .b')][i||0];b&&b.click()},spot:t=>{const p=GMAP.o.s[0].p.find(q=>q[0]===t);spotPick(p)},step:dt=>{updateDrone(dt);if(M&&M.step==='run')updateRun(dt);if(M&&M.step==='crate')updateCrate(dt)},

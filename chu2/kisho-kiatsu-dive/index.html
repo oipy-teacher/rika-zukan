@@ -190,6 +190,21 @@ body.port #map .bot .tk{padding:6px 12px;font-size:15px;min-height:44px}
 body.port .pop{font-size:24px;white-space:normal;width:max-content}body.port .pop.big{font-size:32px}body.port .pop small{font-size:12.5px}
 body.land .pop{font-size:32px}body.land .pop.big{font-size:50px}
 @keyframes popup{0%{transform:translate(-50%,-30%) scale(.4);opacity:0}12%{transform:translate(-50%,-50%) scale(1.1);opacity:1}22%{transform:translate(-50%,-50%) scale(1)}80%{opacity:1}100%{transform:translate(-50%,-140%);opacity:0}}
+/* 仕上げ 2026-09-28（kd-finish-2026-09-28）: ボタンの沈み・★のドン・ドン・ドン・弾む数字 */
+#bBack,#bSnd,#bNote,#bFast,#dialCtl button,.pst{transition:transform .08s,filter .08s}
+#bBack:active,#bSnd:active,#bNote:active,#bFast:active,#dialCtl button:active{transform:translateY(3px) scale(.95);filter:brightness(.92)}
+.pst:active{transform:scale(.97)}
+.tk:active{transform:translateY(3px) scale(.97)}
+.stars div{opacity:0;transform:scale(2.4) rotate(-12deg)}
+.stars div.in{opacity:1;transform:none;transition:transform .32s cubic-bezier(.2,1.9,.4,1),opacity .1s}
+.stars div.in.on{box-shadow:0 0 0 3px var(--coral),0 0 22px rgba(224,122,95,.6)}
+.ptx{position:absolute;z-index:31;transform:translate(-50%,-50%);pointer-events:none;font-family:var(--fh);font-weight:700;font-size:38px;color:var(--ochre);text-shadow:0 3px 0 var(--deep),2px 0 0 var(--deep),-2px 0 0 var(--deep),0 -2px 0 var(--deep);animation:ptx 1.15s cubic-bezier(.2,1.6,.4,1) forwards;white-space:nowrap}
+@keyframes ptx{0%{opacity:0;transform:translate(-50%,-30%) scale(.3)}18%{opacity:1;transform:translate(-50%,-80%) scale(1.5)}32%{transform:translate(-50%,-90%) scale(1)}100%{opacity:0;transform:translate(-50%,-220%) scale(1)}}
+body.gdhold .gd-coach,body.gdhold .gd-band{visibility:hidden}
+body:has(.gd-band) #bBack{z-index:2147482608!important} /* れんしゅう中も「もどる」は吹き出しより上 */
+body.port .gd-band{font-size:13px!important;letter-spacing:.06em!important;padding:.3em .8em!important}
+body.port.tut #bNote{display:none}
+@media (prefers-reduced-motion:reduce){.stars div{opacity:1;transform:none}.ptx{animation:popfade 1.4s forwards}}
 @media (prefers-reduced-motion:reduce){.pop{animation:popfade 2s forwards}@keyframes popfade{0%,78%{opacity:1}100%{opacity:0}}.pst.next{animation:none}}
 </style></head><body class="port">
 <div id="app">
@@ -202,7 +217,7 @@ body.land .pop{font-size:32px}body.land .pop.big{font-size:50px}
       <div class="name" id="nameRow"><b>なまえ</b><input id="nameIn" maxlength="16" placeholder="（空でも遊べる）" autocomplete="off"></div>
       <button class="tk" id="bStart">はじめる</button>
       <button class="tk n hidden" id="bCont">つづきから</button>
-      <div class="row" style="margin-top:0"><button class="tk c s zk" id="bBook1">📖 図鑑</button><button class="tk c s" id="bNote1">観測ノート</button></div>
+      <div class="row" style="margin-top:0"><button class="tk o s" id="bHow">🪂 あそびかた</button><button class="tk c s zk" id="bBook1">📖 図鑑</button><button class="tk c s" id="bNote1">観測ノート</button></div>
     </div>
   </div>
 
@@ -1521,7 +1536,17 @@ window.ZUKAN_CARDS={"v": 1, "grade": "chu2", "name": "中2理科図鑑", "econom
   function vib(ms){try{if(navigator.vibrate)navigator.vibrate(ms)}catch(e){}}
   function el(tag,cls,html){var d=document.createElement(tag);if(cls)d.className=cls;if(html!=null)d.innerHTML=html;return d}
   function rm(d){if(d&&d.parentNode)d.parentNode.removeChild(d)}
-  function inGuide(t){while(t&&t!==document){if(t.classList&&(t.classList.contains('gd-root')||t.classList.contains('gd-hbtn')))return true;t=t.parentNode}return false}
+  /* れんしゅう中の「指以外は押せない」でも、もどる・確認ダイアログ・音量などは常に押せるようにする（2026-09-28・ルール10）
+     ゲーム側で確実に通したい要素には data-gd-pass を付ける */
+  var PASS_RE=/(^|[-_\s])(back|modoru|return|home|exit|mute|sound|confirm|dialog|modal)([-_\s]|$)/i;
+  function passThru(t){var n=0;while(t&&t!==document&&n<8){n++;if(t.nodeType===1){if(t.hasAttribute('data-gd-pass')||t.tagName==='DIALOG'||t.getAttribute('role')==='dialog'||t.getAttribute('aria-modal')==='true')return true;
+      if(PASS_RE.test(String(t.id||''))||PASS_RE.test(typeof t.className==='string'?t.className:''))return true;
+      if((t.tagName==='BUTTON'||t.tagName==='A'||t.getAttribute('role')==='button')&&/^\s*[◀←＜<]?\s*(もどる|戻る|一覧へ|とじる|閉じる|はい|いいえ|やめる|キャンセル|おと|音)/.test(t.textContent||''))return true}
+      t=t.parentNode}return false}
+  /* 手ほどき中は、もどる等（passThru に当たる fixed/absolute のボタン）を暗幕・吹き出しより上へ出す。終わったら元に戻す */
+  function liftPass(){var out=[];try{var els=document.querySelectorAll('button,a,[role=button],[data-gd-pass]');for(var i=0;i<els.length;i++){var e=els[i];if(e.closest&&e.closest('.gd-root'))continue;if(e.classList&&e.classList.contains('gd-hbtn'))continue;if(!passThru(e))continue;var cs=getComputedStyle(e);if(cs.position!=='fixed'&&cs.position!=='absolute')continue;if(cs.display==='none'||cs.visibility==='hidden')continue;out.push([e,e.style.zIndex]);e.style.zIndex=String(Z+1)}}catch(_){}
+    return function(){for(var i=0;i<out.length;i++){out[i][0].style.zIndex=out[i][1]}}}
+  function inGuide(t){if(passThru(t))return true;while(t&&t!==document){if(t.classList&&(t.classList.contains('gd-root')||t.classList.contains('gd-hbtn')))return true;t=t.parentNode}return false}
   function hexRGB(c){c=String(c||'').trim();var m;
     if((m=c.match(/^#([0-9a-f]{3})$/i)))return [0,1,2].map(function(i){return parseInt(m[1][i]+m[1][i],16)});
     if((m=c.match(/^#([0-9a-f]{6})/i)))return [0,2,4].map(function(i){return parseInt(m[1].substr(i,2),16)});
@@ -1861,7 +1886,7 @@ window.ZUKAN_CARDS={"v": 1, "grade": "chu2", "name": "中2理科図鑑", "econom
     if(!steps||!steps.length){resolveP({done:true,steps:0});return p}
     if(opt.key&&!opt.force&&sget('coach:'+opt.key)){resolveP({already:true});return p}
 
-    var root=mkRoot('gd-coach',opt.theme);root.setAttribute('aria-live','polite');
+    var root=mkRoot('gd-coach',opt.theme);root.setAttribute('aria-live','polite');var unlift=liftPass();
     var uid='gdm'+Math.random().toString(36).slice(2,8);
     root.innerHTML='<svg class="dim" aria-hidden="true"><defs><mask id="'+uid+'" maskUnits="userSpaceOnUse"><rect x="-10" y="-10" width="200%" height="200%" fill="#fff"/><g class="holes"></g></mask></defs>'+
       '<rect class="shade" x="-10" y="-10" width="200%" height="200%" style="fill:var(--gd-dim)" mask="url(#'+uid+')"/><g class="halos"></g><path class="arw"/><path class="arh"/><circle class="dest" r="0"/></svg>';
@@ -1909,6 +1934,7 @@ window.ZUKAN_CARDS={"v": 1, "grade": "chu2", "name": "中2理科図鑑", "econom
     };
     st.finish=function(res){
       if(st.finished)return;st.finished=true;
+      try{unlift()}catch(_){}
       if(st.evOff)st.evOff();
       delTick(tick);popLayer(layer);offPtr();window.removeEventListener('resize',onRs);
       if(res.done&&opt.key)sset('coach:'+opt.key,'1');
@@ -2222,6 +2248,7 @@ window.ZUKAN_CARDS={"v": 1, "grade": "chu2", "name": "中2理科図鑑", "econom
 <script>
 (()=>{
 'use strict';
+/* kd-finish-2026-09-28 */
 const GID='kisho-kiatsu-dive',KOMA='chu2-kisho-06',SKEY='rika-zukan:chu2:game:'+GID+':v1',SEAL_KEY='rika-zukan:chu2:seal:'+KOMA;
 const UNIT='中2理科　気象とその変化　第6回',GTITLE='気圧計スカイダイブ ～高さと大気圧～';
 const TEST_ONLY=window.GAME_MODE==='test';
@@ -2273,6 +2300,9 @@ const DIVES=[
   slip:'<span class="hd">3つの高さから続けて降りる</span>便ごとに地上の気圧がちがう。4分30秒以内に、6つの目印を。'}
 ];
 
+// れんしゅう飛行（仕上げ 2026-09-28）: 操作を全部1回ずつ。絶対に失敗しない（ゲートで止めて待つ）
+const PDIVE={nm:'れんしゅう飛行',sub:'ぜったい失敗しない',H:1400,P0:NORMAL,v:30,alt:1,rings:[[1200,'rec',.68],[700,'pre',.34]],smoke:[500],cap:null};
+
 /* ===== 保存 ===== */
 function fresh(){return{v:1,name:'',started:false,clr:{},stars:{},paid:{},note:[],caps:{},ghost:{},tries:{},sealed:false,seal:null,mc:false,sound:true,hits:0,shots:0,preHit:0,preN:0,boss:null,les:{}}}
 let S;try{S=Object.assign(fresh(),JSON.parse(localStorage.getItem(SKEY))||{})}catch(e){S=fresh()}
@@ -2293,7 +2323,8 @@ const sfx={
  tick:()=>tone(2200,.025,'square',.012),
  jump:()=>{noise(.6,.06,600,.7,0,2400);tone(392,.2,'triangle',.04)},
  rec:()=>{marimba(784);marimba(1175,.06,.09)},
- hit:()=>{marimba(659);marimba(880,.07,.08);marimba(1319,.07,.16)},
+ hit:c=>{const u=Math.pow(2,Math.min(Math.max((c||1)-1,0),8)*2/12);marimba(659*u);marimba(880*u,.07,.08);marimba(1319*u,.07,.16);if((c||0)>=3)marimba(1760*u,.06,.24)},
+ stamp:k=>{tone(150,.22,'sine',.14,0,60);marimba([784,988,1319][k%3],.07,.03)},
  off:()=>{tone(233,.3,'triangle',.05,0,175)},
  puff:()=>{tone(170,.25,'sine',.09,0,80);noise(.3,.05,500,.8)},
  lid:()=>{tone(520,.06,'square',.03);tone(390,.09,'square',.03,.05)},
@@ -2576,11 +2607,11 @@ $('#bBack').onclick=()=>{ac();sfx.tap();
  if(MODE==='result'){ovClose();toMap();return}
  if(MODE==='test'){if(TEST_ONLY){if(INHUB){try{window.parent.postMessage({type:'rika-close-game'},'*')}catch(e){}}else startTest();return}
   ovOpen('<div class="no">確認テスト</div><h2>テストをやめる？</h2><p>確認テストは、次はさいしょから。空の旅の進み具合は保存されています。</p><div class="row"><button class="tk c s" id="bkNo">つづける</button><button class="tk n" id="bkGo">ポスターの地図へ</button></div>');$('#bkNo').onclick=ovClose;$('#bkGo').onclick=()=>{ovClose();toMap()};return}
- if(MODE==='dive'){paused=true;windSet(0);ovOpen('<div class="no">いったん止める</div><h2>ポスターの地図にもどる？</h2><p>進み具合は保存されます（封印したカプセル・★・ノートはそのまま。この便は次にはじめから）。</p><div class="row"><button class="tk c s" id="bkNo">つづける</button><button class="tk n" id="bkGo">地図へもどる</button></div>');
-  $('#bkNo').onclick=()=>{ovClose();paused=false};$('#bkGo').onclick=()=>{ovClose();paused=false;windOff();toMap()}}};
-function toTitle(){MODE='title';G=null;windOff();show(['title']);$('#bCont').classList.toggle('hidden',!S.started);backBtn();zkButtons();hideSlip()}
+ if(MODE==='dive'){paused=true;windSet(0);document.body.classList.add('gdhold');ovOpen('<div class="no">いったん止める</div><h2>ポスターの地図にもどる？</h2><p>進み具合は保存されます（封印したカプセル・★・ノートはそのまま。この便は次にはじめから）。</p><div class="row"><button class="tk c s" id="bkNo">つづける</button><button class="tk n" id="bkGo">地図へもどる</button></div>');
+  $('#bkNo').onclick=()=>{ovClose();paused=false;document.body.classList.remove('gdhold')};$('#bkGo').onclick=()=>{ovClose();paused=false;windOff();toMap()}}};
+function toTitle(){tutStop();if(HELP)HELP.hide();MODE='title';G=null;windOff();show(['title']);$('#bCont').classList.toggle('hidden',!S.started);backBtn();zkButtons();hideSlip()}
 function nextDive(){for(let i=0;i<DIVES.length;i++)if(!S.clr[i])return i;return DIVES.length-1}
-function toMap(){MODE='map';G=null;windOff();show(['map']);backBtn();hideSlip();const nx=nextDive();
+function toMap(){tutStop();if(HELP)HELP.show();MODE='map';G=null;windOff();show(['map']);backBtn();hideSlip();const nx=nextDive();
  $('#posters').innerHTML=DIVES.map((d,i)=>{const lock=i>0&&!S.clr[i-1];const st=S.stars[i]||[0,0,0];return '<button class="pst'+(S.clr[i]?' done':'')+(lock?' lock':'')+(i===nx&&!S.clr[i]?' next':'')+'" data-i="'+i+'" '+(lock?'disabled':'')+'><span class="n">第'+(i+1)+'便</span><span class="st">'+st.map(v=>v?'★':'☆').join('')+'</span><span class="t">'+esc(d.nm)+'<small>'+esc(d.sub)+(d.boss?'':'・'+(d.H)+'mから')+'</small></span></button>'}).join('');
  document.querySelectorAll('.pst').forEach(b=>b.onclick=()=>{sfx.tap();startDive(+b.dataset.i,0)});
  const nst=Object.values(S.stars).reduce((a,s)=>a+s.filter(Boolean).length,0);$('#mapInfo').textContent='★'+nst+' / 24';$('#mapJar').textContent='予想カプセル '+capCount()+' / 7';
@@ -2593,7 +2624,7 @@ $('#bGacha').onclick=()=>{sfx.tap();openGacha()};
 $('#bBook1').onclick=$('#bBook2').onclick=()=>{sfx.tap();openBook()};
 $('#bNote1').onclick=$('#bNote2').onclick=()=>{sfx.tap();openNote()};
 $('#bNote').onclick=()=>{ac();sfx.tap();openNote()};
-$('#bStart').onclick=()=>{ac();S.name=$('#nameIn').value.trim();S.started=true;save();sfx.tap();if(!S.clr[0])startDive(0,0);else toMap()};
+$('#bStart').onclick=()=>{ac();S.name=$('#nameIn').value.trim();S.started=true;save();sfx.tap();if(GD){startWithGuide();return}if(!S.clr[0])startDive(0,0);else toMap()};
 $('#bCont').onclick=()=>{ac();S.name=$('#nameIn').value.trim()||S.name;save();sfx.tap();toMap()};
 
 /* ===== 観測ノート ===== */
@@ -2620,23 +2651,23 @@ function openNote(){const wasPaused=paused;if(MODE==='dive'){paused=true;windSet
 
 /* ===== 降下 ===== */
 let BR=null;// タイムアタックの記録
-function startDive(i,leg){ac();const d=DIVES[i];if(!leg&&d.boss)BR={t:0,legs:[]};
+function startDive(i,leg){ac();const tut=i===-1;const d=tut?PDIVE:DIVES[i];if(!leg&&d.boss)BR={t:0,legs:[]};document.body.classList.toggle('tut',tut);
  const L=d.boss?d.legs[leg]:d;
  G={i,leg:leg||0,d,H:L.H,P0:L.P0,h:L.H,x:.5,tx:.5,t:0,v:d.v,alt:!!d.alt,phase:'jump',
   rings:(d.boss?[]:d.rings).map(r=>({h:r[0],k:r[1],x:r[2],st:'wait'})),
-  targets:L.smoke.map(h=>({h,st:'wait',at:null})),tags:[],tagGot:null,tagBad:null,puffs:[],path:[],combo:0,lid:null,lidOn:false,lidK:null,pred:0,chute:false,fast:false,wxHint:false,hinted:{},landT:0};
+  targets:L.smoke.map(h=>({h,st:'wait',at:null})),tags:[],tagGot:null,tagBad:null,puffs:[],path:[],combo:0,lid:null,lidOn:false,lidK:null,pred:0,chute:false,fast:false,wxHint:false,hinted:{},landT:0,tut,fastT:0,fastDone:false};
  if(!d.boss&&d.cap){G.rings.push({h:d.cap[0],k:'cap',x:d.cap[1],st:'wait'});
   const T=TAGS[d.tag],txts=[{txt:T.ok,ok:true},{txt:T.ng[0],ok:false},{txt:T.ng[1],ok:false}].sort(()=>Math.random()-.5),xs=(PORT?[.28,.72,.5]:[.3,.78,.54]);
   txts.forEach((t,k)=>G.tags.push({txt:t.txt,ok:t.ok,h:d.tagH[k],x:xs[k],got:false,pw:tagPW(t.txt)}))}
  G.rings.sort((a,b)=>b.h-a.h);
  // 前回の自分（ゴースト）
  const gh=d.ghost&&S.ghost[i+'-'+(leg||0)];G.ghost=gh||null;if(gh)(gh.sm||[]).forEach(h=>G.puffs.push({x:gh.xs[Math.floor((G.H-h)/25)]||.5,h,ok:false,ghost:true,t:2,lab:''}));
- MODE='dive';paused=false;show(['play']);backBtn();hideSlip();ovClose();CAMH=G.h;
- $('#hDvS').textContent='第'+(i+1)+'便'+(d.boss?'・'+(G.leg+1)+'段目':'');$('#hDv').textContent=d.nm;$('#hWx').textContent=G.P0+'hPa';
+ MODE='dive';paused=false;show(['play']);backBtn();hideSlip();ovClose();CAMH=G.h;if(HELP)HELP.show();
+ $('#hDvS').textContent=tut?'れんしゅう':'第'+(i+1)+'便'+(d.boss?'・'+(G.leg+1)+'段目':'');$('#hDv').textContent=d.nm;$('#hWx').textContent=G.P0+'hPa';
  const wb=$('#hWxBox');wb.classList.toggle('low',G.P0<NORMAL);wb.classList.toggle('high',G.P0>NORMAL);
  $('#hCap').textContent=capCount()+'/7';$('#hTmBox').classList.toggle('hidden',!d.boss);kk();showDial(false);updCtl();
- if(!leg)slip(d.slip,d.boss?7:6);else slip('<span class="hd">第'+(leg+1)+'段　'+G.H+'mから</span>今日の地上の気圧 <b>'+G.P0+'hPa</b>',4);
- S.started=true;S.tries[i]=(S.tries[i]||0)+1;save();windOn();sfx.jump()}
+ if(tut){}else if(!leg)slip(d.slip,d.boss?7:6);else slip('<span class="hd">第'+(leg+1)+'段　'+G.H+'mから</span>今日の地上の気圧 <b>'+G.P0+'hPa</b>',4);
+ S.started=true;if(!tut)S.tries[i]=(S.tries[i]||0)+1;save();windOn();sfx.jump()}
 function showDial(on){$('#dialCtl').classList.toggle('hidden',!on);updCtl()}
 function updCtl(){const lid=G&&G.lid;$('#bSmoke').classList.toggle('hidden',!!lid);$('#bFast').classList.toggle('hidden',!!lid);$('#bSmoke').disabled=!G||!G.targets.some(t=>t.st==='wait');if(lid)$('#dRd').innerHTML=(G.lidK==='cap'?'カプセルの予想':'輪の予想')+'<b>'+G.pred+'</b>'}
 function setPred(v){if(!G||!G.lid)return;const nv=clamp(Math.round(v),600,1050);if(nv!==G.pred){G.pred=nv;sfx.tick();updCtl()}}
@@ -2655,6 +2686,7 @@ function update(dt){
  if(keys.L)g.tx=clamp(g.tx-dt*.8,.04,.96);if(keys.R)g.tx=clamp(g.tx+dt*.8,.04,.96);
  g.x+=(g.tx-g.x)*Math.min(1,dt*6);
  let v=g.v;if(g.lid&&!g.fast)v*=.6;if(g.fast&&!g.lid)v*=1.8;if(g.chute)v=10;
+ if(g.tut)v=tutGate(g,v,dt);
  const h0=g.h;g.h-=v*dt;
  const pi=Math.floor((g.H-g.h)/25);if(g.path[pi]==null)g.path[pi]=Math.round(g.x*1000)/1000;
  // ふた（予想の輪・カプセルの輪の手前）
@@ -2669,7 +2701,7 @@ function update(dt){
  // 計画の札
  g.tags.forEach(t=>{if(t.got)return;if(Math.abs(g.h-t.h)<30&&Math.abs(g.x-t.x)<t.pw/2/SKY.w+.02)grabTag(t)});
  // 出しそびれ
- g.targets.forEach(t=>{if(t.st==='wait'&&g.h<t.h-TOL_SMOKE){t.st='late';g.combo=0;const [sx,sy]=screenOf(g.x,g.h);pop('目印を出しそびれた',t.h+'mを過ぎた',sx,sy-60,'g');sfx.off();updCtl()}});
+ g.targets.forEach(t=>{if(t.st==='wait'&&g.h<t.h-TOL_SMOKE){t.st='late';comboBreak(g.combo);g.combo=0;const [sx,sy]=screenOf(g.x,g.h);pop('目印を出しそびれた',t.h+'mを過ぎた',sx,sy-60,'g');sfx.off();updCtl()}});
  if(!g.chute&&g.h<=150){g.chute=true;sfx.chute()}
  if(g.h<=0){g.h=0;g.phase='land';g.landT=0;sfx.land();windSet(0);addNote(0,g.P0,g.P0);const [sx,sy]=screenOf(g.x,0);burst(sx,sy,10,[C.sage,C.cream,C.ochre])}
  g.puffs.forEach(p=>p.t+=dt);stepParts(dt);
@@ -2677,18 +2709,18 @@ function update(dt){
  CAMH=g.h;
  if(d.boss){const left=Math.max(0,d.limit-BR.t);$('#hTm').textContent=Math.floor(left/60)+':'+String(Math.floor(left%60)).padStart(2,'0')}}
 
-function passRing(r,through){const g=G,[sx,sy]=screenOf(r.x,r.h);const real=PR(r.h,g.P0);
+function passRing(r,through){const g=G,[sx,sy]=screenOf(r.x,r.h);const real=PR(r.h,g.P0);if(g.tut)through=true;
  if(r.k==='rec'){if(!through){r.st='miss';pop('輪をはずれた','記録できなかった',sx,sy-40,'g');sfx.off();return}
-  r.st='ok';r.real=real;addNote(r.h,real,g.P0);sfx.rec();burst(sx,sy,8,[C.paper,C.ochre]);
+  r.st='ok';r.real=real;addNote(r.h,real,g.P0);sfx.rec();burst(sx,sy,14,[C.paper,C.ochre,C.coral]);fx(sx,sy,10,{shake:4,flash:.25,vib:15});
   const nv=noteVal(r.h);
   if(g.P0!==NORMAL&&nv){pop('ノートより '+Math.round(nv-real)+'hPa '+(real<nv?'低い！':'高い！'),'同じ'+r.h+'mなのに　今日 '+Math.round(real)+' ／ ふつうの日 '+nv,sx,sy-50,'n big');slip('<span class="hd">同じ高さなのに、値がちがう</span>今日は地上の気圧が <b>'+g.P0+'hPa</b>（ふつうの日より'+Math.abs(NORMAL-g.P0)+'hPa'+(g.P0<NORMAL?'低い':'高い')+'）。どの高さでも、だいたいその分ずれて出る。',7)}
   else pop('記録！ '+r.h+'m',Math.round(real)+'hPa'+(g.i===0&&r.h<1500?'（下りるほど大きい）':''),sx,sy-50,'n');
   earn(10,'control','rec-first',sx,sy);return}
  if(r.k==='pre'){if(!through){r.st='miss';pop('輪をはずれた','予想は使われなかった',sx,sy-40,'g');sfx.off();return}
-  r.pred=g.pred;r.real=real;const e=r.pred-real,ok=Math.abs(e)<=TOL_PRE;r.st=ok?'hit':'off';S.preN++;addNote(r.h,real,g.P0);sfx.reveal();
-  if(ok){S.preHit++;g.combo++;setTimeout(sfx.hit,90);burst(sx,sy,18);earn(10,'predict','p'+g.i+'-'+r.h,sx,sy);pop((g.combo>1?g.combo+'連続　':'')+'予想どおり！','予想 '+r.pred+' → 本当 '+Math.round(real)+'hPa',sx,sy-60,'big');
+  r.pred=g.pred;r.real=real;const e=r.pred-real,ok=Math.abs(e)<=TOL_PRE;r.st=ok?'hit':'off';if(!g.tut)S.preN++;addNote(r.h,real,g.P0);sfx.reveal();
+  if(ok){if(!g.tut)S.preHit++;g.combo++;setTimeout(()=>sfx.hit(g.combo),90);burst(sx,sy,26);fx(sx,sy,10,{shake:7,flash:.4,vib:[20,30,20],combo:g.combo});earn(10,'predict','p'+g.i+'-'+r.h,sx,sy);pop((g.combo>1?g.combo+'連続　':'')+'予想どおり！','予想 '+r.pred+' → 本当 '+Math.round(real)+'hPa',sx,sy-60,'big');
    if(g.i===1&&r.h===2000)earn(30,'rule','rule-up',sx,sy);if(g.i===5&&r.h===3776)earn(30,'rule','rule-fuji',sx,sy);if(g.P0!==NORMAL)earn(30,'rule','rule-wx-pre',sx,sy)}
-  else{g.combo=0;sfx.off();pop('はずれ','予想 '+r.pred+' → 本当 '+Math.round(real)+'hPa',sx,sy-60,'n');
+  else{comboBreak(g.combo);g.combo=0;sfx.off();buzz([10,40,10]);pop('はずれ','予想 '+r.pred+' → 本当 '+Math.round(real)+'hPa',sx,sy-60,'n');
    if(!g.hinted.pre){g.hinted.pre=true;slip(e>0?'<span class="hd">本当は、もっと小さかった</span>高いところほど、上にある空気が少ない＝気圧は小さい。ノートの値の減り方から考えよう。':'<span class="hd">本当は、もっと大きかった</span>低いところほど、上にある空気が多い＝気圧は大きい。ノートの近い高さの値をよく見よう。',6)}}
   save();return}
  if(r.k==='cap')capPass(r,through,sx,sy)}
@@ -2702,24 +2734,27 @@ function capPass(r,through,sx,sy){const g=G;
  if(!mono){r.st='nomono';sfx.crack();burst(sx,sy,8,['#8b8f95',C.cream]);pop('カプセルにひび','高いほど小さいはず：'+why,sx,sy-50,'n');
   slip('<span class="hd">予想どうしが「高いほど小さい」になっていない</span>'+r.h+'mの予想は '+val+'hPa。'+esc(why)+'。',7);return}
  r.st='sealed';r.val=val;S.caps[r.h]={h:r.h,val,tag:cl(TAGS[g.d.tag].ok),at:Date.now()};save();
- const [jx,jy]=jarPos();FLY.push({x:sx,y:sy,tx:jx,ty:jy,t:0});sfx.cap();burst(sx,sy,16,[C.ochre,C.cream,C.paper]);
+ const [jx,jy]=jarPos();FLY.push({x:sx,y:sy,tx:jx,ty:jy,t:0});sfx.cap();burst(sx,sy,30,[C.ochre,C.cream,C.paper]);fx(sx,sy,10,{shake:8,flash:.5,vib:[30,40,30]});if(GD)setTimeout(()=>GD.cheer('カプセル封印！',{x:sx,y:sy-110,size:.9,sound:false}),350);
  earn(10,'control','cap'+r.h,sx,sy);pop('カプセル封印',r.h+'m：予想 '+val+'hPa（本物は校外学習で）',sx,sy-60,'o big');
  setTimeout(()=>{$('#hCap').textContent=capCount()+'/7'},1200)}
 function grabTag(t){const g=G;t.got=true;const [sx,sy]=screenOf(t.x,t.h);
- if(t.ok){g.tagGot=cl(t.txt);sfx.grab();burst(sx,sy,10,[C.ochre,C.cream]);pop('計画の札','「'+cl(t.txt)+'」',sx,sy-40,'o')}
- else{g.tagBad=cl(t.txt);g.combo=0;sfx.crack();pop('その計画だと…','「'+cl(t.txt)+'」',sx,sy-40,'n');slip('<span class="hd">まちがった計画の札</span>'+esc(TAGS[g.d.tag].why)+'<br>このままではカプセルを封印できない。',6)}}
+ if(t.ok){g.tagGot=cl(t.txt);sfx.grab();burst(sx,sy,16,[C.ochre,C.cream]);fx(sx,sy,0,{shake:3,flash:.2,vib:12});pop('計画の札','「'+cl(t.txt)+'」',sx,sy-40,'o')}
+ else{g.tagBad=cl(t.txt);comboBreak(g.combo);g.combo=0;sfx.crack();buzz([10,40,10]);pop('その計画だと…','「'+cl(t.txt)+'」',sx,sy-40,'n');slip('<span class="hd">まちがった計画の札</span>'+esc(TAGS[g.d.tag].why)+'<br>このままではカプセルを封印できない。',6)}}
 function doSmoke(){const g=G;if(MODE!=='dive'||!g||paused||g.phase!=='fall'||g.lid)return;const tg=g.targets.find(t=>t.st==='wait');
  const [sx,sy]=screenOf(g.x,g.h);if(!tg){pop('目印はもう全部出した','',sx,sy-60,'g');return}
- const err=g.h-tg.h,ok=Math.abs(err)<=TOL_SMOKE,rd=Math.round(reading());tg.st=ok?'hit':'off';tg.at=g.h;tg.rd=rd;S.shots++;
+ const err=g.h-tg.h,ok=Math.abs(err)<=TOL_SMOKE,rd=Math.round(reading());
+ if(g.tut&&!ok){sfx.tap();buzz(8);pop('まだ高い！','高度計が '+tg.h+'m になるまで待とう',sx,sy-60,'n');return}
+ tg.st=ok?'hit':'off';tg.at=g.h;tg.rd=rd;if(!g.tut)S.shots++;
  g.puffs.push({x:g.x,h:g.h,ok,t:0,lab:ok?tg.h+'m':Math.round(g.h/10)*10+'m'});sfx.puff();
- if(ok){S.hits++;g.combo++;setTimeout(sfx.hit,120);burst(sx,sy,20);earn(15,'hit','s'+g.i+'-'+g.leg+'-'+tg.h,sx,sy);
+ if(ok){if(!g.tut)S.hits++;g.combo++;setTimeout(()=>sfx.hit(g.combo),120);burst(sx,sy,28);fx(sx,sy,15,{shake:7,flash:.4,vib:[20,30,20],combo:g.combo});earn(15,'hit','s'+g.i+'-'+g.leg+'-'+tg.h,sx,sy);
   pop((g.combo>1?g.combo+'連続　':'')+'ぴったり！',tg.h+'m（ずれ '+Math.abs(Math.round(err))+'m）気圧計 '+rd+'hPa',sx,sy-70,'big');
   if(g.P0!==NORMAL&&Math.abs(PR(tg.h,NORMAL)-PR(tg.h,g.P0))>9)earn(30,'rule','rule-wx',sx,sy)}
- else{g.combo=0;setTimeout(sfx.off,100);pop(err>0?'まだ高かった':'下りすぎた','けむりの高さ '+Math.round(g.h/10)*10+'m（目標 '+tg.h+'m）',sx,sy-70,'n');
+ else{comboBreak(g.combo);g.combo=0;setTimeout(sfx.off,100);buzz([10,40,10]);pop(err>0?'まだ高かった':'下りすぎた','けむりの高さ '+Math.round(g.h/10)*10+'m（目標 '+tg.h+'m）',sx,sy-70,'n');
   if(g.P0!==NORMAL&&!g.wxHint){g.wxHint=true;const dP=NORMAL-g.P0;slip('<span class="hd">ふつうの日のノートの値のままだと、ずれる！</span>今日の地上は <b>'+g.P0+'hPa</b>＝ふつうの日より<b>'+Math.abs(dP)+'hPa'+(dP>0?'低い':'高い')+'</b>。どの高さでも、だいたい'+Math.abs(dP)+'hPa'+(dP>0?'低く':'高く')+'出る。ノートの値から'+(dP>0?'引いた':'足した')+'値で「けむり」。',9)}
   else if(!g.hinted[tg.h]){g.hinted[tg.h]=true;const nv=noteVal(tg.h);slip(nv?'<span class="hd">ノートでは '+tg.h+'m＝'+nv+'hPa</span>'+(err>0?'気圧計が'+nv+'になるまで待ってから。今は'+rd+'（まだ小さい＝まだ高い）。':'気圧計が'+nv+'をこえる前に。今は'+rd+'（もう大きい＝低すぎる）。'):'<span class="hd">ノートの近い高さの値から考えよう</span>高いほど小さい。',6)}}
  save();updCtl()}
 function finishDive(){const g=G,d=g.d,i=g.i;windOff();
+ if(g.tut){g.tut=false;document.body.classList.remove('tut');if(GD)GD.tutorialClear();else{startDive(0,0)}return}
  const nT=g.targets.length,hits=g.targets.filter(t=>t.st==='hit').length;
  S.ghost[i+'-'+g.leg]={xs:g.path,sm:g.targets.filter(t=>t.at!=null).map(t=>Math.round(t.at))};
  if(d.boss){BR.legs.push({hits,n:nT,res:g.targets.map(t=>({h:t.h,st:t.st,at:t.at}))});save();
@@ -2745,13 +2780,13 @@ function finishDive(){const g=G,d=g.d,i=g.i;windOff();
  result(i,clear,stars,'<ul class="lst">'+li+'</ul>'+les+(clear?'':'<p class="small">クリアの条件：'+esc(need)+'</p>'))}
 function mergeStars(i,st){const o=S.stars[i]||[0,0,0];S.stars[i]=o.map((v,k)=>v||st[k]?1:0)}
 function result(i,clear,stars,body){const d=DIVES[i];const lab=d.boss?['6つ中5つ以上・時間内','6つ全部命中','3分45秒以内']:i===0?['輪を2つ以上記録','3つの輪を全部記録','着地の的に降りた']:[(d.cap?'カプセル封印＋':'')+'けむり命中','予想の輪をぜんぶ的中'.replace('予想の輪をぜんぶ的中',d.rings.some(r=>r[1]==='pre')?'予想の輪をぜんぶ的中':'記録の輪をくぐった'),'けむりを全部命中'];
- if(clear)sfx.fan();else sfx.off();if(clear&&!RM)burst(W/2,H*.3,30);
+ if(clear){if(GD)GD.celebrate(i===DIVES.length-1?'三段降下、成功！':'着地成功！');else sfx.fan()}else sfx.off();if(clear&&!RM)burst(W/2,H*.3,40);
  const last=i===DIVES.length-1;
  ovOpen('<div class="no">第'+(i+1)+'便　'+esc(d.nm)+'</div><h2>'+(clear?(last?'三段降下、成功！':'着地！　この便はクリア'):'着地。もう一度いこう')+'</h2><div class="stars">'+stars.map((v,k)=>'<div class="'+(v?'on':'')+'"><i>'+(v?'★':'☆')+'</i>'+esc(lab[k])+'</div>').join('')+'</div>'+body+
   '<div class="row"><button class="tk c s" id="rAgain">もう一度この便</button>'+(clear&&last&&!S.sealed?'<button class="tk" id="rSeal">カプセルを封印する</button>':clear&&!last?'<button class="tk" id="rNext">つぎの便へ</button>':'')+'<button class="tk n s" id="rMap">ポスターの地図</button></div>');
  $('#rAgain').onclick=()=>{sfx.tap();startDive(i,0)};$('#rMap').onclick=()=>{sfx.tap();ovClose();toMap()};
  if($('#rNext'))$('#rNext').onclick=()=>{sfx.tap();startDive(i+1,0)};if($('#rSeal'))$('#rSeal').onclick=()=>{sfx.tap();sealScreen()};
- MODE='result';backBtn();$('#bNote').classList.add('hidden');showDial(false)}
+ MODE='result';backBtn();$('#bNote').classList.add('hidden');showDial(false);stampStars(stars)}
 
 /* ===== 封印（校外学習のあとに開ける） ===== */
 function sealScreen(){MODE='map';show(['map']);backBtn();
@@ -2772,7 +2807,7 @@ function finalClear(){const go=()=>startTest();if(!S.mc&&window.Zukan&&Zukan.mai
 
 /* ===== 確認テスト ===== */
 let TS=null;function playerName(){return window.PLAYER_NAME||S.name||''}
-function startTest(){if(!window.Quiz)return;MODE='test';G=null;windOff();TS={qs:Quiz.test(),i:0,ans:[]};show(['test']);backBtn();hideSlip();ovClose();renderQ()}
+function startTest(){if(!window.Quiz)return;tutStop();if(HELP)HELP.hide();MODE='test';G=null;windOff();TS={qs:Quiz.test(),i:0,ans:[]};show(['test']);backBtn();hideSlip();ovClose();renderQ()}
 function renderQ(){const q=TS.qs[TS.i],box=$('#tbox');
  box.innerHTML='<span class="tno">確認テスト　'+(TS.i+1)+' / '+TS.qs.length+'</span><div class="prog">'+TS.qs.map((_,i)=>'<i class="'+(i<TS.i?'on':'')+'"></i>').join('')+'</div><div class="tq">'+q.q+'</div>'+(q.fig?'<div class="fig2">'+q.fig+'</div>':'')+'<div id="ta"></div>';
  const ta=$('#ta');
@@ -2815,7 +2850,7 @@ function botStep(){const g=G;if(!g||g.phase!=='fall')return;
  const tg=g.targets.find(t=>t.st==='wait');if(tg&&Math.abs(g.h-tg.h)<25)doSmoke()}
 
 /* ===== ループ ===== */
-function render(){const t=performance.now()/1000;ctx.setTransform(DPR,0,0,DPR,0,0);
+function render(){const t=performance.now()/1000;ctx.setTransform(DPR,0,0,DPR,0,0);if(SHAKE>0&&!RM&&MODE==='dive')ctx.translate((Math.random()-.5)*SHAKE*2,(Math.random()-.5)*SHAKE*2);
  if(MODE==='dive'||MODE==='result'){setView(VD);
   if(!G){return}
   ctx.save();ctx.beginPath();ctx.rect(SKY.x,SKY.y,SKY.w,SKY.h);ctx.clip();
@@ -2836,7 +2871,7 @@ function render(){const t=performance.now()/1000;ctx.setTransform(DPR,0,0,DPR,0,
   // ポスターの縁
   ctx.strokeStyle=C.cream;ctx.lineWidth=10;ctx.strokeRect(SKY.x+5,SKY.y+5,SKY.w-10,SKY.h-10);ctx.strokeStyle=C.navy;ctx.lineWidth=2;ctx.strokeRect(SKY.x+11,SKY.y+11,SKY.w-22,SKY.h-22);
   ctx.restore();
-  drawPanel();drawParts();return}
+  drawPanel();drawParts();if(FLASH>0){ctx.setTransform(DPR,0,0,DPR,0,0);ctx.fillStyle='rgba(251,246,234,'+(FLASH*.6).toFixed(3)+')';ctx.fillRect(0,0,W,H)}return}
  // タイトル・地図: 1枚のポスター
  setView(VF);CAMH=900+Math.sin(t*.2)*8;
  const g0=G;G=null;
@@ -2846,14 +2881,76 @@ function render(){const t=performance.now()/1000;ctx.setTransform(DPR,0,0,DPR,0,
  drawDiver(wx(PORT?.26:.5),wy(PORT?1260:1250)+Math.sin(t*1.7)*5,PORT?1.1:1.4,t,false,1);
  grain(0,0,W,H,.9);ctx.strokeStyle=C.cream;ctx.lineWidth=14;ctx.strokeRect(7,7,W-14,H-14);ctx.strokeStyle=C.navy;ctx.lineWidth=2;ctx.strokeRect(15,15,W-30,H-30);
  ctx.restore();G=g0}
-let lastT=0;function loop(ts){const dt=Math.min(.05,(ts-lastT)/1000||0);lastT=ts;if(MODE==='dive')update(dt);else if(MODE==='result'&&G){stepParts(dt);G.puffs.forEach(p=>p.t+=dt)}render();requestAnimationFrame(loop)}
+let lastT=0;function loop(ts){const dt=Math.min(.05,(ts-lastT)/1000||0);lastT=ts;if(SHAKE>0)SHAKE=Math.max(0,SHAKE-dt*30);if(FLASH>0)FLASH=Math.max(0,FLASH-dt*2.4);if(MODE==='dive')update(dt);else if(MODE==='result'&&G){stepParts(dt);G.puffs.forEach(p=>p.t+=dt)}render();requestAnimationFrame(loop)}
 
 /* ===== 起動 ===== */
 resize();
 try{window.Zukan&&Zukan.setup&&Zukan.setup({game:GID,koma:[KOMA]})}catch(e){}
 setSnd();kk();
 if(window.PLAYER_NAME){$('#nameIn').value=window.PLAYER_NAME;$('#nameRow').classList.add('hidden')}else if(S.name)$('#nameIn').value=S.name;
-window.__game={G:()=>G,S:()=>S,mode:()=>MODE,startDive,toMap,toTitle,startTest,sealScreen,openNote,smoke:doSmoke,setPred,
+
+/* ===== ご褒美の演出（ルール11／仕上げ 2026-09-28） ===== */
+let SHAKE=0,FLASH=0;const STAGES=[3,5,8];
+function buzz(p){try{navigator.vibrate&&navigator.vibrate(p)}catch(e){}}
+function ptx(t,x,y){const d=document.createElement('div');d.className='ptx';d.textContent=t;d.style.left=clamp(x,40,W-40)+'px';d.style.top=clamp(y,70,H-40)+'px';pops.appendChild(d);setTimeout(()=>d.remove(),1250)}
+function fx(x,y,pts,o){o=o||{};if(!RM){SHAKE=Math.max(SHAKE,o.shake||0);FLASH=Math.max(FLASH,o.flash||0)}if(o.vib)buzz(o.vib);
+ if(pts)setTimeout(()=>ptx('+'+pts,x+36,y-20),140);
+ const c=o.combo||0;if(c>=2&&GD){const big=c>=STAGES[1],mid=c>=STAGES[0];const word=c>=STAGES[2]?'空の達人！':big?'気圧マスター！':mid?'いい読み！':'';
+  setTimeout(()=>GD.cheer('×'+c+' 連続'+(word?'　'+word:''),{x:SKY.x+SKY.w/2,y:Math.max(110,DY-90),size:.75+Math.min(c,8)*.1,color:big?'#DDA94B':mid?'#E07A5F':'#2C4A6E',sparks:mid?22:10,sound:false}),420);
+  if(STAGES.includes(c)){setTimeout(()=>{burst(SKY.x+SKY.w/2,DY,44,[C.ochre,C.coral,C.cream,C.paper]);FLASH=RM?0:.6;sfx.cap()},620)}}}
+function comboBreak(c){if(c<2)return;const nx=STAGES.find(k=>k>c)||c+1;setTimeout(()=>{if(GD)GD.cheer('あと'+(nx-c)+'回で ×'+nx+' だった！',{x:SKY.x+SKY.w/2,y:Math.max(110,DY-70),size:.62,color:'#2C4A6E',sparks:false,sound:false})},520)}
+function stampStars(st){const el=document.querySelectorAll('#ovBox .stars div');el.forEach((e,k)=>setTimeout(()=>{e.classList.add('in');if(st[k]){sfx.stamp(k);buzz(18);const r=e.getBoundingClientRect();burst(r.left+r.width/2,r.top+r.height/2,18,[C.ochre,C.coral,C.cream])}else sfx.tap()},450+k*430))}
+
+/* ===== 遊び方案内（Guide・制作ルール13／仕上げ 2026-09-28） ===== */
+const GD=window.Guide||null;let HELP=null,PRACTICE=null,HPAUSE=false;
+const hOff=()=>PORT?140:PAN.w+84; // 横長：ノートの左どなり（計器の帯の見出しにかぶらない）
+function tutStop(){document.body.classList.remove('gdhold','tut');if(GD&&G&&G.tut){G.tut=false;GD.tutorialEnd()}}
+// 練習のゲート：その操作をするまで、先へは落ちない（絶対に失敗しない）
+function tutGate(g,v,dt){const al=r=>Math.abs(g.x-r.x)<=RR()*.7;const pOK=r=>g.lid===r&&Math.abs(g.pred-PR(r.h,g.P0))<=TOL_PRE-1;
+ const r0=g.rings[0],r1=g.rings[1],tg=g.targets[0];
+ const cap=fl=>Math.min(v,Math.max(0,(g.h-fl)/dt));
+ if(r0.st==='wait'){if(!al(r0))v=cap(r0.h+60);return v}
+ if(!g.fastDone){if(g.fast){g.fastT+=dt;if(g.fastT>=.45)g.fastDone=true;return v}return 0}
+ if(r1.st==='wait'){if(!g.lid)return v*2.2;if(!(al(r1)&&pOK(r1)))v=cap(r1.h+55);
+  if(g.lid&&g.pred>PR(r1.h,g.P0)+TOL_PRE&&!g.hinted.over){g.hinted.over=true;slip('<span class="hd">大きくしすぎ！</span><b>−10</b> や <b>−1</b> で少しもどそう。',5)}return v}
+ if(tg&&tg.st==='wait'){if(g.h>tg.h+80)v*=2;return cap(tg.h+3)}
+ return v}
+if(GD){
+ GD.setup({
+  theme:{bg:'#F3E7CF',fg:'#2C4A6E',accent:'#E07A5F',accentText:'#F3E7CF',font:'"Kaisei Opti","Hiragino Mincho ProN",serif',bodyFont:'"Zen Kaku Gothic New","Hiragino Sans",sans-serif',
+   radius:10,texture:'grain',line:'#2C4A6E',dim:'rgba(31,53,80,.5)',shadow:'inset 0 0 0 3px #F3E7CF,inset 0 0 0 5px #E07A5F,6px 6px 0 #1F3550',outline:'#F3E7CF',hand:'#FBF6EA',handLine:'#2C4A6E'},
+  sfx:k=>{ac();({step:()=>sfx.rec(),done:()=>sfx.hit(3),clear:()=>sfx.fan(),open:()=>sfx.lid(),close:()=>sfx.tap(),cheer:()=>sfx.star(),nudge:()=>sfx.tick()}[k]||sfx.tap)()},
+  muted:()=>!S.sound});
+ const on=()=>MODE==='dive'&&G&&G.tut;
+ const dv=()=>G?{x:wx(G.x),y:DY,r:34}:null;
+ const rg=k=>()=>G&&G.rings[k]?{x:wx(G.rings[k].x),y:wy(G.rings[k].h),r:Math.max(30,RR()*SKY.w*.8)}:null;
+ PRACTICE={label:'れんしゅう中',clearText:'れんしゅうクリア！',clearOn:'manual',
+  start:()=>{ovClose();startDive(-1,0)},
+  steps:[
+   {gesture:'drag',label:'左右に動く',target:dv,to:rg(0),until:()=>on()&&G.rings[0].st==='ok',text:'指で **左右にドラッグ** して、白い輪をくぐろう。くぐった高さの **気圧計の値** がノートに記録される',praise:'記録！'},
+   {gesture:'hold',label:'急降下',target:'#bFast',until:()=>on()&&G.fastDone,text:'**▼急降下** を **長おし** すると、速く落ちる'},
+   {gesture:'tap',label:'予想する',target:'#dialCtl button[data-d="10"]',until:()=>on()&&G.lid&&Math.abs(G.pred-PR(G.lid.h,G.P0))<=TOL_PRE-1,
+    text:'赤い輪の手前で、気圧計に **ふた**！ 輪（700m）は今より **低い＝気圧は大きい**。**＋10** を何回か押して予想を上げよう',praise:'いい予想！'},
+   {gesture:'drag',label:'赤い輪へ',target:dv,to:rg(1),until:()=>on()&&G.rings[1].st!=='wait',text:'赤い輪まで **ドラッグ** してくぐると、本当の値がわかる',praise:'予想どおり！'},
+   {gesture:'tap',label:'目印',target:'#bSmoke',until:()=>on()&&G.targets[0].st==='hit',text:'高度計が **500m** になったら **けむり** をタップ。目印を残そう',praise:'ぴったり！'}
+  ],
+  onExit:res=>{document.body.classList.remove('tut');if(!(res.cleared||res.skipped))return;if(G&&G.tut)G.tut=false;if(!S.clr[0])startDive(0,0);else toMap()}};
+ HELP=GD.help({title:'気圧計スカイダイブ',
+  rules:['指で **左右にドラッグ**（←→キー）して輪をくぐる。白い輪＝その高さの値をノートに記録',
+   '赤い輪の手前で気圧計に **ふた**。**＋−** でその高さの値を予想してからくぐる（±10hPaで的中）',
+   '**けむり**：気圧計がノートの「目標の高さの値」になったら押す。**▼急降下** は長おし',
+   '**高いところほど気圧は小さい**。低気圧・高気圧の日は、地上の気圧のずれの分だけ読みかえる',
+   '黄土色の輪は **予想カプセル**。正しい「計画の札」を取ってからくぐる'],
+  onOpen:()=>{if(MODE==='dive'&&!paused){paused=true;HPAUSE=true;windSet(0)}},onClose:()=>{if(HPAUSE){HPAUSE=false;paused=false}},
+  replay:'tutorial',offset:{x:hOff()},show:false,attention:true});
+ addEventListener('resize',()=>{if(HELP)HELP.update({offset:{x:hOff()}})});
+ GD.tutorialButton('#bHow',()=>{ac();sfx.tap();S.name=$('#nameIn').value.trim()||S.name;S.started=true;save();GD.tutorial(PRACTICE)});
+}else{$('#bHow').classList.add('hidden')}
+function startWithGuide(){
+ GD.intro({title:'第6回　気圧計スカイダイブ',
+  learn:'**高いところほど気圧は小さい**（上にのっている空気が少ないから）',
+  how:'指で **左右にドラッグ** して輪をくぐり、気圧計の値を読んで予想する',gesture:'drag'}).then(()=>{if(!S.clr[0])GD.tutorial(PRACTICE);else toMap()})}
+window.__game={pos:()=>G?{dx:wx(G.x),dy:DY,h:G.h,pred:G.pred,lid:!!G.lid,rings:G.rings.map(r=>({x:wx(r.x),y:wy(r.h),st:r.st,k:r.k,h:r.h})),tg:G.targets.map(t=>t.st),tut:!!G.tut}:null,G:()=>G,S:()=>S,mode:()=>MODE,startDive,toMap,toTitle,startTest,sealScreen,openNote,smoke:doSmoke,setPred,
  step:(dt,n)=>{for(let i=0;i<(n||1);i++)update(dt||1/60)},bot:v=>{BOT=v},
  run:(i,leg)=>{BOT=true;startDive(i,leg||0);let n=0;while(MODE==='dive'&&n<200000){update(1/30);n++}BOT=false;return{mode:MODE,clr:!!S.clr[i],stars:S.stars[i],t:n/30}},
  fill:()=>{S.note=[];[4000,3776,3500,3000,2500,2250,2000,1600,1500,1250,1000,750,500,0].forEach(h=>addNote(h,PR(h,NORMAL),NORMAL));save()}};
