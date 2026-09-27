@@ -102,7 +102,16 @@ button{font-family:var(--f);cursor:pointer}
 .qfb .mk{font-size:40px;letter-spacing:.1em}
 .qfb .ex{text-align:left;font-size:16px;line-height:1.75;margin:10px 0 14px}
 @media (max-width:720px){.qbody{flex-direction:column}.qtext{font-size:17px}.k{font-size:16px;padding:8px 12px}}
-@media (prefers-reduced-motion:reduce){*{animation:none!important}}
+/* 仕上げ 2026-09-28（ss-finish-2026-09-28）: ◆のドン・ドットの紙吹雪 */
+.stars span{display:inline-block}
+.stars .on.wait{opacity:0}
+.stars .on.don{animation:ssDon .45s steps(6) both}
+@keyframes ssDon{0%{transform:scale(3);opacity:0;filter:blur(2px)}50%{transform:scale(.8);opacity:1}100%{transform:none;opacity:1}}
+.term.don{animation:ssTerm .2s steps(3)}
+@keyframes ssTerm{30%{transform:translate(4px,-2px)}60%{transform:translate(-3px,2px)}100%{transform:none}}
+.sscf{position:fixed;top:-16px;z-index:45;pointer-events:none;width:var(--w);height:var(--w);background:var(--c);box-shadow:0 0 8px var(--c);animation:sscf var(--t) steps(24) var(--d) forwards}
+@keyframes sscf{to{transform:translate(var(--dx),108vh)}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important}.sscf{display:none}.stars .on.wait{opacity:1}}
 </style>
 </head>
 <body>
@@ -119,6 +128,7 @@ button{font-family:var(--f);cursor:pointer}
    <button class="k inv" id="btnStart">はじめる</button>
    <button class="k" id="btnCont" hidden>つづきから</button>
    <button class="k p sm" id="btnBookT" hidden>図鑑</button>
+   <button class="k sm" id="btnHow">あそびかた</button>
    <button class="k sm" id="btnHub" hidden>一覧へ</button>
   </div>
   <div class="dim" style="font-size:14px;color:#1C8A4E">ピンを打て。デンプンのある所だけが反響する。</div>
@@ -1432,7 +1442,14 @@ window.ZUKAN_CARDS={"v": 1, "grade": "chu2", "name": "中2理科図鑑", "econom
   function vib(ms){try{if(navigator.vibrate)navigator.vibrate(ms)}catch(e){}}
   function el(tag,cls,html){var d=document.createElement(tag);if(cls)d.className=cls;if(html!=null)d.innerHTML=html;return d}
   function rm(d){if(d&&d.parentNode)d.parentNode.removeChild(d)}
-  function inGuide(t){while(t&&t!==document){if(t.classList&&(t.classList.contains('gd-root')||t.classList.contains('gd-hbtn')))return true;t=t.parentNode}return false}
+  /* れんしゅう中の「指以外は押せない」でも、もどる・確認ダイアログ・音量などは常に押せるようにする（2026-09-28・ルール10）
+     ゲーム側で確実に通したい要素には data-gd-pass を付ける */
+  var PASS_RE=/(^|[-_\s])(back|modoru|return|home|exit|mute|sound|confirm|dialog|modal)([-_\s]|$)/i;
+  function passThru(t){var n=0;while(t&&t!==document&&n<8){n++;if(t.nodeType===1){if(t.hasAttribute('data-gd-pass')||t.tagName==='DIALOG'||t.getAttribute('role')==='dialog'||t.getAttribute('aria-modal')==='true')return true;
+      if(PASS_RE.test(String(t.id||''))||PASS_RE.test(typeof t.className==='string'?t.className:''))return true;
+      if((t.tagName==='BUTTON'||t.tagName==='A'||t.getAttribute('role')==='button')&&/^\s*[◀←＜<]?\s*(もどる|戻る|一覧へ|とじる|閉じる|はい|いいえ|やめる|キャンセル|おと|音)/.test(t.textContent||''))return true}
+      t=t.parentNode}return false}
+  function inGuide(t){if(passThru(t))return true;while(t&&t!==document){if(t.classList&&(t.classList.contains('gd-root')||t.classList.contains('gd-hbtn')))return true;t=t.parentNode}return false}
   function hexRGB(c){c=String(c||'').trim();var m;
     if((m=c.match(/^#([0-9a-f]{3})$/i)))return [0,1,2].map(function(i){return parseInt(m[1][i]+m[1][i],16)});
     if((m=c.match(/^#([0-9a-f]{6})/i)))return [0,2,4].map(function(i){return parseInt(m[1].substr(i,2),16)});
@@ -2167,8 +2184,13 @@ const SFX={
  alarm(){for(let i=0;i<3;i++)tone(880,.12,{type:'square',vol:.03,at:i*.2})},
  fanfare(){[523,659,784,1047,784,1047,1319,1568].forEach((f,i)=>tone(f,i===7?.8:.16,{type:'square',vol:.035,at:i*.1}))},
  sweep(){noise(1.2,{ft:'bandpass',f:1800,vol:.03})},
- link(){tone(990,.1,{type:'triangle',vol:.05});tone(1480,.2,{type:'triangle',vol:.05,at:.08})}
+ link(){tone(990,.1,{type:'triangle',vol:.05});tone(1480,.2,{type:'triangle',vol:.05,at:.08})},
+ don(i){tone(160,.14,{type:'square',vol:.06,to:80});tone([1047,1319,1568][i%3],.3,{type:'square',vol:.04,at:.04})},
+ tier(n){[880,1047,1319,1568,1760,2093].slice(0,3+Math.min(3,n)).forEach((f,i)=>tone(f,.12,{type:'square',vol:.035,at:i*.05}))}
 };
+function buzzV(p){try{if(navigator.vibrate)navigator.vibrate(p)}catch(e){}}
+const TIERS=[3,5];
+document.addEventListener('pointerdown',e=>{const b=e.target&&e.target.closest&&e.target.closest('button.k');if(b&&!b.disabled)buzzV(8)},true);
 
 /* ================= 葉（海域）のデータ ================= */
 // 形は100×100（または w×h）の箱の中のパス。ふ・おおい・霧は (x,y) の関数
@@ -2205,8 +2227,9 @@ const LEAVES=[
  {nm:'アオキ（大きな葉・ボス）',sh:'ellipse',bw:100,bh:100,cols:17,rows:17,fu:(x,y)=>[[38,24,7],[62,36,8],[42,62,9],[64,74,7],[30,44,5],[56,86,5]].some(c=>(x-c[0])**2+(y-c[1])**2<c[2]**2),foil:(x,y)=>(x>24&&x<76&&y>46&&y<56)||((x-66)**2+(y-20)**2<10**2),dark:true,cmp:true,boss:true,fog:(x,y)=>x>56&&y>58,
   intro:'<span class="red">ボス海域</span>。大きな葉・星のようなふ・2つのおおい・スケッチのにじみ。ピンは少ない。',tip:'今までの全部を使え。'}
 ];
+const PRAC_LEAF={nm:'れんしゅうの葉',sh:'ovate',bw:100,bh:100,cols:9,rows:9,fu:edgeFu('ovate',.6,50,50),foil:(x,y)=>x>57&&x<82,dark:true,cmp:true,prac:true,intro:'',tip:''};
 const R_PING=1.6;
-function buildLeaf(i){const L=LEAVES[i];const cells=[];const cw=L.bw/L.cols,chh=L.bh/L.rows;
+function buildLeaf(i){const L=i<0?PRAC_LEAF:LEAVES[i];const cells=[];const cw=L.bw/L.cols,chh=L.bh/L.rows;
  for(let r=0;r<L.rows;r++)for(let c=0;c<L.cols;c++){const x=(c+.5)*cw,y=(r+.5)*chh;if(!inPath(L.sh,x,y))continue;let fu=false,foil=false,grain=false,left=x<50;
   if(L.micro){const pc=Math.floor(c/4),pr=Math.floor((r-1)/4),lc=c%4,lr=(r-1)%4;const h=(pc*7+pr*13+lc*3+lr*5)%11;grain=r>=1&&r<=14&&(lc===0||lc===3||lr===0||lr===3)&&h<5;}
   else{fu=L.fu?!!L.fu(x,y):false;foil=L.foil?!!L.foil(x,y):false}
@@ -2215,14 +2238,14 @@ function buildLeaf(i){const L=LEAVES[i];const cells=[];const cw=L.bw/L.cols,chh=
  // 最少に近いピン数（貪欲法）
  const todo=new Set(cells.filter(q=>q.starch));let par=0;const cand=cells.map(q=>({c:q.c,r:q.r}));
  while(todo.size&&par<99){let best=null,bn=0;for(const p of cand){let n=0;for(const q of todo)if((q.c-p.c)**2+(q.r-p.r)**2<=R_PING*R_PING)n++;if(n>bn){bn=n;best=p}}if(!best)break;for(const q of [...todo])if((q.c-best.c)**2+(q.r-best.r)**2<=R_PING*R_PING)todo.delete(q);par++}
- const budget=L.boss?par+2:par+Math.max(3,Math.ceil(par*.45));
+ const budget=L.prac?99:L.boss?par+2:par+Math.max(3,Math.ceil(par*.45));
  return {L,cells,par,budget,cw,chh}}
 
 /* ================= 画面 ================= */
 const cv=$('cv');let ctx=cv.getContext('2d');let W=0,H=0,DPR=1,PORT=false,scene='title';
 function resize(){DPR=Math.min(2,window.devicePixelRatio||1);W=innerWidth;H=innerHeight;PORT=H>W*1.05;cv.width=Math.round(W*DPR);cv.height=Math.round(H*DPR);ctx.setTransform(DPR,0,0,DPR,0,0);scan=null;layoutTitle();if(G)layout()}
 addEventListener('resize',resize);
-function show(s){scene=s;$('scTitle').hidden=s!=='title';$('scMap').hidden=s!=='map';$('scTest').hidden=s!=='test';$('playBar').hidden=s!=='play';
+function show(s){if(HELP){if(s==='play'||s==='map')HELP.show();else HELP.hide()}scene=s;$('scTitle').hidden=s!=='title';$('scMap').hidden=s!=='map';$('scTest').hidden=s!=='test';$('playBar').hidden=s!=='play';
  $('bBack').hidden=!(s==='play'||s==='map'||(s==='test'&&window.GAME_MODE!=='test'));$('bMute').hidden=s==='test';$('bMute').textContent='音 '+(SV.mute?'OFF':'ON')}
 function P(){ctx.beginPath()}
 function txt(s,x,y,o){o=o||{};ctx.save();ctx.font=(o.size||14)+'px '+FONT;ctx.textAlign=o.align||'left';ctx.textBaseline=o.base||'middle';ctx.fillStyle=o.col||K.g;if(o.glow!==false){ctx.shadowColor=o.col||K.g;ctx.shadowBlur=o.blur==null?6:o.blur}ctx.fillText(s,x,y);ctx.restore()}
@@ -2251,7 +2274,8 @@ function layout(){if(!G)return;const L=G.lv.L;
  else{const side=Math.min(W*.96,H-360);G.R=side/1.42;G.cx=W/2;G.cy=Math.max(96+side/2+10,(96+H-170)/2);G.logX=12;G.logW=W-24}
  const side=G.R*1.42;const sc=Math.min(side/L.bw,side/L.bh)*(L.sh==='strip'?1.12:1);G.sc=sc;G.ox=G.cx-L.bw*sc/2;G.oy=G.cy-L.bh*sc/2}
 function startLeaf(i){ovClose();const lv=buildLeaf(i);G={i,lv,t:0,pings:0,combo:0,maxC:0,found:0,total:lv.cells.filter(q=>q.starch).length,rings:[],pops:[],parts:[],log:[],phase:'intro',link:null,links:[],cmpFound:{},paused:true,cur:{x:.5,y:.5},shake:0};
- layout();show('play');$('btnDone').hidden=true;
+ layout();show('play');$('btnDone').hidden=true;G.fl=0;
+ if(i<0){G.phase='ping';G.paused=false;SFX.sweep();log('> れんしゅう海域。ピンは何発でもOK');return}
  const L=lv.L;const rec=(L.micro?'<div class="rline"><span>左の葉</span><span>明るい窓辺に置いた</span></div><div class="rline"><span>右の葉</span><span class="am">暗室に置いた</span></div>':
    '<div class="rline"><span>暗室に一晩</span><span class="'+(L.dark?'':'red')+'">'+(L.dark?'○ 置いた':'<span class="am">✖ 置き忘れた</span>')+'</span></div><div class="rline"><span>ふ（白い部分）</span><span>'+(L.fu?'あり（スケッチ）':'なし')+'</span></div><div class="rline"><span>アルミはく</span><span>'+(L.foil?'あり（記録）':'なし')+'</span></div>')+
    '<div class="rline"><span>日光</span><span>数時間 当てた</span></div><div class="rline"><span>処理</span><span>熱湯 → 湯せんのエタノールで脱色 → ヨウ素液</span></div>';
@@ -2264,18 +2288,20 @@ function toLeaf(x,y){return {x:(x-G.ox)/G.sc,y:(y-G.oy)/G.sc}}
 function cellXY(q){return {x:G.ox+q.x*G.sc,y:G.oy+q.y*G.sc}}
 function ping(px,py){const g=G,lv=g.lv;if(g.phase!=='ping'||g.paused)return;const p=toLeaf(px,py);const cc=p.x/lv.cw-.5,cr=p.y/lv.chh-.5;
  if(!inPath(lv.L.sh,p.x,p.y)&&!lv.cells.some(q=>(q.c-cc)**2+(q.r-cr)**2<=1.2)){log('> 葉の外。ピンは打たない',K.gd);SFX.key();return}
- if(g.pings>=lv.budget)return;g.pings++;SV.pings++;SFX.ping();g.rings.push({x:px,y:py,t:0,R:R_PING*lv.cw*g.sc});
+ if(g.pings>=lv.budget)return;g.pings++;if(!lv.L.prac)SV.pings++;SFX.ping();g.rings.push({x:px,y:py,t:0,R:R_PING*lv.cw*g.sc});
  const hit=lv.cells.filter(q=>!q.rev&&(q.c-cc)**2+(q.r-cr)**2<=R_PING*R_PING).sort((a,b)=>((a.c-cc)**2+(a.r-cr)**2)-((b.c-cc)**2+(b.r-cr)**2));
  const newS=hit.filter(q=>q.starch);let k=0;
  hit.forEach(q=>{q.rev=1;q.rt=g.t+.25+Math.sqrt((q.c-cc)**2+(q.r-cr)**2)*.12;if(q.starch){const d=q.rt-g.t;setTimeout(((kk)=>()=>{if(G===g){SFX.echo(kk);const c=cellXY(q);g.pops.push({x:c.x,y:c.y,t:0,ring:1})}})(k++),d*1000)}});
  const name=String.fromCharCode(65+Math.max(0,Math.min(25,Math.round(cc))))+'-'+(Math.round(cr)+1);
- if(newS.length){g.found+=newS.length;g.combo++;g.maxC=Math.max(g.maxC,g.combo);SV.hits++;SV.maxCombo=Math.max(SV.maxCombo,g.maxC);
+ if(newS.length){g.found+=newS.length;g.combo++;g.maxC=Math.max(g.maxC,g.combo);if(!lv.L.prac){SV.hits++;SV.maxCombo=Math.max(SV.maxCombo,g.maxC)}
+  {const tier=TIERS.indexOf(g.combo);g.shake=RM?0:Math.min(9,3+newS.length*.6);g.fl=.55;g.flC='107,91,214';buzzV([15,30,25]);
+   if(window.Guide){setTimeout(()=>{if(G===g)Guide.cheer(g.combo>1?g.combo+'れんぞく！ +'+newS.length:'反響 +'+newS.length,{x:px,y:py+75,size:1+Math.max(0,tier)*.3,sound:false,sparks:12+Math.max(0,tier)*10})},300);if(tier>=0)setTimeout(()=>SFX.tier(tier+1),520)}}
   const where=regionName(newS[0]);log('> PING '+String(g.pings).padStart(2,'0')+' ['+name+'] 反響 '+newS.length+'  青紫'+(where?' ／ '+where:''),K.pl);
   if(newS.length>=6)setTimeout(()=>{if(G===g){SFX.big();g.pops.push({x:px,y:py-30,t:0,text:'大反響 ×'+newS.length})}},450);
   if(g.combo>=2)g.pops.push({x:px,y:py-50,t:0,text:g.combo+'れんぞく',delay:.3});
   const gain=Math.min(15,2+g.combo*2+(newS.length>=6?3:0));setTimeout(()=>{if(G===g)earnAt('hit',gain,px,py-80)},500);
   if(!SV.tut.first){SV.tut.first=1;save();setTimeout(()=>log('> 反響＝そこにデンプン（ヨウ素液で青紫）',K.pl),700)}}
- else{g.combo=0;SFX.none();const rest=lv.cells.filter(q=>q.starch&&!q.rev);let md=99;rest.forEach(q=>{md=Math.min(md,Math.sqrt((q.c-cc)**2+(q.r-cr)**2)-R_PING)});
+ else{{const lost=g.combo,nt=TIERS.filter(t=>t>lost)[0];if(lost>=2&&nt&&nt-lost===1&&window.Guide)setTimeout(()=>{if(G===g)Guide.cheer('あと1回で '+nt+'れんぞく だった！',{x:px,y:py+75,size:.8,sound:false,sparks:false})},400)}g.combo=0;SFX.none();buzzV([10,40,10]);const rest=lv.cells.filter(q=>q.starch&&!q.rev);let md=99;rest.forEach(q=>{md=Math.min(md,Math.sqrt((q.c-cc)**2+(q.r-cr)**2)-R_PING)});
   const why=hit.length?whyNone(hit):'';log('> PING '+String(g.pings).padStart(2,'0')+' ['+name+'] 反響なし'+(rest.length?'  最寄りの反響まで あと'+Math.max(1,Math.ceil(md))+'マス':''),K.amb);if(why)setTimeout(()=>{if(G===g)log('  '+why,K.gd)},400);
   g.pops.push({x:px,y:py-30,t:0,text:'反響なし',col:K.amb})}
  if(g.found>=g.total){g.phase='done';setTimeout(()=>{if(G===g)leafDone()},1100)}
@@ -2293,7 +2319,8 @@ function leafDone(){const g=G,lv=g.lv;SFX.fanfare();g.shake=RM?0:6;
  if(!lv.L.dark)setTimeout(()=>log('> 暗室に置き忘れ → おおった所にも もとのデンプンが残った',K.amb),500);
  if(lv.L.micro)setTimeout(()=>log('> 青紫になったのは 葉緑体の粒だけ。暗室の葉はどこも変化なし',K.pl),500);
  if(lv.L.cmp){setTimeout(()=>{if(G!==g)return;g.phase='cmp';log('> 考察: 比べる2か所を指で結べ（ちがう条件が1つだけの組）',K.g);$('btnDone').hidden=false;
-  if(!SV.tut.cmp){SV.tut.cmp=1;save();ovOpen('<h2>考察モード</h2><div>区画に <span class="pu">ア〜エ</span> の札がついた。<br><b>ちがう条件が1つだけ</b>の2か所を、指で<b>なぞって結ぶ</b>と結論が出る。</div><div class="rec">ア＝緑・光　イ＝ふ・光<br>ウ＝緑・おおい　エ＝ふ・おおい</div><div class="dim">光が必要か、葉緑体が必要か——2本の線で両方を言えれば完ぺき。</div><div class="mbtns"><button class="k inv" id="cmpOk">わかった</button></div>');$('cmpOk').onclick=()=>{ovClose();g.paused=false};g.paused=true}},1400)}
+  if(g.lv.L.prac){$('btnDone').hidden=true}
+  else if(!SV.tut.cmp){SV.tut.cmp=1;save();ovOpen('<h2>考察モード</h2><div>区画に <span class="pu">ア〜エ</span> の札がついた。<br><b>ちがう条件が1つだけ</b>の2か所を、指で<b>なぞって結ぶ</b>と結論が出る。</div><div class="rec">ア＝緑・光　イ＝ふ・光<br>ウ＝緑・おおい　エ＝ふ・おおい</div><div class="dim">光が必要か、葉緑体が必要か——2本の線で両方を言えれば完ぺき。</div><div class="mbtns"><button class="k inv" id="cmpOk">わかった</button></div>');$('cmpOk').onclick=()=>{ovClose();g.paused=false};g.paused=true}},1400)}
  else setTimeout(()=>{if(G===g)finishLeaf()},2200)}
 function leafFail(){const g=G;const lv=g.lv;lv.cells.forEach((q,k)=>{if(!q.rev){q.rev=2;q.rt=g.t+.2+k*.006}});
  log('> ピン切れ。残りの地図を表示',K.amb);
@@ -2310,24 +2337,32 @@ function tryLink(a,b){const g=G;if(a===b)return;const pair=[a,b].sort().join('-'
  else if(pair==='fl-gl'){res=L.gl+'と'+L.fl+'：ちがいは葉緑体(緑)だけ → <葉緑体のある所で行われる> と分かる';col=K.pl;ok='chl'}
  else{res=L[a]+'と'+L[b]+'：ちがいは1つだが、どちらもデンプンなし → 結論にならない';col=K.amb;SFX.key()}
  const ra=cmpRegions().find(r=>r.k===a),rb=cmpRegions().find(r=>r.k===b);g.links.push({pair,a:ra.q,b:rb.q,col,ok});log('> '+res,col);
- if(ok){SFX.link();g.cmpFound[ok]=1;g.combo++;const c=cellXY(ra.q);earnAt('control',10,c.x,c.y);SV.cmp[ok]=1;save();
+ if(ok){SFX.link();g.cmpFound[ok]=1;g.combo++;const c=cellXY(ra.q);g.fl=.6;g.flC='60,255,143';g.shake=RM?0:5;buzzV([20,40,30]);if(window.Guide){const d=cellXY(rb.q);Guide.cheer(ok==='light'?'光が必要！':'葉緑体が必要！',{x:(c.x+d.x)/2,y:(c.y+d.y)/2-40,size:1.1,sound:false,sparks:20})}
+  if(g.lv.L.prac){if(g.cmpFound.light&&g.cmpFound.chl)g.phase='end';return}
+  earnAt('control',10,c.x,c.y);SV.cmp[ok]=1;save();
   if(g.cmpFound.light&&g.cmpFound.chl){log('> 結論: 光合成には 光と葉緑体の両方が必要',K.g);if(!SV.cmp.rule){SV.cmp.rule=1;save();setTimeout(()=>earnAt('rule',30,W/2,H*.3),500)}setTimeout(()=>{if(G===g&&g.phase==='cmp'){g.phase='done2';finishLeaf()}},1800)}}}
-function finishLeaf(){const g=G,i=g.i,lv=g.lv;$('btnDone').hidden=true;g.phase='end';g.paused=true;const st=g.stars||1;
+function finishLeaf(){const g=G,i=g.i,lv=g.lv;$('btnDone').hidden=true;g.phase='end';g.paused=true;const st=g.stars||1;if(lv.L.prac){SV.tut.cmp=1;SV.tut.first=1;save();return}
  SV.stars[i]=Math.max(SV.stars[i],st);SV.best[i]=Math.min(SV.best[i],g.pings);if(SV.cur<=i)SV.cur=i+1;SV.spec[i]=1;save();
  const both=g.cmpFound.light&&g.cmpFound.chl;
  let sealMsg='';if(i===0&&!SV.sealHit){const r=readSeal();if(r){const hit=(r.dish||[]).includes('starch');SV.sealHit=hit?'hit':'miss';save();if(hit)setTimeout(()=>earnAt('hit',10,W/2,H*.35),600);
   sealMsg='<div class="rec"><div class="dim">── コマ7の予言の鍋 ──</div>あなたの予言：<span class="pu">'+esc(r.pred||'')+'</span><br>'+(hit?'<span class="pu">的中！</span> 光を当てた葉には デンプンが できていた。':'<span class="am">デンプンが できていた！</span> 光を当てた緑の葉には デンプンができる。')+'<br><span class="dim">（酸素ができるかは、線香の実験で確かめる）</span></div>'}}
- const stars='<div class="stars">'+[0,1,2].map(k=>'<span class="'+(k<st?'on':'off')+'">◆</span>').join('')+'</div>';
+ const stars='<div class="stars">'+[0,1,2].map(k=>'<span class="'+(k<st?'on wait':'off')+'">◆</span>').join('')+'</div>';
  const last=i===LEAVES.length-1;
  ovOpen('<h2>海域 '+(i+1)+' 探査完了</h2>'+stars+'<div class="rline"><span>使ったピン</span><span>'+g.pings+' / '+lv.budget+'（目標 '+lv.par+'）</span></div><div class="rline"><span>最高れんぞく</span><span>'+g.maxC+'</span></div>'+(lv.L.cmp?'<div class="rline"><span>結論</span><span>'+(both?'光と葉緑体の両方が必要':g.cmpFound.light?'光が必要':g.cmpFound.chl?'葉緑体が必要':'—')+'</span></div>':'')+
   '<div class="rec">標本ログに「'+lv.L.nm+'」を記録した</div>'+sealMsg+
   '<div class="mbtns">'+(last?'<button class="k inv" id="nx">探査おわり</button>':'<button class="k inv" id="nx">次の海域へ</button>')+'<button class="k sm" id="ag">もう一度</button><button class="k sm" id="mp">海図へ</button></div>');
  $('nx').onclick=()=>{if(last){const fin=()=>{SV.cleared=true;save();openMap()};if(!SV.cleared&&Z()){try{Z().mainClear({onClose:fin})}catch(e){fin()}}else fin()}else startLeaf(i+1)};
- $('ag').onclick=()=>startLeaf(i);$('mp').onclick=()=>openMap()}
+ $('ag').onclick=()=>startLeaf(i);$('mp').onclick=()=>openMap();
+ const sp=[...document.querySelectorAll('#ovBody .stars .on')],tm=document.querySelector('#ov .term');
+ sp.forEach((e,k)=>setTimeout(()=>{if($('ov').hidden)return;e.classList.remove('wait');e.classList.add('don');SFX.don(k);buzzV(25);if(tm){tm.classList.remove('don');void tm.offsetWidth;tm.classList.add('don')}},RM?0:450+k*420));
+ setTimeout(()=>{if(!$('ov').hidden)ssConfetti(st>=3?80:50)},RM?0:450+st*420)}
+function ssConfetti(n){if(RM)return;const cs=[K.g,K.pl,K.p,K.g,K.amb];for(let i=0;i<n;i++){const d=document.createElement('div');d.className='sscf';const q=d.style;q.left=(Math.random()*100).toFixed(1)+'vw';
+  q.setProperty('--w',(6+Math.random()*8|0)+'px');q.setProperty('--c',cs[i%cs.length]);q.setProperty('--dx',((Math.random()-.5)*160|0)+'px');
+  q.setProperty('--t',(1.8+Math.random()*1.3).toFixed(2)+'s');q.setProperty('--d',(Math.random()*.45).toFixed(2)+'s');document.body.appendChild(d);setTimeout(()=>d.remove(),3900)}}
 function readSeal(){try{const r=JSON.parse(localStorage.getItem(SEAL7)||'null');if(r&&r.slots&&(r.dish||r.pot))return r}catch(e){}return null}
 $('btnDone').onclick=()=>{if(G&&G.phase==='cmp'){G.phase='done2';finishLeaf()}};
 
-function update(dt){const g=G;g.t+=dt;SV.elapsed+=dt;for(const r of g.rings)r.t+=dt;g.rings=g.rings.filter(r=>r.t<1.4);for(const p of g.pops)p.t+=dt;g.pops=g.pops.filter(p=>p.t<1.4+(p.delay||0));g.shake=Math.max(0,g.shake-dt*20)}
+function update(dt){const g=G;g.t+=dt;SV.elapsed+=dt;for(const r of g.rings)r.t+=dt;g.rings=g.rings.filter(r=>r.t<1.4);for(const p of g.pops)p.t+=dt;g.pops=g.pops.filter(p=>p.t<1.4+(p.delay||0));g.shake=Math.max(0,g.shake-dt*20);g.fl=Math.max(0,(g.fl||0)-dt*1.8)}
 function render(){const g=G,t=g.t,lv=g.lv,L=lv.L;ctx.fillStyle=K.bg;ctx.fillRect(0,0,W,H);
  ctx.save();if(g.shake)ctx.translate(rnd(-g.shake,g.shake),rnd(-g.shake,g.shake));
  sonarDisk(g.cx,g.cy,g.R,TT,{sweep:g.phase==='ping'});
@@ -2374,18 +2409,19 @@ function render(){const g=G,t=g.t,lv=g.lv,L=lv.L;ctx.fillStyle=K.bg;ctx.fillRect
  // 照準（キーボード）
  if(g.kb){const x=g.ox+g.cur.x*L.bw*s,y=g.oy+g.cur.y*L.bh*s;ctx.save();ctx.strokeStyle=K.amb;ctx.lineWidth=1.5;P();ctx.arc(x,y,R_PING*cw,0,TAU);ctx.stroke();ctx.restore()}
  ctx.restore();
- hud();crt();bezel()}
+ hud();if(g.fl>0&&!RM){ctx.fillStyle='rgba('+(g.flC||'60,255,143')+','+(g.fl*.28).toFixed(3)+')';ctx.fillRect(0,0,W,H)}crt();bezel()}
 function hud(){const g=G,lv=g.lv;const left=lv.budget-g.pings;
  const kk=(()=>{try{return Z()?Z().state().kakera:null}catch(e){return null}})();
  // ステータス行
  const y0=PORT?70:26;const x0=PORT?12:W*.2;
- if(!PORT){txt('海域 '+(g.i+1)+'/9　'+lv.L.nm,170,30,{size:fit('海域 '+(g.i+1)+'/9　'+lv.L.nm,W*.36,17)})}
+ if(g.i<0){if(!PORT)txt('れんしゅう海域',170,30,{size:17});else txt('れんしゅう海域',W/2,26,{size:14,align:'center'})}
+ else if(!PORT){txt('海域 '+(g.i+1)+'/9　'+lv.L.nm,170,30,{size:fit('海域 '+(g.i+1)+'/9　'+lv.L.nm,W*.36,17)})}
  else txt('海域'+(g.i+1)+' '+lv.L.nm,W/2,26,{size:fit(lv.L.nm+'海域0 ',W-250,14),align:'center'});
- const stat=[['残りPING',left+'/'+lv.budget,left<=2?K.amb:K.g],['デンプン',g.found+'/'+g.total,K.pl],['れんぞく',g.combo,K.g]];if(kk!=null)stat.push(['かけら',kk,K.g]);
- if(PORT){const w=(W-24)/stat.length;stat.forEach((s,k)=>{txt(s[0],12+w*k+w/2,62,{size:11,col:K.gd,align:'center'});txt(String(s[1]),12+w*k+w/2,82,{size:19,col:s[2],align:'center'})})}
+ const stat=[['残りPING',lv.L.prac?'∞':left+'/'+lv.budget,left<=2?K.amb:K.g],['デンプン',g.found+'/'+g.total,K.pl],['れんぞく',g.combo,K.g]];if(kk!=null)stat.push(['かけら',kk,K.g]);
+ if(PORT){const w=(W-24-(HELP?52:0))/stat.length;stat.forEach((s,k)=>{txt(s[0],12+w*k+w/2,62,{size:11,col:K.gd,align:'center'});txt(String(s[1]),12+w*k+w/2,82,{size:19,col:s[2],align:'center'})})}
  else{stat.forEach((s,k)=>{const x=g.logX,y=90+k*46;txt(s[0],x,y,{size:13,col:K.gd});txt(String(s[1]),x+120,y,{size:26,col:s[2]})})}
  // ピン残りのランプ
- const n=lv.budget;const lx=PORT?W/2-Math.min(W-40,n*14)/2:g.logX,ly=PORT?H-126:90+stat.length*46+4;const step=PORT?Math.min(14,(W-40)/n):Math.min(18,(g.logW-10)/n);
+ const n=lv.L.prac?0:lv.budget;const lx=PORT?W/2-Math.min(W-40,n*14)/2:g.logX,ly=PORT?H-126:90+stat.length*46+4;const step=PORT?Math.min(14,(W-40)/n):Math.min(18,(g.logW-10)/n);
  for(let k=0;k<n;k++){ctx.fillStyle=k<left?(left<=2?K.amb:K.g):K.gdd;ctx.fillRect(lx+k*step,ly,step-4,8)}
  // ログ
  if(!PORT){const x=g.logX,y1=ly+30;ctx.save();ctx.strokeStyle=K.gdd;ctx.strokeRect(x-8,y1-14,g.logW,H-y1-60);ctx.restore();txt('── 探査ログ ──',x,y1,{size:13,col:K.gd});
@@ -2450,14 +2486,31 @@ function initTitle(){show('title');layoutTitle();if(window.PLAYER_NAME)$('nameIn
  $('btnCont').hidden=!(hasSave()&&SV.cur>0);$('btnBookT').hidden=!Z();$('btnHub').hidden=!(window.parent&&window.parent!==window);$('btnStart').textContent=hasSave()&&SV.cur>0?'はじめから':'はじめる'}
 let arm=false;
 $('btnStart').onclick=()=>{actx();SV.name=$('nameIn').value.trim();if(hasSave()&&SV.cur>0&&!arm){arm=true;$('btnStart').textContent='本当に？（記録が消える）';setTimeout(()=>{arm=false;initTitle()},3500);return}
- if(arm){const nm=SV.name,mu=SV.mute,so=SV.sealOpen;SV=fresh();SV.name=nm;SV.mute=mu;arm=false}save();SFX.ok();openMap()};
+ if(arm){const nm=SV.name,mu=SV.mute,so=SV.sealOpen;SV=fresh();SV.name=nm;SV.mute=mu;arm=false}save();SFX.ok();
+ if(!window.Guide){openMap();return}if(busy)return;busy=true;Guide.intro(INTRO).then(()=>{busy=false;Guide.tutorial(PRACTICE)})};
+let busy=false;
+const INTRO={title:'第8回 デンプン探知',learn:'デンプンができるのは **光が当たって**、しかも **葉緑体（緑）がある所** だけ',
+ how:'葉を **タップ** してピン → 反響した所にデンプン。最後に2か所を **なぞって結ぶ**',gesture:'tap'};
+function bestPing(){const g=G;if(!g)return {x:innerWidth/2,y:innerHeight/2,r:30};const lv=g.lv;const rest=lv.cells.filter(q=>q.starch&&!q.rev);let best=null,bn=-1;
+ for(const p of rest){let n=0;for(const q of rest)if((q.c-p.c)**2+(q.r-p.r)**2<=R_PING*R_PING)n++;if(n>bn){bn=n;best=p}}
+ const c=best?cellXY(best):{x:g.cx,y:g.cy};return {x:c.x,y:c.y,r:Math.max(22,R_PING*lv.cw*g.sc*.8)}}
+function regPt(k){return ()=>{if(!G)return {x:innerWidth/2,y:innerHeight/2,r:26};const r=cmpRegions().find(q=>q.k===k);const c=r?cellXY(r.q):{x:G.cx,y:G.cy};return {x:c.x,y:c.y,r:Math.max(22,G.lv.cw*G.sc*.9)}}}
+const PSTEPS=[
+ {gesture:'tap',target:bestPing,until:()=>!!(G&&G.found>0),praise:false,text:'点線（ふ）も 斜線（おおい）も ない **緑の所** を **タップ**。ピンが反響したら デンプン！'},
+ {gesture:'tap',target:bestPing,until:()=>!!(G&&G.found>=G.total),praise:false,text:'反響は 青紫。のこりのデンプンも **タップ** して ぜんぶ見つけよう'},
+ {gesture:'drag',target:regPt('gl'),to:regPt('gd'),until:()=>!!(G&&G.cmpFound.light),praise:false,text:'考察。**ア**（緑・光）から **ウ**（緑・おおい）へ **なぞって結ぶ**。ちがいは 光だけ'},
+ {gesture:'drag',target:regPt('gl'),to:regPt('fl'),until:()=>!!(G&&G.cmpFound.chl),praise:false,text:'こんどは **ア** から **イ**（ふ・光）へ。ちがいは 葉緑体だけ'}];
+const PRACTICE={label:'れんしゅう中',bandAt:'bottom',steps:PSTEPS,clearText:'れんしゅうクリア！',start:()=>{actx();startLeaf(-1)},
+ onExit:res=>{if(res&&(res.stopped||res.replaced))return;G=null;if(SV.cur>0)openMap();else startLeaf(0)}};
 $('btnCont').onclick=()=>{actx();SV.name=$('nameIn').value.trim()||SV.name;save();SFX.key();openMap()};
 $('btnBookT').onclick=$('btnBookM').onclick=()=>{try{Z().openBook()}catch(e){}};
 $('btnHub').onclick=()=>{try{window.parent.postMessage({type:'rika-close-game'},'*')}catch(e){}};
+if(window.Guide)Guide.tutorialButton('#btnHow',()=>{actx();SFX.key();Guide.tutorial(PRACTICE)});else $('btnHow').hidden=true;
 $('btnSpec').onclick=()=>{SFX.key();openSpec()};
 $('btnTestM').onclick=()=>{SFX.key();startTest()};
 $('bMute').onclick=()=>{SV.mute=!SV.mute;save();$('bMute').textContent='音 '+(SV.mute?'OFF':'ON');if(!SV.mute){actx();SFX.key()}};
-$('bBack').onclick=()=>{SFX.key();if(scene==='play'&&G){G.paused=true;ovOpen('<h2>海図にもどる？</h2><div>探査ずみの海域と◆は保存されます。<br>この海域の途中のピンは、やり直しになります。</div><div class="mbtns"><button class="k inv" id="bkY">もどる</button><button class="k" id="bkN">つづける</button></div>');
+$('bBack').onclick=()=>{SFX.key();if(scene==='play'&&G&&G.i<0){if(window.Guide)Guide.tutorialEnd();G=null;initTitle();return}
+ if(scene==='play'&&G){G.paused=true;ovOpen('<h2>海図にもどる？</h2><div>探査ずみの海域と◆は保存されます。<br>この海域の途中のピンは、やり直しになります。</div><div class="mbtns"><button class="k inv" id="bkY">もどる</button><button class="k" id="bkN">つづける</button></div>');
   $('bkY').onclick=()=>openMap();$('bkN').onclick=()=>{ovClose();if(G&&G.phase!=='end')G.paused=false}}
  else if(scene==='map')initTitle();else if(scene==='test'){T=null;openMap()}};
 function ovOpen(h){$('ovBody').innerHTML=h;$('ov').hidden=false;$('ovBody').scrollTop=0;const d=new Date();$('ovClock').textContent=String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');SFX.type()}
@@ -2493,7 +2546,24 @@ let last=performance.now(),TT=0;
 function frame(now){const dt=Math.min(.05,Math.max(0,(now-last)/1000));last=now;TT+=dt;
  try{if(scene==='play'&&G){if(!G.paused)update(dt);else G.t+=dt*0;render()}else if(scene==='title')drawTitle(TT);else if(scene==='map')drawMap(TT);else if(scene==='test'){ctx.fillStyle=K.bg;ctx.fillRect(0,0,W,H);crt()}}catch(e){console.error(e)}
  requestAnimationFrame(frame)}
-window.__ss={get G(){return G},get SV(){return SV},startLeaf,openMap,startTest,ping,tryLink,cmpRegions,buildLeaf,LEAVES};
+let HELP=null;
+function placeHelp(){if(!HELP)return;const m=$('bMute');const w=m&&m.offsetWidth?m.offsetWidth:110;HELP.update(PORT?{corner:'tr',offset:{x:0,y:56}}:{corner:'tr',offset:{x:w+10,y:0}})}
+if(window.Guide){
+ Guide.setup({theme:{bg:'#021309',fg:'#3CFF8F',accent:'#A99BFF',accentText:'#031A0F',font:FONT,bodyFont:FONT,radius:0,texture:'scan',line:'#3CFF8F',dim:'rgba(0,8,4,.62)',
+   shadow:'0 0 22px rgba(60,255,143,.35), inset 0 0 18px rgba(60,255,143,.08)',outline:'#031A0F',hand:'#3CFF8F',handLine:'#031A0F'},
+  sfx:k=>{if(k==='step')SFX.echo(4);else if(k==='nudge')SFX.key();else if(k==='done')SFX.ok();else if(k==='clear')SFX.fanfare();else if(k==='open'||k==='close')SFX.type();else if(k==='cheer')SFX.echo(8)},
+  muted:()=>SV.mute});
+ HELP=Guide.help({title:INTRO.title,learn:INTRO.learn,how:INTRO.how,gesture:'tap',size:46,show:false,attention:true,replay:'tutorial',
+  rules:['葉を **タップ** するとピン。まわり1マス半に届き、デンプンのある所だけ **反響（青紫）**',
+   '**点線＝ふ**（葉緑体なし）・**斜線＝おおい**（光なし）の所は反響しない',
+   '少ないピンで ぜんぶ見つけるほど ◆が増える。つづけて当てると **れんぞく**',
+   '考察では **ちがう条件が1つだけ** の2か所（ア〜エ）を なぞって結ぶ',
+   '実験記録もよく読む（暗室に置き忘れた葉は…？）'],
+  onOpen:()=>{if(scene==='play'&&G&&!G.paused){G.paused=true;G.hp=1}},
+  onClose:()=>{if(G&&G.hp){G.hp=0;G.paused=false}}});
+ addEventListener('resize',placeHelp);setTimeout(placeHelp,0);
+}
+window.__ss={get G(){return G},get mapHits(){return mapHits},bestPing,regPt,get SV(){return SV},startLeaf,openMap,startTest,ping,tryLink,cmpRegions,buildLeaf,LEAVES};
 resize();
 try{window.Zukan&&Zukan.setup({game:GAME_ID,koma:[KOMA]})}catch(e){}
 if(window.GAME_MODE==='test')startTest();else initTitle();

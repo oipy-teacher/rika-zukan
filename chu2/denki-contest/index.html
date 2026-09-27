@@ -182,6 +182,13 @@ button{font-family:var(--fm);cursor:pointer;color:inherit;touch-action:manipulat
 /* ===== もどる（いつも左上の同じ場所） ===== */
 #bBack{position:absolute;left:12px;top:calc(8px + env(safe-area-inset-top));z-index:11;min-height:0;height:44px;padding:0 14px 0 12px;font-size:17px}
 #scrBackQ{z-index:12}
+/* 仕上げ（2026-09-28）：れんしゅう中も もどるが見えて押せる・審査の判子がドン */
+#bBack{z-index:2147482605}
+#scrBackQ.fix{position:fixed;z-index:2147482700}
+.jrow .m.don{animation:dcStamp .42s cubic-bezier(.2,1.8,.4,1) both}
+.medal .rb.don{animation:dcStamp .55s cubic-bezier(.2,1.8,.4,1) both}
+@keyframes dcStamp{0%{transform:scale(2.6) rotate(-30deg);opacity:0}60%{transform:scale(.86) rotate(-6deg);opacity:1}100%{transform:scale(1) rotate(-8deg)}}
+@media (prefers-reduced-motion:reduce){.jrow .m.don,.medal .rb.don{animation:none}}
 
 @media (min-aspect-ratio:21/20){
   #scrTitle{justify-content:center;align-items:flex-start;padding:6vh 5vw}
@@ -207,7 +214,7 @@ button{font-family:var(--fm);cursor:pointer;color:inherit;touch-action:manipulat
     <div class="nm cbp" id="nmRow"><label for="nameIn">出品者</label><input id="nameIn" maxlength="16" placeholder="なまえ（なくてもOK）" autocomplete="off"></div>
     <button class="kb red" id="bStart">工作をはじめる</button>
     <div class="row"><button class="kb sm" id="bCont">つづきから</button><button class="kb sm" id="bEnv">✉ 封筒をひらく</button></div>
-    <div class="row"><button class="kb wh sm" id="bParts1">🧰 部品図鑑</button><button class="kb wh sm" id="bBook1">📖 図鑑</button></div>
+    <div class="row"><button class="kb wh sm" id="bHow">🔰 あそびかた</button><button class="kb wh sm" id="bParts1">🧰 部品図鑑</button><button class="kb wh sm" id="bBook1">📖 図鑑</button></div>
   </div>
 </div>
 
@@ -217,7 +224,7 @@ button{font-family:var(--fm);cursor:pointer;color:inherit;touch-action:manipulat
   <div id="todo"></div>
   <div id="act"><button class="kb sm" id="aReset">配線を最初から</button><button class="kb red" id="aGo">出品する</button></div>
   <button class="kb wh tb nt" id="bParts" aria-label="部品図鑑">🧰 <span id="pCnt"></span></button>
-  <button class="kb wh tb nt" id="bMute" aria-label="音">🔊</button>
+  <button class="kb wh tb nt" id="bMute" aria-label="音" data-gd-pass>🔊</button>
 </div>
 
 <div id="scrJudge" class="scr ov hidden"><div class="paper tp" id="judge"></div></div>
@@ -254,7 +261,7 @@ button{font-family:var(--fm);cursor:pointer;color:inherit;touch-action:manipulat
   </div>
 </div>
 
-<div id="scrBackQ" class="scr ov hidden"><div class="paper tp"><h3 class="hd" id="bkT">もどりますか？</h3><p style="font:600 14px/1.6 var(--fb)" id="bkSub">進み具合は保存されます。</p><div class="btns"><button class="kb sm" id="bkNo">つづける</button><button class="kb red" id="bkGo">もどる</button></div></div></div>
+<div id="scrBackQ" class="scr ov hidden fix" data-gd-pass><div class="paper tp"><h3 class="hd" id="bkT">もどりますか？</h3><p style="font:600 14px/1.6 var(--fb)" id="bkSub">進み具合は保存されます。</p><div class="btns"><button class="kb sm" id="bkNo">つづける</button><button class="kb red" id="bkGo">もどる</button></div></div></div>
 <div id="toast" class="paper off"><b id="toT"></b><span id="toB"></span></div>
 <button class="kb wh hidden" id="bBack" aria-label="もどる">◀ もどる</button>
 </div>
@@ -2315,7 +2322,7 @@ var PARTS=[
 function fresh(){return {v:2,name:'',ti:0,works:[],t:0,cleared:false,sealed:false,parts:{},envOpen:false}}
 var S=null;try{S=JSON.parse(localStorage.getItem(SKEY))}catch(e){}
 if(!S||S.v!==2){var old=S;S=fresh();if(old&&old.name)S.name=old.name}
-function save(){try{localStorage.setItem(SKEY,JSON.stringify(S))}catch(e){}}
+function save(){if(PR&&PR.sandbox)return;try{localStorage.setItem(SKEY,JSON.stringify(S))}catch(e){}}
 function readSeal(){try{var o=JSON.parse(localStorage.getItem(SEAL)||'null');return o&&o.slots?o:null}catch(e){return null}}
 
 /* ================= 音（段ボール・テープ・ポン） ================= */
@@ -2608,16 +2615,16 @@ cv.addEventListener('pointerdown',function(e){ac();if(scene!=='play')return;var 
   }});
 cv.addEventListener('pointermove',function(e){if(!DRAG)return;DRAG.x=e.clientX;DRAG.y=e.clientY});
 cv.addEventListener('pointerup',function(e){if(!DRAG)return;var d=DRAG,wk=W0(),x=e.clientX,y=e.clientY;DRAG=null;HOVW=-1;if(!wk)return;
-  if(d.t==='dev'){var sl=hitSlot(x,y);if(sl>=0){wk.devs[sl]=d.k;wk.flip[sl]=false;SFX.tap();spark(x,y,10,['#E8C996',INK],140);save();if(!S.parts[d.k]){}}}
-  else if(d.t==='wire'){var t=hitTerm(x,y);if(t&&t!==d.from){var dup=wk.wires.some(function(w){return w[0]===d.from&&w[1]===t||w[1]===d.from&&w[0]===t});if(!dup&&wk.wires.length<12){wk.wires.push([d.from,t]);SFX.pon();BAD=[];save()}}}
+  if(d.t==='dev'){var sl=hitSlot(x,y);if(sl>=0){wk.devs[sl]=d.k;wk.flip[sl]=false;SFX.tap();spark(x,y,22,['#E8C996',INK,RED],200);ftxt(x,y-30,'のせた！',INK,20*U);vib(12);save();if(!S.parts[d.k]){}}}
+  else if(d.t==='wire'){var t=hitTerm(x,y);if(t&&t!==d.from){var dup=wk.wires.some(function(w){return w[0]===d.from&&w[1]===t||w[1]===d.from&&w[0]===t});if(!dup&&wk.wires.length<12){wk.wires.push([d.from,t]);SFX.pon();wireFX(x,y);BAD=[];save()}}}
   else if(d.t==='cut'){var w=hitWire(x,y);if(w===d.w){wk.wires.splice(w,1);SFX.snip();BAD=[];spark(x,y,6,[INK,'#E0A526'],120);save()}}
   else if(d.t==='arrow'){var k=hitCat(x,y);if(k){var ex=wk.arrows.filter(function(a){return a.slot===d.slot&&a.out===k})[0];if(!ex){var hasMain=wk.arrows.some(function(a){return a.slot===d.slot&&a.main});wk.arrows.push({slot:d.slot,out:k,main:!hasMain});SFX.draw();SFX.pon();
-        if(!hasMain)ftxt(x,y-20,'予想：'+OUT[k].t,RED,20*U);else ftxt(x,y-20,'ほかにも：'+OUT[k].t,'#5A3E22',16*U);save()}}}
+        if(!hasMain){ftxt(x,y-20,'予想：'+OUT[k].t,RED,24*U);spark(x,y,18,[RED,'#FFD65A',PAPER],220);vib(12)}else ftxt(x,y-20,'ほかにも：'+OUT[k].t,'#5A3E22',16*U);save()}}}
   else if(d.t==='arrcut'){var ai=hitArrow(x,y);if(ai===d.i){var a=wk.arrows.splice(ai,1)[0];if(a.main){var nx=wk.arrows.filter(function(z){return z.slot===a.slot})[0];if(nx)nx.main=true;else wk.reasons[a.slot]=null}SFX.snip();save()}}
   else if(d.t==='tape'){var moved=Math.hypot(x-d.x0,y-d.y0)>12,slot=activeSlot();
     if(moved){var ai2=hitArrow(x,y);if(ai2>=0)slot=wk.arrows[ai2].slot;else if(hitSlot(x,y)>=0)slot=hitSlot(x,y);else return}
     if(!wk.arrows.some(function(a){return a.slot===slot&&a.main})){say('先に、器具から受け口へ矢印を引こう（器具'+(slot+1)+'）',false,3);SFX.ng();return}
-    wk.reasons[slot]=d.id;SFX.tape();wk.sel=null;save()}
+    wk.reasons[slot]=d.id;SFX.tape();wk.sel=null;spark(x,y,14,[PAPER,'#E0A526',INK],180);ftxt(x,y-24,'ペタッ',INK,20*U);vib(10);save()}
   refreshUI()});
 cv.addEventListener('pointercancel',function(){DRAG=null;HOVW=-1});
 
@@ -2631,17 +2638,17 @@ function doSwitch(){var wk=W0();if(!wk||wk.phase!=='build'||busy)return;SFX.sw()
     while(q.length){var n=q.shift();(adj[n]||[]).forEach(function(e){if(e[1]>=0&&order.indexOf(e[1])<0)order.push(e[1]);if(!(e[0] in seen)){seen[e[0]]=1;q.push(e[0])}})}
     var f=r.f,live=order.filter(function(i){var w=wk.wires[i];return f(w[0])===f('B+')||f(w[0])===f('B-')||ST[S.ti].slots.some(function(_,k){return f(w[0])===f('D'+(k+1)+'a')||f(w[0])===f('D'+(k+1)+'b')})});
     wk.lit=live;wk.litT=0;live.forEach(function(_,i){setTimeout(function(){SFX.flow(i)},i*220)});
-    setTimeout(function(){wk.stampT=.001;SFX.stamp();SFX.ok();spark(b.x+318*b.s,b.y+200*b.s,30,[RED,'#FFD65A',PAPER,INK],260);ftxt(b.x+b.w/2,b.y+b.h*.3,'通電OK！',RED,34*U);
+    setTimeout(function(){wk.stampT=.001;SFX.stamp();SFX.ok();okFX(wk);spark(b.x+318*b.s,b.y+200*b.s,30,[RED,'#FFD65A',PAPER,INK],260);ftxt(b.x+b.w/2,b.y+b.h*.3,'通電OK！',RED,34*U);
       if(wk.firstC){earn(10,'first-try',b.x+b.w/2,b.y+b.h*.3);ftxt(b.x+b.w/2,b.y+b.h*.3+40,'1回で輪がつながった',INK,17*U)}
       say('通電OK！ 何が出るかは実験のお楽しみ。次は予想の矢印を引こう',true,3.2)},live.length*220+200);
     setTimeout(function(){wk.sw=false;wk.phase='predict';wk.stampT=0;busy=false;save();refreshUI()},live.length*220+1300)}
-  else{wk.fails++;if(r.kind==='short'){SFX.zap();BAD=wk.wires.map(function(_,i){return i}).filter(function(i){var w=wk.wires[i];return r.byp>=0?(w.indexOf('D'+(r.byp+1)+'a')>=0&&w.indexOf('D'+(r.byp+1)+'b')>=0):true});
+  else{if(wk.fails===0)brkFX();wk.fails++;if(r.kind==='short'){SFX.zap();BAD=wk.wires.map(function(_,i){return i}).filter(function(i){var w=wk.wires[i];return r.byp>=0?(w.indexOf('D'+(r.byp+1)+'a')>=0&&w.indexOf('D'+(r.byp+1)+'b')>=0):true});
       spark(b.x+(P['B+'][0]+P['B-'][0])/2*b.s,b.y+P['B+'][1]*b.s,24,['#FFD65A',RED,'#fff'],260);ftxt(b.x+b.w/2,b.y+b.h*.2,'ショート！',RED,30*U);earnShort()}
     else{SFX.ng();if(r.kind==='byp')BAD=wk.wires.map(function(_,i){return i}).filter(function(i){var w=wk.wires[i];return w.indexOf('D'+(r.byp+1)+'a')>=0&&w.indexOf('D'+(r.byp+1)+'b')>=0})}
     say(r.msg,false,5.5);busy=true;setTimeout(function(){wk.sw=false;busy=false;refreshUI()},900)}
   refreshUI()}
 function earnShort(){if(!S.parts.short){giveCard('short',true)}}
-function earn(n,why,x,y){var z=Zk();if(!z||!z.earn)return 0;var got=0;try{var rc=cv.getBoundingClientRect();got=z.earn(n,why,{koma:KOMA,x:rc.left+x,y:rc.top+y})||0}catch(e){}refreshK();return got}
+function earn(n,why,x,y){var z=Zk();if(PR&&PR.sandbox||!z||!z.earn)return 0;var got=0;try{var rc=cv.getBoundingClientRect();got=z.earn(n,why,{koma:KOMA,x:rc.left+x,y:rc.top+y})||0}catch(e){}refreshK();return got}
 var KAK=0;function refreshK(){try{var z=Zk();KAK=z&&z.state?(z.state().kakera||0):0}catch(e){KAK=0}}
 
 /* ================= やること・ボタン ================= */
@@ -2654,7 +2661,7 @@ function todoText(){var wk=W0(),st=ST[S.ti];if(!wk)return '';
     if(!wk.reasons[cur])return '<b>⑤</b> 下の<b>理由の札</b>を、赤い矢印に貼ろう';
     return '<b>⑥</b> 「出品する」で審査へ（矢印はタップで消せる）'}
   return ''}
-var TODOH='';function updTodo(){var wk=W0();if(!wk)return;var h=wk.msg?(wk.msg.ok?'✔ ':'✖ ')+wk.msg.s:todoText(),cl=wk.msg?(wk.msg.ok?'okm':'ng'):'';if(h+cl!==TODOH){TODOH=h+cl;$('todo').innerHTML=h;$('todo').className=cl;if(!LM)layoutSoon()}}
+var TODOH='';function updTodo(){var wk=W0();if(!wk)return;$('todo').style.visibility=PR&&PR.on&&!wk.msg?'hidden':'';var h=wk.msg?(wk.msg.ok?'✔ ':'✖ ')+wk.msg.s:todoText(),cl=wk.msg?(wk.msg.ok?'okm':'ng'):'';if(h+cl!==TODOH){TODOH=h+cl;$('todo').innerHTML=h;$('todo').className=cl;if(!LM)layoutSoon()}}
 function refreshUI(){if(scene!=='play')return;var wk=W0(),st=ST[S.ti];if(!wk)return;TODOH='';updTodo();
   $('oN').innerHTML='作品 No.'+(S.ti+1)+' ／ 8'+(st.nw?'<span class="nw">NEW '+st.nw+'</span>':'');$('oT').textContent=st.title;$('oG').textContent=st.goal;
   var ready=wk.phase==='predict'&&st.slots.every(function(_,i){return wk.arrows.some(function(a){return a.slot===i&&a.main})&&wk.reasons[i]});
@@ -2682,7 +2689,7 @@ function openJudge(force){var wk=W0(),st=ST[S.ti],J=judgeCalc();
   J.rows.forEach(function(r,i){h2+='<div class="jrow"><div class="m'+(r.suji?'':' tri')+'">'+(r.suji?'◎':'△')+'</div><div>'+(st.slots.length>1?'器具'+(i+1)+' ':'')+'<b>'+DEV[r.dev].name+'</b> → 予想「'+OUT[r.main].t+'」'+(r.extra.length?'＋'+r.extra.map(function(x){return OUT[x].t}).join('・'):'')+'<br>理由「'+(r.R?r.R.t:'')+'」'+(r.suji?'：筋が通っている':'：予想と理由の筋が合っていない')+'</div></div>'});
   h2+='<div class="jrow"><div class="m'+(J.odai?'':' tri')+'">'+(J.odai?'◎':'△')+'</div><div>お題に合う予想になっている'+(J.odai?'':'（予想のとおりなら、係の役目をはたせないかも）')+'</div></div>';
   h2+='<div class="medal"><div class="rb '+medal+'">'+{g:'金',s:'銀',b:'銅'}[medal]+'</div><div style="font:600 14px/1.6 var(--fb)">'+{g:'金賞！ 回路も予想の筋も、お題も完ぺき。',s:'銀賞！ あと1つで金賞。',b:'銅賞。回路は通った。予想の筋を見直すと金賞に近づく。'}[medal]+'<br><small>審査は「回路」と「予想の筋」だけ。予想が当たっているかは、実験で確かめる。</small></div></div>';
-  h2+='<div class="btns"><button class="kb red" id="jNext">部品箱をあける 📦</button></div>';$('judge').innerHTML=h2;show('scrJudge',true);SFX.medal();spark(W/2,H*.3,40,[RED,'#E8B923',PAPER],300);
+  h2+='<div class="btns"><button class="kb red" id="jNext">部品箱をあける 📦</button></div>';$('judge').innerHTML=h2;show('scrJudge',true);spark(W/2,H*.3,40,[RED,'#E8B923',PAPER],300);stampJudge(medal);
   S.t+=0;save();$('jNext').onclick=function(){show('scrJudge',false);openBox(medal==='g')};refreshUI()}
 /* ================= 部品箱（開封） ================= */
 function nextPart(){var left=PARTS.filter(function(p){return !S.parts[p.id]});if(!left.length)return null;return left[Math.floor(Math.random()*left.length)]}
@@ -2720,7 +2727,7 @@ function blueprint(){var b=$('blue');show('scrBlue',true);S.ti=ST.length-1;save(
 function doSeal(){var rec={v:1,koma:KOMA,game:GAME,at:Date.now(),name:getName(),slots:{}};
   S.works.forEach(function(w,i){if(!w)return;rec.slots[ST[i].key]={title:ST[i].title,devs:w.devs.slice(),pred:w.devs.map(function(d,k){var m=w.arrows.filter(function(a){return a.slot===k&&a.main})[0],ex=w.arrows.filter(function(a){return a.slot===k&&!a.main}).map(function(a){return a.out});return {dev:d,main:m?m.out:'heat',extra:ex,reason:(REASONS.filter(function(r){return r.id===w.reasons[k]})[0]||{}).t||''}})}});
   try{localStorage.setItem(SEAL,JSON.stringify(rec))}catch(e){}
-  S.sealed=true;S.cleared=true;S.envOpen=false;save();SFX.seal();spark(W/2,H/2,60,[RED,'#E8B923',PAPER,INK],360);
+  S.sealed=true;S.cleared=true;S.envOpen=false;save();SFX.seal();if(window.Guide&&!RM)Guide.celebrate('封印！');spark(W/2,H/2,60,[RED,'#E8B923',PAPER,INK],360);
   $('blue').innerHTML='<div class="sealmark">封</div><h3 class="hd" style="text-align:center;color:#EAF1FB">予想を封印した！</h3><p style="font:600 15px/1.75 var(--fb);text-align:center">8作品の予想は封筒の中。<br>学校で<b>器具に電流を流す実験</b>をしたら、<br>タイトル画面の「✉ 封筒をひらく」で答え合わせ。</p><div class="btns"><button class="kb red" id="bgo">本編クリア ▶</button></div>';
   $('bgo').onclick=function(){show('scrBlue',false);mainClear()}}
 function mainClear(){var z=Zk(),sh=function(){showClear()};if(z&&z.mainClear){try{z.mainClear({onClose:sh});return}catch(e){}}sh()}
@@ -2748,20 +2755,22 @@ var OVS=['scrJudge','scrBox','scrPartsBook','scrBlue','scrClear','scrEnv','scrBa
 function show(id,on){$(id).classList.toggle('hidden',!on)}
 function setScene(s){scene=s;['scrTitle','scrPlay','scrTest','scrEnd'].forEach(function(id){$(id).classList.add('hidden')});OVS.forEach(function(id){if(id!=='scrPartsBook'&&id!=='scrEnv')show(id,false)});
   if(s==='title'){show('scrTitle',true);refreshTitle()}else if(s==='play'){show('scrPlay',true);layout();refreshUI()}else if(s==='test')show('scrTest',true);else if(s==='end')show('scrEnd',true);
-  backBtn();$('bMute').textContent=muted?'🔇':'🔊'}
+  backBtn();$('bMute').textContent=muted?'🔇':'🔊';if(HELP){if(s==='play')HELP.show();else HELP.hide()}}
 var INHUB=!!window.COLLECTION_NAME||(function(){try{return window.parent!==window}catch(e){return true}})();
 function backBtn(){var b=$('bBack'),on=scene==='play'||scene==='test'||scene==='end'||(scene==='title'&&INHUB);b.classList.toggle('hidden',!on);b.textContent=scene==='title'?'◀ 一覧へ':'◀ もどる'}
 var backFrom=null;
 $('bBack').onclick=function(){ac();if(scene==='title'){try{window.parent.postMessage({type:'rika-close-game'},'*')}catch(e){}return}
   backFrom=scene;$('bkSub').textContent=scene==='test'?'確認テストは、次はさいしょから。作品の進み具合は保存されています。':scene==='end'?'タイトルにもどります。':'進み具合は保存されます（出品した作品・つないだ導線・部品図鑑はそのまま）。タイトルにもどります。';
   $('bkGo').textContent='タイトルへ';show('scrBackQ',true)};
-$('bkNo').onclick=function(){show('scrBackQ',false)};$('bkGo').onclick=function(){show('scrBackQ',false);OVS.forEach(function(id){show(id,false)});setScene('title')};
+$('bkNo').onclick=function(){show('scrBackQ',false)};$('bkGo').onclick=function(){show('scrBackQ',false);OVS.forEach(function(id){show(id,false)});if(PR.on){leavePractice();return}setScene('title')};
 function refreshTitle(){var started=S.works.length>0&&!!S.works[0];$('bCont').classList.toggle('hidden',!started||S.cleared&&!S.works[S.ti]);$('bEnv').classList.toggle('hidden',!readSeal());
   $('bStart').textContent=S.cleared?'もう一度 はじめから作る':(started?'はじめから作る':'工作をはじめる');$('bBook1').classList.toggle('hidden',!Zk())}
 function getName(){return(window.PLAYER_NAME||$('nameIn').value||S.name||'').trim()}
-function startNew(){var keep={name:S.name,parts:S.parts,sealed:S.sealed,cleared:S.cleared};S=fresh();S.name=keep.name;S.parts=keep.parts||{};S.sealed=keep.sealed;S.cleared=keep.cleared;S.ti=0;S.works=[newWork(ST[0])];save();setScene('play');
-  toast('出品まで あと8作品','器具を選んで、導線で輪をつくり、何が出るか予想して出品。予想の答えは実験の日に。')}
-$('bStart').onclick=function(){ac();SFX.tape();S.name=$('nameIn').value.trim()||S.name;save();startNew()};
+function startNew(quiet){var keep={name:S.name,parts:S.parts,sealed:S.sealed,cleared:S.cleared};S=fresh();S.name=keep.name;S.parts=keep.parts||{};S.sealed=keep.sealed;S.cleared=keep.cleared;S.ti=0;S.works=[newWork(ST[0])];save();setScene('play');
+  if(!quiet)toast('出品まで あと8作品','器具を選んで、導線で輪をつくり、何が出るか予想して出品。予想の答えは実験の日に。')}
+$('bStart').onclick=function(){ac();SFX.tape();S.name=$('nameIn').value.trim()||S.name;save();var first=!(S.works.length&&S.works[0]);
+  if(!window.Guide){startNew();return}
+  Guide.intro(INTRO).then(function(){if(scene!=='title')return;if(first){PR.mode='real';Guide.tutorial(PRACTICE)}else startNew()})};
 $('bCont').onclick=function(){ac();SFX.tape();S.name=$('nameIn').value.trim()||S.name;if(!S.works[S.ti])S.works[S.ti]=newWork(ST[S.ti]);var w=S.works[S.ti];if(w.phase==='done'){nextStationResume();return}save();setScene('play')};
 function nextStationResume(){if(S.ti>=ST.length-1){setScene('play');blueprint();return}S.ti++;if(!S.works[S.ti])S.works[S.ti]=newWork(ST[S.ti]);save();setScene('play')}
 $('bEnv').onclick=function(){ac();openEnv()};
@@ -2808,17 +2817,77 @@ $('eCard').onclick=function(){if(CARD&&window.SubmitCard)SubmitCard.reopen(CARD)
 /* ================= ループ ================= */
 var last=performance.now(),tacc=0;
 function frame(now){var dt=Math.min(.05,(now-last)/1000);last=now;T+=dt;c.setTransform(DPR,0,0,DPR,0,0);
-  if(scene==='play'){S.t+=dt;tacc+=dt;if(tacc>5){tacc=0;save()}drawPlay();updTodo()}else if(scene==='title')drawTitle();else drawBg();
+  if(scene==='play'){S.t+=dt;tacc+=dt;if(tacc>5){tacc=0;save()}c.save();if(SHK>0&&!RM)c.translate((Math.random()-.5)*SHK*18,(Math.random()-.5)*SHK*12);drawPlay();c.restore();
+    if(FLS>0&&!RM){c.fillStyle='rgba(255,236,160,'+(FLS*.4).toFixed(3)+')';c.fillRect(0,0,W,H)}SHK=Math.max(0,SHK-dt*1.5);FLS=Math.max(0,FLS-dt*2.4);updTodo()}else if(scene==='title')drawTitle();else drawBg();
   updFx(dt);if(scene!=='play')drawFx();requestAnimationFrame(frame)}
 
 /* ================= はじまり ================= */
 resize();
 window.Zukan&&Zukan.setup&&Zukan.setup({game:GAME,koma:[KOMA]});refreshK();
 if(window.PLAYER_NAME){$('nameIn').value=window.PLAYER_NAME;$('nmRow').classList.add('hidden')}else if(S.name)$('nameIn').value=S.name;
+
+/* ================= 仕上げ（2026-09-28）：遊び方案内 Guide・れんしゅう・演出どぱどぱ ================= */
+['bBack','scrBackQ'].forEach(function(id){document.body.appendChild($(id))});
+function vib(ms){try{if(navigator.vibrate)navigator.vibrate(ms)}catch(e){}}
+document.addEventListener('pointerdown',function(e){var b=e.target&&e.target.closest&&e.target.closest('button');if(b&&!b.disabled)vib(8)},true);
+var SHK=0,FLS=0,WN=0;
+function wireFX(x,y){WN++;tone(660*Math.pow(2,Math.min(WN,8)*2/12),.14,'sine',.08,.05);spark(x,y,16,['#FFD65A',BRASS,RED],200);ftxt(x,y-26,'つながった！',INK,18*U);vib(10)}
+function streak(){var n=0;for(var i=S.ti;i>=0;i--){var w=S.works[i];if(w&&w.firstC)n++;else break}return n}
+function okFX(wk){var b=LY.board;SHK=.5;FLS=1;vib([25,40,30]);WN=0;spark(b.x+b.w/2,b.y+b.h*.3,40,['#FFD65A',RED,PAPER],320);
+  if(wk.firstC){var n=streak();if(n>=2)setTimeout(function(){ftxt(b.x+b.w/2,b.y+b.h*.3+80,'1回で通電 ×'+n+' 連続！',RED,26*U);tone(1568,.5,'triangle',.08);tone(2093,.6,'triangle',.07,.1)},450)}}
+function brkFX(){var n=0;for(var i=S.ti-1;i>=0;i--){var w=S.works[i];if(w&&w.firstC)n++;else break}if(n>=1){var b=LY.board;setTimeout(function(){ftxt(b.x+b.w/2,b.y+b.h*.2+50,'あと1回で 1回通電 ×'+(n+1)+' だった！','#6B2A1A',18*U)},400)}}
+function stampJudge(medal){var ms=[].slice.call($('judge').querySelectorAll('.jrow .m')),rb=$('judge').querySelector('.medal .rb');ms.concat(rb?[rb]:[]).forEach(function(m){m.style.visibility='hidden'});
+  ms.forEach(function(m,i){setTimeout(function(){m.style.visibility='';m.classList.add('don');SFX.stamp();vib(20)},RM?0:300+i*360)});
+  if(rb)setTimeout(function(){rb.style.visibility='';rb.classList.add('don');SFX.medal();vib([30,40,30]);if(medal==='g'&&window.Guide&&!RM)Guide.celebrate('金賞！');else spark(W/2,H*.35,40,[RED,'#E8B923',PAPER],300)},RM?0:300+ms.length*360+200)}
+/* ---- れんしゅう：1作品目を、指の案内つきで最後まで（はじめての人は本番のまま・あそびかたはお試し） ---- */
+function BX(p,s){var b=LY.board;return[b.x+p[0]*b.s,b.y+p[1]*b.s]}
+function slotT(){var st=ST[S.ti],p=BX(slotPos(st,0)),s=LY.board.s;return{x:p[0],y:p[1],w:124*s,h:66*s,el:cv}}
+function termT(t){var p=BX(termPos(ST[S.ti])[t]);return{x:p[0],y:p[1],r:Math.max(16,18*LY.board.s),el:cv}}
+function swT(){var p=BX([304,254]),s=LY.board.s;return{x:p[0],y:p[1],w:120*s,h:78*s,el:cv}}
+function devT(){var p=devCenter(0),s=LY.board.s;return{x:p[0],y:p[1],w:110*s,h:62*s,el:cv}}
+function uni(rs){if(!rs.length)return null;var x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;rs.forEach(function(r){x0=Math.min(x0,r.x);y0=Math.min(y0,r.y);x1=Math.max(x1,r.x+r.w);y1=Math.max(y1,r.y+r.h)});return{x:(x0+x1)/2,y:(y0+y1)/2,w:x1-x0+8,h:y1-y0+8,el:cv}}
+function shelfT(){return uni(SHELF.filter(function(q){return q.t==='dev'}))}
+function tapeT(){return uni(SHELF.filter(function(q){return q.t==='tape'}))}
+function catT(){return uni(LY.cat)}
+function arrowMidT(){var wk=W0(),a=wk&&wk.arrows.filter(function(z){return z.slot===0&&z.main})[0];if(!a)return devT();var d=devCenter(0),r=LY.cat[OKEYS.indexOf(a.out)],tx=LM?r.x+8:r.x+r.w/2,ty=LM?r.y+r.h/2:r.y+8;return{x:(d[0]+tx)/2,y:(d[1]+ty)/2,r:30,el:cv}}
+var PR={on:false,leaving:false,sandbox:false,mode:null,keep:null,from:null};
+function startSandbox(){PR.keep=JSON.stringify(S);PR.from=scene;PR.sandbox=true;var nm=S.name;S=fresh();S.name=nm;S.works=[newWork(ST[0])];OVS.forEach(function(id){show(id,false)});setScene('play')}
+function endSandbox(){if(!PR.sandbox)return;PR.sandbox=false;try{S=JSON.parse(PR.keep)}catch(e){}PR.keep=null;OVS.forEach(function(id){show(id,false)});var to=PR.from==='play'&&S.works[S.ti]?'play':'title';setScene(to)}
+function leavePractice(){PR.leaving=true;if(window.Guide)Guide.tutorialEnd();PR.on=false;if(PR.sandbox)endSandbox();else setScene('title')}
+var PRACTICE={label:'れんしゅう中',clearText:'れんしゅうクリア！',block:true,
+  start:function(){ac();PR.on=true;PR.leaving=false;WN=0;if(PR.mode==='real')startNew(true);else startSandbox();PR.mode=null},
+  steps:[
+    {gesture:'drag',target:shelfT,to:slotT,until:function(){var w=W0();return w&&!!w.devs[0]},label:'器具をのせる',
+      text:'お題は「寒い人を温める」。部品箱から **器具を1つえらんで**、台の「器具をここへ」まで **ドラッグ**'},
+    {gesture:'drag',target:function(){return termT('D1b')},to:function(){return termT('B-')},until:function(){var w=W0();if(!w||!w.devs[0])return false;var r=evalC(ST[S.ti],w,true);return r.all&&!r.short},label:'導線を引く',
+      text:'金具から金具へ **導線をドラッグ**。器具の右の金具 → 電池の **−極** で、電流の通り道が **輪** になる'},
+    {gesture:'tap',target:swT,until:function(){var w=W0();return w&&w.phase==='predict'},label:'スイッチ',
+      text:'**スイッチをタップ** して 通電テスト！'},
+    {gesture:'drag',target:devT,to:function(){var q=catT();return q?{x:q.x,y:q.y,r:22,el:cv}:null},area:function(){var a=devT(),b=catT();if(!b)return a;return uni([{x:a.x-a.w/2,y:a.y-a.h/2,w:a.w,h:a.h},{x:b.x-b.w/2,y:b.y-b.h/2,w:b.w,h:b.h}])},until:function(){var w=W0();return w&&w.arrows.some(function(a){return a.slot===0&&a.main})},label:'矢印で予想',
+      text:'器具から、**出そうだと思うもの** の受け口へ **矢印を引こう**（答えは 実験の日に）'},
+    {gesture:'drag',target:tapeT,to:arrowMidT,until:function(){var w=W0();return w&&!!w.reasons[0]},label:'理由を貼る',
+      text:'そう思う **理由の札** を、赤い矢印へ **ドラッグ**（タップでも貼れる）'},
+    {gesture:'tap',target:'#aGo',until:function(){return !$('scrJudge').classList.contains('hidden')},label:'出品',
+      text:'**「出品する」** で 審査へ！'}],
+  onExit:function(res){if(PR.leaving||res.replaced){PR.leaving=false;return}PR.on=false;
+    if(PR.sandbox){setTimeout(endSandbox,res.cleared?300:0);return}refreshUI()}};
+var INTRO={title:'でんき工作コンテスト',learn:'電流を流すと、器具から **熱・光・音・運動** が取り出せる（何が出るかは **予想** → 実験で）',
+  how:'器具を **台へドラッグ** → **導線で輪** に → **スイッチ** → **矢印で予想**',gesture:'drag'};
+var HELP=null;
+if(window.Guide){
+  Guide.setup({theme:{bg:'#F2DDB4',fg:INK,accent:RED,accentText:'#FFF7EA',font:FH,bodyFont:FM,radius:10,
+      texture:'repeating-linear-gradient(90deg,rgba(58,42,26,.06) 0 2px,transparent 2px 7px)',line:INK,dim:'rgba(58,42,26,.5)',shadow:'4px 6px 0 rgba(58,42,26,.55)',outline:'#FFF7EA',hand:'#FBF6EA',handLine:INK},
+    sfx:function(k){if(k==='step')SFX.pon();else if(k==='done')SFX.ok();else if(k==='clear')SFX.medal();else if(k==='cheer')SFX.tape();else if(k==='nudge')SFX.tap();else SFX.pick()},
+    muted:function(){return muted}});
+  HELP=Guide.help({learn:INTRO.learn,how:INTRO.how,title:INTRO.title,gesture:'drag',show:false,attention:true,offset:{x:170},replay:'tutorial',
+    rules:['**電池（電源装置）→ スイッチ → 器具 → 電池** が1つの **輪** になると電流が流れる','器具を通らない近道（**ショート**）や、輪の外のスイッチは 通電テストで見つかる','**発光ダイオード・電子ブザー** は向きがある。器具の **↻** で向きを変えられる（導線はタップで外せる）','何が出るかは **予想するだけ**。理由の札と矢印の **筋が通っている** かが審査される','予想の答えは、実験のあとに タイトルの「✉ 封筒をひらく」で']});
+  Guide.tutorialButton('#bHow',function(){ac();SFX.tape();PR.mode='sandbox';Guide.tutorial(PRACTICE)});
+}else $('bHow').classList.add('hidden');
+
 if(TEST)startTest();else setScene('title');
 requestAnimationFrame(frame);
 /* 自動操作の確かめ用の窓口（遊びには影響しない） */
-window.__DC={shelf:function(){return SHELF},ly:function(){return LY},tp:termPos,sp:slotPos,S:function(){return S},ST:ST,test:testCircuit,sw:doSwitch,judge:openJudge,box:openBox,next:nextStation,blue:blueprint,seal:doSeal,scene:function(){return scene},refresh:refreshUI,layout:layout,start:startNew};
+window.__DC={PR:function(){return PR},tg:function(){return{slot:slotT(),shelf:shelfT(),d1b:termT('D1b'),bm:termT('B-'),sw:swT(),dev:devT(),cat:catT(),tapes:tapeT(),mid:arrowMidT(),tape0:(SHELF.filter(function(q){return q.t==='tape'})[0]||null)}},shelf:function(){return SHELF},ly:function(){return LY},tp:termPos,sp:slotPos,S:function(){return S},ST:ST,test:testCircuit,sw:doSwitch,judge:openJudge,box:openBox,next:nextStation,blue:blueprint,seal:doSeal,scene:function(){return scene},refresh:refreshUI,layout:layout,start:startNew};
 })();
 </script>
 </body>

@@ -194,7 +194,16 @@ body.land .qc{font-size:18px;min-height:64px}
 .qfb .mk.x{color:#E0B77A;text-shadow:0 4px 0 #6B4226}
 .qfb .ex{max-width:520px;margin:10px 0 16px}
 #bkOv{position:absolute;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;background:rgba(20,10,4,.6);padding:16px}
-@media (prefers-reduced-motion: reduce){*{animation-duration:.01s!important;animation-iteration-count:1!important;transition:none!important}}
+/* 仕上げ 2026-09-28（sm-finish-2026-09-28）: ★のドン・寄木の木片の紙吹雪・作業台の足もとの帯は指をふさがない */
+#mFoot{pointer-events:none}#mFoot button{pointer-events:auto}
+.stars i.on{animation:starDon .55s cubic-bezier(.2,1.8,.4,1) both}
+@keyframes starDon{0%{transform:scale(3) rotate(-50deg);opacity:0}60%{transform:scale(.86);opacity:1}100%{transform:none;opacity:1}}
+.sheet.don{animation:sheetDon .18s ease-out}
+@keyframes sheetDon{0%{transform:translateY(0)}40%{transform:translateY(5px)}100%{transform:none}}
+.smcf{position:fixed;top:-20px;z-index:45;pointer-events:none;width:var(--w);height:calc(var(--w)*.55);background:var(--c);box-shadow:inset 0 0 0 1px rgba(30,16,8,.45);animation:smcf var(--t) cubic-bezier(.3,.2,.6,1) var(--d) forwards}
+@keyframes smcf{to{transform:translate(var(--dx),108vh) rotate(var(--r))}}
+body:not(.land) .gd-band.bot{bottom:calc(92px + env(safe-area-inset-bottom))}
+@media (prefers-reduced-motion: reduce){*{animation-duration:.01s!important;animation-iteration-count:1!important;transition:none!important}.smcf{display:none}}
 </style>
 </head>
 <body>
@@ -211,6 +220,7 @@ body.land .qc{font-size:18px;min-height:64px}
    <button class="wd" id="btnStart">はじめる</button>
    <button class="wd dk" id="btnCont" hidden>つづきから</button>
    <button class="wd gr sm" id="btnBookT" hidden>📖 図鑑</button>
+   <button class="wd dk sm" id="btnHow">🖐 あそびかた</button>
   </div>
  </div>
 </section>
@@ -1543,7 +1553,14 @@ window.ZUKAN_CARDS={"v": 1, "grade": "chu2", "name": "中2理科図鑑", "econom
   function vib(ms){try{if(navigator.vibrate)navigator.vibrate(ms)}catch(e){}}
   function el(tag,cls,html){var d=document.createElement(tag);if(cls)d.className=cls;if(html!=null)d.innerHTML=html;return d}
   function rm(d){if(d&&d.parentNode)d.parentNode.removeChild(d)}
-  function inGuide(t){while(t&&t!==document){if(t.classList&&(t.classList.contains('gd-root')||t.classList.contains('gd-hbtn')))return true;t=t.parentNode}return false}
+  /* れんしゅう中の「指以外は押せない」でも、もどる・確認ダイアログ・音量などは常に押せるようにする（2026-09-28・ルール10）
+     ゲーム側で確実に通したい要素には data-gd-pass を付ける */
+  var PASS_RE=/(^|[-_\s])(back|modoru|return|home|exit|mute|sound|confirm|dialog|modal)([-_\s]|$)/i;
+  function passThru(t){var n=0;while(t&&t!==document&&n<8){n++;if(t.nodeType===1){if(t.hasAttribute('data-gd-pass')||t.tagName==='DIALOG'||t.getAttribute('role')==='dialog'||t.getAttribute('aria-modal')==='true')return true;
+      if(PASS_RE.test(String(t.id||''))||PASS_RE.test(typeof t.className==='string'?t.className:''))return true;
+      if((t.tagName==='BUTTON'||t.tagName==='A'||t.getAttribute('role')==='button')&&/^\s*[◀←＜<]?\s*(もどる|戻る|一覧へ|とじる|閉じる|はい|いいえ|やめる|キャンセル|おと|音)/.test(t.textContent||''))return true}
+      t=t.parentNode}return false}
+  function inGuide(t){if(passThru(t))return true;while(t&&t!==document){if(t.classList&&(t.classList.contains('gd-root')||t.classList.contains('gd-hbtn')))return true;t=t.parentNode}return false}
   function hexRGB(c){c=String(c||'').trim();var m;
     if((m=c.match(/^#([0-9a-f]{3})$/i)))return [0,1,2].map(function(i){return parseInt(m[1][i]+m[1][i],16)});
     if((m=c.match(/^#([0-9a-f]{6})/i)))return [0,2,4].map(function(i){return parseInt(m[1].substr(i,2),16)});
@@ -2283,8 +2300,13 @@ const SFX={
  ok(){koto(783.99,.6,{vol:.08});koto(1174.66,.8,{vol:.07,at:.12})},
  ng(){tone(220,.35,{type:'triangle',vol:.07,to:180})},
  tick(){tone(1900,.02,{vol:.03})},
- flag(){koto(1174.66,.4,{vol:.06});noise(.08,{ft:'highpass',f:3000,vol:.05})}
+ flag(){koto(1174.66,.4,{vol:.06});noise(.08,{ft:'highpass',f:3000,vol:.05})},
+ stamp(i){if(SV.mute)return;tone(150,.2,{type:'sine',vol:.2,to:70});noise(.07,{f:500,vol:.14,q:.7});koto(MIYA[5+i*2],.7,{vol:.08,at:.05})},
+ tier(n){[0,2,4,6,8,10].slice(0,3+Math.min(3,n)).forEach((k,i)=>koto(MIYA[k],.5,{vol:.07,at:i*.06}))}
 };
+function buzz(p){try{if(navigator.vibrate)navigator.vibrate(p)}catch(e){}}
+const TIERS=[3,5];
+document.addEventListener('pointerdown',e=>{const b=e.target&&e.target.closest&&e.target.closest('button.wd');if(b&&!b.disabled)buzz(8)},true);
 
 /* ================= 木目 ================= */
 function woodTex(n,base,line,seed,stretch){const c=document.createElement('canvas');c.width=c.height=n;const g=c.getContext('2d');const r=mul(seed);g.fillStyle=base;g.fillRect(0,0,n,n);
@@ -2317,6 +2339,7 @@ const BD=[
  {nm:'大きな葉',leaf:'ホオノキ',say:'長さ30cmをこえることもある大きな葉。',sim:1,wave:5,limit:260,par:200,boss:1,balls:[['co2','B','cell'],['co2','A','cell'],['o2','P','out'],['o2','P','out'],['h2o','V','out']],low:[.1,.28,.46,.64,.82],up:[.37],vein:.72,
   tip:'さいごの盤。霧が 深い。<b>5つぶ</b>を 出し入れせよ'}
 ];
+const PRAC={nm:'れんしゅう盤',leaf:'ツユクサ',say:'',prac:1,balls:[['co2','B','cell'],['o2','P','out']],low:[],up:[],par:999,tip:''};
 const KIND={co2:{nm:'二酸化炭素',col:'#3a3d46'},o2:{nm:'酸素',col:'#E4572E'},h2o:{nm:'水蒸気',col:'#EAF6FF'}};
 
 /* ================= 向き・大きさ ================= */
@@ -2349,6 +2372,7 @@ function buildBoard(def,idx){const land=LAND;const W=land?1400:Math.round(clamp(
  // 気孔の位置
  const sto=[];
  def.low.forEach(f=>{const x=ix0+2*R+30+f*(ix1-ix0-4*R-60);sto.push({x,side:'low',y:y1-e/2,found:false})});
+ const pc=pals[Math.floor(n/2)],pracX=def.prac&&pc?pc.x+pc.w/2:0;if(def.prac)sto.push({x:pracX,side:'low',y:y1-e/2,found:false});
  def.up.forEach(f=>{let best=1,bd=1e9;for(let i=1;i<n;i++){const d=Math.abs(gapX(i)-(ix0+f*(ix1-ix0)));if(d<bd){bd=d;best=i}}sto.push({x:gapX(best),side:'up',y:y0+e/2,found:false})});
  // 表皮（すき間は気孔だけ）
  const gh=R+6,gr=12;
@@ -2360,7 +2384,7 @@ function buildBoard(def,idx){const land=LAND;const W=land?1400:Math.round(clamp(
  let vein=null;const sp0=pal1+2*R+10,sp1=y1-e-2*R-10;
  if(def.vein!=null){vein={t:'c',x:ix0+def.vein*(ix1-ix0),y:(sp0+sp1)/2,r:land?60:50,k:'vein'};S.push(vein)}
  // 海綿状の細胞（すき間の多い層）
- const blobs=[];const clear=[];sto.filter(s=>s.side==='low').forEach(s=>clear.push([s.x,y1-e-50,80]));if(vein)clear.push([vein.x,vein.y,vein.r+2*R+14]);
+ const blobs=[];const clear=[];sto.filter(s=>s.side==='low').forEach(s=>clear.push([s.x,y1-e-50,80]));if(def.prac)for(let yy=pal1;yy<y1;yy+=24)clear.push([pracX,yy,R+34]);if(vein)clear.push([vein.x,vein.y,vein.r+2*R+14]);
  const tight=idx<2?0:idx<5?1:2;const rmin=land?30:25,rmax=land?52:40,mind=2*R+[12,7,5][tight];
  for(let k=0;k<(def.boss?4000:2600);k++){const rb=rnd(rmin,rmax);const x=rnd(ix0+rb+mind,ix1-rb-mind),y=rnd(sp0+rb,sp1-rb);if(y-rb<sp0-2||y+rb>sp1+2)continue;
   if(clear.some(c=>Math.hypot(c[0]-x,c[1]-y)<c[2]+rb))continue;if(blobs.some(b=>Math.hypot(b.x-x,b.y-y)<b.r+rb+mind))continue;blobs.push({t:'c',x,y,r:rb,k:'spg',rot:rnd(0,TAU),sq:rnd(.88,1)})}
@@ -2373,11 +2397,12 @@ function buildBoard(def,idx){const land=LAND;const W=land?1400:Math.round(clamp(
  const B={W,H,xa,xb,y0,y1,e,capW,ix0,ix1,pal0,pal1,sp0,sp1,S,pals,sto,vein,blobs,water,flip:!!def.flip};
  if(def.flip){const fy=y=>H-y;S.forEach(s=>{if(s.t==='rr'){s.y=H-(s.y+s.h)}else s.y=fy(s.y)});sto.forEach(s=>s.y=fy(s.y));B.fy=true}
  // 目標の緑の細胞
- B.target=pals[Math.floor(n/2)+(idx%2?-1:1)]||pals[0];
+ B.target=def.prac?pc:(pals[Math.floor(n/2)+(idx%2?-1:1)]||pals[0]);B.prac=!!def.prac;B.pracX=pracX;
  return B}
 function epiY(B,side){const y=side==='up'?B.y0+B.e/2:B.y1-B.e/2;return B.flip?B.H-y:y}
 function spawnPos(B,where){const r=Math.random;
  const airTop=B.y0-2*R-8,airBot=B.y1+2*R+8;
+ if(B.prac){if(where==='B')return {x:B.pracX,y:airBot+10};if(where==='P')return {x:B.pracX,y:B.pal1+R+8}}
  if(where==='A'){return {x:lerp(B.ix0+60,B.ix1-60,r()),y:(B.flip?B.H-airBot:airTop)-rnd(0,20)}}
  if(where==='B'){return {x:lerp(B.ix0+60,B.ix1-60,r()),y:(B.flip?B.H-airTop:airBot)+rnd(0,20)}}
  for(let k=0;k<300;k++){let x,y;if(where==='V'&&B.vein){const a=rnd(0,TAU);x=B.vein.x+Math.cos(a)*(B.vein.r+R+6);y=B.vein.y+Math.sin(a)*(B.vein.r+R+6);if(B.flip)y=B.H-y}
@@ -2438,10 +2463,15 @@ function renderStatic(){if(!G)return;const B=G.B;const q=Math.min(2.2,DPR*SC*1.0
 /* ================= 本編 ================= */
 let G=null;
 function startBoard(i){orient();const def=BD[i];G={i,def,t:0,balls:[],queue:def.balls.map(b=>({k:b[0],from:b[1],goal:b[2]})),done:0,hits:0,hitsUp:0,combo:0,maxC:0,over:false,paused:false,parts:[],pops:[],flagT:{},
-  capT:0,wrongSide:false,firstRight:null,limit:def.limit||0,lastHitT:0,passes:0,judg:0,tilt:{x:0,y:0},glow:0};
+  capT:0,wrongSide:false,firstRight:null,limit:def.limit||0,lastHitT:0,passes:0,judg:0,tilt:{x:0,y:0},glow:0,shake:0,fl:0};
  G.B=buildBoard(def,i);show('scPlay');lastLand=LAND;
  $('hNameB').textContent='第'+KAN[i]+'盤　'+def.nm;$('hNameS').textContent='葉の標本：'+def.leaf;$('timer').hidden=!def.limit;
  spawnWave();setCap(def.tip,6);updTray();updHUD();SFX.box()}
+function startPractice(){orient();ovClose();const def=PRAC;G={i:-1,def,t:0,balls:[],queue:def.balls.map(b=>({k:b[0],from:b[1],goal:b[2]})),done:0,hits:0,hitsUp:0,combo:0,maxC:0,over:false,paused:false,parts:[],pops:[],flagT:{},
+  capT:0,wrongSide:false,firstRight:null,limit:0,lastHitT:0,passes:0,judg:0,tilt:{x:0,y:0},glow:0,shake:0,fl:0};
+ G.B=buildBoard(def,0);show('scPlay');lastLand=LAND;$('cap').classList.remove('on');
+ $('hNameB').textContent='れんしゅう盤';$('hNameS').textContent='ここでは 失敗しません';$('timer').hidden=true;
+ spawnWave();updTray();updHUD();SFX.box()}
 function rebuildForOrient(){const found=G.B.sto.map(s=>s.found);G.B=buildBoard(G.def,G.i);G.B.sto.forEach((s,k)=>s.found=!!found[k]);
  G.balls.forEach(b=>{const p=spawnPos(G.B,b.from);b.x=p.x;b.y=p.y;b.vx=b.vy=0;b.side=sideOf(b)})}
 function spawnWave(){const n=G.def.sim?Math.min(G.def.wave,G.queue.length):Math.min(1,G.queue.length);const used=[];
@@ -2456,9 +2486,10 @@ function bScr(x,y){return {x:OX+x*SC,y:OY+y*SC}}
 function update(dt){G.t+=dt;const B=G.B;
  // 傾き
  const T=readTilt();G.tilt.x+=(T.x-G.tilt.x)*Math.min(1,dt*10);G.tilt.y+=(T.y-G.tilt.y)*Math.min(1,dt*10);
- const gx=G.tilt.x*1500,gy=G.tilt.y*1500;let spd=0;
+ const gx=B.prac?0:G.tilt.x*1500,gy=G.tilt.y*1500;let spd=0;
  const SUB=4,h=dt/SUB;
  for(let s=0;s<SUB;s++){for(const b of G.balls){b.vx+=gx*h;b.vy+=gy*h;const f=Math.pow(.35,h);b.vx*=f;b.vy*=f;const v=Math.hypot(b.vx,b.vy);if(v>950){b.vx*=950/v;b.vy*=950/v}
+   if(B.prac){b.vx+=(B.pracX-b.x)*40*h;b.vx*=Math.pow(.02,h)}
    const px=b.x,py=b.y;b.x+=b.vx*h;b.y+=b.vy*h;collide(b);crossCheck(b,px,py)}
   for(let i=0;i<G.balls.length;i++)for(let j=i+1;j<G.balls.length;j++){const a=G.balls[i],c=G.balls[j];const dx=c.x-a.x,dy=c.y-a.y,d=Math.hypot(dx,dy);if(d<2*R&&d>0){const o=(2*R-d)/2,nx=dx/d,ny=dy/d;a.x-=nx*o;a.y-=ny*o;c.x+=nx*o;c.y+=ny*o;const rv=(c.vx-a.vx)*nx+(c.vy-a.vy)*ny;if(rv<0){a.vx+=rv*nx*.9;a.vy+=rv*ny*.9;c.vx-=rv*nx*.9;c.vy-=rv*ny*.9}}}}
  for(const b of G.balls){b.t+=dt;b.a+=Math.hypot(b.vx,b.vy)/R*dt*(b.vx>=0?1:-1);spd=Math.max(spd,Math.hypot(b.vx,b.vy))}
@@ -2474,6 +2505,7 @@ function update(dt){G.t+=dt;const B=G.B;
  for(let k=G.parts.length-1;k>=0;k--){const p=G.parts[k];p.t+=dt;p.vx*=.95;p.vy*=.95;p.vy+=120*dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.r+=p.vr*dt;if(p.t>1.4)G.parts.splice(k,1)}
  for(let k=G.pops.length-1;k>=0;k--){const p=G.pops[k];p.t+=dt;if(p.t>1.5)G.pops.splice(k,1)}
  if(G.capT>0){G.capT-=dt;if(G.capT<=0)$('cap').classList.remove('on')}
+ if(G.shake>0)G.shake=Math.max(0,G.shake-dt*1.6);if(G.fl>0)G.fl=Math.max(0,G.fl-dt*1.8);
  // 時間
  if(G.limit){const left=G.limit-G.t;$('timer').textContent=fmtT(Math.max(0,left));$('timer').classList.toggle('warn',left<20);if(left<=0&&!G.over)timeUp()}
  if(!G.balls.length&&!G.queue.length&&!G.over)clearBoard();else if(!G.balls.length&&G.queue.length)spawnWave()}
@@ -2489,7 +2521,9 @@ function collide(b){const B=G.B;
 function knock(b,s,v){SFX.knock(clamp(v/600,.3,1));const now=G.t;chips(b.x,b.y,4);
  if(s.k==='water'){if(now-G.lastHitT>1.2){G.lastHitT=now;setCap('水の中へは 出られない。この葉が 空気とつながっているのは <b>水の外の面</b>',3.5)}return}
  if(s.k==='cap'){return}
- if(now-G.lastHitT<.7)return;G.lastHitT=now;G.hits++;SV.hits++;G.combo=0;
+ if(now-G.lastHitT<.7)return;G.lastHitT=now;G.hits++;if(!G.def.prac)SV.hits++;
+ {const lost=G.combo,nt=TIERS.filter(t=>t>lost)[0];if(lost>=2&&nt&&nt-lost===1&&window.Guide){const p=bScr(b.x,b.y);setTimeout(()=>Guide.cheer('あと1回で ×'+nt+' だった！',{x:p.x,y:p.y-70,size:.8,sound:false,sparks:false}),350)}}
+ G.combo=0;buzz([10,40,10]);if(!RM)G.shake=Math.max(G.shake,.15);
  const side=s.side;if(side==='up')G.hitsUp++;
  const sideHasSto=G.B.sto.some(q=>q.side===side);if(!sideHasSto&&G.firstRight===null)G.wrongSide=true;
  const near=G.B.sto.filter(q=>q.side===side).map(q=>Math.abs(q.x-b.x)).sort((a,c)=>a-c)[0];
@@ -2501,35 +2535,45 @@ function knock(b,s,v){SFX.knock(clamp(v/600,.3,1));const now=G.t;chips(b.x,b.y,4
 function crossCheck(b,px,py){const B=G.B;for(const s of B.sto){const ey=epiY(B,s.side);if((py-ey)*(b.y-ey)<=0&&Math.abs(b.x-s.x)<R+10){
   const goingIn=(Math.abs(py-B.H/2)>Math.abs(b.y-B.H/2));
   b.inside=goingIn;if(!goingIn)b.exited=true;
-  G.passes++;SV.flags[s.side==='low'?'low':'up']+=s.found?0:1;
-  if(!s.found){s.found=true;G.judg++;SV.judg++;SFX.pass();chips(s.x,ey,RM?6:18,'#4C9A2A');pop(s.x,ey+(ey<B.H/2?-50:60),'すき間があった！','#9CCB6B',true);
+  G.passes++;if(!G.def.prac)SV.flags[s.side==='low'?'low':'up']+=s.found?0:1;
+  if(!s.found){s.found=true;G.judg++;if(!G.def.prac)SV.judg++;SFX.pass();chips(s.x,ey,RM?6:30,'#4C9A2A');pop(s.x,ey+(ey<B.H/2?-50:60),'すき間があった！','#9CCB6B',true);
+   G.shake=Math.max(G.shake,.35);G.fl=.5;G.flC='190,240,140';buzz([15,30,25]);
    if(G.firstRight===null){G.firstRight=!G.wrongSide;if(G.def.flip&&G.firstRight&&!SV.firsts.flipRule){SV.firsts.flipRule=1;const p=bScr(s.x,ey);zEarn(30,'rule',p.x,p.y);setCap('<b>すき間の多い細胞の側</b>に 出入り口があった。こちらが 葉の <b>裏</b>',5)}
     else if(G.def.water&&G.firstRight&&!SV.firsts.waterRule){SV.firsts.waterRule=1;const p=bScr(s.x,ey);zEarn(30,'rule',p.x,p.y);setCap('水に浮く葉は <b>空気にふれる面</b>に 出入り口がある',5)}
     else if(G.def.flip)setCap('すき間は <b>すき間の多い細胞の側</b>に あった。こちらが 葉の <b>裏</b>',5);
     else if(G.def.water)setCap('水に浮く葉は <b>空気にふれる面</b>に 出入り口がある',5);
+    else if(G.def.prac){}
     else if(!SV.firsts.pass){SV.firsts.pass=1;save();setCap('すき間が あった！ 形は 霧で見えない。<b>旗</b>を立てておこう',4)}}
-   save()}
+   if(!G.def.prac)save()}
   else{pop(s.x,ey+(ey<B.H/2?-40:50),'通った','#C9E3A8')}}}}
-function deliver(b){G.done++;SV.deliv++;G.combo++;G.maxC=Math.max(G.maxC,G.combo);G.judg++;SV.judg++;save();
+function deliver(b){G.done++;G.combo++;G.maxC=Math.max(G.maxC,G.combo);G.judg++;if(!G.def.prac){SV.deliv++;SV.judg++;save()}
+ {const sp=bScr(b.x,b.y),tier=TIERS.indexOf(G.combo);G.shake=Math.max(G.shake,.45+Math.max(0,tier)*.15);G.fl=.7;G.flC=b.goal==='cell'?'200,255,150':'255,236,190';buzz([20,40,30]);
+  if(window.Guide){Guide.cheer(G.combo>1?'×'+G.combo+' れんぞく！':'ナイス！',{x:sp.x,y:sp.y-50*SC-90,size:1.05+Math.max(0,tier)*.3,sound:false,sparks:14+Math.max(0,tier)*10});
+   if(tier>=0)setTimeout(()=>SFX.tier(tier+1),220)}}
  const p=b.goal==='cell'?G.B.target:null;SFX.deliv(G.combo);chips(b.x,b.y,RM?6:24);
  const msg=b.goal==='cell'?'緑の細胞に 届いた！':'外の空気へ 出た！';pop(b.x,b.y-50,msg+(G.combo>1?'　'+G.combo+'れんぞく':''),'#F4F0DC',true);
  if(b.goal==='cell')G.cellGlow=1;
- if(!G.def.sim&&G.queue.length)setTimeout(()=>{if(G&&!G.over&&!G.balls.length&&G.queue.length){spawnWave();const q=G.balls[0];if(q)setCap(KIND[q.k].nm+'のつぶ。'+(q.goal==='cell'?'<b>緑の細胞</b>へ':'<b>外の空気</b>へ'),3)}},700);
+ if(!G.def.sim&&G.queue.length)setTimeout(()=>{if(G&&!G.over&&!G.balls.length&&G.queue.length){spawnWave();const q=G.balls[0];if(q&&!G.def.prac)setCap(KIND[q.k].nm+'のつぶ。'+(q.goal==='cell'?'<b>緑の細胞</b>へ':'<b>外の空気</b>へ'),3)}},700);
  updTray()}
-function clearBoard(){G.over=true;rollSet(0);const i=G.i;const par=G.def.par||G.def.limit||120;
+function clearBoard(){G.over=true;rollSet(0);if(G.def.prac){PDONE=true;return}const i=G.i;const par=G.def.par||G.def.limit||120;
  const s2=G.hits<=2?1:0,s3=G.t<=par?1:0,stars=1+s2+s3;SV.stars[i]=Math.max(SV.stars[i],stars);SV.best[i]=SV.best[i]?Math.min(SV.best[i],Math.round(G.t)):Math.round(G.t);SV.unl=Math.max(SV.unl,i+1);
  const firstSpec=!SV.specs[i];SV.specs[i]=1;save();SFX.clear();
  let got=0;if(G.hits<=2&&!G.def.sim){got=zEarn(10,'first-try',CW/2,CH*.4)}else if(G.def.sim&&G.hits<=4){got=zEarn(10,'first-try',CW/2,CH*.4)}updHUD();
  const up=G.B.sto.filter(s=>s.side==='up'&&s.found).length,low=G.B.sto.filter(s=>s.side==='low'&&s.found).length;
  setTimeout(()=>{if(!G)return;const last=i===BD.length-1;
   ovOpen('<h2>第'+KAN[i]+'盤　'+esc(G.def.nm)+'　完成</h2><div class="sub">かかった時間 '+fmtT(G.t)+'</div>'+
-   '<div class="stars">'+[1,2,3].map(k=>'<i class="'+(k<=stars?'on':'')+'" style="animation-delay:'+(k*.18)+'s">★</i>').join('')+'</div>'+
+   '<div class="stars">'+[1,2,3].map(k=>'<i class="'+(k<=stars?'on':'')+'" style="animation-delay:'+(RM?0:(k-1)*.45)+'s">★</i>').join('')+'</div>'+
    '<div class="tally"><div><span>★ 盤を完成させた</span><b>○</b></div><div><span>★ 表面に コツンと当てたのが 2回以下</span><b>'+(s2?'○':G.hits+'回')+'</b></div><div><span>★ '+fmtT(par)+' 以内</span><b>'+(s3?'○':'－')+'</b></div>'+
    '<div><span>旗を立てた すき間</span><b>'+(B_side(G.B,'up')+':'+up+'　'+B_side(G.B,'low')+':'+low)+'</b></div><div><span>とどけた つぶ</span><b>'+G.done+'</b></div></div>'+
    '<div class="spec"><canvas id="specC" width="180" height="180"></canvas><div><b>'+(firstSpec?'標本を手に入れた！ ':'')+esc(G.def.leaf)+'</b><p>'+esc(G.def.say)+'</p></div></div>'+
    '<div class="btns">'+(last?'<button class="wd gr" id="oNext">秘密箱へ（予想をしまう）</button>':'<button class="wd gr" id="oNext">つぎの盤へ</button>')+'<button class="wd sm" id="oMap">作業台へ</button></div>');
   drawSpec($('specC'),i);
+  const sh=$('ovBody');for(let k=0;k<stars;k++)setTimeout(()=>{if($('ov').hidden)return;SFX.stamp(k);buzz(25);sh.classList.remove('don');void sh.offsetWidth;sh.classList.add('don')},RM?0:k*450+300);
+  setTimeout(()=>{if(!$('ov').hidden)woodConfetti(stars>=3?80:50)},RM?0:stars*450+200);
   $('oNext').onclick=()=>{ovClose();G=null;if(last)openSeal();else startBoard(i+1)};$('oMap').onclick=()=>{ovClose();G=null;openMap()}},1100)}
+function woodConfetti(n){if(RM)return;const cs=['#E0B77A','#8B5A2B','#F1DDB0','#C98A55','#4C9A2A','#3A2414'];for(let i=0;i<n;i++){const d=document.createElement('div');d.className='smcf';const q=d.style;q.left=(Math.random()*100).toFixed(1)+'vw';
+  q.setProperty('--w',(10+Math.random()*12|0)+'px');q.setProperty('--c',cs[i%cs.length]);q.setProperty('--dx',((Math.random()-.5)*200|0)+'px');q.setProperty('--r',((Math.random()-.5)*1080|0)+'deg');
+  q.setProperty('--t',(1.8+Math.random()*1.3).toFixed(2)+'s');q.setProperty('--d',(Math.random()*.45).toFixed(2)+'s');document.body.appendChild(d);setTimeout(()=>d.remove(),3800)}}
 function B_side(B,side){return side==='up'?(B.flip?'（下にある）表':'表'):(B.flip?'（上にある）裏':'裏')}
 function timeUp(){G.over=true;rollSet(0);SFX.ng();const left=G.balls.length+G.queue.length;
  setTimeout(()=>{if(!G)return;ovOpen('<h2>時間切れ</h2><div class="sub">第'+KAN[G.i]+'盤　'+esc(G.def.nm)+'</div><div class="near">あと <b style="font-size:26px">'+left+'</b> つぶ だった（'+G.done+' / '+G.def.balls.length+'）</div><p style="text-align:center">見つけた すき間の旗は 立てたまま、もう一度。<br>傾けると 全部のつぶが 同じ向きに転がる。1つずつ 片付けよう。</p><div class="btns"><button class="wd gr" id="oRe">もう一度</button><button class="wd sm" id="oMap">作業台へ</button></div>');
@@ -2572,7 +2616,9 @@ function render(){const g=cx,B=G.B;g.setTransform(DPR,0,0,DPR,0,0);
  // 仮想の傾き
  if(PT.id!==null){g.save();g.globalAlpha=.6;g.beginPath();g.arc(PT.ox,PT.oy,70,0,TAU);g.strokeStyle='#F1DDB0';g.lineWidth=3;g.setLineDash([8,8]);g.stroke();g.setLineDash([]);g.beginPath();g.arc(PT.ox+PT.jx*70,PT.oy+PT.jy*70,20,0,TAU);g.fillStyle='#E0B77A';g.fill();g.restore()}
  // 盤の3D傾き
- if(!RM)cv.style.transform='rotateX('+(-G.tilt.y*5).toFixed(2)+'deg) rotateY('+(G.tilt.x*5).toFixed(2)+'deg) scale(1.02)';
+ if(G.fl>0&&!RM){g.fillStyle='rgba('+(G.flC||'255,240,200')+','+(G.fl*.35).toFixed(3)+')';g.fillRect(0,0,CW,CH)}
+ const sk=RM?0:G.shake*14,sx=(Math.random()-.5)*sk,sy=(Math.random()-.5)*sk;
+ if(!RM)cv.style.transform='translate('+sx.toFixed(1)+'px,'+sy.toFixed(1)+'px) rotateX('+(-G.tilt.y*5).toFixed(2)+'deg) rotateY('+(G.tilt.x*5).toFixed(2)+'deg) scale(1.02)';
  drawLevel()}
 let FOG=null;
 function fogSprite(){if(FOG)return FOG;const c=document.createElement('canvas');c.width=c.height=128;const g=c.getContext('2d');const gr=g.createRadialGradient(64,64,4,64,64,62);gr.addColorStop(0,'rgba(246,238,220,.95)');gr.addColorStop(.6,'rgba(240,230,208,.75)');gr.addColorStop(1,'rgba(240,230,208,0)');g.fillStyle=gr;g.fillRect(0,0,128,128);
@@ -2743,21 +2789,39 @@ function initTitle(){if(window.PLAYER_NAME)$('nameIn').value=window.PLAYER_NAME;
 let arm=false;
 $('btnStart').onclick=()=>{actx();rollInit();askTiltOnce();SV.name=$('nameIn').value.trim();const has=hasSave()&&(SV.unl>0||SV.sealed);
  if(has&&!arm){arm=true;$('btnStart').textContent='本当に はじめから？（記録が消える）';setTimeout(()=>{arm=false;initTitle()},3500);return}
- if(arm){const nm=SV.name,mu=SV.mute,tl=SV.tilt;SV=fresh();SV.name=nm;SV.mute=mu;SV.tilt=tl}arm=false;save();startBoard(0)};
+ if(arm){const nm=SV.name,mu=SV.mute,tl=SV.tilt;SV=fresh();SV.name=nm;SV.mute=mu;SV.tilt=tl}arm=false;save();
+ if(!window.Guide){startBoard(0);return}if(busy)return;busy=true;Guide.intro(INTRO).then(()=>{busy=false;Guide.tutorial(PRACTICE)})};
+let busy=false,PDONE=false;
+const INTRO={title:'第6回 気孔ラビリンス',learn:'葉の表面は 細胞がすき間なく並ぶ。気体が出入りできるのは **表面のすき間** だけ',
+ how:'画面を **押したまま ドラッグ** して盤を傾け、気体のつぶを転がす',gesture:'drag'};
+function ballPt(){const b=G&&G.balls[0];const p=b?bScr(b.x,b.y):(G?bScr(G.B.pracX,G.B.pal1+R+8):{x:innerWidth/2,y:innerHeight/2});return {x:p.x,y:p.y,r:Math.max(30,R*SC*1.9)}}
+function colArea(){if(!G)return {x:innerWidth/2,y:innerHeight/2,w:120,h:200};const B=G.B,a=bScr(B.pracX,B.target.y),c=bScr(B.pracX,B.H);return {x:a.x,y:(a.y+c.y)/2,w:Math.max(110,(B.target.w+60)*SC),h:c.y-a.y+20}}
+const PSTEPS=[
+ {gesture:'drag',target:ballPt,to:()=>{const p=ballPt();return {x:p.x,y:p.y-Math.min(150,innerHeight*.18)}},area:colArea,until:()=>!!(G&&G.B.sto[0]&&G.B.sto[0].found),praise:false,place:'above',
+  text:'二酸化炭素のつぶを 葉の中へ。画面を **押したまま 上へ** ドラッグすると 盤が傾く'},
+ {gesture:'drag',target:ballPt,to:()=>{const p=ballPt();return {x:p.x,y:p.y-Math.min(150,innerHeight*.18)}},area:colArea,until:()=>!!(G&&G.done>=1),praise:false,place:'above',
+  text:'霧の中の **すき間** を通った！ そのまま上へ、光っている **緑の細胞** まで'},
+ {gesture:'drag',target:ballPt,to:()=>{const p=ballPt();return {x:p.x,y:p.y+Math.min(150,innerHeight*.18)}},area:colArea,until:()=>!!(G&&G.done>=2),praise:false,place:'above',
+  text:'こんどは 葉の中でできた **酸素** を 外の空気へ。**下へ** ドラッグ'}];
+const PRACTICE={label:'れんしゅう中',bandAt:'bottom',steps:PSTEPS,clearText:'れんしゅうクリア！',start:()=>{actx();rollInit();startPractice()},
+ onExit:res=>{if(res&&(res.stopped||res.replaced))return;G=null;if(SV.unl>0||SV.sealed)openMap();else startBoard(0)}};
 $('btnCont').onclick=()=>{actx();rollInit();askTiltOnce();SV.name=$('nameIn').value.trim()||SV.name;save();SFX.click();openMap()};
 $('btnBookT').onclick=()=>{try{Z().openBook()}catch(e){}};
+if(window.Guide)Guide.tutorialButton('#btnHow',()=>{actx();rollInit();askTiltOnce();Guide.tutorial(PRACTICE)});else $('btnHow').hidden=true;
 
 /* ================= もどる ================= */
-function backBtn(){const b=$('bBack');const tm=window.GAME_MODE==='test';const on=scene!=='title'||INHUB;b.hidden=!on;b.textContent=(scene==='title'||(tm&&scene==='test'))?'一覧へ':'もどる'}
+function backBtn(){const b=$('bBack');const tm=window.GAME_MODE==='test';const on=scene!=='title'||INHUB;b.hidden=!on;b.textContent=(scene==='title'||(tm&&scene==='test'))?'一覧へ':'もどる';
+ if(HELP){if(scene==='play'||scene==='map')HELP.show();else HELP.hide()}}
 let bkFrom=null;
 $('bBack').onclick=()=>{actx();SFX.click();const tm=window.GAME_MODE==='test';
  if(scene==='title'||(tm&&scene==='test')){if(INHUB){try{window.parent.postMessage({type:'rika-close-game'},'*')}catch(e){}}return}
+ if(scene==='play'&&G&&G.def.prac){PT.id=null;rollSet(0);if(window.Guide)Guide.tutorialEnd();G=null;show('scTitle');initTitle();return}
  bkFrom=scene;if(scene==='play'&&G){G.paused=true;PT.id=null;rollSet(0)}
  $('bkSub').textContent=scene==='play'?'進み具合は保存されます（この盤は 次は はじめから）。作業台へ もどります。':scene==='seal'?'描いた予想は まだ しまっていません。作業台へ もどります。':scene==='test'?'確認テストは 次は さいしょから。進み具合は保存されています。':'進み具合は保存されます。タイトルへ もどります。';
  $('bkOv').hidden=false};
 $('bkNo').onclick=()=>{$('bkOv').hidden=true;if(bkFrom==='play'&&G&&$('ov').hidden)G.paused=false};
 $('bkGo').onclick=()=>{$('bkOv').hidden=true;ovClose();if(bkFrom==='map'){show('scTitle');initTitle()}else{G=null;T=null;openMap()}};
-document.addEventListener('visibilitychange',()=>{if(document.hidden&&scene==='play'&&G&&!G.paused&&!G.over){$('bBack').click()}});
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&scene==='play'&&G&&!G.paused&&!G.over&&!G.def.prac){$('bBack').click()}});
 
 /* ================= さいごの確認テスト ================= */
 let T=null;const QC=['#F1DDB0','#E0B77A','#D6E3B8','#E8C9A0','#EADBC0'];
@@ -2793,10 +2857,25 @@ function frame(now){const dt=Math.min(.04,Math.max(0,(now-last)/1000));last=now;
  requestAnimationFrame(frame)}
 
 /* ================= はじまり ================= */
+let HELP=null;
+if(window.Guide){
+ Guide.setup({theme:{bg:'#F1DDB0',fg:'#2B1A0E',accent:'#3E8A1E',accentText:'#F4F0DC',font:'"Shippori Mincho","Hiragino Mincho ProN",serif',bodyFont:'"BIZ UDPGothic","Hiragino Kaku Gothic ProN",sans-serif',
+   radius:5,texture:'grain',line:'#8B5A2B',dim:'rgba(20,10,4,.5)',shadow:'inset 0 0 0 3px #E0B77A, inset 0 0 0 5px #2B1A0E, 0 4px 0 #2B1A0E, 0 12px 24px rgba(0,0,0,.45)',outline:'#2B1A0E',hand:'#F1DDB0',handLine:'#2B1A0E'},
+  sfx:k=>{if(k==='step'||k==='nudge')SFX.tick();else if(k==='done')SFX.ok();else if(k==='clear')SFX.clear();else if(k==='open'||k==='close')SFX.click();else if(k==='cheer')SFX.flag()},
+  muted:()=>SV.mute});
+ HELP=Guide.help({title:INTRO.title,learn:INTRO.learn,how:INTRO.how,gesture:'drag',mount:$('hR'),size:46,show:false,attention:true,replay:'tutorial',
+  rules:['**二酸化炭素**（黒と赤のつぶ）は **緑の細胞** へ／酸素・水蒸気は **外の空気** へ',
+   '表面の細胞に当たると **コツン**。通れるのは 霧に隠れた **すき間** だけ',
+   '霧の中で **木目が明るくなる所** の近くに すき間がある。通れたら旗が立つ',
+   'コツンが2回以下・目安の時間内で ★が増える。つづけて届けると **れんぞく**',
+   'スマホは右下の「傾き」で 本体を傾けて遊べる（「水平に」で今の持ち方を水平に）'],
+  onOpen:()=>{if(scene==='play'&&G&&!G.paused){G.paused=true;G.hp=1;PT.id=null;rollSet(0)}},
+  onClose:()=>{if(G&&G.hp){G.hp=0;G.paused=false}}});
+}
 let AUTO=null;
 window.GAME_ID=GAME_ID;
 try{window.Zukan&&Zukan.setup({game:GAME_ID,koma:[KOMA]})}catch(e){}
-window.__sm={get G(){return G},get SV(){return SV},startBoard,openMap,openSeal,openBox,startTest,
+window.__sm={get G(){return G},startPractice,bScr,get SC(){return SC},get SV(){return SV},startBoard,openMap,openSeal,openBox,startTest,
  autoTilt(on){AUTO=on?autoPilot:null},
  sim(sec){let n=0;const f=AUTO;AUTO=autoPilot;while(n<sec*60&&G&&!G.over){update(1/60);n++}AUTO=f;return {t:+(n/60).toFixed(1),over:G&&G.over,done:G&&G.done,hits:G&&G.hits,found:G&&G.B.sto.filter(s=>s.found).length,left:G&&(G.balls.length+G.queue.length)}}};
 // 自動の傾き（画面確認用）：目標に向かう簡単な道さがし

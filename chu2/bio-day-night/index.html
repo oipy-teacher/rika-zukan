@@ -181,7 +181,16 @@ body.land .qch .kb{font-size:19px;min-height:68px}
 #bkC .box{max-width:420px;padding:22px;background:var(--paper);color:var(--sh);text-align:center;clip-path:polygon(0 2%,100% 0,98% 100%,2% 98%)}
 #bkC p{font-size:17px;line-height:1.7;margin:0 0 16px}
 #bkC .row{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
-@media (prefers-reduced-motion: reduce){*{animation-duration:.01s!important;animation-iteration-count:1!important;transition:none!important}}
+/* 仕上げ 2026-09-28（dn-finish-2026-09-28）: ★のドン・切り絵の紙吹雪・「？」を HUD の列に */
+.stars i.on.wait{opacity:0;animation:none}
+.stars i.on.don{animation:dnDon .5s cubic-bezier(.2,1.8,.4,1) both}
+@keyframes dnDon{0%{transform:scale(3) rotate(-40deg);opacity:0}60%{transform:scale(.85);opacity:1}100%{transform:none;opacity:1}}
+.mk.don{animation:dnMk .2s ease-out}
+@keyframes dnMk{40%{transform:translateY(6px)}100%{transform:none}}
+.dncf{position:fixed;top:-24px;z-index:45;pointer-events:none;width:var(--w);height:calc(var(--w)*.7);background:var(--c);clip-path:polygon(0 20%,100% 0,85% 100%,10% 80%);animation:dncf var(--t) cubic-bezier(.3,.2,.6,1) var(--d) forwards}
+@keyframes dncf{to{transform:translate(var(--dx),108vh) rotate(var(--r))}}
+.hR .gd-hbtn{flex:none}
+@media (prefers-reduced-motion: reduce){*{animation-duration:.01s!important;animation-iteration-count:1!important;transition:none!important}.dncf{display:none}.stars i.on.wait{opacity:1}}
 </style>
 </head>
 <body>
@@ -198,8 +207,9 @@ body.land .qch .kb{font-size:19px;min-height:68px}
    <button class="kb main" id="btnStart">はじめる</button>
    <button class="kb" id="btnCont" hidden>つづきから</button>
    <button class="kb sm" id="btnBookT" hidden>📖 図鑑</button>
+   <button class="kb sm" id="btnHow">あそびかた</button>
   </div>
-  <div class="tt-f">昼のうちに養分をためて、夜の呼吸で使い切らないように。<br>5日目の朝まで、一株を守りぬこう。</div>
+  <div class="tt-f">5日目の朝まで、一株を守りぬこう。</div>
  </div>
 </section>
 
@@ -1527,7 +1537,14 @@ window.ZUKAN_CARDS={"v": 1, "grade": "chu2", "name": "中2理科図鑑", "econom
   function vib(ms){try{if(navigator.vibrate)navigator.vibrate(ms)}catch(e){}}
   function el(tag,cls,html){var d=document.createElement(tag);if(cls)d.className=cls;if(html!=null)d.innerHTML=html;return d}
   function rm(d){if(d&&d.parentNode)d.parentNode.removeChild(d)}
-  function inGuide(t){while(t&&t!==document){if(t.classList&&(t.classList.contains('gd-root')||t.classList.contains('gd-hbtn')))return true;t=t.parentNode}return false}
+  /* れんしゅう中の「指以外は押せない」でも、もどる・確認ダイアログ・音量などは常に押せるようにする（2026-09-28・ルール10）
+     ゲーム側で確実に通したい要素には data-gd-pass を付ける */
+  var PASS_RE=/(^|[-_\s])(back|modoru|return|home|exit|mute|sound|confirm|dialog|modal)([-_\s]|$)/i;
+  function passThru(t){var n=0;while(t&&t!==document&&n<8){n++;if(t.nodeType===1){if(t.hasAttribute('data-gd-pass')||t.tagName==='DIALOG'||t.getAttribute('role')==='dialog'||t.getAttribute('aria-modal')==='true')return true;
+      if(PASS_RE.test(String(t.id||''))||PASS_RE.test(typeof t.className==='string'?t.className:''))return true;
+      if((t.tagName==='BUTTON'||t.tagName==='A'||t.getAttribute('role')==='button')&&/^\s*[◀←＜<]?\s*(もどる|戻る|一覧へ|とじる|閉じる|はい|いいえ|やめる|キャンセル|おと|音)/.test(t.textContent||''))return true}
+      t=t.parentNode}return false}
+  function inGuide(t){if(passThru(t))return true;while(t&&t!==document){if(t.classList&&(t.classList.contains('gd-root')||t.classList.contains('gd-hbtn')))return true;t=t.parentNode}return false}
   function hexRGB(c){c=String(c||'').trim();var m;
     if((m=c.match(/^#([0-9a-f]{3})$/i)))return [0,1,2].map(function(i){return parseInt(m[1][i]+m[1][i],16)});
     if((m=c.match(/^#([0-9a-f]{6})/i)))return [0,2,4].map(function(i){return parseInt(m[1].substr(i,2),16)});
@@ -2277,17 +2294,29 @@ const SFX={
  flute(){[0,2,4,7].forEach((s,i)=>tone(523.25*Math.pow(2,s/12),.5,{type:'sine',vol:.045,at:i*.12,atk:.05}))},
  dawn(){[0,4,7,12,16].forEach((s,i)=>tone(392*Math.pow(2,s/12),.9,{type:'triangle',vol:.05,at:i*.13,atk:.03}))},
  wilt(){tone(330,.5,{type:'sine',vol:.05,to:180})},
- grow(){[0,5,9,12].forEach((s,i)=>tone(440*Math.pow(2,s/12),.25,{type:'triangle',vol:.05,at:i*.06}))}
+ grow(){[0,5,9,12].forEach((s,i)=>tone(440*Math.pow(2,s/12),.25,{type:'triangle',vol:.05,at:i*.06}))},
+ don(i){noise(.06,{ft:'bandpass',f:2400,q:6,vol:.45,dec:4});tone(130,.18,{type:'sine',vol:.13,to:65});tone(PENTA[4+i*2],.4,{type:'triangle',vol:.06,at:.05})},
+ tier(n){PENTA.slice(3,6+Math.min(3,n)).forEach((f,i)=>tone(f,.28,{type:'triangle',vol:.06,at:i*.06}))}
 };
+function buzzV(p){try{if(navigator.vibrate)navigator.vibrate(p)}catch(e){}}
+const TIERS=[3,5];
+document.addEventListener('pointerdown',e=>{const b=e.target&&e.target.closest&&e.target.closest('button.kb,#bBack,.flip button');if(b&&!b.disabled)buzzV(8)},true);
+function dnConfetti(n){if(RM)return;const cs=['#F6AE2D','#111118','#FFE7B0','#2F4858','#E8892A'];for(let i=0;i<n;i++){const d=document.createElement('div');d.className='dncf';const q=d.style;q.left=(Math.random()*100).toFixed(1)+'vw';
+  q.setProperty('--w',(12+Math.random()*14|0)+'px');q.setProperty('--c',cs[i%cs.length]);q.setProperty('--dx',((Math.random()-.5)*200|0)+'px');q.setProperty('--r',((Math.random()-.5)*900|0)+'deg');
+  q.setProperty('--t',(1.8+Math.random()*1.3).toFixed(2)+'s');q.setProperty('--d',(Math.random()*.45).toFixed(2)+'s');document.body.appendChild(d);setTimeout(()=>d.remove(),3900)}}
+function donStars(n){const sp=[...document.querySelectorAll('#ov .stars i.on')],mk=document.querySelector('#ov .mk');
+ sp.forEach((e,k)=>setTimeout(()=>{if($('ov').hidden)return;e.classList.remove('wait');e.classList.add('don');SFX.don(k);buzzV(25);if(mk){mk.classList.remove('don');void mk.offsetWidth;mk.classList.add('don')}},RM?0:700+k*450));
+ setTimeout(()=>{if(!$('ov').hidden)dnConfetti(n>=3?90:55)},RM?0:700+n*450)}
 
 /* ================= 画面 ================= */
 let scene='title',LAND=false;
 function orient(){LAND=innerWidth>innerHeight*1.05;document.body.classList.toggle('land',LAND)}
 function show(id){orient();['scTitle','scCal','scPlay','scTest'].forEach(s=>$(s).hidden=s!==id);scene={scTitle:'title',scCal:'cal',scPlay:'play',scTest:'test'}[id];backBtn();if(scene==='title')titleResize();if(scene==='play')layoutPlay();if(scene!=='play')document.body.classList.remove('night')}
-function backBtn(){const b=$('bBack'),on=scene!=='title'||INHUB;b.hidden=!on;b.textContent=scene==='title'?'◀ 一覧へ':'◀ もどる'}
+function backBtn(){const b=$('bBack'),on=scene!=='title'||INHUB;b.hidden=!on;b.textContent=scene==='title'?'◀ 一覧へ':'◀ もどる';if(HELP){placeHelp();if(scene==='play')HELP.show();else HELP.hide()}}
 let backPaused=false;
 $('bBack').onclick=()=>{ac();SFX.click();
  if(scene==='title'){try{window.parent.postMessage({type:'rika-close-game'},'*')}catch(e){}return}
+ if(scene==='play'&&G&&G.P&&G.P.prac){if(window.Guide)Guide.tutorialEnd();G=null;ovClose();show('scTitle');initTitle();return}
  backPaused=!!(G&&G.paused);if(G)G.paused=true;
  $('bkP').innerHTML=scene==='test'?'確認テストをやめて もどりますか？<br>（テストは次もはじめから）':scene==='cal'?'タイトルにもどりますか？<br>進み具合は保存されます。':'こよみにもどりますか？<br>進み具合は保存されます（この日は朝からやり直し）。';
  $('bkGo').textContent=scene==='cal'?'タイトルへ':scene==='test'&&window.GAME_MODE==='test'?'はじめにもどる':'こよみへ';$('bkC').hidden=false};
@@ -2337,6 +2366,10 @@ function startPhase(ph){const P=PH[ph];ovClose();const s=(P.k==='night'&&SV.snap
  show('scPlay');if(!G.mols.length)for(let i=0;i<12;i++)spawnMol(i%2?'co2':'o2',true);
  updHud();if(P.msg)setTimeout(()=>{if(G&&G.ph===ph)capShow(P.msg,4200)},500);
  if(ph===0&&!SV.tut1)setTimeout(()=>{if(G&&G.ph===0)capShow('<b>光っている葉</b>に、空の <b>CO₂</b> を指でつまんで わたそう',7000)},4800)}
+function startPractice(){ovClose();G={ph:-1,P:{day:1,k:'day',len:1e5,L:1,sky:'晴れ',prac:1},t:4e4,len:1e5,N:START_N,wilt:0,leaves:[],mols:[],fx:[],grains:[],combo:0,grab:null,paused:false,over:false,stat:{fed:0,wrong:0,miss:0},arrowOk:false,omenShown:true,msgT:0,grew:1,dimShown:true,pracNeed:'co2',shake:0,fl:0};
+ for(let i=0;i<2;i++){const l=newLeaf(i);l.born=0;l.cd=1e9;G.leaves.push(l)}
+ document.body.classList.remove('night');$('panel').style.visibility='';show('scPlay');for(let i=0;i<12;i++)spawnMol(i%2?'co2':'o2',true);updHud()}
+function pracNight(){if(!G||!G.P.prac)return;G.P=Object.assign({},G.P,{k:'night'});G.pracNeed='o2';document.body.classList.add('night');SFX.hyoshi();updHud();capShow('夜になった。光がないので <b>呼吸だけ</b>',3200)}
 function snapNow(){return {N:Math.round(G.N*10)/10,n:G.leaves.length,wilt:Math.round(G.wilt)}}
 function layoutPlay(){if(!G)return;orient();const r=$('scPlay').getBoundingClientRect();CW=Math.max(300,r.width);CH=Math.max(400,r.height);fit(cv,g,CW,CH);
  const panelH=$('panel').getBoundingClientRect().height;G.gy=LAND?CH*.72:CH*.7;G.cx=CW/2;G.bot=CH-panelH-12;
@@ -2356,12 +2389,13 @@ function upkeepMols(){const cnt={co2:0,o2:0};G.mols.forEach(m=>cnt[m.k]++);['co2
 function drain(){return .15+.1*G.leaves.length}
 function update(dt){const P=G.P;G.t+=dt;const m=mode(),L=lightNow();const geo=plantGeo();G.geo=geo;
  // 養分（呼吸は昼も夜も・からだ全体）
- G.N-=drain()*dt;if(G.N<=0){G.N=0;G.wilt+=6*dt;if(!G.zeroMsg){G.zeroMsg=1;capShow('養分が つきた！ 呼吸に使う養分がないと しおれていく',3500)}}
+ if(!P.prac)G.N-=drain()*dt;if(G.N<=0){G.N=0;G.wilt+=6*dt;if(!G.zeroMsg){G.zeroMsg=1;capShow('養分が つきた！ 呼吸に使う養分がないと しおれていく',3500)}}
  if(m==='day'&&G.N>0)G.wilt=Math.max(0,G.wilt-1.2*dt);
  // 気孔の開き（呼びかけ）
  G.leaves.forEach((lf,i)=>{lf.glow=Math.max(0,lf.glow-dt*2);if(lf.born){lf.bornT=(lf.bornT||0)+dt*1.5;if(lf.bornT>=1)lf.born=0}lf.droop=Math.max(0,lf.droop-dt*.3);
-  if(lf.req){lf.req.t+=dt;if(lf.req.t>lf.req.life){lf.req=null;if(P.k==='night'){G.wilt+=7;lf.droop=1;G.combo=0;G.stat.miss++;SFX.wilt();const q=geo.L[i];fxText(q.cx,q.cy-20,'息が苦しい…','#E8927C',17);if(!G.missMsg){G.missMsg=1;capShow('夜も呼吸は止まらない。気孔が光ったら、すぐに気体をわたそう',3600)}}}}
-  if(lf.bub){lf.bub.t+=dt;if(P.k==='night'&&lf.bub.t>5){releaseBub(lf,i,geo,true);G.wilt+=4;fxText(geo.L[i].tx,geo.L[i].ty,'こもった！','#E8927C',15)}}
+  if(lf.req){lf.req.t+=dt;if(lf.req.t>lf.req.life){lf.req=null;if(P.k==='night'){G.wilt+=7;lf.droop=1;comboBreak(geo.L[i]);G.combo=0;G.stat.miss++;SFX.wilt();const q=geo.L[i];fxText(q.cx,q.cy-20,'息が苦しい…','#E8927C',17);if(!G.missMsg){G.missMsg=1;capShow('夜も呼吸は止まらない。気孔が光ったら、すぐに気体をわたそう',3600)}}}}
+  if(P.prac&&i===0&&!lf.req&&!lf.bub&&G.pracNeed&&G.stat.fed<(G.pracNeed==='co2'?1:2))lf.req={t:0,life:1e9,gas:G.pracNeed};
+  if(lf.bub){lf.bub.t+=dt;if(P.k==='night'&&!P.prac&&lf.bub.t>5){releaseBub(lf,i,geo,true);G.wilt+=4;fxText(geo.L[i].tx,geo.L[i].ty,'こもった！','#E8927C',15)}}
   lf.cd-=dt;if(!lf.req&&!lf.bub&&lf.cd<=0&&m!=='dim'&&!lf.born){lf.req={t:0,life:P.k==='night'?5.5:5,gas:m==='day'?'co2':'o2'};lf.cd=P.k==='night'?Math.max(4,1.9*G.leaves.length)*rnd(.85,1.15)*(P.boss?.9:1):2.6/Math.max(L,.25)*rnd(.7,1.3)}
   if(m==='dim'&&lf.req&&P.k!=='night'){lf.req=null}});
  if(m==='dim'&&!G.dimShown&&G.t>3){G.dimShown=1;capShow((G.t/G.len<.5?'夜明け':'夕方')+'の弱い光。光合成と呼吸がつり合って、気体の出入りが <b>ほとんどない</b>',4200)}
@@ -2376,8 +2410,8 @@ function update(dt){const P=G.P;G.t+=dt;const m=mode(),L=lightNow();const geo=pl
  // 効果
  G.grains.forEach(p=>{p.t+=dt});G.grains=G.grains.filter(p=>p.t<p.d);
  G.fx.forEach(f=>{f.t+=dt});G.fx=G.fx.filter(f=>f.t<f.d);
- if(G.wilt>=100){G.wilt=100;phaseFail();return}
- if(G.t>=G.len)phaseEnd();
+ if(!P.prac&&G.wilt>=100){G.wilt=100;phaseFail();return}
+ if(!P.prac&&G.t>=G.len)phaseEnd();
  if(Math.floor(G.t*4)!==Math.floor((G.t-dt)*4))updHud()}
 /* ---- 指の操作 ---- */
 function ptr(e){const r=cv.getBoundingClientRect();return {x:e.clientX-r.left,y:e.clientY-r.top}}
@@ -2396,13 +2430,15 @@ cv.addEventListener('pointerup',upHandler);cv.addEventListener('pointercancel',(
 function feed(q,o){const m=mode(),lf=q.lf,g2=o.k;
  if(m==='dim'){bounce(o,q);capShow('今は光が弱く、光合成と呼吸がつり合っている。葉全体では気体の出入りが <b>ほとんどない</b>',3800);return}
  const ok=(m==='day'&&g2==='co2')||(m==='night'&&g2==='o2');
- if(!ok){bounce(o,q);SFX.wrong();G.combo=0;G.wilt+=3;G.stat.wrong++;SV.wrong++;lf.droop=Math.min(1,lf.droop+.5);
+ if(!ok){bounce(o,q);SFX.wrong();comboBreak(q);G.combo=0;if(!G.P.prac){G.wilt+=3;SV.wrong++}G.stat.wrong++;lf.droop=Math.min(1,lf.droop+.5);
   fxText(q.cx,q.cy-24,'はね返された','#E8927C',17);
   capShow(m==='day'?'昼も呼吸はしている。でも <b>光合成で出す酸素の方が多い</b>ので、葉全体では 酸素は出ていく。入れるのは <b>二酸化炭素</b>':'暗いと <b>光合成はできない</b>。夜は呼吸だけ。入れるのは <b>酸素</b>',4600);updHud();return}
  if(!lf.req){bounce(o,q);capShow('気孔が <b>光っている葉</b> にわたそう',2000);return}
  // 成功
  const i=G.mols.indexOf(o);if(i>=0)G.mols.splice(i,1);
- lf.req=null;lf.glow=1;lf.bub={gas:m==='day'?'o2':'co2',t:0,a:rnd(0,TAU)};G.combo++;G.stat.fed++;SV.fed++;SFX.feed(G.combo);
+ lf.req=null;lf.glow=1;lf.bub={gas:m==='day'?'o2':'co2',t:0,a:rnd(0,TAU)};G.combo++;G.stat.fed++;if(!G.P.prac)SV.fed++;SFX.feed(G.combo);
+ {const tier=TIERS.indexOf(G.combo);G.shake=RM?0:4+Math.max(0,tier)*2;G.fl=.6;G.flC=m==='day'?'255,236,170':'150,180,210';buzzV([20,40,30]);
+  if(window.Guide){Guide.cheer(G.combo>1?G.combo+' れんぞく！':(m==='day'?'光合成！':'呼吸！'),{x:q.cx,y:q.cy-80,size:1+Math.max(0,tier)*.3,sound:false,sparks:14+Math.max(0,tier)*10});if(tier>=0)setTimeout(()=>SFX.tier(tier+1),240)}}
  if(m==='day'){const L=lightNow(),y=Y_CO2*Math.sqrt(L);G.N+=y;fxText(q.cx,q.cy-26,'＋'+y.toFixed(1)+' 養分','#111118',18,true);
   for(let k=0;k<8;k++)G.grains.push({i:q.i,t:-k*.06,d:1.1,down:1});}
  else{fxText(q.cx,q.cy-26,'呼吸','#F6AE2D',18,true);for(let k=0;k<6;k++)G.grains.push({i:q.i,t:-k*.06,d:1,down:0})}
@@ -2410,10 +2446,11 @@ function feed(q,o){const m=mode(),lf=q.lf,g2=o.k;
  if(G.combo>0&&G.combo%10===0)earn(5,'hit',q.cx,q.cy);
  if(G.ph===0&&!SV.tut1){SV.tut1=1;save();setTimeout(()=>{if(G)capShow('葉から <b>O₂ の泡</b> が出た。泡を <b>はじいて外へ</b> 出すと、次の気体を入れられる',6000)},500)}
  updHud()}
+function comboBreak(q){const lost=G.combo,nt=TIERS.filter(t=>t>lost)[0];if(lost>=2&&nt&&nt-lost===1&&window.Guide&&q)setTimeout(()=>Guide.cheer('あと1回で '+nt+'れんぞく だった！',{x:q.cx,y:q.cy-60,size:.8,sound:false,sparks:false}),400);buzzV([10,40,10])}
 function bounce(o,q){const a=Math.atan2(o.y-q.cy,o.x-q.cx);o.vx=Math.cos(a)*160;o.vy=Math.sin(a)*160;o.fly=.6;G.fx.push({k:'ring',x:q.cx,y:q.cy,t:0,d:.4,col:'#C8553D'})}
 function releaseBub(lf,i,geo,auto,dx,dy){const q=geo.L[i],b=lf.bub;lf.bub=null;const a=(dx||dy)&&Math.hypot(dx,dy)>8?Math.atan2(dy,dx):q.ang;
  G.mols.push({k:b.gas,x:q.tx,y:q.ty,vx:Math.cos(a)*170,vy:Math.sin(a)*170-30,a:b.a,va:rnd(-1,1),ph:rnd(0,TAU),fly:1.2});
- if(!auto){SFX.puff();fxText(q.tx,q.ty-16,(b.gas==='o2'?'O₂':'CO₂')+' を外へ','#111118',14);G.fx.push({k:'ring',x:q.tx,y:q.ty,t:0,d:.45,col:'#F6AE2D'})}}
+ if(!auto){SFX.puff();buzzV(12);fxText(q.tx,q.ty-16,(b.gas==='o2'?'O₂':'CO₂')+' を外へ',G.P.k==='night'?'#F6AE2D':'#111118',15,true);G.fx.push({k:'ring',x:q.tx,y:q.ty,t:0,d:.45,col:'#F6AE2D'})}}
 function fxText(x,y,s,col,size,big){G.fx.push({k:'txt',x,y,s,col,size,t:0,d:big?1.3:1.1,big})}
 function earn(n,why,x,y){const z=Z();if(!z||!z.earn)return 0;let got=0;const r=cv.getBoundingClientRect();try{got=z.earn(n,why,{x:r.left+x,y:r.top+y})||0}catch(e){}updHud();return got}
 /* ---- 時間帯の終わり ---- */
@@ -2427,18 +2464,18 @@ function phaseEnd(){const P=G.P;G.over=true;G.keep=1;
  SV.ph=G.ph+1;SV.snap={N:Math.round(G.N*10)/10,n:G.leaves.length,wilt:Math.round(G.wilt*.5)};SV.snaps=SV.snaps||{};SV.snaps[SV.ph]=SV.snap;G.wilt*=.5;save();
  setTimeout(()=>{ovOpen('<div class="mk"><div class="ey">'+KAN[P.day]+'日目の朝</div><h2>夜を越えた！</h2><p>一株が 一回り大きくなった。</p>'+(got?'<div class="cc">新しい葉が ひらいた：<b>'+esc(got)+'</b>（影絵帳に のった）</div>':'')+
   '<table><tr><td>残った養分</td><td>'+Math.round(G.N)+'</td></tr><tr><td>酸素をわたした回数</td><td>'+G.stat.fed+'</td></tr><tr><td>しおれ</td><td>'+Math.round(G.wilt)+'</td></tr></table><div class="btns"><button class="kb" id="dGo">'+KAN[P.day]+'日目の昼へ</button><button class="kb sm light" id="dCal">こよみ</button></div></div>');
-  $('dGo').onclick=()=>{SFX.click();interlude(SV.ph)};$('dCal').onclick=()=>{SFX.click();G=null;openCal()}},RM?100:1400)}
+  dnConfetti(45);buzzV([20,40,30]);$('dGo').onclick=()=>{SFX.click();interlude(SV.ph)};$('dCal').onclick=()=>{SFX.click();G=null;openCal()}},RM?100:1400)}
 function nextShape(){for(let k=0;k<8;k++)if(SV.shapes.indexOf(k)<0)return k;return 0}
 function phaseFail(){G.over=true;SV.fails++;save();SFX.wilt();const P=G.P;const dayStart=P.k==='night'?G.ph-1:G.ph;
  ovOpen('<div class="mk"><div class="ey">'+KAN[P.day-1]+'日目の'+(P.k==='night'?'夜':'昼')+'</div><h2>しおれてしまった…</h2><div class="cc">'+(G.N<=0?'養分が つきた。夜の呼吸は、昼にためた養分を使う。<b>昼のうちに もっと二酸化炭素を取り入れて</b> 養分をためよう。':'気体の出入りを取り違えたり、気孔が光ったのに気体をわたせなかった。<b>昼は 二酸化炭素を入れて酸素を出す／夜は 酸素を入れて二酸化炭素を出す</b>。')+'</div>'+(dayStart>=2?'<p>葉を広げすぎると、夜の呼吸で使う養分もふえる。<b>前の日</b>からやり直して、予兆を見て ためておく手もある。</p>':'')+'<div class="btns"><button class="kb" id="fRe">'+KAN[P.day-1]+'日目の朝から やり直す</button>'+(dayStart>=2&&SV.snaps&&SV.snaps[dayStart-2]?'<button class="kb sm" id="fPrev">'+KAN[P.day-2]+'日目の朝から</button>':'')+'<button class="kb sm light" id="fCal">こよみ</button></div></div>');
  const fp=$('fPrev');if(fp)fp.onclick=()=>{SFX.click();G=null;SV.ph=dayStart-2;SV.snap=Object.assign({},SV.snaps[dayStart-2]);save();interlude(SV.ph)};
  $('fRe').onclick=()=>{SFX.click();G=null;SV.ph=dayStart;save();interlude(dayStart)};$('fCal').onclick=()=>{SFX.click();G=null;SV.ph=dayStart;save();openCal()}}
 function clearAll(){G.over=true;const nOk=SV.arrows.filter(Boolean).length;const st=[1,nOk>=8?1:0,SV.fails===0?1:0];
- ovOpen('<div class="mk"><div class="ey">五日目の朝</div><h2>一株が 冬の夜を越えた！</h2><div class="stars">'+st.map((v,i)=>'<i class="'+(v?'on':'')+'" style="animation-delay:'+(i*.2)+'s">★</i>').join('')+'</div>'+
+ ovOpen('<div class="mk"><div class="ey">五日目の朝</div><h2>一株が 冬の夜を越えた！</h2><div class="stars">'+st.map((v,i)=>'<i class="'+(v?'on wait':'')+'">★</i>').join('')+'</div>'+
   '<table><tr><td>越えた夜</td><td>4 / 4</td></tr><tr><td>幕間の矢印が正しかった</td><td>'+nOk+' / 8</td></tr><tr><td>葉の枚数</td><td>'+G.leaves.length+'枚</td></tr><tr><td>しおれて やり直した回数</td><td>'+SV.fails+'</td></tr></table>'+
   '<div class="cc">昼は 光合成と呼吸の両方。光合成の方がさかんなので、葉全体では <b>二酸化炭素を取り入れ 酸素を出す</b>。夜は <b>呼吸だけ</b>で、酸素を取り入れ 二酸化炭素を出す。2つのはたらきの気体の出入りは <b>逆向き</b>。</div>'+
   '<div class="btns"><button class="kb" id="cT">確認テストへ</button><button class="kb sm light" id="cC">こよみ</button></div></div>');
- $('cT').onclick=()=>{SFX.click();G=null;goClear()};$('cC').onclick=()=>{SFX.click();G=null;openCal()};SFX.flute()}
+ $('cT').onclick=()=>{SFX.click();G=null;goClear()};$('cC').onclick=()=>{SFX.click();G=null;openCal()};SFX.flute();donStars(st.reduce((a,b)=>a+b,0))}
 function goClear(){ovClose();const z=Z();if(z&&z.mainClear){try{z.mainClear({onClose:startTest})}catch(e){startTest()}}else startTest()}
 
 /* ================= 幕間（次の時間帯の矢印を置く） ================= */
@@ -2456,7 +2493,7 @@ function interlude(ph){const P=PH[ph];if(!P){openCal();return}
  $('iGo').onclick=()=>{const ok=dir.co2===(isDay?'in':'out')&&dir.o2===(isDay?'out':'in');SV.arrows[ph]=ok?1:0;save();SFX.hyoshi();
   const why=isDay?'昼は 光合成と呼吸の両方をしている。<b>光合成の方がさかん</b>なので、葉全体では 二酸化炭素が入り 酸素が出る。':'夜は光がないので <b>呼吸だけ</b>。酸素が入り 二酸化炭素が出る。昼と <b>逆向き</b>。';
   $('ov').querySelector('.mk').innerHTML='<div class="ey">幕間</div><h2>'+(ok?'矢印 ぴったり！':'本当の向きは こう')+'</h2><svg class="arrSvg" viewBox="0 0 300 200">'+arrowScene(isDay,{co2:isDay?'in':'out',o2:isDay?'out':'in'})+'</svg><div class="cc">'+why+'</div><div class="btns"><button class="kb" id="iGo2">幕を上げる</button></div>';
-  if(ok){setTimeout(()=>{earn(10,'predict',innerWidth/2,innerHeight*.3);const rk=isDay?'day':'night';if(!SV.rules[rk]){SV.rules[rk]=1;save();earn(30,'rule',innerWidth/2,innerHeight*.35)}},300)}
+  if(ok){buzzV([20,40,30]);if(window.Guide)Guide.cheer('ぴったり！',{x:innerWidth/2,y:innerHeight*.22,size:1.2,sound:false,sparks:22});setTimeout(()=>{earn(10,'predict',innerWidth/2,innerHeight*.3);const rk=isDay?'day':'night';if(!SV.rules[rk]){SV.rules[rk]=1;save();earn(30,'rule',innerWidth/2,innerHeight*.35)}},300)}
   $('iGo2').onclick=()=>{SFX.click();const keep=G&&G.keep&&G.ph===ph-1;if(!keep)G=null;startPhase(ph)}}}
 function arrowScene(isDay,dir){const sky=isDay?'<linearGradient id="sk" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#F2C66A"/><stop offset="1" stop-color="#F6AE2D"/></linearGradient>':'<linearGradient id="sk" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#15151F"/><stop offset="1" stop-color="#2F4858"/></linearGradient>';
  const ar=(y,k,d)=>{const lab=k==='co2'?'二酸化炭素':'酸素';const inn=d==='in';const x0=inn?18:170,x1=inn?120:282;const col=k==='co2'?'#3a3d46':'#E4572E';
@@ -2466,7 +2503,7 @@ function arrowScene(isDay,dir){const sky=isDay?'<linearGradient id="sk" x1="0" y
   ar(84,'co2',dir.co2)+ar(128,'o2',dir.o2)}
 
 /* ================= 描画 ================= */
-function render(){const c=g;c.setTransform(DPR,0,0,DPR,0,0);const P=G.P,t=G.t,geo=G.geo||plantGeo();G.geo=geo;const cols=skyCols(),L=lightNow(),gy=G.gy;
+function render(){const c=g;c.setTransform(DPR,0,0,DPR,0,0);if(G.shake>0){G.shake=Math.max(0,G.shake-.5);if(!RM)c.translate(rnd(-G.shake,G.shake),rnd(-G.shake,G.shake))}const P=G.P,t=G.t,geo=G.geo||plantGeo();G.geo=geo;const cols=skyCols(),L=lightNow(),gy=G.gy;
  // 空（紙の幕をうしろから照らす）
  const gr=c.createLinearGradient(0,0,0,gy);gr.addColorStop(0,cols[0]);gr.addColorStop(.62,cols[1]);gr.addColorStop(1,cols[2]);c.fillStyle=gr;c.fillRect(0,0,CW,gy+2);
  // 光源（うしろの灯）
@@ -2505,7 +2542,8 @@ function render(){const c=g;c.setTransform(DPR,0,0,DPR,0,0);const P=G.P,t=G.t,ge
  // 時間の帯（道のり）
  drawTimeline(c);
  // 周辺減光
- const vg=c.createRadialGradient(CW/2,gy*.6,Math.min(CW,CH)*.3,CW/2,gy*.6,Math.max(CW,CH)*.8);vg.addColorStop(0,'rgba(0,0,0,0)');vg.addColorStop(1,'rgba(10,8,14,.45)');c.fillStyle=vg;c.fillRect(0,0,CW,CH)}
+ const vg=c.createRadialGradient(CW/2,gy*.6,Math.min(CW,CH)*.3,CW/2,gy*.6,Math.max(CW,CH)*.8);vg.addColorStop(0,'rgba(0,0,0,0)');vg.addColorStop(1,'rgba(10,8,14,.45)');c.fillStyle=vg;c.fillRect(-20,-20,CW+40,CH+40);
+ if(G.fl>0){if(!RM){c.fillStyle='rgba('+(G.flC||'255,236,170')+','+(G.fl*.3).toFixed(3)+')';c.fillRect(-20,-20,CW+40,CH+40)}G.fl=Math.max(0,G.fl-.03)}}
 let MOON=null;function moonSprite(r){const k=Math.round(r*DPR);if(MOON&&MOON.k===k)return MOON.c;const c=document.createElement('canvas');c.width=c.height=k*2;const x=c.getContext('2d');x.beginPath();x.arc(k,k,k,0,TAU);x.fillStyle='#F3E3C0';x.fill();x.globalCompositeOperation='destination-out';x.beginPath();x.arc(k*1.45,k*.75,k*.9,0,TAU);x.fill();MOON={k,c};return c}
 function srand(seed){let s=seed>>>0||1;return()=>{s^=s<<13;s>>>=0;s^=s>>17;s^=s<<5;s>>>=0;return s/4294967296}}
 function drawClouds(c,a,t,night){const rr=srand(3);c.save();c.globalAlpha=a*.85;for(let i=0;i<7;i++){const w=CW*(.25+rr()*.3),x=((rr()*CW*1.4+t*(6+i*2))%(CW*1.6))-CW*.3,y=G.gy*(.12+rr()*.45);c.fillStyle=night?'#23232e':(i%2?'#6f6358':'#857766');c.beginPath();for(let k=0;k<5;k++){c.ellipse(x+k*w*.2,y-Math.sin(k*1.3)*w*.06,w*.16,w*.09,0,0,TAU)}c.fill()}c.restore()}
@@ -2559,7 +2597,7 @@ function drawTimeline(c){const x0=LAND?CW*.2:14,x1=LAND?CW*.8:CW-14,y=G.gy+16;co
  c.globalAlpha=1;c.restore()}
 
 /* ================= HUD ================= */
-function updHud(){if(!G)return;const P=G.P;$('hDs').textContent=KAN[P.day-1]+'日目　'+(G.ph+1)+'/8';$('hDb').textContent=P.k==='day'?'昼（'+P.sky+'）':(P.boss?'夜（長い冬の夜）':P.long?'夜（長い夜）':'夜');
+function updHud(){if(!G)return;const P=G.P;$('hDs').textContent=P.prac?'れんしゅう':KAN[P.day-1]+'日目　'+(G.ph+1)+'/8';$('hDb').textContent=P.k==='day'?'昼（'+P.sky+'）':(P.boss?'夜（長い冬の夜）':P.long?'夜（長い夜）':'夜');
  const z=Z()&&Z().state?Z().state():null;$('hK').innerHTML=(z?'かけら <b>'+z.kakera+'</b>':'')+(G.combo>=3?'<span class="cb">'+G.combo+' れんぞく</span>':'');
  const cap=Math.max(100,Math.ceil(G.N/50)*50);$('mN').style.width=clamp(G.N/cap*100,0,100)+'%';$('mNt').textContent=Math.floor(G.N);$('mW').style.width=clamp(G.wilt,0,100)+'%';$('mWt').textContent=Math.round(G.wilt);
  const cost=growCost(),can=P.k==='day'&&(P.grow||G.ph>2)&&G.leaves.length<MAXLEAF;$('bGrow').hidden=!(P.k==='day'&&G.ph>=2);$('bGrow').disabled=!can||G.N<cost||G.over;$('bGrowC').textContent=G.leaves.length>=MAXLEAF?'これ以上 ふやせない':'養分 '+cost+'（今 '+G.leaves.length+'枚）';$('bGrow').classList.toggle('can',can&&G.N>=cost+30);$('bMute').textContent=SV.mute?'消音':'音'}
@@ -2604,9 +2642,28 @@ function initTitle(){if(window.PLAYER_NAME)$('nameIn').value=window.PLAYER_NAME;
 let arm=false;
 $('btnStart').onclick=()=>{ac();SV.name=$('nameIn').value.trim();
  if(hasSave()&&SV.ph>0&&!arm){arm=true;$('btnStart').textContent='本当に はじめから？（記録が消える）';setTimeout(()=>{arm=false;initTitle()},3500);return}
- if(arm){const nm=SV.name,mu=SV.mute;SV=freshSave();SV.name=nm;SV.mute=mu;arm=false}save();SFX.hyoshi();demo()};
+ if(arm){const nm=SV.name,mu=SV.mute;SV=freshSave();SV.name=nm;SV.mute=mu;arm=false}save();SFX.hyoshi();
+ if(!window.Guide){demo();return}if(busy)return;busy=true;Guide.intro(INTRO).then(()=>{busy=false;Guide.tutorial(PRACTICE)})};
+let busy=false;
+const INTRO={title:'第10回 夜を越える一株',learn:'昼は光合成で **二酸化炭素を入れ 酸素を出す**。夜は呼吸だけで **逆向き**（酸素を入れ 二酸化炭素を出す）',
+ how:'空の気体を **つまんで** 光った葉へ → 葉から出た泡を **はじいて** 外へ',gesture:'drag'};
+function lf0(){if(!G)return null;const geo=G.geo||plantGeo();return geo.L[0]}
+function molPt(k){return ()=>{const q=lf0();if(!q)return {x:innerWidth/2,y:innerHeight/3,r:24};let best=null,bd=1e9;G.mols.forEach(o=>{if(o.k!==k||o.fly)return;const d=Math.hypot(o.x-q.cx,o.y-q.cy);if(d>90&&d<bd){bd=d;best=o}});
+ const o=best||G.mols.find(m=>m.k===k);return o?{x:o.x,y:o.y,r:26,el:cv}:{x:q.cx,y:q.cy-120,r:26,el:cv}}}
+function leafPt(){const q=lf0();return q?{x:q.cx,y:q.cy,r:Math.max(26,q.r*.6),el:cv}:{x:innerWidth/2,y:innerHeight/2,r:30}}
+function bubPt(){const q=lf0();return q?{x:q.tx,y:q.ty,r:24,el:cv}:{x:innerWidth/2,y:innerHeight/2,r:24}}
+function bubTo(){const q=lf0();if(!q)return {x:innerWidth/2,y:innerHeight/2,r:20};const a=q.ang;return {x:q.tx+Math.cos(a)*110,y:q.ty+Math.sin(a)*110-40,r:20,el:cv}}
+const bubGone=n=>()=>!!(G&&G.stat.fed>=n&&G.leaves[0]&&!G.leaves[0].bub);
+const PSTEPS=[
+ {gesture:'drag',target:molPt('co2'),to:leafPt,until:()=>!!(G&&G.stat.fed>=1),praise:false,text:'昼。空の **二酸化炭素（CO₂）** を つまんで、**光っている葉** へ。光合成で 根に養分がたまる'},
+ {gesture:'swipe',target:bubPt,to:bubTo,until:bubGone(1),praise:false,wait:1000,onDone:()=>setTimeout(pracNight,300),text:'葉から **酸素（O₂）の泡** が出た。泡を **はじいて** 外へ出す'},
+ {gesture:'drag',target:molPt('o2'),to:leafPt,until:()=>!!(G&&G.stat.fed>=2),praise:false,text:'夜は 光合成ができない。**酸素（O₂）** を 光った葉へ（呼吸は養分を使う）'},
+ {gesture:'swipe',target:bubPt,to:bubTo,until:bubGone(2),praise:false,text:'こんどは **二酸化炭素の泡**。はじいて外へ。昼と **逆向き**！'}];
+const PRACTICE={label:'れんしゅう中',bandAt:'bottom',steps:PSTEPS,clearText:'れんしゅうクリア！',start:()=>{ac();startPractice()},
+ onExit:res=>{if(res&&(res.stopped||res.replaced))return;SV.demo=1;SV.tut1=1;save();G=null;document.body.classList.remove('night');if(SV.ph>0)openCal();else interlude(0)}};
 $('btnCont').onclick=()=>{ac();SV.name=$('nameIn').value.trim()||SV.name;save();SFX.click();openCal()};
 $('btnBookT').onclick=()=>{try{Z().openBook()}catch(e){}};$('btnBookC').onclick=()=>{try{Z().openBook()}catch(e){}};
+if(window.Guide)Guide.tutorialButton('#btnHow',()=>{ac();SFX.click();Guide.tutorial(PRACTICE)});else $('btnHow').hidden=true;
 
 /* ================= こよみ（1日目の朝 → 5日目の朝） ================= */
 function openCal(){G=null;ovClose();show('scCal');const svg=$('calSvg'),r=svg.getBoundingClientRect(),W=Math.max(300,r.width),H=Math.max(200,r.height);svg.setAttribute('viewBox','0 0 '+W+' '+H);
@@ -2665,8 +2722,26 @@ function frame(now){const dt=Math.min(.05,Math.max(0,(now-last)/1000))*(window._
  requestAnimationFrame(frame)}
 let rzT=0;window.addEventListener('resize',()=>{clearTimeout(rzT);rzT=setTimeout(()=>{orient();if(scene==='play')layoutPlay();if(scene==='title')titleResize();if(scene==='cal')openCal()},80)});
 /* ================= はじまり ================= */
+var HELP=null;
+function placeHelp(){if(!HELP)return;orient();HELP.update(LAND?{mount:document.querySelector('#hud .hR')}:{mount:null,corner:'tl',offset:{x:0,y:56}})}
+addEventListener('resize',placeHelp);
+if(window.Guide){
+ Guide.setup({theme:{bg:'#F3E3C0',fg:'#111118',accent:'#B8570C',accentText:'#FFF3D0',font:FONT,bodyFont:FONT,radius:0,texture:'paper',line:'#111118',dim:'rgba(17,17,24,.5)',
+   shadow:'0 0 0 3px #111118, 0 14px 30px rgba(0,0,0,.45)',outline:'#111118',hand:'#111118',handLine:'#F6AE2D'},
+  sfx:k=>{if(k==='step')SFX.feed(3);else if(k==='nudge')SFX.click();else if(k==='done')SFX.grow();else if(k==='clear')SFX.dawn();else if(k==='open'||k==='close')SFX.hyoshi();else if(k==='cheer')SFX.grain()},
+  muted:()=>SV.mute});
+ HELP=Guide.help({title:INTRO.title,learn:INTRO.learn,how:INTRO.how,gesture:'drag',size:46,show:false,attention:true,replay:'tutorial',
+  rules:['昼：**二酸化炭素** を光った葉へ（光合成で 養分が根にたまる）',
+   '夜：**酸素** を光った葉へ（呼吸だけ。養分を使う）',
+   '葉から出た泡は **はじいて外へ**。夜にほうっておくと こもって しおれる',
+   '取り違えると はね返されて **しおれ** がふえる。100になると その日の朝からやり直し',
+   '2日目から「葉を広げる」：昼の養分はふえるが、夜の呼吸もふえる'],
+  onOpen:()=>{if(scene==='play'&&G&&!G.paused&&!G.over){G.paused=true;G.hp=1}},
+  onClose:()=>{if(G&&G.hp){G.hp=0;G.paused=false}}});
+}
 window.GAME_ID=GAME_ID;
 try{window.Zukan&&Zukan.setup({game:GAME_ID,koma:[KOMA]})}catch(e){}
+window.__dn={get G(){return G},molPt,leafPt,bubPt,bubTo};
 window.__db={get G(){return G},get SV(){return SV},startPhase,interlude,startTest,openCal,mode,lightNow,plantGeo,feed(i,k){const geo=plantGeo();const o={k,x:0,y:0};G.mols.push(o);feed(geo.L[i],o)},release(i){const lf=G.leaves[i];if(lf.bub)releaseBub(lf,i,plantGeo(),false,0,-30)}};
 if(window.GAME_MODE==='test'){startTest()}else{show('scTitle');initTitle()}
 requestAnimationFrame(frame);

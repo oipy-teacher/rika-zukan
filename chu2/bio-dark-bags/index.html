@@ -191,7 +191,19 @@ body.land .qch .fb{font-size:19px;min-height:68px}
 #bkC .box{max-width:420px;padding:22px;border:1.5px solid rgba(230,236,234,.7);background:#0A0E0B;text-align:center}
 #bkC p{font-size:17px;line-height:1.7;margin:0 0 16px}
 #bkC .row{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
-@media (prefers-reduced-motion: reduce){*{animation-duration:.01s!important;animation-iteration-count:1!important;transition:none!important}}
+/* 仕上げ 2026-09-28（db-finish-2026-09-28）: ★のドン・フィルム片の紙吹雪・「？」を HUD の列に */
+.pr .stars i.on.wait{opacity:0;animation:none}
+.pr .stars i.on.don{animation:dbDon .5s cubic-bezier(.2,1.8,.4,1) both}
+@keyframes dbDon{0%{transform:scale(3);opacity:0;filter:blur(3px)}60%{transform:scale(.85);opacity:1}100%{transform:none;opacity:1}}
+.pr.don{animation:dbPr .2s ease-out}
+@keyframes dbPr{40%{transform:translateY(6px) rotate(-.6deg)}100%{transform:rotate(-.6deg)}}
+.dbcf{position:fixed;top:-20px;z-index:45;pointer-events:none;width:var(--w);height:calc(var(--w)*1.4);background:var(--c);box-shadow:0 0 10px var(--c);animation:dbcf var(--t) cubic-bezier(.3,.2,.6,1) var(--d) forwards}
+@keyframes dbcf{to{transform:translate(var(--dx),108vh) rotate(var(--r))}}
+.h-rt .gd-hbtn{flex:none}
+.h-q .gd-hbtn{flex:none;margin-left:auto}
+body.land .gd-band.bot{left:20%}
+body:has(.gd-band.bot) #cap{bottom:calc(56px + env(safe-area-inset-bottom))}
+@media (prefers-reduced-motion: reduce){*{animation-duration:.01s!important;animation-iteration-count:1!important;transition:none!important}.dbcf{display:none}.pr .stars i.on.wait{opacity:1}}
 </style>
 </head>
 <body>
@@ -209,8 +221,9 @@ body.land .qch .fb{font-size:19px;min-height:68px}
    <button class="fb am" id="btnStart">はじめる</button>
    <button class="fb" id="btnCont" hidden>つづきから</button>
    <button class="fb sm" id="btnBookT" hidden>📖 図鑑</button>
+   <button class="fb sm" id="btnHow">あそびかた</button>
   </div>
-  <div class="tt-f">暗い所に置いた袋を、ダーツで割って確かめる。<br>割る前に、石灰水のにごり方を予言しよう。</div>
+  <div class="tt-f">予言して、割って、焼きつける。</div>
  </div>
 </section>
 
@@ -1535,7 +1548,14 @@ window.ZUKAN_CARDS={"v": 1, "grade": "chu2", "name": "中2理科図鑑", "econom
   function vib(ms){try{if(navigator.vibrate)navigator.vibrate(ms)}catch(e){}}
   function el(tag,cls,html){var d=document.createElement(tag);if(cls)d.className=cls;if(html!=null)d.innerHTML=html;return d}
   function rm(d){if(d&&d.parentNode)d.parentNode.removeChild(d)}
-  function inGuide(t){while(t&&t!==document){if(t.classList&&(t.classList.contains('gd-root')||t.classList.contains('gd-hbtn')))return true;t=t.parentNode}return false}
+  /* れんしゅう中の「指以外は押せない」でも、もどる・確認ダイアログ・音量などは常に押せるようにする（2026-09-28・ルール10）
+     ゲーム側で確実に通したい要素には data-gd-pass を付ける */
+  var PASS_RE=/(^|[-_\s])(back|modoru|return|home|exit|mute|sound|confirm|dialog|modal)([-_\s]|$)/i;
+  function passThru(t){var n=0;while(t&&t!==document&&n<8){n++;if(t.nodeType===1){if(t.hasAttribute('data-gd-pass')||t.tagName==='DIALOG'||t.getAttribute('role')==='dialog'||t.getAttribute('aria-modal')==='true')return true;
+      if(PASS_RE.test(String(t.id||''))||PASS_RE.test(typeof t.className==='string'?t.className:''))return true;
+      if((t.tagName==='BUTTON'||t.tagName==='A'||t.getAttribute('role')==='button')&&/^\s*[◀←＜<]?\s*(もどる|戻る|一覧へ|とじる|閉じる|はい|いいえ|やめる|キャンセル|おと|音)/.test(t.textContent||''))return true}
+      t=t.parentNode}return false}
+  function inGuide(t){if(passThru(t))return true;while(t&&t!==document){if(t.classList&&(t.classList.contains('gd-root')||t.classList.contains('gd-hbtn')))return true;t=t.parentNode}return false}
   function hexRGB(c){c=String(c||'').trim();var m;
     if((m=c.match(/^#([0-9a-f]{3})$/i)))return [0,1,2].map(function(i){return parseInt(m[1][i]+m[1][i],16)});
     if((m=c.match(/^#([0-9a-f]{6})/i)))return [0,2,4].map(function(i){return parseInt(m[1].substr(i,2),16)});
@@ -2273,8 +2293,14 @@ const SFX={
  shutter(){noise(.05,{ft:'highpass',f:2200,vol:.22});noise(.07,{ft:'highpass',f:1500,vol:.2,at:.1})},
  tray(){noise(1.3,{ft:'lowpass',f:520,vol:.1,swell:true});noise(1,{ft:'lowpass',f:700,vol:.06,swell:true,at:.5})},
  fan(){[0,4,7,11,14,19].forEach((s,i)=>tone(392*Math.pow(2,s/12),.7,{type:'triangle',vol:.05,at:i*.09}))},
- bad(){tone(140,.4,{type:'square',vol:.03});tone(132,.4,{type:'square',vol:.02,at:.05})}
+ bad(){tone(140,.4,{type:'square',vol:.03});tone(132,.4,{type:'square',vol:.02,at:.05})},
+ don(i){noise(.09,{ft:'lowpass',f:380,vol:.35,dec:3});tone(110,.18,{type:'sine',vol:.14,to:55});tone(392*Math.pow(2,[0,4,7][i%3]/12)*2,.4,{type:'triangle',vol:.05,at:.05})},
+ tier(n){[0,4,7,12,16,19].slice(0,3+Math.min(3,n)).forEach((s,i)=>tone(523*Math.pow(2,s/12),.3,{type:'triangle',vol:.05,at:i*.06}))},
+ set(){tone(1320,.05,{type:'triangle',vol:.04});tone(1760,.08,{type:'triangle',vol:.035,at:.05})}
 };
+function buzzV(p){try{if(navigator.vibrate)navigator.vibrate(p)}catch(e){}}
+const TIERS=[3,5];
+document.addEventListener('pointerdown',e=>{const b=e.target&&e.target.closest&&e.target.closest('button.fb,button.pb,#bBack');if(b&&!b.disabled)buzzV(8)},true);
 
 /* ================= 理科のデータ ================= */
 /* resp: 暗い所7時間での二酸化炭素のふえ方（%の目安）。
@@ -2376,15 +2402,17 @@ const BOSS=[
  {q:'amount',bags:[B('leaf7','L'),B('leaf3'),B('leaf7','D',7,1),B('leaf7')]}
 ];
 const BOSS_N=5,BOSS_LIMIT=210;
+const PRAC_S={nm:'れんしゅうの棚',qs:['resp'],min:2,bags:[B('leaf7'),B('none')],sway:0,prac:1};
 
 /* ================= 画面の切りかえ ================= */
 let scene='title',LAND=false;
 function orient(){LAND=innerWidth>innerHeight*1.05;document.body.classList.toggle('land',LAND)}
 function show(id){orient();['scTitle','scMap','scPlay','scTest'].forEach(s=>$(s).hidden=s!==id);scene={scTitle:'title',scMap:'map',scPlay:'play',scTest:'test'}[id];backBtn();if(scene==='title')titleResize();if(scene==='play')layoutPlay()}
-function backBtn(){const b=$('bBack'),on=scene!=='title'||INHUB;b.hidden=!on;b.textContent=scene==='title'?'◀ 一覧へ':'◀ もどる'}
+function backBtn(){const b=$('bBack'),on=scene!=='title'||INHUB;b.hidden=!on;b.textContent=scene==='title'?'◀ 一覧へ':'◀ もどる';if(HELP){HELP.update({mount:helpMount()});if(scene==='play')HELP.show();else HELP.hide()}}
 let backPaused=false;
 $('bBack').onclick=()=>{ac();SFX.click();
  if(scene==='title'){try{window.parent.postMessage({type:'rika-close-game'},'*')}catch(e){}return}
+ if(scene==='play'&&G&&G.S.prac){if(window.Guide)Guide.tutorialEnd();G=null;ovClose();show('scTitle');initTitle();return}
  backPaused=!!(G&&G.paused);if(G)G.paused=true;
  $('bkP').innerHTML=scene==='test'?'確認テストをやめて もどりますか？<br>（テストは次もはじめから。棚の進み具合は保存されています）':scene==='map'?'タイトルにもどりますか？<br>進み具合は保存されます。':'棚の地図にもどりますか？<br>進み具合は保存されます（この棚は次にはじめから）。';
  $('bkGo').textContent=scene==='map'?'タイトルへ':scene==='test'&&window.GAME_MODE==='test'?'はじめにもどる':'棚の地図へ';$('bkC').hidden=false};
@@ -2444,11 +2472,12 @@ function dartShape(c,x,y,ang,s,a){c.save();c.translate(x,y);c.rotate(ang);c.scal
 /* ================= 本編 ================= */
 let G=null;
 function mkBags(list){return list.map((d,i)=>Object.assign({},d,{id:'ABCDEF'[i],pred:null,popped:false,popT:0,shown:0,res:null,ph:rnd(0,TAU),hit:null,flash:0}))}
-function startStage(si){const S=STAGES[si];ovClose();
+function startStage(si){const S=si<0?PRAC_S:STAGES[si];ovClose();
  G={si,S,qi:0,bags:[],darts:0,pops:0,combo:0,hitsAll:true,firstTry:true,fx:[],mols:[],flying:null,drag:null,t:0,intro:RM?.3:1.9,paused:false,over:false,busy:0,failN:0,
   boss:S.boss?{round:0,time:0,pool:shuffle(BOSS).slice(0,BOSS_N),pen:0}:null};
  if(G.boss)loadBossRound();else{G.bags=mkBags(S.bags);G.darts=S.min+1}
  updHud();show('scPlay');updHud();SFX.tick();
+ if(S.prac)return;
  if(si===0&&!SV.tut)setTimeout(()=>tut(1),RM?300:2000);
  else setTimeout(()=>{if(G&&G.si===si)capShow(G.boss?'2袋だけ割って、組をつくれ。<b>時間が勝負</b>':Q[curQ()].hint,5200)},RM?300:2000)}
 function loadBossRound(){const R=G.boss.pool[G.boss.round];G.bags=mkBags(shuffle(R.bags));G.darts=3;G.busy=0;G.mols=[];G.flying=null;G.intro=RM?.2:.9;layoutPlay();updHud()}
@@ -2473,17 +2502,18 @@ cv.addEventListener('pointerdown',e=>{ac();if(!G||G.paused||G.over||G.intro>0)re
  const b=bagAt(p.x,p.y);if(b){b.flash=1;SFX.click();capShow('<b>'+b.id+'</b> '+esc(bagName(b))+'・'+condOf(b)+(b.pred==null?' ─ '+(LAND?'下':'右')+'のゲージをなぞって予言しよう':' ─ 発射台を下へ引いて ねらおう'),2600)}});
 cv.addEventListener('pointermove',e=>{if(!G||!G.drag)return;const p=ptr(e);if(G.drag.k==='pred')setPred(G.drag.b,p.y);else{G.drag.x=p.x;G.drag.y=p.y}});
 function endDrag(e){if(!G||!G.drag)return;const d=G.drag;G.drag=null;
- if(d.k==='pred'){SFX.click();if(!SV.tut&&G.si===0&&G.bags.every(b=>b.pred!=null))tut(2)}
+ if(d.k==='pred'){SFX.set();buzzV(10);const b=d.b;b.flash=1;fxText(b.ga.x+b.ga.w/2,b.ga.y-18,'予言 '+Math.round(b.pred*100),'rgba('+AMB+',1)',16);if(!SV.tut&&G.si===0&&G.bags.every(b=>b.pred!=null))tut(2)}
  else{const a=aimOf(d);if(Math.hypot(d.sx-d.x,d.sy-d.y)<16){capShow('発射台を <b>下へ引いて</b> はなすと飛ぶ',2200);return}throwDart(a.x,a.y)}}
 cv.addEventListener('pointerup',endDrag);cv.addEventListener('pointercancel',()=>{if(G)G.drag=null});
 function setPred(b,y){b.pred=clamp(1-(y-b.ga.y)/b.ga.h,0,1);if(Math.random()<.3)SFX.tick()}
 function aimOf(d){const K=LAND?3.3:3.9;return {x:clamp(G.L.lx+(d.sx-d.x)*K,8,CW-8),y:clamp(G.L.ly+(d.sy-d.y)*K,G.L.top,CH-8)}}
 function throwDart(x,y){G.flying={x0:G.L.lx,y0:G.L.ly-10,x1:x,y1:y,t:0,d:.34};SFX.thr()}
-function landDart(f){G.flying=null;const b=bagAt(f.x1,f.y1);
+function landDart(f){G.flying=null;let b=bagAt(f.x1,f.y1);
+ if(!b&&G.S.prac){let bd=1e9;G.bags.forEach(q=>{if(q.popped)return;const p=bagPos(q),d=Math.hypot(p.cx-f.x1,p.cy-f.y1)+(q.pred!=null?0:1e5);if(d<bd){bd=d;b=q}})}
  if(!b){fxText(f.x1,f.y1,'はずれ','rgba('+W8+',.8)',16);G.fx.push({k:'stuck',x:f.x1,y:f.y1,t:1.2});SFX.clink();capShow('袋に当たらなかった。ダーツは手元にもどる',1800);return}
  if(b.pred==null){SFX.bounce();G.fx.push({k:'bounce',x:f.x1,y:f.y1,t:.7});fxText(f.x1,f.y1-20,'予言が先！','rgba('+AMB+',1)',20);capShow('割る前に、その袋の <b>石灰水のゲージ</b> をなぞって にごり方を予言しよう',3200);b.flash=1;return}
  popBag(b)}
-function popBag(b){b.popped=true;b.popT=0;G.darts--;G.pops++;G.busy++;SV.pops++;const p=bagPos(b);SFX.pop();shake(8);
+function popBag(b){b.popped=true;b.popT=0;if(!G.S.prac)G.darts--;G.pops++;G.busy++;if(!G.S.prac)SV.pops++;buzzV([25,30,20]);const p=bagPos(b);SFX.pop();shake(8);
  G.fx.push({k:'ring',x:p.cx,y:p.cy,t:0,d:.5,r:b.bw});G.fx.push({k:'flash',t:0,d:.18});
  for(let i=0;i<22;i++){const a=rnd(0,TAU),v=rnd(90,320);G.fx.push({k:'shard',x:p.cx,y:p.cy,vx:Math.cos(a)*v,vy:Math.sin(a)*v-60,r:rnd(3,9),rot:rnd(0,TAU),vr:rnd(-8,8),t:0,d:rnd(.6,1.1)})}
  // 気体が石灰水へ流れこむ
@@ -2493,11 +2523,12 @@ function popBag(b){b.popped=true;b.popT=0;G.darts--;G.pops++;G.busy++;SV.pops++;
  setTimeout(()=>{if(G&&G.bags.includes(b))resolveBag(b)},RM?500:G.boss?1100:1700)}
 function resolveBag(b){G.busy=Math.max(0,G.busy-1);const act=cloudOf(b),d=Math.abs(b.pred-act),dn=Math.round(d*100),x=b.ga.x+b.ga.w/2,y=b.ga.y+b.ga.h*(1-act)-10;
  b.res={act,d};SV.spec=SV.spec||{};
- if(d<=.15){G.combo++;SV.hits++;SV.maxCombo=Math.max(SV.maxCombo,G.combo);b.hit='hit';SFX.hit(G.combo);fxText(x,y,'的中！','rgba('+AMB+',1)',LAND?30:24,true);if(G.combo>=2)fxText(x,y+28,'連続 ×'+G.combo,'rgba('+AMB+',1)',16);
-  const k=specKey(b);if(!SV.spec[k]){SV.spec[k]=1;setTimeout(()=>{if(G)fxText(b.cx,b.cy,'標本ネガ ＋1','rgba('+W8+',1)',18)},400)}
+ if(d<=.15){G.combo++;if(!G.S.prac){SV.hits++;SV.maxCombo=Math.max(SV.maxCombo,G.combo)}b.hit='hit';SFX.hit(G.combo);shake(5);G.fx.push({k:'flash',t:0,d:.25});buzzV([20,40,30]);
+  {const tier=TIERS.indexOf(G.combo),r=cv.getBoundingClientRect();if(window.Guide){Guide.cheer(G.combo>1?'連続 ×'+G.combo+'！':'的中！',{x:r.left+b.cx,y:r.top+b.cy-b.bh*.2,size:1+Math.max(0,tier)*.3,sound:false,sparks:14+Math.max(0,tier)*10});if(tier>=0)setTimeout(()=>SFX.tier(tier+1),260)}}fxText(x,y,'的中！','rgba('+AMB+',1)',LAND?30:24,true);if(G.combo>=2)fxText(x,y+28,'連続 ×'+G.combo,'rgba('+AMB+',1)',16);
+  const k=specKey(b);if(!G.S.prac&&!SV.spec[k]){SV.spec[k]=1;setTimeout(()=>{if(G)fxText(b.cx,b.cy,'標本ネガ ＋1','rgba('+W8+',1)',18)},400)}
   earn(Math.min(15,5+G.combo*2),'hit',b.cx,b.cy)}
  else if(d<=.3){b.hit='near';G.hitsAll=false;SFX.near();fxText(x,y,'あと少し','rgba('+W8+',1)',LAND?24:20,true);fxText(x,y+24,'差 '+dn,'rgba('+AMB+',1)',16)}
- else{b.hit='miss';G.hitsAll=false;G.combo=0;SFX.miss();fxText(x,y,'はずれ','rgba('+W8+',.85)',LAND?22:19);fxText(x,y+22,'差 '+dn,'rgba('+W8+',.8)',15)}
+ else{{const lost=G.combo,nt=TIERS.filter(t=>t>lost)[0],r=cv.getBoundingClientRect();if(lost>=2&&nt&&nt-lost===1&&window.Guide)setTimeout(()=>Guide.cheer('あと1回で 連続×'+nt+' だった！',{x:r.left+b.cx,y:r.top+b.cy,size:.8,sound:false,sparks:false}),500)}b.hit='miss';G.hitsAll=false;G.combo=0;SFX.miss();buzzV([10,40,10]);fxText(x,y,'はずれ','rgba('+W8+',.85)',LAND?22:19);fxText(x,y+22,'差 '+dn,'rgba('+W8+',.8)',15)}
  const why=whyOf(b,b.pred);capShow('<b>'+b.id+'</b> '+esc(meterOf(b))+(d>.15&&why?'<br>'+esc(why):''),d>.15&&why?5200:3000);
  save();updHud();
  if(G.boss){const rd=G.boss.round,ok=findPair();if(ok||G.darts<=0)setTimeout(()=>{if(G&&G.boss&&G.boss.round===rd&&!G.over&&!G.busy)doPrint()},ok?500:700)}
@@ -2521,8 +2552,8 @@ function doPrint(){const pair=findPair();SFX.shutter();
   setTimeout(()=>{if(first)earn(10,'control',CW/2,CH*.3);if(!SV.rules[qk]){SV.rules[qk]=1;save();earn(30,'rule',CW/2,CH*.35)}},900);
   const last=G.qi+1>=G.S.qs.length;
   ovOpen('<div class="pr"><div class="pe">PRINT No.'+String(G.si+1).padStart(2,'0')+(G.S.qs.length>1?'-'+(G.qi+1):'')+'　焼きつけ</div><h2>言い切れる！</h2>'+pairSVG(pair)+'<div class="ob">'+esc(q.obs)+'</div><div class="cc">'+esc(q.cc)+'</div>'+(first?'<div class="rw">比べる袋をそろえて一発で結論 ─ かけらボーナス</div>':'')+
-   '<div class="btns"><button class="pb" id="pNext">'+(last?'棚の成績へ':'次の問いへ')+'</button></div></div>');
-  $('pNext').onclick=()=>{SFX.click();ovClose();if(last)stageClear();else{G.qi++;G.darts=Math.max(G.darts,1)+1;G.firstTry=true;G.paused=false;updHud();capShow(Q[curQ()].hint,5000)}}}
+   '<div class="btns"><button class="pb" id="pNext">'+(G.S.prac?'OK！':last?'棚の成績へ':'次の問いへ')+'</button></div></div>');G.printed=1;
+  $('pNext').onclick=()=>{SFX.click();ovClose();if(G.S.prac){G.over=true;G.pracDone=1;SV.tut=1;save();return}if(last)stageClear();else{G.qi++;G.darts=Math.max(G.darts,1)+1;G.firstTry=true;G.paused=false;updHud();capShow(Q[curQ()].hint,5000)}}}
  else{SFX.bad();G.combo=0;G.firstTry=false;G.failN++;const r=failReason();
   ovOpen('<div class="pr bad"><div class="pe">PRINT ── ピンぼけ</div><h2>言い切れない…</h2><div class="cc">'+esc(r)+'</div><div class="ob">問い：'+esc(q.t)+'<br>ヒント：'+q.hint+'</div><div class="rw">かけらは出ない。袋をつくり直して、もう一晩。</div><div class="btns"><button class="pb" id="pRe">袋をつくり直す</button></div></div>');
   $('pRe').onclick=()=>{SFX.click();ovClose();G.bags=mkBags(G.S.bags);G.darts=G.S.min+1;G.busy=0;G.mols=[];G.flying=null;G.intro=RM?.3:1.4;G.paused=false;layoutPlay();updHud()}}}
@@ -2535,18 +2566,23 @@ function pairSVG(pair){const W=360,H=160;let s='<svg class="fig" viewBox="0 0 '+
  return s+'<text x="180" y="60" text-anchor="middle" font-size="22" fill="#1a211c">⇄</text></svg>'}
 function stageClear(){const S=G.S,si=G.si;const st=[1,G.hitsAll?1:0,(G.firstTry&&G.failN===0&&G.pops<=S.min)?1:0];const n=st.reduce((a,b)=>a+b,0);
  SV.stars[si]=Math.max(SV.stars[si],n);SV.stage=Math.max(SV.stage,si+1);save();SFX.fan();G.over=true;
- ovOpen('<div class="pr"><div class="pe">SHELF '+String(si+1).padStart(2,'0')+'　現像完了</div><h2>'+esc(S.nm)+' クリア</h2><div class="stars">'+st.map((v,i)=>'<i class="'+(v?'on':'')+'" style="animation-delay:'+(i*.18)+'s">★</i>').join('')+'</div>'+
+ ovOpen('<div class="pr"><div class="pe">SHELF '+String(si+1).padStart(2,'0')+'　現像完了</div><h2>'+esc(S.nm)+' クリア</h2><div class="stars">'+st.map((v,i)=>'<i class="'+(v?'on wait':'')+'">★</i>').join('')+'</div>'+
   '<table><tr><td>結論（言い切れる組）</td><td>'+(st[0]?'◎':'─')+'</td></tr><tr><td>予言をすべて的中（差15以内）</td><td>'+(st[1]?'◎':'─')+'</td></tr><tr><td>むだな袋を割らず、一発で結論</td><td>'+(st[2]?'◎':'─')+'</td></tr></table>'+
   '<div class="rw">標本ネガ '+Object.keys(SV.spec).length+' / '+SPEC.length+'</div><div class="btns">'+(si+1<STAGES.length?'<button class="pb" id="cNext">次の棚へ</button>':'')+'<button class="pb ghost" id="cMap">棚の地図</button><button class="pb ghost" id="cRe">この棚をもう一度</button></div></div>');
- const nx=$('cNext');if(nx)nx.onclick=()=>{SFX.click();startStage(si+1)};$('cMap').onclick=()=>{SFX.click();ovClose();G=null;openMap()};$('cRe').onclick=()=>{SFX.click();startStage(si)}}
+ const nx=$('cNext');if(nx)nx.onclick=()=>{SFX.click();startStage(si+1)};$('cMap').onclick=()=>{SFX.click();ovClose();G=null;openMap()};$('cRe').onclick=()=>{SFX.click();startStage(si)};donStars(n)}
+function donStars(n){const sp=[...document.querySelectorAll('#ov .stars i.on')],pr=document.querySelector('#ov .pr');
+ sp.forEach((e,k)=>setTimeout(()=>{if($('ov').hidden)return;e.classList.remove('wait');e.classList.add('don');SFX.don(k);buzzV(25);if(pr){pr.classList.remove('don');void pr.offsetWidth;pr.classList.add('don')}},RM?0:1100+k*450));
+ setTimeout(()=>{if($('ov').hidden||RM)return;const cs=['#E6ECEA','#FFD166','#E6ECEA','#FFD166','#8A8F9C'];for(let i=0;i<(n>=3?80:50);i++){const d=document.createElement('div');d.className='dbcf';const q=d.style;q.left=(Math.random()*100).toFixed(1)+'vw';
+  q.setProperty('--w',(6+Math.random()*9|0)+'px');q.setProperty('--c',cs[i%cs.length]);q.setProperty('--dx',((Math.random()-.5)*200|0)+'px');q.setProperty('--r',((Math.random()-.5)*900|0)+'deg');
+  q.setProperty('--t',(1.8+Math.random()*1.3).toFixed(2)+'s');q.setProperty('--d',(Math.random()*.45).toFixed(2)+'s');document.body.appendChild(d);setTimeout(()=>d.remove(),3900)}},RM?0:1100+n*450)}
 function bossClear(){const tt=Math.round(G.boss.time+G.boss.pen);G.over=true;SV.bossBest=SV.bossBest?Math.min(SV.bossBest,tt):tt;const n=tt<=120?3:tt<=160?2:1;SV.stars[7]=Math.max(SV.stars[7],n);const firstDone=!SV.done;SV.done=true;SV.stage=8;save();SFX.fan();
- ovOpen('<div class="pr"><div class="pe">SHELF 08　タイムアタック</div><h2>最終棚 突破！</h2><div class="stars">'+[0,1,2].map(i=>'<i class="'+(i<n?'on':'')+'" style="animation-delay:'+(i*.18)+'s">★</i>').join('')+'</div><table><tr><td>タイム（ペナルティこみ）</td><td>'+fmtT(tt)+'</td></tr><tr><td>自己ベスト</td><td>'+fmtT(SV.bossBest)+'</td></tr></table><div class="cc">植物を入れた袋と、入れない袋。ちがいを1つにした2袋を比べて初めて「植物が呼吸して二酸化炭素を出した」と言い切れる。</div><div class="btns"><button class="pb" id="bT">'+(firstDone?'本編クリア → 確認テスト':'確認テストへ')+'</button><button class="pb ghost" id="bM">棚の地図</button></div></div>');
- $('bT').onclick=()=>{SFX.click();ovClose();G=null;goClear()};$('bM').onclick=()=>{SFX.click();ovClose();G=null;openMap()}}
+ ovOpen('<div class="pr"><div class="pe">SHELF 08　タイムアタック</div><h2>最終棚 突破！</h2><div class="stars">'+[0,1,2].map(i=>'<i class="'+(i<n?'on wait':'')+'">★</i>').join('')+'</div><table><tr><td>タイム（ペナルティこみ）</td><td>'+fmtT(tt)+'</td></tr><tr><td>自己ベスト</td><td>'+fmtT(SV.bossBest)+'</td></tr></table><div class="cc">植物を入れた袋と、入れない袋。ちがいを1つにした2袋を比べて初めて「植物が呼吸して二酸化炭素を出した」と言い切れる。</div><div class="btns"><button class="pb" id="bT">'+(firstDone?'本編クリア → 確認テスト':'確認テストへ')+'</button><button class="pb ghost" id="bM">棚の地図</button></div></div>');
+ donStars(n);$('bT').onclick=()=>{SFX.click();ovClose();G=null;goClear()};$('bM').onclick=()=>{SFX.click();ovClose();G=null;openMap()}}
 function bossFail(){G.over=true;SFX.bad();ovOpen('<div class="pr bad"><div class="pe">SHELF 08</div><h2>時間切れ…</h2><div class="cc">'+BOSS_N+'組のうち '+G.boss.round+'組まで。<br>問いに合う「ちがいが1つだけの2袋」をすばやく見つけよう。</div><div class="btns"><button class="pb" id="bR">もう一度</button><button class="pb ghost" id="bM">棚の地図</button></div></div>');$('bR').onclick=()=>{SFX.click();startStage(7)};$('bM').onclick=()=>{SFX.click();ovClose();G=null;openMap()}}
 function goClear(){const z=Z();if(z&&z.mainClear){try{z.mainClear({onClose:startTest})}catch(e){startTest()}}else startTest()}
 const fmtT=s=>Math.floor(s/60)+'分'+String(Math.round(s%60)).padStart(2,'0')+'秒';
 function earn(n,why,x,y){const z=Z();if(!z||!z.earn)return 0;let got=0;const r=cv.getBoundingClientRect();try{got=z.earn(n,why,{x:r.left+x,y:r.top+y})||0}catch(e){}updHud();return got}
-function updHud(){if(!G)return;const S=G.S;const rn=G.boss?Math.min(G.boss.round+1,BOSS_N)+'/'+BOSS_N:'';$('hShelf').textContent=G.boss&&!LAND?'SHELF 08':'SHELF '+String(G.si+1).padStart(2,'0')+(LAND?' / 08':'/08')+(G.boss?'　組 '+rn:'');$('hName').textContent=G.boss&&!LAND?'組 '+rn:S.nm;$('hQ').textContent=Q[curQ()]?Q[curQ()].t:'';
+function updHud(){if(!G)return;const S=G.S;const rn=G.boss?Math.min(G.boss.round+1,BOSS_N)+'/'+BOSS_N:'';$('hShelf').textContent=G.boss&&!LAND?'SHELF 08':'SHELF '+String(G.si+1).padStart(2,'0')+(LAND?' / 08':'/08')+(G.boss?'　組 '+rn:'');$('hName').textContent=G.boss&&!LAND?'組 '+rn:S.nm;if(S.prac)$('hShelf').textContent='PRACTICE';$('hQ').textContent=Q[curQ()]?Q[curQ()].t:'';
  const z=Z()&&Z().state?Z().state():null;$('hK').innerHTML=(z?'かけら <b>'+z.kakera+'</b>':'')+(G.combo>=2?'<span class="cb">連続的中 ×'+G.combo+'</span>':'');
  $('hTime').hidden=!G.boss;$('bMute').textContent=SV.mute?'消音':'音';
  const pb=$('bPrint');pb.disabled=!G.bags.some(b=>b.popped&&b.res)||!!G.boss;pb.hidden=!!G.boss;pb.classList.toggle('go',!!findPair()&&!G.boss)}
@@ -2689,9 +2725,31 @@ function initTitle(){if(window.PLAYER_NAME)$('nameIn').value=window.PLAYER_NAME;
 let arm=false;
 $('btnStart').onclick=()=>{ac();SV.name=$('nameIn').value.trim();
  if(hasSave()&&SV.stage>0&&!arm){arm=true;$('btnStart').textContent='本当に はじめから？（記録が消える）';setTimeout(()=>{arm=false;initTitle()},3500);return}
- if(arm){const nm=SV.name,mu=SV.mute;SV=freshSave();SV.name=nm;SV.mute=mu;arm=false}save();SFX.shutter();startStage(0)};
+ if(arm){const nm=SV.name,mu=SV.mute;SV=freshSave();SV.name=nm;SV.mute=mu;arm=false}save();SFX.shutter();
+ if(!window.Guide){startStage(0);return}if(busy)return;busy=true;Guide.intro(INTRO).then(()=>{busy=false;Guide.tutorial(PRACTICE)})};
+let busy=false;
+const INTRO={title:'第9回 暗室の袋わり',learn:'植物も **呼吸** して 二酸化炭素を出す（植物を入れない袋と **比べて** 言い切れる）',
+ how:'ゲージを **なぞって** 予言 → 発射台を **引いて** 袋を割る → **焼きつける**',gesture:'drag'};
+const onCv=(x,y,r)=>({x,y,r:r||20,el:cv});
+function gBot(i){return ()=>{const b=G&&G.bags[i];if(!b||!b.ga)return {x:innerWidth/2,y:innerHeight/2,r:20};return onCv(b.ga.x+b.ga.w/2,b.ga.y+b.ga.h-6,18)}}
+function gTo(i){return ()=>{const b=G&&G.bags[i];if(!b||!b.ga)return {x:innerWidth/2,y:innerHeight/2,r:20};return onCv(b.ga.x+b.ga.w/2,b.ga.y+b.ga.h*(1-cloudOf(b)),16)}}
+function gTop(i){return ()=>{const b=G&&G.bags[i];if(!b||!b.ga)return {x:innerWidth/2,y:innerHeight/2,r:20};return onCv(b.ga.x+b.ga.w/2,b.ga.y+10,18)}}
+function gArea(i){return ()=>{const b=G&&G.bags[i];if(!b||!b.ga)return {x:innerWidth/2,y:innerHeight/2,r:20};const z=gaugeZone(b);return {x:z.x+z.w/2,y:z.y+z.h/2,w:z.w+8,h:z.h+8,el:cv}}}
+function lPt(){if(!G||!G.L)return {x:innerWidth/2,y:innerHeight*.85,r:30};return onCv(G.L.lx,G.L.ly,32)}
+function lTo(i){return ()=>{if(!G||!G.L)return {x:innerWidth/2,y:innerHeight*.95,r:20};const b=G.bags[i],p=bagPos(b),K=LAND?3.3:3.9;return onCv(G.L.lx-(p.cx-G.L.lx)/K,G.L.ly-(p.cy-G.L.ly)/K,18)}}
+const released=i=>()=>!!(G&&G.bags[i]&&G.bags[i].pred!=null&&!G.drag);
+const PSTEPS=[
+ {gesture:'drag',target:gBot(0),to:gTo(0),area:gArea(0),until:released(0),praise:false,text:'割る前に 予言。**A 葉の袋** の石灰水は どれくらい白くにごる？ ゲージを **なぞって** 決める'},
+ {gesture:'drag',target:gTop(1),to:gBot(1),area:gArea(1),until:released(1),praise:false,text:'**B 空気だけ** の袋は？ こちらも なぞって予言'},
+ {gesture:'drag',target:lPt,to:lTo(0),until:()=>!!(G&&G.bags[0].popped),praise:false,text:'発射台を **下へ引いて はなす** と ダーツが飛ぶ。**A** をねらおう'},
+ {gesture:'drag',target:lPt,to:lTo(1),until:()=>!!(G&&G.bags[1].popped),praise:false,text:'**B** も割って 比べよう'},
+ {gesture:'tap',target:'#bPrint',until:()=>!!(G&&G.printed),praise:false,text:'2袋そろった。**焼きつける** で結論を出す',wait:900},
+ {gesture:'tap',target:'#pNext',until:()=>!!(G&&G.pracDone),praise:false,text:'「植物を入れない袋」と比べたから **言い切れる**！'}];
+const PRACTICE={label:'れんしゅう中',bandAt:'bottom',steps:PSTEPS,clearText:'れんしゅうクリア！',start:()=>{ac();startStage(-1)},
+ onExit:res=>{if(res&&(res.stopped||res.replaced))return;G=null;ovClose();if(SV.stage>0)openMap();else startStage(0)}};
 $('btnCont').onclick=()=>{ac();SV.name=$('nameIn').value.trim()||SV.name;save();SFX.click();openMap()};
 $('btnBookT').onclick=()=>{try{Z().openBook()}catch(e){}};
+if(window.Guide)Guide.tutorialButton('#btnHow',()=>{ac();SFX.click();Guide.tutorial(PRACTICE)});else $('btnHow').hidden=true;
 $('btnBookM').onclick=()=>{try{Z().openBook()}catch(e){}};
 
 /* ================= 棚の地図 ================= */
@@ -2750,9 +2808,26 @@ function frame(now){const dt=Math.min(.05,Math.max(0,(now-last)/1000));last=now;
 let rzT=0;window.addEventListener('resize',()=>{clearTimeout(rzT);rzT=setTimeout(()=>{orient();if(scene==='play')layoutPlay();if(scene==='title')titleResize()},80)});
 if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>{if(scene==='play'&&G)layoutPlay()});
 /* ================= はじまり ================= */
+let HELP=null;
+function helpMount(){orient();return LAND?document.querySelector('#hud .h-rt'):$('hQw')}
+addEventListener('resize',()=>{if(HELP)HELP.update({mount:helpMount()})});
+if(window.Guide){
+ Guide.setup({theme:{bg:'#0B100D',fg:'#E6ECEA',accent:'#FFD166',accentText:'#070A08',font:FONT,bodyFont:FONT,radius:0,texture:'grain',line:'rgba(230,236,234,.85)',dim:'rgba(3,5,4,.58)',
+   shadow:'0 0 0 4px #070A08, 0 0 0 5px rgba(230,236,234,.3), 0 0 30px rgba(230,236,234,.14)',outline:'#070A08',hand:'#E6ECEA',handLine:'#070A08'},
+  sfx:k=>{if(k==='step')SFX.set();else if(k==='nudge')SFX.tick();else if(k==='done')SFX.hit(2);else if(k==='clear')SFX.fan();else if(k==='open'||k==='close')SFX.shutter();else if(k==='cheer')SFX.clink()},
+  muted:()=>SV.mute});
+ HELP=Guide.help({title:INTRO.title,learn:INTRO.learn,how:INTRO.how,gesture:'drag',mount:helpMount(),size:44,show:false,attention:true,replay:'tutorial',
+  rules:['割る前に、袋の **石灰水のゲージ** をなぞって にごり方を予言（予言していない袋は割れない）',
+   '発射台を **下へ引いて はなす** と、引いた反対へダーツが飛ぶ',
+   '予言と結果の差が15以内で **的中**。つづけて的中すると **連続**',
+   '問いに合う「ちがう条件が **1つだけ** の2袋」を割ったら **焼きつける**',
+   '穴のあいた袋は 気体がにげる。比べる結果には使えない'],
+  onOpen:()=>{if(scene==='play'&&G&&!G.paused){G.paused=true;G.hp=1}},
+  onClose:()=>{if(G&&G.hp){G.hp=0;G.paused=false}}});
+}
 window.GAME_ID=GAME_ID;
 try{window.Zukan&&Zukan.setup({game:GAME_ID,koma:[KOMA]})}catch(e){}
-window.__db={get G(){return G},get SV(){return SV},startStage,startTest,openMap,Q,cloudOf,
+window.__db={get G(){return G},bagPos,lTo,gTo,gBot,gTop,get SV(){return SV},startStage,startTest,openMap,Q,cloudOf,
  predict(i,v){const b=G.bags[i];b.pred=v},throwAt(i){const b=G.bags[i],p=bagPos(b);throwDart(p.cx,p.cy)},print(){doPrint()},findPair};
 if(window.GAME_MODE==='test'){startTest()}else{show('scTitle');initTitle()}
 requestAnimationFrame(frame);

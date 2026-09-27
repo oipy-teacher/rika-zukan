@@ -221,7 +221,13 @@ h1.tt span.b{font-size:1.02em;background-image:linear-gradient(100deg,#FF7AA2 0%
   .tt-bot{max-width:600px;align-self:center}
   .ttl{align-self:center;text-align:center}
 }
-@media (prefers-reduced-motion:reduce){.fb::after,.pack::after,.bc.got::after,h1.tt span{animation:none}}
+/* 仕上げ（2026-09-28）：れんしゅう中も もどる／一時停止が見えて押せる・★のドン */
+#bBack{z-index:2147482605}
+#scrBackQ,#scrPause{position:fixed;z-index:2147482700}
+.stars div.on i{animation:gcStamp .45s cubic-bezier(.2,1.8,.4,1) both}
+@keyframes gcStamp{0%{transform:scale(2.8) rotate(-20deg);opacity:0}60%{transform:scale(.85);opacity:1}100%{transform:scale(1)}}
+#ctl .gd-hbtn.inl{flex:none;align-self:center;pointer-events:auto}
+@media (prefers-reduced-motion:reduce){.fb::after,.pack::after,.bc.got::after,h1.tt span,.stars div.on i{animation:none}}
 </style>
 </head>
 <body>
@@ -237,7 +243,7 @@ h1.tt span.b{font-size:1.02em;background-image:linear-gradient(100deg,#FF7AA2 0%
   <div class="tt-bot">
     <div class="nm" id="nmRow"><label for="nameIn">プレイヤー名</label><input id="nameIn" maxlength="16" placeholder="なまえ（なくてもOK）" autocomplete="off"></div>
     <button class="fb pk" id="bStart">パックをあける（はじめる）</button>
-    <div class="row"><button class="fb sm" id="bCont">つづきから</button><button class="fb dk sm" id="bBook1">📖 図鑑</button></div>
+    <div class="row"><button class="fb sm" id="bCont">つづきから</button><button class="fb dk sm" id="bHow">🔰 あそびかた</button><button class="fb dk sm" id="bBook1">📖 図鑑</button></div>
   </div>
 </div>
 
@@ -248,8 +254,8 @@ h1.tt span.b{font-size:1.02em;background-image:linear-gradient(100deg,#FF7AA2 0%
 </div>
 
 <div id="scrPlay" class="scr hidden">
-  <button class="fb dk tb" id="bMute" aria-label="音">🔊</button>
-  <button class="fb dk tb" id="bPause" aria-label="一時停止">⏸</button>
+  <button class="fb dk tb" id="bMute" aria-label="音" data-gd-pass>🔊</button>
+  <button class="fb dk tb" id="bPause" aria-label="一時停止" data-gd-pass>⏸</button>
   <div id="ctl">
     <button class="fb dk" id="cHold"><small>HOLD</small>とっておく</button>
     <button class="fb pk" id="cRot"><small>TAP</small>直列 ⇄ 並列</button>
@@ -276,7 +282,7 @@ h1.tt span.b{font-size:1.02em;background-image:linear-gradient(100deg,#FF7AA2 0%
   </div></div>
 </div>
 
-<div id="scrPause" class="scr hidden dim">
+<div id="scrPause" class="scr hidden dim" data-gd-pass>
   <div class="pan slab"><div class="in"><span class="lbl">PAUSE</span><h2>一時停止<small>カードは空中で止まっている</small></h2>
     <div class="btns"><button class="fb dk sm" id="pMap">パックの箱へ</button><button class="fb pk" id="pGo">つづける</button></div></div></div>
 </div>
@@ -316,7 +322,7 @@ h1.tt span.b{font-size:1.02em;background-image:linear-gradient(100deg,#FF7AA2 0%
   </div></div>
 </div>
 
-<div id="scrBackQ" class="scr hidden">
+<div id="scrBackQ" class="scr hidden" data-gd-pass>
   <div class="pan slab"><div class="in"><span class="lbl">BACK</span><h2 id="bkT">もどりますか？<small id="bkSub">進み具合は保存されます。</small></h2>
     <div class="btns"><button class="fb dk sm" id="bkNo">つづける</button><button class="fb pk" id="bkGo">もどる</button></div></div></div>
 </div>
@@ -2466,8 +2472,8 @@ function ftxt(x,y,s,col,sz,life,sub){FT.push({x:x,y:y,s:s,c:col||'#fff',z:sz||22
 function toast(t,b,ms){$('toT').textContent=t;$('toB').innerHTML=b;var el=$('toast');el.classList.remove('off');clearTimeout(toast.h);toast.h=setTimeout(function(){el.classList.add('off')},ms||4200)}
 
 function pick(a){return a[Math.floor(Math.random()*a.length)]}
-function newStage(si){var S=STAGES[si];
-  G={si:si,S:S,lanes:[],cur:null,next:0,hold:0,holdOn:!!(S.hold||si>=3),clears:0,miss:0,combo:0,maxCombo:0,score:0,t:0,state:'fall',res:null,placed:0,left:S.time||0,paused:false,okS:0,okP:0,newBin:[],tut:S.tut&&!(SV.stars[0]&&SV.stars[0][0])?1:0,tutStep:0,endT:0,ms0:Date.now()};
+function newStage(si,forceTut){var S=STAGES[si];
+  G={si:si,S:S,lanes:[],cur:null,next:0,hold:0,holdOn:!!(S.hold||si>=3),clears:0,miss:0,combo:0,maxCombo:0,score:0,t:0,state:'fall',res:null,placed:0,left:S.time||0,paused:false,okS:0,okP:0,newBin:[],tut:S.tut&&(forceTut||!(SV.stars[0]&&SV.stars[0][0]))?1:0,tutStep:0,endT:0,ms0:Date.now()};
   layout();
   for(var i=0;i<S.lanes;i++){G.lanes.push({floor:0,base:pick(S.base||S.vals),kind:null,trapLeft:0,pair:null,fl:0,drop:0,shake:0})}
   if(G.tut){G.lanes[0].kind='Rbig';G.lanes[1].kind='Rsmall';G.lanes[0].base=10;G.lanes[1].base=10}
@@ -2505,14 +2511,14 @@ function verdict(){var r=G.res,l=G.lanes[r.li],cx=laneX(r.li),cy=rowY(l.floor+(r
   if(r.ok){G.combo++;G.maxCombo=Math.max(G.maxCombo,G.combo);G.clears++;SV.okN=(SV.okN||0)+1;var pts=100*G.combo;G.score+=pts;
     if(r.mode==='S')G.okS++;else G.okP++;
     var rare=G.combo>=5,key=binKey(r.a,r.b,r.mode),had=SV.bin[key];SV.bin[key]={n:(had?had.n:0)+1,r:(had&&had.r)||rare};if(!had||(rare&&!had.r))G.newBin.push({k:key,rare:rare});G.recent=G.recent||[];G.recent.unshift({a:r.a,b:r.b,m:r.mode,R:r.Rt,rare:rare});G.recent.length=Math.min(G.recent.length,4);
-    G.combo>=3?SFX.big():SFX.ok(G.combo);
+    G.combo>=3?SFX.big():SFX.ok(G.combo);okFX(cx,cy,pts);
     spark(cx,cy,G.combo>=3?46:26,[PK,GOLD,MINT,SKY,'#fff'],G.combo>=3?360:240,3.4);
     var cmp=r.mode==='S'?'どちらの抵抗よりも 大きい':'どちらの抵抗よりも 小さい';
     ftxt(cx,cy-LY.rh*.55,'合体 '+fmtR(r.Rt),'#fff',Math.max(18,LY.lw*.13),1.7,(r.mode==='S'?'直列：':'並列：')+cmp);
     if(G.combo>=2)ftxt(LM?W/2:W/2,LY.well.y+LY.oh+LY.rh*1.2,'COMBO ×'+G.combo,G.combo>=5?GOLD:PK,Math.min(64,28+G.combo*5)*U*.9,1.2,'+'+pts);
     if(G.combo>=3&&l.floor>0){r.clean=1;ftxt(cx,floorY(l.floor-1)-10,'焦げカード1枚 片付いた','#9CF2D0',13*U,1.6)}
     l.fl=1;save();checkRules(r)
-  }else{G.combo=0;G.miss++;SFX.ng();l.shake=RM?0:.5;
+  }else{var was=G.combo;G.combo=0;G.miss++;SFX.ng();l.shake=RM?0:.5;ngFX(was);
     spark(cx,cy,14,[NGC,'#555C78'],160,3);
     var why=r.need==='X'?'2枚をつなぐと、直列は大きい方より大きく、並列は小さい方より小さくなる。あいだの値にはならない':
       r.mode==='P'?'並列にすると、全体の抵抗は どちらの抵抗よりも小さくなる（全体の電流は大きくなる）':'直列にすると、全体の抵抗は どちらの抵抗よりも大きくなる（全体の電流は小さくなる）';
@@ -2540,7 +2546,7 @@ var KAK=0;function refreshK(){try{var z=Zk();KAK=z&&z.state?(z.state().kakera||0
 function overflow(li){G.state='over';SFX.ng();G.lanes[li].shake=1;
   setTimeout(function(){if(!G||G.state!=='over')return;$('fSub').innerHTML='PACK '+pad2(G.si+1)+'「'+G.S.n+'」<br>合体 '+G.clears+' / '+G.S.target+'　焦げカードが積もって列があふれた。<br>注文を「大きく？小さく？」に言いかえてから向きを決めよう。';$('fTitle').firstChild.nodeValue='列があふれた！';showScr('scrPlay','scrFail')},900)}
 function timeUp(){G.state='over';SFX.ng();setTimeout(function(){if(!G)return;$('fTitle').firstChild.nodeValue='時間切れ！';$('fSub').innerHTML='ガッタイ王まで あと '+(G.S.target-G.clears)+' 合体（'+G.clears+' / '+G.S.target+'）。<br>ムリ注文は放っておくのも正解。';showScr('scrPlay','scrFail')},700)}
-function stageClear(){G.state='clear';SFX.clear();var si=G.si,st=[true,G.miss===0,G.maxCombo>=Math.min(5,G.S.target)];
+function stageClear(){G.state='clear';if(window.Guide&&!RM)Guide.celebrate(G.S.boss?'ガッタイ王 撃破！':'PACK CLEAR！');else SFX.clear();var si=G.si,st=[true,G.miss===0,G.maxCombo>=Math.min(5,G.S.target)];
   var old=SV.stars[si]||[false,false,false];SV.stars[si]=old.map(function(v,i){return v||st[i]});SV.unl=Math.max(SV.unl,Math.min(STAGES.length,si+2));
   SV.ms+=Date.now()-G.ms0;SV.maxCombo=Math.max(SV.maxCombo||0,G.maxCombo);var b=SV.best[si]||{};SV.best[si]={score:Math.max(b.score||0,G.score),combo:Math.max(b.combo||0,G.maxCombo)};
   if(G.S.boss){if(!SV.done){SV.done=1;SV.clearMs=SV.ms}}save();
@@ -2556,7 +2562,7 @@ function update(dt){if(!G||G.paused)return;G.t+=dt;
   if(G.S.time&&(G.state==='fall'||G.state==='res')){var pl=G.left;G.left-=dt;if(G.left<10&&Math.floor(pl)!==Math.floor(G.left))SFX.warn();if(G.left<=0){G.left=0;return timeUp()}}
   var cu=G.cur;
   if(G.state==='fall'&&cu){var slow=G.tut&&G.tutStep<2&&!cu.fast?.55:1;var sp=ROWS/G.S.fall*(cu.fast?16:1)*slow;cu.y+=sp*dt;cu.x+=(laneX(cu.lane)+(cu.mode==='P'?LY.lw*.21:0)-cu.x)*Math.min(1,dt*18);cu.mx=Math.max(0,cu.mx-dt*4);
-    var ly=ROWS-1-landRow(G.lanes[cu.lane],cu.mode);if(cu.y>=ly){cu.y=ly;land()}}
+    var ly=ROWS-1-landRow(G.lanes[cu.lane],cu.mode);if(cu.y>=ly){if(G.tut&&G.tutStep<2&&!tutOK(cu)){cu.y=ly-.45;if(cu.fast){cu.fast=false;tutNudge(cu)}}else{cu.y=ly;land()}}}
   if(G.state==='res'&&G.res){G.res.t+=dt;var l=G.lanes[G.res.li];if(l.pair)l.pair.t+=dt;if(!G.res.verdict&&G.res.t>=.6)verdict();if(G.res&&G.res.t>=1.45)finishRes()}
   G.lanes.forEach(function(l){l.fl=Math.max(0,l.fl-dt*1.2);l.drop=Math.max(0,l.drop-dt*4);l.shake=Math.max(0,l.shake-dt)});
   if(G.why){G.why.t-=dt;if(G.why.t<=0)G.why=null}}
@@ -2621,7 +2627,7 @@ function drawPlay(){drawBg();if(!G)return;var wl=LY.well;
     var tag=cu.mode==='S'?'直列｜縦に重ねる':'並列｜横に並べる',fs=Math.max(10.5,Math.min(15,LY.lw*.085));c.font='400 '+fs+'px '+FH;var tw=c.measureText(tag).width+14;
     var tx0=Math.max(wl.x+4,Math.min(wl.x+wl.w-tw-4,cu.x-tw/2)),ty0=cy-LY.ch*.52-fs-12;rr(tx0,ty0,tw,fs+10,6);c.fillStyle=cu.mode==='S'?foilFill(tx0,ty0,tw,fs+10):pinkFill(tx0,ty0,tw,fs+10);c.fill();
     c.fillStyle='#141830';c.textAlign='center';c.textBaseline='middle';c.fillText(tag,tx0+tw/2,ty0+(fs+10)/2+1);
-    if(G.tut)drawTut(cu,cy)}
+    if(G.tut&&!window.Guide)drawTut(cu,cy)}
   // パーティクル・文字
   drawFx();
   if(LM)drawSideL(),drawSideR();else drawStrip();
@@ -2798,7 +2804,7 @@ $('cRot').onclick=function(){ac();toggle()};$('cDrop').onclick=function(){ac();h
 var SCR=['scrTitle','scrMap','scrPlay','scrClear','scrFail','scrPause','scrBinder','scrTest','scrEnd'];
 function showScr(){var on=[].slice.call(arguments);SCR.forEach(function(id){$(id).classList.toggle('hidden',on.indexOf(id)<0)})}
 var INHUB=!!window.COLLECTION_NAME||(function(){try{return window.parent!==window}catch(e){return true}})();
-function backBtn(){var b=$('bBack'),on=scene==='play'||scene==='map'||scene==='test'||scene==='end'||(scene==='title'&&INHUB);b.classList.toggle('hidden',!on);b.textContent=scene==='title'?'◀ 一覧へ':'◀ もどる';$('scrBackQ').classList.add('hidden')}
+function backBtn(){placeHelp();var b=$('bBack'),on=scene==='play'||scene==='map'||scene==='test'||scene==='end'||(scene==='title'&&INHUB);b.classList.toggle('hidden',!on);b.textContent=scene==='title'?'◀ 一覧へ':'◀ もどる';$('scrBackQ').classList.add('hidden')}
 var backFrom=null,backPaused=false;
 $('bBack').onclick=function(){ac();
   if(scene==='title'){try{window.parent.postMessage({type:'rika-close-game'},'*')}catch(e){}return}
@@ -2806,8 +2812,8 @@ $('bBack').onclick=function(){ac();
   $('bkSub').textContent=scene==='test'?'確認テストは、次はさいしょから。パックの進み具合は保存されています。':scene==='map'||scene==='end'?'進み具合は保存されます。タイトルにもどります。':'進み具合は保存されます（開けたパックと★・バインダーはそのまま。このパックは次はさいしょから）。';
   $('bkGo').textContent=scene==='map'||scene==='end'?'タイトルへ':'パックの箱へ';$('scrBackQ').classList.remove('hidden')};
 $('bkNo').onclick=function(){$('scrBackQ').classList.add('hidden');if(backFrom==='play'&&G&&!backPaused)G.paused=false};
-$('bkGo').onclick=function(){$('scrBackQ').classList.add('hidden');if(backFrom==='map'||backFrom==='end')setScene('title');else{G=null;setScene('map')}};
-function setScene(s){scene=s;backBtn();
+$('bkGo').onclick=function(){$('scrBackQ').classList.add('hidden');leavePractice();if(backFrom==='map'||backFrom==='end')setScene('title');else{G=null;setScene('map')}};
+function setScene(s){scene=s;backBtn();if(HELP){if(s==='map')HELP.show();else HELP.hide()}
   if(s==='title'){showScr('scrTitle');refreshTitle()}else if(s==='map'){refreshK();buildPacks();showScr('scrMap')}
   else if(s==='play')showScr('scrPlay');else if(s==='test')showScr('scrTest');else if(s==='end')showScr('scrEnd');
   $('bMute').textContent=muted?'🔇':'🔊'}
@@ -2817,20 +2823,20 @@ function buildPacks(){var h='',tot=0;STAGES.forEach(function(S,i){var st=SV.star
   $('packs').innerHTML=h;[].forEach.call($('packs').querySelectorAll('.pack'),function(b){b.onclick=function(){ac();SFX.pack();startStage(+b.dataset.i)}});
   $('mStat').innerHTML='★ '+tot+' / 30<br>合体カード '+binCount()+' / 30'+(Zk()?'<br>かけら ◆'+KAK:'');
   $('bToTest').disabled=!SV.done;$('bToTest').innerHTML=SV.done?'📋 鑑定へ':'📋 鑑定（ボス後）'}
-function startStage(i){G=null;newStage(i);scene='play';backBtn();showScr('scrPlay');$('cHold').disabled=!G.holdOn;$('bMute').textContent=muted?'🔇':'🔊';
+function startStage(i,forceTut){G=null;newStage(i,forceTut);if(HELP)HELP.show();scene='play';backBtn();showScr('scrPlay');$('cHold').disabled=!G.holdOn;$('bMute').textContent=muted?'🔇':'🔊';
   if(!G.tut)toast('PACK '+pad2(i+1)+'「'+G.S.n+'」',G.S.note+'<br>合体 '+G.S.target+' 回でパック完了',2600)}
 function showClear(){if(!G)return;var st=SV.stars[G.si],S=G.S,now=[true,G.miss===0,G.maxCombo>=Math.min(5,S.target)];showScr('scrPlay','scrClear');
   $('cLbl').textContent=S.boss?'BOSS CLEAR':'PACK CLEAR';$('cTitle').firstChild.nodeValue=S.boss?'ガッタイ王に勝った！':'パック完了！';
   $('cSub').textContent='PACK '+pad2(G.si+1)+'「'+S.n+'」'+(S.boss?' ─ 150秒で12合体':'');
-  var L=['パック完了','ノーミス','コンボ'+Math.min(5,S.target)+'以上'];$('cStars').innerHTML=now.map(function(v,i){return'<div class="'+(v?'on':'')+'"><i>★</i>'+L[i]+'</div>'}).join('');
+  var L=['パック完了','ノーミス','コンボ'+Math.min(5,S.target)+'以上'];$('cStars').innerHTML=now.map(function(v,i){return'<div><i>★</i>'+L[i]+'</div>'}).join('');stampStars(now);
   $('cRec').innerHTML='<span>最大コンボ<b>'+G.maxCombo+'</b></span><span>ミス<b>'+G.miss+'</b></span><span>SCORE<b>'+G.score+'</b></span><span>時間<b>'+fmtT(G.t*1000)+'</b></span>';
   $('newCards').innerHTML=G.newBin.length?'<div style="width:100%;font:400 12px var(--fh);color:#FFE08A">NEW 合体カード</div>'+G.newBin.slice(0,8).map(function(o){return binHTML(o.k,true,o.rare)}).join(''):'';
   $('cNext').textContent=S.boss?'📋 鑑定へ（確認テスト）':'次のパック'}
 $('cNext').onclick=function(){ac();if(!G)return;if(G.S.boss)toTest();else{SFX.pack();startStage(Math.min(STAGES.length-1,G.si+1))}};
 $('cMap').onclick=function(){G=null;setScene('map')};
 $('fRetry').onclick=function(){ac();var i=G?G.si:0;SFX.pack();startStage(i)};$('fMap').onclick=function(){G=null;setScene('map')};
-$('bPause').onclick=function(){if(!G||G.state!=='fall'&&G.state!=='res')return;G.paused=true;showScr('scrPlay','scrPause')};
-$('pGo').onclick=function(){if(G)G.paused=false;showScr('scrPlay')};$('pMap').onclick=function(){G=null;setScene('map')};
+$('bPause').onclick=function(){if(!G||G.state!=='fall'&&G.state!=='res')return;G.paused=true;$('scrPause').classList.remove('hidden')};
+$('pGo').onclick=function(){if(G)G.paused=false;$('scrPause').classList.add('hidden');showScr('scrPlay')};$('pMap').onclick=function(){$('scrPause').classList.add('hidden');leavePractice();G=null;setScene('map')};
 $('bMute').onclick=function(){muted=!muted;try{localStorage.setItem(SKEY+':mute',muted?'1':'0')}catch(e){}$('bMute').textContent=muted?'🔇':'🔊'};
 function toTest(){var z=Zk();if(z&&z.mainClear&&!TEST){try{z.mainClear({onClose:startTest});return}catch(e){}}startTest()}
 $('bToTest').onclick=function(){if(SV.done)startTest()};
@@ -2843,7 +2849,9 @@ function binHTML(k,got,rb){var p=k.split('-'),a=+p[0],b=+p[1],m=p[2],R=m==='S'?a
 $('bBinder').onclick=function(){$('bGrid').innerHTML=BINALL.map(function(k){var o=SV.bin[k];return binHTML(k,!!o,o&&o.r)}).join('');$('bCount').textContent=binCount()+' / 30';showScr('scrMap','scrBinder')};
 $('bBinClose').onclick=function(){showScr('scrMap')};
 function getName(){return(window.PLAYER_NAME||$('nameIn').value||SV.name||'').trim()}
-$('bStart').onclick=function(){ac();SFX.pack();SV.name=$('nameIn').value.trim()||SV.name;save();if(SV.unl<=1&&!(SV.stars[0]&&SV.stars[0][0]))startStage(0);else setScene('map')};
+$('bStart').onclick=function(){ac();SFX.pack();SV.name=$('nameIn').value.trim()||SV.name;save();var first=SV.unl<=1&&!(SV.stars[0]&&SV.stars[0][0]);
+  if(!window.Guide){if(first)startStage(0);else setScene('map');return}
+  Guide.intro(INTRO).then(function(){if(scene!=='title')return;if(first)Guide.tutorial(PRACTICE);else setScene('map')})};
 $('bCont').onclick=function(){ac();SV.name=$('nameIn').value.trim()||SV.name;save();setScene('map')};
 
 /* ================= 確認テスト（鑑定書） ================= */
@@ -2885,12 +2893,13 @@ $('eMap').onclick=function(){setScene('map')};
 var last=performance.now();
 function frame(now){var dt=Math.min(.05,(now-last)/1000);last=now;T+=dt;
   c.setTransform(DPR,0,0,DPR,0,0);
-  if(scene==='play'&&G){update(dt);drawPlay()}
+  if(scene==='play'&&G){update(dt);c.save();if(SHK>0&&!RM)c.translate((Math.random()-.5)*SHK*20,(Math.random()-.5)*SHK*14);drawPlay();c.restore();
+    if(FLS>0&&!RM){c.save();c.globalCompositeOperation='lighter';c.fillStyle='rgba(255,214,228,'+(FLS*.32).toFixed(3)+')';c.fillRect(0,0,W,H);c.restore()}SHK=Math.max(0,SHK-dt*1.6);FLS=Math.max(0,FLS-dt*2.6);practiceWatch()}
   else if(scene==='title')drawTitle();
   else drawMapBg();
   updFx(dt);if(scene!=='play')drawFx();
   requestAnimationFrame(frame)}
-document.addEventListener('visibilitychange',function(){if(document.hidden&&scene==='play'&&G&&G.state==='fall'&&!G.paused){G.paused=true;showScr('scrPlay','scrPause')}});
+document.addEventListener('visibilitychange',function(){if(document.hidden&&scene==='play'&&G&&G.state==='fall'&&!G.paused){G.paused=true;$('scrPause').classList.remove('hidden')}});
 
 /* ================= はじまり ================= */
 if(INHUB)document.body.classList.add('inhub');
@@ -2898,10 +2907,60 @@ resize();
 window.Zukan&&Zukan.setup&&Zukan.setup({game:GID,koma:[KOMA]});
 refreshK();
 if(window.PLAYER_NAME){$('nameIn').value=window.PLAYER_NAME;$('nmRow').classList.add('hidden')}else if(SV.name)$('nameIn').value=SV.name;
+
+/* ================= 仕上げ（2026-09-28）：遊び方案内 Guide・れんしゅう・演出どぱどぱ ================= */
+['bBack','scrBackQ','scrPause'].forEach(function(id){document.body.appendChild($(id))});
+function vib(ms){try{if(navigator.vibrate)navigator.vibrate(ms)}catch(e){}}
+document.addEventListener('pointerdown',function(e){var b=e.target&&e.target.closest&&e.target.closest('button');if(b&&!b.disabled)vib(8)},true);
+var SHK=0,FLS=0,TIERS=[3,5,10];
+function okFX(cx,cy,pts){SHK=Math.min(.55,.14+G.combo*.07);FLS=Math.min(1,.4+G.combo*.12);vib(G.combo>=3?[20,30,25]:18);
+  ftxt(cx+LY.lw*.28,cy-LY.rh*1.25,'+'+pts,GOLD,Math.max(22,LY.lw*.16),1.3);
+  if(G.combo===3)ftxt(W/2,LY.well.y+LY.oh+LY.rh*2.4,'焦げカードが 片付く！','#9CF2D0',Math.max(18,20*U),1.5);
+  if(G.combo===5){ftxt(W/2,LY.well.y+LY.oh+LY.rh*2.4,'虹のシークレット！',GOLD,Math.max(22,26*U),1.8);for(var i=0;i<(RM?1:3);i++)setTimeout(function(){spark(W*(.25+Math.random()*.5),H*(.25+Math.random()*.3),50,[PK,GOLD,MINT,SKY,'#fff'],420,3.6)},i*160)}}
+function ngFX(was){var t=TIERS.filter(function(v){return v>was})[0];if(was<2||!t)return;
+  setTimeout(function(){if(!G)return;ftxt(W/2,LY.well.y+LY.oh+LY.rh*2.2,t-was===1?'あと1回で ×'+t+' だった！':'COMBO ×'+was+' でストップ','#FFC2D4',Math.max(18,22*U),2)},250)}
+function stampStars(now){var ds=[].slice.call($('cStars').children);ds.forEach(function(d,i){if(now[i])setTimeout(function(){d.classList.add('on');[1047,1319,1568][i]&&tone([1047,1319,1568][i],.4,'sine',.1);noise(.12,.1,3000);vib(25)},RM?0:450+i*420)})}
+/* ---- れんしゅう：1面の最初の2枚（直列1枚・並列1枚） ---- */
+function tutOK(cu){return G.tutStep===0?(cu.lane===0&&cu.mode==='S'):(cu.lane===1&&cu.mode==='P')}
+function tutNudge(cu){ftxt(cu.x,LY.chTop+(cu.y-.2)*LY.rh,G.tutStep===0?'このカードは 縦に（直列）':'右の列・並列にしてから','#FFC2D4',Math.max(15,LY.lw*.1),1.3);SFX.warn()}
+function cardT(){if(!G||!G.cur||G.state!=='fall')return null;var cu=G.cur;return{x:cu.x,y:LY.chTop+(cu.y+.5)*LY.rh,w:LY.cw*1.1,h:LY.ch*1.1,el:cv}}
+function lane1T(){var q=cardT();if(!q)return null;return{x:laneX(1),y:q.y,r:26,el:cv}}
+var PR={on:false,leaving:false};
+function leavePractice(){if(!PR.on)return;PR.leaving=true;if(window.Guide)Guide.tutorialEnd();PR.on=false}
+function practiceWatch(){}
+function placeHelp(){if(!HELP)return;var inl=!LM&&scene==='play';HELP.update({mount:inl?$('ctl'):null,size:inl?52:null})}
+var PRACTICE={label:'れんしゅう中',clearText:'れんしゅうクリア！',block:true,
+  start:function(){ac();PR.on=true;PR.leaving=false;startStage(0,true)},
+  steps:[
+    {gesture:'swipe',dir:'down',target:cardT,until:function(){return G&&(G.cur&&G.cur.fast||G.tutStep>=1)},label:'下へはらう',
+      text:'左の列の注文は「全体の抵抗を **大きく**」→ **縦に重ねる（直列）**。カードを **下へはらって ストン！**'},
+    {gesture:'drag',target:cardT,to:lane1T,until:function(){return G&&G.tutStep>=1&&G.cur&&G.cur.lane===1},label:'ドラッグ',
+      text:'つぎは 右の列「全体の抵抗を **小さく**」。カードを **右の列へ ドラッグ**'},
+    {gesture:'tap',target:cardT,until:function(){return G&&G.cur&&G.cur.mode==='P'},label:'タップ',
+      text:'カードを **タップ** して「**並列**（横に並べる）」に切りかえ'},
+    {gesture:'swipe',dir:'down',target:cardT,until:function(){return G&&(G.tutStep>=2||G.cur&&G.cur.fast&&G.cur.lane===1&&G.cur.mode==='P')},label:'下へはらう',
+      text:'**下へはらって ストン！** 並列なら 全体の抵抗は **小さく** なる'}],
+  onExit:function(res){if(PR.leaving||res.replaced){PR.leaving=false;return}PR.on=false;if(G){G.tut=0;if(G.S.tut&&G.clears<G.S.target)toast('ここから本番！','PACK 01「'+G.S.n+'」 ─ 合体 '+G.S.target+' 回でパック完了',2800)}}};
+var INTRO={title:'ガッタイ・レジスター',learn:'抵抗を **直列につなぐと全体の抵抗は大きく**、**並列につなぐと小さく** なる',how:'カードを **ドラッグで列えらび**・**タップで直列⇄並列**・**下へはらって ストン**',gesture:'swipe'};
+var HELP=null;
+if(window.Guide){
+  Guide.setup({theme:{bg:'#1B2036',fg:'#EEF1F7',accent:PK,accentText:'#2A0B17',font:FH,bodyFont:FB,radius:16,
+      texture:'linear-gradient(115deg,rgba(255,122,162,.12),rgba(255,224,138,.08) 30%,rgba(156,242,208,.08) 55%,rgba(156,203,255,.12) 80%)',
+      line:SVC,dim:'rgba(8,10,20,.6)',shadow:'0 0 0 3px #8C95AA,0 6px 0 3px #07090F,0 18px 36px rgba(0,0,0,.55)',outline:'#141830',hand:'#fff',handLine:'#141830'},
+    sfx:function(k){if(k==='step')SFX.rot(true);else if(k==='done')SFX.ok(3);else if(k==='clear')SFX.clear();else if(k==='cheer')tone(1568,.18,'sine',.07);else if(k==='nudge')SFX.warn();else SFX.tick()},
+    muted:function(){return muted}});
+  HELP=Guide.help({learn:INTRO.learn,how:INTRO.how,title:INTRO.title,gesture:'swipe',show:false,attention:true,offset:{x:120},replay:'tutorial',
+    rules:['縦に重ねる＝**直列** → 全体の抵抗は **どちらのカードよりも大きい**（電流は小さい）','横に並べる＝**並列** → 全体の抵抗は **どちらのカードよりも小さい**（電流は大きい）',
+      '列の上の **注文** に合う向きで落とすと合体。まちがえると焦げカードが積もる','続けて合体すると **COMBO**。×3で焦げ1枚が片付き、×5で虹のカード','**HOLD**（パック4から）で、合わないカードをとっておける'],
+    onOpen:function(){HELP._p=G?G.paused:true;if(G)G.paused=true},onClose:function(){if(G&&!HELP._p)G.paused=false}});
+  addEventListener('resize',placeHelp);
+  Guide.tutorialButton('#bHow',function(){ac();SFX.pack();Guide.tutorial(PRACTICE)});
+}else $('bHow').classList.add('hidden');
+
 if(TEST){startTest()}else setScene('title');
 requestAnimationFrame(frame);
 /* 自動操作の確かめ用の窓口（遊びには影響しない） */
-window.__GC={G:function(){return G},start:startStage,lane:setLane,toggle:toggle,drop:hardDrop,hold:doHold,scene:function(){return scene},SV:function(){return SV},need:function(i){return G&&G.lanes[i]?needOf(G.lanes[i]):null}};
+window.__GC={pos:function(){return{card:cardT(),lane1:lane1T(),lanes:[laneX(0),laneX(1)],chTop:LY.chTop,rh:LY.rh}},PR:function(){return PR},G:function(){return G},start:startStage,lane:setLane,toggle:toggle,drop:hardDrop,hold:doHold,scene:function(){return scene},SV:function(){return SV},need:function(i){return G&&G.lanes[i]?needOf(G.lanes[i]):null}};
 })();
 </script>
 </body>

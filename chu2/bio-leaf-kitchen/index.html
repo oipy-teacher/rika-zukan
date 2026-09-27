@@ -68,6 +68,7 @@ button{font-family:var(--jp);cursor:pointer;color:inherit}
 .tt-foot{margin-top:12px;font-size:14px;background:rgba(244,233,216,.9);padding:4px 10px}
 /* 番組表（地図） */
 #mapBar{position:absolute;left:0;right:0;bottom:0;display:flex;flex-wrap:wrap;gap:12px;justify-content:center;padding:10px 10px calc(12px + env(safe-area-inset-bottom))}
+#scMap,#mapBar{pointer-events:none}#mapBar button{pointer-events:auto}
 /* HUD（もどる・音） */
 #bBack{position:absolute;left:8px;top:8px;z-index:20;border:0;background:none;padding:0;filter:drop-shadow(3px 3px 0 var(--ink))}
 #bBack span{display:flex;align-items:center;height:46px;padding:0 18px 0 30px;background:var(--mustard);color:var(--ink);font-size:17px;letter-spacing:.08em;
@@ -146,7 +147,17 @@ button{font-family:var(--jp);cursor:pointer;color:inherit}
 .qfb .ex{font-size:16px;line-height:1.7;text-align:left;margin:8px 0 12px}
 @media (max-width:600px){.jar{width:74px;height:86px}#sealHead{font-size:14px}#sealHead h2{font-size:19px}}
 @media (max-width:720px){.qbody{flex-direction:column}.qtext{font-size:17px}.card{padding:10px 12px 18px}}
-@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+/* 仕上げ 2026-09-28（lk-finish-2026-09-28）: ✦のドン・スターバーストの紙吹雪 */
+.stars span{display:inline-block}
+@media (orientation:portrait){#cue{left:calc(50% + 29px);max-width:calc(100vw - 74px)}}
+.stars .on.don{animation:lkDon .5s cubic-bezier(.2,1.8,.4,1) both}
+@keyframes lkDon{0%{transform:scale(3.2) rotate(-60deg);opacity:0}60%{transform:scale(.85);opacity:1}100%{transform:none;opacity:1}}
+.stars .on.wait{opacity:0}
+.tv.don{animation:lkTv .2s ease-out}
+@keyframes lkTv{40%{transform:translateY(6px)}100%{transform:none}}
+.lkcf{position:fixed;top:-24px;z-index:45;pointer-events:none;width:var(--w);height:var(--w);background:var(--c);clip-path:polygon(50% 0,61% 39%,100% 50%,61% 61%,50% 100%,39% 61%,0 50%,39% 39%);animation:lkcf var(--t) cubic-bezier(.3,.2,.6,1) var(--d) forwards}
+@keyframes lkcf{to{transform:translate(var(--dx),110vh) rotate(var(--r))}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}.lkcf{display:none}.stars .on.wait{opacity:1}}
 </style>
 </head>
 <body>
@@ -164,9 +175,10 @@ button{font-family:var(--jp);cursor:pointer;color:inherit}
    <button class="pl" id="btnStart"><span>はじめる</span></button>
    <button class="pl g" id="btnCont" hidden><span>つづきから</span></button>
    <button class="pl m sm" id="btnBookT" hidden><span>📖 図鑑</span></button>
+   <button class="pl t sm" id="btnHow"><span>👆 あそびかた</span></button>
    <button class="pl t sm" id="btnHub" hidden><span>一覧へ</span></button>
   </div>
-  <div class="tt-foot">光合成の実験の「下ごしらえ」を、時間内に正しい順で！</div>
+  <div class="tt-foot">光合成の実験の「下ごしらえ」を、正しい順で！</div>
  </div>
 </section>
 
@@ -1488,7 +1500,14 @@ window.ZUKAN_CARDS={"v": 1, "grade": "chu2", "name": "中2理科図鑑", "econom
   function vib(ms){try{if(navigator.vibrate)navigator.vibrate(ms)}catch(e){}}
   function el(tag,cls,html){var d=document.createElement(tag);if(cls)d.className=cls;if(html!=null)d.innerHTML=html;return d}
   function rm(d){if(d&&d.parentNode)d.parentNode.removeChild(d)}
-  function inGuide(t){while(t&&t!==document){if(t.classList&&(t.classList.contains('gd-root')||t.classList.contains('gd-hbtn')))return true;t=t.parentNode}return false}
+  /* れんしゅう中の「指以外は押せない」でも、もどる・確認ダイアログ・音量などは常に押せるようにする（2026-09-28・ルール10）
+     ゲーム側で確実に通したい要素には data-gd-pass を付ける */
+  var PASS_RE=/(^|[-_\s])(back|modoru|return|home|exit|mute|sound|confirm|dialog|modal)([-_\s]|$)/i;
+  function passThru(t){var n=0;while(t&&t!==document&&n<8){n++;if(t.nodeType===1){if(t.hasAttribute('data-gd-pass')||t.tagName==='DIALOG'||t.getAttribute('role')==='dialog'||t.getAttribute('aria-modal')==='true')return true;
+      if(PASS_RE.test(String(t.id||''))||PASS_RE.test(typeof t.className==='string'?t.className:''))return true;
+      if((t.tagName==='BUTTON'||t.tagName==='A'||t.getAttribute('role')==='button')&&/^\s*[◀←＜<]?\s*(もどる|戻る|一覧へ|とじる|閉じる|はい|いいえ|やめる|キャンセル|おと|音)/.test(t.textContent||''))return true}
+      t=t.parentNode}return false}
+  function inGuide(t){if(passThru(t))return true;while(t&&t!==document){if(t.classList&&(t.classList.contains('gd-root')||t.classList.contains('gd-hbtn')))return true;t=t.parentNode}return false}
   function hexRGB(c){c=String(c||'').trim();var m;
     if((m=c.match(/^#([0-9a-f]{3})$/i)))return [0,1,2].map(function(i){return parseInt(m[1][i]+m[1][i],16)});
     if((m=c.match(/^#([0-9a-f]{6})/i)))return [0,2,4].map(function(i){return parseInt(m[1].substr(i,2),16)});
@@ -2237,8 +2256,13 @@ const SFX={
  fanfare(){[523,659,784,1047,784,1047,1319].forEach((f,i)=>vib(f,i===6?1:.3,{vol:.06,at:i*.11}))},
  lid(){noise(.18,{ft:'lowpass',f:500,vol:.3,dec:2});tone(140,.2,{type:'triangle',vol:.08,to:80})},
  stamp(){noise(.12,{ft:'lowpass',f:300,vol:.4,dec:3});tone(110,.15,{type:'sine',vol:.12,to:60})},
- jar(){tone(1568,.06,{type:'triangle',vol:.05});tone(2093,.08,{type:'triangle',vol:.04,at:.04})}
+ jar(){tone(1568,.06,{type:'triangle',vol:.05});tone(2093,.08,{type:'triangle',vol:.04,at:.04})},
+ don(i){noise(.1,{ft:'lowpass',f:320,vol:.4,dec:3});tone(120,.16,{type:'sine',vol:.13,to:60});vib([784,988,1319][i%3],.45,{vol:.06,at:.05})},
+ tier(n){[523,659,784,1047,1319,1568].slice(0,3+Math.min(3,n)).forEach((f,i)=>vib(f,.4,{vol:.05,at:i*.06}))}
 };
+function buzzV(p){try{if(navigator.vibrate)navigator.vibrate(p)}catch(e){}}
+const TIERS=[3,5];
+document.addEventListener('pointerdown',e=>{const b=e.target&&e.target.closest&&e.target.closest('button.pl');if(b&&!b.disabled)buzzV(8)},true);
 
 /* ================= 厨房の器具・手順 ================= */
 const SD={
@@ -2289,13 +2313,14 @@ const ROUNDS=[
   intro:'<b>生放送！</b>待ち時間が短い。<br>拍手ランプを消すな！'}
 ];
 
+const PRAC_R={s:0,nm:'れんしゅう　光を当てた葉',dur:999,max:1,gap:0,noFire:1,prac:1,plan:['lit'],stars:[1,1,1],intro:''};
 /* ================= 画面 ================= */
 const cv=$('cv');let ctx=cv.getContext('2d');const ctx0=ctx;
 let W=0,H=0,DPR=1,PORT=false,scene='title';
 function resize(){DPR=Math.min(2,window.devicePixelRatio||1);W=innerWidth;H=innerHeight;PORT=H>W*1.05;cv.width=Math.round(W*DPR);cv.height=Math.round(H*DPR);ctx.setTransform(DPR,0,0,DPR,0,0);bgCache=null;
  if(G)layoutPlay();layoutTitle();if(scene==='seal')sealLayout()}
 addEventListener('resize',()=>{resize()});
-function show(s){scene=s;$('scTitle').hidden=s!=='title';$('scMap').hidden=s!=='map';$('scTest').hidden=s!=='test';$('scSeal').hidden=s!=='seal';
+function show(s){if(HELP){if(s==='play'||s==='map')HELP.show();else HELP.hide();placeHelp()}scene=s;$('scTitle').hidden=s!=='title';$('scMap').hidden=s!=='map';$('scTest').hidden=s!=='test';$('scSeal').hidden=s!=='seal';
  $('bBack').hidden=!(s==='play'||s==='map'||s==='seal'||(s==='test'&&window.GAME_MODE!=='test'));$('bMute').hidden=s==='test';$('bMute').classList.toggle('off',!!SV.mute);$('cue').hidden=s!=='play';
  if(s!=='play')G&&(G.paused=true);bgCache=null}
 
@@ -2497,16 +2522,18 @@ function layoutPlay(){if(!G)return;const S=STORES[G.store];const hdr=PORT?122:92
  if(G.chef.x==null)G.chef.x=W/2;G.chef.y=G.L.aisleY+G.chefS*.05;
  // 注文票
  G.tk.forEach((k,i)=>k.slot=i);bgCache=null}
-function startRound(i){const R=ROUNDS[i];ovClose();show('play');
+function startRound(i){const R=i<0?PRAC_R:ROUNDS[i];ovClose();show('play');
  const S=STORES[R.s];const ids=S.top.concat(S.bot).filter(id=>!(R.noFire&&id==='fire'));
  G={ri:i,R,store:R.s,t:0,left:R.dur,st:[],chef:{x:null,y:0,tx:null,target:-1,hold:null,walk:0,face:1,act:0},tk:[],plan:R.plan.slice(),lastSpawn:-99,served:0,combo:0,maxC:0,miss:0,fx:[],parts:[],pops:[],over:false,paused:true,guide:R.guide&&!SV.tut[R.guide]?R.guide:null,shake:0,clap:0,sel:-1,guestT:6,guestMsg:'',guestShow:0,ctrlDone:{}};
  S.top.forEach(id=>G.st.push({id,row:0,slots:[],out:[],flame:0,hidden:R.noFire&&id==='fire'}));
  S.bot.forEach(id=>G.st.push({id,row:1,slots:[],out:[],flame:0,hidden:R.noFire&&id==='fire'}));
+ G.fl=0;if(R.prac){G.guide=null;layoutPlay();G.paused=false;spawnTicket();cue('');return}
  if(R.prelit){const sun=G.st.find(s=>s.id==='sun');for(let k=0;k<R.prelit;k++){const it=newItem('leaf');it.pre=1;it.hist=['sun'];sun.slots.push({it,p:5,dur:5,ready:true})}}
  layoutPlay();
  const S2=SD;ovOpen(`<div class="mh"><small>${STORES[R.s].en} ・ ${STORES[R.s].nm}</small>${R.nm}</div><p class="mp" style="text-align:center">${R.intro}</p>
   <div class="rline"><span>時間</span><b>${Math.floor(R.dur/60)}分${R.dur%60?R.dur%60+'秒':''}</b></div><div class="rline"><span>★の目安（出した皿）</span><b>${R.stars.join(' ／ ')} 皿</b></div>
-  <div class="mbtns"><button class="pl" id="goR"><span>収録スタート</span></button></div>`);
+  <div class="mbtns"><button class="pl" id="goR"><span>収録スタート</span></button><button class="pl t sm" id="goMap"><span>◀ 番組表</span></button></div>`);
+ $('goMap').onclick=()=>{SFX.tap();openMap()};
  $('goR').onclick=()=>{actx();SFX.fanfare();ovClose();G.paused=false;spawnTicket();cue(G.guide?guideText():'注文票を見て、器具をタップ。シェフが走ってこなす！')};
  SV.tut.seen=1;save()}
 function stById(id){return G.st.find(s=>s.id===id&&!s.hidden)}
@@ -2538,14 +2565,16 @@ function act(st){const ch=G.chef,h=ch.hold,D=SD[st.id];const F=stationFocus(st,s
   if(st.slots.length){cueTemp(D.nm+'はまだ途中。できあがると <b>✦</b> が光る');return}
   cueTemp(D.tip);return}
  if(D.src){if(h.kind===D.src&&!h.hist.length&&!h.pre){ch.hold=null;SFX.place();cueTemp('棚にもどした');return}cueTemp('手に持っているものを先に使おう');SFX.bounce();return}
+ if(G.R.prac&&h.kind==='leaf'&&!h.done&&st.id!=='pass'){const nx=REC.lit.steps[h.hist.length];if(nx&&st.id!==nx){SFX.bounce();cueTemp('次は「<b>'+SD[nx].nm+'</b>」。れんしゅうでは 注文どおりの順に進もう','',3.5);pop(F.x,F.y-30,'？',C.ink);return}}
  if(st.id==='pass'){serve(h,st,F);return}
  const cap=D.cap||1;const v=check(h,st.id);let swap=null;
  if(st.slots.length>=cap){const k=st.slots.findIndex(s=>s.ready);if(k<0||v.bounce||v.fail){cueTemp(D.nm+'はいっぱい。できあがり（✦）を待とう');SFX.bounce();return}swap=st.slots.splice(k,1)[0].it}
  if(v.bounce){SFX.bounce();cueTemp(v.msg);pop(F.x,F.y-30,'？',C.ink);return}
+ if(v.fail&&G.R.prac){SFX.bounce();cueTemp('✖ '+v.msg,'bad',4);pop(F.x,F.y-30,'？',C.ink);return}
  if(v.fail){failItem(h,st,v.msg,v.trap);ch.hold=null;return}
  // OK
  if(v.reset){h.hist=[];h.pre=0;cueTemp('一晩おけば、葉にあったデンプンはなくなる。<b>これで光の効果を比べられる！</b>','good',4.5);earnAt('first-try',5,F.x,F.y);unlockTrap('prelit_ok')}
- h.hist.push(st.id);st.slots.push({it:h,p:0,dur:D.dur,ready:false});ch.hold=swap;SFX.place();if(swap)setTimeout(SFX.pick,90);unlock(st.id);
+ h.hist.push(st.id);st.slots.push({it:h,p:0,dur:D.dur,ready:false});ch.hold=swap;SFX.place();spark2(F.x,F.y);pop(F.x,F.y-34,'✓',C.green);buzzV(10);if(swap)setTimeout(SFX.pick,90);unlock(st.id);
  if(st.id==='breath')SFX.bubble();
  if(G.guide)cue(guideText())}
 function check(h,id){const H=h.hist,last=H[H.length-1];
@@ -2572,18 +2601,20 @@ function itemKey(h){if(h.kind==='leaf'){const j=h.hist.join();if(j==='dark,sun,h
  const w=h.hist.includes('weed'),s=h.hist.includes('sun'),d=h.hist.includes('dark');if(!h.hist.includes('breath'))return null;if(w&&s)return 'A';if(!w&&s)return 'B';if(w&&d)return 'C';return 'X'}
 function serve(h,st,F){if(!h.done){SFX.bounce();cueTemp(h.kind==='leaf'?'まだ下ごしらえの途中（ヨウ素液まで）':'まだ途中（光か暗い所に置くまで）');return}
  const key=itemKey(h);const ti=G.tk.findIndex(k=>k.k===key);G.chef.hold=null;
- if(ti<0){G.combo=0;G.miss++;SFX.fail();const open=G.tk.map(k=>'「'+REC[k.k].sh+'」').join('');
+ if(ti<0){comboBreak(F.x,F.y);G.combo=0;G.miss++;SFX.fail();const open=G.tk.map(k=>'「'+REC[k.k].sh+'」').join('');
   const what=key==='X'?'水草なし・暗い所の管（注文にない）':REC[key]?REC[key].nm:'？';
   cueTemp('注文とちがう：これは<b>'+what+'</b>。いま出ている注文は '+(open||'なし'),'bad',4.5);pop(F.x,F.y-40,'✖',C.salmonD);return}
- const tk=G.tk.splice(ti,1)[0];G.tk.forEach((k,i)=>k.slot=i);G.served++;G.combo++;G.maxC=Math.max(G.maxC,G.combo);SV.served++;SV.recipes[key]=(SV.recipes[key]||0)+1;
+ const tk=G.tk.splice(ti,1)[0];G.tk.forEach((k,i)=>k.slot=i);G.served++;G.combo++;G.maxC=Math.max(G.maxC,G.combo);if(!G.R.prac)SV.served++;SV.recipes[key]=(SV.recipes[key]||0)+1;
  st.out.push({p:0});SFX.bell();setTimeout(()=>{SFX.serve(G&&G.combo);SFX.clap()},160);G.clap=1.6;G.shake=RM?0:4;
- burst(F.x,F.y-10,G.combo>=3?26:16);
+ burst(F.x,F.y-10,G.combo>=3?40:24);G.fl=.8;buzzV([20,40,30]);
+ {const tier=TIERS.indexOf(G.combo);if(window.Guide){Guide.cheer(G.combo>1?G.combo+'れんぞく！':'1皿 あがり！',{x:F.x,y:F.y-110,size:1.05+Math.max(0,tier)*.3,sound:false,sparks:14+Math.max(0,tier)*10});if(tier>=0)setTimeout(()=>SFX.tier(tier+1),260)}}
  const mult=G.combo>=5?'×2':G.combo>=3?'×1.5':'';pop(F.x,F.y-50,(G.combo>=2?G.combo+'れんぞく！ ':'')+REC[key].sh+' OK',C.green,G.combo>=3);
  earnAt('first-try',Math.min(10,3+G.combo),F.x,F.y-80);
  if(REC[key].ctrl){const pair={unlit:'lit',B:'A',C:'A'}[key];if(!G.ctrlDone[key]&&(SV.recipes[pair]||0)>0){G.ctrlDone[key]=1;setTimeout(()=>earnAt('control',8,F.x,F.y-110),500);cueTemp('比べる用の皿！ <b>ちがう条件は1つだけ</b>（'+({unlit:'光',B:'水草',C:'光'}[key])+'）。ほかはそろえてある','good',4)}}
  else cueTemp(pick(['拍手！ 正しい順番の下ごしらえ','いい手さばき！','その調子！'])+(G.combo>=3?' <b>'+G.combo+'れんぞく</b>':''),'good',2.2);
  if(G.guide&&G.served>=1){SV.tut[G.guide]=1;save();G.guide=null;G.R=Object.assign({},G.R,{max:2});cueTemp('ここからは自分で！ 注文票を見て 手順を思い出そう','good',4)}}
-function failItem(h,st,msg,trap){const F=stationFocus(st,st.r);G.combo=0;G.miss++;SFX.fail();SV.traps[trap]=(SV.traps[trap]||0)+1;unlockTrap(trap);
+function comboBreak(x,y){const lost=G.combo,nt=TIERS.filter(t=>t>lost)[0];if(lost>=2&&nt&&nt-lost===1&&window.Guide)setTimeout(()=>Guide.cheer('あと1皿で '+nt+'れんぞく だった！',{x,y:y-90,size:.8,sound:false,sparks:false}),450);buzzV([10,40,10])}
+function failItem(h,st,msg,trap){const F=stationFocus(st,st.r);comboBreak(F.x,F.y);G.combo=0;G.miss++;SFX.fail();SV.traps[trap]=(SV.traps[trap]||0)+1;unlockTrap(trap);
  if(trap==='fire'){st.flame=1.6;SFX.fire();G.shake=RM?0:12;for(let i=0;i<24;i++)G.parts.push({x:F.x,y:F.y,vx:rnd(-90,90),vy:rnd(-220,-60),life:rnd(.6,1.2),t:0,col:pick(['#555','#777','#999']),r:rnd(6,14),smoke:1})}
  else{for(let i=0;i<10;i++)G.parts.push({x:F.x,y:F.y,vx:rnd(-80,80),vy:rnd(-160,-40),life:.7,t:0,col:h.kind==='leaf'?C.leaf:btbColor(h.btb||0),r:rnd(3,6)})}
  pop(F.x,F.y-30,'しっぱい',C.salmonD);cueTemp('✖ '+msg,'bad',5.5);save()}
@@ -2594,12 +2625,12 @@ function burst(x,y,n){for(let i=0;i<n;i++){const a=rnd(0,TAU),v=rnd(80,260);G.pa
 function update(dt){const g=G;g.t+=dt;g.left-=dt;SV.elapsed+=dt;
  // 注文
  if(g.tk.length<g.R.max&&g.plan.length&&(g.t-g.lastSpawn>=g.R.gap||g.tk.length===0))spawnTicket();
- for(const k of g.tk){k.left-=dt;k.flash=Math.max(0,k.flash-dt)}
- for(let i=g.tk.length-1;i>=0;i--)if(g.tk[i].left<=0){const k=g.tk.splice(i,1)[0];g.combo=0;g.miss++;SFX.buzz();cueTemp('注文「'+REC[k.k].sh+'」が時間切れ……','bad',3)}
+ for(const k of g.tk){if(!g.R.prac)k.left-=dt;k.flash=Math.max(0,k.flash-dt)}
+ for(let i=g.tk.length-1;i>=0;i--)if(g.tk[i].left<=0){const k=g.tk.splice(i,1)[0];comboBreak(W/2,H*.4);g.combo=0;g.miss++;SFX.buzz();cueTemp('注文「'+REC[k.k].sh+'」が時間切れ……','bad',3)}
  g.tk.forEach((k,i)=>k.slot=i);
  // 器具
  for(const st of g.st){st.flame=Math.max(0,st.flame-dt);
-  for(const s of st.slots){if(s.ready)continue;s.p+=dt;const it=s.it;const q=clamp(s.p/s.dur,0,1);
+  for(const s of st.slots){if(s.ready)continue;s.p+=dt*(g.R.prac?2.6:1);const it=s.it;const q=clamp(s.p/s.dur,0,1);
    if(st.id==='bath')it.bleach=q;if(st.id==='breath'){it.btb=q;it.bub=(it.bub||0)+dt;if(Math.random()<dt*6)SFX.bubble()}
    if(st.id==='sink'&&Math.random()<dt*2)SFX.water();
    if(s.p>=s.dur){s.ready=true;if(st.id==='iodine'||((st.id==='sun'||st.id==='dark')&&it.kind==='tube'))it.done=true;if(st.id==='iodine')SFX.lid();SFX.done();const F=stationFocus(st,st.r);spark2(F.x,F.y)}}
@@ -2609,7 +2640,7 @@ function update(dt){const g=G;g.t+=dt;g.left-=dt;SV.elapsed+=dt;
  // ゲスト
  if(g.R.guest){g.guestT-=dt;g.guestShow=Math.max(0,g.guestShow-dt);if(g.guestT<=0){g.guestT=rnd(14,20);g.guestShow=5;g.guestMsg=pick(['直火なら あっという間よ〜！','暗室なんて 飛ばしちゃえば？','緑のまま ヨウ素液でいいじゃない','息なんて ふきこまなくても 平気よ'])}}
  // 演出
- g.shake=Math.max(0,g.shake-dt*30);g.clap=Math.max(0,g.clap-dt);
+ g.shake=Math.max(0,g.shake-dt*30);g.clap=Math.max(0,g.clap-dt);g.fl=Math.max(0,(g.fl||0)-dt*1.8);
  for(const p of g.parts){p.t+=dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=(p.smoke?-40:420)*dt}g.parts=g.parts.filter(p=>p.t<p.life);
  for(const p of g.pops)p.t+=dt;g.pops=g.pops.filter(p=>p.t<1.3);
  if(cueTimer>0){cueTimer-=dt;if(cueTimer<=0)cue(g.guide?guideText():'')}
@@ -2641,6 +2672,7 @@ function render(){const g=G,t=g.t;
  for(const p of g.pops){const a=p.t<1?1:1-(p.t-1)/.3;const yy=p.y-p.t*40;ctx.save();ctx.globalAlpha=clamp(a,0,1);if(p.big){ctx.fillStyle=C.mustard;P();starPath(p.x,yy,70,44,14,p.t);ctx.fill()}txt(p.s,p.x,yy,{size:p.big?22:18,col:p.col,stroke:'#FFF8EC',sw:5});ctx.restore()}
  ctx.restore();
  drawHeader();
+ if(g.fl>0&&!RM){ctx.fillStyle='rgba(255,236,170,'+(g.fl*.33).toFixed(3)+')';ctx.fillRect(0,0,W,H)}
  grain()}
 function offscreen(fn){const c=document.createElement('canvas');c.width=cv.width;c.height=cv.height;const real=ctx;const cx2=c.getContext('2d');cx2.setTransform(DPR,0,0,DPR,0,0);ctx=cx2;try{fn()}finally{ctx=real}return c}
 function drawBgInto(){const L=G.L;const S=STORES[G.store];
@@ -2666,7 +2698,7 @@ function bubble(x,y,s,right){const fs=PORT?13:15;ctx.save();ctx.font=fs+"px 'Kos
  mc(()=>{rrp(bx,y-18,w,36,16)},C.paper,1.6);mc(()=>{ctx.moveTo(x-6,y+16);ctx.lineTo(x-14,y+30);ctx.lineTo(x+6,y+16)},C.paper,1.2);txt(s,bx+w/2,y,{size:fitSize(s,w-16,fs)})}
 function drawHeader(){const g=G,L=g.L,t=g.t;const st=starsFor(g.served);
  const kk=(()=>{try{return Z()?Z().state().kakera:null}catch(e){return null}})();
- const sec=Math.max(0,Math.ceil(g.left)),tstr=Math.floor(sec/60)+':'+String(sec%60).padStart(2,'0');
+ const sec=Math.max(0,Math.ceil(g.left)),tstr=g.R.prac?'∞':Math.floor(sec/60)+':'+String(sec%60).padStart(2,'0');
  const dial=(x,y,r)=>{mc(()=>ctx.arc(x,y,r,0,TAU),C.mustard,1.6);mc(()=>ctx.arc(x,y,r*.74,0,TAU),C.paper,1.2);const f=clamp(g.left/g.R.dur,0,1);
   ctx.save();ctx.strokeStyle=g.left<20?C.salmon:C.teal;ctx.lineWidth=r*.2;ctx.lineCap='round';P();ctx.arc(x,y,r*.86,-Math.PI/2,-Math.PI/2+TAU*f);ctx.stroke();ctx.restore();
   txt(tstr,x,y+1,{size:r*.5,col:g.left<20&&Math.sin(t*8)>0?C.salmonD:C.ink})};
@@ -2696,21 +2728,27 @@ function drawHeader(){const g=G,L=g.L,t=g.t;const st=starsFor(g.served);
  if(g.combo>=2){const cx=W/2,cy=L.hdr+30;ctx.save();ctx.translate(cx,cy);ctx.rotate(Math.sin(t*3)*.05);ctx.fillStyle=g.combo>=5?C.salmon:C.mustard;P();starPath(0,0,52,34,14,0);ctx.fill();txt(g.combo+'れんぞく',0,-3,{size:15,col:g.combo>=5?'#fff':C.ink});txt(g.combo>=5?'×2':g.combo>=3?'×1.5':'',0,13,{size:12,col:g.combo>=5?'#fff':C.ink});ctx.restore()}}
 function starsFor(n){const s=G.R.stars;return n>=s[2]?3:n>=s[1]?2:n>=s[0]?1:0}
 
-function endRound(all){const g=G;if(g.over)return;g.over=true;g.paused=true;const i=g.ri;const st=starsFor(g.served);
+function endRound(all){const g=G;if(g.over)return;g.over=true;g.paused=true;if(g.R.prac){SV.tut.leaf=1;save();return}const i=g.ri;const st=starsFor(g.served);
  SV.stars[i]=Math.max(SV.stars[i],st);SV.best[i]=Math.max(SV.best[i],g.served);SV.maxCombo=Math.max(SV.maxCombo,g.maxC);
  let firstClear=false;if(st>=1&&SV.cur<=i){SV.cur=i+1;firstClear=true}save();
  if(st>=1){SFX.fanfare();setTimeout(SFX.clap,400)}else SFX.fail();
  // 店の手順を覚えた（規則の発見）
  let ruleMsg='';const lastOfStore=ROUNDS[i+1]?ROUNDS[i+1].s!==ROUNDS[i].s:true;
  if(st>=1&&lastOfStore&&g.store<2&&!SV.rules[g.store]){SV.rules[g.store]=1;save();setTimeout(()=>earnAt('rule',30,W/2,H*.3),700);ruleMsg=g.store===0?'<div class="newel"><div><b>手順カード完成：</b>暗室で一晩 → 光（比べる用は暗いまま）→ 熱湯 → 湯せんのエタノールで脱色 → 水洗い → ヨウ素液</div></div>':'<div class="newel"><div><b>手順カード完成：</b>BTB液に息 → 黄色（二酸化炭素が溶けた）→ 水草あり／なし → ゴム栓 → 光／暗い所</div></div>'}
- const stars='<div class="stars">'+[0,1,2].map(k=>'<span class="'+(k<st?'on':'off')+'">✦</span>').join('')+'</div>';
+ const stars='<div class="stars">'+[0,1,2].map(k=>'<span class="'+(k<st?'on wait':'off')+'">✦</span>').join('')+'</div>';
  const next=i+1<ROUNDS.length;const canNext=SV.cur>i&&next;
  ovOpen(`<div class="mh"><small>That's a wrap!</small>${ROUNDS[i].nm}</div>${stars}
   <div class="rline"><span>出した皿</span><b>${g.served} 皿</b></div><div class="rline"><span>最高れんぞく</span><b>${g.maxC}</b></div><div class="rline"><span>しっぱい・時間切れ</span><b>${g.miss}</b></div>
   ${st<1?'<p class="mp">★1つには <b>'+ROUNDS[i].stars[0]+'皿</b>。手順の順番を思い出して、もう一度！</p>':''}${ruleMsg}
   <div class="mbtns">${canNext?'<button class="pl" id="rNext"><span>次の回へ</span></button>':''}${!next&&st>=1?'<button class="pl g" id="rSeal"><span>予言の鍋へ</span></button>':''}<button class="pl m sm" id="rAgain"><span>もう一度</span></button><button class="pl t sm" id="rMap"><span>番組表</span></button></div>`);
  if($('rNext'))$('rNext').onclick=()=>{SFX.tap();startRound(i+1)};if($('rSeal'))$('rSeal').onclick=()=>{SFX.tap();openSeal()};
- $('rAgain').onclick=()=>{SFX.tap();startRound(i)};$('rMap').onclick=()=>{SFX.tap();openMap()}}
+ $('rAgain').onclick=()=>{SFX.tap();startRound(i)};$('rMap').onclick=()=>{SFX.tap();openMap()};
+ const sp=[...document.querySelectorAll('#ovBody .stars .on')],tv=document.querySelector('#ov .tv');
+ sp.forEach((e,k)=>setTimeout(()=>{if($('ov').hidden)return;e.classList.remove('wait');e.classList.add('don');SFX.don(k);buzzV(25);if(tv){tv.classList.remove('don');void tv.offsetWidth;tv.classList.add('don')}},RM?0:500+k*450));
+ if(st>=1)setTimeout(()=>{if(!$('ov').hidden)lkConfetti(st>=3?90:55)},RM?0:500+st*450)}
+function lkConfetti(n){if(RM)return;const cs=[C.salmon,C.mustard,C.teal,C.green,C.paper];for(let i=0;i<n;i++){const d=document.createElement('div');d.className='lkcf';const q=d.style;q.left=(Math.random()*100).toFixed(1)+'vw';
+  q.setProperty('--w',(12+Math.random()*14|0)+'px');q.setProperty('--c',cs[i%cs.length]);q.setProperty('--dx',((Math.random()-.5)*200|0)+'px');q.setProperty('--r',((Math.random()-.5)*900|0)+'deg');
+  q.setProperty('--t',(1.8+Math.random()*1.3).toFixed(2)+'s');q.setProperty('--d',(Math.random()*.45).toFixed(2)+'s');document.body.appendChild(d);setTimeout(()=>d.remove(),3900)}}
 
 /* ================= 入力 ================= */
 cv.addEventListener('pointerdown',e=>{actx();const x=e.clientX,y=e.clientY;
@@ -2853,16 +2891,35 @@ function initTitle(){show('title');layoutTitle();if(window.PLAYER_NAME)$('nameIn
  $('btnStart').querySelector('span').textContent=hasSave()&&SV.cur>0?'はじめから':'はじめる'}
 let arm=false;
 $('btnStart').onclick=()=>{actx();SV.name=$('nameIn').value.trim();if(hasSave()&&SV.cur>0&&!arm){arm=true;$('btnStart').querySelector('span').textContent='本当に？（記録が消える）';setTimeout(()=>{arm=false;initTitle()},3500);return}
- if(arm){const nm=SV.name,mu=SV.mute;SV=fresh();SV.name=nm;SV.mute=mu;arm=false}save();SFX.fanfare();startRound(0)};
+ if(arm){const nm=SV.name,mu=SV.mute;SV=fresh();SV.name=nm;SV.mute=mu;arm=false}save();SFX.fanfare();
+ if(!window.Guide){startRound(0);return}if(busy)return;busy=true;Guide.intro(INTRO).then(()=>{busy=false;Guide.tutorial(PRACTICE)})};
+let busy=false;
+const INTRO={title:'第7回 葉っぱキッチン',learn:'光合成を調べる実験の **手順とそのわけ**（暗室・光・脱色・ヨウ素液／BTB液）',
+ how:'**器具をタップ** するとシェフが走ってこなす。✦が光ったら もう一度タップで取り出す',gesture:'tap'};
+const stR=id=>()=>{const st=G&&stById(id);if(!st||!st.r)return {x:innerWidth/2,y:innerHeight/2,r:40};const r=st.r;return {x:r.x+r.w/2,y:r.y+r.h/2,w:r.w-4,h:r.h-4,rx:12}};
+const hk=k=>()=>!!(G&&G.chef.hold&&G.chef.hold.hist.length>=k);
+const PSTEPS=[
+ {gesture:'tap',target:stR('shelf'),until:()=>!!(G&&G.chef.hold),text:'注文は「光あり の葉」。まず **葉の棚** をタップして 葉を1まいとる'},
+ {gesture:'tap',target:stR('dark'),until:hk(1),text:'**暗室** へ（一晩おいて もとのデンプンをなくす）。**✦が光ったら もう一度タップ** で取り出す'},
+ {gesture:'tap',target:stR('sun'),until:hk(2),text:'**日なた** で光を当てる。✦で取り出す'},
+ {gesture:'tap',target:stR('hot'),until:hk(3),text:'**熱湯** にひたして やわらかくする'},
+ {gesture:'tap',target:stR('bath'),until:hk(4),text:'**湯せん**：湯であたためたエタノールで 緑色をぬく（直火はだめ）'},
+ {gesture:'tap',target:stR('sink'),until:hk(5),text:'**流し** で水洗い'},
+ {gesture:'tap',target:stR('iodine'),until:()=>!!(G&&G.chef.hold&&G.chef.hold.done),text:'**ヨウ素液** をたらす。結果は ふたの下（実験の日まで ひみつ）'},
+ {gesture:'tap',target:stR('pass'),until:()=>!!(G&&G.served>=1),praise:false,text:'できた！ **出し口** へ運んで 出す'}];
+const PRACTICE={label:'れんしゅう中',bandAt:'bottom',steps:PSTEPS,clearText:'れんしゅうクリア！',start:()=>{actx();startRound(-1)},
+ onExit:res=>{if(res&&(res.stopped||res.replaced))return;G=null;if(SV.cur>0)openMap();else startRound(0)}};
 $('btnCont').onclick=()=>{actx();SV.name=$('nameIn').value.trim()||SV.name;save();SFX.tap();openMap()};
 $('btnBookT').onclick=()=>{try{Z().openBook()}catch(e){}};
+if(window.Guide)Guide.tutorialButton('#btnHow',()=>{actx();SFX.tap();Guide.tutorial(PRACTICE)});else $('btnHow').hidden=true;
 $('btnBookM').onclick=()=>{try{Z().openBook()}catch(e){}};
 $('btnHub').onclick=()=>{try{window.parent.postMessage({type:'rika-close-game'},'*')}catch(e){}};
 $('btnNote').onclick=()=>{SFX.tap();openNote()};
 $('btnSealM').onclick=()=>{SFX.tap();openSeal()};
 $('btnTestM').onclick=()=>{SFX.tap();startTest()};
 $('bMute').onclick=()=>{SV.mute=!SV.mute;save();$('bMute').classList.toggle('off',SV.mute);if(!SV.mute){actx();SFX.tap()}};
-$('bBack').onclick=()=>{SFX.tap();if(scene==='play'&&G){G.paused=true;ovOpen('<div class="mh"><small>Commercial break</small>番組表にもどる？</div><p class="mp" style="text-align:center">クリアした回と★は保存されます。<br>この回の途中の皿は、やり直しになります。</p><div class="mbtns"><button class="pl" id="bkY"><span>もどる</span></button><button class="pl g sm" id="bkN"><span>つづける</span></button></div>');
+$('bBack').onclick=()=>{SFX.tap();if(scene==='play'&&G&&G.R.prac){if(window.Guide)Guide.tutorialEnd();G=null;initTitle();return}
+ if(scene==='play'&&G){G.paused=true;ovOpen('<div class="mh"><small>Commercial break</small>番組表にもどる？</div><p class="mp" style="text-align:center">クリアした回と★は保存されます。<br>この回の途中の皿は、やり直しになります。</p><div class="mbtns"><button class="pl" id="bkY"><span>もどる</span></button><button class="pl g sm" id="bkN"><span>つづける</span></button></div>');
   $('bkY').onclick=()=>{SFX.tap();save();openMap()};$('bkN').onclick=()=>{SFX.tap();ovClose();if(G)G.paused=false}}
  else if(scene==='map'){initTitle()}else if(scene==='seal'){openMap()}else if(scene==='test'){T=null;openMap()}};
 function ovOpen(h){$('ovBody').innerHTML=h;$('ov').hidden=false;$('ovBody').scrollTop=0}
@@ -2900,7 +2957,24 @@ let last=performance.now(),tt=0;
 function frame(now){const dt=Math.min(.05,Math.max(0,(now-last)/1000));last=now;tt+=dt;
  try{if(scene==='play'&&G){if(!G.paused&&!G.over)update(dt);render()}else if(scene==='title'){drawTitle(tt);grain()}else if(scene==='map'){drawMap(tt);grain()}else if(scene==='seal'){drawSeal(tt);grain()}else if(scene==='test'){wallpaper(0,0,W,H,C.cream)}}catch(e){console.error(e)}
  requestAnimationFrame(frame)}
-window.__lk={get G(){return G},get SV(){return SV},startRound,openMap,openSeal,startTest,tapStation,endRound};
+let HELP=null;
+function placeHelp(){if(!HELP)return;HELP.update(PORT?{corner:'bl',offset:{x:0,y:0}}:{corner:'tr',offset:{x:0,y:52}})}
+if(window.Guide){
+ Guide.setup({theme:{bg:'#FBF3E4',fg:'#2B2A28',accent:'#E76F51',accentText:'#FFF8EC',font:"'Kosugi Maru','Hiragino Maru Gothic ProN',sans-serif",bodyFont:"'Kosugi Maru','Hiragino Maru Gothic ProN',sans-serif",
+   radius:14,texture:'dots',line:'#2B2A28',dim:'rgba(43,42,40,.4)',shadow:'5px 5px 0 #2B2A28',outline:'#2B2A28',hand:'#FBF3E4',handLine:'#2B2A28'},
+  sfx:k=>{if(k==='step')SFX.done();else if(k==='nudge')SFX.tick();else if(k==='done')SFX.bell();else if(k==='clear'){SFX.fanfare();setTimeout(SFX.clap,300)}else if(k==='open'||k==='close')SFX.tap();else if(k==='cheer')SFX.jar()},
+  muted:()=>SV.mute});
+ HELP=Guide.help({title:INTRO.title,learn:INTRO.learn,how:INTRO.how,gesture:'tap',size:46,show:false,attention:true,replay:'tutorial',
+  rules:['注文票と **同じ皿** を「出し口」へ。注文票をタップすると 手順のメモが見られる',
+   '**✦が光ったら** できあがり。もう一度タップで取り出す',
+   '順番をまちがえると **しっぱい**（暗室を飛ばす・直火のエタノール・緑のままヨウ素液・息をふきこまない）',
+   '**比べる用** の皿は「ちがう条件は1つだけ」。つづけて出すと **れんぞく**',
+   '時間内に出した皿の数で ★が決まる'],
+  onOpen:()=>{if(scene==='play'&&G&&!G.paused){G.paused=true;G.hp=1}},
+  onClose:()=>{if(G&&G.hp){G.hp=0;G.paused=false}}});
+ placeHelp();addEventListener('resize',placeHelp);
+}
+window.__lk={get G(){return G},stById,get mapHits(){return mapHits},get SV(){return SV},startRound,openMap,openSeal,startTest,tapStation,endRound};
 resize();
 try{window.Zukan&&Zukan.setup({game:GAME_ID,koma:[KOMA]})}catch(e){}
 if(window.GAME_MODE==='test'){startTest()}else{initTitle()}
