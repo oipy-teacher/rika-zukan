@@ -133,6 +133,8 @@ button{font-family:var(--fh);cursor:pointer;touch-action:manipulation}
 #tNext{display:block;margin:6px auto 0;min-width:220px}
 #eScore{font:800 64px var(--fh);color:var(--y);margin:6px 0;text-shadow:4px 4px 0 #000}
 #eScore small{font:700 20px var(--fh);color:var(--cr)}
+/* 仕上げ 2026-09-28（ky-finish-2026-09-28）: もどる・音・確認ダイアログは #stage の外。確認はれんしゅうの暗幕より上 */
+#scrBackCf{position:fixed;z-index:2147482640}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 </head>
@@ -145,7 +147,7 @@ button{font-family:var(--fh);cursor:pointer;touch-action:manipulation}
  <div id="logo"><div class="kick">静電気と放電の洋館</div><h1><b>雷</b>の館</h1><div class="sub">～静電気と放電～</div></div>
  <div class="nm" id="nmRow">名前 <input id="nameIn" maxlength="16" autocomplete="off" placeholder="（なくても遊べます）"></div>
  <div class="row"><button class="lb y" id="bStart">はじめる</button></div>
- <div class="row"><button class="lb sm" id="bCont">つづきから</button><button class="lb sm" id="bBook1">📖 図鑑</button><button class="lb sm hidden" id="bToTest">確認テストへ</button></div>
+ <div class="row"><button class="lb sm" id="bHow">あそびかた</button><button class="lb sm" id="bCont">つづきから</button><button class="lb sm" id="bBook1">📖 図鑑</button><button class="lb sm hidden" id="bToTest">確認テストへ</button></div>
 </div>
 
 <div id="scrMap" class="scr hidden"><div id="mapBar"><button class="lb sm" id="bBook2">📖 図鑑</button><button class="lb sm" id="bGacha">🎰 かけらで引く</button><button class="lb sm y hidden" id="bMapTest">確認テストへ</button></div></div>
@@ -156,10 +158,6 @@ button{font-family:var(--fh);cursor:pointer;touch-action:manipulation}
  <div class="btns"><button class="lb y" id="cNext">次の部屋へ</button><button class="lb sm dk" id="cMap">館の地図</button></div>
 </div></div></div>
 
-<div id="scrBackCf" class="scr hidden"><div class="ov"><div class="card">
- <div class="en">RETURN</div><h2>もどりますか？</h2><p id="bkSub">進み具合は保存されます。</p>
- <div class="btns"><button class="lb y" id="bkGo">もどる</button><button class="lb dk" id="bkNo">つづける</button></div>
-</div></div></div>
 
 <div id="scrTest" class="scr hidden"><div id="tBox">
  <div id="tHead"><div id="tNo">第1問</div><div id="tLamps"></div></div>
@@ -173,9 +171,13 @@ button{font-family:var(--fh);cursor:pointer;touch-action:manipulation}
  <div class="btns"><button class="lb y" id="eCard">提出カードをひらく</button><button class="lb sm dk" id="eBook">📖 図鑑</button><button class="lb sm dk" id="eMap">館の地図</button></div>
 </div></div></div>
 
-<button class="lb sm" id="bBack">◀ もどる</button>
-<button class="lb sm dk" id="bMute">音</button>
 </div>
+<button class="lb sm" id="bBack" data-gd-pass>◀ もどる</button>
+<button class="lb sm dk" id="bMute" data-gd-pass>音</button>
+<div id="scrBackCf" class="scr hidden" role="dialog" aria-modal="true" data-gd-pass><div class="ov"><div class="card">
+ <div class="en">RETURN</div><h2>もどりますか？</h2><p id="bkSub">進み具合は保存されます。</p>
+ <div class="btns"><button class="lb y" id="bkGo">もどる</button><button class="lb dk" id="bkNo">つづける</button></div>
+</div></div></div>
 
 <script>/*@SUBMIT_CARD_BEGIN*/
 /* ==========================================================
@@ -2326,11 +2328,11 @@ function calcPar(tubes){var got={},n=0,guard=0;while(Object.keys(got).length<tub
 var scene='title',G=null,T=0,parts=[],floats=[],bolts=[],shake=0,flashA=0,bigT=null;
 var BUDGET=.5,JMAX=26;/* 電気1あたり 0.5目盛り飛べる。1回に飛べるのは最大26目盛り */
 function coilQ(t){var s=0;for(var i=1;i<t.length;i++)s+=Math.hypot(t[i].x-t[0].x,t[i].y-t[0].y);return s*1.12/BUDGET}
-function startRoom(ri){var D=ROOMS[ri];G={ri:ri,D:D,tubes:D.final?[]:(D.coil?coilStage(0):makeTubes(ri)),Q:0,held:null,dis:0,traps:0,time:0,score:0,stage:0,chainMax:0,
+var PRAC=false;function startRoom(ri,prac){var D=ROOMS[ri];G={ri:ri,prac:!!prac,D:D,tubes:D.final?[]:(D.coil?coilStage(0):makeTubes(ri)),Q:0,held:null,dis:0,traps:0,time:0,score:0,stage:0,chainMax:0,
   steam:D.steam?1:0,winOpen:false,lastDis:false,msg:'',state:'play',best:0,cloud:{Q:0,ice:[],strikes:0,wait:0,count:0},rubDir:0,rubAcc:0,rubN:0,trapShown:{},coilHold:0,amb:0,chan:0,sw:0};
  if(D.coil)G.coilQ=coilQ(G.tubes);if(!D.final&&!D.coil)D.par=calcPar(G.tubes);
  if(D.final){for(var i=0;i<26;i++)G.cloud.ice.push({x:Math.random(),y:Math.random(),vx:(Math.random()-.5)*.3,vy:(Math.random()-.5)*.3})}
- roomArtKey='';setScene('play');say('<b>'+esc(D.n)+'</b>　'+esc(D.lead),7);if(ri===0)G.hint=1}
+ roomArtKey='';setScene('play');if(G.prac){G.hint=0;return}say('<b>'+esc(D.n)+'</b>　'+esc(D.lead),7);if(ri===0&&!window.Guide)G.hint=1}
 
 /* ================= こする台（道具の位置） ================= */
 function stationItems(){var g=G,D=g.D,S=L.st,items=[];if(!S)return items;
@@ -2352,7 +2354,7 @@ cv.addEventListener('pointerdown',function(e){ac();if(scene==='map'){mapTap(e.cl
  if(g.D.final){if(inRoom(px,py)){ptr={id:e.pointerId,k:'cloud',x:px,y:py,lx:px,ly:py};}return}
  /* 浴室の窓 */
  if(g.D.steam&&!g.winOpen&&inRoom(px,py)){var q=toRoom(px,py);if(q[0]>96&&q[1]<44){g.winOpen=true;SFX.ok();say('窓を開けた。湯気が外へ出て、<b>空気がかわいていく</b>。',4);return}}
- var its=stationItems();for(var i=0;i<its.length;i++){var it=its[i];if(it.t==='rod'&&px>=it.x&&px<=it.x+it.w&&py>=it.y&&py<=it.y+it.h){g.held={k:it.k,x:px,y:py,home:it};ptr={id:e.pointerId,k:'rod'};SFX.grab();if(g.hint===1)g.hint=2;return}}
+ var its=stationItems();for(var i=0;i<its.length;i++){var it=its[i];if((it.t==='rod'||(g.prac&&it.t==='cloth'))&&px>=it.x&&px<=it.x+it.w&&py>=it.y&&py<=it.y+it.h){if(it.t==='cloth'){it=its.filter(function(q){return q.t==='rod'})[0];if(!it)return}g.held={k:it.k,x:px,y:py,home:it};ptr={id:e.pointerId,k:'rod'};SFX.grab();if(g.hint===1)g.hint=2;return}}
 });
 addEventListener('pointermove',function(e){if(!ptr||ptr.id!==e.pointerId||!G)return;var g=G,px=e.clientX,py=e.clientY;
  if(ptr.k==='cloud'){cloudRub(px,py);return}
@@ -2369,10 +2371,11 @@ function clothAt(px,py){var its=stationItems();for(var i=0;i<its.length;i++){var
 function rubStep(ck,px,py){var g=G,rod=g.held.k,v=valid(rod,ck);SFX.rub();
  for(var i=0;i<3;i++)parts.push({x:px+(Math.random()-.5)*30,y:py+(Math.random()-.5)*16,vx:(Math.random()-.5)*80,vy:-40-Math.random()*60,life:.6,dec:1.6,c:v==='ok'?YE:CR,sz:2+Math.random()*2});
  if(v==='ok'){var before=g.Q;g.Q=Math.min(100,g.Q+(g.steam&&!g.winOpen?5:7));g.lastDis=false;if(g.Q>=100&&before<100){SFX.full();floatT(px,py-30,'満タン！',YE,22)}
-  if(g.hint===2&&g.Q>=40){g.hint=3}}
+  if(g.hint===2&&g.Q>=40){g.hint=3}
+  if(before<30&&g.Q>=30&&!g.firstQ){g.firstQ=1;floatT(px,py-24,'ビリッ！ たまってきた',YE,18);vib(10);if(window.Guide&&!RUBCHEER){RUBCHEER=1;Guide.cheer('電気がたまる！',{x:px,y:py-70,size:.8,sound:false})}}}
  else if(v==='same'){trap('same','<em>同じ物どうし</em>（'+esc(ROD[rod].n)+'と'+esc(CLOTH[ck].n)+'）をこすっても、<b>静電気は起こらない</b>。ちがう物でこすろう。')}
  else if(v==='metal'){g.Q=0;if(Math.random()<.5)SFX.leak();trap('metal','<em>金属のスプーン</em>は電気を通しやすい。たまった電気が<b>持っている手へ逃げてしまう</b>。電気を通しにくい物でこすろう。')}}
-function trap(k,msg){var g=G;g.rubTrap=(g.rubTrap||{});g.rubTrap[k]=(g.rubTrap[k]||0)+1;if(g.rubTrap[k]===4){g.traps++;SFX.dud();say(msg,6);g.hint=0}}
+var RUBCHEER=0;function trap(k,msg){var g=G;if(g.prac)return;g.rubTrap=(g.rubTrap||{});g.rubTrap[k]=(g.rubTrap[k]||0)+1;if(g.rubTrap[k]===4){g.traps++;SFX.dud();say(msg,6);g.hint=0}}
 
 /* ================= 放電（連鎖） ================= */
 function chainFrom(x0,y0,Q,tubes,jm){var JM=jm||JMAX,B=Q*BUDGET,nodes=[{x:x0,y:y0,i:-1}],used={},edges=[];
@@ -2381,8 +2384,10 @@ function chainFrom(x0,y0,Q,tubes,jm){var JM=jm||JMAX,B=Q*BUDGET,nodes=[{x:x0,y:y
  var miss=null;for(var k=0;k<tubes.length;k++){if(used[k])continue;for(var m=0;m<nodes.length;m++){var dd=Math.hypot(tubes[k].x-nodes[m].x,tubes[k].y-nodes[m].y);if(dd<=JM){var need=(dd-B)/BUDGET;if(need>0&&(miss===null||need<miss))miss=need}}}
  return{edges:edges,rest:B,miss:miss}}
 function release(x,y){var g=G;
+ if(g.prac&&g.Q<=0){SFX.dud();say('まだ電気がたまっていない。布の上で <b>左右にこすろう</b>。',4);return}
  if(g.Q<=0){g.traps++;SFX.dud();say(g.lastDis?'<em>1回光らせると、たまった電気は流れ去る</em>。もう一度こすってから近づけよう。':'<em>こすっていない</em>ので電気がたまっていない。ネオン管は光らない。',5);return}
- if(g.hint)g.hint=0;var qUsed=g.Q;var ch=chainFrom(x,y,g.Q,g.tubes);g.dis++;g.Q=0;g.lastDis=true;var n=ch.edges.length,newN=0;
+ if(g.hint)g.hint=0;var qUsed=g.Q;var ch=chainFrom(x,y,g.Q,g.tubes);
+ if(g.prac&&ch.edges.length===0){SFX.dud();say('ネオン管の <b>すぐ近く</b> ではなそう（電気はそのまま）。',4);return}g.dis++;g.Q=0;g.lastDis=true;var n=ch.edges.length,newN=0;
  ch.edges.forEach(function(e,k){if(!g.tubes[e.i].got)newN++});
  var chain={edges:ch.edges,t:0,k:0,n:n,newN:newN,miss:ch.miss,x:x,y:y,full:qUsed>=100};g.chain=chain;
  if(n===0){SFX.dud();bolts.push({a:[x,y],b:[x+(Math.random()-.5)*8,y+6],life:.25});say('ネオン管が遠すぎて、<b>とどかなかった</b>'+(ch.miss!=null?'。電気が <b>あと '+Math.ceil(ch.miss)+'</b> たりなかった':'')+'。',4);g.chain=null}}
@@ -2390,12 +2395,13 @@ function stepChain(dt){var g=G,ch=g.chain;if(!ch)return;ch.t+=dt;var gap=RM?.05:
  while(ch.k<ch.edges.length&&ch.t>=ch.k*gap){var e=ch.edges[ch.k],tb=g.tubes[e.i];ch.k++;
   bolts.push({a:[e.from.x,e.from.y],b:[tb.x,tb.y],life:.45});tb.glow=1;var wasNew=!tb.got;tb.got=true;
   SFX.zap(ch.k);var q=rsc(tb.x,tb.y);burst(q[0],q[1],[YE,CR,'#fff6a8'],RM?4:10+ch.k,160+ch.k*12);floatT(q[0],q[1]-18,ch.k+'',YE,16+Math.min(20,ch.k*2));
-  flashA=Math.max(flashA,RM?.08:.12+ch.k*.02);g.amb=1;shake=Math.max(shake,RM?0:2+ch.k*.8);if(ch.k>=6)vib(15)}
+  flashA=Math.max(flashA,RM?.08:.12+ch.k*.02);g.amb=1;shake=Math.max(shake,RM?0:2+ch.k*.8);vib(ch.k>=6?15:6)}
  if(ch.k>=ch.edges.length&&ch.t>ch.k*gap+.35){g.chain=null;endChain(ch)}}
 function endChain(ch){var g=G,n=ch.n;g.chainMax=Math.max(g.chainMax,n);g.score+=n*n*10;
  if(!SV.rules.flash&&n>0){SV.rules.flash=1;save();ruleFound('flash')}
- if(n>=8)big('大連鎖 ×'+n+'！',1);else if(n>=5)big('連鎖 ×'+n+'！',0);
- if(n>=3&&ch.newN>0&&!TEST){var z=Zk();if(z&&z.earn){var q=rsc(ch.x,ch.y);try{z.earn(10,'first-try',{x:q[0],y:q[1]})}catch(e){}}}
+ if(n>=8)big('大連鎖 ×'+n+'！',1);else if(n>=5)big('連鎖 ×'+n+'！',0);else if(n>=2&&!g.prac)big('×'+n+' 連鎖',0);
+ if(window.Guide&&!g.D.coil&&(n===4||n===7)){var nq=rsc(ch.x,ch.y);setTimeout(function(){Guide.cheer(n===4?'あと1本で ×5 だった！':'あと1本で 大連鎖×8 だった！',{x:Math.min(W-150,Math.max(150,nq[0])),y:Math.max(90,nq[1]-40),size:.8,sound:false})},900)}
+ if(n>=3&&ch.newN>0&&!TEST&&!g.prac){var z=Zk();if(z&&z.earn){var q=rsc(ch.x,ch.y);try{z.earn(10,'first-try',{x:q[0],y:q[1]})}catch(e){}}}
  if(g.D.coil){g.tubes.forEach(function(t){t.got=false});say('下じきの放電では、ネオン管は<b>一瞬</b>で消えてしまう。<b>高電圧発生装置</b>の電極を持って、光り続けさせよう。',6);return}
  var left=g.tubes.filter(function(t){return!t.got}).length;
  var msg='<b>'+n+'本</b>が一瞬光って消えた（放電＝たまった電気が一気に流れた）。';
@@ -2450,6 +2456,7 @@ function roomLit(){var g=G;if(g.state==='clear')return;g.state='clear';var ri=g.
  SV.lit[ri]=1;var b=SV.best[ri]||{};var prev=b.dis;if(!b.dis||g.dis<b.dis)b.dis=g.dis;b.chain=Math.max(b.chain||0,g.chainMax);SV.best[ri]=b;SV.maxChain=Math.max(SV.maxChain||0,g.chainMax);
  SV.unl=Math.max(SV.unl,Math.min(NR-1,ri+1));SV.playMs=(SV.playMs||0)+g.time*1000;if(D.final&&!SV.done){SV.done=true;SV.clearMs=SV.playMs}save();
  SFX.fan();confetti();vib([40,60,40]);g.chan=1;
+ if(g.prac){$('tick').classList.add('off');setTimeout(function(){if(G===g&&window.Guide)Guide.tutorialClear()},RM?100:900);return}
  $('cEn').textContent=D.en+' — LIT';$('cTitle').textContent=D.final?'館じゅうが灯った！':D.n+'が灯った！';
  $('cSub').textContent=D.final?'雷＝雲にたまった静電気の放電。その電気で、館のすべての部屋が灯った。':'シャンデリアに火が入った。館の地図の窓がひとつ明るくなる。';
  var rec=!old[0]?'初点灯！':(prev&&g.dis<prev)?'新記録！':'';$('cRec2').textContent=rec;$('cRec2').classList.toggle('hidden',!rec);
@@ -2538,8 +2545,8 @@ function drawPlay(x,dt){var g=G,D=g.D,s=L.s;
  if(L.mini)drawHouse(x,L.mini.x,L.mini.y,L.mini.w,L.mini.h,g.ri,true);
  /* 上の帯 */
  x.save();x.font='800 '+(W<420?17:22)+'px "Kaisei Tokumin",serif';x.textAlign='center';x.textBaseline='middle';x.fillStyle=CR;var title=(g.ri+1)+'　'+D.n+(D.coil?'　'+(Math.min(g.stage+1,D.stages))+'/'+D.stages:'');
- var tx0=L.land?L.rx+L.rw/2:W/2;x.fillText(title,tx0,L.land?32:30);
- if(!D.final&&!D.coil){var left=g.tubes.filter(function(t){return!t.got}).length;x.font='700 '+(W<420?12:15)+'px "Kaisei Tokumin",serif';x.fillStyle=YE;x.fillText('のこり '+left+'本 ・ 放電 '+g.dis+'回（めやす '+D.par+'）',tx0,L.land?58:L.ry-16)}
+ var tx0=L.land?L.rx+L.rw/2:W/2;if(!g.prac)x.fillText(title,tx0,L.land?32:30);
+ if(!D.final&&!D.coil&&!g.prac){var left=g.tubes.filter(function(t){return!t.got}).length;x.font='700 '+(W<420?12:15)+'px "Kaisei Tokumin",serif';x.fillStyle=YE;x.fillText('のこり '+left+'本 ・ 放電 '+g.dis+'回（めやす '+D.par+'）',tx0,L.land?58:L.ry-16)}
  x.restore();
  /* 連鎖カウンター */
  if(g.chain&&g.chain.k>0){var n=g.chain.k,sz=Math.min(90,40+n*6)*(L.land?1:.8);x.save();x.translate(L.rx+L.rw-16,L.ry+14);x.textAlign='right';x.textBaseline='top';x.font='800 '+sz+'px "Kaisei Tokumin",serif';
@@ -2668,17 +2675,46 @@ var INHUB=!!window.COLLECTION_NAME||(function(){try{return window.parent!==windo
 function setScene(s){scene=s;SCR.forEach(function(id){show(id,false)});bolts=[];
  if(s==='title')show('scrTitle',true);else if(s==='map'){show('scrMap',true);$('bMapTest').classList.toggle('hidden',!SV.done)}else if(s==='test')show('scrTest',true);else if(s==='end')show('scrEnd',true);
  var b=$('bBack');b.classList.toggle('hidden',s==='title'&&!INHUB);b.textContent=s==='title'?'◀ 一覧へ':'◀ もどる';
- if(s!=='play')$('tick').classList.add('off');$('bMute').textContent=muted?'音×':'音'}
+ if(s!=='play')$('tick').classList.add('off');$('bMute').textContent=muted?'音×':'音';
+ if(HELP){if(s==='play'||s==='map')HELP.show();else HELP.hide()}}
 $('bBack').onclick=function(){ac();
  if(scene==='title'){try{window.parent.postMessage({type:'rika-close-game'},'*')}catch(e){}return}
- if(G)G.paused=true;
+ if(G)G.paused=true;if(G&&G.prac){$('bkSub').textContent='れんしゅうをやめますか？（あとで表紙の「あそびかた」から、いつでもできます）';$('bkGo').textContent=SV.unl>0||SV.lit[0]?'館の地図へ':'タイトルへ';show('scrBackCf',true);return}
  $('bkSub').textContent=scene==='play'?'進み具合は保存されます（灯した部屋と★はそのまま。この部屋は次にはじめから）。':scene==='test'?'確認テストは、次はさいしょから。館の進み具合は保存されています。':'進み具合は保存されます。タイトルにもどります。';
  $('bkGo').textContent=scene==='play'?'館の地図へ':'タイトルへ';show('scrBackCf',true)};
-$('bkNo').onclick=function(){show('scrBackCf',false);if(G)G.paused=false};
-$('bkGo').onclick=function(){show('scrBackCf',false);if(scene==='play'){if(G){SV.playMs=(SV.playMs||0)+G.time*1000;save()}G=null;setScene('map')}else{G=null;setScene('title')}};
+$('bkNo').onclick=function(){show('scrBackCf',false);if(G&&!G.hp)G.paused=false};
+$('bkGo').onclick=function(){show('scrBackCf',false);if(G&&G.prac&&window.Guide){G=null;Guide.tutorialEnd();setScene(SV.unl>0||SV.lit[0]?'map':'title');return}if(scene==='play'){if(G){SV.playMs=(SV.playMs||0)+G.time*1000;save()}G=null;setScene('map')}else{G=null;setScene('title')}};
 $('bMute').onclick=function(){muted=!muted;try{localStorage.setItem(SKEY+':mute',muted?'1':'0')}catch(e){}$('bMute').textContent=muted?'音×':'音';if(!muted)ac()};
 function getName(){return(window.PLAYER_NAME||$('nameIn').value||SV.name||'').trim()}
-$('bStart').onclick=function(){ac();SFX.tap();SV.name=$('nameIn').value.trim()||SV.name;save();if(SV.unl>0||SV.lit[0])setScene('map');else startRoom(0)};
+var INTRO={title:'第21回 雷の館',learn:'物をこすると **静電気** がたまり、一気に流れる **放電** でネオン管が光る',
+  how:'下じきを布で **こすって** 部屋へ運び、ネオン管の近くで **はなす**',gesture:'drag'};
+function rodIt(){return stationItems().filter(function(q){return q.t==='rod'})[0]}
+function clothIt(){return stationItems().filter(function(q){return q.t==='cloth'})[0]}
+function ctr(it,k){return it?{x:it.x+it.w/2,y:it.y+it.h/2,r:Math.max(30,Math.min(it.w,it.h)*(k||.42))}:{x:W/2,y:H/2,r:30}}
+function heldPt(){return G&&G.held?{x:G.held.x,y:G.held.y,r:34}:ctr(rodIt())}
+function tubePt(){var t=G&&G.tubes[1];if(!t)return{x:W/2,y:H/3,r:30};var q=rsc(t.x,t.y);return{x:q[0],y:q[1],r:Math.max(30,L.s*12)}}
+var PSTEPS=[
+  {gesture:'drag',target:function(){return ctr(rodIt())},to:function(){return ctr(clothIt(),.3)},
+    until:function(){return !!(G&&G.held&&clothAt(G.held.x,G.held.y))},praise:'布の上！',place:'above',
+    text:'**下じき** を おさえたまま、**セーターの上** まで運ぼう'},
+  {gesture:'draw',target:function(){return ctr(clothIt(),.46)},area:function(){var c2=clothIt();return c2?{x:c2.x+c2.w/2,y:c2.y+c2.h/2,w:c2.w+16,h:c2.h+16}:null},
+    path:function(){var c2=clothIt();if(!c2)return[];var y=c2.y+c2.h*.45,a=c2.x+c2.w*.18,b=c2.x+c2.w*.82;return[{x:a,y:y},{x:b,y:y},{x:a,y:y+6},{x:b,y:y+6},{x:a,y:y}]},
+    until:function(){return !!(G&&G.Q>=100)},praise:'満タン！',place:'above',
+    text:'指をはなさずに **左右にこする**。上のメーター「電気」が **満タン** になるまで！'},
+  {gesture:'drag',target:heldPt,to:tubePt,area:function(){return{x:L.rx+L.rw/2,y:L.ry+L.rh/2,w:L.rw+12,h:L.rh+12}},
+    until:function(){return !!(G&&G.tubes.some(function(t){return t.got}))},praise:false,place:'below',
+    text:'そのまま **部屋のネオン管の近く** まで運んで、指を **はなす**！'}];
+var PRACTICE={start:function(){PRAC=true;startRoom(0,true)},label:'れんしゅう中',clearOn:'manual',clearText:'れんしゅうクリア！',steps:PSTEPS,
+  onExit:function(res){PRAC=false;if(res&&(res.stopped||res.replaced))return;
+    if(res&&res.cleared){if(SV.unl<=1)startRoom(1);else setScene('map');return}
+    if(G&&G.prac){G.prac=false;say('<b>'+esc(ROOMS[0].n)+'</b>　'+esc(ROOMS[0].lead),6)}}};
+var busy=false;
+$('bStart').onclick=function(){if(busy)return;ac();SFX.tap();SV.name=$('nameIn').value.trim()||SV.name;save();var first=!(SV.unl>0||SV.lit[0]);
+  var go=function(){busy=false;if(!first)setScene('map');else if(window.Guide)Guide.tutorial(PRACTICE);else startRoom(0)};
+  if(window.Guide){busy=true;Guide.intro(INTRO).then(go)}else go()};
+if(window.Guide)Guide.tutorialButton('#bHow',function(){ac();SFX.tap();Guide.tutorial(PRACTICE)});else $('bHow').classList.add('hidden');
+/* ボタンは押すと沈む＋軽い振動 */
+document.addEventListener('pointerdown',function(e){var b=e.target&&e.target.closest&&e.target.closest('.lb');if(b&&!b.disabled)vib(8)},true);
 $('bCont').onclick=function(){ac();SFX.tap();SV.name=$('nameIn').value.trim()||SV.name;save();setScene('map')};
 function openBook(){var z=Zk();if(z&&z.openBook)z.openBook()}
 $('bBook1').onclick=openBook;$('bBook2').onclick=openBook;$('eBook').onclick=openBook;
@@ -2686,7 +2722,7 @@ $('bGacha').onclick=function(){var z=Zk();if(z&&z.openGacha)z.openGacha()};
 if(!Zk()){['bBook1','bBook2','bGacha','eBook'].forEach(function(id){$(id).classList.add('hidden')})}
 $('bToTest').onclick=function(){startTest()};$('bMapTest').onclick=function(){startTest()};
 function toTest(){var z=Zk();if(z&&z.mainClear&&!TEST){try{z.mainClear({onClose:startTest});return}catch(e){}}startTest()}
-document.addEventListener('visibilitychange',function(){if(document.hidden&&G&&scene==='play'){G.paused=true;show('scrBackCf',true);$('bkSub').textContent='一時停止中。進み具合は保存されます。';$('bkGo').textContent='館の地図へ'}});
+document.addEventListener('visibilitychange',function(){if(document.hidden&&G&&scene==='play'&&!G.prac){G.paused=true;show('scrBackCf',true);$('bkSub').textContent='一時停止中。進み具合は保存されます。';$('bkGo').textContent='館の地図へ'}});
 
 /* ================= 確認テスト ================= */
 var TQ=[],TI=0,TA=[],TOK=[],CARD=null;
@@ -2723,6 +2759,19 @@ $('eCard').onclick=function(){if(CARD&&window.SubmitCard)SubmitCard.reopen(CARD)
 $('eMap').onclick=function(){setScene(TEST?'title':'map')};
 
 /* ================= はじまり ================= */
+var HELP=null;
+if(window.Guide){
+  Guide.setup({theme:{bg:'#0B0B0B',fg:'#F5F1E6',accent:'#FFD400',accentText:'#0B0B0B',font:'"Kaisei Tokumin","Hiragino Mincho ProN",serif',bodyFont:'"Kaisei Tokumin","Hiragino Mincho ProN",serif',
+      radius:0,texture:'grain',line:'#F5F1E6',dim:'rgba(5,5,5,.62)',shadow:'0 0 0 4px #0B0B0B, 0 0 0 7px #F5F1E6, 9px 9px 0 7px #FFD400',outline:'#0B0B0B',hand:'#F5F1E6',handLine:'#0B0B0B'},
+    sfx:function(k){if(k==='step')SFX.grab();else if(k==='done')SFX.ok();else if(k==='clear')SFX.fan();else if(k==='open'||k==='close')SFX.tap();else if(k==='cheer')SFX.full();else if(k==='nudge')SFX.tap()},
+    muted:function(){return muted}});
+  HELP=Guide.help({title:INTRO.title,learn:INTRO.learn,how:INTRO.how,offset:{x:62,y:0},size:46,show:false,attention:true,replay:'tutorial',
+    rules:['下じきを布で **こする** と電気がたまる（こする台のメーター）','部屋の中で **指をはなす** と、放電がネオン管から次の管へ **連鎖** する',
+      'たまった電気が多いほど **遠くまで** 飛ぶ。1回はなすと電気は流れ去る','**同じ物どうし**・**金属のスプーン** でこすっても電気はたまらない',
+      '塔では、雲の中を指でかき回して電気をため、**避雷針** まで指をすべらせて はなす'],
+    onOpen:function(){if(scene==='play'&&G&&!G.paused){G.paused=true;G.hp=1}},
+    onClose:function(){if(G&&G.hp){G.hp=0;if($('scrBackCf').classList.contains('hidden'))G.paused=false}}});
+}
 var greeted=false;addEventListener('pointerdown',function(){if(greeted||scene!=='title')return;greeted=true;ac();SFX.thunder(.35);[262,330,392].forEach(function(f,i){tone(f,1.2,'triangle',.02,.3+i*.12)})},true);
 resize();
 window.Zukan&&Zukan.setup&&Zukan.setup({game:GID,koma:[KOMA]});
@@ -2733,7 +2782,7 @@ if(TEST)startTest();else setScene('title');
 requestAnimationFrame(frame);
 /* 自動操作の確かめ用の窓口（遊びには影響しない） */
 window.__KY={G:function(){return G},start:startRoom,scene:function(){return scene},SV:function(){return SV},chainFrom:chainFrom,release:function(x,y,q){if(!G)return;G.Q=q==null?100:q;release(x,y)},
- hold:function(k,px,py){if(!G)return;G.held={k:k,x:px,y:py}},drop:function(){if(G)G.held=null},strike:function(){if(G){G.cloud.Q=100;strike()}},toTest:toTest,lit:roomLit,rsc:rsc,items:stationItems};
+ hold:function(k,px,py){if(!G)return;G.held={k:k,x:px,y:py}},drop:function(){if(G)G.held=null},strike:function(){if(G){G.cloud.Q=100;strike()}},toTest:toTest,lit:roomLit,rsc:rsc,items:stationItems,L:function(){return L},mapR:function(){return MAPR}};
 })();
 </script>
 </body>

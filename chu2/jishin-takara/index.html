@@ -164,6 +164,12 @@ body.port #shelf .sp{width:30px;height:28px}body.port #shelf .sp svg{width:28px;
 #scrAsk{background:rgba(44,44,52,.5);z-index:70}
 #ask{width:min(90vw,420px);padding:20px;text-align:center;background:var(--bg);border:4px dotted var(--ink)}
 #ask p{font-size:16px;line-height:1.6}
+/* 仕上げ 2026-09-28（jt-finish-2026-09-28）: 確認はれんしゅうの暗幕より上。「？」の場所をあける。れんしゅう中は上の札を帯にゆずる */
+#scrAsk{z-index:2147482640}
+body:not(.port) #hud{padding:0 128px}
+#hud.prac{visibility:hidden}
+.tool.hot{animation:tlhot .45s ease-out}
+@keyframes tlhot{0%{box-shadow:0 0 0 0 rgba(224,169,59,.9)}100%{box-shadow:0 0 0 14px rgba(224,169,59,0)}}
 @media (prefers-reduced-motion:reduce){.peb.pulse,#tDig.ready,#logo.drop h1,#logo.drop p{animation:none}#combo.go{animation-duration:.01s}}
 </style>
 </head>
@@ -173,8 +179,8 @@ body.port #shelf .sp{width:30px;height:28px}body.port #shelf .sp svg{width:28px;
 <div id="combo"><b id="comboB"></b><span id="comboS"></span></div>
 <div id="toast"></div>
 
-<button id="bBack" class="hidden" aria-label="もどる"><b>◀</b><span id="bBackT">もどる</span></button>
-<button id="bMute" class="peb" aria-label="音">🔊</button>
+<button id="bBack" class="hidden" aria-label="もどる" data-gd-pass><b>◀</b><span id="bBackT">もどる</span></button>
+<button id="bMute" class="peb" aria-label="音" data-gd-pass>🔊</button>
 
 <div id="hud" class="hidden"><div id="hudT"></div><div id="hudN"></div></div>
 
@@ -194,6 +200,7 @@ body.port #shelf .sp{width:30px;height:28px}body.port #shelf .sp svg{width:28px;
     <button class="peb red pulse" id="bStart">はじめる</button>
   </div>
   <div class="row" style="margin-top:12px">
+    <button class="peb" id="bHow">あそびかた</button>
     <button class="peb" id="bCont">つづきから</button>
     <button class="peb" id="bBook1">📖 図鑑</button>
   </div>
@@ -238,7 +245,7 @@ body.port #shelf .sp{width:30px;height:28px}body.port #shelf .sp svg{width:28px;
   </div>
 </div>
 
-<div id="scrAsk" class="scr hidden"><div id="ask"><p id="askP">もどりますか？<br>進み具合は保存されます。</p><div class="row"><button class="peb" id="askNo">つづける</button><button class="peb red" id="askGo">もどる</button></div></div></div>
+<div id="scrAsk" class="scr hidden" role="dialog" aria-modal="true" data-gd-pass><div id="ask"><p id="askP">もどりますか？<br>進み具合は保存されます。</p><div class="row"><button class="peb" id="askNo">つづける</button><button class="peb red" id="askGo">もどる</button></div></div></div>
 
 <script>/*@SUBMIT_CARD_BEGIN*/
 /* ==========================================================
@@ -2405,12 +2412,12 @@ var toastT=null;function toast(h,ms){var t=$('toast');t.innerHTML=h;t.classList.
 
 /* ================= あそぶ ================= */
 var G=null;
-function startLevel(i){ac();var L=LV[i],r=rng(1000+i*77);
+function startLevel(i,prac){ac();var L=LV[i],r=rng(1000+i*77);
   var mags=L.mags.map(buildMag);POLES=[];mags.forEach(function(m){POLES=POLES.concat(m.poles)});
   G={li:i,L:L,mags:mags,flags:[],lines:[],comps:[],fil:[],falling:[],bag:1,bagN:L.bag,tool:'sand',errs:0,lineFails:0,digMiss:0,hits:0,preds:0,combo:0,best:0,score:0,time:0,
      state:'play',draw:null,fails:[],holes:[],stripes:null,stripeHash:null,done:false,left:L.boss||0,tut:L.tip==='tut'?0:-1,predMsg:L.tip==='pred',visited:[],clearT:0};
-  buildStripes();makeFlags(r);FL.width=FL.width;fl.clearRect(0,0,FL.width,FL.height);
-  selectTool('sand');setScene('play');updHud();
+  G.prac=!!prac;buildStripes();makeFlags(r);if(prac)G.flags=G.flags.slice(0,1);FL.width=FL.width;fl.clearRect(0,0,FL.width,FL.height);
+  selectTool('sand');setScene('play');$('hud').classList.toggle('prac',!!prac);updHud();
   var intro={tut:'紙の上を指でなぞって<b>砂鉄をまこう</b>（🫙を長押しでも）',pred:'<b>方位磁針を置くとき、ドラッグで針の向きを予想</b>→当たると大ボーナス',u:'U字形磁石の<b>体は、極の後ろ</b>にあるかも',ns:'磁石が2本。<b>N極から出た線は、どのS極に入る？</b>',nn:'<b>同じ極どうし</b>が向き合っている…線は<b>交わらない</b>',disc:'<b>砂鉄袋が小さい</b>。まく場所を考えよう',str:'<b>強い磁石</b>のまわりは線が<b>ぎっしり</b>'}[L.tip]||'砂鉄→方位磁針→<b>N極からS極へ</b>磁力線';
   if(L.boss)intro='<b>大地図・タイムアタック</b>　4分以内に5本の線と3つの磁石！';
   note(intro);SFX.whoosh();
@@ -2511,6 +2518,7 @@ function judgeLine(path){var rs=resample(path,.12);if(rs.length<6)return;var s=r
   else if(tot>0&&good<tot*.86||maxRun>7){why='磁界の向きからずれた';hint=crossed?'磁力線は<b>交わらない</b>。となりの線と同じ向きに進もう':'砂鉄の模様と磁針の向きに<b>そって</b>なぞろう'}
   else if(sN.d>.8){var dd=Math.max(.1,sN.d-.5);why='出発点に極がない';hint='磁力線は<b>N極から出る</b>。N極まで <b>あと'+dd.toFixed(1)+'マス</b>';where=s}
   else if(eS.d>.8){var d2=Math.max(.1,eS.d-.5);why='終点に極がない';hint='磁力線は<b>S極に入る</b>。S極まで <b>あと'+d2.toFixed(1)+'マス</b>';where=e}
+  if(why&&G.prac){var wsp=W2S(where[0],where[1]);floatT(wsp[0],wsp[1]-18,why,'#5a5a66',24);SFX.bad();toast(hint||'',3200);G.fails.push({pts:rs,t:0,at:where,ang:where?fieldAng(where[0],where[1]):0});return}
   if(why){G.lineFails++;G.errs++;if(fi>=0)G.flags[fi].fails++;G.fails.push({pts:rs,t:0,at:where,ang:where?fieldAng(where[0],where[1]):0});
     var ws=W2S(where[0],where[1]);badMove(ws[0],ws[1],why,hint);if(G.tut===2)note('<b>旗</b>を通って、<b>N極からS極へ</b>。赤い点線の<b>矢印の向き</b>が磁界の向き');return}
   // 成功: 本当の磁力線に吸い付く
@@ -2542,11 +2550,12 @@ function digAt(x,y,sx,sy){if(G.state!=='play')return;var best=null,bd=1e9;
       var s=W2S(best.m.x,best.m.y);burst(s[0],s[1],[RED,BLUE,GOLD,'#fff'],60,5,1.1);
       if(first)goodMove(s[0],s[1],'掘り当てた！','hit',5,'磁石の位置');else{floatT(s[0],s[1]-24,'掘り当てた！',RED,34);G.score+=100;updHud()}
       if(G.mags.every(function(m){return m.found}))setTimeout(levelClear,900)},260)}
+  else if(G.prac){G.holes.push({x:x,y:y,ok:false,t:0});floatT(sx,sy-18,'からっぽ…','#5a5a66',24);SFX.bad();toast('磁石の体は、磁力線が集まる <b>N極とS極の間</b>',2600)}
   else{G.digMiss++;G.holes.push({x:x,y:y,ok:false,t:0});var dd=Math.max(1,Math.round(bd-.5));badMove(sx,sy,'からっぽ…','磁石の体まで <b>あと'+dd+'マス</b>。磁力線が集まる<b>極と極の間（U字形は極の後ろ）</b>に体がある')}}
 
 /* ---- クリア ---- */
 function levelClear(){if(!G||G.state!=='play')return;G.state='clear';G.clearT=0;var L=G.L,li=G.li;
-  var st=[true,G.lineFails===0,G.digMiss===0&&(!L.boss||G.left>0)];
+  var st=[true,G.lineFails===0,G.digMiss===0&&(!L.boss||G.left>0)];if(G.prac&&SV.stars[li])st=SV.stars[li].slice();
   var old=SV.stars[li]||[false,false,false];SV.stars[li]=st.map(function(v,i){return v||old[i]});
   var b=SV.best[li];if(!b||G.time<b.t)SV.best[li]={t:G.time,err:G.errs};
   SV.specs[li]=Math.max(SV.specs[li]||0,G.lineFails===0?2:1);SV.score=(SV.score||0)+G.score;SV.hits=(SV.hits||0)+G.hits;
@@ -2555,6 +2564,7 @@ function levelClear(){if(!G||G.state!=='play')return;G.state='clear';G.clearT=0;
   save();var z=Zk();
   if(z&&z.earn){if(G.lineFails===0&&G.digMiss===0)z.earn(30,'rule',{silent:false});if(L.boss&&G.left>0)z.earn(100,'boss',{id:GID+':boss'})}
   SFX.fan();flash(.5);shake(12);for(var i=0;i<6;i++)setTimeout(function(){burst(Math.random()*W,Math.random()*H*.5,[RED,GOLD,'#5C8A4E','#3F7CAC','#fff'],30,5,1.4)},i*140);
+  if(G.prac){var gp=G;setTimeout(function(){if(G===gp&&window.Guide)Guide.tutorialClear()},900);return}
   setTimeout(function(){showClear(st)},1300)}
 var SPECS=['棒磁石（横）','棒磁石（縦）','ななめの棒磁石','U字形磁石','N極とS極の向かい合わせ','N極どうしの向かい合わせ','円形磁石','強い磁石と弱い磁石','U字形と棒','宝島の大地図'];
 var SPECTXT=['両端の極に線が集まり、N極から出た線がぐるりと回ってS極に入る。','向きを変えても、線の形は磁石といっしょに回るだけ。','磁界の向きは磁石の向きで決まる。紙の向きは関係ない。','向かい合う両極の間では、線がほぼまっすぐN→S。体は極の後ろ側。','向かい合ったN極とS極の間を、線がつながる。','N極どうしの間では線がつながらず、押し合うように曲がる。','丸くても極は2つ。N極の側から出てS極の側に入る。','強い磁石ほど線がぎっしり＝磁界が強い。','いくつ磁石があっても、線は交わらない。','島じゅうの磁界を、磁力線で表しきった！'];
@@ -2708,15 +2718,16 @@ function backBtn(){var b=$('bBack'),on=scene!=='title'||INHUB;b.classList.toggle
 function setScene(s){scene=s;$('logo').classList.toggle('hidden',s!=='title');$('hud').classList.toggle('hidden',s!=='play');$('box').classList.toggle('hidden',s!=='play');
   if(s==='title'){showScr('scrTitle');var lg=$('logo');lg.classList.remove('drop');void lg.offsetWidth;lg.classList.add('drop');$('bCont').classList.toggle('hidden',!(SV.unl>1||SV.stars[0]))}
   else if(s==='map'){showScr('scrMap');refreshShelf()}else if(s==='play')showScr();else if(s==='test')showScr('scrTest');else if(s==='end')showScr('scrEnd');
-  backBtn();$('bMute').textContent=muted?'🔇':'🔊'}
+  backBtn();$('bMute').textContent=muted?'🔇':'🔊';if(s!=='play')$('hud').classList.remove('prac');
+  if(HELP){if(s==='play'||s==='map')HELP.show();else HELP.hide()}}
 var askGo=null;
 $('bBack').onclick=function(){ac();SFX.tap();
   if(scene==='title'){try{window.parent.postMessage({type:'rika-close-game'},'*')}catch(e){}return}
   if(scene==='map'){setScene('title');return}
-  $('askP').innerHTML=scene==='test'?'確認テストをやめて、島の地図にもどりますか？<br>（テストは次はさいしょから）':'島の地図にもどりますか？<br>掘った区画と★は保存されます（この区画は次ははじめから）。';
+  $('askP').innerHTML=G&&G.prac?'れんしゅうをやめますか？<br>（あとで表紙の「あそびかた」から、いつでもできます）':scene==='test'?'確認テストをやめて、島の地図にもどりますか？<br>（テストは次はさいしょから）':'島の地図にもどりますか？<br>掘った区画と★は保存されます（この区画は次ははじめから）。';
   $('scrAsk').classList.remove('hidden');if(G)G.paused=true};
-$('askNo').onclick=function(){$('scrAsk').classList.add('hidden');if(G)G.paused=false};
-$('askGo').onclick=function(){$('scrAsk').classList.add('hidden');if(G&&G.state==='play')SV.playMs=(SV.playMs||0)+G.time*1000;save();G=null;setScene('map')};
+$('askNo').onclick=function(){$('scrAsk').classList.add('hidden');if(G&&!G.hp)G.paused=false};
+$('askGo').onclick=function(){$('scrAsk').classList.add('hidden');if(G&&G.state==='play')SV.playMs=(SV.playMs||0)+G.time*1000;save();var wasP=G&&G.prac;G=null;if(wasP&&window.Guide)Guide.tutorialEnd();setScene('map')};
 $('bMute').onclick=function(){muted=!muted;try{localStorage.setItem(SKEY+':mute',muted?'1':'0')}catch(e){}$('bMute').textContent=muted?'🔇':'🔊';if(!muted){ac();SFX.tap()}};
 ['tSand','tComp','tPen','tDig'].forEach(function(id){var k={tSand:'sand',tComp:'comp',tPen:'pen',tDig:'dig'}[id];$(id).addEventListener('click',function(){ac();selectTool(k)})});
 // 🫙長押し＝紙全体にふる（スマホでも）
@@ -2727,7 +2738,36 @@ $('bBook1').onclick=openBook;$('bBook2').onclick=openBook;$('eBook').onclick=ope
 $('bGacha').onclick=function(){var z=Zk();if(z&&z.openGacha)z.openGacha()};
 if(!Zk()){['bBook1','bBook2','bGacha','eBook'].forEach(function(id){$(id).classList.add('hidden')})}
 function getName(){return(window.PLAYER_NAME||$('nameIn').value||SV.name||'').trim()}
-$('bStart').onclick=function(){ac();SFX.find();SV.name=$('nameIn').value.trim()||SV.name;save();if(SV.unl<=1&&!SV.stars[0])startLevel(0);else setScene('map')};
+var INTRO={title:'第24回 砂鉄の宝さがし',learn:'磁石のまわりには **磁界** がある。磁力線は **N極から出てS極に入り**、交わらない',
+  how:'砂鉄を **まいて** 模様を見て、旗を通る磁力線を **なぞる** → 磁石を掘る',gesture:'draw'};
+function wpt(x,y,r){var p=W2S(x,y);return{x:p[0],y:p[1],r:r||Math.max(26,U*.7)}}
+function m0(){return G&&G.mags&&G.mags[0]&&G.mags[0].m}
+function flag0(){return G&&G.flags&&G.flags[0]}
+function sandPath(){var m=m0()||{x:8,y:5};var o=[];for(var k=0;k<=8;k++){var a=k/8*6.283;o.push(W2S(m.x+Math.cos(a)*3.4,m.y+Math.sin(a)*2.6))}return o.map(function(p){return{x:p[0],y:p[1]}})}
+function compPt(){var f=flag0();if(!f)return wpt(8,8);var x=f.x+(f.x<8?-1:1)*.2,y=f.y>5?f.y-1.1:f.y+1.1;return wpt(Math.max(1,Math.min(PW-1,f.x)),Math.max(1,Math.min(PH-1,y)))}
+function linePath(){var f=flag0();if(!f)return[];var rs=resampleN(f.line,12);return rs.map(function(p){var q=W2S(p[0],p[1]);return{x:q[0],y:q[1]}})}
+function paperArea(){var pr=paperRect();return{x:pr.x+pr.w/2,y:pr.y+pr.h/2,w:pr.w+8,h:pr.h+8}}
+var PSTEPS=[
+  {gesture:'draw',target:function(){var m=m0()||{x:8,y:5};return wpt(m.x,m.y+2.6)},path:sandPath,area:paperArea,until:function(){return !!(G&&G.tut>=1)},praise:'模様が出た！',
+    text:'🫙 砂鉄で、紙の上を **ぐるっとなぞって** まこう。見えない磁石のまわりに **模様** が浮かぶ'},
+  {gesture:'tap',target:compPt,until:function(){return !!(G&&G.comps.length>=1)},praise:'置いた！',
+    text:'🧭 方位磁針を、**旗の近く** をタップして置こう。針の **赤（N極）** がさす向き＝磁界の向き'},
+  {gesture:'tap',target:'#tPen',until:function(){return !!(G&&G.tool==='pen')},praise:'えんぴつ！',
+    text:'道具箱の **✏️ 磁力線** をタップ'},
+  {gesture:'draw',target:function(){var p=linePath();return p.length?{x:p[0].x,y:p[0].y,r:26}:wpt(8,5)},path:linePath,area:paperArea,
+    until:function(){var f=flag0();return !!(f&&f.done)},praise:'磁力線！',
+    text:'**旗** を通って、**N極から出て S極に入る** ように なぞろう（砂鉄の模様にそって）'},
+  {gesture:'tap',target:function(){var m=m0()||{x:8,y:5};return wpt(m.x,m.y,Math.max(30,U*.9))},until:function(){return !!(G&&G.mags&&G.mags.every(function(m){return m.found}))},praise:false,
+    text:'線がそろった！ **⛏️ 磁石の体**（N極とS極の間）をタップして掘ろう'}];
+var PRACTICE={start:function(){startLevel(0,true)},label:'れんしゅう中',clearOn:'manual',clearText:'れんしゅうクリア！',steps:PSTEPS,
+  onExit:function(res){if(res&&(res.stopped||res.replaced))return;if(res&&res.cleared){G=null;if(SV.unl<=2)startLevel(1);else setScene('map');return}
+    if(G&&G.prac){G.prac=false;$('hud').classList.remove('prac')}}};
+var busy=false;
+$('bStart').onclick=function(){if(busy)return;ac();SFX.find();SV.name=$('nameIn').value.trim()||SV.name;save();var first=SV.unl<=1&&!SV.stars[0];
+  var go=function(){busy=false;PRACTICE.bandAt=PORT?'top':'bottom';if(!first)setScene('map');else if(window.Guide)Guide.tutorial(PRACTICE);else startLevel(0)};
+  if(window.Guide){busy=true;Guide.intro(INTRO).then(go)}else go()};
+if(window.Guide)Guide.tutorialButton('#bHow',function(){ac();SFX.tap();PRACTICE.bandAt=PORT?'top':'bottom';Guide.tutorial(PRACTICE)});else $('bHow').classList.add('hidden');
+document.addEventListener('pointerdown',function(e){var b=e.target&&e.target.closest&&e.target.closest('.peb,.tool');if(b&&!b.disabled){vib(8);if(b.classList.contains('tool')){b.classList.remove('hot');void b.offsetWidth;b.classList.add('hot')}}},true);
 $('bCont').onclick=function(){ac();SFX.tap();SV.name=$('nameIn').value.trim()||SV.name;save();setScene('map')};
 $('bToTest').onclick=function(){if(SV.done)toTest()};
 function toTest(){var z=Zk();if(z&&z.mainClear&&!TEST){try{z.mainClear({onClose:startTest});return}catch(e){}}startTest()}
@@ -2770,7 +2810,7 @@ function frame(now){var dt=Math.min(.05,(now-last)/1000);last=now;T+=dt;
   if(G&&!G.paused&&scene==='play'){if(G.state==='play'){G.time+=dt;if(G.L.boss){G.left-=dt;if(Math.floor(G.left+dt)!==Math.floor(G.left))updHud();if(G.left<=0){G.left=0;G.L.boss&&timeUp()}}}
     // 砂鉄を焼き付け
     var nf=[];for(var i=0;i<G.falling.length;i++){var f=G.falling[i];f.t+=dt;if(f.t>=.3)bakeFiling(f);else nf.push(f)}G.falling=nf;
-    if(G.tut===0&&G.fil.length>260){G.tut=1;note('模様が出てきた！ 次は<b>🧭方位磁針</b>をえらんで、紙を<b>タップして置こう</b>');selectTool('comp');var r=$('tComp').getBoundingClientRect();burst(r.left+r.width/2,r.top+r.height/2,[GOLD,RED],20,3)}
+    if(G.tut===0&&G.fil.length>260){G.tut=1;var pr0=paperRect();floatT(pr0.x+pr0.w/2,pr0.y+pr0.h*.3,'模様が出た！',RED,36);burst(pr0.x+pr0.w/2,pr0.y+pr0.h*.3,[INK,RED,GOLD],24,3.5);SFX.find&&SFX.find();vib(15);note('模様が出てきた！ 次は<b>🧭方位磁針</b>をえらんで、紙を<b>タップして置こう</b>');selectTool('comp');var r=$('tComp').getBoundingClientRect();burst(r.left+r.width/2,r.top+r.height/2,[GOLD,RED],20,3)}
     stepComps(dt);G.lines.forEach(function(L){L.t+=dt});G.mags.forEach(function(m){if(m.found)m.t+=dt});if(G.state==='clear')G.clearT+=dt;
     if(Math.floor(T*2)!==Math.floor((T-dt)*2))updHud()}
   stepFx(dt);
@@ -2784,13 +2824,24 @@ document.addEventListener('visibilitychange',function(){if(document.hidden&&G)sa
 window.addEventListener('resize',function(){resize()});
 
 /* ---------------- はじまり ---------------- */
+var HELP=null;
+if(window.Guide){
+  Guide.setup({theme:{bg:'#FBF7EF',fg:'#2C2C34',accent:'#D1495B',accentText:'#FFFFFF',font:FONT,bodyFont:FONT,radius:22,texture:'dots',
+      line:'#2C2C34',dim:'rgba(44,44,52,.38)',shadow:'0 6px 0 rgba(44,44,52,.28)',outline:'#FBF7EF',hand:'#FBF7EF',handLine:'#2C2C34'},
+    sfx:function(k){if(k==='step')SFX.tap();else if(k==='done')SFX.hit(2);else if(k==='clear')SFX.fan();else if(k==='open'||k==='close')SFX.tap();else if(k==='cheer')SFX.line(2);else if(k==='nudge')SFX.tap()},
+    muted:function(){return muted}});
+  HELP=Guide.help({title:INTRO.title,learn:INTRO.learn,how:INTRO.how,offset:{x:60,y:0},size:48,show:false,attention:true,replay:'tutorial',
+    rules:['🫙 砂鉄：紙を **なぞる** とまける。模様が、見えない磁石の形を教えてくれる','🧭 方位磁針：紙を **タップ** で置く。針の **N極（赤）** がさす向き＝その場所の **磁界の向き**（置くときドラッグで向きを予想→的中でボーナス）',
+      '✏️ 磁力線：**旗** を通る線を **N極から S極へ** なぞる。線どうしは **交わらない**','⛏️ 掘る：線がぜんぶそろったら、**磁石の体**（N極とS極の間）をタップ'],
+    onOpen:function(){if(G&&!G.paused){G.paused=true;G.hp=1}},onClose:function(){if(G&&G.hp){G.hp=0;if($('scrAsk').classList.contains('hidden'))G.paused=false}}});
+}
 resize();
 window.Zukan&&Zukan.setup&&Zukan.setup({game:GID,koma:[KOMA]});
 if(window.PLAYER_NAME){$('nameIn').value=window.PLAYER_NAME;$('nmRow').classList.add('hidden')}else if(SV.name)$('nameIn').value=SV.name;
 if(TEST)startTest();else setScene('title');
 requestAnimationFrame(frame);
 /* 自動操作での確かめ用（遊びには影響しない） */
-window.__JT={G:function(){return G},start:startLevel,scene:function(){return scene},SV:function(){return SV},W2S:W2S,judge:judgeLine,dig:function(m){var b=m.body[0];digAt((b[0]+b[2])/2,(b[1]+b[3])/2,W/2,H/2)},sprinkle:sprinkle,place:placeComp,clear:levelClear,sel:selectTool};
+window.__JT={mapN:function(){mapNodes();return MAPN},pr:function(){return paperRect()},G:function(){return G},start:startLevel,scene:function(){return scene},SV:function(){return SV},W2S:W2S,judge:judgeLine,dig:function(m){var b=m.body[0];digAt((b[0]+b[2])/2,(b[1]+b[3])/2,W/2,H/2)},sprinkle:sprinkle,place:placeComp,clear:levelClear,sel:selectTool};
 })();
 </script>
 </body>

@@ -165,6 +165,14 @@ body.port #hud .lt{top:118px}
 #tEx{margin-top:12px;padding:10px 12px;border-left:3px solid var(--fg);background:rgba(221,231,234,.06);font-size:15px;line-height:1.65}
 #tNext{margin-top:12px;width:100%}
 #eScore{font-size:52px}#eScore small{font-size:18px}
+/* 仕上げ 2026-09-28（tk-finish-2026-09-28）: もどる・音・確認は #stage の外（れんしゅうの暗幕より上）。「？」の場所をあける */
+#bBack,#bMute{position:fixed}
+#scrBack{position:fixed;z-index:2147482640}
+#hud .rt{right:120px}
+body.port #hud .top{right:116px}
+#hud.prac .top{display:none}
+.bt.hot,#bStamp.hot{animation:bthot .45s ease-out}
+@keyframes bthot{0%{box-shadow:0 0 0 0 rgba(221,231,234,.8)}100%{box-shadow:0 0 0 16px rgba(221,231,234,0)}}
 @media (prefers-reduced-motion:reduce){*{animation-duration:.01s!important;animation-iteration-count:1!important;transition:none!important}}
 </style>
 </head>
@@ -183,7 +191,7 @@ body.port #hud .lt{top:118px}
   <div class="btns" id="tBtns">
     <div id="nmRow">名前<input id="nameIn" maxlength="16" placeholder="（なくても遊べる）"></div>
     <button class="bt pri" id="bStart">勤務をはじめる</button>
-    <div class="row2"><button class="bt hidden" id="bCont">つづきから</button><button class="bt" id="bBook1">📖 図鑑</button></div>
+    <div class="row2"><button class="bt" id="bHow">あそびかた</button><button class="bt hidden" id="bCont">つづきから</button><button class="bt" id="bBook1">📖 図鑑</button></div>
   </div>
 </div>
 
@@ -209,14 +217,14 @@ body.port #hud .lt{top:118px}
   <div class="btns"><button class="bt pri" id="eCard">提出カードをもう一度</button><button class="bt" id="eBook">📖 図鑑</button><button class="bt" id="eMap">勤務表へ</button></div>
 </div></div>
 
-<div id="scrBack" class="scr hidden"><div class="dim"></div><div class="card bx in">
+</div>
+<!-- もどる確認（#stage の外：れんしゅうの暗幕より上に出す） -->
+<div id="scrBack" class="scr hidden" role="dialog" aria-modal="true" data-gd-pass><div class="dim"></div><div class="card bx in">
   <div class="k">も ど り ま す か</div><h2 style="font-size:22px" id="bkT">検査を中断します</h2><p id="bkSub">進み具合は保存されます。</p>
   <div class="btns"><button class="bt" id="bkNo">つづける</button><button class="bt red" id="bkGo">勤務表へ</button></div>
 </div></div>
-
-<button id="bBack" class="hidden">もどる</button>
-<button id="bMute" aria-label="音">🔊</button>
-</div>
+<button id="bBack" class="hidden" data-gd-pass>もどる</button>
+<button id="bMute" aria-label="音" data-gd-pass>🔊</button>
 
 <script>/*@SUBMIT_CARD_BEGIN*/
 /* ==========================================================
@@ -2454,8 +2462,8 @@ function recIcon(k){var W2='#DDE7EA';var s={bone:'<rect x="20" y="24" width="30"
 /* ---------------- 勤務の状態 ---------------- */
 var scene='title',G=null;
 var LENS={x:200,y:300,set:false,touch:false,on:false,hot:0};
-function startJob(ji){ac();var jb=JOBS[ji];if(jb.rest){startRest(ji);return}
-  var n=jb.N,seq=[],tgN=Math.round(n*.5);
+function startJob(ji,prac){ac();var jb=JOBS[ji];if(jb.rest){startRest(ji);return}
+  var n=prac?1:jb.N,seq=[],tgN=Math.round(n*.5);
   for(var i=0;i<n;i++){var ty=jb.items[i%jb.items.length];if(jb.boss||jb.items.length>1)ty=pick(jb.items);seq.push(ty)}
   if(jb.tut){seq[0]='hand'}
   var tgs=shuf(seq.map(function(_,i){return i<tgN})),q=[];
@@ -2463,6 +2471,8 @@ function startJob(ji){ac();var jb=JOBS[ji];if(jb.rest){startRest(ji);return}
   G={ji:ji,J:jb,q:q,spawned:0,t:0,v0:U*.42*(jb.boss?1.25:1),combo:0,maxC:0,found:0,need:0,miss:0,wrong:0,first:0,state:'intro',last:-99,paused:false,tut:jb.tut?1:0,scanned:0,rest:false};
   q.forEach(function(it){G.need+=it.tg.length});
   scene='play';showScr();backBtn();$('hPlace').textContent=jb.pl+'　'+jb.t;$('hTime').innerHTML=jb.tm;
+  G.prac=!!prac;$('hud').classList.toggle('prac',!!prac);
+  if(prac){LENS.set=true;LENS.x=PORT?W*.5:W*.84;LENS.y=PORT?H*.8:BL.c;G.state='run';setUI();$('msg').classList.add('hidden');return}
   $('inCard').innerHTML='<div class="k">'+esc(jb.tm)+'　'+esc(jb.pl)+'</div><h2>'+esc(jb.t)+'</h2><p>さがす物：<b>'+esc(jb.find)+'</b></p><p style="font-size:15px">'+jb.tip+'</p>'+(jb.boss?'<p style="font-size:14px">見逃しと誤判定は、あわせて3つまで。</p>':'')+'<div class="btns"><button class="bt pri" id="inGo">検査開始</button></div>';
   $('scrIntro').classList.remove('hidden');$('inGo').onclick=function(){SFX.click();$('scrIntro').classList.add('hidden');G.state='run';setUI();if(G.tut)say('指（マウス）で<b>レンズ</b>を動かして、手の上にかざそう');else say('さがす物：<b>'+esc(jb.find)+'</b>',false,2600)}}
 function speed(){return G.v0*(1+Math.min(G.combo,10)*.05)}
@@ -2476,8 +2486,8 @@ function updRun(dt){var g=G;if(g.paused||g.state!=='run')return;g.t+=dt;
     it2.pos=Math.min(stop,it2.pos+v*dt);
     if(g.tut&&i===1&&!g.q[0].first)it2.pos=Math.min(it2.pos,g.q[0].pos-gap);
     if(it2.pos>BL.a1-U*.3){finishItem(it2)}}
-  if(g.tut&&!g.q[0].first&&g.q[0].pos>=BL.span*.5-1){var p=itemPx(g.q[0]);if(Math.hypot(LENS.x-p[0],LENS.y-p[1])<U*.45&&!g.scanned){g.scanned=1;say('骨が<b>白く</b>透けた！ 1か所、骨が<b>折れている</b>。そこにレンズの中心を合わせて「印」');SFX.rare()}}
-  if(g.q.every(function(x){return x.done})&&g.state==='run'){g.state='clear';setTimeout(jobClear,700)}
+  if(g.tut&&!g.q[0].first&&g.q[0].pos>=BL.span*.5-1){var p=itemPx(g.q[0]);if(Math.hypot(LENS.x-p[0],LENS.y-p[1])<U*.45&&!g.scanned){g.scanned=1;if(!g.prac)say('骨が<b>白く</b>透けた！ 1か所、骨が<b>折れている</b>。そこにレンズの中心を合わせて「印」');SFX.rare();pop(p[0],p[1]-U*.62,'透けた！',30,FG);burst(LENS.x,LENS.y,18,FG,260);vib(15)}}
+  if(g.q.every(function(x){return x.done})&&g.state==='run'&&!g.prac){g.state='clear';setTimeout(jobClear,700)}
   // 珍しい物（鈴入りぬいぐるみ）をレンズで見た
   for(var j=0;j<g.spawned;j++){var t=g.q[j];if(t.rare&&!t.seen&&!t.done){var pp=itemPx(t);if(Math.hypot(LENS.x-pp[0],LENS.y-(pp[1]+.1*U))<LR*.7){t.seen=1;record('bell',pp);SFX.rare();pop(pp[0],pp[1]-U*.5,'めずらしい物！',24,'#ffd66b');say('中に<b>鈴</b>。明るく写るけれど、危ない物ではない。印はいらない',false,2600)}}}}
 function finishItem(it){var g=G;it.done=true;var left=it.tg.filter(function(t){return !t.found});
@@ -2495,6 +2505,7 @@ function stamp(){var g=G;if(!g||g.state!=='run'||g.paused)return;ac();var x=LENS
     if(Math.abs(lx)<it.w/2+.03&&Math.abs(ly)<it.h/2+.05){onIt=it;it.tg.forEach(function(t){if(t.found)return;var d=Math.hypot(lx-t.x,ly-t.y);if(d<t.r||(t.any))hit=hit||t})}}
   tone(300,.05,'square',.04);
   if(!onIt){pop(x,y,'空振り',18,DIM);return}
+  if(g.prac&&!onIt.tg.some(function(t){return !t.found&&Math.hypot((x-itemPx(onIt)[0])/U-t.x,(y-itemPx(onIt)[1])/U-t.y)<t.r})){SFX.miss();pop(x,y-LR*.5,'もう少し',24,DIM);say('骨が <b>とぎれて黒いすき間</b> になっている所に、レンズの中心（＋）を合わせよう',true);return}
   MARKS.push({x:x,y:y,t:0,ok:!!hit});
   if(hit){hit.found=true;var first=onIt.first===null;if(first)onIt.first=true;g.found++;if(first&&!onIt.wrong){g.first++;g.combo++;g.maxC=Math.max(g.maxC,g.combo)}
     var ip=itemPx(onIt);onIt.marks.push({x:(x-ip[0])/U,y:(y-ip[1])/U});
@@ -2505,7 +2516,8 @@ function stamp(){var g=G;if(!g||g.state!=='run'||g.paused)return;ac();var x=LENS
     if(first&&!onIt.wrong){if(hit.k==='lead'&&!SV.leadRule){SV.leadRule=1;save();Zk()&&Zk().earn(30,'rule',{x:x,y:y-40});say('<b>鉛</b>などはX線をほとんど通さない。だから中が分からず、開けて調べる',false,3400)}
       else if(hit.k==='su'&&!SV.suRule){SV.suRule=1;save();Zk()&&Zk().earn(30,'rule',{x:x,y:y-40});say('中が空いた所はX線がよく通る。だから<b>黒く</b>写る',false,3400)}
       else Zk()&&Zk().earn(5,'first-try',{x:x,y:y-40})}
-    if(g.tut&&onIt===g.q[0]){say('発見！ ラインが動きだす。<b>異常のない手</b>は、そのまま流してよい',false,3200)}
+    if(g.prac){g.pracDone=1;say('発見！ 骨はX線を通しにくいので白い。折れ目のすき間だけ<b>黒い</b>',false,3000);var gp=g;setTimeout(function(){if(G===gp){SFX.fan();filmRain();if(window.Guide)Guide.tutorialClear()}},1100)}
+    else if(g.tut&&onIt===g.q[0]){say('発見！ ラインが動きだす。<b>異常のない手</b>は、そのまま流してよい',false,3200)}
     else if(!(hit.k==='lead'||hit.k==='su'))say(hitWhy(hit.k),false,2200)}
   else{onIt.wrong=true;if(onIt.first===null)onIt.first=false;g.wrong++;var br=g.combo;g.combo=0;if(br>=2)showCombo(0,br);SFX.miss();shake(4);vib(60);flash(.18,RED);
     pop(x,y-LR*.5,'誤判定',26,RED);say(wrongWhy(onIt,x,y),true);if(g.J.boss&&g.miss+g.wrong>3){g.state='clear';setTimeout(bossFail,600)}}
@@ -2618,7 +2630,7 @@ function placeUI(){var st=$('bStamp'),m=$('msg'),lg=$('legend'),pg=$('prog'),cb=
   var lg1=$('tLogo'),bt=$('tBtns'),h1=$('tH1');if(!PORT){h1.style.fontSize=Math.min(78,W*.06)+'px';lg1.style.top=Math.max(40,H*.08)+'px';bt.style.bottom=Math.max(20,H*.05)+'px'}else{h1.style.fontSize=Math.min(58,W*.1)+'px';lg1.style.top=(H*.07+20)+'px';bt.style.bottom='24px'}}
 
 /* ---------------- 勤務の終わり ---------------- */
-function jobClear(){var g=G;$('bStamp').classList.add('hidden');var jb=g.J,ji=g.ji;
+function jobClear(){var g=G;if(!g||g.prac)return;$('bStamp').classList.add('hidden');var jb=g.J,ji=g.ji;
   if(g.rest){SV.stars[ji]=[1,1,1];SV.unl=Math.max(SV.unl,ji+2);save();
     $('clCard').innerHTML='<div class="k">'+esc(jb.tm)+'　休 憩 室</div><h2>身の回りの放射線</h2><div class="fig">'+natFig()+'</div><p>自然放射線は、大地・宇宙・空気・食べ物から、<br>ふだんから受けている（日本の平均で年に約2.1ミリシーベルト）。</p><div class="btns"><button class="bt pri" id="clNext">午後の勤務へ</button><button class="bt" id="clMap">勤務表へ</button></div>';
     $('scrClear').classList.remove('hidden');SFX.fan();wireClear(ji);return}
@@ -2656,14 +2668,16 @@ function showScr(){['scrTitle','scrMap','scrTest','scrEnd'].forEach(function(id)
   if(scene==='title')$('scrTitle').classList.remove('hidden');else if(scene==='map'){buildMap();$('scrMap').classList.remove('hidden')}else if(scene==='test')$('scrTest').classList.remove('hidden');else if(scene==='end')$('scrEnd').classList.remove('hidden');
   if(scene!=='play'){$('scrIntro').classList.add('hidden')}$('msg').classList.add('hidden');$('combo').style.opacity=0;setUI()}
 function setScene(s){scene=s;showScr();backBtn()}
-function backBtn(){var b=$('bBack'),on=scene==='play'||scene==='map'||scene==='test'||(scene==='title'&&INHUB);b.classList.toggle('hidden',!on);b.textContent=scene==='title'?'一覧へ':'もどる'}
+function backBtn(){var b=$('bBack'),on=scene==='play'||scene==='map'||scene==='test'||scene==='end'||(scene==='title'&&INHUB);b.classList.toggle('hidden',!on);b.textContent=scene==='title'?'一覧へ':'もどる';
+  if(HELP){if(scene==='play'||scene==='map')HELP.show();else HELP.hide()}}
 var backFrom=null;
 $('bBack').onclick=function(){ac();SFX.click();if(scene==='title'){try{window.parent.postMessage({type:'rika-close-game'},'*')}catch(e){}return}
-  backFrom=scene;if(G)G.paused=true;$('bkT').textContent=scene==='test'?'確認テストを中断します':scene==='map'?'表紙にもどります':'検査を中断します';
+  backFrom=scene;if(scene==='end'){setScene(TEST?'title':'map');return}if(G)G.paused=true;$('bkT').textContent=G&&G.prac?'れんしゅうをやめます':scene==='test'?'確認テストを中断します':scene==='map'?'表紙にもどります':'検査を中断します';
   $('bkSub').textContent=scene==='test'?'確認テストは、次はさいしょから。勤務の進み具合は保存されています。':scene==='map'?'進み具合は保存されます。':'進み具合は保存されます（終えた勤務と印はそのまま。この勤務は次にはじめから）。';
+  if(G&&G.prac)$('bkSub').textContent='あとで表紙の「あそびかた」から、いつでもできます。';
   $('bkGo').textContent=scene==='map'?'表紙へ':'勤務表へ';$('scrBack').classList.remove('hidden')};
-$('bkNo').onclick=function(){$('scrBack').classList.add('hidden');if(G)G.paused=false};
-$('bkGo').onclick=function(){$('scrBack').classList.add('hidden');if(backFrom==='map')setScene('title');else{G=null;setScene('map')}};
+$('bkNo').onclick=function(){$('scrBack').classList.add('hidden');if(G&&!G.hp)G.paused=false};
+$('bkGo').onclick=function(){$('scrBack').classList.add('hidden');if(backFrom==='map')setScene('title');else{var wasP=G&&G.prac;G=null;if(wasP&&window.Guide)Guide.tutorialEnd();setScene('map')}};
 $('bMute').onclick=function(){muted=!muted;try{localStorage.setItem(SKEY+':mute',muted?'1':'0')}catch(e){}$('bMute').textContent=muted?'🔇':'🔊'};$('bMute').textContent=muted?'🔇':'🔊';
 function buildMap(){var h='';JOBS.forEach(function(j,i){var lk=i+1>SV.unl,s=SV.stars[i]||[0,0,0],done=!!s[0],cur=!lk&&!done;
   h+='<button class="job bx'+(lk?' lock':'')+(cur?' cur':'')+(j.rest?' rest':'')+'" data-i="'+i+'"><span class="tm">'+esc(j.tm)+'</span><span><span class="pl">'+esc(j.pl)+'</span><span class="nm">'+(lk?'──':esc(j.t))+'</span></span><span class="sr">'+(lk?'🔒':j.rest?(done?'済':''):s.map(function(v){return v?'●':'○'}).join(''))+'</span></button>'});
@@ -2674,7 +2688,31 @@ function openBook(){var z=Zk();if(z&&z.openBook)z.openBook()}
 $('bBook1').onclick=openBook;$('bBook2').onclick=openBook;$('eBook').onclick=openBook;$('bGacha').onclick=function(){var z=Zk();if(z&&z.openGacha)z.openGacha()};
 if(!Zk()){['bBook1','bBook2','bGacha','eBook'].forEach(function(id){$(id).classList.add('hidden')})}
 function getName(){return(window.PLAYER_NAME||$('nameIn').value||SV.name||'').trim()}
-$('bStart').onclick=function(){ac();SFX.find(0);SV.name=$('nameIn').value.trim()||SV.name;save();if(SV.unl>1)setScene('map');else startJob(0)};
+var INTRO={title:'第23回 透視係の一日',learn:'X線は物を **通りぬける**（透過性）。骨や金属は通りにくく **白く** 写る',
+  how:'レンズを **ドラッグ** して荷物を透かし、異常を見つけたら **印**',gesture:'drag'};
+function isTouch(){return LENS.touch||(window.matchMedia&&matchMedia('(pointer:coarse)').matches)}
+function fOff(){return isTouch()?LR+30:0}
+function it0(){return G&&G.q&&G.q[0]}
+function itemPt(){var it=it0();if(!it)return{x:W/2,y:H/2,r:40};var p=itemPx(it);return{x:p[0],y:p[1]+fOff(),r:Math.max(36,U*.3)}}
+function lensPt(){return{x:LENS.x,y:LENS.y+fOff(),r:Math.max(32,Math.min(60,LR*.6))}}
+function fracPt(add){var it=it0();if(!it||!it.tg[0])return itemPt();var p=itemPx(it),t=it.tg[0];return{x:p[0]+t.x*U,y:p[1]+t.y*U+(add?fOff():0),r:Math.max(24,t.r*U)}}
+var PSTEPS=[
+  {gesture:'drag',target:lensPt,to:itemPt,until:function(){return !!(G&&G.scanned)},praise:'透けた！',
+    text:'**レンズ** を ドラッグして、流れてきた **手の上** へ'+'（指で動かすと、レンズは指の少し上に出る）'},
+  {gesture:'drag',target:lensPt,to:function(){return fracPt(true)},area:function(){var p=fracPt(false);return{x:p.x,y:p.y,r:Math.max(40,LR*.8)}},
+    until:function(){var f=fracPt(false);return !!(G&&Math.hypot(LENS.x-f.x,LENS.y-f.y)<f.r*.9)},praise:'そこだ！',place:'above',
+    text:'骨が **とぎれて黒いすき間** になっている所がある。レンズの **中心（＋）** をそこへ'},
+  {gesture:'tap',target:function(){if(isTouch()){var e=$('bStamp').getBoundingClientRect();return{x:e.left+e.width/2,y:e.top+e.height/2,r:e.width/2+6}}return fracPt(false)},until:function(){return !!(G&&G.pracDone)},praise:false,
+    onEnter:function(){this.text=isTouch()?'指をはなして、赤い **印** ボタンを押そう。骨折を記録！':'そのまま **クリック** で印（赤い **印** ボタンや スペースキーでもよい）。骨折を記録！'},text:''}];
+var PRACTICE={start:function(){startJob(0,true)},label:'れんしゅう中',clearOn:'manual',clearText:'れんしゅうクリア！',steps:PSTEPS,
+  onExit:function(res){if(res&&(res.stopped||res.replaced))return;if(G&&G.prac){G=null;$('hud').classList.remove('prac')}
+    if(SV.unl>1)setScene('map');else startJob(0)}};
+var busy=false;
+$('bStart').onclick=function(){if(busy)return;ac();SFX.find(0);SV.name=$('nameIn').value.trim()||SV.name;save();var first=SV.unl<=1&&!SV.stars[0];
+  var go=function(){busy=false;if(!first)setScene('map');else if(window.Guide)Guide.tutorial(PRACTICE);else startJob(0)};
+  if(window.Guide){busy=true;Guide.intro(INTRO).then(go)}else go()};
+if(window.Guide)Guide.tutorialButton('#bHow',function(){ac();SFX.click();Guide.tutorial(PRACTICE)});else $('bHow').classList.add('hidden');
+document.addEventListener('pointerdown',function(e){var b=e.target&&e.target.closest&&e.target.closest('.bt,#bStamp');if(b&&!b.disabled){vib(8);b.classList.remove('hot');void b.offsetWidth;b.classList.add('hot')}},true);
 $('bCont').onclick=function(){ac();SFX.click();SV.name=$('nameIn').value.trim()||SV.name;save();setScene('map')};
 $('bToTest').onclick=function(){if(SV.done)startTest()};
 function toTest(){var z=Zk();if(z&&z.mainClear&&!TEST){try{z.mainClear({onClose:startTest});return}catch(e){}}startTest()}
@@ -2720,17 +2758,29 @@ function frame(now){var dt=Math.min(.05,(now-last)/1000);last=now;TT+=dt;c.setTr
     if(!G.rest&&Math.floor(TT*2)!==Math.floor((TT-dt)*2))hud()}
   else if(scene==='title')drawTitle(dt);
   drawFX(dt);drawFilm(dt);c.restore();requestAnimationFrame(frame)}
-document.addEventListener('visibilitychange',function(){if(document.hidden){save();if(G&&scene==='play'&&!G.rest&&$('scrBack').classList.contains('hidden')){$('bBack').click()}}});
+document.addEventListener('visibilitychange',function(){if(document.hidden){save();if(G&&scene==='play'&&!G.rest&&!G.prac&&$('scrBack').classList.contains('hidden')){$('bBack').click()}}});
 window.addEventListener('pagehide',save);
 
 /* ---------------- はじまり ---------------- */
+var HELP=null;
+if(window.Guide){
+  Guide.setup({theme:{bg:'rgba(5,8,7,.94)',fg:'#DDE7EA',accent:'#FF4F4F',accentText:'#050807',font:FS,bodyFont:FS,radius:0,texture:'scan',
+      line:'rgba(221,231,234,.6)',dim:'rgba(0,0,0,.62)',shadow:'0 0 0 1px rgba(5,8,7,.9), 0 0 22px rgba(221,231,234,.22), inset 0 0 18px rgba(221,231,234,.06)',outline:'#050807',hand:'#DDE7EA',handLine:'#050807'},
+    sfx:function(k){if(k==='step')SFX.click();else if(k==='done')SFX.find(1);else if(k==='clear')SFX.fan();else if(k==='open'||k==='close')SFX.click();else if(k==='cheer')SFX.rare();else if(k==='nudge')SFX.scan()},
+    muted:function(){return muted}});
+  HELP=Guide.help({title:INTRO.title,learn:INTRO.learn,how:INTRO.how,offset:{x:54,y:0},size:46,show:false,attention:true,replay:'tutorial',
+    rules:['レンズを **動かす** と、下の物がX線で透けて見える','骨・金属はX線が通りにくく **白い**。布・紙・皮ふは通りやすく、ほとんど写らない',
+      '画面の「さがす」物が見えたら、**レンズの中心を合わせて「印」**','白い＝異常ではない（指輪・鍵・鈴）。**異常のない物は そのまま流す**',
+      '一発で見つけると **連続** が伸び、ラインが速くなる'],
+    onOpen:function(){if(G&&!G.paused){G.paused=true;G.hp=1}},onClose:function(){if(G&&G.hp){G.hp=0;if($('scrBack').classList.contains('hidden'))G.paused=false}}});
+}
 resize();
 window.Zukan&&Zukan.setup&&Zukan.setup({game:GID,koma:[KOMA]});
 if(window.PLAYER_NAME){$('nameIn').value=window.PLAYER_NAME;$('nmRow').classList.add('hidden')}else if(SV.name)$('nameIn').value=SV.name;
 if(SV.unl>1||SV.stars[0])$('bCont').classList.remove('hidden');
 if(TEST)startTest();else setScene('title');
 requestAnimationFrame(frame);
-window.__TK={G:function(){return G},LENS:LENS,start:startJob,stamp:stamp,scene:function(){return scene},SV:function(){return SV},itemPx:itemPx,U:function(){return U},rest:restProbe,NAT:NAT,restPos:restPos};
+window.__TK={LR:function(){return LR},G:function(){return G},LENS:LENS,start:startJob,stamp:stamp,scene:function(){return scene},SV:function(){return SV},itemPx:itemPx,U:function(){return U},rest:restProbe,NAT:NAT,restPos:restPos};
 })();
 </script>
 </body>

@@ -178,6 +178,14 @@ body.port .ct{max-width:none;flex:0 0 auto}
 #eScore{font-size:54px;font-weight:800}#eScore small{font-size:20px}
 /* ポーズ系 */
 .dim{position:absolute;inset:0;background:rgba(59,42,26,.35)}
+/* 仕上げ 2026-09-28（sh-finish-2026-09-28）: もどる・音・確認は #stage の外（れんしゅうの暗幕より上）。「？」の場所をあける */
+#bBack,#bMute{position:fixed}
+#scrBack{position:fixed;z-index:2147482640}
+#hud .rt{right:120px}
+body.port #hud .ttl{right:116px}
+#hud.prac .ttl{display:none}
+.sw.hot,.pl.hot{animation:swhot .5s ease-out}
+@keyframes swhot{0%{box-shadow:0 0 0 0 rgba(91,209,122,.8)}100%{box-shadow:0 0 0 14px rgba(91,209,122,0)}}
 @media (prefers-reduced-motion:reduce){*{animation-duration:.01s!important;animation-iteration-count:1!important;transition:none!important}}
 </style>
 </head>
@@ -206,7 +214,7 @@ body.port .ct{max-width:none;flex:0 0 auto}
   <div class="btns" id="tBtns">
     <div id="nmRow">名前<input id="nameIn" maxlength="16" placeholder="（なくても遊べる）"></div>
     <button class="pl dk" id="bStart">実験をはじめる</button>
-    <div class="row2"><button class="pl hidden" id="bCont">つづきから</button><button class="pl" id="bBook1">📖 図鑑</button></div>
+    <div class="row2"><button class="pl" id="bHow">あそびかた</button><button class="pl hidden" id="bCont">つづきから</button><button class="pl" id="bBook1">📖 図鑑</button></div>
   </div>
 </div>
 
@@ -236,15 +244,14 @@ body.port .ct{max-width:none;flex:0 0 auto}
   <div class="btns"><button class="pl dk" id="eCard">提出カードをもう一度</button><button class="pl" id="eBook">📖 図鑑</button><button class="pl" id="eMap">戸棚へ</button></div>
 </div></div>
 
-<!-- もどる確認 -->
-<div id="scrBack" class="scr hidden"><div class="dim"></div><div class="card in">
+</div>
+<!-- もどる確認（#stage の外：れんしゅうの暗幕より上に出す） -->
+<div id="scrBack" class="scr hidden" role="dialog" aria-modal="true" data-gd-pass><div class="dim"></div><div class="card in">
   <div class="k">も ど り ま す か</div><h2 style="font-size:24px" id="bkT">実験を中断します</h2><p id="bkSub">進み具合は保存されます。</p>
   <div class="btns"><button class="pl" id="bkNo">つづける</button><button class="pl dk" id="bkGo">戸棚へ</button></div>
 </div></div>
-
-<button id="bBack" class="hidden">もどる</button>
-<button id="bMute" aria-label="音">🔊</button>
-</div>
+<button id="bBack" class="hidden" data-gd-pass>もどる</button>
+<button id="bMute" aria-label="音" data-gd-pass>🔊</button>
 
 <script>/*@SUBMIT_CARD_BEGIN*/
 /* ==========================================================
@@ -2403,8 +2410,8 @@ function genRounds(k){
 var scene='title',G=null;
 var CT={pol:0,ps:1,pv:0,mf:-1,mv:0,cw:0,coil:0};
 function S(){return G&&G.S}
-function startStage(si){
-  ac();var st=STG[si];
+function startStage(si,prac){
+  ac();var st=STG[si];PRACG=!!prac;
   G={si:si,S:st,rounds:st.k==='pump'?[]:genRounds(st.k),ri:0,R:null,state:'intro',first:0,n:0,miss:0,combo:0,maxC:0,time:0,boss:st.k==='boss'?120:0,
      nT:0,strokes:0,pumpY:0,pumpDir:0,orderOK:true,shot:null,wheel:0,wx:0,wire:null,tries:0};
   G.nT=G.rounds.filter(function(r){return !r.trial}).length;scene='play';showScr();backBtn();
@@ -2412,10 +2419,12 @@ function startStage(si){
   var ic=shelfIcon(st.ic);
   $('inCard').innerHTML='<div class="k">'+esc(st.n.split('').join(' '))+'</div><h2>'+esc(st.t)+'</h2><div class="fig">'+ic.replace('<svg','<svg style="width:220px;height:120px"')+'</div><p>'+esc(st.goal)+'</p>'+
     (st.k==='boss'?'<p style="font-size:15px">まちがえると 6秒 へる。</p>':'')+'<div class="btns"><button class="pl dk" id="inGo">はじめる</button></div>';
+  G.prac=!!prac;$('hud').classList.toggle('prac',!!prac);if(prac){$('hNo').textContent='れんしゅう';beginPlay();return}
   $('scrIntro').classList.remove('hidden');$('inGo').onclick=function(){SFX.click();$('scrIntro').classList.add('hidden');beginPlay()};
 }
+var PRACG=false;
 function beginPlay(){var g=G;g.state='aim';
-  if(g.S.k==='pump'){CT.coil=0;CT.pol=0;g.state='coil';setDeck();say('① 誘導コイルのスイッチを入れよう');return}
+  if(g.S.k==='pump'){CT.coil=0;CT.pol=0;g.state='coil';setDeck();if(!g.prac)say('① 誘導コイルのスイッチを入れよう');else $('msg').classList.add('hidden');return}
   nextRound(true)}
 function nextRound(first){var g=G;if(!first)g.ri++;
   if(g.ri>=g.rounds.length){stageClear();return}
@@ -2451,7 +2460,7 @@ function setDeck(){
   $('cPol').classList.toggle('lock',!!(r&&(r.lockPol||r.k==='mag'||r.k==='both')));
   $('cPlate').classList.toggle('lock',!!(r&&r.rust));
   $('cMag').classList.toggle('lock',!!(r&&r.trial));
-  f.classList.toggle('hidden',k==='wire'||(k==='pump'&&g.state!=='shoot'));
+  f.classList.toggle('hidden',k==='wire'||(k==='pump'&&g.state!=='shoot'&&!r));
   f.disabled=g.state!=='aim'&&g.state!=='shoot';f.classList.toggle('ready',!f.disabled);
   syncCtl();placeUI();
 }
@@ -2473,6 +2482,7 @@ function studDrag(id,key){var el=$(id),on=false;
   el.addEventListener('pointerup',function(){on=false});el.addEventListener('pointercancel',function(){on=false})}
 function canEdit(key){var g=G;if(!g||(g.state!=='aim'))return false;var r=g.R;if(!r)return false;
   if(key==='pol')return !(r.lockPol||r.k==='mag'||r.k==='both');
+  if(key==='ps'&&r.prac)return false;
   if(key==='pv'||key==='ps')return !r.rust;
   if(key==='mv'||key==='mf')return !r.trial;return true}
 studDrag('stPl','pv');studDrag('stMg','mv');
@@ -2481,7 +2491,7 @@ $('swPl').onclick=function(){ac();if(!canEdit('ps')){SFX.miss();return}CT.ps=-CT
 $('swMg').onclick=function(){ac();if(!canEdit('mf')){SFX.miss();return}CT.mf=-CT.mf;SFX.click();tone(300,.15,'sine',.05,0,600);syncCtl()};
 $('swCoil').onclick=function(){ac();var g=G;if(!g||g.S.k!=='pump'||g.state==='shoot')return;CT.coil=1-CT.coil;SFX.click();
   if(CT.coil){SFX.spark();SFX.buzz(.6);var p=coilXY();burst(p[0],p[1],14,INK,260);shake(3);
-    if(g.strokes<11)say(g.strokes?'② 電圧がかかった。ポンプを動かして、さらに空気をぬこう':'② ポンプのハンドルを<b>上下に大きく</b>動かして、管の空気をぬこう');}
+    if(g.strokes<11&&!g.prac)say(g.strokes?'② 電圧がかかった。ポンプを動かして、さらに空気をぬこう':'② ポンプのハンドルを<b>上下に大きく</b>動かして、管の空気をぬこう');}
   syncCtl()};
 
 /* ---------------- 放電（撃つ） ---------------- */
@@ -2491,7 +2501,7 @@ function curS(){return CT.ps*CT.pv}function curM(){return CT.mf*CT.mv}
 function fire(){var g=G;if(!g||(g.state!=='aim'&&g.state!=='shoot'))return;ac();
   var r=g.R,res;$('bFire').classList.add('dn');setTimeout(function(){$('bFire').classList.remove('dn')},140);
   SFX.spark();SFX.buzz(.7);shake(4);
-  if(g.S.k==='pump'){res={hit:true,cat:0,te:1,w:0,kind:'st'};g.shot={t:0,res:res,path:straightPath(0)};g.state='fire';setDeck();return}
+  if(g.S.k==='pump'&&!g.R){res={hit:true,cat:0,te:1,w:0,kind:'st'};g.shot={t:0,res:res,path:straightPath(0)};g.state='fire';setDeck();return}
   res=evalShot(r);g.shot={t:0,res:res,path:res.path};g.state='fire';g.tries++;setDeck();
 }
 function straightPath(cat){var pts=[],a=uCat(cat),b=uWin(1-cat);for(var i=0;i<=40;i++)pts.push([a+(b-a)*i/40,0]);return pts}
@@ -2523,8 +2533,12 @@ function resolveShot(){var g=G,res=g.shot.res,r=g.R;
   var tp=targetXY(res);
   if(res.kind==='st'){hitFX(tp,1,true);g.first=1;Zk()&&Zk().earn(5,'first-try',{x:tp[0],y:tp[1]-40});g.state='done';
     say('緑のすじが的に当たった！ これが<b>真空放電</b>の光のすじ（陰極線）',false);
+    if(g.prac){setTimeout(function(){if(G!==g)return;g.R={k:'plate',cat:0,lockPol:1,tk:2,prac:1};g.ri=0;g.tries=0;g.shot=null;g.state='aim';CT.pol=0;CT.ps=1;CT.pv=0;
+      say('すじは <b>−の電気</b> をもつ粒の流れ。電極板に電圧をかけると…？',false);setDeck();hud()},1400);return}
     setTimeout(function(){stageClear()},1400);return}
   if(res.trial){say(res.why);g.state='done';hud();setDeck();setTimeout(function(){if(G===g&&scene==='play')nextRound()},2200);return}
+  if(res.hit&&g.prac){hitFX(tp,1,true);say(res.why,false);g.state='done';g.pracDone=1;if(!SV.disc.pl){SV.disc.pl=1;save();discover('すじは −の電気をもつ','＋の電極板に引かれる。正体は−の電気をもつ粒＝電子',tp)}setTimeout(function(){if(G===g)stageClear()},1500);hud();setDeck();return}
+  if(!res.hit&&g.prac){SFX.miss();pop(tp[0],tp[1]-30,'もう少し',26,INK2);say('電圧つまみを <b>目盛り2</b> にして、もう一度 放電！（れんしゅうは何回でも）',true);g.state='aim';setDeck();return}
   if(res.hit){var first=g.tries===1;g.n++;if(first){g.first++;g.combo++;g.maxC=Math.max(g.maxC,g.combo)}
     hitFX(tp,g.combo,first);say((first?'':'（2回目以降）')+res.why,false);
     // 発見の瞬間
@@ -2589,11 +2603,11 @@ function pumpMove(v){var g=G;var old=g.pumpY;g.pumpY=v;
   if(g.pumpDir===0&&v>.85){g.pumpDir=1;SFX.pump(g.strokes)}
   if(g.pumpDir===1&&v<.15){g.pumpDir=0;g.strokes=Math.min(12,g.strokes+1);onStroke()}}
 function onStroke(){var g=G,s=g.strokes;if(!CT.coil)g.orderOK=false;
-  var p=T(.5,0);
+  var p=T(.5,0);var pp0=pumpXY();pop(pp0.x,pp0.y-pp0.s*1.9,s+' / 12',22+s,s>=12?'#1f7a3f':INK);tone(300+s*45,.08,'triangle',.05);buzz(8);
   if(!CT.coil){say(s<12?'空気はぬけていく。でも<b>電圧をかけていない</b>ので、何も光らない':'空気はぬけた。<b>誘導コイルのスイッチ</b>を入れよう',true);}
   else{var tx={3:'細い光の糸がゆらめきはじめた',6:'管全体が<b>桃色</b>に光った！',9:'−極のまわりに<b>暗い部分</b>が広がっていく',12:'管の中は暗くなり、ガラスが<b>緑</b>に光った！'}[s];
     if(tx){say(tx);bell(440+s*40,.06);flash(.3,s>=12?GL:ROSE);burst(p[0],p[1],18,s>=12?GL:ROSE,300);shake(4)}}
-  if(s>=12&&CT.coil&&g.state!=='shoot'){g.state='shoot';SFX.fan();setTimeout(function(){if(G===g){say('③ 放電スイッチを押して、すじを右の的へ！'.replace('右',endName(1)));setDeck()}},900)}
+  if(s>=12&&CT.coil&&g.state!=='shoot'){g.state='shoot';SFX.fan();setTimeout(function(){if(G===g){if(!g.prac)say('③ 放電スイッチを押して、すじを右の的へ！'.replace('右',endName(1)));setDeck()}},900)}
   hud()}
 function pressure(){var s=G?G.strokes:0;return Math.pow(.45,s)}
 
@@ -2819,6 +2833,7 @@ function stageClear(){var g=G;g.state='clear';$('deck').classList.add('hidden');
   var b=SV.best[si]||{};SV.best[si]={first:Math.max(b.first||0,g.first),n:n,combo:Math.max(b.combo||0,g.maxC)};
   if(st.k==='boss'){SV.done=1;SV.bossT=Math.max(SV.bossT||0,Math.round(g.boss));if(!SV.clearMs)SV.clearMs=SV.ms}
   save();
+  if(g.prac){SFX.fan();flash(.5);confetti();for(var ii=0;ii<3;ii++)(function(ii){setTimeout(function(){burst(rnd(W*.2,W*.8),rnd(H*.2,H*.6),26,ii%2?GL:INK,420)},ii*180)})(ii);setTimeout(function(){if(G===g&&window.Guide)Guide.tutorialClear()},700);return}
   var L3=st.k==='pump'?['光のすじ','空気をぬいた','手順どおり']:st.k==='boss'?['完了','30秒のこした','ノーミス']:['完了','一発命中 2/3','ノーミス'];
   var newly=!old[0];
   $('clCard').innerHTML='<div class="k">'+esc(st.n.split('').join(' '))+'　完 了</div><h2>'+esc(st.t)+'</h2>'+
@@ -2859,16 +2874,18 @@ function showScr(){['scrTitle','scrMap','scrTest','scrEnd'].forEach(function(id)
   if(scene!=='play'){$('deck').classList.add('hidden');$('bFire').classList.add('hidden');$('scrIntro').classList.add('hidden')}
   placeUI()}
 function setScene(s){scene=s;showScr();backBtn()}
-function backBtn(){var b=$('bBack'),on=scene==='play'||scene==='map'||scene==='test'||(scene==='title'&&INHUB);b.classList.toggle('hidden',!on);b.textContent=scene==='title'?'一覧へ':'もどる'}
+function backBtn(){var b=$('bBack'),on=scene==='play'||scene==='map'||scene==='test'||scene==='end'||(scene==='title'&&INHUB);b.classList.toggle('hidden',!on);b.textContent=scene==='title'?'一覧へ':'もどる';
+  if(HELP){if(scene==='play'||scene==='map')HELP.show();else HELP.hide()}}
 var backFrom=null;
 $('bBack').onclick=function(){ac();SFX.click();
   if(scene==='title'){try{window.parent.postMessage({type:'rika-close-game'},'*')}catch(e){}return}
-  backFrom=scene;
-  $('bkT').textContent=scene==='test'?'口頭試問を中断します':scene==='map'?'表紙にもどります':'実験を中断します';
+  backFrom=scene;if(scene==='end'){setScene(TEST?'title':'map');return}
+  $('bkT').textContent=G&&G.prac?'れんしゅうをやめます':scene==='test'?'口頭試問を中断します':scene==='map'?'表紙にもどります':'実験を中断します';
   $('bkSub').textContent=scene==='test'?'確認テストは、次はさいしょから。戸棚の進み具合は保存されています。':scene==='map'?'進み具合は保存されます。':'進み具合は保存されます（終えた棚と★はそのまま。この棚は次にはじめから）。';
+  if(G&&G.prac)$('bkSub').textContent='あとで表紙の「あそびかた」から、いつでもできます。';
   $('bkGo').textContent=scene==='map'?'表紙へ':'戸棚へ';$('scrBack').classList.remove('hidden')};
 $('bkNo').onclick=function(){$('scrBack').classList.add('hidden')};
-$('bkGo').onclick=function(){$('scrBack').classList.add('hidden');if(backFrom==='map')setScene('title');else{G=null;setScene('map')}};
+$('bkGo').onclick=function(){$('scrBack').classList.add('hidden');if(backFrom==='map')setScene('title');else{var wasP=G&&G.prac;G=null;if(wasP&&window.Guide)Guide.tutorialEnd();setScene('map')}};
 $('bMute').onclick=function(){muted=!muted;try{localStorage.setItem(SKEY+':mute',muted?'1':'0')}catch(e){}$('bMute').textContent=muted?'🔇':'🔊'};
 $('bMute').textContent=muted?'🔇':'🔊';
 
@@ -2882,7 +2899,35 @@ $('bBook1').onclick=openBook;$('bBook2').onclick=openBook;$('eBook').onclick=ope
 $('bGacha').onclick=function(){var z=Zk();if(z&&z.openGacha)z.openGacha()};
 if(!Zk()){['bBook1','bBook2','bGacha','eBook'].forEach(function(id){$(id).classList.add('hidden')})}
 function getName(){return(window.PLAYER_NAME||$('nameIn').value||SV.name||'').trim()}
-$('bStart').onclick=function(){ac();SFX.spark();SV.name=$('nameIn').value.trim()||SV.name;save();if(SV.unl>1)setScene('map');else startStage(0)};
+var INTRO={title:'第22回 見えない粒のすじ',learn:'真空放電の光のすじは **−極から出る電子** の流れ。＋の電極板や磁石で **曲がる**',
+  how:'スイッチとつまみで すじの向きを決めて、**放電** スイッチで的に当てる',gesture:'tap'};
+function elC(id){var e=$(id);if(!e)return null;var r=e.getBoundingClientRect();return{x:r.left+r.width/2,y:r.top+r.height/2,r:Math.max(26,Math.min(r.width,r.height)/2+4)}}
+function studPt(v){var e=$('stPl');if(!e)return null;var r=e.getBoundingClientRect();return{x:r.left+r.width*(.14+v*.24),y:r.top+37,r:24}}
+function pumpPath(){var p=pumpXY(),s=p.s,top=p.y-s*1.6,bot=p.y-s*1.6+s*2.2;return[{x:p.x,y:top},{x:p.x,y:bot},{x:p.x,y:top},{x:p.x,y:bot}]}
+var PSTEPS=[
+  {gesture:'tap',target:'#swCoil',until:function(){return !!(G&&CT.coil)},praise:'電圧オン！',
+    text:'まず **誘導コイル** のスイッチをタップ。管に高い電圧がかかる'},
+  {gesture:'draw',target:function(){var p=pumpXY();return{x:p.x,y:p.y-s0(),r:p.s*1.2}},path:pumpPath,area:function(){var p=pumpXY();return{x:p.x,y:p.y-p.s*.4,w:p.s*3.2,h:p.s*3.6}},
+    until:function(){return !!(G&&G.strokes>=12)},praise:'空気がぬけた！',
+    text:'ポンプの柄を **上下に大きく** 動かして、管の空気をぬこう（12回）。管の光の変わり方を見て！'},
+  {gesture:'tap',target:'#bFire',until:function(){return !!(G&&G.R&&G.R.prac)},praise:'すじが出た！',
+    text:'**放電** スイッチを押して、光のすじを的へ！'},
+  {gesture:'drag',target:function(){return studPt(CT.pv)},to:function(){return studPt(2)},area:'#cPlate',
+    until:function(){return !!(G&&CT.pv===2)},praise:'電圧 2！',place:'above',
+    text:'**電極板** の電圧つまみを **目盛り2** まで ドラッグ。上が＋、下が−の板になる'},
+  {gesture:'tap',target:'#bFire',until:function(){return !!(G&&G.pracDone)},praise:false,
+    text:'もう一度 **放電**！ すじは ＋の板の側へ曲がる？'}];
+function s0(){var p=pumpXY();return p.s*.4}
+var PRACTICE={start:function(){startStage(0,true)},label:'れんしゅう中',clearOn:'manual',clearText:'れんしゅうクリア！',steps:PSTEPS,
+  onExit:function(res){PRACG=false;if(res&&(res.stopped||res.replaced))return;
+    if(res&&res.cleared){startStage(Math.min(SV.unl-1,1));return}
+    if(G&&G.prac){G.prac=false;$('hud').classList.remove('prac');if(G.R&&G.R.prac){G=null;startStage(1)}else say('① 誘導コイルのスイッチ → ② ポンプ → ③ 放電')}}};
+var busy=false;
+$('bStart').onclick=function(){if(busy)return;ac();SFX.spark();SV.name=$('nameIn').value.trim()||SV.name;save();var first=SV.unl<=1&&!SV.stars[0];
+  var go=function(){busy=false;if(!first)setScene('map');else if(window.Guide)Guide.tutorial(PRACTICE);else startStage(0)};
+  if(window.Guide){busy=true;Guide.intro(INTRO).then(go)}else go()};
+if(window.Guide)Guide.tutorialButton('#bHow',function(){ac();SFX.click();Guide.tutorial(PRACTICE)});else $('bHow').classList.add('hidden');
+document.addEventListener('pointerdown',function(e){var b=e.target&&e.target.closest&&e.target.closest('.pl,.sw,#bFire');if(b&&!b.disabled){buzz(8);b.classList.remove('hot');void b.offsetWidth;b.classList.add('hot')}},true);
 $('bCont').onclick=function(){ac();SFX.click();SV.name=$('nameIn').value.trim()||SV.name;save();setScene('map')};
 $('bToTest').onclick=function(){if(SV.done)startTest()};
 function toTest(){var z=Zk();if(z&&z.mainClear&&!TEST){try{z.mainClear({onClose:startTest});return}catch(e){}}startTest()}
@@ -2949,7 +2994,7 @@ function frame0(now){var dt=Math.min(.05,(now-last)/1000);last=now;TT+=dt;
   c.setTransform(DPR,0,0,DPR,0,0);
   var sx=0,sy=0;if(SHK>0){sx=rnd(-SHK,SHK);sy=rnd(-SHK,SHK);SHK=Math.max(0,SHK-dt*40)}
   c.drawImage(BG,0,0,W,H);c.save();c.translate(sx,sy);
-  if(scene==='play'&&G){drawPlay(dt);if(G.S.k==='boss'&&G.state!=='clear'&&G.state!=='intro'&&$('scrBack').classList.contains('hidden')){G.boss-=dt;if(G.boss<=0){G.boss=0;bossFail()}else if(Math.floor(G.boss+dt)!==Math.floor(G.boss)){hud();if(G.boss<10)tone(1200,.04,'square',.03)}}
+  if(scene==='play'&&G){drawPlay(dt);if(G.S.k==='boss'&&G.state!=='clear'&&G.state!=='intro'&&!G.hp&&$('scrBack').classList.contains('hidden')){G.boss-=dt;if(G.boss<=0){G.boss=0;bossFail()}else if(Math.floor(G.boss+dt)!==Math.floor(G.boss)){hud();if(G.boss<10)tone(1200,.04,'square',.03)}}
     SV.ms+=dt*1000;if(DISC){drawDisc(dt)}}
   else if(scene==='title')drawTitle(dt);
   drawFX(dt);drawConf(dt);c.restore()}
@@ -2964,6 +3009,18 @@ document.addEventListener('visibilitychange',function(){if(document.hidden)save(
 window.addEventListener('pagehide',save);
 
 /* ---------------- はじまり ---------------- */
+var HELP=null;
+if(window.Guide){
+  Guide.setup({theme:{bg:'#EFE3C8',fg:'#3B2A1A',accent:'#1f7a3f',accentText:'#EFE3C8',font:FM,bodyFont:FM,radius:0,texture:'repeating-linear-gradient(135deg,rgba(59,42,26,.10) 0 1px,transparent 1px 5px)',
+      line:'#3B2A1A',dim:'rgba(59,42,26,.42)',shadow:'inset 0 0 0 4px #EFE3C8, inset 0 0 0 5px #3B2A1A, 8px 10px 0 rgba(59,42,26,.3)',outline:'#EFE3C8',hand:'#EFE3C8',handLine:'#3B2A1A'},
+    sfx:function(k){if(k==='step')SFX.click();else if(k==='done')bell(988,.06);else if(k==='clear')SFX.fan();else if(k==='open'||k==='close')SFX.click();else if(k==='cheer')bell(1175,.05);else if(k==='nudge')SFX.click()},
+    muted:function(){return muted}});
+  HELP=Guide.help({title:INTRO.title,learn:INTRO.learn,how:INTRO.how,offset:{x:54,y:0},size:46,show:false,attention:true,replay:'tutorial',
+    rules:['光のすじ（陰極線）は **−極から出て** 反対の端へ進む。極を逆にすると出る向きも逆','すじは **−の電気をもつ粒（電子）** の流れ。**＋の電極板** の側へ曲がる',
+      '**磁石** でも曲がる。N・Sを逆にすると、曲がる向きも逆','スイッチ・つまみで決めてから **放電**。一発で当てると **連続命中** が伸びる',
+      '導線の中では、電子は −極→＋極、**電流は ＋極→−極**（向きが逆）'],
+    onOpen:function(){if(G){G.hp=1}},onClose:function(){if(G)G.hp=0}});
+}
 resize();
 window.Zukan&&Zukan.setup&&Zukan.setup({game:GID,koma:[KOMA]});
 if(window.PLAYER_NAME){$('nameIn').value=window.PLAYER_NAME;$('nmRow').classList.add('hidden')}else if(SV.name)$('nameIn').value=SV.name;
@@ -2971,7 +3028,7 @@ if(SV.unl>1||SV.stars[0])$('bCont').classList.remove('hidden');
 if(TEST)startTest();else setScene('title');
 setTimeout(function(){placeUI()},300);
 requestAnimationFrame(frame);
-window.__SH={G:function(){return G},CT:CT,start:startStage,begin:beginPlay,fire:fire,scene:function(){return scene},SV:function(){return SV},pump:pumpMove,wire:wireAnswer,next:nextRound};
+window.__SH={pump0:function(){return pumpXY()},G:function(){return G},CT:CT,start:startStage,begin:beginPlay,fire:fire,scene:function(){return scene},SV:function(){return SV},pump:pumpMove,wire:wireAnswer,next:nextRound};
 })();
 </script>
 </body>

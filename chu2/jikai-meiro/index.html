@@ -151,6 +151,10 @@ body.port #shelf .sp{width:31px;height:31px}body.port #shelf .sp svg{width:26px;
 @keyframes cmb{0%{opacity:0;transform:translate(-50%,-50%) scale(.2) rotate(-12deg)}18%{opacity:1;transform:translate(-50%,-50%) scale(1.3)}35%{transform:translate(-50%,-50%) scale(1)}80%{opacity:1}100%{opacity:0;transform:translate(-50%,-60%)}}
 #toast{position:fixed;z-index:55;left:50%;bottom:24%;transform:translateX(-50%);background:#000;color:#fff;padding:10px 18px;font:800 16px/1.5 var(--b);max-width:90vw;text-align:center;opacity:0;transition:opacity .25s;pointer-events:none;border:3px solid #fff;outline:3px solid #000}
 #toast.on{opacity:1}#toast b{color:#FF8A82}
+/* 仕上げ 2026-09-28（jm-finish-2026-09-28）: 確認はれんしゅうの暗幕より上。「？」の場所をあける */
+#scrAsk{z-index:2147482640}
+body:not(.port) #sc{right:max(128px,calc(env(safe-area-inset-right) + 128px))}
+#hud.prac #hudT{visibility:hidden}
 @media (prefers-reduced-motion:reduce){.st.pulse,#intro .go{animation:none}#logo.drop h1 span{animation:none}#combo.go{animation-duration:.01s}}
 </style>
 </head>
@@ -161,8 +165,8 @@ body.port #shelf .sp{width:31px;height:31px}body.port #shelf .sp svg{width:26px;
 <div id="toast"></div>
 <div id="rule"></div>
 
-<button id="bBack" class="hidden" aria-label="もどる">◀ <span id="bBackT">もどる</span></button>
-<button id="bMute" class="st" aria-label="音">🔊</button>
+<button id="bBack" class="hidden" aria-label="もどる" data-gd-pass>◀ <span id="bBackT">もどる</span></button>
+<button id="bMute" class="st" aria-label="音" data-gd-pass>🔊</button>
 
 <div id="hud" class="hidden"><div id="hudT"></div><div id="prog"><div id="progF"></div><div id="progR"></div></div></div>
 <div id="sc" class="hidden"><span id="scN">0</span><small id="scS">コンボ ×0</small></div>
@@ -177,7 +181,7 @@ body.port #shelf .sp{width:31px;height:31px}body.port #shelf .sp svg{width:26px;
 <div id="scrTitle" class="scr hidden">
   <div id="nmRow">なまえ <input id="nameIn" maxlength="12" autocomplete="off" placeholder="（なくても遊べる）"></div>
   <div class="row"><button class="st r pulse" id="bStart">はじめる</button></div>
-  <div class="row" style="margin-top:14px"><button class="st" id="bCont">つづきから</button><button class="st" id="bBook1">📖 図鑑</button></div>
+  <div class="row" style="margin-top:14px"><button class="st" id="bHow">あそびかた</button><button class="st" id="bCont">つづきから</button><button class="st" id="bBook1">📖 図鑑</button></div>
 </div>
 <div id="scrMap" class="scr hidden">
   <div id="mapBar">
@@ -190,7 +194,7 @@ body.port #shelf .sp{width:31px;height:31px}body.port #shelf .sp svg{width:26px;
   <div class="row"><button class="st" id="cMap">庭の地図へ</button><button class="st" id="cAgain">もう一回</button><button class="st r" id="cNext">次の庭へ</button></div></div></div>
 <div id="scrTest" class="scr hidden"><div id="tp"><div id="tHead"><span id="tNo"></span><div id="tLamps"></div></div><div id="tQ"></div><div id="tFig" class="hidden"></div><div id="tA"></div><div id="tEx" class="hidden"></div><button class="st r hidden" id="tNext">つぎへ</button></div></div>
 <div id="scrEnd" class="scr hidden"><div id="endP"><div id="eName"></div><div id="eScore"></div><div class="row" style="margin-top:14px"><button class="st r" id="eCard">提出カードを開く</button><button class="st" id="eBook">📖 図鑑</button><button class="st" id="eMap">庭の地図へ</button></div></div></div>
-<div id="scrAsk" class="scr hidden"><div id="ask"><p id="askP"></p><div class="row"><button class="st" id="askNo">つづける</button><button class="st r" id="askGo">もどる</button></div></div></div>
+<div id="scrAsk" class="scr hidden" role="dialog" aria-modal="true" data-gd-pass><div id="ask"><p id="askP"></p><div class="row"><button class="st" id="askNo">つづける</button><button class="st r" id="askGo">もどる</button></div></div></div>
 
 <script>/*@SUBMIT_CARD_BEGIN*/
 /* ==========================================================
@@ -2206,6 +2210,7 @@ function fresh(){return{v:1,name:'',unl:1,stars:{},best:{},cards:{},gems:0,clear
 var SV=null;try{SV=JSON.parse(localStorage.getItem(SKEY))}catch(e){}
 if(!SV||SV.v!==1)SV=fresh();
 function save(){try{localStorage.setItem(SKEY,JSON.stringify(SV))}catch(e){}}
+(function(){try{var B=15;if(SV.done&&SV.stars&&SV.stars[9]&&!SV.stars[B]){SV.stars[B]=SV.stars[9];delete SV.stars[9];if(SV.cards&&SV.cards[9]){SV.cards[B]=1;delete SV.cards[9]}if(SV.best&&SV.best[9]){SV.best[B]=SV.best[9];delete SV.best[9]}SV.unl=Math.max(SV.unl||1,B+1);save()}}catch(e){}})();
 
 /* ---------------- 音（乾いた電子音） ---------------- */
 var AC=null,muted=false;try{muted=localStorage.getItem(SKEY+':mute')==='1'}catch(e){}
@@ -2241,6 +2246,12 @@ var GD=[
  {n:'うずまきの庭',pool:'uoofkc',k:17,p:.65,gap:3,v:4.2,tip:'石と石のすき間が<b>せまい</b>。次の柱の⊙⊗を<b>先に読む</b>。'},
  {n:'夜の庭',pool:'fckfuo',k:17,p:.6,gap:3,v:4.4,tip:'わかれ道とコイルがつづく。<b>宝石</b>を全部とれる？'},
  {n:'迷いの庭',pool:'fffckuo',k:17,p:.65,gap:2.8,v:4.6,tip:'迷って<b>連打</b>すると、通れても<b>コンボにならない</b>。1回で決めよう。'},
+ {n:'となりあう柱',pool:'uo',k:18,p:.75,gap:2.9,v:4.4,tip:'⊙と⊗が<b>交互</b>に並ぶ。電流の向きが逆の導線は、<b>磁界の回る向きも逆</b>。柱ごとに読もう。'},
+ {n:'ふたごのコイル',pre:'cc',pool:'ccuo',k:16,p:.6,gap:3,v:4.4,tip:'コイルが続く。電流の向きが逆のコイルは、<b>内側の磁界も逆</b>。右手でにぎって親指の向き！'},
+ {n:'わかれ道の迷宮',pre:'ff',pool:'ffuo',k:18,p:.6,gap:2.9,v:4.5,tip:'わかれ道が続く。同じ柱の<b>上と下では磁界が逆</b>。◆の道へ切りかえよう。'},
+ {n:'コイルの回廊',pre:'ck',pool:'cckk',k:16,p:.6,gap:2.9,v:4.5,tip:'コイルの<b>内側と外側</b>が交互に。外側の磁界は<b>内側と逆向き</b>。'},
+ {n:'嵐の庭',pool:'uofck',k:18,p:.7,gap:2.8,v:4.7,tip:'スピード最大級！ 導線に<b>近い石ほど磁界が強い</b>。<b>石の手前</b>で切りかえよう。'},
+ {n:'鏡の庭',pool:'fkcuo',k:18,p:.65,gap:2.7,v:4.7,tip:'電流を逆にしても磁界の<b>形</b>はそのまま、<b>向きだけ</b>が逆になる。すべての仕掛けを1回で！'},
  {n:'大庭園',pool:'uofckuocfk',k:26,p:.6,gap:2.7,v:4.8,tip:'<b>タイムアタック</b>！ すべての仕掛けが出る。落ちると<b>時間だけが進む</b>。',boss:1}
 ];
 var NG=GD.length;
@@ -2253,7 +2264,7 @@ function at(br,s){var L=br.L,p=br.p;s=Math.max(0,Math.min(br.len,s));var lo=0,hi
 var SRC=[];   // 電流の源: {x,y,s(+1=⊙),w}
 function Bf(x,y,sig){var bx=0,by=0;for(var i=0;i<SRC.length;i++){var q=SRC[i],dx=x-q.x,dy=y-q.y,r2=dx*dx+dy*dy+.004,k=q.w*q.s*sig/r2;bx+=-dy*k;by+=dx*k}return[bx,by]}
 function Aval(x,y){var a=0;for(var i=0;i<SRC.length;i++){var q=SRC[i],dx=x-q.x,dy=y-q.y,r2=dx*dx+dy*dy;if(r2>289)continue;var t=1;if(r2>121){var z=(r2-121)/168;t=1-z*z*(3-2*z)}a-=q.w*q.s*.5*Math.log(r2+.003)*t}return a}
-function buildGarden(li){var D=GD[li],r=rng(900+li*53),x=0,secs=[],posts=[],coils=[],pc=0,cc=0,gi=0;SRC=[];
+function buildGarden(li,Dov){var D=Dov||GD[li],r=rng(900+li*53),x=0,secs=[],posts=[],coils=[],pc=0,cc=0,gi=0;SRC=[];
   function gravel(len,cp){secs.push({t:'g',br:[mkLine(x,0,x+len,0)],cp:!!cp});x+=len}
   gravel(4.5,true);
   // 仕掛けの並びを作る（切りかえが必要になる割合 p を目安に）
@@ -2325,7 +2336,7 @@ function drawTiles(budget){var t0=performance.now(),a=S2W(0,0),b=S2W(W,H),xmin=M
 
 /* ================= あそぶ ================= */
 var G=null;
-function startGarden(li){ac();var D=GD[li],gd=buildGarden(li);
+var PRAC_D=null;function startGarden(li,prac){ac();var D=prac?(PRAC_D=PRAC_D||Object.assign({},GD[0],{n:'れんしゅうの庭',pre:'uu',k:4,p:.7})):GD[li],gd=buildGarden(li,prac?D:null);
   G={li:li,D:D,gd:gd,sig:1,sec:0,br:0,s:0,x:0,y:0,state:'intro',v:D.v,time:0,left:D.boss?0:0,falls:0,flips:0,flipsSince:0,mash:0,combo:0,best:0,score:0,gems:0,gemTot:0,
      cp:{sec:0,sig:1},fallT:0,passed:0,firstTry:0,wipe:null,hold:false,lastFlip:-9,stepK:0,secFails:0,beat:0,readyT:0,deadSec:-1,runT:0,tutDone:!!(SV.stars[0])};
   gd.secs.forEach(function(s){s.br.forEach(function(b){if(b.gem)G.gemTot++})});
@@ -2333,6 +2344,7 @@ function startGarden(li){ac();var D=GD[li],gd=buildGarden(li);
   var first=gd.secs.find(function(s){return s.t!=='g'});G.sig=first?-first.br[0].need:1;G.cp.sig=G.sig;
   if(D.boss){var est=gd.len/D.v;G.left=Math.round(est*1.45+8)}
   TILES={};camX=0;camY=0;placeRunner();setScene('play');
+  G.prac=!!prac;$('hud').classList.toggle('prac',!!prac);if(prac){G.tutDone=true;updHud();G.state='run';G.readyT=.6;showScr();SFX.go();return}
   $('iNo').textContent=D.boss?'大庭園':'庭 '+(li+1);$('iNm').textContent=D.boss?'タイムアタック '+fmtS(G.left):D.n;$('iHt').innerHTML=D.tip;showScr('scrIntro');updHud();SFX.go()}
 function curBr(){return G.gd.secs[G.sec].br[G.br]}
 function placeRunner(){var q=at(curBr(),G.s);G.x=q.x;G.y=q.y;G.tx=q.tx;G.ty=q.ty}
@@ -2347,6 +2359,10 @@ function enterSec(i){G.sec=i;G.s=0;var sec=G.gd.secs[i];G.br=0;
   if(sec.cp&&i>0){G.cp={sec:i,sig:G.sig};}
   if(sec.t!=='g'){G.flipsSinceAtEnter=G.flipsSince;G.stepK=0}}
 function stepRun(dt){var D=G.D,sec=G.gd.secs[G.sec],br=sec.br[G.br];
+  if(G.prac){var pnx=G.gd.secs[G.sec+1],onSt=sec.t!=='g',blk=onSt?!stoneOpen(br):!!(pnx&&pnx.t!=='g'&&pnx.t!=='fork'&&br.len-G.s<1.2&&pnx.br[0].need!==G.sig);
+    if(blk){if(!G.hold){G.hold=true;var hq=W2S(G.x,G.y);floatT(hq[0],hq[1]-46,'タップ！',RED,34)}return}
+    if(G.hold){G.hold=false;G.pOK=(G.pOK||0)+1;var hp=W2S(G.x,G.y);floatT(hp[0],hp[1]-50,'反転！',RED,40);burst(hp[0],hp[1],['#000','#fff',RED],26,4.2);flash(.2);vib(20);rule('<em>そう！</em>電流の向きを逆にすると、<b>磁界の向きも逆</b>になる',2.2)}}
+  else
   // はじめの庭：最初の石の前で止まって待つ
   if(!G.tutDone&&G.li===0){var nx=G.gd.secs[G.sec+1];if(sec.t==='g'&&nx&&nx.t!=='g'&&br.len-G.s<1.2&&nx.br[0].need!==G.sig&&!G.tutHeld){G.hold=true;
       rule('<em>タップ！</em>石の<b>赤い針（N極）</b>が、進む向きと<b>逆</b>をさしている。<br>タップで<b>電流を逆</b>にすると、磁界も針も逆になる',9);}
@@ -2384,17 +2400,20 @@ function respawn(){var cp=G.cp;G.gd.secs.forEach(function(s,i){if(i>=cp.sec)s.br
   G.gems=Math.max(0,G.gems);G.sig=cp.sig;updSwitch();enterSec(cp.sec);G.s=0;G.flipsSince=0;placeRunner();G.state='run';G.readyT=.8;G.splash=null}
 
 /* ---- クリア ---- */
-var CARDS=['1本の導線（⊙）','⊙と⊗の2本','上の道と下の道','コイルの内側','コイルの外側','導線とコイル','同心円の磁界','電流の向きを逆に','右ねじのきまり','大庭園'];
-var CARDTXT=['電流が手前へ向かう導線のまわりは、上から見て左回りの同心円。','電流の向きが逆の導線どうしは、磁界の回る向きも逆。','同じ柱の上と下では、磁界の向きが逆。だから通れる道が入れかわる。','右手の4本の指を電流の向きに合わせると、親指の向きが内側の磁界。','コイルの外側の磁界は、内側と逆向き（棒磁石と同じ形）。','導線もコイルも、電流の向きを逆にすると磁界が逆になる。','導線に近い所ほど縞がつまる＝磁界が強い。','電流を逆にすると、すべての磁針がいっせいに逆を向く。','電流の向きにねじを進めると、回す向きが磁界の向き。','電流がつくる磁界を、すべての形で読みこなした！'];
+var CARDS=['1本の導線（⊙）','⊙と⊗の2本','上の道と下の道','コイルの内側','コイルの外側','導線とコイル','同心円の磁界','電流の向きを逆に','右ねじのきまり','交互に並ぶ導線','ふたつのコイル','上と下のわかれ道','コイルの内と外','導線に近い所','形はそのまま向きだけ逆','大庭園'];
+var CARDTXT=['電流が手前へ向かう導線のまわりは、上から見て左回りの同心円。','電流の向きが逆の導線どうしは、磁界の回る向きも逆。','同じ柱の上と下では、磁界の向きが逆。だから通れる道が入れかわる。','右手の4本の指を電流の向きに合わせると、親指の向きが内側の磁界。','コイルの外側の磁界は、内側と逆向き（棒磁石と同じ形）。','導線もコイルも、電流の向きを逆にすると磁界が逆になる。','導線に近い所ほど縞がつまる＝磁界が強い。','電流を逆にすると、すべての磁針がいっせいに逆を向く。','電流の向きにねじを進めると、回す向きが磁界の向き。','電流の向きが交互の導線では、となりどうしの磁界も交互に逆回り。','コイルに流す電流の向きを逆にすると、内側の磁界の向きも逆になる。','導線の上と下では磁界の向きが逆。だから電流の向きで通れる道が決まる。','コイルの外側の磁界は内側と逆向き。棒磁石のまわりの磁界と同じ形。','導線に近い所ほど磁界が強い（縞がつまっている）。','電流の向きを逆にしても、磁界の形は変わらず、向きだけが逆になる。','電流がつくる磁界を、すべての形で読みこなした！'];
+var CK=['one','two','two','coil','coil','coil','one','two','screw','two','coil','two','coil','one','two','one'];
 function cardSVG(i){var s='<svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg"><rect width="80" height="80" fill="#fff"/>';
   function rings(cx,cy,n,sp){var o='';for(var k=n;k>=1;k--)o+='<circle cx="'+cx+'" cy="'+cy+'" r="'+k*sp+'" fill="'+(k%2?'#000':'#fff')+'"/>';return o}
   function post(cx,cy,out){return'<circle cx="'+cx+'" cy="'+cy+'" r="6" fill="#fff" stroke="#FF3B30" stroke-width="2.5"/>'+(out?'<circle cx="'+cx+'" cy="'+cy+'" r="2" fill="#000"/>':'<path d="M'+(cx-3)+' '+(cy-3)+'l6 6m0-6l-6 6" stroke="#000" stroke-width="2"/>')}
-  if(i===3||i===4||i===5){s+='<g>';for(var k=0;k<9;k++)s+='<rect x="0" y="'+(k*9)+'" width="80" height="4.5" fill="#000"/>';s+='</g><rect x="14" y="26" width="52" height="28" fill="#fff" stroke="#000" stroke-width="3"/>';for(var j=0;j<6;j++)s+='<line x1="'+(18+j*9)+'" y1="24" x2="'+(22+j*9)+'" y2="56" stroke="#000" stroke-width="3"/>';s+='<path d="M24 40h30m-6-5l6 5-6 5" stroke="#FF3B30" stroke-width="3" fill="none"/>'}
-  else if(i===1||i===2||i===7){s+=rings(24,40,5,4.2)+rings(58,40,5,4.2)+post(24,40,1)+post(58,40,0)}
-  else if(i===8){s+=rings(40,40,8,4.6)+post(40,40,1)+'<path d="M40 14a26 26 0 1 0 26 26" fill="none" stroke="#FF3B30" stroke-width="3"/>'}
+  var ck=CK[i]||'one';
+  if(ck==='coil'){s+='<g>';for(var k=0;k<9;k++)s+='<rect x="0" y="'+(k*9)+'" width="80" height="4.5" fill="#000"/>';s+='</g><rect x="14" y="26" width="52" height="28" fill="#fff" stroke="#000" stroke-width="3"/>';for(var j=0;j<6;j++)s+='<line x1="'+(18+j*9)+'" y1="24" x2="'+(22+j*9)+'" y2="56" stroke="#000" stroke-width="3"/>';s+='<path d="M24 40h30m-6-5l6 5-6 5" stroke="#FF3B30" stroke-width="3" fill="none"/>'}
+  else if(ck==='two'){s+=rings(24,40,5,4.2)+rings(58,40,5,4.2)+post(24,40,1)+post(58,40,0)}
+  else if(ck==='screw'){s+=rings(40,40,8,4.6)+post(40,40,1)+'<path d="M40 14a26 26 0 1 0 26 26" fill="none" stroke="#FF3B30" stroke-width="3"/>'}
   else{s+=rings(40,40,8,4.6)+post(40,40,1)}
   return s+'</svg>'}
 function gardenClear(){if(G.state!=='run')return;G.state='clear';var li=G.li,D=G.D;
+  if(G.prac){SFX.fan();flash(.5);shake(10);for(var pi=0;pi<5;pi++)setTimeout(function(){burst(Math.random()*W,Math.random()*H*.6,['#000','#fff',RED],30,5,1.3)},pi*130);var gp=G;setTimeout(function(){if(G===gp&&window.Guide)Guide.tutorialClear()},700);return}
   var st=[true,G.falls===0,D.boss?G.left>0:(G.gemTot?G.gems>=G.gemTot:G.mash===0)];
   var old=SV.stars[li]||[false,false,false];SV.stars[li]=st.map(function(v,i){return v||old[i]});SV.cards[li]=1;SV.gems=(SV.gems||0)+G.gems;
   var b=SV.best[li];if(!b||G.time<b.t)SV.best[li]={t:G.time,falls:G.falls};if(li+1>=SV.unl)SV.unl=Math.min(NG,li+2);
@@ -2530,7 +2549,7 @@ function drawTitle(){c.fillStyle='#fff';c.fillRect(0,0,W,H);var m=Math.max(W,H),
   c.fillStyle='#fff';c.beginPath();c.arc(cx,cy,u*.5,0,6.283);c.fill();c.strokeStyle=RED;c.lineWidth=u*.14;c.stroke();c.fillStyle='#000';c.beginPath();c.arc(cx,cy,u*.16,0,6.283);c.fill();
   var rx=cx+Math.cos(T*1.6)*u*2.6,ry=cy+Math.sin(T*1.6)*u*2.6;c.save();c.translate(rx,ry);drawRunnerBody(u*.45,0);c.restore()}
 var MAPN=[];
-function mapNodes(){var pts=PORT?[[.3,.18],[.7,.2],[.72,.33],[.3,.37],[.28,.5],[.7,.52],[.72,.65],[.3,.68],[.3,.8],[.62,.83]]:[[.08,.35],[.2,.6],[.3,.34],[.41,.6],[.51,.34],[.61,.6],[.7,.34],[.79,.6],[.88,.34],[.93,.62]];MAPN=pts.map(function(p){return[p[0]*W,p[1]*H*(PORT?.9:.95)+(PORT?H*.035:H*.02)]})}
+function mapNodes(){var pts=[];for(var q=0;q<NG;q++){if(PORT){var row=Math.floor(q/3),col=q%3;if(row%2)col=2-col;if(q===NG-1&&NG%3===1)col=1;pts.push([.2+col*.3,.17+row*(.61/Math.max(1,Math.ceil(NG/3)-1))])}else pts.push([.055+q*(.89/Math.max(1,NG-1)),q%2?.62:.36])}MAPN=pts.map(function(p){return[p[0]*W,p[1]*H*(PORT?.9:.95)+(PORT?H*.035:H*.02)]})}
 function drawMap(){c.fillStyle='#fff';c.fillRect(0,0,W,H);var m=Math.max(W,H),sp=m*.022;c.save();opRings(W*.5,H*1.1,sp,Math.ceil(m*1.3/sp),(T*.3)%1,'#000');c.restore();
   mapNodes();var R=Math.max(24,Math.min(W,H)*.05);
   for(var i=1;i<MAPN.length;i++){var a=MAPN[i-1],b=MAPN[i];c.strokeStyle='#000';c.lineWidth=R*.9;c.lineCap='round';c.beginPath();c.moveTo(a[0],a[1]);c.lineTo(b[0],b[1]);c.stroke();c.strokeStyle=i<SV.unl?RED:'#fff';c.lineWidth=R*.55;c.stroke()}
@@ -2555,24 +2574,43 @@ function backBtn(){var b=$('bBack'),on=scene!=='title'||INHUB;b.classList.toggle
 function setScene(s){scene=s;$('logo').classList.toggle('hidden',s!=='title');['hud','sc','sw','screw'].forEach(function(id){$(id).classList.toggle('hidden',s!=='play')});
   if(s==='title'){showScr('scrTitle');var lg=$('logo');lg.classList.remove('drop');void lg.offsetWidth;lg.classList.add('drop');$('bCont').classList.toggle('hidden',!(SV.unl>1||SV.stars[0]))}
   else if(s==='map'){showScr('scrMap');refreshShelf()}else if(s==='play'){showScr();updSwitch()}else if(s==='test')showScr('scrTest');else if(s==='end')showScr('scrEnd');
-  backBtn();$('bMute').textContent=muted?'🔇':'🔊'}
+  backBtn();$('bMute').textContent=muted?'🔇':'🔊';if(s!=='play')$('hud').classList.remove('prac');
+  if(HELP){if(s==='play'||s==='map')HELP.show();else HELP.hide()}}
 function fmtS(s){s=Math.max(0,Math.ceil(s));return Math.floor(s/60)+':'+('0'+s%60).slice(-2)}
 function fmtT(ms){var s=Math.round(ms/1000);return Math.floor(s/60)+'分'+('0'+s%60).slice(-2)+'秒'}
 function updHud(){if(!G)return;$('hudT').innerHTML=(G.D.boss?'大庭園　<span id="tim">⏱ '+fmtS(G.left)+'</span>':'庭 '+(G.li+1)+'　'+G.D.n);$('scN').textContent=G.score;$('scS').textContent='コンボ ×'+G.combo+(G.gemTot?'　◆'+G.gems+'/'+G.gemTot:'')}
 function updProg(){if(!G)return;var k=Math.max(0,Math.min(1,G.x/G.gd.len));$('progF').style.width=(k*100)+'%';$('progR').style.left=(k*100)+'%'}
 $('bBack').onclick=function(){ac();SFX.tap();if(scene==='title'){try{window.parent.postMessage({type:'rika-close-game'},'*')}catch(e){}return}
   if(scene==='map'){setScene('title');return}
-  $('askP').innerHTML=scene==='test'?'確認テストをやめて、庭の地図にもどりますか？<br>（テストは次はさいしょから）':'庭の地図にもどりますか？<br>ぬけた庭と★は保存されます（この庭は次ははじめから）。';
+  $('askP').innerHTML=G&&G.prac?'れんしゅうをやめますか？<br>（あとで表紙の「あそびかた」から、いつでもできます）':scene==='test'?'確認テストをやめて、庭の地図にもどりますか？<br>（テストは次はさいしょから）':'庭の地図にもどりますか？<br>ぬけた庭と★は保存されます（この庭は次ははじめから）。';
   $('scrAsk').classList.remove('hidden');if(G)G.paused=true};
-$('askNo').onclick=function(){$('scrAsk').classList.add('hidden');if(G)G.paused=false};
-$('askGo').onclick=function(){$('scrAsk').classList.add('hidden');if(G&&G.state!=='clear'){SV.playMs=(SV.playMs||0)+G.time*1000;save()}G=null;setScene('map')};
+$('askNo').onclick=function(){$('scrAsk').classList.add('hidden');if(G&&!G.hp)G.paused=false};
+$('askGo').onclick=function(){$('scrAsk').classList.add('hidden');var wasP=G&&G.prac;if(G&&G.state!=='clear'&&!wasP){SV.playMs=(SV.playMs||0)+G.time*1000;save()}G=null;if(wasP&&window.Guide)Guide.tutorialEnd();setScene('map')};
 $('bMute').onclick=function(){muted=!muted;try{localStorage.setItem(SKEY+':mute',muted?'1':'0')}catch(e){}$('bMute').textContent=muted?'🔇':'🔊';if(!muted){ac();SFX.tap()}};
 function openBook(){var z=Zk();if(z&&z.openBook)z.openBook()}
 $('bBook1').onclick=openBook;$('bBook2').onclick=openBook;$('eBook').onclick=openBook;
 $('bGacha').onclick=function(){var z=Zk();if(z&&z.openGacha)z.openGacha()};
 if(!Zk()){['bBook1','bBook2','bGacha','eBook'].forEach(function(id){$(id).classList.add('hidden')})}
 function getName(){return(window.PLAYER_NAME||$('nameIn').value||SV.name||'').trim()}
-$('bStart').onclick=function(){ac();SV.name=$('nameIn').value.trim()||SV.name;save();if(SV.unl<=1&&!SV.stars[0])startGarden(0);else setScene('map')};
+var INTRO={title:'第25回 反転する庭',learn:'導線やコイルのまわりには **磁界** ができ、電流の向きを逆にすると **磁界も逆** になる',
+  how:'**タップ** で電流を逆にして、赤い針（N極）が **進む向き** をさす石を渡る',gesture:'tap'};
+function nextStones(){if(!G)return{x:W/2,y:H/2,r:40};for(var i=G.sec;i<G.gd.secs.length;i++){var sc=G.gd.secs[i];if(sc.t==='g')continue;var b=sc.br[0],a=b.stones[0],z=b.stones[b.stones.length-1];var p=W2S(a.x,a.y),q=W2S(z.x,z.y);
+    return{x:(p[0]+q[0])/2,y:(p[1]+q[1])/2,w:Math.abs(p[0]-q[0])+U*1.4,h:Math.abs(p[1]-q[1])+U*1.4}}return{x:W/2,y:H/2,r:40}}
+function runnerPt(){if(!G)return{x:W/2,y:H/2,r:40};var p=W2S(G.x,G.y);return{x:p[0],y:p[1],r:U*.7}}
+var PSTEPS=[
+  {gesture:'tap',target:nextStones,until:function(){return !!(G&&(G.pOK>=1||G.passed>=1))},praise:'反転！',
+    text:'走る方位磁針は、石の **赤い針（N極）が進む向き** をさすときだけ渡れる。いまは逆！ 画面を **タップ** して電流を逆に'},
+  {gesture:'tap',target:nextStones,dim:false,until:function(){return !!(G&&G.state==='clear')},praise:false,
+    text:'柱の **⊙・⊗** で磁界の回る向きが変わる。針が逆なら **石の手前で タップ**。ゴールまで走ろう！'}];
+var PRACTICE={start:function(){startGarden(0,true)},label:'れんしゅう中',clearOn:'manual',clearText:'れんしゅうクリア！',steps:PSTEPS,
+  onExit:function(res){if(res&&(res.stopped||res.replaced))return;if(G&&G.prac){G=null}$('hud').classList.remove('prac');rule('',.01);
+    if(SV.unl<=1&&!SV.stars[0])startGarden(0);else setScene('map')}};
+var busy=false;
+$('bStart').onclick=function(){if(busy)return;ac();SV.name=$('nameIn').value.trim()||SV.name;save();var first=SV.unl<=1&&!SV.stars[0];
+  var go=function(){busy=false;PRACTICE.bandAt=PORT?'top':'bottom';if(!first)setScene('map');else if(window.Guide)Guide.tutorial(PRACTICE);else startGarden(0)};
+  if(window.Guide){busy=true;Guide.intro(INTRO).then(go)}else go()};
+if(window.Guide)Guide.tutorialButton('#bHow',function(){ac();SFX.tap();PRACTICE.bandAt=PORT?'top':'bottom';Guide.tutorial(PRACTICE)});else $('bHow').classList.add('hidden');
+document.addEventListener('pointerdown',function(e){var b=e.target&&e.target.closest&&e.target.closest('.st');if(b&&!b.disabled)vib(8)},true);
 $('bCont').onclick=function(){ac();SFX.tap();SV.name=$('nameIn').value.trim()||SV.name;save();setScene('map')};
 $('bToTest').onclick=function(){if(SV.done)toTest()};
 function toTest(){var z=Zk();if(z&&z.mainClear&&!TEST){try{z.mainClear({onClose:startTest});return}catch(e){}}startTest()}
@@ -2630,17 +2668,29 @@ function frame(now){var dt=Math.min(.05,(now-last)/1000);last=now;T+=dt;
   var sx=SHK?(Math.random()-.5)*SHK:0,sy=SHK?(Math.random()-.5)*SHK:0;c.setTransform(DPR,0,0,DPR,sx*DPR,sy*DPR);
   if(scene==='play'&&G)drawGarden();else if(scene==='map')drawMap();else if(scene==='title')drawTitle();else{c.fillStyle='#fff';c.fillRect(-20,-20,W+40,H+40)}
   c.setTransform(DPR,0,0,DPR,0,0);drawFx();requestAnimationFrame(frame)}
-document.addEventListener('visibilitychange',function(){if(document.hidden&&G&&G.state==='run'){G.paused=true;$('askP').innerHTML='ひと休み中。つづけますか？';$('scrAsk').classList.remove('hidden')}});
+document.addEventListener('visibilitychange',function(){if(document.hidden&&G&&G.state==='run'&&!G.prac){G.paused=true;$('askP').innerHTML='ひと休み中。つづけますか？';$('scrAsk').classList.remove('hidden')}});
 window.addEventListener('resize',resize);
 
 /* ---------------- はじまり ---------------- */
+var HELP=null;
+if(window.Guide){
+  Guide.setup({theme:{bg:'#FFFFFF',fg:'#000000',accent:'#FF3B30',accentText:'#FFFFFF',font:FB,bodyFont:FB,radius:0,texture:'none',
+      line:'#000000',dim:'rgba(0,0,0,.45)',shadow:'0 0 0 3px #fff, 0 0 0 7px #000, 12px 12px 0 7px #FF3B30',outline:'#FFFFFF',hand:'#FFFFFF',handLine:'#000000'},
+    sfx:function(k){if(k==='step')SFX.tap();else if(k==='done')SFX.pass(2);else if(k==='clear')SFX.fan();else if(k==='open'||k==='close')SFX.tap();else if(k==='cheer')SFX.gem();else if(k==='nudge')SFX.tap()},
+    muted:function(){return muted}});
+  HELP=Guide.help({title:INTRO.title,learn:INTRO.learn,how:INTRO.how,offset:{x:62,y:0},size:50,show:false,attention:true,replay:'tutorial',
+    rules:['方位磁針の石は、**赤い針（N極）が進む向きをさす** ときだけ踏める','**タップ** で電流の向きを逆にすると、磁界も針も **いっせいに逆** になる',
+      '柱の **⊙（電流が手前へ）は左回り・⊗（向こうへ）は右回り** の磁界（右ねじのきまり）','コイルの **内側** は、右手の4本指を電流の向きに→**親指の向き**。**外側は内側と逆**',
+      '**石の上では切りかえない**（足場が裏返る）。迷って連打した区間はコンボにならない'],
+    onOpen:function(){if(G&&!G.paused){G.paused=true;G.hp=1}},onClose:function(){if(G&&G.hp){G.hp=0;if($('scrAsk').classList.contains('hidden'))G.paused=false}}});
+}
 resize();
 window.Zukan&&Zukan.setup&&Zukan.setup({game:GID,koma:[KOMA]});
 if(window.PLAYER_NAME){$('nameIn').value=window.PLAYER_NAME;$('nmRow').classList.add('hidden')}else if(SV.name)$('nameIn').value=SV.name;
 if(TEST)startTest();else setScene('title');
 requestAnimationFrame(frame);
 /* 自動操作での確かめ用（遊びには影響しない） */
-window.__JM={G:function(){return G},start:startGarden,begin:beginRun,flip:flip,scene:function(){return scene},SV:function(){return SV},build:buildGarden,GD:GD};
+window.__JM={mapN:function(){mapNodes();return MAPN},W2S:function(x,y){return W2S(x,y)},G:function(){return G},start:startGarden,begin:beginRun,flip:flip,scene:function(){return scene},SV:function(){return SV},build:buildGarden,GD:GD};
 })();
 </script>
 </body>

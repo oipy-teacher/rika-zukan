@@ -80,6 +80,10 @@ html,body{margin:0;height:100%;background:#B9C2A7;overflow:hidden;overscroll-beh
 #tFb{margin-top:14px;font-size:17px;line-height:1.6;font-weight:700}
 #tFb .mk{font-size:34px;margin-right:8px;vertical-align:middle}
 #tFb .ex{display:block;font-weight:500;margin-top:4px}
+/* 仕上げ 2026-09-28（dk-finish-2026-09-28） */
+#dlg{z-index:2147483300!important}
+@media (max-width:560px){.gd-band{top:calc(66px + env(safe-area-inset-top))!important}}
+@media (min-aspect-ratio:112/100) and (min-width:640px){.gd-band{left:75%!important}} /* 横長は育成機の上の段（？・音）をふさがないよう、右の記録機の上へ */
 @media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
@@ -88,7 +92,7 @@ html,body{margin:0;height:100%;background:#B9C2A7;overflow:hidden;overscroll-beh
 <div class="sr" id="sr" aria-live="polite">銅くんレベル上限 ～結び付く酸素には限度がある～。Ⓐ長押しで加熱、Ⓑでまぜる、Ⓒではかる。同じ値が2回続いたら「じょうげん！」で上限を宣言する。</div>
 <input id="nameIn" class="hidden" maxlength="16" autocomplete="off" placeholder="なまえ（空でもOK）" aria-label="なまえ">
 
-<div id="dlg" class="hidden"><div class="box"><div class="lcd" id="dlgT"></div><div class="row" id="dlgR"></div></div></div>
+<div id="dlg" class="hidden" data-gd-pass><div class="box"><div class="lcd" id="dlgT"></div><div class="row" id="dlgR"></div></div></div>
 
 <div id="test" class="hidden">
   <div class="top"><span class="ttl">COPPER PET ─ 確認テスト</span><span class="no" id="tNo"></span></div>
@@ -2208,7 +2212,7 @@ function layout(){
  if(LAND){var dw=(W-3*m)/2;L.A={x:m,y:m,w:dw,h:H-2*m};L.B={x:2*m+dw,y:m,w:dw,h:H-2*m}}
  else{L.A={x:m,y:m,w:W-2*m,h:H-2*m};L.B=null}
  devA(L.A);if(L.B)devB(L.B);
- makeBG();placeName();
+ makeBG();placeName();placeHelp();
 }
 function devA(d){
  var u=Math.min(d.w/10,d.h/15);L.u=u;
@@ -2216,7 +2220,7 @@ function devA(d){
  var bez=clamp(d.h*.068,50,68);
  L.back={x:d.x+pad*.7,y:d.y+(bez-44)/2+3,w:clamp(d.w*.26,100,150),h:44};
  L.snd={w:clamp(d.w*.15,58,84),h:44};L.snd.x=d.x+d.w-pad*.7-L.snd.w;L.snd.y=L.back.y;
- L.kk={w:clamp(d.w*.17,64,96),h:30};L.kk.x=L.snd.x-8-L.kk.w;L.kk.y=L.back.y+7;
+ L.help={w:44,h:44,x:L.snd.x-8-44,y:L.snd.y};L.kk={w:clamp(d.w*.17,64,96),h:30};L.kk.x=L.help.x-8-L.kk.w;L.kk.y=L.back.y+7;
  L.brand={x:(L.back.x+L.back.w+L.kk.x)/2,y:L.back.y+22,w:L.kk.x-(L.back.x+L.back.w)-10};
  var bd=clamp(Math.min(d.w*.22,d.h*.105),58,112);
  var labH=clamp(bd*.27,17,25);L.labH=labH;
@@ -2443,6 +2447,7 @@ function stir(){if(scene!=='play'||!E||E.done||E.holding||A.reveal>0)return;var 
  if(!S.stirSeen){S.stirSeen=1;msg('薬さじでまぜた。中の銅が表面に出て、空気（酸素）にふれる',3.5)}save()}
 /* ---- はかる（Ⓒ） ---- */
 function weigh(){if(scene!=='play'||!E||E.done||E.holding||A.wT>0||A.reveal>0)return;var D=D_();
+ if(E.T>40&&E.prac){msg('まだ熱い！ 温度計が下がるまで待ってから Ⓒ',3);SFX.key();return}
  if(E.T>40){A.wT=.9;A.wHot=1;E.hot=1;collect('hot');mistake('熱いまま はかった！ 表示がゆれて読めない。冷めるまで待とう');return}
  if(!E.cyc.h){msg('加熱していないので、前と同じ '+f2(E.rd[E.rd.length-1].m)+' g。先に Ⓐ で加熱',3);SFX.key();return}
  if(D.pin===2&&!E.pinSet){msg('はかる前に、グラフの「予想ピン」を指で上下に動かして予想しよう',3.5);A.pinBlink=1.6;SFX.key();return}
@@ -2470,6 +2475,7 @@ function declare(){if(scene!=='play'||!E||E.done||E.holding||A.wT>0||A.reveal>0)
  if(n<3){msg('まだ はかった回数が少ない。加熱 → 冷ます → はかる を くり返そう',3.2);SFX.key();return}
  var a=E.rd[n-1],b=E.rd[n-2],eq=Math.abs(a.m-b.m)<.001&&a.n>b.n,comp=complete(E);
  if(comp&&eq){success();return}
+ if(E.prac){msg('まだ宣言しない。Ⓐ加熱 → 冷ます → Ⓒはかる で、同じ値が2回続いたら',4);SFX.key();return}
  if(comp&&!eq){mistake('上限に届いたかも。でも「前と同じ値」をまだ確かめていない。もう一度 加熱 → はかる で確かめよう');return}
  A.reveal=3.4;var left=Math.max(.01,Math.ceil(remO(E)*100-1e-6)/100),why;
  if(!eq)why='まだ増えている途中だった（前回より '+f2(a.m-b.m)+' g 増えた）';
@@ -2478,7 +2484,7 @@ function declare(){if(scene!=='play'||!E||E.done||E.holding||A.wT>0||A.reveal>0)
  else why='まだ反応していない金属が残っていた';
  mistake(why+'　─ あと '+f2(left)+' g の酸素が結び付く')}
 function success(){var D=D_(),cap=r2(massOf(E)),pc=petCenter();E.done=1;A.happy=99;E.album[E.album.length-1]=5;
- S.ledger.push({i:E.i,mt:D.mt,m0:D.m0,cap:cap,mis:E.mis});var gb=Math.round(E.gas)*30;S.pt+=200+gb;
+ if(!(E.prac&&S.ledger.some(function(x){return x.i===E.i})))S.ledger.push({i:E.i,mt:D.mt,m0:D.m0,cap:cap,mis:E.mis});var gb=Math.round(E.gas)*30;S.pt+=200+gb;
  SFX.max();ev('LEVEL MAX!','上限 '+f2(cap)+' g',2.4);sparks(pc[0],pc[1],44);FLASH=.6;SHAKE=.3;vib([30,40,70]);confetti(40);
  A.starGot=[1,E.mis===0?1:0,E.gas>=1.5?1:0];A.starT=-99;
  collect(D.mt==='Cu'?'c5':'m5');if(D.m0>=1.2)collect('big');
@@ -2486,7 +2492,7 @@ function success(){var D=D_(),cap=r2(massOf(E)),pc=petCenter();E.done=1;A.happy=
  var cuAm={};S.ledger.forEach(function(x){if(x.mt==='Cu')cuAm[x.m0]=1});
  if(!S.ruleA){S.ruleA=1;setTimeout(function(){earn(30,'rule',pc[0],pc[1]-40)},900)}
  if(!S.ruleB&&Object.keys(cuAm).length>=3){S.ruleB=1;setTimeout(function(){earn(30,'rule',pc[0],pc[1]-40);msg('発見！ 上限は、銅の量で変わる（量が多いほど、結び付く酸素も多い）',6)},1500)}
- S.egg=E.i+1;save();
+ S.egg=E.prac&&PRAC_KEEP!=null?Math.max(PRAC_KEEP,E.i+1):E.i+1;save();if(E.prac){setTimeout(function(){if(window.Guide)Guide.tutorialClear()},RM?300:1500)}
  setTimeout(function(){if(scene==='play'){scene='eggclear';A.happy=0;A.starT=0;A.starPlayed=0;confetti(110);save()}},RM?400:2300)}
 
 /* ---- 予想ピン ---- */
@@ -2621,9 +2627,10 @@ function drawPoster(){if(POST.t0<0)POST.t0=TT;var t=TT-POST.t0,land=W>=H*1.05;
  var st=A.armed?'もう一度で 最初から':(sv?'はじめから':'はじめる');ICON.play(-bw/2+bh*.55,0,bh*.3,'#253021');
  ctx.font=font(fit(st,bw-bh*1.2,bh*.4,1),1);ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle='#1b1206';ctx.fillText(st,bh*.22,2);ctx.restore();
  HIT.push({id:'pStart',x:bx,y:by,w:bw,h:bh,down:function(){SFX.key()},up:function(){titleStart()}});
- var sw=(bw-14)/2,sy=by+bh+(land?20:14),sh2=54;
+ var sw=(bw-20)/3,sy=by+bh+(land?20:14),sh2=54;
  posterPill({x:bx,y:sy,w:sw,h:sh2},'つづきから',!!sv,function(){titleCont()});
- posterPill({x:bx+sw+14,y:sy,w:sw,h:sh2},'図鑑',!!(window.Zukan&&Zukan.openBook),function(){window.Zukan&&Zukan.openBook&&Zukan.openBook()});
+ posterPill({x:bx+sw+10,y:sy,w:sw,h:sh2},'あそびかた',true,function(){howto()});
+  posterPill({x:bx+2*sw+20,y:sy,w:sw,h:sh2},'図鑑',!!(window.Zukan&&Zukan.openBook),function(){window.Zukan&&Zukan.openBook&&Zukan.openBook()});
  ctx.restore();
  /* もどる（一覧へ）・音 */
  if(INHUB){var bp={x:12,y:12,w:124,h:46};posterPill(bp,'◀ 一覧へ',true,function(){onBack()})}
@@ -2905,20 +2912,20 @@ addEventListener('keydown',function(e){if(e.repeat||scene==='test'||!$('dlg').cl
 addEventListener('keyup',function(e){if(scene==='test')return;var k={a:'A',z:'A',' ':'A',b:'B',x:'B',c:'C'}[e.key.toLowerCase()];if(e.key==='Enter'&&scene==='title')k='A';if(k&&PRESS[k])btnUp(k)});
 
 /* ================= 進行 ================= */
-function toTitle(){scene='title';A.armed=0;hideAll();POST.t0=-1;POST.landed=0}
+function toTitle(){scene='title';A.armed=0;hideAll();POST.t0=-1;POST.landed=0;if(HELP)HELP.hide()}
 function hideAll(){$('test').classList.add('hidden');$('nameIn').classList.add('hidden');$('dlg').classList.add('hidden')}
 function readName(){var v=$('nameIn').value.trim();if(v)NAME=v}
-function titleStart(){if(load()&&!A.armed){A.armed=1;return}if(!NAME&&!TEST&&!A.asked){A.asked=1;askName(titleStart);return}S=fresh();S.name=NAME;hideAll();goIntro(0)}
+function titleStart(){if(load()&&!A.armed){A.armed=1;return}if(!NAME&&!TEST&&!A.asked){A.asked=1;askName(titleStart);return}S=fresh();S.name=NAME;hideAll();firstRun()}
 function askName(cb){dialog('なまえ<small>提出カードにのる名前（空でもOK）</small><input id="dlgName" maxlength="16" autocomplete="off" placeholder="なまえ">',[['OK',function(){var el=$('dlgName');if(el&&el.value.trim())NAME=el.value.trim();cb()},1]]);setTimeout(function(){try{$('dlgName').focus()}catch(e){}},60)}
-function titleCont(){S=load();if(!S){titleStart();return}if(!NAME)NAME=S.name||'';else S.name=NAME;hideAll();E=S.E||null;
+function titleCont(){S=load();if(!S){titleStart();return}if(!NAME)NAME=S.name||'';else S.name=NAME;hideAll();E=S.E||null;if(E)E.prac=false;if(HELP)HELP.show();
  if(S.cleared){scene='clear';return}
  if(S.ph==='boss'||S.ph==='bossintro'){goBossIntro();return}
  if(S.ph==='bossend'){scene='bossend';return}
  if(S.egg>=EGGS.length){goBossIntro();return}
  if(E&&E.i===S.egg&&!E.done){E.holding=0;E.T=20;scene='play';S.ph='play';return}
  goIntro(S.egg)}
-function goIntro(i){S.egg=i;S.ph='intro';E=null;S.E=null;scene='intro';save()}
-function startEgg(){E=newEgg(S.egg);S.E=E;S.ph='play';scene='play';A.happy=0;A.sad=0;A.reveal=0;MSG.life=0;SFX.hatch();save()}
+function goIntro(i){S.egg=i;S.ph='intro';E=null;S.E=null;scene='intro';save();if(HELP)HELP.show()}
+function startEgg(){if(PRAC&&!STARTING_PRAC)endPractice();E=newEgg(S.egg);S.E=E;S.ph='play';scene='play';if(HELP)HELP.show();A.happy=0;A.sad=0;A.reveal=0;MSG.life=0;SFX.hatch();save()}
 function goBossIntro(){scene='bossintro';S.ph='bossintro';E=null;save()}
 function bossStart(){S.boss={k:0,t:150,ok:0,line:null,tap:null,show:0,last:-1};S.ph='boss';scene='boss';MSG.life=0;save()}
 function finishMain(){S.cleared=1;S.ph='clear';save();var go=function(){scene='clear'};
@@ -2927,7 +2934,7 @@ function onBack(){AU.init();SFX.key();
  if(scene==='title'){try{window.parent.postMessage({type:'rika-close-game'},'*')}catch(e){}return}
  if(E&&E.holding)heatEnd();
  var t=scene==='test'?'確認テストをやめて、タイトルにもどる？<small>テストは次はさいしょから。育成の記録は保存されています。</small>':'タイトルにもどる？<small>進み具合は保存されます。「つづきから」で、このたまごの続きから遊べます。</small>';
- dialog(t,[['つづける',null],['もどる',function(){save();toTitle()},1]])}
+ dialog(t,[['つづける',null],['もどる',function(){if(PRAC)endPractice();save();toTitle()},1]])}
 function dialog(html,btns){$('dlgT').innerHTML=html;var R=$('dlgR');R.innerHTML='';btns.forEach(function(b){var el=document.createElement('button');el.className='pbtn'+(b[2]?' go':'');el.textContent=b[0];
  el.onclick=function(){$('dlg').classList.add('hidden');if(b[1])b[1]()};R.appendChild(el)});$('dlg').classList.remove('hidden')}
 
@@ -2957,9 +2964,54 @@ function finishTest(){var qs=TQ,review=Quiz.review(qs,TA),marks=review.map(funct
  SubmitCard.show({gameId:GID,grade:'chu2',koma:[KOMA],unit:'中2理科　化学変化と原子・分子　第29回',game:'銅くんレベル上限 ～結び付く酸素には限度がある～'+(TEST?'（確認テストのみ）':''),
   name:nm,score:score,total:qs.length,marks:marks,records:recs,review:review},function(){if(TEST)startTest();else{$('test').classList.add('hidden');scene='clear'}})}
 
+/* ================= 遊び方案内（Guide）2026-09-28 ================= */
+var PAUSED=false,PRAC=false,HELP=null,PRAC_KEEP=null,STARTING_PRAC=false;
+var INTRO={title:'銅くんレベル上限',
+  learn:'金属を加熱すると酸素と結び付いて重くなるが、**結び付く酸素には限度がある**（質量が一定になる＝上限）',
+  how:'Ⓐを **長押し** で加熱 → 冷めたら Ⓒ **はかる**。同じ値が2回続いたら **じょうげん！**',gesture:'hold'};
+function endPractice(){if(!PRAC)return;PRAC=false;if(E&&E.prac&&!E.done&&S&&PRAC_KEEP!=null){S.egg=Math.max(S.egg||0,PRAC_KEEP)}if(E)E.prac=false;if(window.Guide)Guide.tutorialEnd()}
+function placeHelp(){if(!HELP||!L.help)return;HELP.update({size:44,offset:{x:Math.max(0,W-(L.help.x+L.help.w)-10),y:Math.max(0,L.help.y-10)}})}
+function btnT(k){var b=L.btn[k];return {x:b.cx,y:b.cy,r:b.r+6}}
+function declT(){var d=L.decl;return {x:d.x+d.w/2,y:d.y+d.h/2,w:d.w+10,h:d.h+10}}
+function prE(){return scene==='play'&&E&&E.prac}
+function firstRun(){if(!window.Guide){goIntro(0);return}Guide.intro(INTRO).then(function(){Guide.tutorial(PRACTICE)})}
+function howto(){AU.init();SFX.key();var sv=load();if(sv){S=sv;if(!NAME)NAME=S.name||''}else{S=fresh();S.name=NAME}hideAll();if(window.Guide)Guide.tutorial(PRACTICE);else goIntro(0)}
+var PRACTICE={label:'れんしゅう中　ちび銅くん',block:false,clearOn:'manual',clearText:'れんしゅうクリア！',
+  start:function(){if(!S){S=fresh();S.name=NAME}PRAC=true;hideAll();PRAC_KEEP=S.egg||0;S.egg=0;STARTING_PRAC=true;startEgg();STARTING_PRAC=false;E.prac=true},
+  steps:[
+    {gesture:'hold',holdMs:1700,target:function(){return btnT('A')},until:function(){return prE()&&E.heats>=1},
+     text:'Ⓐ を **長押し**。ガスバーナーで加熱すると、**酸素** が飛んできて銅くんに結び付く（ゲージ満タンまで はなさない）',praise:'加熱した！'},
+    {gesture:'tap',target:function(){return btnT('C')},until:function(){return prE()&&E.rd.length>=2},
+     text:'熱いままでは はかれない。**温度計が下がる** のを待ってから Ⓒ **はかる**',praise:'重くなった！'},
+    {gesture:'hold',holdMs:1700,target:function(){return btnT('A')},until:function(){return prE()&&E.heats>=2},
+     text:'もう一度 Ⓐ **長押し** で加熱',praise:'加熱した！'},
+    {gesture:'tap',target:function(){return btnT('C')},until:function(){return prE()&&E.rd.length>=3},
+     text:'冷めたら Ⓒ **はかる**。さっきより増えた？',praise:'はかった！'},
+    {gesture:'hold',holdMs:1700,target:function(){return btnT('A')},until:function(){return prE()&&E.heats>=3},
+     text:'まだ増える？ Ⓐ **長押し** で もう一度',praise:'加熱した！'},
+    {gesture:'tap',target:function(){return btnT('C')},until:function(){return prE()&&E.rd.length>=4},
+     text:'冷めたら Ⓒ **はかる**',praise:false},
+    {gesture:'tap',target:declT,until:function(){return prE()&&E.done},
+     text:'**同じ値が2回続いた** ら、もう酸素は結び付かない。**じょうげん！** で上限を宣言',praise:false}
+  ],
+  onExit:function(res){PRAC=false;if(res&&res.stopped)return;if(E&&E.prac&&!(res&&res.cleared)){E.prac=false}}};
+if(window.Guide){
+  Guide.setup({theme:{bg:'#B9C2A7',fg:'#253021',accent:'#C8773C',accentText:'#1b1206',font:'"M PLUS 1 Code","Hiragino Kaku Gothic ProN",monospace',bodyFont:'"M PLUS 1 Code","Hiragino Kaku Gothic ProN",monospace',
+      radius:8,texture:'scan',line:'#253021',dim:'rgba(16,22,14,.45)',shadow:'0 0 0 5px #0f140d, 0 0 0 7px #C8773C, 0 10px 26px rgba(0,0,0,.45)',outline:'#B9C2A7',hand:'#B9C2A7',handLine:'#253021'},
+    sfx:function(k){AU.init();if(k==='step'||k==='done')SFX.key();else if(k==='clear')SFX.max();else if(k==='open'||k==='close')SFX.key();else if(k==='cheer')SFX.hit();else if(k==='nudge')SFX.key()},
+    muted:function(){return AU.mute}});
+  HELP=Guide.help({title:'銅くんレベル上限',learn:INTRO.learn,how:INTRO.how,gesture:'hold',size:44,attention:true,replay:'tutorial',
+    rules:['Ⓐ **長押し** ＝ 加熱（ゲージ満タンまで）。ガスは回数に限りがある',
+      '**冷めてから** Ⓒ はかる。熱いままだと表示がゆれて読めない',
+      '粉が多い銅くんは Ⓑ **まぜる** で、中の銅も空気（酸素）にふれさせる',
+      'はかった値が **2回続けて同じ** になったら **じょうげん！**（途中で宣言すると断面が見える）',
+      '予想ピンのたまごは、グラフのピンを **指で上下** に動かして予想してから はかる'],
+    onOpen:function(){PAUSED=true;if(E&&E.holding)heatEnd()},onClose:function(){PAUSED=false;last=performance.now()}});
+  HELP.hide();placeHelp();
+}
 /* ================= ループ ================= */
 var last=performance.now(),saveT=0;
-function frame(t){var dt=Math.min(.05,(t-last)/1000);last=t;TT+=dt;
+function frame(t){var dt=Math.min(.05,(t-last)/1000);last=t;if(PAUSED){draw();drawPT();requestAnimationFrame(frame);return}TT+=dt;
  if(S&&(scene==='play'||scene==='boss'||scene==='intro'||scene==='eggclear'))S.t+=dt;
  if(scene==='play'&&E){if(E.holding)heatTick(dt);else E.T=20+(E.T-20)*Math.exp(-dt/1.15)}
  if(scene==='boss'&&S.boss&&!S.boss.show){S.boss.t-=dt;if(S.boss.t<=0){S.boss.t=0;var B=S.boss;msg('時間切れ！',2);B.k=BOSSG.length;bossEnd()}}
@@ -2989,7 +3041,7 @@ if(document.fonts&&document.fonts.ready)document.fonts.ready.then(function(){lay
 if(TEST)startTest();else toTitle();
 requestAnimationFrame(frame);
 /* 自動テスト用の読み取り口 */
-window.__DK={get S(){return S},get E(){return E},get scene(){return scene},get L(){return L},EGGS:EGGS,BOSSG:BOSSG,btnDown:btnDown,btnUp:btnUp,declare:declare,heatEnd:heatEnd,setPin:setPin,massOf:massOf,
+window.__DK={prac:function(){return PRAC},paused:function(){return PAUSED},get S(){return S},get E(){return E},get scene(){return scene},get L(){return L},EGGS:EGGS,BOSSG:BOSSG,btnDown:btnDown,btnUp:btnUp,declare:declare,heatEnd:heatEnd,setPin:setPin,massOf:massOf,
  complete:function(){return E&&complete(E)},bossAns:bossAns,heatStart:heatStart,heatTick:heatTick,stir:stir,weigh:weigh,weighDone:weighDone,
  startEgg:startEgg,goIntro:goIntro,titleStart:titleStart,bossStart:bossStart,bossSubmit:bossSubmit,goBossIntro:goBossIntro,finishMain:finishMain,get MSG(){return MSG},
  setScene:function(s){scene=s},setS:function(o){S=o;E=o.E||null}};
