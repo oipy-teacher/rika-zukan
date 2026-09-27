@@ -43,7 +43,7 @@
 html,body{margin:0;height:100%;background:var(--bg);overflow:hidden;overscroll-behavior:none}
 body{color:var(--p);font-family:var(--fb);user-select:none;-webkit-user-select:none;touch-action:manipulation;-webkit-touch-callout:none}
 button{font-family:var(--fh);cursor:pointer;touch-action:manipulation;color:inherit}
-#stage{position:fixed;inset:0;overflow:hidden;background:var(--bg)}
+#stage{position:absolute;inset:0;overflow:hidden;background:var(--bg)}/* 仕上げ 2026-09-28（tp-finish-2026-09-28）: fixed だと重ね順の箱になり、れんしゅう中に「もどる」を暗幕の上へ出せないため absolute */
 #cv{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
 .scr{position:absolute;inset:0;pointer-events:none}
 .scr button,.scr input,.scr .shoji,.scr .pick{pointer-events:auto}
@@ -155,6 +155,7 @@ button{font-family:var(--fh);cursor:pointer;touch-action:manipulation;color:inhe
   <div class="tbox">
     <div class="nm" id="nmRow"><label for="nameIn">なまえ</label><input id="nameIn" maxlength="16" placeholder="（なくても遊べます）" autocomplete="off"></div>
     <button class="pl lit" id="bStart">灯をともす（はじめる）</button>
+    <button class="pl sm" id="bHowto">あそびかた（れんしゅう）</button>
     <div class="row"><button class="pl sm" id="bCont">つづきから</button><button class="pl sm" id="bBook1">📖 図鑑</button></div>
     <div class="row"><button class="pl sm hidden" id="bToTest">確認テストへ</button><button class="pl sm hidden" id="bGacha">🎁 ガチャ</button></div>
   </div>
@@ -201,12 +202,12 @@ button{font-family:var(--fh);cursor:pointer;touch-action:manipulation;color:inhe
   <div class="btns"><button class="pl sm" id="eBook">📖 図鑑</button><button class="pl sm" id="eMap">夜の暦へ</button></div>
 </div></div></div>
 
-<div id="scrBack" class="scr hidden" style="pointer-events:auto;background:rgba(18,16,14,.55)"><div class="center"><div class="shoji">
+<div id="scrBack" class="scr hidden" data-gd-pass style="pointer-events:auto;background:rgba(18,16,14,.55)"><div class="center"><div class="shoji">
   <h2 id="bkT">もどりますか？<small id="bkSub">進み具合は保存されます。</small></h2>
   <div class="btns"><button class="pl sm" id="bkNo">つづける</button><button class="pl lit sm" id="bkGo">もどる</button></div>
 </div></div></div>
 
-<button class="pl hidden" id="bBack" aria-label="もどる">◀ もどる</button>
+<button class="pl hidden" id="bBack" aria-label="もどる" data-gd-pass>◀ もどる</button>
 <button class="pl" id="bMute" aria-label="音">🔔</button>
 </div>
 
@@ -1628,7 +1629,7 @@ window.ZUKAN_CARDS={"v": 1, "grade": "chu2", "name": "中2理科図鑑", "econom
 '.gd-band.bot{top:auto;bottom:max(10px,env(safe-area-inset-bottom))}',
 '.gd-conf{position:fixed;left:0;top:0;z-index:'+(Z+28)+';pointer-events:none;width:var(--w);height:var(--h);background:var(--c);animation:gd-fall var(--t) cubic-bezier(.3,.2,.6,1) both}',
 '@media (max-width:560px){.gd-band{font-size:12px;padding:.22em .8em .26em;letter-spacing:.08em;animation:gd-bandin .45s cubic-bezier(.2,1.4,.4,1) both,gd-dim .6s 2.6s ease forwards}}',
-'@keyframes gd-dim{to{opacity:.38}}',
+'@keyframes gd-dim{to{opacity:0;visibility:hidden}}',
 '@keyframes gd-bandin{from{opacity:0;transform:translate(-50%,-140%)}to{opacity:1;transform:translate(-50%,0)}}',
 '@keyframes gd-fall{0%{opacity:1;transform:translate(0,-20px) rotate(0)}85%{opacity:1}100%{opacity:0;transform:translate(var(--dx),calc(100vh + 20px)) rotate(var(--rot))}}',
 /* 動き */
@@ -2353,6 +2354,7 @@ const JU={sh:0,shA:0,shD:.3,fl:-9,flD:.4,flC:'#FFE9A8'};
 function shake(a,d){JU.shA=RM?a*.2:a;JU.sh=T+d;JU.shD=d}
 function flashS(col,d){JU.flC=col||'#FFE9A8';JU.fl=T;JU.flD=d||.4}
 function buzz(ms){try{navigator.vibrate&&navigator.vibrate(ms)}catch(e){}}
+function comboLost(x,y){const n=G&&G.combo||0;if(n<2)return;const nt=[2,4,6].find(v=>v>n);if(nt&&nt-n===1)floatT(x,y,'あと1回で ×'+nt+' だった！',GD,20);else floatT(x,y,'×'+n+' で とぎれた',PP,18)}
 function comboStage(n){return n>=6?3:n>=4?2:n>=2?1:0}
 function drawCombo(){if(!G||!(G.combo>=2))return;const stg=comboStage(G.combo),k=G.comboPop!=null?clamp((T-G.comboPop)/.35,0,1):1;
  const pop=RM?1:(k<1?1+Math.sin(k*Math.PI)*.5:1+Math.sin(T*5)*.025*stg);const R=L.scroll||{x:W*.05,y:70,w:200,h:100};const sz=(L.land?34:26)+stg*7;
@@ -2361,9 +2363,9 @@ function drawCombo(){if(!G||!(G.combo>=2))return;const stg=comboStage(G.combo),k
  c.fillStyle='#0b0a09';c.fillRect(-sz*1.05,-sz*.7,sz*2.1,sz*1.35);c.strokeStyle=stg>=3?'#FFF3C4':GD;c.lineWidth=2;c.strokeRect(-sz*1.05+4,-sz*.7+4,sz*2.1-8,sz*1.35-8);
  txt('×'+G.combo,0,-sz*.1,sz*.9,stg>=2?'#FFF3C4':GD,'center');txt('おねがい連続',0,sz*.42,Math.max(10,sz*.26),PP,'center',FB);c.restore()}
 
-function newNight(i){const N=NIGHTS[i];G={i,N,blocks:[],id:1,known:{},cap:N.cap||0,phase:N.charge?'charge':'pack',lock:0,used:0,tries:0,recharged:0,chargeH:1,chargeTries:0,
+function newNight(i,prac){if(!prac&&PRAC)endPractice();const N=NIGHTS[i];G={i,N,blocks:[],id:1,known:{},cap:N.cap||0,phase:N.charge?'charge':'pack',lock:0,used:0,tries:0,recharged:0,chargeH:1,chargeTries:0,
  runT:0,evI:0,hint:false,flash:{},anim:[],met:{},start:performance.now(),dawn:0,outAt:-1};
- if(i===0){} scene='play';showScr('scrPlay');backBtn();tellSet(N.tell);updAct();rain(true)}
+ if(i===0){} scene='play';showScr('scrPlay');backBtn();helpVis();if(prac)tellSet(null);else tellSet(N.tell);updAct();rain(true)}
 function needsNow(){return allNeeds(G.N,G.known)}
 function totalWh(){let s=0;G.blocks.forEach(b=>{s+=bW(b)*b.d});return s}
 function unionLen(list,a,b){const st=[];for(let t=a+.05;t<b;t+=.1){if(list.some(x=>x.t0<=t+1e-6&&t<x.t0+x.d-1e-6))st.push(1)}return st.length*.1}
@@ -2630,7 +2632,7 @@ $('bRun').onclick=()=>{ac();if(!G)return;
   G.chargeOK=G.cap>=need&&G.cap-75<need;if(G.cap>=need+150)floatT(W/2,H*.5,'順番待ちの人が困っている…','#b8a57a');
   G.phase='pack';SFX.ok();burst(L.gauge.x+L.gauge.w/2,L.gauge.y+L.gauge.h/2,18);updAct();tellSet('充電 '+fmt1(G.cap)+'Wh。帯へ家電を差しこもう。');return}
  const need=needsNow();const miss=need.map((q,i)=>needMet(q)?-1:i).filter(i=>i>=0);
- if(miss.length){miss.forEach(i=>G.flash['n'+i]=T+1.2);SFX.bad();if(G.combo>=2)floatT(W/2,H*.45,'×'+G.combo+' で とぎれた',PP,18);G.combo=0;shake(3,.2);buzz(50);tellSet('まだ守れていない<b>おねがい</b>がある（赤く点滅）。');return}
+ if(miss.length){miss.forEach(i=>G.flash['n'+i]=T+1.2);SFX.bad();comboLost(W/2,H*.45);G.combo=0;shake(3,.2);buzz(50);tellSet('まだ守れていない<b>おねがい</b>がある（赤く点滅）。');return}
  G.phase='run';G.running=true;updAct();$('tell').classList.add('hidden');SFX.place()};
 $('bClearAll').onclick=()=>{if(!G||G.phase!=='pack')return;G.blocks=G.blocks.filter(b=>b.locked);SFX.remove()};
 $('bRecharge').onclick=()=>{if(!G||!G.N.charge)return;G.phase='charge';G.recharged++;G.blocks=[];updAct();tellSet('昼にもどった。もう一度、今夜の分を見積もろう。')};
@@ -2642,7 +2644,7 @@ function stepRun(dt){const N=G.N,sp=N.span<=6?.75:1.05;const t0=G.runT;let t1=t0
 function energy(a,b){let s=0;G.blocks.forEach(x=>{const o=Math.min(b,x.t0+x.d)-Math.max(a,x.t0);if(o>0)s+=o*bW(x)});return s}
 function runTo(t0,t1){const cap=G.cap,E=energy(t0,t1);
  if(G.used+E>cap+1e-6){let lo=t0,hi=t1;for(let k=0;k<30;k++){const m=(lo+hi)/2;if(G.used+energy(t0,m)>cap)hi=m;else lo=m}
-  G.used=cap;G.runT=hi;G.phase='out';G.outAt=T;SFX.out();G.combo=0;shake(6,.5);buzz([60,40,60]);rain(false);setTimeout(showOut,1400);return}
+  G.used=cap;G.runT=hi;G.phase='out';G.outAt=T;SFX.out();comboLost(W/2,H*.3);G.combo=0;shake(6,.5);buzz([60,40,60]);rain(false);setTimeout(showOut,1400);return}
  G.used+=E;G.runT=t1;const hr=Math.floor(t1),ph=Math.floor(t0);if(hr!==ph)SFX.tick()}
 function triggerEvent(i){const e=G.N.events[i];G.known[i]=true;G.phase='pack';G.lock=e.t;
  /* 時刻をまたぐ札は、使った分（ロック）と残りに分ける */
@@ -2716,7 +2718,7 @@ function endDrag(e){if(!drag.mode)return;const[x,y]=P(e);const N=G&&G.N;
 cv.addEventListener('pointerup',endDrag);cv.addEventListener('pointercancel',e=>{drag.mode=null;drag.blk=null});
 function puffAt(x,y){burst(x,y,8,'#8a7a5a')}
 function moveCharge(x){const R=chargeR,ch=G.N.charge;const h=clamp(snap((x-R.x)/(R.w/ch.max)),.5,ch.max);if(h!==G.chargeH){G.chargeH=h;SFX.stretch(h*2)}}
-function addBlock(k,t0,d,x,y){const b={k,t0,d:AP[k].fixed?.1:d,v:0,id:G.id++};G.blocks.push(b);SFX.place();burst(x,y,10);
+function addBlock(k,t0,d,x,y){if(PRAC&&k==='bulb'&&!G.blocks.some(z=>z.k==='bulb'))t0=0;const b={k,t0,d:AP[k].fixed?.1:d,v:0,id:G.id++};G.blocks.push(b);SFX.place();burst(x,y,10);
  if(!SV.labels[k]){SV.labels[k]=1;save();floatT(x,y-30,'電力ラベル帳に：'+AP[k].n+'「'+AP[k].plate+'」',PP)}
  if(k==='pot'){stackLayout();const w=800;const from=rectOf(t0,t0+.1,0,G.N.wMax);const to=rectOf(t0,t0+2,0,40);G.anim.push({kind:'fold',from,to,t0:T+.3,d:3.2,label:'800W×0.1h＝80Wh は 40W×2h と同じ面積'});}
  checkMet()}
@@ -2739,10 +2741,11 @@ const SCR=['scrTitle','scrIntro','scrMap','scrPlay','scrPanel','scrTest','scrEnd
 function showScr(...on){SCR.forEach(id=>$(id).classList.toggle('hidden',on.indexOf(id)<0))}
 const INHUB=!!window.COLLECTION_NAME||(()=>{try{return window.parent!==window}catch(e){return true}})();
 function backBtn(){const b=$('bBack'),on=scene!=='title'||INHUB;b.classList.toggle('hidden',!on);b.textContent=scene==='title'?'◀ 一覧へ':'◀ もどる';$('scrBack').classList.add('hidden')}
-function setScene(s){scene=s;if(s!=='play')rain(false);backBtn();
+function setScene(s){scene=s;if(s!=='play')rain(false);backBtn();helpVis();
  if(s==='title')showScr('scrTitle');else if(s==='intro')showScr('scrIntro');else if(s==='map'){buildMap();showScr('scrMap')}else if(s==='test')showScr('scrTest');else if(s==='end')showScr('scrEnd')}
 let backFrom=null;
 $('bBack').onclick=()=>{ac();if(scene==='title'){try{window.parent.postMessage({type:'rika-close-game'},'*')}catch(e){}return}
+ if(PRAC){endPractice();G=null;closePanel();rain(false);setScene('title');return}
  backFrom=scene;$('bkSub').textContent=scene==='play'?'ともした夜はそのまま保存されます（この夜は次にはじめから）。':scene==='test'?'答え合わせは次はさいしょから。夜の進み具合は保存されています。':'進み具合は保存されます。';
  $('bkGo').textContent=scene==='play'||scene==='test'||scene==='end'?'夜の暦へ':'タイトルへ';$('scrBack').classList.remove('hidden')};
 $('bkNo').onclick=()=>$('scrBack').classList.add('hidden');
@@ -2750,7 +2753,8 @@ $('bkGo').onclick=()=>{$('scrBack').classList.add('hidden');closePanel();if(back
 $('bMute').onclick=()=>{muted=!muted;try{localStorage.setItem(SKEY+':mute',muted?'1':'0')}catch(e){}$('bMute').textContent=muted?'🔕':'🔔';if(muted)rain(false);else if(scene==='play'&&G&&G.phase!=='done')rain(true)};
 $('bMute').textContent=muted?'🔕':'🔔';
 function getName(){return(window.PLAYER_NAME||$('nameIn').value||SV.name||'').trim()}
-$('bStart').onclick=()=>{ac();SV.name=$('nameIn').value.trim()||SV.name;if(!SV.t0)SV.t0=Date.now();save();if(SV.unl>1||SV.stars[0])setScene('map');else setScene('intro')};
+$('bStart').onclick=()=>{ac();SV.name=$('nameIn').value.trim()||SV.name;if(!SV.t0)SV.t0=Date.now();save();if(SV.unl>1||SV.stars[0])setScene('map');else if(window.Guide)Guide.intro(INTRO).then(()=>Guide.tutorial(PRACTICE));else setScene('intro')};
+$('bHowto').onclick=()=>{ac();SV.name=$('nameIn').value.trim()||SV.name;if(!SV.t0)SV.t0=Date.now();save();if(window.Guide)Guide.tutorial(PRACTICE);else setScene('intro')};
 $('bCont').onclick=()=>{ac();SV.name=$('nameIn').value.trim()||SV.name;save();setScene('map')};
 $('bIntroGo').onclick=()=>{ac();newNight(0)};
 function openBook(){const z=Zk();if(z&&z.openBook)z.openBook()}
@@ -2761,7 +2765,7 @@ function toTest(){const z=Zk();if(z&&z.mainClear&&!TEST){try{z.mainClear({onClos
 
 /* ================= 確認テスト ================= */
 let TQ=[],TI=0,TA=[],TOK=[],CARD=null;
-function startTest(){scene='test';G=null;rain(false);showScr('scrTest');backBtn();TQ=window.Quiz?Quiz.test():[];TI=0;TA=[];TOK=[];$('scrTest').scrollTop=0;showQ()}
+function startTest(){scene='test';G=null;rain(false);showScr('scrTest');backBtn();helpVis();TQ=window.Quiz?Quiz.test():[];TI=0;TA=[];TOK=[];$('scrTest').scrollTop=0;showQ()}
 function lamps(){$('tLamps').innerHTML=TQ.map((q,i)=>'<i class="'+(i<TOK.length?(TOK[i]?'ok':'ng'):i===TI?'cur':'')+'"></i>').join('')}
 function showQ(){if(TI>=TQ.length)return finishTest();const q=TQ[TI];$('tNo').textContent='第'+(TI+1)+'問 ／ '+TQ.length;lamps();
  $('tQ').textContent=q.q;const f=$('tFig');if(q.fig){f.innerHTML=q.fig;f.classList.remove('hidden')}else{f.innerHTML='';f.classList.add('hidden')}
@@ -2816,7 +2820,8 @@ let last=performance.now();
 function frame(now){const dt=Math.min(.05,(now-last)/1000);last=now;T+=dt;
  c.setTransform(DPR,0,0,DPR,0,0);c.clearRect(0,0,W,H);
  if(T<JU.sh){const k=(JU.sh-T)/(JU.shD||.3);c.translate((Math.random()-.5)*2*JU.shA*k,(Math.random()-.5)*2*JU.shA*k)}
- if(scene==='play'&&G){if(G.phase==='run')stepRun(dt);
+ if(scene==='play'&&G){if(G.phase==='run'&&!PAUSED)stepRun(dt);
+  if(G.phase==='done'&&PRAC){PRAC=false;if(window.Guide)Guide.tutorialClear()}
   if(G.phase==='done'){G.dawn=Math.min(1,G.dawn+dt/2.4);if(G.dawn>=1&&!G.shown){G.shown=1;finishNight()}}
   G.anim=G.anim.filter(a=>T<a.t0+a.d);drawPlay();drawCombo()}
  else if(scene==='map')drawMapScene();
@@ -2831,6 +2836,45 @@ function frame(now){const dt=Math.min(.05,(now-last)/1000);last=now;T+=dt;
 document.addEventListener('visibilitychange',()=>{if(document.hidden)rain(false)});
 addEventListener('resize',resize);
 
+/* ================= 遊び方案内（Guide）2026-09-28 ================= */
+let PRAC=false,PAUSED=false;
+const INTRO={title:'停電の夜を越えろ',
+  learn:'電力量〔Wh〕＝**電力〔W〕×時間〔h〕**。家電の札の **面積** が電力量',
+  how:'家電の札を **夜の帯へドラッグ**。はしの **棒を引いて** 長さ＝時間。面積の合計を電池に収めて朝まで',gesture:'drag'};
+function endPractice(){if(!PRAC)return;PRAC=false;if(window.Guide)Guide.tutorialEnd()}
+function bulbB(){return G&&G.blocks.find(b=>b.k==='bulb')}
+function cvPt(x,y,r){return {x:x,y:y,r:r||30,el:cv}}
+function trayPt(k){const r=trayRects.find(z=>z.k===k);return r?{x:r.x+r.w/2,y:r.y+r.h/2,w:r.w,h:r.h,el:cv}:null}
+function bandPt(t){const d=BD();return L.land?cvPt(tp(t),d.B.y+d.B.h-26,30):cvPt(d.B.x+26,tp(t),30)}
+function handlePt(b){const r=b.r;return L.land?cvPt(r.x+r.w,r.y+r.h/2,24):cvPt(r.x+r.w/2,r.y+r.h,24)}
+const PRACTICE={label:'れんしゅう中　第1夜',block:true,clearOn:'manual',clearText:'れんしゅうクリア！ 朝まで持った',
+  start:()=>{PRAC=true;closePanel();$('scrBack').classList.add('hidden');newNight(0,true)},
+  steps:[
+    {gesture:'drag',target:()=>trayPt('bulb'),to:()=>bandPt(1),until:()=>PRAC&&!!bulbB(),
+      text:'**電球の札** を、夜の帯へ **ドラッグ**。札の高さ＝**8W**',praise:'ともった！'},
+    {gesture:'drag',target:()=>{const b=bulbB();return b&&b.r?handlePt(b):null},to:()=>{const b=bulbB();if(!b||!b.r)return null;const d=BD();return L.land?cvPt(tp(4)-4,b.r.y+b.r.h/2,24):cvPt(b.r.x+b.r.w/2,tp(4)-4,24)},
+      until:()=>{const b=bulbB();return PRAC&&b&&b.t0===0&&b.d>=4},
+      text:'はしの **棒を引いて**、22時まで（**4時間**）のばす。長さ＝使う時間',praise:'8W×4h＝32Wh'},
+    {gesture:'drag',target:()=>trayPt('phone'),to:()=>bandPt(2),until:()=>PRAC&&G.blocks.some(b=>b.k==='phone'),
+      text:'**スマホの札** も帯へ。15W × 1.5時間',praise:'充電OK！'},
+    {gesture:'tap',target:'#bRun',until:()=>PRAC&&G&&G.phase==='run',
+      text:'面積の合計が電池に収まった。**▶夜を進める**！',praise:'出発！'}
+  ],
+  onExit:res=>{PRAC=false;if(!(res&&res.cleared)&&scene==='play'&&G)tellSet(G.N.tell)}};
+if(window.Guide){
+  Guide.setup({theme:{bg:'#0b0a09',fg:'#F0EAD6',accent:'#F2C14E',accentText:'#12100E',font:'"Shippori Antique","Hiragino Mincho ProN",serif',bodyFont:'"Hiragino Sans","Hiragino Kaku Gothic ProN",sans-serif',
+      radius:0,texture:'none',line:'#F2C14E',dim:'rgba(0,0,0,.62)',shadow:'0 0 44px rgba(242,193,78,.35)',outline:'#0b0a09',hand:'#0b0a09',handLine:'#F2C14E'},
+    sfx:k=>{if(k==='step'||k==='done')SFX.met(2);else if(k==='clear')SFX.dawn();else if(k==='open')SFX.pick();else if(k==='nudge')SFX.tick()},
+    muted:()=>muted});
+  Guide.help({title:'停電の夜を越えろ',learn:INTRO.learn,how:INTRO.how,gesture:'drag',offset:{x:152},attention:true,replay:'tutorial',show:false,
+    rules:['家電の札を夜の帯へ **ドラッグ**。たて＝**電力W**、よこ＝**使う時間h**',
+      'はしの **棒を引く** と長さが変わる。札をドラッグで時刻を動かす／札箱へもどすと外す',
+      '札の **面積＝電力量Wh**。合計が **電池のWh** に収まれば朝まで持つ',
+      '巻物の **おねがい** を全部守ってから **▶夜を進める**。毛布の札はタップで 弱⇄強'],
+    onOpen:()=>{PAUSED=true},onClose:()=>{PAUSED=false}});
+}
+function helpVis(){if(!window.Guide)return;const h=Guide.help();if(!h)return;if(scene==='play')h.show();else h.hide()}
+
 /* ================= はじまり ================= */
 resize();
 window.Zukan&&Zukan.setup&&Zukan.setup({game:GID,koma:[KOMA]});
@@ -2841,7 +2885,7 @@ if(SV.done){$('bToTest').classList.remove('hidden');if(Zk())$('bGacha').classLis
 if(TEST)startTest();else setScene('title');
 requestAnimationFrame(frame);
 /* テスト用の窓口（自動操作の確かめに使う。遊びには影響しない） */
-window.__TP={G:()=>G,scene:()=>scene,night:newNight,add:(k,t0,d,v)=>{const b={k,t0,d:AP[k].fixed?.1:d,v:v||0,id:G.id++};G.blocks.push(b);checkMet();return b},
+window.__TP={PRAC:()=>PRAC,PAUSED:()=>PAUSED,G:()=>G,scene:()=>scene,night:newNight,add:(k,t0,d,v)=>{const b={k,t0,d:AP[k].fixed?.1:d,v:v||0,id:G.id++};G.blocks.push(b);checkMet();return b},
  run:()=>$('bRun').onclick(),total:totalWh,min:()=>minNeed(needsNow()),met:()=>needsNow().map(needMet),L:()=>L,trayRects:()=>trayRects,SV:()=>SV,finish:()=>{G.runT=G.N.span;}};
 })();
 </script>

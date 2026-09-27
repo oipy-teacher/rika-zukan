@@ -42,7 +42,7 @@
 html,body{margin:0;height:100%;background:var(--bk);overflow:hidden;overscroll-behavior:none}
 body{color:var(--iv);font-family:var(--fb);user-select:none;-webkit-user-select:none;touch-action:none;-webkit-touch-callout:none}
 button{font-family:var(--fh);cursor:pointer;touch-action:manipulation}
-#stage{position:fixed;inset:0;overflow:hidden}
+#stage{position:absolute;inset:0;overflow:hidden}/* 仕上げ 2026-09-28（sp-finish-2026-09-28）: fixed だと重ね順の箱になり、れんしゅう中に「もどる」を暗幕の上へ出せないため absolute */
 #cv{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
 .hidden{display:none!important}
 .scr{position:absolute;inset:0;pointer-events:none;display:flex;align-items:center;justify-content:center}
@@ -180,7 +180,7 @@ button{font-family:var(--fh);cursor:pointer;touch-action:manipulation}
  </div>
  <div class="nm" id="nmRow">名前 <input id="nameIn" maxlength="16" autocomplete="off" placeholder="（なくても遊べます）"></div>
  <div class="row"><button class="dk gold" id="bStart">はじめる</button></div>
- <div class="row"><button class="dk sm" id="bCont">つづきから</button><button class="dk sm" id="bBook1">📖 図鑑</button><button class="dk sm hidden" id="bToTest">確認テストへ</button></div>
+ <div class="row"><button class="dk sm" id="bHowto">あそびかた</button><button class="dk sm" id="bCont">つづきから</button><button class="dk sm" id="bBook1">📖 図鑑</button><button class="dk sm hidden" id="bToTest">確認テストへ</button></div>
 </div>
 
 <div id="scrMap" class="scr hidden">
@@ -196,7 +196,7 @@ button{font-family:var(--fh);cursor:pointer;touch-action:manipulation}
  <div class="btns"><button class="dk gold" id="cNext">上の階へ</button><button class="dk sm" id="cMap">エレベーター</button></div>
 </div></div></div>
 
-<div id="scrBackCf" class="scr hidden"><div class="ov"><div class="card">
+<div id="scrBackCf" class="scr hidden" data-gd-pass><div class="ov"><div class="card">
  <div class="en">RETURN</div><h2>もどりますか？</h2><p id="bkSub">進み具合は保存されます。</p>
  <div class="btns"><button class="dk gold" id="bkGo">もどる</button><button class="dk" id="bkNo">つづける</button></div>
 </div></div></div>
@@ -213,7 +213,7 @@ button{font-family:var(--fh);cursor:pointer;touch-action:manipulation}
  <div class="btns"><button class="dk gold" id="eCard">提出カードをひらく</button><button class="dk sm" id="eBook">📖 図鑑</button><button class="dk sm" id="eMap">エレベーター</button></div>
 </div></div></div>
 
-<button class="dk sm" id="bBack">◀ もどる</button>
+<button class="dk sm" id="bBack" data-gd-pass>◀ もどる</button>
 <button class="dk sm" id="bMute">♪</button>
 </div>
 
@@ -1635,7 +1635,7 @@ window.ZUKAN_CARDS={"v": 1, "grade": "chu2", "name": "中2理科図鑑", "econom
 '.gd-band.bot{top:auto;bottom:max(10px,env(safe-area-inset-bottom))}',
 '.gd-conf{position:fixed;left:0;top:0;z-index:'+(Z+28)+';pointer-events:none;width:var(--w);height:var(--h);background:var(--c);animation:gd-fall var(--t) cubic-bezier(.3,.2,.6,1) both}',
 '@media (max-width:560px){.gd-band{font-size:12px;padding:.22em .8em .26em;letter-spacing:.08em;animation:gd-bandin .45s cubic-bezier(.2,1.4,.4,1) both,gd-dim .6s 2.6s ease forwards}}',
-'@keyframes gd-dim{to{opacity:.38}}',
+'@keyframes gd-dim{to{opacity:0;visibility:hidden}}',
 '@keyframes gd-bandin{from{opacity:0;transform:translate(-50%,-140%)}to{opacity:1;transform:translate(-50%,0)}}',
 '@keyframes gd-fall{0%{opacity:1;transform:translate(0,-20px) rotate(0)}85%{opacity:1}100%{opacity:0;transform:translate(var(--dx),calc(100vh + 20px)) rotate(var(--rot))}}',
 /* 動き */
@@ -2366,7 +2366,7 @@ function cfgOK(g){if(g.D.multi){return g.drums.every(function(d){return d.face==
  var s=g.balls[0].side;return g.drums.every(function(d){return d.lit>=0?d.face!==s:d.face===s})}
 function rel(side,face){return side===face?1:-1}/* +1 しりぞけ合う／-1 引き合う */
 
-function startTable(ti){G=newTable(ti);G.startAt=performance.now();statKey='';nextTarget();setScene('play');
+function startTable(ti,prac){if(!prac&&PRAC)endPractice();G=newTable(ti);G.startAt=performance.now();statKey='';nextTarget();setScene('play');
  say('<b>'+(ti+1)+'階 '+esc(TABLES[ti].n)+'</b>　'+esc(TABLES[ti].lead),6);
  if(TABLES[ti].intro)G.hint=1}
 
@@ -2380,7 +2380,7 @@ cv.addEventListener('pointerdown',function(e){if(scene!=='play'||!G||G.paused)re
  /* ドラム（面の切りかえ） */
  for(var i=0;i<g.drums.length;i++){var d=g.drums[i];if(Math.hypot(p[0]-d.x,p[1]-d.y)<Math.max(8.5,26/L.s)){toggleDrum(d);ptrs[e.pointerId]={k:'drum'};return}}
  var lb=laneBall();
- if(lb&&(ballsWaiting()||(p[0]>84&&p[1]>118))){ptrs[e.pointerId]={k:'pull'};g.pulling=true;g.pull=0;return}
+ if(lb&&((ballsWaiting()&&!(p[0]<84&&p[1]>140))||(p[0]>84&&p[1]>118))){/* 2026-09-28: 下の左右（フリッパーの所）は玉を待っている間もフリッパー */ptrs[e.pointerId]={k:'pull'};g.pulling=true;g.pull=0;return}
  var side=e.clientX<W/2?-1:1;ptrs[e.pointerId]={k:'flip',side:side};flipper(side,true)});
 function upPtr(e){var q=ptrs[e.pointerId];if(!q)return;delete ptrs[e.pointerId];if(!G)return;
  if(q.k==='pull'){release()}else if(q.k==='flip'){var still=false;for(var k in ptrs)if(ptrs[k].k==='flip'&&ptrs[k].side===q.side)still=true;if(!still)flipper(q.side,false)}}
@@ -2393,8 +2393,8 @@ addEventListener('keydown',function(e){if(scene!=='play'||!G||e.repeat)return;va
  else if(/^[1-5]$/.test(k)){var d=G.drums[+k-1];if(d)toggleDrum(d)}});
 addEventListener('keyup',function(e){if(scene!=='play'||!G)return;var k=e.key;
  if(k==='ArrowLeft'||k==='z'||k==='Z')flipper(-1,false);else if(k==='ArrowRight'||k==='/'||k==='m'||k==='M')flipper(1,false);else if((k===' '||k==='ArrowDown')&&G.pulling)release()});
-function flipper(side,on){var f=side<0?G.flL:G.flR;if(on&&!f.on)SFX.flip();f.on=on}
-function toggleDrum(d){var g=G;if(g.state==='done')return;d.face=1-d.face;d.flipT=1;SFX.rub();
+function flipper(side,on){var f=side<0?G.flL:G.flR;if(on&&!f.on){SFX.flip();G.flipped=true;vib(8)}f.on=on}
+function toggleDrum(d){var g=G;if(g.state==='done')return;d.face=1-d.face;d.flipT=1;SFX.rub();vib(10);if(g.state==='aim'&&d.lit>=0&&d.face===wantFace(g,d)){var q0=tsc(d.x,d.y);floatT(q0[0],q0[1]-26,'引き合う面！','#F6E27A',18);tone(880,.12,'triangle',.03);tone(1320,.18,'triangle',.025,.06)}
  var sc2=tsc(d.x,d.y);for(var i=0;i<8;i++)parts.push({x:sc2[0],y:sc2[1],vx:(Math.random()-.5)*160,vy:(Math.random()-.5)*160,life:1,dec:2.5,c:'#F6E27A',sz:2+Math.random()*2});
  if(g.balls.some(function(b){return b.alive&&!b.lane&&!b.cap})){g.tog=true}
  if(g.hint===2)g.hint=3}
@@ -2442,6 +2442,7 @@ function physics(dt){var g=G,N=8,h=dt/N;
    for(var di=0;di<g.drums.length;di++){var d=g.drums[di];var hd=Math.hypot(b.x-d.hx,b.y-d.hy);
     if(d.lit>=0&&(!g.D.multi||d.lit===b.side)&&hd<b.minD)b.minD=hd;
     if(hd<HOLE_R&&!b.lane){var bsp=Math.hypot(b.vx,b.vy);if(bsp<30||(bsp<CAP_V&&rel(b.side,d.face)<0)){capture(b,d);break}}}
+   if(PRAC&&b.y>TH-14&&b.vy>0&&!b.lane){b.vy=-240;b.vx=(50-b.x)*2.2;SFX.post()}
    if(b.y>TH+4){drain(b)}
   }
  }
@@ -2450,7 +2451,7 @@ function physics(dt){var g=G,N=8,h=dt/N;
 }
 
 /* ================= 入った・落ちた ================= */
-function capture(b,d){var g=G;b.cap=d;b.capT=0;var sc2=tsc(d.hx,d.hy);
+function capture(b,d){var g=G;b.cap=d;b.capT=0;var sc2=tsc(d.hx,d.hy);if(PRAC&&d.lit>=0){PRAC=false;g.hint=0;setTimeout(function(){if(window.Guide)Guide.tutorialClear()},700)}
  var right=d.lit>=0&&(!g.D.multi||d.lit===b.side);
  var bn=ballName(g.pair,b.side),dn=MAT[PAIRS[g.pair][d.face]].n;
  var attract=rel(b.side,d.face)<0;
@@ -2576,7 +2577,7 @@ function buildStatic(){var key=W+'x'+H+':'+DPR+':'+scene+':'+(G?G.ti:'-');if(key
 
 /* ================= 描く ================= */
 function frame(now){var dt=Math.min(.033,(now-last)/1000)||.016;last=now;T+=dt;
- if(scene==='play'&&G&&!G.paused&&G.state!=='clear')update(dt);
+ if(scene==='play'&&G&&!G.paused&&!PAUSED&&G.state!=='clear')update(dt);
  draw(dt);requestAnimationFrame(frame)}
 var last=performance.now();
 function update(dt){var g=G;g.time+=dt;music(dt);
@@ -2805,7 +2806,7 @@ function drawMap(x){var r=Math.min(W*.3,H*.26,190),cx=W/2,cy=Math.min(H*.42,r+90
 var SCR=['scrTitle','scrMap','scrClear','scrBackCf','scrTest','scrEnd'];
 function show(id,on){$(id).classList.toggle('hidden',!on)}
 var INHUB=!!window.COLLECTION_NAME||(function(){try{return window.parent!==window}catch(e){return true}})();
-function setScene(s){scene=s;statKey='';SCR.forEach(function(id){show(id,false)});
+function setScene(s){scene=s;statKey='';SCR.forEach(function(id){show(id,false)});helpVis();
  if(s==='title')show('scrTitle',true);else if(s==='map'){buildFloors();show('scrMap',true)}else if(s==='test')show('scrTest',true);else if(s==='end')show('scrEnd',true);
  var b=$('bBack');b.classList.toggle('hidden',s==='title'&&!INHUB);b.textContent=s==='title'?'◀ 一覧へ':'◀ もどる';
  $('tick').classList.toggle('off',s!=='play'||!L.land);if(s==='play'&&L.land)$('tick').classList.remove('off');
@@ -2818,6 +2819,7 @@ function buildFloors(){var f=$('floors');f.innerHTML='';
  $('bMapTest').classList.toggle('hidden',!SV.done)}
 $('bBack').onclick=function(){ac();
  if(scene==='title'){try{window.parent.postMessage({type:'rika-close-game'},'*')}catch(e){}return}
+ if(PRAC){endPractice();G=null;show('scrClear',false);setScene('title');return}
  if(G)G.paused=true;
  $('bkSub').textContent=scene==='play'?'進み具合は保存されます（上がった階と★はそのまま。この階は次にはじめから）。':scene==='test'?'確認テストは、次はさいしょから。台の進み具合は保存されています。':'進み具合は保存されます。タイトルにもどります。';
  $('bkGo').textContent=scene==='play'?'エレベーターへ':'タイトルへ';show('scrBackCf',true)};
@@ -2825,7 +2827,8 @@ $('bkNo').onclick=function(){show('scrBackCf',false);if(G)G.paused=false};
 $('bkGo').onclick=function(){show('scrBackCf',false);if(scene==='play'){if(G){SV.playMs=(SV.playMs||0)+G.time*1000;save()}G=null;setScene('map')}else{G=null;setScene('title')}};
 $('bMute').onclick=function(){muted=!muted;try{localStorage.setItem(SKEY+':mute',muted?'1':'0')}catch(e){}$('bMute').textContent=muted?'♪×':'♪';if(!muted)ac()};
 function getName(){return(window.PLAYER_NAME||$('nameIn').value||SV.name||'').trim()}
-$('bStart').onclick=function(){ac();SFX.tap();SV.name=$('nameIn').value.trim()||SV.name;save();if(SV.unl>0||SV.stars[0])setScene('map');else startTable(0)};
+$('bStart').onclick=function(){ac();SFX.tap();SV.name=$('nameIn').value.trim()||SV.name;save();if(SV.unl>0||SV.stars[0])setScene('map');else if(window.Guide)Guide.intro(INTRO).then(function(){Guide.tutorial(PRACTICE)});else startTable(0)};
+$('bHowto').onclick=function(){ac();SFX.tap();SV.name=$('nameIn').value.trim()||SV.name;save();if(window.Guide)Guide.tutorial(PRACTICE);else startTable(0)};
 $('bCont').onclick=function(){ac();SFX.tap();SV.name=$('nameIn').value.trim()||SV.name;save();setScene('map')};
 function openBook(){var z=Zk();if(z&&z.openBook)z.openBook()}
 $('bBook1').onclick=openBook;$('bBook2').onclick=openBook;$('eBook').onclick=openBook;
@@ -2869,6 +2872,39 @@ function finishTest(){var qs=TQ,answers=TA;var review=window.Quiz?Quiz.review(qs
 $('eCard').onclick=function(){if(CARD&&window.SubmitCard)SubmitCard.reopen(CARD)};
 $('eMap').onclick=function(){setScene(TEST?'title':'map')};
 
+/* ================= 遊び方案内（Guide）2026-09-28 ================= */
+var PRAC=false,PAUSED=false;
+var INTRO={title:'せいでんきピンボール',
+  learn:'**同じ物どうし** の電気は **しりぞけ合い**、**こすった物とこすられた物** は **引き合う**。ふれる前から力がはたらく',
+  how:'**ドラムをタップ** で面を切りかえ、右下を **長おし→はなす** で発射。画面の左右をタップでフリッパー',gesture:'tap'};
+function endPractice(){if(!PRAC)return;PRAC=false;if(window.Guide)Guide.tutorialEnd()}
+function tpt(x,y,r){var q=tsc(x,y);return {x:q[0],y:q[1],r:r}}
+var PRACTICE={label:'れんしゅう中　1階の1発目',block:true,clearOn:'manual',clearText:'れんしゅうクリア！ 引き合って IN',
+  start:function(){PRAC=true;show('scrClear',false);show('scrBackCf',false);startTable(0,true);
+    G.hint=0;G.introDone=true;G.drums[0].face=0;G.drums[1].face=0;G.drums.forEach(function(d){d.flipT=.6})},
+  steps:[
+    {gesture:'tap',target:function(){var d=G&&G.drums[0];return d?tpt(d.x,d.y,Math.max(30,8*L.s)):null},until:function(){return PRAC&&G&&cfgOK(G)},
+      text:'玉は **ストロー玉**。金の穴のドラムを **タップ** して **ティッシュ面** に（こすった相手＝**引き合う**）',praise:'引き合う面！'},
+    {gesture:'tap',target:function(){return G?tpt(36,158,Math.max(34,9*L.s)):null},until:function(){return PRAC&&G&&G.flipped},
+      text:'画面の **左半分・右半分** をタップするとフリッパーが動く。落ちてきた玉を打ち返す',praise:'パシッ！'},
+    {gesture:'hold',holdMs:900,target:function(){return G?tpt(94.75,162,Math.max(30,7*L.s)):null},until:function(){return PRAC&&G&&G.state==='fly'},
+      text:'右下を **長おし** してばねを引き、**はなして** 発射！',praise:'発射！'}
+  ],
+  onExit:function(res){PRAC=false}};
+if(window.Guide){
+  Guide.setup({theme:{bg:'#0d0c0a',fg:'#F3E9D2',accent:'#F6E27A',accentText:'#140f02',font:'"Aoboshi One","Hiragino Mincho ProN",serif',bodyFont:'"Aoboshi One","Hiragino Mincho ProN",serif',
+      radius:0,texture:'none',line:'#D4AF37',dim:'rgba(5,5,5,.66)',shadow:'0 0 0 4px #0d0c0a,0 0 0 5px #8C6B1F,0 0 34px rgba(212,175,55,.35)',outline:'#0d0c0a',hand:'#F3E9D2',handLine:'#8C6B1F'},
+    sfx:function(k){if(k==='step'||k==='done')SFX.ok();else if(k==='clear')SFX.fan();else if(k==='open')SFX.tap();else if(k==='nudge')SFX.post()},
+    muted:function(){return muted}});
+  Guide.help({title:'せいでんきピンボール',learn:INTRO.learn,how:INTRO.how,gesture:'tap',offset:{x:70},attention:true,replay:'tutorial',show:false,
+    rules:['玉は「こすった物の片方」。**いまの玉** を札で確かめてから構える',
+      '**金の穴** のドラムは玉と **引き合う面**（こすった相手）に、ほかは **しりぞけ合う面**（玉と同じ物）に',
+      'ドラムはタップで面が切りかわる。**打つ前に構える** と一発ボーナスと連続',
+      '右下を長おしで引いて、はなして発射。画面の左半分・右半分でフリッパー（キーは ← →・スペース）'],
+    onOpen:function(){PAUSED=true},onClose:function(){PAUSED=false}});
+}
+function helpVis(){if(!window.Guide)return;var h=Guide.help();if(!h)return;if(scene==='play')h.show();else h.hide()}
+
 /* ================= はじまり ================= */
 var greeted=false;addEventListener('pointerdown',function(){if(greeted||scene!=='title')return;greeted=true;ac();[392,523,659,784,1047].forEach(function(f,i){bell(f,.03,i*.07)})},true);
 resize();
@@ -2879,7 +2915,7 @@ if(SV.done)$('bToTest').classList.remove('hidden');
 if(TEST)startTest();else setScene('title');
 requestAnimationFrame(frame);
 /* 自動操作の確かめ用の窓口（遊びには影響しない） */
-window.__SP={G:function(){return G},start:startTable,scene:function(){return scene},SV:function(){return SV},
+window.__SP={PRAC:function(){return PRAC},PAUSED:function(){return PAUSED},tsc:function(x,y){return tsc(x,y)},G:function(){return G},start:startTable,scene:function(){return scene},SV:function(){return SV},
  setRight:function(){if(!G)return;G.drums.forEach(function(d){d.face=wantFace(G,d)})},
  launch:function(p){if(!G)return;G.pull=p||.7;release()},flip:function(s,on){if(G)flipper(s,on)},toggle:function(i){if(G&&G.drums[i])toggleDrum(G.drums[i])},
  physics:function(dt){physics(dt)},update:function(dt){update(dt)},clear:tableClear,toTest:toTest};

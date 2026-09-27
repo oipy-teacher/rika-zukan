@@ -37,7 +37,7 @@ body{font-family:var(--f);color:var(--sumi);font-weight:700;user-select:none;-we
 button{font-family:inherit;cursor:pointer;color:inherit;touch-action:manipulation}
 input{font-family:inherit}
 .hidden{display:none!important}
-#app{position:fixed;inset:0;overflow:hidden;background:var(--bg)}
+#app{position:absolute;inset:0;overflow:hidden;/* 2026-09-28: fixed だと重ね順の箱になり、れんしゅう中に「もどる」を暗幕の上へ出せないため absolute */background:var(--bg)}
 /* 紙と絵の具のにじみ */
 .gou{background:var(--paper);box-shadow:0 0 0 3px var(--sumi) inset;border-radius:6px 10px 7px 12px/10px 6px 12px 7px}
 
@@ -145,7 +145,23 @@ body.P #tIn{grid-template-columns:1fr}
 #ban div small{display:block;font-size:.5em;margin-top:4px;color:#FFE3A6}
 @keyframes ban{0%{transform:translateY(-30px) scale(.8);opacity:0}12%,80%{transform:none;opacity:1}100%{transform:translateY(-20px);opacity:0}}
 #toast{position:absolute;left:50%;bottom:16%;transform:translateX(-50%);z-index:60;background:var(--sumi);color:var(--paper);font:800 16px var(--f);padding:10px 16px;border-radius:6px;pointer-events:none;max-width:90vw;text-align:center}
-@media (prefers-reduced-motion:reduce){#ban div{animation:none}}
+/* 仕上げ 2026-09-28（jy-finish-2026-09-28）: 閉店の★・花吹雪・連続の札 */
+.jystars{display:flex;gap:14px;justify-content:center;margin:6px 0 4px}
+.jystars span{display:flex;flex-direction:column;align-items:center;gap:4px;font:800 12px/1.3 var(--f);text-align:center;width:7.5em}
+.jystars i{display:block;width:58px;height:58px;background:#E2D5BA;clip-path:polygon(50% 0,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%);transform:scale(0) rotate(-40deg)}
+.jystars i.in{transform:none;transition:transform .34s cubic-bezier(.2,1.9,.4,1)}
+.jystars i.on{background:var(--shu)}.jystars span:nth-child(2) i.on{background:var(--odo)}.jystars span:nth-child(3) i.on{background:var(--ai)}
+.jycf{position:fixed;top:-20px;z-index:2147483000;pointer-events:none;width:var(--w);height:calc(var(--w) * .6);border-radius:50%;background:var(--c);animation:jycf var(--t) cubic-bezier(.3,.2,.6,1) var(--d) forwards}
+@keyframes jycf{to{transform:translate(var(--dx),110vh) rotate(var(--r))}}
+#hStreak{background:var(--odo);color:var(--sumi);font:800 15px var(--f);padding:5px 9px;border-radius:4px 9px 5px 8px;white-space:nowrap;transition:transform .2s}
+#hStreak.big{transform:scale(1.35)}
+body.P #hStreak{display:none}
+body.P .hk{display:none}
+body.P #hud{gap:4px;padding-right:6px}
+body.P .hb{width:34px;height:34px;font-size:15px}
+body.P .hday{font-size:13px;padding:4px 6px}
+body.P #hud .gd-hbtn{width:34px!important;height:34px!important;font-size:19px!important}
+@media (prefers-reduced-motion:reduce){#ban div{animation:none}.jycf{display:none}.jystars i{transform:none}}
 </style>
 </head>
 <body class="L">
@@ -156,6 +172,7 @@ body.P #tIn{grid-template-columns:1fr}
     <div class="hv">わかした熱<b id="hJ">0 J</b></div>
     <div id="hTimer" class="hidden">3:00</div>
     <div class="hsp"></div>
+    <div id="hStreak" class="hidden">連続×2</div>
     <div class="hk" id="hK">◆0</div>
     <button class="hb shu" id="bShop" aria-label="道具屋">店</button>
     <button class="hb" id="bGraph" aria-label="記録帳">帳</button>
@@ -176,6 +193,7 @@ body.P #tIn{grid-template-columns:1fr}
       <label id="nmRow">おなまえ<input id="nameIn" maxlength="16" placeholder="なくてもOK" autocomplete="off"></label>
       <button class="bx shu" id="bStart">のれんをくぐる</button>
       <button class="bx ai hidden" id="bCont">つづきから</button>
+      <button class="bx sm" id="bHowto">あそびかた（れんしゅう）</button>
       <div class="row"><button class="bx odo sm" id="bEnvT">封筒をひらく</button><button class="bx sm" id="bBookT">図鑑</button></div>
     </div>
   </div>
@@ -199,9 +217,9 @@ body.P #tIn{grid-template-columns:1fr}
     </div>
   </div>
 
-  <div id="sheet" class="hidden"><div id="sheetIn"></div></div>
+  <div id="sheet" class="hidden" data-gd-pass><div id="sheetIn"></div></div>
   <div id="ban" class="hidden"></div>
-  <button id="bBack" class="hidden"><i></i><span id="bBackT">もどる</span></button>
+  <button id="bBack" class="hidden" data-gd-pass><i></i><span id="bBackT">もどる</span></button>
 </div>
 
 <script>/*@SUBMIT_CARD_BEGIN*/
@@ -1622,7 +1640,7 @@ window.ZUKAN_CARDS={"v": 1, "grade": "chu2", "name": "中2理科図鑑", "econom
 '.gd-band.bot{top:auto;bottom:max(10px,env(safe-area-inset-bottom))}',
 '.gd-conf{position:fixed;left:0;top:0;z-index:'+(Z+28)+';pointer-events:none;width:var(--w);height:var(--h);background:var(--c);animation:gd-fall var(--t) cubic-bezier(.3,.2,.6,1) both}',
 '@media (max-width:560px){.gd-band{font-size:12px;padding:.22em .8em .26em;letter-spacing:.08em;animation:gd-bandin .45s cubic-bezier(.2,1.4,.4,1) both,gd-dim .6s 2.6s ease forwards}}',
-'@keyframes gd-dim{to{opacity:.38}}',
+'@keyframes gd-dim{to{opacity:0;visibility:hidden}}',
 '@keyframes gd-bandin{from{opacity:0;transform:translate(-50%,-140%)}to{opacity:1;transform:translate(-50%,0)}}',
 '@keyframes gd-fall{0%{opacity:1;transform:translate(0,-20px) rotate(0)}85%{opacity:1}100%{opacity:0;transform:translate(var(--dx),calc(100vh + 20px)) rotate(var(--rot))}}',
 /* 動き */
@@ -2237,8 +2255,14 @@ var SFX={
   hot:function(){tone(700,.2,'sawtooth',.05,0,300);noise(.4,.12,.05,600)},
   coin:function(){tone(1319,.08,'square',.04);tone(1760,.18,'square',.04,.07)},
   gong:function(){tone(174,1.6,'sine',.16);tone(349,1.1,'sine',.05)},
-  buy:function(){noise(.05,.2,0,2400);[988,1319].forEach(function(f,i){tone(f,.2,'triangle',.06,.05+i*.08)})}
+  buy:function(){noise(.05,.2,0,2400);[988,1319].forEach(function(f,i){tone(f,.2,'triangle',.06,.05+i*.08)})},
+  tickP:function(k){tone(700+900*clamp(k,0,1.3),.03,'square',.02)},
+  tier:function(n){[523,659,784,1047,1319,1568].slice(0,3+Math.min(3,n)).forEach(function(f,i){tone(f,.3,'sine',.07,i*.06)})},
+  star:function(i){noise(.05,.3,0,2400);tone([784,988,1319][i%3],.4,'sine',.09,.04)},
+  fan:function(){[523,659,784,1047,784,1047,1319].forEach(function(f,i){tone(f,.3,'triangle',.07,i*.1)})}
 };
+function buzz(p){try{if(navigator.vibrate)navigator.vibrate(p)}catch(e){}}
+var TIERS=[3,5,8],shake=0,okfl=0,PR=false,PRAUSED=false,DAYST={n:0,one:0,hot:0};
 
 /* ================= 理科の設定 ================= */
 var SPEED=8;                 // ゲーム内の1秒＝画面の0.125秒（時計は8倍速）
@@ -2377,7 +2401,7 @@ function D_(){return DAYS[S.day]}
 
 /* ---- 一日のはじまり ---- */
 function startDay(){
-  D=D_();dayEnded=false;pairA={};
+  if(PR)endPractice();D=D_();dayEnded=false;pairA={};DAYST={n:0,one:0,hot:0};
   (D.gift||[]).forEach(function(id){if(S.owned.indexOf(id)<0)S.owned.push(id)});
   Q=genOrders(S.day);T=[];for(var i=0;i<3;i++){var t=newTub(i);t.ht=bestHt(i);T.push(t)}
   T.forEach(function(t,i){t.wait=.5+i*.6});
@@ -2397,7 +2421,7 @@ function switchTub(t){
   if(t.run){t.run=false;t.manualStop=true;SFX.kachi();judge(t);return}
   if(!D.manual&&t.set<=0){toast('タイマーの文字盤を回して、時間を決めよう');SFX.low();return}
   if(t.order.pair==='B'&&pairA.W!=null&&realW(t.ht)===pairA.W){toast('さっきと同じ電熱線（'+pairA.W+'W）！ ちがうWの電熱線で');SFX.low();return}
-  t.run=true;t.runT=0;t.J0=t.J;t.runs++;SFX.kachi();noise(.3,.05,0,500);
+  t.run=true;t.runT=0;t.J0=t.J;t.runs++;SFX.kachi();noise(.3,.05,0,500);buzz(15);
   if(HT[t.ht].pair&&!S.known[t.ht]){S.known[t.ht]=1;save();var h=HT[t.ht];setTimeout(function(){banner(h.pair+'につなぐと '+h.W+'W',h.pair==='直列'?'1本に3Vずつしかかからない → 1本1.5W × 2本':'1本ずつに6Vかかる → 6W＋6W')},300)}
 }
 function stepTubs(dt){
@@ -2405,20 +2429,27 @@ function stepTubs(dt){
   T.forEach(function(t,i){if(i>=tubsOn())return;
     if(t.res){t.resT-=dt;if(t.resT<=0){var was=t.res;t.res='';if(was==='done'||was==='hot'){t.order=null;t.J=0;t.wait=.7}}}
     if(!t.order&&!t.res){if(Q.length&&!(Q[0].pair==='B'&&pairA.W==null)){t.wait-=dt;if(t.wait<=0){t.order=Q.shift();t.J=0;t.runs=0;t.manualStop=false;t.totT=0;t.set=D.manual?0:t.set;SFX.suzu()}}}
-    if(t.run){var w=realW(t.ht),lim=D.manual?Infinity:t.set;var nt=Math.min(t.runT+gdt,lim);var d=nt-t.runT;t.runT=nt;t.totT+=d;t.J=t.J0+w*t.runT;S.totalJ+=w*d;
-      if(Math.floor(t.runT)!==Math.floor(t.runT-d))SFX.tick();if(Math.random()<dt*w*.4&&!RM)SFX.bubble();
+    if(t.run){var w=realW(t.ht),lim=D.manual?Infinity:t.set;var nt=Math.min(t.runT+gdt,lim);var d=nt-t.runT;t.runT=nt;t.totT+=d;t.J=t.J0+w*t.runT;if(!PR)S.totalJ+=w*d;
+      if(Math.floor(t.runT)!==Math.floor(t.runT-d))SFX.tickP(t.order?t.J/needJ(t.order):0);if(Math.random()<dt*w*.4&&!RM)SFX.bubble();
       if(D.manual&&t.J>needJ(t.order)*1.6){t.run=false;judge(t)}
       else if(!D.manual&&t.runT>=lim-1e-9){t.run=false;judge(t)}}
   });
-  if(!dayEnded&&!Q.length&&T.every(function(t,i){return i>=tubsOn()||(!t.order&&!t.res)}))endDay();
+  if(!PR&&!dayEnded&&!Q.length&&T.every(function(t,i){return i>=tubsOn()||(!t.order&&!t.res)}))endDay();
 }
 function judge(t){
   var o=t.order,need=needJ(o),tol=tolJ(o,D.manual),diff=t.J-need,W=realW(t.ht),p=tubPt(t);
+  if(PR){if(Math.abs(diff)<=tol){t.res='done';t.resT=9;SFX.pitta();splash(p[0],p[1],44);shake=.35;okfl=.6;buzz([20,40,30]);fl(p,'ぴったり！',W+'W × '+Math.round(t.totT)+'秒 ＝ '+fmtJ(t.J)+'J',K.shu);coinFly(p,20);
+      if(window.Guide){var cc=cl(p);Guide.cheer('600J ぴったり！',{x:cc.x,y:cc.y-150,size:1.15,sound:false})}
+      setTimeout(function(){if(PR&&window.Guide)Guide.tutorialClear()},1500)}
+    else{t.res='low';t.resT=1.2;t.J=0;t.runs=0;SFX.low();fl(p,diff<0?'ぬるい…':'あつすぎ！','もう一度',K.ai)}
+    return}
   S.log.push({W:W,t:Math.round(t.totT),J:Math.round(t.J),ht:t.ht});if(S.log.length>40)S.log.shift();
   if(Math.abs(diff)<=tol){
-    if(o.limit&&t.totT>o.limit+.01){t.res='hot';t.resT=1.6;S.streak=0;fl(p,'間に合わず…','通電 '+Math.round(t.totT)+'秒 ＞ '+o.limit+'秒',K.sumi);SFX.low();save();return}
+    if(o.limit&&t.totT>o.limit+.01){nearMiss(p);DAYST.hot++;t.res='hot';t.resT=1.6;S.streak=0;fl(p,'間に合わず…','通電 '+Math.round(t.totT)+'秒 ＞ '+o.limit+'秒',K.sumi);SFX.low();save();return}
     var one=t.runs===1&&!t.manualStop&&!D.manual;
-    S.orders++;S.pitta++;S.streak++;S.best=Math.max(S.best,S.streak);if(one)S.one++;
+    S.orders++;S.pitta++;S.streak++;S.best=Math.max(S.best,S.streak);if(one)S.one++;DAYST.n++;if(t.runs===1)DAYST.one++;
+    shake=one?.35:.25;okfl=one?.6:.45;buzz([20,40,30]);var tier=TIERS.indexOf(S.streak);
+    if(window.Guide&&S.streak>=2){var cc=cl(p);Guide.cheer('連続ぴったり ×'+S.streak,{x:cc.x,y:cc.y-90,size:.9+Math.max(0,tier)*.25,sound:false});if(tier>=0)setTimeout(function(){SFX.tier(tier);okfl=.9;splash(p[0],p[1],50)},280)}
     var pay=20+(one?10:0)+(o.limit?10:0);S.coins+=pay;
     t.res='done';t.resT=1.5;SFX.pitta();splash(p[0],p[1],one?40:24);
     fl(p,one?'一発ぴったり！':'ぴったり！',W+'W × '+Math.round(t.totT)+'秒 ＝ '+fmtJ(t.J)+'J'+(o.k==='C'?'（＋'+r1(t.J/S.jpc)+'℃）':''),K.shu);
@@ -2430,10 +2461,15 @@ function judge(t){
     t.res='low';t.resT=1.3;SFX.low();fl(p,'ぬるい…','あと '+fmtJ(-diff)+' J',K.ai);
   }else{
     if(o.pair==='A'){for(var qi=0;qi<Q.length;qi++)if(Q[qi].pair==='B'){delete Q[qi].pair;break}}
-    S.orders++;S.overs++;S.streak=0;t.res='hot';t.resT=1.8;SFX.hot();fl(p,'あつすぎ！',fmtJ(diff)+' J 行き過ぎ',K.shu);steamBurst(p);
+    nearMiss(p);DAYST.hot++;S.orders++;S.overs++;S.streak=0;t.res='hot';shake=.2;buzz([10,40,10]);t.resT=1.8;SFX.hot();fl(p,'あつすぎ！',fmtJ(diff)+' J 行き過ぎ',K.shu);steamBurst(p);
   }
   save();updHUD();
 }
+function cl(p){var r=cv.getBoundingClientRect();return {x:r.left+p[0],y:r.top+p[1]}}
+function nearMiss(p){var lost=S.streak,nt=TIERS.filter(function(x){return x>lost})[0];if(lost>=2&&nt&&nt-lost===1&&window.Guide){var cc=cl(p);setTimeout(function(){Guide.cheer('あと1回で 連続×'+nt+' だった！',{x:cc.x,y:cc.y-40,size:.75,sound:false})},500)}}
+function starsHTML(st){return '<div class="jystars" id="jyStars">'+['閉店まで','あつすぎ・間に合わず なし','1回の通電で ぴったり 半分以上'].map(function(t,i){return '<span><i class="'+(st[i]?'on':'')+'"></i>'+t+'</span>'}).join('')+'</div>'}
+function stampStars(st){SFX.fan();[].slice.call(document.querySelectorAll('#jyStars i')).forEach(function(e,i){setTimeout(function(){e.classList.add('in');if(st[i]){SFX.star(i);buzz(18)}else tone(200,.12,'triangle',.05)},RM?0:380+i*400)});setTimeout(bigConfetti,RM?0:380+3*400)}
+function bigConfetti(){if(RM)return;var cols=[K.shu,K.odo,K.ai,K.matsu,K.paper];for(var i=0;i<56;i++){var d=document.createElement('div');d.className='jycf';d.style.left=(Math.random()*100)+'vw';d.style.setProperty('--w',(10+Math.random()*12|0)+'px');d.style.setProperty('--c',cols[i%5]);d.style.setProperty('--dx',((Math.random()-.5)*200|0)+'px');d.style.setProperty('--r',((Math.random()-.5)*900|0)+'deg');var tt=1.7+Math.random()*1.3;d.style.setProperty('--t',tt.toFixed(2)+'s');d.style.setProperty('--d',(Math.random()*.4).toFixed(2)+'s');document.body.appendChild(d);(function(d,tt){setTimeout(function(){d.remove()},(tt+.6)*1000)})(d,tt)}}
 function endDay(){dayEnded=true;
   setTimeout(function(){
     var last=S.day>=DAYS.length-1;
@@ -2441,8 +2477,10 @@ function endDay(){dayEnded=true;
     S.day++;save();
     if(last){$('hTimer').classList.add('hidden');mainClear();return}
     var nx=DAYS[S.day],shopL=(nx.shop||[]).filter(function(id){return !S.bought[id]});
-    sheet('<h3><i></i>'+esc(D.n)+'　閉店</h3><p>入浴料 <b>'+S.coins+'円</b>　／　一発ぴったり <b>'+S.one+'</b> 回　／　連続ぴったり 最高 <b>'+S.best+'</b></p><p>わかした熱 のべ <b>'+fmtJ(S.totalJ)+' J</b></p>'+(shopL.length?'<p>道具屋に新しい品が入った。</p>':''),
+    var st=[1,DAYST.hot===0?1:0,DAYST.one*2>=Math.max(1,DAYST.n)?1:0];
+    sheet('<h3><i></i>'+esc(D.n)+'　閉店</h3>'+starsHTML(st)+'<p>入浴料 <b>'+S.coins+'円</b>　／　一発ぴったり <b>'+S.one+'</b> 回　／　連続ぴったり 最高 <b>'+S.best+'</b></p><p>わかした熱 のべ <b>'+fmtJ(S.totalJ)+' J</b></p>'+(shopL.length?'<p>道具屋に新しい品が入った。</p>':''),
       (shopL.length?[['道具屋をのぞく','odo',function(){shopSheet(function(){startDay()})}]]:[]).concat([[nx.n+'へ ▶','shu',function(){closeSheet();startDay()}]]));
+    stampStars(st);
   },1200)}
 
 /* ---- 山場：同じJを別の組で ---- */
@@ -2537,12 +2575,13 @@ function drawCtl(t,o){
   if(D.manual&&t.order&&!t.run&&!t.res&&!t.runs)fitTxt(cx,'押す→',s.x-s.r-30,s.y,clamp(s.r*.4,12,18),K.shu,60);
   HITS.push({k:'sw',t:t,cx:s.x,cy:s.y,r:s.r+3});
 }
+function ownL(){return PR?['h6','h12']:S.owned}
 function drawShelf(){var r=LY.shelf;prect(cx,r.x,r.y,r.w,r.h,K.hid,90,1);prect(cx,r.x,r.y,r.w,6,'#6B4524',91,.5);
-  var own=S.owned,n=own.length,cw=Math.min(128,(r.w-24)/Math.max(n,1)-8),x=12;
+  var own=ownL(),n=own.length,cw=Math.min(128,(r.w-24)/Math.max(n,1)-8),x=12;
   fitTxt(cx,'電熱線の棚（札をタップ、またはここから湯おけへドラッグ）',r.x+r.w-10,r.y+12,11,'#F4E3BE',r.w*.6,'right',700);
   own.forEach(function(id,i){var bx=x+i*(cw+8),by=r.y+18,bh=r.h-26;if(drag&&drag.chip===id)cx.globalAlpha=.35;prect(cx,bx,by,cw,bh,K.paper,100+i,1.2);drawHeaterIcon(cx,id,bx+cw*.08,by+bh*.08,cw*.84,bh*.5,false);fitTxt(cx,htLabel(id),bx+cw/2,by+bh*.8,bh*.3,K.sumi,cw*.92);cx.globalAlpha=1;HITS.push({k:'chip',id:id,x:bx,y:by,w:cw,h:bh})})}
 function frameDraw(T0){
-  HITS=[];var c=cx;c.setTransform(DPR,0,0,DPR,0,0);
+  HITS=[];var c=cx;c.setTransform(DPR,0,0,DPR,0,0);if(shake>0&&!RM){shake=Math.max(0,shake-.016);c.translate((Math.random()-.5)*14*shake,(Math.random()-.5)*14*shake)}
   c.fillStyle=K.bg;c.fillRect(0,0,W,H);
   // タイル壁
   var mr=LY.mural;c.fillStyle='#EDE3CD';c.fillRect(0,mr.h,W,H-mr.h);c.strokeStyle='rgba(29,47,79,.08)';c.lineWidth=1;c.beginPath();for(var yy=mr.h;yy<H;yy+=22){c.moveTo(0,yy);c.lineTo(W,yy)}for(var xx=0;xx<W;xx+=22){c.moveTo(xx,mr.h);c.lineTo(xx,H)}c.stroke();
@@ -2554,6 +2593,7 @@ function frameDraw(T0){
   drawFX(c,T0);drawShelf();
   if(drag&&drag.chip){prect(c,drag.x-50,drag.y-30,100,60,K.paper,5,1.2);drawHeaterIcon(c,drag.chip,drag.x-42,drag.y-24,84,34,false);fitTxt(c,htLabel(drag.chip),drag.x,drag.y+18,16,K.sumi,90)}
   if(grain){c.save();c.globalAlpha=.07;c.fillStyle=c.createPattern(grain,'repeat');c.fillRect(0,0,W,H);c.restore()}
+  if(okfl>0&&!RM){okfl=Math.max(0,okfl-.02);c.setTransform(DPR,0,0,DPR,0,0);c.fillStyle='rgba(255,227,166,'+(okfl*.45)+')';c.fillRect(0,0,W,H)}
 }
 
 /* ---- 湯気・花びら・文字 ---- */
@@ -2576,20 +2616,20 @@ function hitAt(x,y){for(var i=HITS.length-1;i>=0;i--){var h=HITS[i];if(h.r!=null
 function pos(e){var r=cv.getBoundingClientRect();return [e.clientX-r.left,e.clientY-r.top]}
 cv.addEventListener('pointerdown',function(e){if(scene!=='play')return;ac();var p=pos(e),h=hitAt(p[0],p[1]);if(!h)return;e.preventDefault();
   if(h.k==='sw'){switchTub(h.t);return}
-  if(h.k==='plate'){if(!canEdit(h.t)){if(h.t.run)toast('通電中は替えられない');return}var own=S.owned,i=own.indexOf(h.t.ht);h.t.ht=own[(i+1)%own.length];SFX.tap();return}
+  if(h.k==='plate'){if(!canEdit(h.t)){if(h.t.run)toast('通電中は替えられない');return}var own=ownL(),i=own.indexOf(h.t.ht);h.t.ht=own[(i+1)%own.length];SFX.tap();buzz(8);return}
   if(h.k==='minus'||h.k==='plus'){if(!canEdit(h.t))return;h.t.set=clamp(h.t.set+(h.k==='plus'?5:-5),0,S.tmax);SFX.tick();return}
   if(h.k==='dial'){if(!canEdit(h.t))return;drag={dial:h,t:h.t};try{cv.setPointerCapture(e.pointerId)}catch(_){}dialMove(p);return}
   if(h.k==='chip'){drag={chip:h.id,x:p[0],y:p[1]};try{cv.setPointerCapture(e.pointerId)}catch(_){}SFX.tap()}});
 cv.addEventListener('pointermove',function(e){if(!drag)return;var p=pos(e);if(drag.dial)dialMove(p);else{drag.x=p[0];drag.y=p[1]}});
 ['pointerup','pointercancel'].forEach(function(ev){cv.addEventListener(ev,function(e){if(!drag)return;var p=pos(e);
-  if(drag.chip){for(var i=0;i<tubsOn();i++){var o=LY.tubs[i],r=o.r;if(p[0]>=r.x&&p[0]<=r.x+r.w&&p[1]>=r.y&&p[1]<=r.y+r.h){var t=T[i];if(canEdit(t)||!t.order){t.ht=drag.chip;SFX.kachi();splash(tubPt(t)[0],tubPt(t)[1],6)}else toast('通電中は替えられない');break}}}
+  if(drag.chip){for(var i=0;i<tubsOn();i++){var o=LY.tubs[i],r=o.r;if(p[0]>=r.x&&p[0]<=r.x+r.w&&p[1]>=r.y&&p[1]<=r.y+r.h){var t=T[i];if(canEdit(t)||!t.order){t.ht=drag.chip;SFX.kachi();splash(tubPt(t)[0],tubPt(t)[1],16);fl(tubPt(t),realW(drag.chip)+'W','1秒に '+realW(drag.chip)+' J',K.ai);buzz(12)}else toast('通電中は替えられない');break}}}
   drag=null})});
 function dialMove(p){var h=drag.dial,a=Math.atan2(p[1]-h.cy,p[0]-h.cx)+Math.PI/2;if(a<0)a+=Math.PI*2;var s=Math.round(a/(Math.PI*2)*S.tmax/5)*5;if(s>=S.tmax-2&&drag.t.set<S.tmax*.3)s=0;if(s!==drag.t.set){drag.t.set=clamp(s,0,S.tmax);SFX.tick()}}
 
 /* ================= 1コマ ================= */
 var last=performance.now(),T0=0;
 function frame(now){var dt=Math.min(.05,(now-last)/1000);last=now;T0+=dt;
-  if(scene==='play'&&LY){var paused=!$('sheet').classList.contains('hidden');
+  if(scene==='play'&&LY){var paused=!$('sheet').classList.contains('hidden')||PRAUSED;
     if(!paused&&!document.hidden){S.t+=dt*1000;stepTubs(dt);
       if(D&&D.boss&&bossLeft>0){bossLeft=Math.max(0,bossLeft-dt);$('hTimer').textContent=fmtT(bossLeft*1000);if(bossLeft<=0){Q=[];toast('閉店の時間！');T.forEach(function(t){if(t.order&&!t.run){t.order=null}})}}}
     steamTick(dt);stepFX(dt);frameDraw(T0);if(Math.random()<.1)updHUD()}
@@ -2608,7 +2648,8 @@ function drawTitle(T0){var c=tx;c.setTransform(DPR,0,0,DPR,0,0);c.fillStyle=K.bg
 function updHUD(){$('hDay').textContent=(DAYS[Math.min(S.day,DAYS.length-1)]||{}).n||'';if(D)$('hDay').textContent=D.n;
   $('hCoin').textContent=S.coins+'円';$('hJ').textContent=fmtJ(S.totalJ)+' J';
   var z=Zk(),k=0;if(z&&z.state){try{k=z.state().kakera||0}catch(e){}}$('hK').textContent='◆'+k;$('hK').classList.toggle('hidden',!z);$('bBook').classList.toggle('hidden',!z);
-  $('bMute').textContent=muted?'無':'音'}
+  $('bMute').textContent=muted?'無':'音';
+  var hs=$('hStreak');if(hs){var on=S.streak>=2&&!PR;hs.classList.toggle('hidden',!on);if(on&&hs.textContent!=='連続ぴったり×'+S.streak){hs.textContent='連続ぴったり×'+S.streak;hs.classList.add('big');setTimeout(function(){hs.classList.remove('big')},220)}}}
 $('bMute').onclick=function(){muted=!muted;try{localStorage.setItem('rika-zukan:chu2:mute',muted?'1':'0')}catch(e){}updHUD();if(!muted){ac();SFX.tap()}};
 
 /* ================= シート ================= */
@@ -2709,12 +2750,13 @@ function setScene(s){scene=s;SCR.forEach(function(id){$(id).classList.add('hidde
 $('bBack').onclick=function(){ac();
   if(scene==='title'){try{window.parent.postMessage({type:'rika-close-game'},'*')}catch(e){}return}
   if(scene==='end'||scene==='clear'){setScene('title');refreshTitle();return}
+  if(PR){PRBACK=true;endPractice();closeSheet();setScene('title');refreshTitle();toast('れんしゅうは 表紙の「あそびかた」から いつでも');return}
   var sub=scene==='test'?'確認テストは、次はさいしょから。お店の進み具合は保存されています。':'進み具合は保存されます（入浴料・道具・わかした熱）。この日は、次は朝からやり直し。';
   sheet('<h3><i></i>のれんを下ろしますか？</h3><p>'+sub+'</p>',[['タイトルへ','shu',function(){closeSheet();T.forEach(function(t){t.run=false});setScene('title');refreshTitle()}],['つづける','',closeSheet]])};
 function refreshTitle(){var has=S.started&&(S.day>0||S.orders>0);$('bCont').classList.toggle('hidden',!has);$('bStart').textContent=has?'はじめから':'のれんをくぐる';$('bBookT').classList.toggle('hidden',!Zk());
   if(window.PLAYER_NAME)$('nmRow').classList.add('hidden');else if(S.name)$('nameIn').value=S.name}
 function takeName(){var v=$('nameIn').value.trim();if(v)S.name=v}
-$('bStart').onclick=function(){ac();takeName();var has=S.started&&(S.day>0||S.orders>0);var go=function(){var nm=S.name,keep=S;S=fresh();S.name=nm;S.rules=keep.rules;S.envSeen=keep.envSeen;S.myPred=keep.myPred;S.cls=keep.cls;save();startDay()};
+$('bStart').onclick=function(){ac();takeName();var has=S.started&&(S.day>0||S.orders>0);var go=function(){var nm=S.name,keep=S;S=fresh();S.name=nm;S.rules=keep.rules;S.envSeen=keep.envSeen;S.myPred=keep.myPred;S.cls=keep.cls;save();firstRun()};
   if(has){sheet('<h3><i></i>はじめから？</h3><p>一日目の朝にもどる（入浴料・道具は0から）。</p>',[['はじめから','shu',function(){closeSheet();go()}],['やめる','',closeSheet]]);return}go()};
 $('bCont').onclick=function(){ac();takeName();save();if(S.day>=DAYS.length){showClear();return}startDay()};
 $('bBook').onclick=$('bBookT').onclick=$('bBookC').onclick=$('eBook').onclick=function(){var z=Zk();if(z&&z.openBook)z.openBook({unit:'denryu'})};
@@ -2753,6 +2795,59 @@ function finishTest(){var qs=TQ,answers=TA,review=window.Quiz?Quiz.review(qs,ans
   if(window.SubmitCard)CARD=SubmitCard.show({gameId:GAME,grade:'chu2',koma:[KOMA],unit:'中2理科　電流とその利用　第17回',game:'ジュールの湯 ～電力量と熱量～'+(TEST?'（確認テストのみ）':''),name:name,score:score,total:qs.length,marks:marks,records:records,review:review},function(){})}
 $('eCard').onclick=function(){if(CARD&&window.SubmitCard)SubmitCard.reopen(CARD)};$('eRetest').onclick=function(){startTest()};$('eTitle').onclick=function(){setScene('title');refreshTitle()};
 
+/* ================= 遊び方案内（Guide）2026-09-28 ================= */
+var INTRO={title:'ジュールの湯',
+  learn:'たまる熱は **電力量〔J〕＝電力〔W〕×時間〔秒〕**。熱量も同じ **J** で表す',
+  how:'電熱線を **湯おけへドラッグ**、**文字盤を回して** 秒数を決め、**入** で注文の J ぴったりに',gesture:'drag'};
+var PRBACK=false,PRAFTER=null,PRSNAP=null;
+function firstRun(){if(!window.Guide||TEST){startDay();return}Guide.intro(INTRO).then(function(){PRAFTER='day';Guide.tutorial(PRACTICE)})}
+function endPractice(){if(!PR)return;PR=false;if(PRSNAP){S=PRSNAP;PRSNAP=null}if(window.Guide)Guide.tutorialEnd()}
+function startPractice(){PRSNAP=JSON.parse(JSON.stringify(S));PR=true;closeSheet();
+  D={n:'れんしゅう',tubs:1,kinds:[],nw:''};dayEnded=false;pairA={};Q=[];T=[];for(var i=0;i<3;i++)T.push(newTub(i));
+  var t=T[0];t.order={k:'J',J:600,no:1};t.ht='h6';t.set=0;bossLeft=0;$('hTimer').classList.add('hidden');setScene('play');muralKey='';SFX.hyoshi()}
+function tub0(){return LY&&LY.tubs[0]}
+function chipPos(id){for(var i=0;i<HITS.length;i++){var h=HITS[i];if(h.k==='chip'&&h.id===id)return {x:h.x+h.w/2,y:h.y+h.h/2,r:Math.max(26,Math.min(h.w,h.h)*.55),el:cv}}return null}
+function dialAt(sec){var o=tub0(),d=o.dial,a=sec/S.tmax*Math.PI*2;return {x:d.x+Math.sin(a)*d.r*.62,y:d.y-Math.cos(a)*d.r*.62,r:Math.max(22,d.r*.3),el:cv}}
+var PRACTICE={
+  label:'れんしゅう中　600J の湯',block:true,clearOn:'manual',
+  start:function(){startPractice()},
+  steps:[
+    {gesture:'drag',target:function(){return chipPos('h12')},to:function(){var p=tubPt(T[0]);return {x:p[0],y:p[1],r:40,el:cv}},until:function(){return PR&&T[0]&&T[0].ht==='h12'},
+      text:'棚の **12W** の電熱線を、湯おけへ **ドラッグ**（1秒に 12J たまる）',praise:'12W！'},
+    {gesture:'drag',target:function(){return dialAt(0)},to:function(){return dialAt(50)},until:function(){return PR&&T[0].set>=30&&T[0].set<=70},
+      text:'**文字盤を指で回して** 通電する秒数を決める。600J ÷ 12W ＝ **50秒**',praise:'いいね！'},
+    {gesture:'tap',target:function(){var o=tub0(),b=T[0].set>50?o.mi:o.pl;return {x:b.x,y:b.y,r:b.r+6,el:cv}},until:function(){return PR&&T[0].set===50},
+      text:'**＋ − で 5秒ずつ** 合わせる。**50秒** ぴったりに',praise:'50秒！'},
+    {gesture:'tap',target:function(){var s=tub0().sw;return {x:s.x,y:s.y,r:s.r+6,el:cv}},until:function(){return PR&&T[0].run},
+      text:'**入** でスイッチ！ 12W × 50秒 ＝ 600J',praise:'通電！'}
+  ],
+  onExit:function(res){var was=PR,back=PRBACK;PRBACK=false;if(PR){PR=false;if(PRSNAP){S=PRSNAP;PRSNAP=null}}save();
+    if(back)return;var after=PRAFTER;PRAFTER=null;
+    if(after==='day'||after==='resume'){startDay();if(after==='day')day1Coach()}else{setScene('title');refreshTitle()}}
+};
+function day1Coach(){if(!window.Guide||S.day!==0)return;var o=function(){return LY.tubs[0]};
+  var area=function(){var r=o().r;return {x:r.x+r.w/2,y:r.y+r.h/2,w:r.w+10,h:r.h+10,el:cv}};
+  Guide.coach([
+    {gesture:'tap',target:function(){var s=o().swM;return {x:s.x,y:s.y,r:s.r,el:cv}},area:area,until:function(){return T[0]&&T[0].run},text:'一日目は **手でスイッチ**。**入** をタップ',praise:'通電！'},
+    {gesture:'tap',target:function(){var s=o().swM;return {x:s.x,y:s.y,r:s.r,el:cv}},area:area,until:function(){return T[0]&&!!T[0].res},text:'看板の J が **札の J** に近づいたら **切**！',praise:false}
+  ],{key:'jy-day1',theme:null})}
+$('bHowto').onclick=function(){ac();takeName();save();if(!window.Guide)return;PRAFTER='title';Guide.tutorial(PRACTICE)};
+if(window.Guide){
+  Guide.setup({theme:{bg:'#FBF4E4',fg:'#1D2F4F',accent:'#E4572E',accentText:'#FBF4E4',font:'"Kaisei Opti","Hiragino Mincho ProN",serif',bodyFont:'"Kaisei Opti","Hiragino Mincho ProN",serif',
+      radius:12,texture:'paper',line:'#1D2F4F',dim:'rgba(29,47,79,.55)',shadow:'0 7px 0 rgba(29,47,79,.28)',outline:'#FBF4E4',hand:'#FBF4E4',handLine:'#1D2F4F'},
+    sfx:function(k){if(k==='step'||k==='done')SFX.suzu();else if(k==='clear')SFX.pitta();else if(k==='open')SFX.tap();else if(k==='nudge')SFX.tick()},
+    muted:function(){return muted}});
+  Guide.help({title:'ジュールの湯',learn:INTRO.learn,how:INTRO.how,gesture:'drag',mount:$('hud'),size:44,attention:true,replay:true,
+    rules:['札の **J** ぶんだけ湯をわかす。たまる速さは **電力（W）**：6W なら 1秒に 6J',
+      '**J ÷ W ＝ 秒**。文字盤（＋−は5秒ずつ）で秒数を決めて **入**',
+      '行き過ぎると **あつすぎ**。急ぎの客は「通電○秒以内」＝ W の大きい電熱線で',
+      '色・形・金色カバーでは **J の増え方は変わらない**（見た目だけ）',
+      '「＋○℃」の注文は、実験の結果「1℃に約○J」から J に直す'],
+    onOpen:function(){PRAUSED=true},onClose:function(){PRAUSED=false;last=performance.now()}});
+  /* 「れんしゅうをもう一度」：遊んでいる途中なら、その日の朝にもどる */
+  var _rp=Guide.replay;Guide.replay=function(){PRAFTER=scene==='play'&&!PR?'resume':'title';return Guide.tutorial(PRACTICE)};
+}
+
 /* ================= はじまり ================= */
 mkGrain();window.addEventListener('resize',resize);
 try{window.Zukan&&Zukan.setup&&Zukan.setup({game:GAME,koma:[KOMA]})}catch(e){}
@@ -2761,7 +2856,7 @@ if(TEST)startTest();else setScene('title');
 requestAnimationFrame(frame);
 if(document.fonts&&document.fonts.ready)document.fonts.ready.then(function(){resize();drawTitle.key=''});
 /* 自動操作の確かめ用（遊びには影響しない） */
-window.__JY={pairA:function(){return pairA},S:function(){return S},T:function(){return T},Q:function(){return Q},D:function(){return D},startDay:startDay,switchTub:switchTub,scene:function(){return scene},LY:function(){return LY},envFlow:envFlow,shop:shopSheet,needJ:needJ,endDay:endDay};
+window.__JY={PR:function(){return PR},PAUSED:function(){return PRAUSED},HITS:function(){return HITS},pairA:function(){return pairA},S:function(){return S},T:function(){return T},Q:function(){return Q},D:function(){return D},startDay:startDay,switchTub:switchTub,scene:function(){return scene},LY:function(){return LY},envFlow:envFlow,shop:shopSheet,needJ:needJ,endDay:endDay};
 })();
 </script>
 </body>
