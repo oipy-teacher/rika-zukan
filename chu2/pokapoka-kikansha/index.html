@@ -145,14 +145,25 @@ body.land #tFig svg{width:100%;max-height:56vh}
 #tFb{margin-top:14px;font-size:16px;line-height:1.7}
 #tFb .mk{font-family:"Kaisei Opti",serif;font-size:34px;color:#E4572E;margin-right:8px;vertical-align:-6px}
 #tFb .ex{display:block;margin-top:4px;color:#3a3029;font-weight:500}
+.tut #bBack,.tut #bMute{z-index:2147482608}.tut #confirm{z-index:2147482610}
+.tk:active{filter:brightness(1.15)}
+.pstars{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin:6px 0 10px}
+.pstars span{display:flex;flex-direction:column;align-items:center;font-size:12px;font-weight:700;color:#1D4E89;opacity:0;animation:stardon .45s cubic-bezier(.2,1.7,.4,1) forwards}
+.pstars span:nth-child(2){animation-delay:.45s}.pstars span:nth-child(3){animation-delay:.9s}
+.pstars i{font-style:normal;font-family:"Kaisei Opti",serif;font-size:46px;line-height:1;color:#d8c9a8;text-shadow:3px 3px 0 #1D4E89}
+.pstars .on i{color:#E4572E;text-shadow:3px 3px 0 #1D4E89,0 0 18px rgba(255,200,87,.9)}
+@keyframes stardon{0%{opacity:0;transform:scale(2.6) rotate(-12deg)}60%{opacity:1;transform:scale(.9) rotate(3deg)}100%{opacity:1;transform:none}}
+.cf{position:fixed;top:-14px;z-index:60;pointer-events:none;width:var(--w);height:var(--h);background:var(--c);animation:cfall var(--t) cubic-bezier(.3,.2,.6,1) forwards}
+@keyframes cfall{to{transform:translate(var(--dx),108vh) rotate(var(--r))}}
+@media (prefers-reduced-motion:reduce){.pstars span{animation:none;opacity:1}}
 @media (prefers-reduced-motion:reduce){.tk:active,.ans:active{transform:none}}
 </style>
 </head>
 <body>
 <canvas id="cv"></canvas>
 
-<button id="bBack" class="tk hidden" aria-label="もどる">◀ もどる</button>
-<button id="bMute" aria-label="音を切りかえる"><svg viewBox="0 0 26 26"><path d="M3 9h5l6-5v18l-6-5H3z" fill="#1D4E89"/><path class="w" d="M17 8c2 2 2 8 0 10M20 5c4 4 4 12 0 16" stroke="#E4572E" stroke-width="2.4" fill="none" stroke-linecap="round"/><path class="x" d="M17 9l7 8M24 9l-7 8" stroke="#E4572E" stroke-width="2.6" stroke-linecap="round"/></svg></button>
+<button id="bBack" class="tk hidden" aria-label="もどる" data-gd-pass>◀ もどる</button>
+<button id="bMute" aria-label="音を切りかえる" data-gd-pass><svg viewBox="0 0 26 26"><path d="M3 9h5l6-5v18l-6-5H3z" fill="#1D4E89"/><path class="w" d="M17 8c2 2 2 8 0 10M20 5c4 4 4 12 0 16" stroke="#E4572E" stroke-width="2.4" fill="none" stroke-linecap="round"/><path class="x" d="M17 9l7 8M24 9l-7 8" stroke="#E4572E" stroke-width="2.6" stroke-linecap="round"/></svg></button>
 
 <div id="title" class="ov hidden">
   <div id="tPanel">
@@ -160,6 +171,7 @@ body.land #tFig svg{width:100%;max-height:56vh}
     <div class="row">
       <button id="btnStart" class="tk">しゅっぱつ</button>
       <button id="btnCont" class="tk b hidden">つづきから</button>
+      <button id="btnHow" class="tk c sm">あそびかた</button>
       <button id="btnBook" class="tk c sm hidden">📖 図鑑</button>
     </div>
   </div>
@@ -176,6 +188,7 @@ body.land #tFig svg{width:100%;max-height:56vh}
 <div id="depot" class="ov hidden"><div class="sheet">
   <div class="band">機関区 ─ 次の駅へ</div>
   <h2 id="dpTitle">開通！</h2>
+  <div class="pstars" id="dpStars"></div>
   <div class="route" id="dpRoute"></div>
   <div class="dgrid">
     <div class="dbox"><h3>投資の掲示板 <span style="font-size:14px;color:#E4572E">ぬくもり券 <b id="dpCoins">0</b> 枚</span></h3><div id="dpUp"></div></div>
@@ -184,7 +197,7 @@ body.land #tFig svg{width:100%;max-height:56vh}
   <div class="dbtns"><button id="dpBook" class="tk c sm hidden">📖 図鑑</button><button id="dpNext" class="tk">次の駅へ発車</button></div>
 </div></div>
 
-<div id="confirm" class="ov hidden"><div class="sheet">
+<div id="confirm" class="ov hidden" data-gd-pass><div class="sheet">
   <h2 style="font-size:26px">もどりますか？</h2>
   <p id="cfText">進み具合は保存されます。</p>
   <div class="dbtns"><button id="cfNo" class="tk c sm">つづける</button><button id="cfGo" class="tk sm">もどる</button></div>
@@ -1496,6 +1509,9 @@ window.ZUKAN_CARDS={"v": 1, "grade": "chu2", "name": "中2理科図鑑", "econom
       if(PASS_RE.test(String(t.id||''))||PASS_RE.test(typeof t.className==='string'?t.className:''))return true;
       if((t.tagName==='BUTTON'||t.tagName==='A'||t.getAttribute('role')==='button')&&/^\s*[◀←＜<]?\s*(もどる|戻る|一覧へ|とじる|閉じる|はい|いいえ|やめる|キャンセル|おと|音)/.test(t.textContent||''))return true}
       t=t.parentNode}return false}
+  /* 手ほどき中は、もどる等（passThru に当たる fixed/absolute のボタン）を暗幕・吹き出しより上へ出す。終わったら元に戻す */
+  function liftPass(){var out=[];try{var els=document.querySelectorAll('button,a,[role=button],[data-gd-pass]');for(var i=0;i<els.length;i++){var e=els[i];if(e.closest&&e.closest('.gd-root'))continue;if(e.classList&&e.classList.contains('gd-hbtn'))continue;if(!passThru(e))continue;var cs=getComputedStyle(e);if(cs.position!=='fixed'&&cs.position!=='absolute')continue;if(cs.display==='none'||cs.visibility==='hidden')continue;out.push([e,e.style.zIndex]);e.style.zIndex=String(Z+1)}}catch(_){}
+    return function(){for(var i=0;i<out.length;i++){out[i][0].style.zIndex=out[i][1]}}}
   function inGuide(t){if(passThru(t))return true;while(t&&t!==document){if(t.classList&&(t.classList.contains('gd-root')||t.classList.contains('gd-hbtn')))return true;t=t.parentNode}return false}
   function hexRGB(c){c=String(c||'').trim();var m;
     if((m=c.match(/^#([0-9a-f]{3})$/i)))return [0,1,2].map(function(i){return parseInt(m[1][i]+m[1][i],16)});
@@ -1836,7 +1852,7 @@ window.ZUKAN_CARDS={"v": 1, "grade": "chu2", "name": "中2理科図鑑", "econom
     if(!steps||!steps.length){resolveP({done:true,steps:0});return p}
     if(opt.key&&!opt.force&&sget('coach:'+opt.key)){resolveP({already:true});return p}
 
-    var root=mkRoot('gd-coach',opt.theme);root.setAttribute('aria-live','polite');
+    var root=mkRoot('gd-coach',opt.theme);root.setAttribute('aria-live','polite');var unlift=liftPass();
     var uid='gdm'+Math.random().toString(36).slice(2,8);
     root.innerHTML='<svg class="dim" aria-hidden="true"><defs><mask id="'+uid+'" maskUnits="userSpaceOnUse"><rect x="-10" y="-10" width="200%" height="200%" fill="#fff"/><g class="holes"></g></mask></defs>'+
       '<rect class="shade" x="-10" y="-10" width="200%" height="200%" style="fill:var(--gd-dim)" mask="url(#'+uid+')"/><g class="halos"></g><path class="arw"/><path class="arh"/><circle class="dest" r="0"/></svg>';
@@ -1884,6 +1900,7 @@ window.ZUKAN_CARDS={"v": 1, "grade": "chu2", "name": "中2理科図鑑", "econom
     };
     st.finish=function(res){
       if(st.finished)return;st.finished=true;
+      try{unlift()}catch(_){}
       if(st.evOff)st.evOff();
       delTick(tick);popLayer(layer);offPtr();window.removeEventListener('resize',onRs);
       if(res.done&&opt.key)sset('coach:'+opt.key,'1');
@@ -2232,8 +2249,14 @@ var SFX={
   bad:function(){tone(220,.22,'triangle',.05,0,165);tone(147,.3,'sine',.03,.08)},
   plop:function(){tone(520,.12,'sine',.045,0,880);tone(1046,.15,'triangle',.02,.08)},
   vent:function(){noise(.6,.04,0,900,'lowpass');tone(330,.2,'triangle',.02,.1,440)},
-  fan:function(){[523,659,784,1046,784,1046,1318].forEach(function(f,i){tone(f,.4,'triangle',.04,i*.11)});noise(.8,.02,.1,2600)}
+  fan:function(){[523,659,784,1046,784,1046,1318].forEach(function(f,i){tone(f,.4,'triangle',.04,i*.11)});noise(.8,.02,.1,2600)},
+  up:function(n){var f=523*Math.pow(2,Math.min(n,14)/12);tone(f,.2,'triangle',.05);tone(f*1.5,.25,'sine',.025,.05)},
+  tier:function(){[523,659,784,1046,1318].forEach(function(f,i){tone(f,.3,'triangle',.05,i*.05)});tone(698,.4,'sine',.03,.3);tone(880,.4,'sine',.025,.3)},
+  don:function(i){tone(110-i*10,.3,'sine',.12,0,60);noise(.12,.05,0,500,'lowpass');tone(880+i*220,.35,'triangle',.04,.04)}
 };
+function vib(p){try{if(navigator.vibrate)navigator.vibrate(p)}catch(e){}}
+var GD=window.Guide||null,HELP=null,PRACTICE=null,REPLAY=false,TUTON=false,TIERS=[3,5,10,15,20];
+function confettiDOM(n){if(RM)return;var cs=['#E4572E','#1D4E89','#FFC857','#FBF1DC','#3F6B4F'];for(var i=0;i<(n||60);i++){var d=document.createElement('div');d.className='cf';d.style.left=(Math.random()*100)+'vw';d.style.setProperty('--w',(7+Math.random()*8|0)+'px');d.style.setProperty('--h',(9+Math.random()*9|0)+'px');d.style.setProperty('--c',cs[i%cs.length]);d.style.setProperty('--dx',((Math.random()-.5)*180|0)+'px');d.style.setProperty('--r',((Math.random()-.5)*900|0)+'deg');var t=1.8+Math.random()*1.4;d.style.setProperty('--t',t.toFixed(2)+'s');d.style.animationDelay=(Math.random()*.4).toFixed(2)+'s';document.body.appendChild(d);(function(d,t){setTimeout(function(){d.remove()},(t+.5)*1000)})(d,t)}}
 
 /* ================= 原子・分子（色は制作ルール5.） ================= */
 var EL={H:['#EAF6FF','#1c4f86',.4],C:['#3a3d46','#fff',.5],O:['#E4572E','#fff',.5],Na:['#E9B949','#3d2a00',.55],Cl:['#2FA36B','#fff',.55]};
@@ -2376,6 +2399,7 @@ function layout(){
   L.n=n;L.vr=Math.max(30,L.U*.72);
   L.trainL=L.U*1.02;L.wagL=L.U*.9;L.tw=L.U*.56;L.gap=L.U*.28;
   makeGrain();renderBg();
+  if(HELP)HELP.update({offset:L.land?{x:0,y:62}:{x:56,y:0}});
 }
 
 /* ================= 背景（ガッシュの平塗り）を1枚に描いておく ================= */
@@ -2488,7 +2512,8 @@ function windowsOf(k){var out=[];houses(k).forEach(function(h){var cols=2,rows=h
   for(var r=0;r<rows;r++)for(var c=0;c<cols;c++)out.push({x:h.x+h.w*(.16+c*.42),y:h.y+h.h*.18+r*(h.h*.78/rows),w:ww,h:wh})});return out}
 
 /* ================= 1駅ぶんの進行 ================= */
-function newRun(si){var d=ST[si];R={si:si,def:d,trains:[],spawnT:1.2,spawned:0,sw1:0,sw2:0,P:.6,crates:0,checks:0,combo:0,best:0,bubbles:[],puffs:[],pt:[],ft:[],
+var PDEF={nm:'れんしゅう',sky:'dawn',cars:[['ch4',1]],non:0,st:['cook','heat'],sw1:0,prod:0,vent:0,ghost:'all',q:99,iv:999,sp:.9,intro:''};
+function newRun(si,tut){var d=tut?PDEF:ST[si];R={tut:!!tut,si:si,def:d,trains:[],spawnT:1.2,spawned:0,sw1:0,sw2:0,P:.6,crates:0,checks:0,combo:0,best:0,bubbles:[],puffs:[],pt:[],ft:[],
   roomO2:1,ventAnim:0,warm:{cook:.25,heat:.25,bath:.25},lit:{cook:0,heat:0,bath:0},t:0,boss:d.boss?{t:0,dur:d.dur,warm:.62}:null,
   furn:{st:'idle'},hold:false,holdT:0,valveRot:0,idleAir:0,msg:null,hint:null,stats:{ok:0,err:0,perfect:0,burn:0,sort:0,check:0,deliv:0,vent:0},lime:0,cob:0,swAnim:{s1:0,s2:0},shake:0,flash:0,paused:false,ended:false,hiShown:{}};
   HOUSE_CACHE={};renderBg()}
@@ -2513,6 +2538,7 @@ function updTrains(dt){var v=speed(),i,t;
       var oc=coord(o);if(oc>my)lim=Math.min(lim,oc-L.trainL-L.wagL-L.gap)}
     var vv=v;if(G.up.sign){var dS=gp==='pre'&&t.e==='in'?E.in.len-t.s:(t.e==='out'?E.out.len-t.s:1e9);if(dS<L.U*1.4&&dS>0)vv*=1-.22*G.up.sign}
     var ns=Math.min(my+vv*dt,lim),ds=ns-my;if(ds<0)ds=0;t.s+=ds;
+    if(R.tut&&t.e==='out'&&t.ticket&&R.sw2!==R.def.st.indexOf(t.ticket.cat))t.s=Math.min(t.s,E.out.len-L.U*.9);
     if(t.e==='in'&&t.s>=E.in.len){var ov=t.s-E.in.len;t.e=(R.def.sw1&&R.sw1===1)?'sid':'f';t.route.push(t.e);t.s=ov;SFX.sw();}
     if(t.e==='f'&&t.s>=E.f.len){t.s=E.f.len;arriveFurnace(t)}
     if(t.e==='sid'&&t.s>=E.sid.len){t.s=E.sid.len;arriveSiding(t)}
@@ -2525,8 +2551,11 @@ function posBack(t,back){var s=t.s-back,i=t.route.length-1;while(s<0&&i>0){i--;s
 /* ---------- 置き場・炉・駅 ---------- */
 function mult(){return 1+Math.min(10,R.combo)*.1}
 function good(pts,x,y,txt){R.combo++;R.best=Math.max(R.best,R.combo);G.st.best=Math.max(G.st.best,R.combo);var c=Math.round(pts*mult());G.coins+=c;R.stats.ok++;
-  floatText(x,y,(txt?txt+' ':'')+'+'+c,'#FFC857');if(R.combo>=3&&R.combo%3===0)floatText(x,y-L.U*.5,R.combo+'連！',PAL.red,1.4)}
-function bad(x,y,why){R.combo=0;R.stats.err++;G.st.err++;SFX.bad();msg(why,'bad',4.2);R.shake=.35;burst(x,y,['#7a6a5a','#aaa'],8,L.U*1.2)}
+  floatText(x,y,(txt?txt+' ':'')+'+'+c,'#FFC857',1.25);if(R.combo>=2)floatText(x,y-L.U*.6,R.combo+'連！',R.combo>=5?PAL.red:PAL.blue,1+Math.min(1,R.combo*.08));
+  R.shake=Math.max(R.shake,.12+Math.min(.2,R.combo*.02));R.flash=Math.max(R.flash,.45);vib(15);SFX.up(R.combo);burst(x,y,['#FFC857','#E4572E','#FBF1DC'],RM?5:18,L.U*1.8);
+  if(TIERS.indexOf(R.combo)>=0){var n=R.combo;setTimeout(function(){if(!R)return;SFX.tier();floatText(L.W/2,L.PR.y+L.PR.h*.45,n+'連！ '+(n>=10?'止まらない！':n>=5?'絶好調！':'いい流れ！'),PAL.red,2.4);burst(L.W/2,L.PR.y+L.PR.h*.45,['#FFC857','#E4572E','#1D4E89'],RM?5:30,L.U*3)},200)}}
+function comboBreak(x,y){var c=R.combo;if(c<2)return;var nx=TIERS.filter(function(t){return t>c})[0];setTimeout(function(){if(R)floatText(x,y-L.U*1.2,nx&&nx-c===1?'あと1回で '+nx+'連だった！':c+'連で とぎれた',PAL.navy,1.2)},350)}
+function bad(x,y,why){comboBreak(x,y);R.combo=0;if(!R.tut){R.stats.err++;G.st.err++}vib([30,40,30]);SFX.bad();msg(why,'bad',4.2);R.shake=.35;burst(x,y,['#7a6a5a','#aaa'],8,L.U*1.2)}
 function arriveSiding(t){var c=CG[t.k];t.st='fade';var p=L.n.SID;
   if(!c.fuel){R.stats.sort++;G.st.sort++;G.stamps[t.k]=1;SFX.good(1);good(1,p[0],p[1]-L.U*.5,'置き場へ');msg(c.nm+'は燃えない → 置き場へ。正解！','good',2.4);burst(p[0],p[1],['#d2b07a','#8B6B4A'],10,L.U*1.6);
     if(!R.hiShown['sid_ok']){R.hiShown['sid_ok']=1}}
@@ -2603,7 +2632,7 @@ function finishBurn(){var f=R.furn,t=f.tr,c=CG[f.k];
   t.crates=f.mols.length>1&&f.k!=='h2'?2:(f.k==='h2'&&f.n>1?2:1);
   var cats=R.def.st,cat=cats[0];if(cats.length>1){// ぬくもりの低い駅ほど選ばれやすい
     var ws=cats.map(function(k){return 1.25-R.warm[k]}),sum=ws.reduce(function(a,b){return a+b},0),x=Math.random()*sum;for(var i=0;i<cats.length;i++){x-=ws[i];if(x<=0){cat=cats[i];break}}}
-  t.ticket={cat:cat,nm:pick(TICK[cat].list)};t.st='run';t.e='out';t.route.push('out');t.s=0;
+  if(R.tut)cat='heat';t.ticket={cat:cat,nm:pick(TICK[cat].list)};t.st='run';t.e='out';t.route.push('out');t.s=0;
   // 煙（できた物）
   var ch=[L.chim.x+L.chim.w/2,L.chim.y];var kinds={};f.prods.forEach(function(p){kinds[p]=1});
   if(R.def.prod){Object.keys(kinds).forEach(function(k,i){R.bubbles.push({k:k,x:ch[0]+(i?L.U*.9:-L.U*.1),sx:(i?L.U*.9:-L.U*.1),y:ch[1]-L.U*.1,vx:1+i*.7,vy:-L.U*.5,t:-i*.4,drag:false,life:R.boss?14:17})})}
@@ -2664,7 +2693,7 @@ addEventListener('keyup',function(e){if(state!=='play'||!R)return;if(e.code==='S
 function burst(x,y,cols,n,spd){if(RM)n=Math.min(n,5);for(var i=0;i<n;i++){var a=Math.random()*6.283,s=spd*(.3+Math.random()*.8);R.pt.push({x:x,y:y,vx:Math.cos(a)*s,vy:Math.sin(a)*s-spd*.3,t:0,life:.6+Math.random()*.5,c:pick(cols),r:L.U*(.05+Math.random()*.07)})}}
 function floatText(x,y,txt,col,sc){R.ft.push({x:x,y:y,txt:txt,c:col,t:0,sc:sc||1})}
 function msg(t,kind,dur){if(!R)return;R.msg={t:t,k:kind||'tip',d:dur||2.5,age:0}}
-function hint(k,t,dur){R.hint={k:k,t:t,d:dur||6,age:0}}
+function hint(k,t,dur){if(GD){if(k==='vent')stageCoach('vent');return}R.hint={k:k,t:t,d:dur||6,age:0}}
 
 /* ================= 描く ================= */
 var now=0;
@@ -2844,17 +2873,17 @@ function drawBoss(g){var b=R.boss,U=L.U,PR=L.PR;var w=L.land?Math.min(PR.w*.28,4
 function drawHud(g){var U=L.U,W=L.W,h=L.hud;g.save();g.fillStyle=PAL.paper;g.fillRect(0,0,W,h-2);
   var d=R.def,z=window.Zukan&&Zukan.state?Zukan.state():null;g.textBaseline='middle';
   var bx=L.land?150:0;
-  if(L.land){g.fillStyle=PAL.blue;g.font=F(14);g.textAlign='left';g.fillText('高原鉄道 ぽかぽか線',bx,h*.3);g.font=F(26);g.fillStyle=PAL.ink;g.fillText('第'+(R.si+1)+'駅　'+d.nm+(d.boss?'':'駅'),bx,h*.66);
+  if(L.land){g.fillStyle=PAL.blue;g.font=F(14);g.textAlign='left';g.fillText('高原鉄道 ぽかぽか線',bx,h*.3);g.font=F(26);g.fillStyle=PAL.ink;if(!R.tut)g.fillText('第'+(R.si+1)+'駅　'+d.nm+(d.boss?'':'駅'),bx,h*.66);
     var mx=bx+Math.max(270,g.measureText('第'+(R.si+1)+'駅　'+d.nm+'駅').width+30),mw=Math.max(120,W-mx-420);progLine(g,mx,h*.5,mw);
     var rx=W-64;g.textAlign='right';hudNum(g,rx,h*.5,'かけら',z?z.kakera:'-',PAL.blue);rx-=110;hudNum(g,rx,h*.5,'ぬくもり券',G.coins,PAL.red);rx-=120;hudNum(g,rx,h*.5,'あたたかい窓',G.windows,'#C27A12');
     if(R.combo>=2){g.font=F(18);g.fillStyle=PAL.red;g.textAlign='left';g.fillText(R.combo+'連 ×'+mult().toFixed(1),mx,h*.18)}}
-  else{g.textAlign='center';g.fillStyle=PAL.ink;var ttl='第'+(R.si+1)+'駅 '+d.nm+(d.boss?'':'駅'),cxh=(135+W-60)/2,fs=Math.min(22,W*.055);g.font=F(fs);while(g.measureText(ttl).width>W-205&&fs>12){fs--;g.font=F(fs)}g.fillText(ttl,cxh,30);
+  else{g.textAlign='center';g.fillStyle=PAL.ink;var ttl='第'+(R.si+1)+'駅 '+d.nm+(d.boss?'':'駅'),cxh=(135+W-114)/2,fs=Math.min(22,W*.055);g.font=F(fs);while(g.measureText(ttl).width>W-262&&fs>11){fs--;g.font=F(fs)}if(!R.tut)g.fillText(ttl,cxh,30);
     progLine(g,14,h*.76,W*.4);g.textAlign='right';var rx2=W-10;hudNum(g,rx2,h*.66,'かけら',z?z.kakera:'-',PAL.blue,true);rx2-=W*.17;hudNum(g,rx2,h*.66,'券',G.coins,PAL.red,true);rx2-=W*.16;hudNum(g,rx2,h*.66,'窓',G.windows,'#C27A12',true);
     if(R.combo>=2){g.font=F(14);g.fillStyle=PAL.red;g.textAlign='left';g.fillText(R.combo+'連 ×'+mult().toFixed(1),14,h*.88)}}
   g.strokeStyle=PAL.blue;g.lineWidth=2;g.beginPath();g.moveTo(0,h-3);g.lineTo(W,h-3);g.stroke();g.restore()}
 function hudNum(g,x,y,lab,val,col,small){g.save();g.textAlign='right';g.font=F(small?18:26);g.fillStyle=col;g.fillText(String(val),x,y+(small?2:6));var w=g.measureText(String(val)).width;
   g.font=S(small?9.5:11,700);g.fillStyle=PAL.ink;g.fillText(lab,x-w-5,y+(small?3:8));g.restore()}
-function progLine(g,x,y,w){var d=R.def,U=L.U;var f,lab;if(d.boss){f=R.boss.t/R.boss.dur;lab='夜明けまで'}else{var a=R.crates/d.q,b=d.qc?R.checks/d.qc:1;f=Math.min(1,(Math.min(1,a)+Math.min(1,b))/2);lab='熱 '+Math.min(R.crates,d.q)+'/'+d.q+(d.qc?'　しらべ '+Math.min(R.checks,d.qc)+'/'+d.qc:'')}
+function progLine(g,x,y,w){var d=R.def,U=L.U;var f,lab;if(d.boss){f=R.boss.t/R.boss.dur;lab='夜明けまで'}else{var a=R.crates/d.q,b=d.qc?R.checks/d.qc:1;f=Math.min(1,(Math.min(1,a)+Math.min(1,b))/2);lab=R.tut?'熱 '+R.crates:'熱 '+Math.min(R.crates,d.q)+'/'+d.q+(d.qc?'　しらべ '+Math.min(R.checks,d.qc)+'/'+d.qc:'')}
   g.save();g.strokeStyle=PAL.blue;g.lineWidth=4;g.setLineDash([12,6]);g.beginPath();g.moveTo(x,y);g.lineTo(x+w,y);g.stroke();g.setLineDash([]);
   g.fillStyle=PAL.red;g.beginPath();g.arc(x+w,y,6,0,6.283);g.fill();g.fillStyle=PAL.blue;g.beginPath();g.arc(x,y,5,0,6.283);g.fill();
   var tx=x+w*f;g.fillStyle=PAL.navy;g.fillRect(tx-10,y-7,20,14);g.fillStyle=PAL.red;g.fillRect(tx+6,y-7,5,14);
@@ -2908,7 +2937,8 @@ function sideLoco(g,x,y,s){g.save();g.translate(x,y);
 function showOv(id){['title','card','depot','confirm','clear','test'].forEach(function(k){$(k).classList.toggle('hidden',k!==id)})}
 function hideOv(){['title','card','depot','confirm','clear','test'].forEach(function(k){$(k).classList.add('hidden')})}
 function backBtn(){var b=$('bBack'),on=state==='play'||state==='depot'||state==='test'||state==='card'||(state==='title'&&INHUB)||state==='clear';b.classList.toggle('hidden',!on);b.textContent=state==='title'?'◀ 一覧へ':'◀ もどる'}
-function toTitle(){state='title';R=null;hideOv();showOv('title');TBG=null;var sv=loadGame();$('btnCont').classList.toggle('hidden',!sv||!!(sv&&sv.done&&false));
+function endTut(){document.body.classList.remove('tut');if(TUTON&&GD){TUTON=false;try{GD.tutorialEnd()}catch(e){}}else if(GD&&GD.active()){try{GD.skip()}catch(e){}}}
+function toTitle(){endTut();if(HELP)HELP.hide();state='title';R=null;hideOv();showOv('title');TBG=null;var sv=loadGame();$('btnCont').classList.toggle('hidden',!sv||!!(sv&&sv.done&&false));
   $('btnStart').textContent=sv?'はじめから':'しゅっぱつ';$('btnBook').classList.toggle('hidden',!window.Zukan);armed=false;backBtn();posTitlePanel()}
 function posTitlePanel(){var p=$('tPanel');if(L.land){p.style.marginLeft=Math.round(L.W*.06)+'px';p.style.alignItems='flex-start'}else{p.style.marginLeft='0';p.style.width='100%';p.style.alignItems='center'}}
 var armed=false;
@@ -2916,14 +2946,14 @@ function startGame(cont){AU.init();var sv=loadGame();
   if(!cont&&sv&&!armed){armed=true;$('btnStart').textContent='もう一度おすと最初から';return}
   G=cont&&sv?sv:fresh();if(!cont)G.name=NAME;else if(!NAME)NAME=G.name||'';
   if(G.done){showClear();return}
-  saveGame();openStage(G.stage)}
-function openStage(si){newRun(si);state='card';R.paused=true;var d=ST[si];
+  saveGame();if(!cont&&GD&&G.stage===0){GD.intro(INTRO).then(function(){REPLAY=false;GD.tutorial(PRACTICE)});return}openStage(G.stage)}
+function openStage(si){endTut();if(HELP)HELP.hide();newRun(si);state='card';R.paused=true;var d=ST[si];
   $('cdTag').textContent=d.boss?'終点　大寒波の峠':'第'+(si+1)+'駅';$('cdTitle').textContent=d.boss?d.nm:d.nm+'駅';$('cdBody').innerHTML=d.intro;$('cdBtn').textContent=d.boss?'峠へ発車！':'発車！';
   $('cdArt').innerHTML=cardArt(si);showOv('card');backBtn()}
 function cardArt(si){var d=ST[si],ks=[];d.cars.forEach(function(c){if(ks.indexOf(c[0])<0)ks.push(c[0])});var html='';ks.forEach(function(k){html+='<span style="display:inline-flex;flex-direction:column;align-items:center;margin:0 6px;font-size:12px;font-weight:700;color:#1D4E89"><img src="'+molImg(CG[k].m,64)+'" width="64" height="48" alt="">'+CG[k].nm+'</span>'});return html}
 var IMGC={};function molImg(k,px){var key=k+px;if(IMGC[key])return IMGC[key];var c=document.createElement('canvas'),s=2;c.width=px*s;c.height=px*.75*s;var g=c.getContext('2d');g.scale(s,s);
   var b=k==='sand'?{x0:-.6,x1:.6,y0:-.5,y1:.5}:molBox(k),d=Math.min(px*.9/(b.x1-b.x0),px*.65/(b.y1-b.y0));mol(g,k,px/2-(b.x0+b.x1)/2*d,px*.375-(b.y0+b.y1)/2*d,d);return IMGC[key]=c.toDataURL()}
-$('cdBtn').onclick=function(){AU.init();if(!R)return;hideOv();state='play';R.paused=false;backBtn();SFX.whistle();
+$('cdBtn').onclick=function(){AU.init();if(!R)return;hideOv();state='play';R.paused=false;backBtn();SFX.whistle();if(HELP)HELP.show();if(GD){if(R.si===2)setTimeout(function(){stageCoach('s1')},1500);if(R.si===4)stageCoach('bub')}
   if(R.si===2&&!R.hiShown.s1){R.hiShown.s1=1;setTimeout(function(){if(R&&R.si===2)hint('s1','燃えない荷物は ここを置き場へ',7)},2500)}
   if(R.si===6)setTimeout(function(){if(R&&R.si===6)hint('vent','酸素が減ったら 換気窓をタップ',6)},9000)};
 function stageClear(){R.ended=true;R.paused=true;var d=R.def;SFX.fan();
@@ -2931,7 +2961,9 @@ function stageClear(){R.ended=true;R.paused=true;var d=R.def;SFX.fan();
   if(R.si===4&&window.Zukan&&Zukan.earn){Zukan.earn(30,'rule')}
   G.stage=Math.min(ST.length-1,R.si+1);saveGame();
   setTimeout(function(){openDepot()},900)}
-function openDepot(){state='depot';var si=R.si,d=R.def;showOv('depot');backBtn();
+function openDepot(){if(HELP)HELP.hide();state='depot';var si=R.si,d=R.def;showOv('depot');backBtn();
+  var stl=[[true,'開通'],[R.stats.burn>0&&R.stats.perfect===R.stats.burn,'ぜんぶ ぴったり'],[R.stats.err===0,'ミス 0']];$('dpStars').innerHTML=stl.map(function(q){return '<span class="'+(q[0]?'on':'')+'"><i>★</i>'+q[1]+'</span>'}).join('');
+  confettiDOM(70);stl.forEach(function(q,k){setTimeout(function(){if(q[0]){SFX.don(k);vib(18)}else SFX.plop()},(RM?0:k*450)+150)});
   $('dpTitle').textContent=d.nm+(d.boss?'':'駅')+'まで開通！';
   var rt='';ST.forEach(function(s,i){rt+='<div class="st'+(i<=si?' on':'')+(i===si+1?' now':'')+'"><i></i><span>'+s.nm+'</span></div>'});$('dpRoute').innerHTML=rt;
   var rule=si===2?'<div style="margin-top:6px;color:#1D4E89;font-weight:700">★ 規則を見つけた：燃料は酸素と結び付いて熱を出す。水・CO₂ は「もう酸素と結び付いたあとの物」なので燃えない。</div>':
@@ -2960,14 +2992,14 @@ function renderStamps(){var h='';STAMP_ORDER.forEach(function(k){var isP=k==='CO
   h+='<div class="stamp'+(got?'':' no')+(c.fuel?'':' non')+'" title="'+esc(isP?PRODFACT[k].t:c.fact)+'"><img src="'+molImg(c.m,80)+'" alt="">'+c.nm+(isP?'<br><span style="font-weight:500;font-size:10px">できた物</span>':c.fuel?'':'<br><span style="font-weight:500;font-size:10px">燃えない</span>')+'</div>'});$('dpStamps').innerHTML=h}
 $('dpNext').onclick=function(){AU.init();openStage(G.stage)};
 $('dpBook').onclick=function(){window.Zukan&&Zukan.openBook()};
-function bossFail(){R.ended=true;R.paused=true;SFX.bad();state='card';$('cdTag').textContent='大寒波の峠';$('cdTitle').textContent='町が冷えきった…';
+function bossFail(){if(HELP)HELP.hide();R.ended=true;R.paused=true;SFX.bad();state='card';$('cdTag').textContent='大寒波の峠';$('cdTitle').textContent='町が冷えきった…';
   $('cdBody').innerHTML='ぬくもりが0になってしまった。<br><b>ぴったり燃やす</b>（型紙なし）・<b>切符の駅へ送る</b>・<b>燃えない荷物は置き場</b>・<b>換気</b>をもう一度。';$('cdArt').innerHTML='';$('cdBtn').textContent='もう一度 峠へ';
   showOv('card');var si=R.si;$('cdBtn').onclick=function(){$('cdBtn').onclick=cdDefault;openStage(si)}}
 var cdDefault=$('cdBtn').onclick;
 function bossWin(){R.ended=true;R.paused=true;SFX.fan();G.done=1;G.stage=ST.length-1;saveGame();
   if(window.Zukan&&Zukan.earn)Zukan.earn(100,'boss',{id:GID+':daikanpa'});
   setTimeout(function(){if(window.Zukan&&Zukan.mainClear)Zukan.mainClear({onClose:showClear});else showClear()},1400)}
-function showClear(){state='clear';showOv('clear');backBtn();
+function showClear(){if(HELP)HELP.hide();state='clear';showOv('clear');backBtn();
   $('clRec').innerHTML='あたたかい窓 <b>'+G.windows+'</b> ／ ぴったり燃焼 <b>'+G.st.perfect+'</b> 回<br>届けた熱 '+G.st.deliv+' ／ 煙のしらべ '+G.st.check+' ／ 置き場へ '+G.st.sort+'<br>最大 '+G.st.best+'連 ／ プレイ時間 '+fmtTime(G.st.time);
   $('clBook').classList.toggle('hidden',!window.Zukan)}
 function fmtTime(s){s=Math.round(s||0);return Math.floor(s/60)+'分'+('0'+s%60).slice(-2)+'秒'}
@@ -2975,7 +3007,7 @@ $('toTest').onclick=function(){startTest()};$('clBook').onclick=function(){windo
 
 /* ================= 確認テスト ================= */
 var TQ=[],TA=[],TI=0;
-function startTest(){state='test';R=null;showOv('test');backBtn();TQ=window.Quiz?Quiz.test():[];TA=[];TI=0;showQ()}
+function startTest(){endTut();if(HELP)HELP.hide();state='test';R=null;showOv('test');backBtn();TQ=window.Quiz?Quiz.test():[];TA=[];TI=0;showQ()}
 function showQ(){var q=TQ[TI];if(!q){finishTest();return}$('test').scrollTop=0;
   $('tNo').textContent=(TI+1)+' / '+TQ.length;$('tQ').textContent=q.q;$('tFig').innerHTML=q.fig||'';$('tFb').innerHTML='';var A=$('tA');A.innerHTML='';
   if(q.t==='choice'){q.shown.forEach(function(c){var b=document.createElement('button');b.className='ans';b.textContent=c;b.onclick=function(){answer(c,b)};A.appendChild(b)})}
@@ -3003,7 +3035,7 @@ $('bBack').onclick=function(){AU.init();
   backFrom=state;if(R)R.paused=true;
   $('cfText').textContent=state==='test'?'確認テストは、次はさいしょから。開通した駅は保存されています。':state==='play'?'進み具合は保存されます（開通した駅・ぬくもり券・切手はそのまま。この駅は次にはじめから）。':'進み具合は保存されます。タイトルにもどります。';
   $('confirm').classList.remove('hidden')};
-$('cfNo').onclick=function(){$('confirm').classList.add('hidden');if(backFrom==='play'&&R)R.paused=false};
+$('cfNo').onclick=function(){$('confirm').classList.add('hidden');if(backFrom==='play'&&R&&!(HELP&&HELP.isOpen()))R.paused=false};
 $('cfGo').onclick=function(){$('confirm').classList.add('hidden');saveGame();toTitle()};
 
 /* ================= ループ ================= */
@@ -3025,7 +3057,7 @@ function step(dt){var d=R.def;G.st.time+=dt;R.t+=dt;
   var f=R.furn;
   if(f.st==='load'){f.t+=dt;if(f.t>=.55){f.st='air';f.t=0}}
   else if(f.st==='air'){f.t+=dt;var iv=(R.si>=7?.42:.5)*(d.vent&&R.roomO2<.3?2.2:1);
-    if(R.hold){R.holdT-=dt;if(R.holdT<=0){R.holdT=iv;if(f.o2<f.need+6)spawnO2()}R.idleAir=0}
+    if(R.hold){R.holdT-=dt;if(R.holdT<=0){R.holdT=iv;if(f.o2<(R.tut?f.need:f.need+6))spawnO2()}R.idleAir=0}
     else{R.idleAir+=dt;if(R.idleAir>7){R.P=Math.max(0,R.P-dt*.06);if(!R.hiShown.idle||R.idleAir>7&&R.idleAir-dt<=7){R.hiShown.idle=1;msg('空気（酸素）を入れないと燃えない。火が弱まって列車が止まりそう！','bad',3)}}}
     f.fly=f.fly.filter(function(q){q.t+=dt;return q.t<.32})}
   else if(f.st==='wait'){f.t+=dt;f.fly=f.fly.filter(function(q){q.t+=dt;return q.t<.32});if(f.t>.3&&!f.fly.length)doBurn()}
@@ -3051,7 +3083,7 @@ function step(dt){var d=R.def;G.st.time+=dt;R.t+=dt;
   if(Math.random()<dt*(1+R.P*7))R.puffs.push({x:L.chim.x+L.chim.w/2,y:L.chim.y,r:L.U*(.12+R.P*.12),vx:(Math.random()-.2)*L.U*.25,vy:-L.U*(.35+R.P*.5),t:0,life:1.6+R.P*1.5});
   // ボス
   if(R.boss){var b=R.boss;b.t+=dt;b.warm=Math.max(0,b.warm-dt*.0135);if(b.warm<=0&&!R.ended){bossFail();return}if(b.t>=b.dur&&!R.ended){bossWin();return}}
-  if(Math.floor(R.t)%6===0&&Math.floor(R.t-dt)%6!==0)saveGame()}
+  if(!R.tut&&Math.floor(R.t)%6===0&&Math.floor(R.t-dt)%6!==0)saveGame()}
 
 /* ================= 起動 ================= */
 cv.addEventListener('pointerdown',onDown);addEventListener('pointermove',onMove);addEventListener('pointerup',onUp);addEventListener('pointercancel',onUp);
@@ -3063,6 +3095,39 @@ $('btnCont').onclick=function(){NAME=$('nameIn').value.trim()||NAME;startGame(tr
 $('btnBook').onclick=function(){window.Zukan&&Zukan.openBook()};
 if(window.PLAYER_NAME){$('nameIn').value=window.PLAYER_NAME;$('nameBox').classList.add('hidden')}
 window.Zukan&&Zukan.setup&&Zukan.setup({game:GID,koma:KOMA});
+/* ===== 遊び方案内（Guide）：旅行ポスターの看板 ===== */
+var INTRO={title:'第23回　ぽかぽか機関車',learn:'燃料が **酸素と結び付いて燃える** と **熱** が出る。その熱で 料理や 暖房ができる',how:'**ハンドルを 長おし** で 酸素を入れて燃やし、**ポイントを タップ** で 熱を 駅へ送る',gesture:'hold'};
+function disc(w){var p=L['swDisc'+w]||L.n['S'+w];return{x:p[0],y:p[1],r:Math.max(30,L.U*.62)}}
+function stRect(k){var r=L.st[k];return{x:r.x+r.w/2,y:r.y+r.h/2,w:r.w,h:r.h}}
+function stageCoach(k){if(!GD||!R||R.tut)return;var r0=R;
+  if(k==='s1')GD.coach([{gesture:'tap',target:function(){return disc(1)},until:function(){return R!==r0||R.stats.sort>=1},dim:false,text:'燃えない荷物（**水・砂・食塩**）が 来たら、入口の **ポイントを タップ** して **置き場** へ。燃料は 炉へ'}],{key:'poka-s1',nudgeMs:15000});
+  if(k==='bub')GD.coach([{gesture:'drag',target:function(){var b=R&&R.bubbles.filter(function(b){return !b.dead&&b.t>=0})[0];return b?{x:b.x,y:b.y,r:Math.max(30,L.U*.62)}:null},to:function(){var a=L.lime;return{x:a.x+a.w/2,y:a.y+a.h/2,w:a.w,h:a.h}},until:function(){return R!==r0||R.checks>=1},dim:false,
+    text:'煙突の 煙を **しらべ台へ ドラッグ**。石灰水が 白くにごれば **二酸化炭素**、塩化コバルト紙が 赤（桃）色なら **水**'}],{key:'poka-bub',nudgeMs:15000});
+  if(k==='vent')GD.coach([{gesture:'tap',target:function(){var v=L.vent;return{x:v.x+v.w/2,y:v.y+v.h/2,w:v.w+10,h:v.h+10}},until:function(){return R!==r0||R.stats.vent>=1},dim:false,text:'機関庫の中の 酸素が 減った！ **換気窓を タップ** して 外の空気を 入れる'}],{key:'poka-vent'})}
+if(GD){
+ GD.setup({theme:{bg:'#FBF1DC',fg:'#231B16',accent:'#E4572E',accentText:'#FBF1DC',font:'"Kaisei Opti",serif',bodyFont:'"Hiragino Kaku Gothic ProN","Hiragino Sans","Noto Sans JP",sans-serif',radius:0,texture:'grain',line:'#1D4E89',dim:'rgba(18,53,89,.5)',shadow:'6px 6px 0 #1D4E89',outline:'#FBF1DC',hand:'#FBF1DC',handLine:'#1D4E89'},
+  sfx:function(k){({step:function(){SFX.good(2)},done:function(){SFX.bell()},clear:function(){SFX.fan()},open:function(){SFX.sw()},close:function(){SFX.sw()},cheer:function(){SFX.plop()},nudge:function(){SFX.plop()}}[k]||function(){})()},muted:function(){return AU.mute}});
+ PRACTICE={label:'れんしゅう運転',clearText:'れんしゅうクリア！',block:true,
+  start:function(){TUTON=true;$('confirm').classList.add('hidden');if(!G||REPLAY)G=loadGame()||fresh();document.body.classList.add('tut');newRun(0,true);hideOv();state='play';R.paused=false;backBtn();if(HELP)HELP.show();
+   var t={id:Math.random(),k:'ch4',n:1,route:['in','f'],e:'f',s:Math.max(0,E.f.len-L.trainL*1.3),st:'run',crates:0,ticket:null,fade:0};R.trains.push(t);R.spawned=1;R.spawnT=1e9;SFX.whistle()},
+  steps:[
+   {gesture:'hold',holdMs:1400,target:function(){return{x:L.valve[0],y:L.valve[1],r:L.vr*1.3}},until:function(){return R&&R.stats.burn>=1},
+    text:'炉に **都市ガス** が来た。**空気のハンドルを 長おし** して 酸素 O₂ を入れ、**O の席が うまったら はなす**',praise:'ぴったり 燃えた！'},
+   {gesture:'tap',target:function(){return disc(2)},until:function(){return R&&R.sw2===1},text:'熱を積んだ列車の 切符は **「暖房」**。分かれ目の **ポイントを タップ** して 暖房の駅へ'},
+   {gesture:'tap',label:'みる',dim:false,block:false,target:function(){return stRect('heat')},until:function(){return R&&R.stats.deliv>=1},text:'熱が 届くと、町の窓が あたたかく ともる',praise:false}
+  ],
+  onExit:function(res){TUTON=false;document.body.classList.remove('tut');if(res.stopped||!R||!R.tut)return;R=null;
+   if(REPLAY){REPLAY=false;G=null;toTitle();return}openStage(0)}};
+ HELP=GD.help({rules:['**空気のハンドルを 長おし** → 酸素 O₂ が入る。**O の席が うまったら はなす**（ぴったりで ご褒美）',
+   '熱を積んだ列車は **切符の駅** へ。分かれ目の **ポイントを タップ** で 行き先を 切りかえる',
+   '水・砂・食塩・ドライアイスは **燃えない**。入口の ポイントで **置き場** へ',
+   '煙は **しらべ台へ ドラッグ**：石灰水が白く＝二酸化炭素／塩化コバルト紙が赤（桃）＝水',
+   '機関庫の 酸素が 減ったら **換気窓を タップ**'],
+  onOpen:function(){if(R)R.paused=true},onClose:function(){if(R&&state==='play'&&$('confirm').classList.contains('hidden'))R.paused=false},
+  replay:function(){if(R&&R.tut)return null;saveGame();REPLAY=true;GD.tutorial(PRACTICE);return null},labels:{replay:'れんしゅうを もう一度'},
+  offset:{x:56},size:46,attention:true,show:false});
+ GD.tutorialButton('#btnHow',function(){AU.init();NAME=$('nameIn').value.trim()||NAME;REPLAY=true;GD.tutorial(PRACTICE)});
+}else $('btnHow').classList.add('hidden');
 layout();
 if(document.fonts&&document.fonts.load){document.fonts.load('20px "Kaisei Opti"').then(function(){TBG=null;if(R)renderBg()}).catch(function(){})}
 if(TEST)startTest();else toTitle();

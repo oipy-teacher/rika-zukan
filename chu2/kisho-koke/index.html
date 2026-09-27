@@ -41,6 +41,7 @@
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--ink);font-family:var(--fb);-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 #app{position:fixed;inset:0;overflow:hidden}
+
 #cv{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
 .hidden{display:none!important}
 button{font-family:var(--fh);color:inherit;background:none;border:0;padding:0;margin:0;cursor:pointer;touch-action:manipulation}
@@ -155,6 +156,19 @@ body:not(.wide) #tools .fd.s{min-height:44px;font-size:15px;padding:4px 10px}
 .wide .pop{font-size:38px}.wide .pop.big{font-size:56px}
 @keyframes pup{0%{opacity:0;transform:translate(-50%,-30%) scale(.6)}12%{opacity:1;transform:translate(-50%,-50%) scale(1.08)}22%{transform:translate(-50%,-50%) scale(1)}78%{opacity:1}100%{opacity:0;transform:translate(-50%,-85%)}}
 @media (prefers-reduced-motion:reduce){.pop{animation:pfade 2s forwards}@keyframes pfade{0%,80%{opacity:1}100%{opacity:0}}.blink,#hint,.seal{animation:none}}
+/* 仕上げ（2026-09-28）: もどる・音はれんしゅう中も一番上／墨と苔のフラッシュ／作品の落款がドン */
+#bBack{z-index:2147482640!important}
+#hudR{z-index:2147482640}
+#ov.top{z-index:2147482660}
+/* #app が fixed だと重なりの箱ができて、もどる・確認の札が手ほどきの吹き出しの下にもぐるので absolute にする（見た目は同じ） */
+#app{position:absolute}
+body.prac:not(.wide) #kk{visibility:hidden}
+body:has(.gd-band) #roomNm{visibility:hidden}
+#flash{position:absolute;inset:0;pointer-events:none;z-index:34;opacity:0;background:radial-gradient(ellipse at 50% 45%,rgba(207,240,140,.42),rgba(242,244,238,.35) 45%,rgba(242,244,238,0) 75%)}
+.album div{animation:thIn .45s cubic-bezier(.2,1.5,.4,1) both}
+@keyframes thIn{from{opacity:0;transform:scale(1.6) rotate(-4deg)}}
+#title .trow2{display:flex;gap:8px}#title .trow2 .fd{flex:1 1 0}
+@media (prefers-reduced-motion:reduce){.album div{animation:none}}
 </style></head><body>
 <div id="app">
  <canvas id="cv"></canvas>
@@ -165,7 +179,7 @@ body:not(.wide) #tools .fd.s{min-height:44px;font-size:15px;padding:4px 10px}
    <div class="namestrip" id="nameRow"><b>なまえ</b><input id="nameIn" maxlength="16" placeholder="（空でも遊べる）" autocomplete="off"></div>
    <button class="fd sumi big" id="bStart">はじめる</button>
    <button class="fd big hidden" id="bCont">つづきから</button>
-   <div class="trow"><button class="fd s" id="bSnd1">音　あり</button><button class="fd s zk" id="bBook1">📖 図鑑</button></div>
+   <div class="trow"><button class="fd s" id="bHow">あそびかた</button><button class="fd s" id="bSnd1">音　あり</button><button class="fd s zk" id="bBook1">📖 図鑑</button></div>
   </div>
  </div>
 
@@ -193,11 +207,12 @@ body:not(.wide) #tools .fd.s{min-height:44px;font-size:15px;padding:4px 10px}
  <div id="test" class="scr hidden"><div class="jikuW"><div class="jiku" id="tbox"></div></div></div>
 
  <div id="hud" class="hidden">
-  <button class="fd sumi" id="bBack">◀ もどる</button>
+  <button class="fd sumi" id="bBack" data-gd-pass>◀ もどる</button>
   <div id="roomNm"></div>
-  <div id="hudR"><div id="kk"><svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="8" fill="#4F7942"/><circle cx="9" cy="11" r="2" fill="#1E2A22" opacity=".55"/><circle cx="14" cy="15" r="1.6" fill="#1E2A22" opacity=".5"/><path d="M12 5c0-2 1-3 3-4" stroke="#1E2A22" stroke-width="1.5" fill="none"/></svg><span id="kkN">0</span></div><button class="fd sq" id="bSnd">音</button></div>
+  <div id="hudR"><div id="kk"><svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="8" fill="#4F7942"/><circle cx="9" cy="11" r="2" fill="#1E2A22" opacity=".55"/><circle cx="14" cy="15" r="1.6" fill="#1E2A22" opacity=".5"/><path d="M12 5c0-2 1-3 3-4" stroke="#1E2A22" stroke-width="1.5" fill="none"/></svg><span id="kkN">0</span></div><button class="fd sq" id="bSnd" data-gd-pass>音</button></div>
  </div>
- <div id="ov" class="hidden"><div class="jikuW"><div class="jiku" id="ovBox"></div></div></div>
+ <div id="ov" class="hidden" data-gd-pass><div class="jikuW"><div class="jiku" id="ovBox"></div></div></div>
+ <div id="flash"></div>
  <div id="pops"></div>
 </div>
 
@@ -1495,6 +1510,9 @@ window.ZUKAN_CARDS={"v": 1, "grade": "chu2", "name": "中2理科図鑑", "econom
       if(PASS_RE.test(String(t.id||''))||PASS_RE.test(typeof t.className==='string'?t.className:''))return true;
       if((t.tagName==='BUTTON'||t.tagName==='A'||t.getAttribute('role')==='button')&&/^\s*[◀←＜<]?\s*(もどる|戻る|一覧へ|とじる|閉じる|はい|いいえ|やめる|キャンセル|おと|音)/.test(t.textContent||''))return true}
       t=t.parentNode}return false}
+  /* 手ほどき中は、もどる等（passThru に当たる fixed/absolute のボタン）を暗幕・吹き出しより上へ出す。終わったら元に戻す */
+  function liftPass(){var out=[];try{var els=document.querySelectorAll('button,a,[role=button],[data-gd-pass]');for(var i=0;i<els.length;i++){var e=els[i];if(e.closest&&e.closest('.gd-root'))continue;if(e.classList&&e.classList.contains('gd-hbtn'))continue;if(!passThru(e))continue;var cs=getComputedStyle(e);if(cs.position!=='fixed'&&cs.position!=='absolute')continue;if(cs.display==='none'||cs.visibility==='hidden')continue;out.push([e,e.style.zIndex]);e.style.zIndex=String(Z+1)}}catch(_){}
+    return function(){for(var i=0;i<out.length;i++){out[i][0].style.zIndex=out[i][1]}}}
   function inGuide(t){if(passThru(t))return true;while(t&&t!==document){if(t.classList&&(t.classList.contains('gd-root')||t.classList.contains('gd-hbtn')))return true;t=t.parentNode}return false}
   function hexRGB(c){c=String(c||'').trim();var m;
     if((m=c.match(/^#([0-9a-f]{3})$/i)))return [0,1,2].map(function(i){return parseInt(m[1][i]+m[1][i],16)});
@@ -1835,7 +1853,7 @@ window.ZUKAN_CARDS={"v": 1, "grade": "chu2", "name": "中2理科図鑑", "econom
     if(!steps||!steps.length){resolveP({done:true,steps:0});return p}
     if(opt.key&&!opt.force&&sget('coach:'+opt.key)){resolveP({already:true});return p}
 
-    var root=mkRoot('gd-coach',opt.theme);root.setAttribute('aria-live','polite');
+    var root=mkRoot('gd-coach',opt.theme);root.setAttribute('aria-live','polite');var unlift=liftPass();
     var uid='gdm'+Math.random().toString(36).slice(2,8);
     root.innerHTML='<svg class="dim" aria-hidden="true"><defs><mask id="'+uid+'" maskUnits="userSpaceOnUse"><rect x="-10" y="-10" width="200%" height="200%" fill="#fff"/><g class="holes"></g></mask></defs>'+
       '<rect class="shade" x="-10" y="-10" width="200%" height="200%" style="fill:var(--gd-dim)" mask="url(#'+uid+')"/><g class="halos"></g><path class="arw"/><path class="arh"/><circle class="dest" r="0"/></svg>';
@@ -1883,6 +1901,7 @@ window.ZUKAN_CARDS={"v": 1, "grade": "chu2", "name": "中2理科図鑑", "econom
     };
     st.finish=function(res){
       if(st.finished)return;st.finished=true;
+      try{unlift()}catch(_){}
       if(st.evOff)st.evOff();
       delTick(tick);popLayer(layer);offPtr();window.removeEventListener('resize',onRs);
       if(res.done&&opt.key)sset('coach:'+opt.key,'1');
@@ -2432,14 +2451,14 @@ function resize(){const r=$('#app').getBoundingClientRect();W=Math.max(300,r.wid
 function rebuild(){if(MODE==='day'&&DY){buildRoom(DY.d.r)}else if(MODE==='title')buildTitle();else buildMap()}
 
 /* ===== 状態 ===== */
-let MODE='title',DY=null,fogCur=0,fogDirty=true,tt=0;const PT=[];
+let MODE='title',DY=null,fogCur=0,fogDirty=true,tt=0,PAUSED=false,PFIRST=false;const PT=[];
 function roomOf(i){return DAYS[i].r}
-function startDay(i){ac();if(i>=DAYS.length){toMap();return}const d=DAYS[i],r=ROOMS[d.r];if(S.roomSeen!==d.r){S.roomSeen=d.r;S.mistLeft=3;save()}
+function startDay(i,pr){ac();if(i>=DAYS.length){toMap();return}const d=DAYS[i],r=ROOMS[d.r];if(pr!=='replay'&&S.roomSeen!==d.r){S.roomSeen=d.r;S.mistLeft=3;save()}
  DY={i,d,r,T:d.T0,Tset:d.T0,v:d.v,plan:{mist:0,vent:0},phase:'set',tries:0,mistToday:0,ventToday:0,first:true,anim:null,dt:0,dur:20,started:false,
-  samples:[],guide:[],dabs:0,stray:0,inb:0,tot:0,off:0,strokes:[],curS:null,drips:[],dripT:0,res:null,setT:0,rule1:false,hStart:hum(d.v,d.T0),vShow:false,varP:0,wiping:{}};
- MODE='day';S.day=i;S.started=true;save();fogCur=fogF(DY.hStart);show('day');builtRoom=-1;buildRoom(d.r);WC.getContext('2d').clearRect(0,0,WC.width,WC.height);
+  samples:[],guide:[],dabs:0,stray:0,inb:0,tot:0,off:0,strokes:[],curS:null,drips:[],dripT:0,res:null,setT:0,rule1:false,hStart:hum(d.v,d.T0),vShow:false,varP:0,wiping:{},practice:pr||null,covN:0,mile:0,lastNote:0};
+ MODE='day';document.body.classList.toggle('prac',!!pr);if(pr!=='replay'){S.day=i;S.started=true;save()}fogCur=fogF(DY.hStart);show('day');builtRoom=-1;buildRoom(d.r);WC.getContext('2d').clearRect(0,0,WC.width,WC.height);
  $('#roomNm').innerHTML=r.nm+'<small>第'+DN[i]+'日</small>';updTools();updCond();
- hintFor(i);sfx.tap()}
+ if(!pr)hintFor(i);else $('#hint').classList.add('hidden');sfx.tap()}
 function curH(){return hum(DY.v,DY.T)}
 function planV(){let v=DY.v;for(let k=0;k<DY.plan.vent;k++)v=r1((v+DY.d.vo)/2);v=r1(v+2*DY.plan.mist);return v}
 function mode(){return DY?DY.r.meter:'live'}
@@ -2491,14 +2510,15 @@ function commit(){if(!DY||DY.phase!=='set')return;ac();S.dec++;DY.tries++;
  DY.anim={t:0,dur:RM?.3:1.5,T0:DY.T,T1:DY.Tset,v0:DY.v,v1};DY.phase='anim';updTools()}
 function judge(){const d=DY.d,h=Math.round(curH()),mid=(d.lo+d.hi)/2;DY.phase='set';
  if(h>=d.lo&&h<=d.hi){DY.phase='ready';const sweet=Math.abs(curH()-mid)<=2,dry=DY.mistToday===0||d.lock;const x=L.meter.cx,y=L.meter.cy;
-  sfx.kon();pop('帯に入った！<small>湿度 '+h+'%</small>',x,y-L.meter.r*.3,'g big');inkBurst(x,y,24,true);
-  if(DY.first){S.first++;setTimeout(()=>earn(5,'first-try','ft'+DY.i,x,y+40),450)}
+  sfx.kon();pop('帯に入った！<small>湿度 '+h+'%</small>',x,y-L.meter.r*.3,'g big');inkBurst(x,y,RM?8:44,true);shake(8);flash(.9);vib([18,30,28]);
+  if(DY.practice==='replay'){DY.varP=5;updCond();setTimeout(()=>{if(DY&&DY.phase==='ready')startDraw()},RM?300:1500);updTools();return}
+  if(DY.first){S.first++;S.streak=(S.streak||0)+1;const sk=S.streak;if(sk>=2)setTimeout(()=>{pop('一発 '+sk+'日れんぞく！',W/2,H*.22,'g big');if(STREAK.indexOf(sk)>=0){sfx.fan();flash(1);inkBurst(W/2,H*.22,RM?8:50,true)}},650);setTimeout(()=>earn(5,'first-try','ft'+DY.i,x,y+40),450)}
   if(DY.first&&sweet)setTimeout(()=>earn(8,'hit','ht'+DY.i,x,y+80),900);
   if(!DY.d.lock&&DY.mistToday===0&&DY.T<d.T0-1&&curH()>DY.hStart)setTimeout(()=>{if(!S.paid.r1)pop('水を足さずに湿度が上がった！<small>室温を下げると飽和水蒸気量が小さくなる</small>',W/2,H*.3,'g');earn(30,'rule','r1',W/2,H*.36)},1300);
   if(!DY.d.lock&&DY.T>d.T0+1&&curH()<DY.hStart)setTimeout(()=>{if(!S.paid.r2)pop('暖めたら湿度が下がった！<small>水蒸気の量は同じまま</small>',W/2,H*.3,'g');earn(30,'rule','r2',W/2,H*.36)},1300);
   if(d.lock)setTimeout(()=>earn(10,'control','ct'+DY.i,x,y+60),1600);
   DY.varP=5+(dry?15:0)+(sweet?15:0)+(DY.first?5:0);save();updCond();setTimeout(()=>{if(DY&&DY.phase==='ready')startDraw()},RM?300:1700)}
- else{DY.first=false;const diff=h<d.lo?d.lo-h:h-d.hi;sfx.bad();pop((h<d.lo?'まだ乾いている':'湿りすぎ')+'<small>帯まで あと '+diff+'%（いま '+h+'%）</small>',L.meter.cx,L.meter.cy-L.meter.r*.2,'');
+ else{if(DY.first&&DY.practice!=='replay'){const was=S.streak||0;S.streak=0;if(was>=2){const nx=STREAK.find(m=>m>was);setTimeout(()=>pop(nx&&nx-was===1?'あと1日で '+nx+'日れんぞく だった！':'一発 '+was+'日れんぞく でストップ',W/2,H*.22,''),700)}}DY.first=false;const diff=h<d.lo?d.lo-h:h-d.hi;sfx.bad();vib(40);pop((h<d.lo?'まだ乾いている':'湿りすぎ')+'<small>帯まで あと '+diff+'%（いま '+h+'%）</small>',L.meter.cx,L.meter.cy-L.meter.r*.2,'');
   if(DY.tries>=2){const v=DY.v;hint(d.lock?'室温は固定。換気すると水蒸気は ('+f1(v)+'＋'+f1(d.vo||0)+')÷2 ＝ '+f1(((v+(d.vo||0))/2))+'g。霧吹きなら ＋2.0g。':'水蒸気 '+f1(v)+'g が 湿度'+d.hi+'%になるのは 飽和水蒸気量 '+f1(v/d.hi*100)+'g、'+d.lo+'%なら '+f1(v/d.lo*100)+'g。<b>表</b>でこの間の気温を探そう。',11000)}
   if(DY.d.drift)DY.Tset=Math.round(DY.T)}
  updTools();updCond()}
@@ -2508,15 +2528,16 @@ function placeGuide(){const G=L.G,d=DY.d,od=OD[d.od],fl=fogF(d.lo)-.05;let bx=G.
  let bh=Math.max(20,bot-top),w=bw,h=w/od.a;if(h>bh){h=bh;w=h*od.a}const x0=bx+(bw-w)/2,y0=bot-h;const rr=Math.max(9,Math.min(24,Math.min(G.w,G.h)*.03));DY.br=rr;
  DY.guide=od.s.map(st=>curve(st.map(p=>[x0+p[0]*w,y0+p[1]*h]),6));DY.samples=[];DY.guide.forEach(st=>{let acc=0;for(let i=0;i<st.length;i++){if(i===0){DY.samples.push({x:st[0][0],y:st[0][1],c:0});continue}const dd=Math.hypot(st[i][0]-st[i-1][0],st[i][1]-st[i-1][1]);acc+=dd;if(acc>=rr*.7){acc=0;DY.samples.push({x:st[i][0],y:st[i][1],c:0})}}})}
 function startDraw(){DY.phase='draw';DY.dt=0;DY.started=false;DY.dur=Math.round(16+OD[DY.d.od].s.length*1.8+(DY.d.drift?4:0));WC.getContext('2d').clearRect(0,0,WC.width,WC.height);DY.drips=[];placeGuide();DY.inb=0;DY.tot=0;DY.off=0;
- updTools();updCond();hint(DY.i===0?'下絵の<b>'+OD[DY.d.od].nm+'</b>を、指でなぞって拭きとろう。上の線香が燃えつきるまで。':'お題「<b>'+OD[DY.d.od].nm+'</b>」。なぞって拭きとろう。',4500);koto(6,0,.18)}
+ updTools();updCond();if(!DY.practice)hint(DY.i===0?'下絵の<b>'+OD[DY.d.od].nm+'</b>を、指でなぞって拭きとろう。上の線香が燃えつきるまで。':'お題「<b>'+OD[DY.d.od].nm+'</b>」。なぞって拭きとろう。',4500);koto(6,0,.18)}
 function wipeAt(x,y,px,py){const G=L.G,gx=x-G.x,gy=y-G.y;if(gx<-10||gy<-10||gx>G.w+10||gy>G.h+10)return;const g=WC.getContext('2d'),r=DY.br,sx=WC.width/G.w;
  const n=px==null?1:Math.max(1,Math.ceil(Math.hypot(x-px,y-py)/(r*.3)));for(let k=1;k<=n;k++){const qx=px==null?gx:(px-G.x)+(gx-(px-G.x))*k/n,qy=py==null?gy:(py-G.y)+(gy-(py-G.y))*k/n;
   const gr=g.createRadialGradient(qx*sx,qy*sx,0,qx*sx,qy*sx,r*sx);gr.addColorStop(0,'rgba(0,0,0,1)');gr.addColorStop(.65,'rgba(0,0,0,.9)');gr.addColorStop(1,'rgba(0,0,0,0)');g.fillStyle=gr;g.fillRect((qx-r)*sx,(qy-r)*sx,r*2*sx,r*2*sx);
-  DY.dabs++;let near=1e9;for(const s of DY.samples){const dd=Math.hypot(s.x-qx,s.y-qy);if(dd<near)near=dd;if(dd<=r*.95)s.c=1}if(near>r*2.3)DY.stray++}
+  DY.dabs++;let near=1e9;for(const s of DY.samples){const dd=Math.hypot(s.x-qx,s.y-qy);if(dd<near)near=dd;if(dd<=r*.95&&!s.c){s.c=1;brushHit(s)}}if(near>r*2.3)DY.stray++}
  fogDirty=true;if(!DY.curS){DY.curS=[];DY.strokes.push(DY.curS)}const last=DY.curS[DY.curS.length-1];if(!last||Math.hypot(last[0]*G.w-gx,last[1]*G.h-gy)>r*.6){if(DY.strokes.reduce((a,s)=>a+s.length,0)<600)DY.curS.push([Math.round(gx/G.w*1000)/1000,Math.round(gy/G.h*1000)/1000])}}
 function fogTop(xf){return 1-fogCur+(fogCur>.02&&fogCur<.98?(Math.sin(xf*7.1+tt*.15)*.5+Math.sin(xf*17.3+1.3-tt*.1)*.3+Math.sin(xf*31+2)*.2)*.035:0)}
 function finishDraw(){if(!DY||DY.phase!=='draw')return;DY.phase='done';const G=L.G;let tot=0,cov=0;DY.samples.forEach(s=>{tot++;if(s.c&&s.y/G.h>=fogTop(s.x/G.w))cov++});const c=tot?cov/tot:0,st=DY.dabs?DY.stray/DY.dabs:0;
- let q=c-.6*Math.max(0,st-.2);let g=q>=.85?3:q>=.65?2:q>=.4?1:0;const k=DY.tot?DY.inb/DY.tot:1;if(DY.d.drift&&k<.75)g=Math.max(0,g-1);
+ let q=c-.6*Math.max(0,st-.2);let g=q>=.85?3:q>=.65?2:q>=.4?1:0;const k=DY.tot?DY.inb/DY.tot:1;if(DY.d.drift&&k<.75)g=Math.max(0,g-1);if(DY.practice)g=Math.max(1,g);
+ if(DY.practice==='replay'){DY.res={g,c,st,k,vr:false};updTools();sfx.seal();setTimeout(showResult,500);return}
  const R=Math.random()*100;const vr=g>=1&&R<DY.varP;DY.vShow=vr;DY.res={g,c,st,k,vr};
  const prev=S.works[DY.i];const w={g,vr:vr||!!(prev&&prev.vr),s:DY.strokes.filter(s=>s.length>1).slice(0,40),a:Math.round(G.w/G.h*100)/100};if(!prev||g>=prev.g||vr){S.works[DY.i]=w}if(vr)S.vars++;
  if(DY.d.drift&&k>=.9)earn(10,'control','dr'+DY.i,L.meter.cx,L.meter.cy);
@@ -2529,9 +2550,11 @@ function showResult(){if(!DY||!DY.res)return;const d=DY.d,r=DY.res,h=Math.round(
  const last=DY.i===DAYS.length-1,roomEnd=last||DAYS[DY.i+1].r!==d.r;
  s+='<div class="row">'+(r.g===0?'<button class="fd" id="rAgain">もう一度この日</button>':'')+'<button class="fd sumi big" id="rNext">'+(last?'大温室、完成':roomEnd?'この間を仕上げる':'次の日へ')+'</button></div>';ovOpen(s);
  if(r.g>0)setTimeout(()=>{if(r.g>=2)sfx.fan();else sfx.ok()},250);
+ setTimeout(()=>{sfx.seal();shake(r.g>=2?10:6);vib(r.g>=2?[20,30,40]:20);if(r.g>=2&&window.Guide&&!DY.practice)Guide.celebrate(GRN[r.g]+'！',{y:H*.12})},120);
+ if(DY.practice==='replay'){const b=$('#rNext');b.textContent='れんしゅう おわり';b.onclick=()=>{ovClose();sfx.tap();endReplay()};return}
  $('#rNext').onclick=()=>{ovClose();sfx.tap();if(last){S.done=true;save();finale()}else if(roomEnd)roomClear(d.r);else startDay(DY.i+1)};if($('#rAgain'))$('#rAgain').onclick=()=>{ovClose();startDay(DY.i)}}
 function roomClear(ri){const days=DAYS.map((d,i)=>[d,i]).filter(p=>p[0].r===ri);let s='<h2>'+ROOMS[ri].nm+'　完</h2><p class="sm">この間で描いた窓</p><div class="album">'+days.map(p=>'<div class="'+(S.works[p[1]]&&S.works[p[1]].vr?'v':'')+'"><canvas data-w="'+p[1]+'" width="180" height="120"></canvas><b>'+(S.works[p[1]]?GRN[S.works[p[1]].g]:'─')+'</b><br>'+OD[p[0].od].nm+'</div>').join('')+'</div>';
- s+='<p class="sm">次は「'+(ROOMS[ri+1]?ROOMS[ri+1].nm:'')+'」。窓がふえる。</p><div class="row"><button class="fd sumi big" id="rMap">道のりへ</button></div>';ovOpen(s);drawThumbs();sfx.fan();$('#rMap').onclick=()=>{ovClose();toMap()}}
+ s+='<p class="sm">次は「'+(ROOMS[ri+1]?ROOMS[ri+1].nm:'')+'」。窓がふえる。</p><div class="row"><button class="fd sumi big" id="rMap">道のりへ</button></div>';ovOpen(s);document.querySelectorAll('#ovBox .album div').forEach((e,k)=>{e.style.animationDelay=(.3+k*.38)+'s';setTimeout(()=>{sfx.seal();vib(18)},300+k*380)});drawThumbs();sfx.fan();if(window.Guide)Guide.celebrate(ROOMS[ri].nm+' 完',{y:H*.12});$('#rMap').onclick=()=>{ovClose();toMap()}}
 function finale(){let s='<h2>大温室、完成</h2><p>24日で描いた窓 <b>'+Object.keys(S.works).length+'</b> 枚・光苔 <b>'+Object.values(S.works).filter(w=>w.vr).length+'</b> 枚。</p><p class="why">湿度＝水蒸気の量÷その気温の飽和水蒸気量×100。<br>水を足さなくても、冷やせば湿度は上がり、暖めれば下がる。</p><div class="row"><button class="fd sumi big" id="rTest">確認テストへ</button></div>';ovOpen(s);sfx.fan();
  $('#rTest').onclick=()=>{ovClose();const go=()=>startTest();if(!S.mc&&window.Zukan&&Zukan.mainClear){S.mc=true;save();try{Zukan.mainClear({onClose:go})}catch(e){go()}}else go()}}
 
@@ -2545,21 +2568,54 @@ function drawThumbs(){document.querySelectorAll('canvas[data-w]').forEach(c=>{co
  if(w.vr){g.save();g.fillStyle='rgba(200,240,130,.9)';g.shadowColor='#CFF08C';g.shadowBlur=6;const R=RNG(i*7+1);for(let k=0;k<24;k++){g.beginPath();g.arc(R()*cw,ch*(.55+R()*.45),1+R()*1.5,0,7);g.fill()}g.restore()}})}
 function albumOpen(){let n=Object.keys(S.works).length;let s='<h2>作品帳</h2><p class="sm">描いた窓 '+n+' / 24　・　光苔 '+Object.values(S.works).filter(w=>w.vr).length+' 枚</p><div class="album">'+DAYS.map((d,i)=>{const w=S.works[i];return'<div class="'+(w?(w.vr?'v':''):'no')+'"><canvas data-w="'+i+'" width="180" height="120"></canvas><b>'+(w?GRN[w.g]:'第'+DN[i]+'日')+'</b><br>'+OD[d.od].nm+'</div>'}).join('')+'</div><div class="row"><button class="fd sumi" id="ovX">とじる</button></div>';ovOpen(s);drawThumbs();$('#ovX').onclick=ovClose}
 
+/* ===== とっつきやすさ（仕上げ 2026-09-28）: この回でわかること → れんしゅう（指の手ほどき） → 本編 ===== */
+const INTRO={title:'第13回　くもり窓アトリエ ～湿度～',learn:'湿度＝水蒸気量÷**飽和水蒸気量**×100。\n水を足さなくても **冷やすと湿度が上がる**',how:'**室温の円相を回して** 窓をくもらせ、指で **なぞって** 描く',gesture:'draw'};
+const GTHEME={bg:'#F2F4EE',fg:'#1E2A22',accent:'#4F7942',accentText:'#F2F4EE',font:'"Yuji Syuku","Hiragino Mincho ProN",serif',bodyFont:'"Klee One","Hiragino Maru Gothic ProN",sans-serif',
+ radius:4,texture:'paper',line:'#1E2A22',dim:'rgba(30,42,34,.42)',shadow:'-12px 0 0 #C5CFBF,12px 0 0 #C5CFBF,0 12px 30px rgba(30,42,34,.3)',outline:'#F2F4EE',hand:'#F2F4EE',handLine:'#1E2A22'};
+let HELPC=null;
+function dialPt(T){const d=L.dial,a=gaugeA(Math.max(0,Math.min(35,T))/35);return {x:d.cx+Math.cos(a)*d.r*.88,y:d.cy+Math.sin(a)*d.r*.88,r:Math.max(22,d.r*.2)}}
+function guidePath(){if(!DY||!DY.guide||!DY.guide[0])return null;const G=L.G,st=DY.guide[0],o=[];for(let i=0;i<st.length;i+=Math.max(1,Math.floor(st.length/24)))o.push({x:G.x+st[i][0],y:G.y+st[i][1]});const e=st[st.length-1];o.push({x:G.x+e[0],y:G.y+e[1]});return o}
+function covRate(){if(!DY||!DY.samples.length)return 0;return DY.samples.filter(s=>s.c).length/DY.samples.length}
+function endReplay(){ovClose();DY=null;if(window.Guide)Guide.tutorialEnd();if(S.started)toMap();else toTitle()}
+const PRACTICE={get label(){return wide?'れんしゅう中 ─ 小窓の間':'れんしゅう中'},bandAt:'top',block:true,clearText:'れんしゅうクリア！',
+ start:()=>{const m=PFIRST?'first':'replay';PFIRST=false;ovClose();PAUSED=false;startDay(0,m)},
+ steps:[
+  {gesture:'drag',label:'まわす',target:()=>DY?dialPt(DY.Tset):null,to:()=>dialPt(17),area:()=>({x:L.dial.cx,y:L.dial.cy,r:L.dial.r*1.25}),wait:150,
+   until:()=>{if(!DY||DY.phase!=='set'||Object.keys(PTR).length)return false;const h=Math.round(hum(DY.v,DY.Tset));return h>=DY.d.lo&&h<=DY.d.hi},
+   text:'右の **室温の円相** を回して、**17℃** まで冷やす。水を足さないのに **湿度が上がって** 窓がくもる'},
+  {gesture:'tap',label:'決める',target:'#tGo',until:()=>!!(DY&&DY.phase!=='set'),wait:150,text:'湿度が **注文の帯（緑）** に入った。**決める** を押す'},
+  {gesture:'draw',label:'なぞる',target:()=>{const p=guidePath();return p?{x:p[0].x,y:p[0].y,r:26}:null},path:()=>guidePath()||[],area:()=>({x:L.G.x+L.G.w/2,y:L.G.y+L.G.h/2,w:L.G.w,h:L.G.h}),
+   until:()=>!!(DY&&DY.phase==='draw'&&covRate()>=.7),wait:200,text:'くもった窓の **下絵を指でなぞって** 拭きとる。外の苔の庭がのぞく'},
+  {gesture:'tap',label:'筆をおく',target:'#tDone',until:()=>!!(DY&&(DY.phase==='done')),praise:false,text:'描けたら **筆をおく**'}
+ ]};
+function beginFirst(){if(!window.Guide){startDay(0);return}Guide.intro(INTRO).then(()=>{PFIRST=true;Guide.tutorial(PRACTICE)})}
+if(window.Guide){
+ Guide.setup({theme:GTHEME,title:INTRO.title,learn:INTRO.learn,how:INTRO.how,
+  sfx:k=>{ac();if(k==='step')sfx.ok();else if(k==='done')sfx.kon();else if(k==='clear')sfx.fan();else if(k==='open'||k==='close'||k==='nudge')sfx.tap();else if(k==='cheer')koto(7,0,.16)},
+  muted:()=>!S.snd});
+ HELPC=Guide.help({rules:['**室温の円相** を回す（−／＋でも）→ 湿度が **注文の帯（緑）** に入ったら「決める」','室温を **下げる** と飽和水蒸気量が小さくなり、**湿度が上がる**（水を足さなくても）','くもった窓の **下絵をなぞって** 拭きとる → 線香が燃えつきる前に「筆をおく」','**霧吹き**＝水蒸気 +2.0g／**換気**＝中と外の水蒸気のまん中に','湿度 **95%以上** は水滴が流れて、絵がくずれる'],
+  onOpen:()=>{PAUSED=true},onClose:()=>{PAUSED=false},replay:'tutorial',mount:$('#hudR'),size:46,attention:true,show:false});
+ Guide.tutorialButton('#bHow',()=>{ac();sfx.tap();PFIRST=false;Guide.tutorial(PRACTICE)});
+}else $('#bHow').classList.add('hidden');
+document.addEventListener('pointerdown',e=>{if(e.target&&e.target.closest&&e.target.closest('.fd'))vib(8)},true);
+
 /* ===== 画面の切りかえ ===== */
-function show(m){['title','day','map','test'].forEach(k=>$('#'+k).classList.toggle('hidden',k!==m));$('#hud').classList.toggle('hidden',m==='title'&&!INHUB);$('#roomNm').classList.toggle('hidden',m!=='day');$('#hudR').classList.toggle('hidden',m==='title');
+function show(m){if(m!=='day')document.body.classList.remove('prac');if(HELPC){if(m==='day'||m==='map')HELPC.show();else HELPC.hide()}['title','day','map','test'].forEach(k=>$('#'+k).classList.toggle('hidden',k!==m));$('#hud').classList.toggle('hidden',m==='title'&&!INHUB);$('#roomNm').classList.toggle('hidden',m!=='day');$('#hudR').classList.toggle('hidden',m==='title');
  $('#bBack').textContent=m==='title'?'◀ 一覧へ':'◀ もどる';zkButtons()}
 function ovOpen(h){$('#ovBox').innerHTML=h;$('#ov').classList.remove('hidden');$('#ovBox').scrollTop=0}
-function ovClose(){$('#ov').classList.add('hidden');$('#ovBox').innerHTML=''}
+function ovClose(){$('#ov').classList.add('hidden');$('#ov').classList.remove('top');$('#ovBox').innerHTML=''}
 function toTitle(){ovClose();MODE='title';DY=null;show('title');buildTitle();$('#bCont').classList.toggle('hidden',!S.started);$('#bStart').textContent=S.started?'はじめから':'はじめる'}
 function toMap(){ovClose();MODE='map';DY=null;show('map');buildMap();const n=S.day;$('#bNext').textContent=S.done?'確認テストへ':'次の日へ（第'+DN[Math.min(23,n)]+'日）';const done=Object.keys(S.works).length;$('#mapInfo').innerHTML='苔の道のり　描いた窓 '+done+' / 24'}
 $('#bNext').onclick=()=>{ac();sfx.tap();if(S.done)startTest();else startDay(Math.min(23,S.day))};
 $('#bAlbum').onclick=()=>{ac();sfx.tap();albumOpen()};$('#bGacha').onclick=openGacha;$('#bBook1').onclick=openBook;$('#bBook2').onclick=openBook;
 $('#bSnd').onclick=toggleSnd;$('#bSnd1').onclick=toggleSnd;
-$('#bBack').onclick=()=>{ac();sfx.tap();if(MODE==='title'){try{window.parent.postMessage({type:'rika-close-game'},'*')}catch(e){}return}
+$('#bBack').onclick=()=>{ac();sfx.tap();if(HELPC&&HELPC.isOpen())HELPC.close();if(MODE==='title'){try{window.parent.postMessage({type:'rika-close-game'},'*')}catch(e){}return}
+ if(DY&&DY.practice){ovOpen('<h2>もどりますか？</h2><p>れんしゅうをやめて、'+(S.started?'道のり':'タイトル')+'にもどります。「あそびかた」からいつでもやり直せます。</p><div class="row"><button class="fd" id="bkNo">つづける</button><button class="fd sumi" id="bkGo">もどる</button></div>');$('#ov').classList.add('top');
+  $('#bkNo').onclick=ovClose;$('#bkGo').onclick=()=>{ovClose();PAUSED=false;if(S.started)toMap();else toTitle();if(window.Guide)Guide.tutorialEnd()};return}
  const msg=MODE==='day'?'この日は次に はじめから。描き終えた窓と作品帳は保存されています。':MODE==='test'?'確認テストは次に はじめから。':'進み具合は保存されます。';
- ovOpen('<h2>もどりますか？</h2><p>'+msg+'</p><div class="row"><button class="fd" id="bkNo">つづける</button><button class="fd sumi" id="bkGo">'+(MODE==='day'?'道のりへ':'タイトルへ')+'</button></div>');
+ ovOpen('<h2>もどりますか？</h2><p>'+msg+'</p><div class="row"><button class="fd" id="bkNo">つづける</button><button class="fd sumi" id="bkGo">'+(MODE==='day'?'道のりへ':'タイトルへ')+'</button></div>');$('#ov').classList.add('top');
  $('#bkNo').onclick=ovClose;$('#bkGo').onclick=()=>{ovClose();if(MODE==='day')toMap();else if(TEST_ONLY)startTest();else toTitle()}};
-$('#bStart').onclick=()=>{ac();sfx.tap();const go=()=>{const nm=$('#nameIn').value.trim(),snd=S.snd;S=fresh();S.name=nm;S.snd=snd;S.started=true;save();startDay(0)};
+$('#bStart').onclick=()=>{ac();sfx.tap();const go=()=>{const nm=$('#nameIn').value.trim(),snd=S.snd;S=fresh();S.name=nm;S.snd=snd;S.started=true;save();beginFirst()};
  if(S.started){ovOpen('<h2>はじめからにしますか？</h2><p>作品帳と進み具合が消えます。</p><div class="row"><button class="fd" id="bkNo">やめる</button><button class="fd sumi" id="bkGo">はじめから</button></div>');$('#bkNo').onclick=ovClose;$('#bkGo').onclick=()=>{ovClose();go()}}else go()};
 $('#bCont').onclick=()=>{ac();sfx.tap();const v=$('#nameIn').value.trim();if(v)S.name=v;save();toMap()};
 
@@ -2581,17 +2637,27 @@ cv.addEventListener('pointerup',pup);cv.addEventListener('pointercancel',pup);
 addEventListener('keydown',e=>{if(MODE!=='day'||!DY)return;if(e.key==='ArrowLeft'||e.key==='ArrowDown'){if(dialEnabled())setDial(DY.Tset-1)}else if(e.key==='ArrowRight'||e.key==='ArrowUp'){if(dialEnabled())setDial(DY.Tset+1)}else if(e.key==='Enter'||e.key===' '){if(DY.phase==='set')commit()}});
 
 /* ===== 演出 ===== */
+/* 仕上げ（2026-09-28）: 揺れ・苔のフラッシュ・振動・なぞるたびの琴・一発の連続 */
+const STREAK=[3,5,10,15,20];
+function vib(p){try{navigator.vibrate&&navigator.vibrate(p)}catch(e){}}
+function shake(a){if(RM||!cv.animate)return;const k=[];for(let i=0;i<7;i++){const d=a*(1-i/7);k.push({transform:'translate('+((Math.random()-.5)*2*d).toFixed(1)+'px,'+((Math.random()-.5)*2*d).toFixed(1)+'px)'})}k.push({transform:'none'});cv.animate(k,{duration:360,easing:'ease-out'})}
+function flash(a){const f=$('#flash');if(!f||!f.animate)return;f.animate([{opacity:0},{opacity:RM?.3*a:a,offset:.16},{opacity:0}],{duration:RM?300:620,easing:'ease-out'})}
+function brushHit(s){if(!DY)return;const G=L.G;if(s.y/G.h<fogTop(s.x/G.w))return;DY.covN++;const n=DY.samples.length||1,pc=DY.covN/n;
+ if(!RM)for(let i=0;i<3;i++)PT.push({x:G.x+s.x,y:G.y+s.y,vx:(Math.random()-.5)*90,vy:-20-Math.random()*70,life:.7+Math.random()*.4,t:0,r:1.4+Math.random()*2,c:'rgba(160,210,110,.95)',glow:1});
+ const now=performance.now();if(now-DY.lastNote>70){DY.lastNote=now;koto(Math.min(9,Math.floor(pc*10)),0,.12)}
+ const M=[.25,.5,.75,.95];if(DY.mile<M.length&&pc>=M[DY.mile]){const m=M[DY.mile];DY.mile++;pop(m>=.95?'一筆 通った！':Math.round(m*100)+'%',G.x+s.x,G.y+s.y-40,'g'+(m>=.95?' big':''));flash(m>=.95?.9:.4);vib(m>=.95?[18,30,28]:14);if(m>=.95){sfx.fan();inkBurst(G.x+s.x,G.y+s.y,RM?8:36,true)}}}
 function pop(t,x,y,cls){const d=document.createElement('div');d.className='pop '+(cls||'');d.innerHTML=t;d.style.left=Math.max(80,Math.min(W-80,x))+'px';d.style.top=y+'px';$('#pops').appendChild(d);setTimeout(()=>d.remove(),2300)}
 function inkBurst(x,y,n,green){if(RM)n=Math.min(n,6);for(let i=0;i<n;i++){const a=Math.random()*Math.PI*2,s=60+Math.random()*220;PT.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:.8+Math.random()*.6,t:0,r:2+Math.random()*5,c:green&&i%2?moss(.9):ink(.85)})}}
 function sprayFx(){const G=L.G;for(let i=0;i<40;i++)PT.push({x:G.x+G.w*(.3+Math.random()*.4),y:G.y+G.h*(.3+Math.random()*.5),vx:(Math.random()-.5)*80,vy:(Math.random()-.5)*80,life:.7+Math.random()*.5,t:0,r:1+Math.random()*2,c:'rgba(255,255,255,.95)'})}
 function sporeBurst(){const G=L.G;for(let i=0;i<(RM?10:70);i++)PT.push({x:G.x+Math.random()*G.w,y:G.y+G.h*(.5+Math.random()*.5),vx:(Math.random()-.5)*30,vy:-30-Math.random()*90,life:1.6+Math.random()*1.4,t:0,r:1.5+Math.random()*2.5,c:'rgba(200,240,130,.95)',glow:1})}
 
 /* ===== 更新 ===== */
-function update(dt){tt+=dt;if(MODE==='title'){titleT=Math.min(1,titleT+dt/(RM?.2:2.4));return}
+function update(dt){if(PAUSED)return;tt+=dt;if(MODE==='title'){titleT=Math.min(1,titleT+dt/(RM?.2:2.4));return}
  if(MODE!=='day'||!DY)return;S.t+=dt;const d=DY.d;
  if(DY.phase==='anim'){const a=DY.anim;a.t+=dt;const k=Math.min(1,a.t/a.dur),e=k<.5?2*k*k:1-Math.pow(-2*k+2,2)/2;DY.T=a.T0+(a.T1-a.T0)*e;DY.v=a.v0+(a.v1-a.v0)*e;updCond();if(k>=1){DY.T=a.T1;DY.v=a.v1;DY.anim=null;judge()}}
  else if(DY.phase==='set'&&DY.r.meter==='live'){DY.T+=(DY.Tset-DY.T)*Math.min(1,dt*7);if(Math.abs(DY.T-DY.Tset)<.02)DY.T=DY.Tset;updCond()}
  else if(DY.phase==='draw'){if(!DY.started&&DY.dt===0&&!DY.w8)DY.w8=0;DY.w8=(DY.w8||0)+dt;if(DY.started||DY.w8>3)DY.dt+=dt;const t=Math.min(1,DY.dt/DY.dur);
+  if(DY.practice&&DY.dt>DY.dur*.9)DY.dt=DY.dur*.9;
   if(d.drift){const off=d.drift==='n'?-3*t:3*Math.sin(Math.PI*1.5*t);DY.off=off;const target=DY.Tset+off;DY.T+=(target-DY.T)*Math.min(1,dt*5);const hh=Math.round(curH());DY.tot+=dt;if(hh>=d.lo&&hh<=d.hi)DY.inb+=dt;updCond()}
   if(DY.dt>=DY.dur)finishDraw()}
  if(DY.r.boss&&DY.phase==='set'){DY.setT+=dt;if(DY.setT>=45){DY.setT=0;hint('線香が燃えつきた。もう一度、はじめから考えよう。',5000);sfx.bad();DY.T=d.T0;DY.Tset=d.T0;DY.v=d.v;DY.plan={mist:0,vent:0};DY.first=false;updTools();updCond()}}
@@ -2686,7 +2752,7 @@ setSnd();if(window.PLAYER_NAME){$('#nameIn').value=window.PLAYER_NAME;$('#nameRo
 resize();
 if(TEST_ONLY)startTest();else toTitle();
 if(document.fonts&&document.fonts.load){Promise.all([document.fonts.load('40px "Yuji Syuku"'),document.fonts.load('16px "Klee One"')]).then(()=>{if(MODE==='title'&&TT)drawTitleMask();if(MODE==='day'){ENSO_M=ENSO_M}}).catch(()=>{})}
-window.__game={S:()=>S,DY:()=>DY,DAYS,SAT,ROOMS,startDay,commit,setT:v=>{if(DY){DY.Tset=v}},plan:(m,v)=>{if(DY){DY.plan={mist:m,vent:v}}},mistLive:()=>$('#tMist').click(),
+window.__game={L:()=>L,dialPt,guidePath,covRate,S:()=>S,DY:()=>DY,DAYS,SAT,ROOMS,startDay,commit,setT:v=>{if(DY){DY.Tset=v}},plan:(m,v)=>{if(DY){DY.plan={mist:m,vent:v}}},mistLive:()=>$('#tMist').click(),
  autoDraw:(frac)=>{if(!DY||DY.phase!=='draw')return;frac=frac==null?1:frac;DY.started=true;DY.guide.forEach(st=>{let px=null,py=null;const n=Math.floor(st.length*frac);for(let i=0;i<n;i++){const x=L.G.x+st[i][0],y=L.G.y+st[i][1];wipeAt(x,y,px,py);px=x;py=y}DY.curS=null})},
  finish:finishDraw,next:()=>{const b=$('#rNext');if(b)b.click()},mode:()=>MODE,phase:()=>DY&&DY.phase,toMap,startTest,step:dt=>update(dt)};
 requestAnimationFrame(loop);

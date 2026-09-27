@@ -35,6 +35,7 @@
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;height:100%;overflow:hidden;background:#0d0d0d;color:var(--w);font-family:var(--f);-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 #app{position:fixed;inset:0;overflow:hidden}
+
 #cv{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
 .hidden{display:none!important}
 .scr{position:absolute;inset:0;pointer-events:none}
@@ -135,6 +136,18 @@ body:not(.wide) #locNm{display:none}
 .pop small{display:block;font-size:15px;font-weight:600;color:var(--g)}.pop.g{color:var(--g)}.pop.big{font-size:40px}
 @keyframes pup{0%{opacity:0;transform:translate(-50%,-50%) scale(1.4)}10%{opacity:1;transform:translate(-50%,-50%) scale(1)}80%{opacity:1}100%{opacity:0}}
 @media (prefers-reduced-motion:reduce){.pop{animation:pf 2s forwards}@keyframes pf{0%,80%{opacity:1}100%{opacity:0}}}
+/* 仕上げ（2026-09-28）: もどる・音はれんしゅう中も一番上／マグネシウムの閃光／★のドン */
+#bBack{z-index:2147482640}
+#hudR{z-index:2147482640}
+#ov.top{z-index:2147482660}
+/* #app が fixed だと重なりの箱ができて、もどる・確認の札が手ほどきの吹き出しの下にもぐるので absolute にする（見た目は同じ） */
+#app{position:absolute}
+#flash{position:absolute;inset:0;pointer-events:none;z-index:34;opacity:0;background:radial-gradient(ellipse at 50% 40%,rgba(255,250,235,.85),rgba(242,193,78,.25) 50%,rgba(0,0,0,0) 80%)}
+.stars i.on{display:inline-block;animation:stampIn .42s cubic-bezier(.3,1.7,.5,1) both}
+@keyframes stampIn{0%{transform:scale(2.8) rotate(-18deg);opacity:0}55%{transform:scale(.85) rotate(4deg);opacity:1}100%{transform:scale(1)}}
+body.prac:not(.wide) #kk{visibility:hidden}
+body:has(.gd-band) #locNm{visibility:hidden}
+@media (prefers-reduced-motion:reduce){.stars i.on{animation:none}}
 </style></head><body>
 <div id="app">
  <canvas id="cv"></canvas>
@@ -145,7 +158,7 @@ body:not(.wide) #locNm{display:none}
    <div class="namestrip pe" id="nameRow"><b>写真師</b><input id="nameIn" maxlength="16" placeholder="なまえ（空でも遊べる）" autocomplete="off"></div>
    <button class="ic gold big" id="bStart">撮影の旅に出る</button>
    <button class="ic big hidden" id="bCont">つづきから</button>
-   <div class="trow"><button class="ic s" id="bSnd1">音　あり</button><button class="ic s zk" id="bBook1">📖 図鑑</button></div>
+   <div class="trow"><button class="ic s" id="bHow">あそびかた</button><button class="ic s" id="bSnd1">音　あり</button><button class="ic s zk" id="bBook1">📖 図鑑</button></div>
   </div>
  </div>
 
@@ -169,11 +182,12 @@ body:not(.wide) #locNm{display:none}
  <div id="test" class="scr hidden"><div class="card" id="tbox"></div></div>
 
  <div id="hud" class="hidden">
-  <button class="ic" id="bBack">◀ もどる</button>
+  <button class="ic" id="bBack" data-gd-pass>◀ もどる</button>
   <div id="locNm"></div>
-  <div id="hudR"><div id="kk"><svg viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="17" rx="2" fill="none" stroke="#F2C14E" stroke-width="2"/><rect x="8" y="1.5" width="8" height="3" fill="#F2C14E"/><path d="M8 9h8M8 13h8M8 17h8" stroke="#E5E5E5" stroke-width="1.2"/></svg><span id="kkN">0</span></div><button class="ic sq" id="bSnd">音</button></div>
+  <div id="hudR"><div id="kk"><svg viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="17" rx="2" fill="none" stroke="#F2C14E" stroke-width="2"/><rect x="8" y="1.5" width="8" height="3" fill="#F2C14E"/><path d="M8 9h8M8 13h8M8 17h8" stroke="#E5E5E5" stroke-width="1.2"/></svg><span id="kkN">0</span></div><button class="ic sq" id="bSnd" data-gd-pass>音</button></div>
  </div>
- <div id="ov" class="hidden"><div class="card" id="ovBox"></div></div>
+ <div id="ov" class="hidden" data-gd-pass><div class="card" id="ovBox"></div></div>
+ <div id="flash"></div>
  <div id="pops"></div>
 </div>
 
@@ -1471,6 +1485,9 @@ window.ZUKAN_CARDS={"v": 1, "grade": "chu2", "name": "中2理科図鑑", "econom
       if(PASS_RE.test(String(t.id||''))||PASS_RE.test(typeof t.className==='string'?t.className:''))return true;
       if((t.tagName==='BUTTON'||t.tagName==='A'||t.getAttribute('role')==='button')&&/^\s*[◀←＜<]?\s*(もどる|戻る|一覧へ|とじる|閉じる|はい|いいえ|やめる|キャンセル|おと|音)/.test(t.textContent||''))return true}
       t=t.parentNode}return false}
+  /* 手ほどき中は、もどる等（passThru に当たる fixed/absolute のボタン）を暗幕・吹き出しより上へ出す。終わったら元に戻す */
+  function liftPass(){var out=[];try{var els=document.querySelectorAll('button,a,[role=button],[data-gd-pass]');for(var i=0;i<els.length;i++){var e=els[i];if(e.closest&&e.closest('.gd-root'))continue;if(e.classList&&e.classList.contains('gd-hbtn'))continue;if(!passThru(e))continue;var cs=getComputedStyle(e);if(cs.position!=='fixed'&&cs.position!=='absolute')continue;if(cs.display==='none'||cs.visibility==='hidden')continue;out.push([e,e.style.zIndex]);e.style.zIndex=String(Z+1)}}catch(_){}
+    return function(){for(var i=0;i<out.length;i++){out[i][0].style.zIndex=out[i][1]}}}
   function inGuide(t){if(passThru(t))return true;while(t&&t!==document){if(t.classList&&(t.classList.contains('gd-root')||t.classList.contains('gd-hbtn')))return true;t=t.parentNode}return false}
   function hexRGB(c){c=String(c||'').trim();var m;
     if((m=c.match(/^#([0-9a-f]{3})$/i)))return [0,1,2].map(function(i){return parseInt(m[1][i]+m[1][i],16)});
@@ -1811,7 +1828,7 @@ window.ZUKAN_CARDS={"v": 1, "grade": "chu2", "name": "中2理科図鑑", "econom
     if(!steps||!steps.length){resolveP({done:true,steps:0});return p}
     if(opt.key&&!opt.force&&sget('coach:'+opt.key)){resolveP({already:true});return p}
 
-    var root=mkRoot('gd-coach',opt.theme);root.setAttribute('aria-live','polite');
+    var root=mkRoot('gd-coach',opt.theme);root.setAttribute('aria-live','polite');var unlift=liftPass();
     var uid='gdm'+Math.random().toString(36).slice(2,8);
     root.innerHTML='<svg class="dim" aria-hidden="true"><defs><mask id="'+uid+'" maskUnits="userSpaceOnUse"><rect x="-10" y="-10" width="200%" height="200%" fill="#fff"/><g class="holes"></g></mask></defs>'+
       '<rect class="shade" x="-10" y="-10" width="200%" height="200%" style="fill:var(--gd-dim)" mask="url(#'+uid+')"/><g class="halos"></g><path class="arw"/><path class="arh"/><circle class="dest" r="0"/></svg>';
@@ -1859,6 +1876,7 @@ window.ZUKAN_CARDS={"v": 1, "grade": "chu2", "name": "中2理科図鑑", "econom
     };
     st.finish=function(res){
       if(st.finished)return;st.finished=true;
+      try{unlift()}catch(_){}
       if(st.evOff)st.evOff();
       delTick(tick);popLayer(layer);offPtr();window.removeEventListener('resize',onRs);
       if(res.done&&opt.key)sset('coach:'+opt.key,'1');
@@ -2310,12 +2328,12 @@ function resize(){const r=$('#app').getBoundingClientRect();W=Math.max(300,r.wid
 function titleLayout(){L.vf={x:0,y:0,w:W,h:H};scK='';buildScene(0,1)}
 
 /* ===== 夜の進行 ===== */
-let MODE='title',NT=null,tt=0,flashA=0,FF=false;const PT=[];
-function startNight(i){ac();if(i>=NIGHTS.length){toMap();return}const c=NIGHTS[i],lc=LOCS[c.l];
- NT={i,c,lc,t:0,phase:'card',pins:c.tg.map(()=>null),sel:0,shots:c.tg.map(()=>null),morn:null,skipped:false,endT:null,pinOK:false};
- MODE='night';S.n=i;S.started=true;save();show('night');layout();buildScene(lc.sc);$('#locNm').innerHTML=lc.nm+'<small>第'+KAN[i]+'夜</small>';renderCard();renderCtl();sfx.tap()}
+let MODE='title',NT=null,tt=0,flashA=0,FF=false,PAUSED=false,PFIRST=false;const PT=[];
+function startNight(i,pr){ac();if(i>=NIGHTS.length){toMap();return}const c=NIGHTS[i],lc=LOCS[c.l];
+ NT={i,c,lc,t:0,phase:'card',pins:c.tg.map(()=>null),sel:0,shots:c.tg.map(()=>null),morn:null,skipped:false,endT:null,pinOK:false,practice:pr||null};
+ MODE='night';document.body.classList.toggle('prac',!!pr);if(pr!=='replay'){S.n=i;S.started=true;save()}show('night');layout();buildScene(lc.sc);$('#locNm').innerHTML=lc.nm+'<small>第'+KAN[i]+'夜</small>';renderCard();renderCtl();sfx.tap()}
 function tgts(){return NT.c.spot?[NT.c.tg[NT.sel]]:NT.c.tg}
-function needPin(){return !NT.c.tut}
+function needPin(){return !NT.c.tut||!!NT.practice}
 function renderCard(){const c=NT.c,lc=NT.lc,i=NT.i;let s='<div class="card"><h2><small>第'+KAN[i]+'夜</small>'+lc.nm+'</h2>';
  if(c.tut)s+='<p style="text-align:center">夜のあいだに地面の近くの空気が冷え、<br>気温が<b class="gold">露点</b>まで下がると、霧がわく。</p>';
  const rec=t=>{let r='<div class="rec">'+(t.nm?'<span class="gd">【'+t.nm+'】</span><br>':'')+(c.g3?'気温　18時 <b>'+t.T+'</b>℃ → 19時 <b>'+Math.round((t.T-t.sky[0][1])*10)/10+'</b>℃ → 20時 <b>'+Math.round((t.T-2*t.sky[0][1])*10)/10+'</b>℃':'18時の気温 <b>'+t.T+'</b>℃')+'<br>'+(lc.showTd||t.H==null?'露点 <b class="gd">'+t.Td+'</b>℃':'18時の湿度 <b>'+t.H+'</b>%　<span class="sm">（露点は表で）</span>')+'<br>';
@@ -2323,7 +2341,7 @@ function renderCard(){const c=NT.c,lc=NT.lc,i=NT.i;let s='<div class="card"><h2>
  if(c.spot){s+='<p class="sm">注文：<b class="gold">22時までに</b>わく「宵の霧」を撮れ。カメラは1台。どこに構える？</p><div class="spots">'+c.tg.map((t,k)=>'<button data-s="'+k+'" class="'+(NT.sel===k?'on':'')+'">'+t.nm+'</button>').join('')+'</div>'+c.tg.map(rec).join('')}
  else s+=c.tg.map(rec).join('');
  if(c.boss)s+='<p class="sm">3つの谷に1台ずつカメラ。<b class="gold">A・B・C</b>それぞれ霧がわく時刻にピンを置き、3つのシャッターを切る。</p>';
- if(needPin())s+='<p>下のフィルムの時間帯に<b class="gold">金のピン</b>を置こう（霧がわき始める時刻。出ないと思えば右はしの「出ない」へ）。</p>';else s+='<p>霧がわき始めたら、<b class="gold">シャッター</b>。早すぎると霧はまだ無く、遅すぎると真っ白。</p>';
+ if(NT.practice)s+='<p>下のフィルムの時間帯に<b class="gold">金のピン</b>を置いてから、夜を回そう。</p>';else if(needPin())s+='<p>下のフィルムの時間帯に<b class="gold">金のピン</b>を置こう（霧がわき始める時刻。出ないと思えば右はしの「出ない」へ）。</p>';else s+='<p>霧がわき始めたら、<b class="gold">シャッター</b>。早すぎると霧はまだ無く、遅すぎると真っ白。</p>';
  s+='<div class="row">'+(lc.showTd?'':'<button class="ic s" id="cTbl">飽和水蒸気量の表</button>')+'<button class="ic gold big" id="cGo">夜を回す ▶</button></div></div>';
  $('#card').innerHTML=s;$('#card').classList.remove('hidden');$('#card').scrollTop=0;
  document.querySelectorAll('.spots button').forEach(b=>b.onclick=()=>{NT.sel=+b.dataset.s;NT.pins=NT.c.tg.map(()=>null);S.dec=(S.dec||0)+1;sfx.tap();renderCard()});
@@ -2331,16 +2349,17 @@ function renderCard(){const c=NT.c,lc=NT.lc,i=NT.i;let s='<div class="card"><h2>
 function updGo(){const b=$('#cGo');if(!b)return;const ok=!needPin()||tgts().every((_,k)=>NT.pins[NT.c.spot?NT.sel:k]!=null);b.disabled=!ok;b.textContent=ok?'夜を回す ▶':'ピンを置こう'}
 function openTable(){let s='<h2>飽和水蒸気量の表</h2><p class="sm">空気1m³中にふくむことのできる水蒸気の最大の量（g/m³）。<br>水蒸気量＝その気温の飽和水蒸気量×湿度。その水蒸気量が飽和水蒸気量になる気温が露点。</p><div class="tbl">';for(let t=0;t<=30;t++)s+='<div><span>'+t+'℃</span><b>'+SAT[t].toFixed(1)+'</b></div>';s+='</div><div class="row"><button class="ic gold" id="ovX">とじる</button></div>';ovOpen(s);$('#ovX').onclick=ovClose}
 function goNight(){if(!NT||NT.phase!=='card')return;ac();$('#card').classList.add('hidden');NT.phase='night';NT.t=0;
- tgts().forEach((tg,k)=>{const pk=NT.c.spot?NT.sel:k,p=NT.pins[pk];if(p!=null){const hit=(tg.t0==null&&p>=12)||(tg.t0!=null&&p<12&&Math.abs(p-tg.t0)<=.5);if(hit){S.pinHit++;earn(10,'hit','pin'+NT.i+'_'+k,W/2,H*.3);pop('予想ピン、よし',L.tl.x+L.tl.w*p/13.5,L.tl.y-20,'g')}}});renderCtl();save()}
+ tgts().forEach((tg,k)=>{const pk=NT.c.spot?NT.sel:k,p=NT.pins[pk];if(p!=null){const hit=(tg.t0==null&&p>=12)||(tg.t0!=null&&p<12&&Math.abs(p-tg.t0)<=.5);if(hit){if(NT.practice!=='replay'){S.pinHit++;earn(10,'hit','pin'+NT.i+'_'+k,W/2,H*.3)}pop('予想ピン、よし',L.tl.x+L.tl.w*p/13.5,L.tl.y-20,'g big');flash(.55);vib(20);sfx.good();for(let i=0;i<(RM?4:20);i++)PT.push({x:tlX(p>=12?0:p),y:L.tl.y,vx:(Math.random()-.5)*260,vy:-60-Math.random()*200,life:.8,t:0,r:1.5+Math.random()*2.5})}}});renderCtl();save()}
 function renderCtl(){const c=NT.c,boss=!!c.boss;const sh=$('#shuts');sh.innerHTML=boss?c.tg.map((t,k)=>'<button class="shut sm3" data-k="'+k+'">'+t.nm.slice(-1)+'<small>シャッター</small></button>').join(''):'<button class="shut" data-k="0">シャッター<small>1枚だけ</small></button>';
  sh.style.display='flex';sh.style.gap='8px';sh.querySelectorAll('.shut').forEach(b=>b.onclick=()=>shoot(+b.dataset.k));updCtl()}
 function updCtl(){if(!NT)return;const nightOn=NT.phase==='night';$('#bFF').disabled=!nightOn;$('#bSkip').disabled=!nightOn||NT.t>=12||tgts().some((_,k)=>NT.shots[k]!=null)||NT.skipped;
  document.querySelectorAll('.shut').forEach(b=>{const k=+b.dataset.k,taken=NT.shots[k]!=null;const mornOK=NT.c.morn&&taken&&NT.morn==null&&NT.t>=11.5;b.disabled=!nightOn||(taken&&!mornOK);b.innerHTML=(NT.c.boss?NT.c.tg[k].nm.slice(-1):mornOK?'朝の霧晴れ':'シャッター')+'<small>'+(taken&&!mornOK?'撮った':mornOK?'もう1枚':NT.c.boss?'':'1枚だけ')+'</small>'})}
 function shoot(k){if(!NT||NT.phase!=='night')return;ac();const tgList=tgts(),tg=tgList[k];if(!tg)return;
+ if(NT.practice&&NT.shots[k]==null&&tg.t0!=null&&NT.t<tg.t0+.05){sfx.tap();pop('まだ霧がない！<small>谷底が白くなるまで待とう</small>',L.vf.x+L.vf.w/2,L.vf.y+L.vf.h*.35,'');return}
  if(NT.shots[k]!=null){if(NT.c.morn&&NT.morn==null&&NT.t>=11.5){NT.morn={t:NT.t,fd:fogAt(tg,NT.t)};sfx.shut();flashA=RM?.3:.9;S.shots++;S.dec=(S.dec||0)+1;updCtl();if(allDone())NT.endT=NT.t+.4}return}
  NT.shots[k]={t:NT.t,fd:fogAt(tg,NT.t)};S.shots++;S.dec=(S.dec||0)+1;sfx.shut();setTimeout(sfx.flash,70);flashA=RM?.4:1;
  const x=L.vf.x+L.vf.w*((tg.x?(tg.x[0]+tg.x[1])/2:.5));for(let i=0;i<(RM?4:24);i++)PT.push({x,y:L.vf.y+L.vf.h*.5,vx:(Math.random()-.5)*300,vy:(Math.random()-.5)*300,life:.6,t:0,r:1+Math.random()*2.5});
- pop('カシャッ',x,L.vf.y+L.vf.h*.3,'');updCtl();if(allDone())NT.endT=NT.t+(NT.c.morn&&NT.morn==null?99:.5)}
+ pop('カシャッ',x,L.vf.y+L.vf.h*.3,'big');shake(9);flash(1);vib([20,30,40]);updCtl();if(allDone())NT.endT=NT.t+(NT.c.morn&&NT.morn==null?99:.5)}
 function allDone(){const ok=tgts().every((_,k)=>NT.shots[k]!=null);return ok&&(!NT.c.morn||NT.morn!=null)}
 $('#bSkip').onclick=()=>{if(!NT||NT.phase!=='night'||NT.t>=12)return;ac();NT.skipped=true;S.dec=(S.dec||0)+1;sfx.tap();NT.endT=null;NT.skipFast=true;updCtl()};
 const ffOn=v=>{FF=v;$('#bFF').classList.toggle('gold',v)};
@@ -2361,8 +2380,9 @@ cv.addEventListener('pointermove',e=>{if(pinDrag&&pinDrag.id===e.pointerId)setPi
 function setPin(x){const v=tlT(x);if(NT.pins[pinDrag.k]!==v){NT.pins[pinDrag.k]=v>=12.01?99:v;updGo()}}
 
 /* ===== 更新 ===== */
-function update(dt){tt+=dt;flashA=Math.max(0,flashA-dt*2.2);if(MODE!=='night'||!NT)return;S.t+=dt;
+function update(dt){if(PAUSED)return;tt+=dt;flashA=Math.max(0,flashA-dt*2.2);if(MODE!=='night'||!NT)return;S.t+=dt;
  if(NT.phase==='night'){let sp=1/2.0;const alld=tgts().every((_,k)=>NT.shots[k]!=null);if(FF)sp*=5;if(alld&&NT.c.morn&&NT.morn==null&&NT.t<11.4)sp=Math.max(sp,4);if(NT.skipFast)sp=6;if(NT.c.tut&&!alld&&!FF)sp*=.8;
+  if(NT.practice){const tg=tgts()[0];if(tg.t0!=null&&NT.shots[0]==null){if(FF&&NT.t>=tg.t0-.35)ffOn(false);if(NT.t>tg.t0)sp*=.35;if(NT.t>tg.t0+.55)sp=0}}
   NT.t+=dt*sp;if(on()){songT-=dt*(FF?2:1);if(songT<=0){songT=.34;piano(SONG[songI%SONG.length],0,.05);if(songI%4===0)piano(SONG[songI%SONG.length]-12,0,.05);songI++}}
   if(NT.endT!=null&&NT.t>=NT.endT)endNight();else if(NT.t>=TLMAX)endNight();else if(NT.skipFast&&NT.t>=12.2)endNight();updCtl()}}
 function endNight(){if(NT.phase!=='night')return;NT.phase='end';FF=false;updCtl();setTimeout(develop,RM?100:500)}
@@ -2370,19 +2390,21 @@ function endNight(){if(NT.phase!=='night')return;NT.phase='end';FF=false;updCtl(
 /* ===== 採点・現像 ===== */
 function grade(tg,sh){if(!sh)return{st:0,why:'none'};if(tg.t0==null)return{st:0,why:'nofog'};const ideal=tg.t0+1/3,err=Math.round(Math.abs(sh.t-ideal)*60);
  if(sh.t<tg.t0)return{st:0,why:'early',m:Math.round((tg.t0-sh.t)*60)};const st=err<=15?3:err<=35?2:err<=60?1:0;return{st,why:st?'ok':'late',m:Math.round((sh.t-ideal)*60),err}}
-function develop(){const c=NT.c,list=tgts();const res=list.map((tg,k)=>Object.assign({tg,sh:NT.shots[k]},grade(tg,NT.shots[k])));
+function develop(){const c=NT.c,list=tgts();const res=list.map((tg,k)=>Object.assign({tg,sh:NT.shots[k]},grade(tg,NT.shots[k])));const REC=NT.practice!=='replay';if(NT.practice)res.forEach(r=>{if(r.sh&&r.st<1)r.st=1});
  const nofogNight=list.every(tg=>tg.t0==null);let ok;
- if(nofogNight){ok=NT.skipped||res.every(r=>!r.sh);if(NT.skipped){if(!S.skipOK){S.skipOK=true}earn(30,'rule','skip',W/2,H*.3)}}
+ if(nofogNight){ok=NT.skipped||res.every(r=>!r.sh);if(NT.skipped&&REC){if(!S.skipOK){S.skipOK=true}earn(30,'rule','skip',W/2,H*.3)}}
  else ok=res.every(r=>r.st>=1);
  if(c.spot&&ok){const r=res[0];if(r.sh&&r.sh.t>c.dead){r.late22=true;r.st=Math.min(r.st,1)}}
- res.forEach((r,k)=>{if(r.st===3)earn(10,'first-try','f3_'+NT.i+'_'+k,W/2,H*.35)});if(NT.i===0&&ok)earn(30,'rule','r1',W/2,H*.4);
- const key=NT.i;res.forEach((r,k)=>{const kk=key+'_'+k;if(r.st>0&&(!S.best[kk]||S.best[kk].st<r.st))S.best[kk]={st:r.st,fd:r.sh.fd,t:r.sh.t,sel:c.spot?NT.sel:k}});
- let mornOK=false;if(NT.morn&&NT.morn.fd>=.2&&NT.morn.fd<=.85){mornOK=true;S.morn[key]={fd:NT.morn.fd}}
- if(ok&&S.n<=NT.i)S.n=NT.i+1;if(!ok)S.tries++;save();
+ const key=NT.i;let mornOK=false;if(NT.morn&&NT.morn.fd>=.2&&NT.morn.fd<=.85)mornOK=true;
+ if(REC){res.forEach((r,k)=>{if(r.st===3)earn(10,'first-try','f3_'+NT.i+'_'+k,W/2,H*.35)});if(NT.i===0&&ok)earn(30,'rule','r1',W/2,H*.4);
+ res.forEach((r,k)=>{const kk=key+'_'+k;if(r.st>0&&(!S.best[kk]||S.best[kk].st<r.st))S.best[kk]={st:r.st,fd:r.sh.fd,t:r.sh.t,sel:c.spot?NT.sel:k}});
+ if(mornOK)S.morn[key]={fd:NT.morn.fd};
+ if(ok&&S.n<=NT.i)S.n=NT.i+1;if(!ok)S.tries++;save()}
+ const best=Math.max(0,...res.map(r=>r.st||0));let streakMsg='';if(REC&&!nofogNight){const was=S.streak||0;if(ok&&best>=3){S.streak=was+1;if(S.streak>=2)streakMsg='傑作 '+S.streak+'枚れんぞく！'}else{S.streak=0;if(was>=2){const nx=STREAK.find(m=>m>was);streakMsg=nx&&nx-was===1?'あと1枚で 傑作 '+nx+'枚れんぞく だった！':'傑作 '+was+'枚れんぞく でストップ'}}save()}
  const lc=NT.lc;let s='<h2><small>暗室にて ─ 第'+KAN[NT.i]+'夜</small>'+lc.nm+'</h2>';
  const shotCount=res.filter(r=>r.sh).length+(NT.morn?1:0);
  if(shotCount){s+='<div class="photos">'+res.map((r,k)=>r.sh?'<canvas class="photo" data-p="'+k+'" width="480" height="320"></canvas>':'').join('')+(NT.morn?'<canvas class="photo" data-p="m" width="480" height="320"></canvas>':'')+'</div>'}
- res.forEach((r,k)=>{const nm=r.tg.nm?'【'+r.tg.nm+'】':'';if(r.tg.t0!=null)s+='<div class="stars">'+[0,1,2].map(j=>'<i class="'+(j<r.st?'on':'')+'">★</i>').join('')+'</div>';
+ res.forEach((r,k)=>{const nm=r.tg.nm?'【'+r.tg.nm+'】':'';if(r.tg.t0!=null)s+='<div class="stars">'+[0,1,2].map(j=>'<i class="'+(j<r.st?'on':'')+'" style="animation-delay:'+(1.2+j*.38+k*1.2).toFixed(2)+'s">★</i>').join('')+'</div>';
   const V=r.why==='nofog'?(NT.skipped?'霧の出ない夜を見抜いた':'霧は出なかった'):r.why==='none'?(r.tg.t0==null?(NT.skipped?'霧の出ない夜を見抜いた':'撮らずに夜明け'):'シャッターを切らなかった'):r.why==='early'?'早すぎた ─ まだ霧がない':r.why==='late'?'遅すぎた ─ 真っ白':r.st===3?'傑作 ─ 霧がわき上がる瞬間':r.st===2?'いい写真':'写った';
   s+='<div class="verdict">'+nm+V+(r.late22?'（でも22時を過ぎた）':'')+'</div>';
   const tg=r.tg;let tr='18時 気温'+tg.T+'℃・露点'+tg.Td+'℃';
@@ -2394,7 +2416,12 @@ function develop(){const c=NT.c,list=tgts();const res=list.map((tg,k)=>Object.as
  if(NT.morn)s+='<p class="sm">朝の1枚：'+(mornOK?'日がのぼって気温が露点より上がり、霧が消えていく瞬間が撮れた。':'霧晴れの瞬間ではなかった（霧がまだ濃い／もう消えていた）。')+'</p>';
  const last=NT.i===NIGHTS.length-1;
  s+='<div class="row">'+(ok?'':'<button class="ic" id="rAgain">↺ もう一度この夜</button>')+(ok?'<button class="ic gold big" id="rNext">'+(last?'旅の終わりへ':'次の夜へ')+'</button>':'')+(ok?'':'<button class="ic s" id="rMap">撮影行の地図へ</button>')+'</div>';
+ if(NT.practice==='replay')s=s.replace(/<div class="row">[\s\S]*<\/div>$/,'<div class="row"><button class="ic gold big" id="rEnd">れんしゅう おわり</button></div>');
  ovOpen(s);drawDevPhotos(res);if(ok){setTimeout(()=>res.some(r=>r.st===3)?sfx.great():sfx.good(),300)}else setTimeout(sfx.bad,300);
+ res.forEach((r,k)=>{for(let j=0;j<(r.st||0);j++)setTimeout(()=>{thump(j);vib(18)},1200+j*380+k*1200)});
+ if(ok&&window.Guide&&!NT.practice){const t3=res.some(r=>r.st===3);setTimeout(()=>Guide.celebrate(t3?'傑作！':nofogNight?'見抜いた！':'写った！',{y:H*.12}),1300+best*380)}
+ if(streakMsg)setTimeout(()=>pop(streakMsg,W/2,H*.2,'g'),2400);
+ if($('#rEnd')){$('#rEnd').onclick=()=>{ovClose();endReplay()};return}
  if($('#rAgain'))$('#rAgain').onclick=()=>{ovClose();startNight(NT.i)};if($('#rMap'))$('#rMap').onclick=()=>{ovClose();toMap()};
  if($('#rNext'))$('#rNext').onclick=()=>{ovClose();if(last){S.done=true;save();finale()}else{const nx=NIGHTS[NT.i+1];if(nx.l!==c.l){toMap()}else startNight(NT.i+1)}}}
 function photoDraw(g,w,h,k,fd,x,L0,seed){const key=k+'_'+w+'_'+h;if(!photoDraw.c[key]){const c=document.createElement('canvas');c.width=w;c.height=h;scene(c.getContext('2d'),w,h,k);contrast(c,1.55,-4);const f=document.createElement('canvas');f.width=w;f.height=h;fgLayer(f.getContext('2d'),w,h,k,0);photoDraw.c[key]=[c,f]}g.drawImage(photoDraw.c[key][0],0,0);
@@ -2418,20 +2445,57 @@ function albumOpen(){const sl=slots(),[n,tot]=albumCount();let s='<h2><small>ア
   let tgx=q.x||null;if(n.spot&&b.sel!=null)tgx=n.tg[b.sel].x;photoDraw(g,cn.width,cn.height,k,q.k==='skip'?0:b.fd,tgx,q.m?1:.82,q.i)})}
 
 /* ===== 画面の切りかえ ===== */
-function show(m){['title','night','map','test'].forEach(k=>$('#'+k).classList.toggle('hidden',k!==m));$('#hud').classList.toggle('hidden',m==='title'&&!INHUB);$('#locNm').classList.toggle('hidden',m!=='night');$('#hudR').classList.toggle('hidden',m==='title');$('#bBack').textContent=m==='title'?'◀ 一覧へ':'◀ もどる';zkButtons()}
+function show(m){if(m!=='night')document.body.classList.remove('prac');if(HELPC){if(m==='night'||m==='map')HELPC.show();else HELPC.hide()}['title','night','map','test'].forEach(k=>$('#'+k).classList.toggle('hidden',k!==m));$('#hud').classList.toggle('hidden',m==='title'&&!INHUB);$('#locNm').classList.toggle('hidden',m!=='night');$('#hudR').classList.toggle('hidden',m==='title');$('#bBack').textContent=m==='title'?'◀ 一覧へ':'◀ もどる';zkButtons()}
 function ovOpen(h){$('#ovBox').innerHTML=h;$('#ov').classList.remove('hidden');$('#ovBox').scrollTop=0}
-function ovClose(){$('#ov').classList.add('hidden');$('#ovBox').innerHTML=''}
+function ovClose(){$('#ov').classList.add('hidden');$('#ov').classList.remove('top');$('#ovBox').innerHTML=''}
 function toTitle(){ovClose();MODE='title';NT=null;show('title');titleLayout();$('#bCont').classList.toggle('hidden',!S.started);$('#bStart').textContent=S.started?'はじめから旅に出る':'撮影の旅に出る'}
 function toMap(){ovClose();MODE='map';NT=null;show('map');layout();const [n,t]=albumCount();$('#mapInfo').textContent='撮影行の地図　アルバム '+n+' / '+t;$('#bNext').textContent=S.done?'確認テストへ':'次の夜へ（第'+KAN[Math.min(12,S.n)]+'夜）'}
 $('#bNext').onclick=()=>{ac();sfx.tap();if(S.done)startTest();else startNight(Math.min(12,S.n))};
 $('#bAlbum').onclick=()=>{ac();sfx.tap();albumOpen()};$('#bGacha').onclick=openGacha;$('#bBook1').onclick=openBook;$('#bBook2').onclick=openBook;$('#bSnd').onclick=toggleSnd;$('#bSnd1').onclick=toggleSnd;
-$('#bBack').onclick=()=>{ac();sfx.tap();if(MODE==='title'){try{window.parent.postMessage({type:'rika-close-game'},'*')}catch(e){}return}
+$('#bBack').onclick=()=>{ac();sfx.tap();if(HELPC&&HELPC.isOpen())HELPC.close();if(MODE==='title'){try{window.parent.postMessage({type:'rika-close-game'},'*')}catch(e){}return}
+ if(NT&&NT.practice){ffOn(false);ovOpen('<h2>もどりますか？</h2><p style="text-align:center">れんしゅうをやめて、'+(S.started?'地図':'タイトル')+'にもどります。<br>「あそびかた」からいつでもやり直せます。</p><div class="row"><button class="ic" id="bkNo">つづける</button><button class="ic gold" id="bkGo">もどる</button></div>');$('#ov').classList.add('top');
+  $('#bkNo').onclick=ovClose;$('#bkGo').onclick=()=>{ovClose();PAUSED=false;if(S.started)toMap();else toTitle();if(window.Guide)Guide.tutorialEnd()};return}
  const msg=MODE==='night'?'この夜は次に はじめから。アルバムと進み具合は保存されています。':MODE==='test'?'確認テストは次に はじめから。':'進み具合は保存されます。';
- ovOpen('<h2>もどりますか？</h2><p style="text-align:center">'+msg+'</p><div class="row"><button class="ic" id="bkNo">つづける</button><button class="ic gold" id="bkGo">'+(MODE==='night'?'地図へ':'タイトルへ')+'</button></div>');
+ ovOpen('<h2>もどりますか？</h2><p style="text-align:center">'+msg+'</p><div class="row"><button class="ic" id="bkNo">つづける</button><button class="ic gold" id="bkGo">'+(MODE==='night'?'地図へ':'タイトルへ')+'</button></div>');$('#ov').classList.add('top');
  $('#bkNo').onclick=ovClose;$('#bkGo').onclick=()=>{ovClose();if(MODE==='night')toMap();else if(TEST_ONLY)startTest();else toTitle()}};
-$('#bStart').onclick=()=>{ac();sfx.tap();const go=()=>{const nm=$('#nameIn').value.trim(),snd=S.snd;S=fresh();S.name=nm;S.snd=snd;S.started=true;save();startNight(0)};
+$('#bStart').onclick=()=>{ac();sfx.tap();const go=()=>{const nm=$('#nameIn').value.trim(),snd=S.snd;S=fresh();S.name=nm;S.snd=snd;S.started=true;save();beginFirst()};
  if(S.started){ovOpen('<h2>はじめから？</h2><p style="text-align:center">アルバムと進み具合が消えます。</p><div class="row"><button class="ic" id="bkNo">やめる</button><button class="ic gold" id="bkGo">はじめから</button></div>');$('#bkNo').onclick=ovClose;$('#bkGo').onclick=()=>{ovClose();go()}}else go()};
 $('#bCont').onclick=()=>{ac();sfx.tap();const v=$('#nameIn').value.trim();if(v)S.name=v;save();toMap()};
+
+/* ===== 演出（仕上げ 2026-09-28）: 揺れ・閃光・振動・★のドン・傑作の連続 ===== */
+const STREAK=[3,5,10];
+function vib(p){try{navigator.vibrate&&navigator.vibrate(p)}catch(e){}}
+function shake(a){if(RM||!cv.animate)return;const k=[];for(let i=0;i<7;i++){const d=a*(1-i/7);k.push({transform:'translate('+((Math.random()-.5)*2*d).toFixed(1)+'px,'+((Math.random()-.5)*2*d).toFixed(1)+'px)'})}k.push({transform:'none'});cv.animate(k,{duration:340,easing:'ease-out'})}
+function flash(a){const f=$('#flash');if(!f||!f.animate)return;f.animate([{opacity:0},{opacity:RM?.3*a:a,offset:.12},{opacity:0}],{duration:RM?300:560,easing:'ease-out'})}
+function thump(i){if(!on())return;const t=AC.currentTime;noise(t,.12,.3,260,'lowpass');osc(110+i*30,t,.25,'sine',.25,60);piano(81+i*4,t+.02,.1)}
+
+/* ===== とっつきやすさ（仕上げ 2026-09-28）: この回でわかること → れんしゅう（指の手ほどき） → 本編 ===== */
+const INTRO={title:'第14回　朝霧フォトグラファー ～霧のでき方～',learn:'夜に冷えて **気温が露点まで下がる** と、\n水蒸気が凝結して **霧** ができる',how:'露点に届く時刻に **金のピン** → 霧がわく瞬間に **シャッター**',gesture:'tap'};
+const GTHEME={bg:'#111111',fg:'#E5E5E5',accent:'#F2C14E',accentText:'#111111',font:'"Noto Serif JP","Hiragino Mincho ProN",serif',bodyFont:'"Noto Serif JP","Hiragino Mincho ProN",serif',
+ radius:0,texture:'grain',line:'#F2C14E',dim:'rgba(0,0,0,.62)',shadow:'0 0 0 1px #000,0 0 0 5px #111,0 0 0 6px #F2C14E,0 12px 36px rgba(0,0,0,.7)',outline:'#111',hand:'#E5E5E5',handLine:'#111'};
+let HELPC=null;
+function endReplay(){ovClose();NT=null;FF=false;if(window.Guide)Guide.tutorialEnd();if(S.started)toMap();else toTitle()}
+function tlArea(){return {x:L.tl.x+L.tl.w/2,y:L.tl.y+L.tl.h/2-8,w:L.tl.w+16,h:L.tl.h+40}}
+const PRACTICE={get label(){return wide?'れんしゅう中 ─ 峠の見晴らし':'れんしゅう中'},bandAt:'top',block:true,clearText:'れんしゅうクリア！',
+ start:()=>{const m=PFIRST?'first':'replay';PFIRST=false;ovClose();PAUSED=false;FF=false;startNight(0,m)},
+ steps:[
+  {gesture:'drag',label:'ピン',target:()=>NT?{x:tlX(0),y:L.tl.y+L.tl.h*.45,r:24}:null,to:()=>NT?{x:tlX(NT.c.tg[0].t0),y:L.tl.y+L.tl.h*.45,r:24}:null,area:()=>tlArea(),wait:150,
+   until:()=>{if(!NT||pinDrag)return false;const p=NT.pins[0];return p!=null&&p<12&&Math.abs(p-NT.c.tg[0].t0)<=.5},
+   text:'気温15℃・露点10℃。1時間に1℃ずつ冷えると **5時間後の23時** に露点。フィルムの時間帯を **なぞって** 金のピンを置く'},
+  {gesture:'tap',label:'夜を回す',target:'#cGo',onEnter:()=>{const b=$('#cGo');if(b&&b.scrollIntoView)b.scrollIntoView({block:'nearest'})},until:()=>!!(NT&&NT.phase==='night'),wait:150,text:'**夜を回す** を押す'},
+  {gesture:'hold',label:'早回し',target:'#bFF',until:()=>!!(NT&&NT.phase==='night'&&NT.t>=NT.c.tg[0].t0-.7),wait:100,holdMs:99999,text:'**早回し** を長おしすると、夜が早く進む（懐中時計を見よう）'},
+  {gesture:'tap',label:'シャッター',target:'.shut',until:()=>!!(NT&&NT.shots[0]!=null),praise:false,text:'谷底から **霧がわき上がったら** シャッター！　1枚だけ'}
+ ]};
+function beginFirst(){if(!window.Guide){startNight(0);return}Guide.intro(INTRO).then(()=>{PFIRST=true;Guide.tutorial(PRACTICE)})}
+if(window.Guide){
+ Guide.setup({theme:GTHEME,title:INTRO.title,learn:INTRO.learn,how:INTRO.how,
+  sfx:k=>{ac();if(k==='step')sfx.pin();else if(k==='done')sfx.good();else if(k==='clear')sfx.great();else if(k==='open'||k==='close'||k==='nudge')sfx.tap();else if(k==='cheer')sfx.bell()},
+  muted:()=>!S.snd});
+ HELPC=Guide.help({rules:['夕方の **気温** と **露点** から、露点に届く時刻を読む（晴れ＝1時間に1℃、くもり＝0.2℃しか冷えない）','フィルムの時間帯を **なぞって** 金のピン → 「夜を回す」','**早回し** を長おしで夜が早く進む。霧がわき上がったら **シャッター**（1枚だけ）','早すぎると霧がない・遅すぎると真っ白。出ないと思ったら **「霧は出ない」**','露点が書いていない夜は、湿度と **飽和水蒸気量の表** で求める'],
+  onOpen:()=>{PAUSED=true;ffOn(false)},onClose:()=>{PAUSED=false},replay:'tutorial',mount:$('#hudR'),size:44,attention:true,show:false});
+ Guide.tutorialButton('#bHow',()=>{ac();sfx.tap();PFIRST=false;Guide.tutorial(PRACTICE)});
+}else $('#bHow').classList.add('hidden');
+document.addEventListener('pointerdown',e=>{if(e.target&&e.target.closest&&e.target.closest('.ic,.shut'))vib(8)},true);
 
 /* ===== 描画 ===== */
 function pop(t,x,y,cls){const d=document.createElement('div');d.className='pop '+(cls||'');d.innerHTML=t;d.style.left=Math.max(90,Math.min(W-90,x))+'px';d.style.top=y+'px';$('#pops').appendChild(d);setTimeout(()=>d.remove(),2300)}
@@ -2513,7 +2577,7 @@ addEventListener('resize',()=>{clearTimeout(window.__rz);window.__rz=setTimeout(
 try{window.Zukan&&Zukan.setup&&Zukan.setup({game:GID,koma:[KOMA]})}catch(e){}
 setSnd();if(window.PLAYER_NAME){$('#nameIn').value=window.PLAYER_NAME;$('#nameRow').classList.add('hidden')}else if(S.name)$('#nameIn').value=S.name;
 resize();if(TEST_ONLY)startTest();else toTitle();
-window.__game={S:()=>S,NT:()=>NT,NIGHTS,startNight,goNight,shoot,setPins:a=>{NT.pins=a.slice();updGo()},sel:k=>{NT.sel=k;NT.pins=NT.c.tg.map(()=>null);renderCard()},ff:v=>{FF=v},skip:()=>$('#bSkip').click(),mode:()=>MODE,phase:()=>NT&&NT.phase,toMap,startTest,albumOpen,next:()=>{const b=$('#rNext');if(b)b.click()}};
+window.__game={L:()=>L,tlX,S:()=>S,NT:()=>NT,NIGHTS,startNight,goNight,shoot,setPins:a=>{NT.pins=a.slice();updGo()},sel:k=>{NT.sel=k;NT.pins=NT.c.tg.map(()=>null);renderCard()},ff:v=>{FF=v},skip:()=>$('#bSkip').click(),mode:()=>MODE,phase:()=>NT&&NT.phase,toMap,startTest,albumOpen,next:()=>{const b=$('#rNext');if(b)b.click()}};
 requestAnimationFrame(loop);
 })();
 </script>

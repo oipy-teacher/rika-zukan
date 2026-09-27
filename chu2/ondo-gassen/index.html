@@ -125,17 +125,28 @@ body.land #tFig svg{width:100%;max-height:56vh}
 #tFb{margin-top:14px;font-size:16px;line-height:1.7}
 #tFb .mk{font-family:"Zen Kurenaido",sans-serif;font-size:38px;color:#FF7A5C;margin-right:8px;vertical-align:-6px}
 #tFb .ex{display:block;margin-top:4px;color:rgba(244,244,240,.85);font-weight:500}
+.tut #bBack,.tut #bMute{z-index:2147482608}.tut #confirm{z-index:2147482610}
+.cb:active{filter:brightness(1.2)}
+.cstars{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin:4px 0 8px}
+.cstars span{display:flex;flex-direction:column;align-items:center;font-size:13px;color:#F4F4F0;opacity:0;animation:stardon .45s cubic-bezier(.2,1.7,.4,1) forwards}
+.cstars span:nth-child(2){animation-delay:.45s}.cstars span:nth-child(3){animation-delay:.9s}
+.cstars i{font-style:normal;font-family:"Zen Kurenaido",sans-serif;font-size:50px;line-height:1;color:rgba(244,244,240,.25)}
+.cstars .on i{color:#F2D675;text-shadow:0 0 12px rgba(242,214,117,.8)}
+@keyframes stardon{0%{opacity:0;transform:scale(2.6) rotate(-12deg)}60%{opacity:1;transform:scale(.9) rotate(3deg)}100%{opacity:1;transform:none}}
+.cf{position:fixed;top:-14px;z-index:60;pointer-events:none;width:var(--w);height:var(--h);background:var(--c);border-radius:40%;opacity:.9;animation:cfall var(--t) cubic-bezier(.3,.2,.6,1) forwards}
+@keyframes cfall{to{transform:translate(var(--dx),108vh) rotate(var(--r))}}
+@media (prefers-reduced-motion:reduce){.cstars span{animation:none;opacity:1}}
 @media (prefers-reduced-motion:reduce){.cb:active,.ans:active{transform:none}}
 </style>
 </head>
 <body>
 <canvas id="cv"></canvas>
-<button id="bBack" class="hidden" aria-label="もどる">◀ もどる</button>
-<button id="bMute" aria-label="音を切りかえる"><svg viewBox="0 0 26 26"><path d="M3 9h5l6-5v18l-6-5H3z" fill="#F4F4F0"/><path class="w" d="M17 8c2 2 2 8 0 10M20 5c4 4 4 12 0 16" stroke="#FF7A5C" stroke-width="2.4" fill="none" stroke-linecap="round"/><path class="x" d="M17 9l7 8M24 9l-7 8" stroke="#FF7A5C" stroke-width="2.6" stroke-linecap="round"/></svg></button>
+<button id="bBack" class="hidden" aria-label="もどる" data-gd-pass>◀ もどる</button>
+<button id="bMute" aria-label="音を切りかえる" data-gd-pass><svg viewBox="0 0 26 26"><path d="M3 9h5l6-5v18l-6-5H3z" fill="#F4F4F0"/><path class="w" d="M17 8c2 2 2 8 0 10M20 5c4 4 4 12 0 16" stroke="#FF7A5C" stroke-width="2.4" fill="none" stroke-linecap="round"/><path class="x" d="M17 9l7 8M24 9l-7 8" stroke="#FF7A5C" stroke-width="2.6" stroke-linecap="round"/></svg></button>
 
 <div id="title" class="ov hidden"><div id="tPanel">
   <div id="nameBox"><span>なまえ</span><input id="nameIn" maxlength="20" autocomplete="off" placeholder="チョークで書く"></div>
-  <div class="row"><button id="btnStart" class="cb big">合戦はじめ！</button><button id="btnCont" class="cb hidden">つづきから</button><button id="btnBook" class="cb sm hidden">📖 図鑑</button></div>
+  <div class="row"><button id="btnStart" class="cb big">合戦はじめ！</button><button id="btnCont" class="cb hidden">つづきから</button><button id="btnHow" class="cb sm">あそびかた</button><button id="btnBook" class="cb sm hidden">📖 図鑑</button></div>
 </div></div>
 
 <div id="card" class="ov hidden"><div class="board">
@@ -147,6 +158,7 @@ body.land #tFig svg{width:100%;max-height:56vh}
 
 <div id="map" class="ov hidden"><div class="board">
   <div class="memo">陣地の地図 ─ 取り返した陣地</div>
+  <div class="cstars" id="mapStars"></div>
   <h2 id="mapTitle"><span class="ul">取り返した！</span></h2>
   <div class="flags" id="mapFlags"></div>
   <div class="mgrid">
@@ -156,7 +168,7 @@ body.land #tFig svg{width:100%;max-height:56vh}
   <div class="mbtns"><button id="mapBook" class="cb sm hidden">📖 図鑑</button><button id="mapNext" class="cb big">次の陣地へ</button></div>
 </div></div>
 
-<div id="confirm" class="ov hidden"><div class="board">
+<div id="confirm" class="ov hidden" data-gd-pass><div class="board">
   <h2 style="font-size:28px">もどりますか？</h2>
   <p id="cfText">進み具合は保存されます。</p>
   <div class="mbtns"><button id="cfNo" class="cb sm">つづける</button><button id="cfGo" class="cb sm hot">もどる</button></div>
@@ -1468,6 +1480,9 @@ window.ZUKAN_CARDS={"v": 1, "grade": "chu2", "name": "中2理科図鑑", "econom
       if(PASS_RE.test(String(t.id||''))||PASS_RE.test(typeof t.className==='string'?t.className:''))return true;
       if((t.tagName==='BUTTON'||t.tagName==='A'||t.getAttribute('role')==='button')&&/^\s*[◀←＜<]?\s*(もどる|戻る|一覧へ|とじる|閉じる|はい|いいえ|やめる|キャンセル|おと|音)/.test(t.textContent||''))return true}
       t=t.parentNode}return false}
+  /* 手ほどき中は、もどる等（passThru に当たる fixed/absolute のボタン）を暗幕・吹き出しより上へ出す。終わったら元に戻す */
+  function liftPass(){var out=[];try{var els=document.querySelectorAll('button,a,[role=button],[data-gd-pass]');for(var i=0;i<els.length;i++){var e=els[i];if(e.closest&&e.closest('.gd-root'))continue;if(e.classList&&e.classList.contains('gd-hbtn'))continue;if(!passThru(e))continue;var cs=getComputedStyle(e);if(cs.position!=='fixed'&&cs.position!=='absolute')continue;if(cs.display==='none'||cs.visibility==='hidden')continue;out.push([e,e.style.zIndex]);e.style.zIndex=String(Z+1)}}catch(_){}
+    return function(){for(var i=0;i<out.length;i++){out[i][0].style.zIndex=out[i][1]}}}
   function inGuide(t){if(passThru(t))return true;while(t&&t!==document){if(t.classList&&(t.classList.contains('gd-root')||t.classList.contains('gd-hbtn')))return true;t=t.parentNode}return false}
   function hexRGB(c){c=String(c||'').trim();var m;
     if((m=c.match(/^#([0-9a-f]{3})$/i)))return [0,1,2].map(function(i){return parseInt(m[1][i]+m[1][i],16)});
@@ -1808,7 +1823,7 @@ window.ZUKAN_CARDS={"v": 1, "grade": "chu2", "name": "中2理科図鑑", "econom
     if(!steps||!steps.length){resolveP({done:true,steps:0});return p}
     if(opt.key&&!opt.force&&sget('coach:'+opt.key)){resolveP({already:true});return p}
 
-    var root=mkRoot('gd-coach',opt.theme);root.setAttribute('aria-live','polite');
+    var root=mkRoot('gd-coach',opt.theme);root.setAttribute('aria-live','polite');var unlift=liftPass();
     var uid='gdm'+Math.random().toString(36).slice(2,8);
     root.innerHTML='<svg class="dim" aria-hidden="true"><defs><mask id="'+uid+'" maskUnits="userSpaceOnUse"><rect x="-10" y="-10" width="200%" height="200%" fill="#fff"/><g class="holes"></g></mask></defs>'+
       '<rect class="shade" x="-10" y="-10" width="200%" height="200%" style="fill:var(--gd-dim)" mask="url(#'+uid+')"/><g class="halos"></g><path class="arw"/><path class="arh"/><circle class="dest" r="0"/></svg>';
@@ -1856,6 +1871,7 @@ window.ZUKAN_CARDS={"v": 1, "grade": "chu2", "name": "中2理科図鑑", "econom
     };
     st.finish=function(res){
       if(st.finished)return;st.finished=true;
+      try{unlift()}catch(_){}
       if(st.evOff)st.evOff();
       delTick(tick);popLayer(layer);offPtr();window.removeEventListener('resize',onRs);
       if(res.done&&opt.key)sset('coach:'+opt.key,'1');
@@ -2206,8 +2222,14 @@ var SFX={
   window:function(){noise(.5,.04,0,700,'lowpass');noise(.3,.02,.3,1800)},
   mix:function(){noise(.4,.02,0,2600)},
   win:function(){[523,659,784,1046,784,1046,1318].forEach(function(f,i){tone(f,.35,'triangle',.045,i*.1)})},
-  lose:function(){[392,330,262,196].forEach(function(f,i){tone(f,.35,'triangle',.04,i*.14)})}
+  lose:function(){[392,330,262,196].forEach(function(f,i){tone(f,.35,'triangle',.04,i*.14)})},
+  up:function(n){var f=523*Math.pow(2,Math.min(n,14)/12);tone(f,.18,'triangle',.05);tone(f*2,.12,'sine',.02,.04)},
+  tier:function(){[523,659,784,1046,1318,1568].forEach(function(f,i){tone(f,.25,'triangle',.05,i*.05)})},
+  don:function(i){tone(120-i*10,.3,'sine',.12,0,60);noise(.14,.05,0,3000,'highpass');tone(1046+i*262,.3,'triangle',.04,.04)}
 };
+function vib(p){try{if(navigator.vibrate)navigator.vibrate(p)}catch(e){}}
+var GD=window.Guide||null,HELP=null,PRACTICE=null,REPLAY=false,TUTON=false,TIERS=[3,5,10,15,20];
+function confettiDOM(n){if(RM)return;var cs=['#F4F4F0','#FF7A5C','#9ED6EA','#F2D675'];for(var i=0;i<(n||60);i++){var d=document.createElement('div');d.className='cf';d.style.left=(Math.random()*100)+'vw';d.style.setProperty('--w',(5+Math.random()*8|0)+'px');d.style.setProperty('--h',(5+Math.random()*8|0)+'px');d.style.setProperty('--c',cs[i%cs.length]);d.style.setProperty('--dx',((Math.random()-.5)*160|0)+'px');d.style.setProperty('--r',((Math.random()-.5)*900|0)+'deg');var t=1.8+Math.random()*1.4;d.style.setProperty('--t',t.toFixed(2)+'s');d.style.animationDelay=(Math.random()*.4).toFixed(2)+'s';document.body.appendChild(d);(function(d,t){setTimeout(function(){d.remove()},(t+.5)*1000)})(d,t)}}
 
 /* ================= チョーク ================= */
 var PAT={},GR=null;
@@ -2294,6 +2316,7 @@ function layout(){var W=innerWidth,Hh=innerHeight,dpr=Math.min(2.5,window.device
   L.bw=L.land?L.U*1.25:Math.min(L.U*1.45,L.B.w*.18);L.bh=L.land?L.U*1.18:L.U*1.05;
   L.hr=Math.max(26,L.U*.55);
   layoutEnemy();renderBg();
+  if(HELP)HELP.update({offset:{x:56,y:0}});
 }
 function layoutEnemy(){var n=R?R.def.eb:4;L.ene=[];
   for(var i=0;i<n;i++){if(L.land){var cols=n>4?2:1,col=cols>1?i%2:0,row=cols>1?Math.floor(i/2):i,rows=Math.ceil(n/cols);L.ene.push({x:P(cols>1?(.655+col*.125):.72,0)[0],y:P(0,.20+row*(.72/Math.max(rows,1))+(col?.1:0))[1]})}
@@ -2326,12 +2349,14 @@ function renderBg(){BG=document.createElement('canvas');BG.width=cv.width;BG.hei
 }
 
 /* ================= 1試合 ================= */
-function newRun(si){var d=ST[si];R={si:si,def:d,own:[],ene:[],ball:null,queue:[],fly:[],pt:[],ft:[],marks:[],combo:0,best:0,gog:false,air:0,cpuT:(d.cpu||0)+2.5,cpuFixT:d.cpuFix||0,t:0,
+var PDEF={nm:'れんしゅう',rx:['kairo','soda'],modes:['both'],eb:2,ehp:9,cpu:0,intro:''};
+function newRun(si,tut){var d=tut?PDEF:ST[si];R={tut:!!tut,tq:0,si:si,def:d,own:[],ene:[],ball:null,queue:[],fly:[],pt:[],ft:[],marks:[],combo:0,best:0,gog:false,air:0,cpuT:(d.cpu||0)+2.5,cpuFixT:d.cpuFix||0,t:0,
   paused:true,ended:false,msg:null,hint:null,stats:{throw:0,ok:0,err:0,melt:0,freeze:0,cover:0,vent:0},drag:null,paperDrag:null,shake:0,frost:0,steam:0,winAnim:0,seen:{},cpuArm:0,firstCold:false,hs:{}};
   for(var i=0;i<4;i++)R.own.push({hp:3,max:3,fx:0,col:null});
   for(var j=0;j<d.eb;j++)R.ene.push({hp:d.ehp,max:d.ehp,fx:0,col:null});
   layoutEnemy();R.queue=[genBall(),genBall(),genBall()]}
 function genBall(){var d=R.def,pool=d.rx.slice(),k;
+  if(R.tut){k=['kairo','soda'][(R.tq++)%2];return{k:k,md:'both',t0:20,t1:RX[k].t,age:0,covered:false,wisp:0}}
   if(d.cold){var low=R.own.filter(function(b){return b.hp<=1}).length;var pc=.34+low*.08;if(Math.random()<pc){var cs=pool.filter(function(x){return !RX[x].hot});k=pick(cs)}else{k=pick(pool.filter(function(x){return RX[x].hot}))}}
   else k=pick(pool);
   if(d.peak&&!R.firstCold&&R.stats&&R.stats.throw>=5){k='nh4';R.firstCold=true}
@@ -2354,7 +2379,7 @@ function land(f){var tg=f.tg,blk=tg.side==='own'?R.own[tg.i]:R.ene[tg.i],p=tg.si
     else{blk.hp=Math.min(blk.max+1,blk.hp+1);blk.fx=1;blk.col='cold';SFX.frost();frost(p.x,p.y)}
     checkEnd();return}
   var ok=(tg.side==='ene'&&rx.hot)||(tg.side==='own'&&!rx.hot);
-  if(ok){R.combo++;R.best=Math.max(R.best,R.combo);G.st.best=Math.max(G.st.best,R.combo);R.stats.ok++;G.st.ok++;SFX.xylo(Math.min(6,R.combo));
+  if(ok){R.combo++;R.best=Math.max(R.best,R.combo);G.st.best=Math.max(G.st.best,R.combo);R.stats.ok++;G.st.ok++;SFX.xylo(Math.min(6,R.combo));juice(p.x,p.y,rx.hot);
     var first=!G.rx[f.k];G.rx[f.k]=(G.rx[f.k]||0)+1;if(first){if(window.Zukan&&Zukan.earn)Zukan.earn(10,'first-try',{x:p.x,y:p.y});ftext(p.x,p.y-L.U*.9,'図鑑に記入：'+rx.nm,C.yel,.8)}
     else if(R.combo%5===0&&window.Zukan&&Zukan.earn)Zukan.earn(4,'first-try',{x:p.x,y:p.y});
     if(tg.side==='ene'){var dmg=R.combo>=6?2:1;blk.hp=Math.max(0,blk.hp-dmg);blk.fx=1;blk.col='hot';R.stats.melt++;G.st.melt++;SFX.sizzle();steam(p.x,p.y);R.shake=.3;R.steam=1;
@@ -2362,7 +2387,7 @@ function land(f){var tg=f.tg,blk=tg.side==='own'?R.own[tg.i]:R.ene[tg.i],p=tg.si
     else{var was=blk.hp;blk.hp=Math.min(blk.max+1,blk.hp+2);blk.fx=1;blk.col='cold';R.stats.freeze++;G.st.freeze++;SFX.frost();frost(p.x,p.y);R.frost=1;
       ftext(p.x,p.y-L.U*.4,was<=0?'固めなおした！':'パキッ！ 固まった',C.cold,1.2)}
     if(R.combo>=3)ftext(L.hand[0],L.hand[1]-L.U*1.2,R.combo+'連！',C.yel,1.3+Math.min(1,R.combo*.05))}
-  else{R.combo=0;R.stats.err++;G.st.err++;SFX.bad();
+  else{comboBreak(p.x,p.y);R.combo=0;if(!R.tut){R.stats.err++;G.st.err++}SFX.bad();vib([30,40,30]);
     if(tg.side==='ene'){blk.hp=Math.min(blk.max+1,blk.hp+1);blk.fx=1;blk.col='cold';frost(p.x,p.y);msg('温度が下がる反応（つめたい玉）で、相手の氷がもっと固まった！ つめたい玉は自分の雪のかべへ','bad',3.6)}
     else{blk.hp=Math.max(0,blk.hp-1);blk.fx=1;blk.col='hot';steam(p.x,p.y);msg('温度が上がる反応（あつい玉）で、自分のかべが溶けた！ あつい玉は相手の氷へ','bad',3.6)}}
   checkEnd()}
@@ -2370,7 +2395,7 @@ function cpuThrow(hot){var alive=R.own.map(function(b,i){return i}).filter(funct
   var i=hot?pick(alive):0,src=L.cpu;
   if(!hot){var dmg=R.ene.map(function(b,i){return i}).filter(function(i){return R.ene[i].hp>0&&R.ene[i].hp<R.ene[i].max});if(!dmg.length)return;i=pick(dmg);var p2=L.ene[i];R.fly.push({k:'soda',hot:0,x0:src[0],y0:src[1],x1:p2.x,y1:p2.y,t:0,d:.7,tg:{side:'ene',i:i},me:0});return}
   var p=L.own[i];R.cpuArm=.5;R.fly.push({k:'kairo',hot:1,x0:src[0],y0:src[1],x1:p.x,y1:p.y,t:0,d:.95,tg:{side:'own',i:i},me:0});SFX.throw()}
-function checkEnd(){if(R.ended)return;if(R.ene.every(function(b){return b.hp<=0})){win()}else if(R.own.every(function(b){return b.hp<=0}))lose()}
+function checkEnd(){if(R.ended||R.tut)return;if(R.ene.every(function(b){return b.hp<=0})){win()}else if(R.own.every(function(b){return b.hp<=0}))lose()}
 
 /* ---------- 安全 ---------- */
 function wearGog(){if(R.gog)return;R.gog=true;SFX.chalk();ftext(L.gog[0],L.gog[1]-L.U*.7,'保護眼鏡よし！',C.yel,1);if(R.hint&&R.hint.k==='gog')R.hint=null;
@@ -2401,8 +2426,12 @@ function burst(x,y,cols,n){if(RM)n=Math.min(n,5);for(var i=0;i<n;i++){var a=Math
 function steam(x,y){for(var i=0;i<(RM?2:5);i++)R.marks.push({k:'steam',x:x+(Math.random()-.5)*L.bw*.6,y:y-L.bh*.4,t:-i*.08,life:1.6});burst(x,y,[C.hot,'#ffb4a2',C.w],12)}
 function frost(x,y){for(var i=0;i<(RM?2:6);i++)R.marks.push({k:'frost',x:x+(Math.random()-.5)*L.bw*.9,y:y+(Math.random()-.5)*L.bh*.8,t:-i*.05,life:1.4,s:.5+Math.random()*.6});burst(x,y,[C.cold,C.w],12)}
 function ftext(x,y,t,c,sc){R.ft.push({x:x,y:y,t:0,txt:t,c:c,sc:sc||1})}
+/* 正しく投げた瞬間：揺れ・チョーク色のフラッシュ・粉の爆発・上がっていく音・振動・連続の段階 */
+function juice(x,y,hot){var n=R.combo;R.shake=Math.max(R.shake,.3+Math.min(.3,n*.03));R.flash=.35+Math.min(.25,n*.03);R.flashC=hot?'255,122,92':'158,214,234';vib(15);SFX.up(n);burst(x,y,[hot?C.hot:C.cold,C.w,C.yel],RM?5:26);
+  if(TIERS.indexOf(n)>=0){setTimeout(function(){if(!R)return;SFX.tier();var cx=L.W/2,cy=L.B.y+L.B.h*.42;ftext(cx,cy,n+'連！ '+(n>=10?'止まらない！':n>=5?'絶好調！':'いい流れ！'),C.yel,2.2);burst(cx,cy,[C.yel,C.hot,C.cold,C.w],RM?5:34)},200)}}
+function comboBreak(x,y){var c=R.combo;if(c<2)return;var nx=TIERS.filter(function(t){return t>c})[0];setTimeout(function(){if(R)ftext(x,y-L.U*1.3,nx&&nx-c===1?'あと1回で '+nx+'連だった！':c+'連で とぎれた',C.yel,1.1)},350)}
 function msg(t,k,d){if(R)R.msg={t:t,k:k||'tip',d:d||2.5,age:0}}
-function hint(k,t,d){R.hint={k:k,t:t,d:d||6,age:0}}
+function hint(k,t,d){if(GD){if(k==='paper'){stageCoach('paper');return}if(k==='win'){stageCoach('win');return}if(GD.active()||R.tut||k==='hand'||k==='ene')return}R.hint={k:k,t:t,d:d||6,age:0}}
 
 /* ================= 描く ================= */
 var now=0;
@@ -2411,6 +2440,7 @@ function draw(){var g=ctx;g.setTransform(L.dpr,0,0,L.dpr,0,0);
   var sh=R.shake>0&&!RM?R.shake*L.U*.08:0;g.save();if(sh)g.translate((Math.random()-.5)*sh,(Math.random()-.5)*sh);
   g.drawImage(BG,0,0,L.W,L.H);
   drawCpu(g);drawWalls(g);drawMe(g);drawCard(g);drawBench(g);drawFly(g);drawMarks(g);drawAir(g);drawFx(g);drawHint(g);drawMsg(g);
+  if(R.flash>0){g.fillStyle='rgba('+(R.flashC||'244,244,240')+','+(RM?R.flash*.3:R.flash*.55).toFixed(3)+')';g.fillRect(0,0,L.W,L.H)}
   g.restore();drawHud(g)}
 function block(g,x,y,w,h,b,seed,enemy){var f=b.hp/b.max,ww=w*(b.hp<=0?1.1:1),hh=h*(b.hp<=0?.25:(.55+.45*Math.min(1,f)));var bx=x-ww/2,by=y+h/2-hh;
   g.beginPath();if(b.hp<=0){g.ellipse(x,y+h*.42,w*.6,h*.14,0,0,6.283);cfill(g,enemy?C.cold:C.w,.25);g.beginPath();g.ellipse(x,y+h*.42,w*.6,h*.14,0,0,6.283);cstroke(g,C.w,1.8,.45);return}
@@ -2523,11 +2553,11 @@ function drawMsg(g){var m=R.msg;if(!m)return;var U=L.U,px=Math.max(14,Math.min(U
   lines.forEach(function(l,i){ctext(g,l,x,y-hh/2+px*.4+px*1.4*(i+.5),px,C.w,'center',a)})}
 function drawHud(g){var U=L.U,W=L.W,d=R.def,z=window.Zukan&&Zukan.state?Zukan.state():null;
   var ttl=(d.boss?'最後の陣　':'第'+(R.si+1)+'陣　')+d.nm;
-  if(L.land){ctext(g,ttl,W*.5,L.fr+26,Math.min(30,U*.5),C.w);g.beginPath();jline(g,W*.5-U*2.4,L.fr+46,W*.5+U*2.4,L.fr+46,1400,2);cstroke(g,C.w,1.8,.6);
-    ctext(g,'かけら '+(z?z.kakera:'-'),W-80,L.fr+26,Math.min(20,U*.34),C.yel,'right');
-    ctext(g,'図鑑の玉 '+Object.keys(G.rx).length+'/'+RX_ORDER.length,W-200,L.fr+26,Math.min(20,U*.34),C.w,'right');
+  if(L.land){if(!R.tut)ctext(g,ttl,W*.5,L.fr+26,Math.min(30,U*.5),C.w);g.beginPath();jline(g,W*.5-U*2.4,L.fr+46,W*.5+U*2.4,L.fr+46,1400,2);cstroke(g,C.w,1.8,.6);
+    ctext(g,'かけら '+(z?z.kakera:'-'),W-80-(HELP?56:0),L.fr+26,Math.min(20,U*.34),C.yel,'right');
+    ctext(g,'図鑑の玉 '+Object.keys(G.rx).length+'/'+RX_ORDER.length,W-200-(HELP?56:0),L.fr+26,Math.min(20,U*.34),C.w,'right');
     if(R.combo>=2)ctext(g,R.combo+'連'+(R.combo>=6?'（ダブル！）':''),150,L.fr+26,Math.min(24,U*.42),C.yel,'left')}
-  else{ctext(g,ttl,(135+W-62)/2,L.fr+22,Math.min(20,W*.05),C.w);ctext(g,'かけら '+(z?z.kakera:'-'),W-14,L.fr+62,15,C.yel,'right');
+  else{if(!R.tut)ctext(g,ttl,(135+W-116)/2,L.fr+22,Math.min(20,W*.05,(W-262)/Math.max(6,ttl.length)),C.w);ctext(g,'かけら '+(z?z.kakera:'-'),W-14,L.fr+62,15,C.yel,'right');
     ctext(g,'図鑑の玉 '+Object.keys(G.rx).length+'/'+RX_ORDER.length,W-110,L.fr+62,15,C.w,'right');if(R.combo>=2)ctext(g,R.combo+'連'+(R.combo>=6?' ダブル':''),20,L.fr+62,18,C.yel,'left');
     g.beginPath();jline(g,L.fr+4,L.top-6,W-L.fr-4,L.top-6,1401,2);cstroke(g,C.w,1.4,.35)}}
 
@@ -2552,34 +2582,37 @@ var OVS=['title','card','map','confirm','clear','test'];
 function showOv(id){OVS.forEach(function(k){$(k).classList.toggle('hidden',k!==id)})}
 function backBtn(){var b=$('bBack'),on=state!=='title'||INHUB;b.classList.toggle('hidden',!on);b.textContent=state==='title'?'◀ 一覧へ':'◀ もどる'}
 var armed=false;
-function toTitle(){state='title';R=null;showOv('title');var sv=loadGame();$('btnCont').classList.toggle('hidden',!sv);$('btnStart').textContent=sv?'はじめから':'合戦はじめ！';
+function endTut(){document.body.classList.remove('tut');if(TUTON&&GD){TUTON=false;try{GD.tutorialEnd()}catch(e){}}else if(GD&&GD.active()){try{GD.skip()}catch(e){}}}
+function toTitle(){endTut();if(HELP)HELP.hide();state='title';R=null;showOv('title');var sv=loadGame();$('btnCont').classList.toggle('hidden',!sv);$('btnStart').textContent=sv?'はじめから':'合戦はじめ！';
   $('btnBook').classList.toggle('hidden',!window.Zukan);armed=false;backBtn();renderBg()}
 function startGame(cont){AU.init();var sv=loadGame();if(!cont&&sv&&!armed){armed=true;$('btnStart').textContent='もう一度おすと最初から';return}
-  G=cont&&sv?sv:fresh();if(!cont)G.name=NAME;else if(!NAME)NAME=G.name||'';if(G.done){showClear();return}saveGame();openStage(G.stage)}
-function openStage(si){state='card';newRun(si);renderBg();var d=ST[si];$('cdTag').textContent=d.boss?'最後の陣':'第'+(si+1)+'陣';$('cdTitle').textContent=d.nm;$('cdBody').innerHTML=d.intro;$('cdBtn').textContent=d.boss?'大将に挑む！':'はじめ！';showOv('card');backBtn()}
-$('cdBtn').onclick=function(){AU.init();if(!R)return;if(R.ended){openStage(R.si);return}$('card').classList.add('hidden');state='play';R.paused=false;backBtn();SFX.chalk();
+  G=cont&&sv?sv:fresh();if(!cont)G.name=NAME;else if(!NAME)NAME=G.name||'';if(G.done){showClear();return}saveGame();if(!cont&&GD&&G.stage===0){GD.intro(INTRO).then(function(){REPLAY=false;GD.tutorial(PRACTICE)});return}openStage(G.stage)}
+function openStage(si){endTut();if(HELP)HELP.hide();state='card';newRun(si);renderBg();var d=ST[si];$('cdTag').textContent=d.boss?'最後の陣':'第'+(si+1)+'陣';$('cdTitle').textContent=d.nm;$('cdBody').innerHTML=d.intro;$('cdBtn').textContent=d.boss?'大将に挑む！':'はじめ！';showOv('card');backBtn()}
+$('cdBtn').onclick=function(){AU.init();if(!R)return;if(R.ended){openStage(R.si);return}$('card').classList.add('hidden');state='play';R.paused=false;backBtn();SFX.chalk();if(HELP)HELP.show();
   hint('gog','まず 保護眼鏡をタップ',6)};
 function win(){R.ended=true;R.paused=true;SFX.win();R.winAnim=1;
   if(R.si===3&&window.Zukan&&Zukan.earn)Zukan.earn(30,'rule');if(R.si===6&&window.Zukan&&Zukan.earn)Zukan.earn(30,'rule');
   if(R.def.boss){G.done=1;saveGame();if(window.Zukan&&Zukan.earn)Zukan.earn(100,'boss',{id:GID+':yuki-taisho'});var r1=R;setTimeout(function(){if(R!==r1)return;if(window.Zukan&&Zukan.mainClear)Zukan.mainClear({onClose:showClear});else showClear()},1400);return}
   G.stage=Math.min(ST.length-1,R.si+1);saveGame();var r0=R;setTimeout(function(){if(R===r0)openMap()},1100)}
-function lose(){R.ended=true;R.paused=true;SFX.lose();G.st.lose++;saveGame();var r0=R;setTimeout(function(){if(R!==r0)return;state='card';$('cdTag').textContent=R.def.boss?'最後の陣':'第'+(R.si+1)+'陣';$('cdTitle').textContent='かべが全部とけた…';
+function lose(){R.ended=true;R.paused=true;SFX.lose();G.st.lose++;saveGame();var r0=R;setTimeout(function(){if(R!==r0)return;if(HELP)HELP.hide();state='card';$('cdTag').textContent=R.def.boss?'最後の陣':'第'+(R.si+1)+'陣';$('cdTitle').textContent='かべが全部とけた…';
   $('cdBody').innerHTML='温度が <b>上がる</b>反応＝あつい玉 → 相手の氷へ。<br>温度が <i>下がる</i>反応＝つめたい玉 → 自分の雪のかべへ（溶けたかべも固めなおせる）。<br>もう一度！';$('cdBtn').textContent='もう一度';showOv('card');backBtn()},1000)}
-function openMap(){state='map';showOv('map');backBtn();var si=R.si;$('mapTitle').innerHTML='<span class="ul">'+esc(R.def.nm)+'を取り返した！</span>';
+function openMap(){endTut();if(HELP)HELP.hide();state='map';showOv('map');backBtn();var si=R.si;
+  var stl=[[true,'取り返した'],[R.stats.err===0,'まちがい 0'],[R.best>=5,'5連 以上']];$('mapStars').innerHTML=stl.map(function(q){return '<span class="'+(q[0]?'on':'')+'"><i>★</i>'+q[1]+'</span>'}).join('');
+  confettiDOM(70);stl.forEach(function(q,k){setTimeout(function(){if(q[0]){SFX.don(k);vib(18)}else SFX.chalk()},(RM?0:k*450)+150)});$('mapTitle').innerHTML='<span class="ul">'+esc(R.def.nm)+'を取り返した！</span>';
   var fl='';ST.forEach(function(s,i){var on=i<=si,nw=i===si+1;fl+='<div class="flag'+(on?' on':'')+(nw?' now':'')+'"><svg viewBox="0 0 34 40"><path d="M6 38V4" stroke="'+(on?'#F4F4F0':'rgba(244,244,240,.5)')+'" stroke-width="2.4" fill="none" stroke-linecap="round"/><path d="M7 5 L30 11 L7 18Z" fill="'+(on?'#FF7A5C':nw?'#F2D675':'rgba(244,244,240,.25)')+'"/></svg>'+esc(s.nm)+'</div>'});$('mapFlags').innerHTML=fl;
   var rule=si===3?'<div style="margin-top:8px;color:#9ED6EA">★ 規則：化学変化には、温度が上がる（熱を出す）ものだけでなく、温度が下がる（周りから熱を奪う）ものもある。</div>':si===6?'<div style="margin-top:8px;color:#9ED6EA">★ 規則：「A＋B → C＋熱」は熱を出す反応（発熱反応）、「A＋B＋熱 → C」は熱を奪う反応（吸熱反応）。</div>':'';
   $('mapStat').innerHTML='溶かした氷 <b>'+R.stats.melt+'</b> ／ 固めたかべ <b>'+R.stats.freeze+'</b><br>正しく投げた '+R.stats.ok+' ／ まちがい '+R.stats.err+'<br>最大 '+R.best+'連 ／ ぬれたろ紙 '+R.stats.cover+' ／ 換気 '+R.stats.vent+rule;
   var h='';RX_ORDER.forEach(function(k){var r=RX[k],got=G.rx[k]>0;h+='<div class="rx '+(r.hot?'h':'c')+(got?'':' no')+'"><span class="tag">'+(r.hot?'温度↑':'温度↓')+'</span><b>'+(got?esc(r.nm):'？？？')+'</b>'+(got?esc(r.fact):'まだ投げていない')+'</div>'});$('mapRx').innerHTML=h;
   $('mapCnt').textContent=Object.keys(G.rx).length+' / '+RX_ORDER.length;$('mapBook').classList.toggle('hidden',!window.Zukan);$('mapNext').textContent=si+1<ST.length-1?'次の陣地へ':'雪の大将へ'}
 $('mapNext').onclick=function(){AU.init();openStage(G.stage)};$('mapBook').onclick=function(){window.Zukan&&Zukan.openBook()};
-function showClear(){state='clear';showOv('clear');backBtn();
+function showClear(){if(HELP)HELP.hide();state='clear';showOv('clear');backBtn();
   $('clRec').innerHTML='溶かした氷 <b>'+G.st.melt+'</b> ／ 固めたかべ <b>'+G.st.freeze+'</b><br>反応の玉の図鑑 '+Object.keys(G.rx).length+'/'+RX_ORDER.length+' ／ 最大 '+G.st.best+'連<br>ぬれたろ紙 '+G.st.cover+' ／ 換気 '+G.st.vent+' ／ プレイ時間 '+fmtTime(G.st.time);$('clBook').classList.toggle('hidden',!window.Zukan)}
 function fmtTime(s){s=Math.round(s||0);return Math.floor(s/60)+'分'+('0'+s%60).slice(-2)+'秒'}
 $('toTest').onclick=function(){startTest()};$('clBook').onclick=function(){window.Zukan&&Zukan.openBook()};
 
 /* ================= 確認テスト ================= */
 var TQ=[],TA=[],TI=0;
-function startTest(){state='test';R=null;showOv('test');backBtn();TQ=window.Quiz?Quiz.test():[];TA=[];TI=0;showQ()}
+function startTest(){endTut();if(HELP)HELP.hide();state='test';R=null;showOv('test');backBtn();TQ=window.Quiz?Quiz.test():[];TA=[];TI=0;showQ()}
 function showQ(){var q=TQ[TI];if(!q){finishTest();return}$('test').scrollTop=0;$('tNo').textContent=(TI+1)+' / '+TQ.length;$('tQ').textContent=q.q;$('tFig').innerHTML=q.fig||'';$('tFb').innerHTML='';var A=$('tA');A.innerHTML='';
   if(q.t==='choice'){q.shown.forEach(function(c){var b=document.createElement('button');b.className='ans';b.textContent=c;b.onclick=function(){answer(c,b)};A.appendChild(b)})}
   else if(q.t==='num'){var row=document.createElement('div');row.className='numrow';row.innerHTML='<input id="numIn" inputmode="decimal" autocomplete="off"><span style="font-weight:700;font-size:18px">'+esc(q.unit||'')+'</span>';
@@ -2602,13 +2635,13 @@ var backFrom=null;
 $('bBack').onclick=function(){AU.init();if(state==='title'){try{window.parent.postMessage({type:'rika-close-game'},'*')}catch(e){}return}
   backFrom=state;if(R)R.paused=true;$('cfText').textContent=state==='test'?'小テストは、次はさいしょから。取り返した陣地は保存されています。':state==='play'?'進み具合は保存されます（取り返した陣地・図鑑はそのまま。この試合は次にはじめから）。':'進み具合は保存されます。タイトルにもどります。';
   $('confirm').classList.remove('hidden')};
-$('cfNo').onclick=function(){$('confirm').classList.add('hidden');if(backFrom==='play'&&R&&!R.ended)R.paused=false};
+$('cfNo').onclick=function(){$('confirm').classList.add('hidden');if(backFrom==='play'&&R&&!R.ended&&!(HELP&&HELP.isOpen()))R.paused=false};
 $('cfGo').onclick=function(){$('confirm').classList.add('hidden');saveGame();toTitle()};
 
 /* ================= ループ ================= */
 var last=performance.now();
 function frame(ts){var dt=Math.min(.05,(ts-last)/1000);last=ts;now+=dt;if(state==='play'&&R&&!R.paused)step(dt);
-  if(R){if(R.shake>0)R.shake=Math.max(0,R.shake-dt);R.own.concat(R.ene).forEach(function(b){if(b.fx>0)b.fx=Math.max(0,b.fx-dt*1.6)});
+  if(R){if(R.shake>0)R.shake=Math.max(0,R.shake-dt);if(R.flash>0)R.flash=Math.max(0,R.flash-dt*1.4);R.own.concat(R.ene).forEach(function(b){if(b.fx>0)b.fx=Math.max(0,b.fx-dt*1.6)});
     R.pt=R.pt.filter(function(p){p.t+=dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=L.U*4*dt;return p.t<p.life});R.ft=R.ft.filter(function(f){f.t+=dt;return f.t<1.3});
     R.marks=R.marks.filter(function(m){m.t+=dt;return m.t<m.life});if(R.msg){R.msg.age+=dt;if(R.msg.age>R.msg.d)R.msg=null}if(R.hint){R.hint.age+=dt;if(R.hint.age>R.hint.d)R.hint=null}if(R.cpuArm>0)R.cpuArm-=dt;if(R.venting>0)R.venting-=dt}
   draw();requestAnimationFrame(frame)}
@@ -2623,7 +2656,7 @@ function step(dt){var d=R.def;G.st.time+=dt;R.t+=dt;
   if(d.vent){R.air=Math.min(1,R.air+dt*.004)}
   if(R.air>.6&&!R.hs.air){R.hs.air=1;msg('教室の空気がにごってきた！ 窓をタップして換気しよう','bad',3);hint('win','窓をタップして換気',5)}
   if(R.air>.8&&R.drag&&Math.random()<dt*2){R.drag.x+=(Math.random()-.5)*L.U*.6;R.drag.y+=(Math.random()-.5)*L.U*.6}
-  if(Math.floor(R.t)%6===0&&Math.floor(R.t-dt)%6!==0)saveGame()}
+  if(!R.tut&&Math.floor(R.t)%6===0&&Math.floor(R.t-dt)%6!==0)saveGame()}
 
 /* ================= 起動 ================= */
 cv.addEventListener('pointerdown',onDown);addEventListener('pointermove',onMove);addEventListener('pointerup',onUp);addEventListener('pointercancel',onUp);
@@ -2634,6 +2667,36 @@ $('btnStart').onclick=function(){NAME=$('nameIn').value.trim()||NAME;startGame(f
 $('btnBook').onclick=function(){window.Zukan&&Zukan.openBook()};
 if(window.PLAYER_NAME){$('nameIn').value=window.PLAYER_NAME;$('nameBox').classList.add('hidden')}
 window.Zukan&&Zukan.setup&&Zukan.setup({game:GID,koma:KOMA});
+/* ===== 遊び方案内（Guide）：黒板とチョーク ===== */
+var INTRO={title:'第24回　あつい玉・つめたい玉合戦',learn:'化学変化には **熱が出る（温度が上がる）** ものと **熱を奪う（温度が下がる）** ものがある',how:'温度計を見て、玉を **ドラッグで投げる**。あつい玉は **相手の氷**・つめたい玉は **自分のかべ** へ',gesture:'drag'};
+function hand(){return{x:L.hand[0],y:L.hand[1],r:L.hr*1.3}}
+function handArea(){return L.land?hand():null}
+function wallT(side,i){return function(){var p=side==='own'?L.own[i]:L.ene[i];return p?{x:p.x,y:p.y,w:L.bw*1.2,h:L.bh*1.2}:null}}
+function stageCoach(k){if(!GD||!R||R.tut)return;var r0=R;
+  if(k==='paper')GD.coach([{gesture:'drag',target:function(){return{x:L.paper[0],y:L.paper[1],r:L.U*.75}},to:hand,until:function(){return R!==r0||!R.ball||R.ball.covered},text:'アンモニアが出る玉。**ぬれたろ紙を 玉へ ドラッグ** して かぶせてから 投げる'}],{key:'ondo-paper'});
+  if(k==='win')GD.coach([{gesture:'tap',target:function(){var w=L.win;return{x:w.x+w.w/2,y:w.y+w.h/2,w:w.w+12,h:w.h+12}},until:function(){return R!==r0||R.stats.vent>=1},dim:false,text:'教室の空気が にごってきた。**窓を タップ** して 換気'}],{key:'ondo-win'})}
+if(GD){
+ GD.setup({theme:{bg:'#23352B',fg:'#F4F4F0',accent:'#F2D675',accentText:'#23352B',font:'"Zen Kurenaido",sans-serif',bodyFont:'"Zen Kurenaido","Hiragino Kaku Gothic ProN",sans-serif',radius:4,texture:'chalk',line:'rgba(244,244,240,.8)',dim:'rgba(10,20,15,.55)',shadow:'0 10px 0 #5a3b22',outline:'#23352B',hand:'#F4F4F0',handLine:'#23352B'},
+  sfx:function(k){({step:function(){SFX.xylo(3)},done:function(){SFX.frost()},clear:function(){SFX.win()},open:function(){SFX.chalk()},close:function(){SFX.chalk()},cheer:function(){SFX.chalk()},nudge:function(){SFX.chalk()}}[k]||function(){})()},muted:function(){return AU.mute}});
+ PRACTICE={label:'れんしゅう試合',clearText:'れんしゅうクリア！',block:true,
+  start:function(){TUTON=true;$('confirm').classList.add('hidden');if(!G||REPLAY)G=loadGame()||fresh();document.body.classList.add('tut');newRun(0,true);renderBg();OVS.forEach(function(k){$(k).classList.add('hidden')});state='play';R.paused=false;backBtn();if(HELP)HELP.show()},
+  steps:[
+   {gesture:'tap',target:function(){return{x:L.gog[0],y:L.gog[1],r:L.U*.8}},until:function(){return R&&R.gog},text:'実験の前に **保護眼鏡を タップ** して かける',praise:'安全よし！'},
+   {gesture:'drag',target:hand,area:handArea,to:wallT('ene',0),until:function(){return R&&R.stats.melt>=1},text:'実験メモの **温度計が 上がった** ＝ **あつい玉**。手元の玉を **相手の氷のかべへ ドラッグ**',praise:'ジュッ！'},
+   {gesture:'drag',target:hand,area:handArea,to:wallT('own',1),until:function(){return R&&R.stats.freeze>=1},text:'こんどは **温度が 下がった** ＝ **つめたい玉**。**自分の雪のかべへ ドラッグ** すると 固まる',praise:'パキッ！'}
+  ],
+  onExit:function(res){TUTON=false;document.body.classList.remove('tut');if(res.stopped||!R||!R.tut)return;R=null;
+   if(REPLAY){REPLAY=false;G=null;toTitle();return}openStage(0)}};
+ HELP=GD.help({rules:['はじめに **保護眼鏡を タップ**',
+   '実験メモで **温度が 上がる** 反応＝**あつい玉** → 相手の **氷のかべへ ドラッグ**（溶ける）',
+   '**温度が 下がる** 反応＝**つめたい玉** → **自分の雪のかべへ ドラッグ**（固まる・直る）',
+   'アンモニアが出る玉は **ぬれたろ紙を ドラッグ** して かぶせてから。空気がにごったら **窓を タップ**',
+   '相手の氷を ぜんぶ溶かせば 勝ち。自分のかべが ぜんぶ溶けたら 負け'],
+  onOpen:function(){if(R)R.paused=true},onClose:function(){if(R&&state==='play'&&!R.ended&&$('confirm').classList.contains('hidden'))R.paused=false},
+  replay:function(){if(R&&R.tut)return null;saveGame();REPLAY=true;GD.tutorial(PRACTICE);return null},labels:{replay:'れんしゅうを もう一度'},
+  offset:{x:56},size:46,attention:true,show:false});
+ GD.tutorialButton('#btnHow',function(){AU.init();NAME=$('nameIn').value.trim()||NAME;REPLAY=true;GD.tutorial(PRACTICE)});
+}else $('btnHow').classList.add('hidden');
 layout();
 if(document.fonts&&document.fonts.load){document.fonts.load('20px "Zen Kurenaido"').catch(function(){})}
 if(TEST)startTest();else toTitle();

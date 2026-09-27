@@ -110,6 +110,15 @@ button:disabled{opacity:.45}
 .pop.r{background:var(--shu);color:var(--gofun)}.pop.g{background:var(--bokuryoku);color:var(--gofun)}.pop.big{font-size:38px}
 .wide .pop{font-size:32px}.wide .pop.big{font-size:48px}
 @keyframes popup{0%{transform:translate(-50%,-50%) scale(.3);opacity:0}14%{transform:translate(-50%,-50%) scale(1.1);opacity:1}24%{transform:translate(-50%,-50%) scale(1)}78%{opacity:1}100%{transform:translate(-50%,-110%);opacity:0}}
+.tut #bBack,.tut #bSnd{z-index:2147482608}
+.fu{transition:transform .08s,filter .08s}.fu:active{filter:brightness(1.12)}
+.stars{display:flex;gap:14px;justify-content:center;align-items:flex-end;margin:6px 0 2px}
+.stars span{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:12px;color:#5b5247}
+.stars i{font-style:normal;font-family:var(--fh);font-size:52px;line-height:1;color:#d8ccb0;text-shadow:0 0 0 #2A2622,2px 2px 0 #2A2622;opacity:0;animation:stardon .42s cubic-bezier(.2,1.7,.4,1) forwards}
+.stars i.on{color:#C8A24A;text-shadow:2px 2px 0 #2A2622,0 0 18px rgba(226,197,114,.9)}
+.stars span:nth-child(2) i{animation-delay:.45s}.stars span:nth-child(3) i{animation-delay:.9s}.stars span:nth-child(1) i{animation-delay:0s}
+@keyframes stardon{0%{opacity:0;transform:scale(2.8) rotate(-18deg)}60%{opacity:1;transform:scale(.86) rotate(4deg)}100%{opacity:1;transform:scale(1)}}
+@media (prefers-reduced-motion:reduce){.stars i{animation:none;opacity:1}}
 @media (prefers-reduced-motion:reduce){.pop{animation:popfade 1.8s forwards}@keyframes popfade{0%,80%{opacity:1}100%{opacity:0}}#say{animation:none}}
 </style></head><body>
 <div id="app">
@@ -121,6 +130,7 @@ button:disabled{opacity:.45}
       <div class="namestrip kg" id="nameRow"><b>なまえ</b><input id="nameIn" maxlength="16" placeholder="（空でも遊べる）" autocomplete="off"></div>
       <button class="fu" id="bStart">出陣する</button>
       <button class="fu g hidden" id="bCont">つづきから</button>
+      <button class="fu w s" id="bHow">あそびかた（れんしゅう）</button>
       <div class="row"><button class="fu w s" id="bSnd1">音　あり</button><button class="fu w s zk" id="bBook1">📖 図鑑</button><button class="fu w s hidden" id="bList">一覧へ</button></div>
     </div>
   </div>
@@ -128,9 +138,9 @@ button:disabled{opacity:.45}
   <div id="stageUI" class="scr hidden"><div id="slip" class="kg hidden"></div></div>
   <div id="say" class="kg hidden"></div>
   <div id="test" class="scr hidden"><div id="tbox" class="kg"></div></div>
-  <div id="ov" class="scr hidden"><div id="ovBox" class="kg"></div></div>
-  <button id="bBack" class="fu hidden" aria-label="もどる">もどる</button>
-  <button id="bSnd" class="fu w hidden" aria-label="音">音</button>
+  <div id="ov" class="scr hidden" data-gd-pass><div id="ovBox" class="kg"></div></div>
+  <button id="bBack" class="fu hidden" aria-label="もどる" data-gd-pass>もどる</button>
+  <button id="bSnd" class="fu w hidden" aria-label="音" data-gd-pass>音</button>
   <div id="pops"></div>
 </div>
 <script>/*@SUBMIT_CARD_BEGIN*/
@@ -1427,6 +1437,9 @@ window.ZUKAN_CARDS={"v": 1, "grade": "chu2", "name": "中2理科図鑑", "econom
       if(PASS_RE.test(String(t.id||''))||PASS_RE.test(typeof t.className==='string'?t.className:''))return true;
       if((t.tagName==='BUTTON'||t.tagName==='A'||t.getAttribute('role')==='button')&&/^\s*[◀←＜<]?\s*(もどる|戻る|一覧へ|とじる|閉じる|はい|いいえ|やめる|キャンセル|おと|音)/.test(t.textContent||''))return true}
       t=t.parentNode}return false}
+  /* 手ほどき中は、もどる等（passThru に当たる fixed/absolute のボタン）を暗幕・吹き出しより上へ出す。終わったら元に戻す */
+  function liftPass(){var out=[];try{var els=document.querySelectorAll('button,a,[role=button],[data-gd-pass]');for(var i=0;i<els.length;i++){var e=els[i];if(e.closest&&e.closest('.gd-root'))continue;if(e.classList&&e.classList.contains('gd-hbtn'))continue;if(!passThru(e))continue;var cs=getComputedStyle(e);if(cs.position!=='fixed'&&cs.position!=='absolute')continue;if(cs.display==='none'||cs.visibility==='hidden')continue;out.push([e,e.style.zIndex]);e.style.zIndex=String(Z+1)}}catch(_){}
+    return function(){for(var i=0;i<out.length;i++){out[i][0].style.zIndex=out[i][1]}}}
   function inGuide(t){if(passThru(t))return true;while(t&&t!==document){if(t.classList&&(t.classList.contains('gd-root')||t.classList.contains('gd-hbtn')))return true;t=t.parentNode}return false}
   function hexRGB(c){c=String(c||'').trim();var m;
     if((m=c.match(/^#([0-9a-f]{3})$/i)))return [0,1,2].map(function(i){return parseInt(m[1][i]+m[1][i],16)});
@@ -1767,7 +1780,7 @@ window.ZUKAN_CARDS={"v": 1, "grade": "chu2", "name": "中2理科図鑑", "econom
     if(!steps||!steps.length){resolveP({done:true,steps:0});return p}
     if(opt.key&&!opt.force&&sget('coach:'+opt.key)){resolveP({already:true});return p}
 
-    var root=mkRoot('gd-coach',opt.theme);root.setAttribute('aria-live','polite');
+    var root=mkRoot('gd-coach',opt.theme);root.setAttribute('aria-live','polite');var unlift=liftPass();
     var uid='gdm'+Math.random().toString(36).slice(2,8);
     root.innerHTML='<svg class="dim" aria-hidden="true"><defs><mask id="'+uid+'" maskUnits="userSpaceOnUse"><rect x="-10" y="-10" width="200%" height="200%" fill="#fff"/><g class="holes"></g></mask></defs>'+
       '<rect class="shade" x="-10" y="-10" width="200%" height="200%" style="fill:var(--gd-dim)" mask="url(#'+uid+')"/><g class="halos"></g><path class="arw"/><path class="arh"/><circle class="dest" r="0"/></svg>';
@@ -1815,6 +1828,7 @@ window.ZUKAN_CARDS={"v": 1, "grade": "chu2", "name": "中2理科図鑑", "econom
     };
     st.finish=function(res){
       if(st.finished)return;st.finished=true;
+      try{unlift()}catch(_){}
       if(st.evOff)st.evOff();
       delTick(tick);popLayer(layer);offPtr();window.removeEventListener('resize',onRs);
       if(res.done&&opt.key)sset('coach:'+opt.key,'1');
@@ -2163,8 +2177,12 @@ const SFX={
  tap:()=>tone(700,.05,'sine',.07),
  swish:()=>noise(.14,.12,2600,'bandpass'),
  fan:()=>{SFX.taiko();[523,659,784,1047].forEach((f,i)=>tone(f,.5,'triangle',.08,.15+i*.12));SFX.sho(0)},
- stamp:()=>{tone(80,.3,'sine',.35,0,50);noise(.1,.15,400)}
+ stamp:()=>{tone(80,.3,'sine',.35,0,50);noise(.1,.15,400)},
+ up:n=>{const f=523*Math.pow(2,Math.min(n,16)/12);tone(f,.22,'triangle',.09);tone(f*1.5,.3,'sine',.04,.05)},
+ tier:()=>{SFX.taiko();[784,988,1175,1568].forEach((f,i)=>tone(f,.35,'triangle',.07,.06+i*.07))},
+ don:i=>{tone(110-i*8,.3,'sine',.4,0,60);noise(.1,.16,380);tone(880+i*220,.4,'triangle',.07,.04)}
 };
+function vib(p){try{if(navigator.vibrate)navigator.vibrate(p)}catch(e){}}
 
 /* ===== canvas ===== */
 const cv=$('#cv'),ctx=cv.getContext('2d'),app=$('#app');
@@ -2252,22 +2270,33 @@ const PAINT={red:{n:'赤茶色',c:'#B5652F',to:'powder'},black:{n:'黒',c:'#2623
 function prodsOf(pw,lm){if(pw==='red')return lm==='white'?['cu','co2']:['cu','o2'];return lm==='white'?['co2']:['none']}
 
 /* ===== 状態 ===== */
-let MODE='title',ST=null,PD=null,parts=[],shakeA=0,KK=0,hov=null;
+let MODE='title',ST=null,PD=null,parts=[],shakeA=0,KK=0,hov=null,flashA=0,comboFx=null,PAUSED=false;
+const GD=window.Guide||null;let HELP=null,PRACTICE=null,REPLAY=false,TUTON=false;
+const TIERS=[3,5,10,15,20,30,50];
+/* 当たった瞬間：揺れ・金のフラッシュ・音程が上がる音・振動・連続の大文字 */
+function juice(x,y){const n=S.combo;if(!RM)shakeA=Math.max(shakeA,3+Math.min(7,n*.8));flashA=Math.min(.5,.2+n*.025);vib(14);SFX.up(n);
+ if(n>=2)comboFx={n,t:T};if(TIERS.includes(n)){setTimeout(()=>{SFX.tier();pop(n+'連続！',W/2,H*.3,'big'+(n>=5?' r':''),n>=10?'止まらない！':n>=5?'絶好調！':'いい流れ！');burst(W/2,H*.3,['#E2C572','#B8472E','#F4EEDF','#4E8A72'],RM?5:30)},160)}}
+/* 連続がとぎれたとき：「あと1回で×5だった！」 */
+function comboBreak(x,y){const c=S.combo;if(c<2)return;const nx=TIERS.find(t=>t>c);setTimeout(()=>{if(nx&&nx-c===1)pop('あと1回で '+nx+'連続だった！',x,y-70,'r');else pop(c+'連続で とぎれた',x,y-70,'g')},420)}
+/* 紙吹雪（金箔・朱・緑青の小片が舞う） */
+function confetti(n){if(RM)return;const cs=['#E2C572','#C8A24A','#B8472E','#4E8A72','#F4EEDF','#2E4A7D'];for(let i=0;i<(n||80);i++)parts.push({leaf:1,x:Math.random()*W,y:-20-Math.random()*H*.3,vx:(Math.random()-.5)*60,vy:40+Math.random()*80,r:6+Math.random()*7,c:cs[i%cs.length],life:3.2+Math.random(),rot:Math.random()*6,vr:(Math.random()-.5)*8,ph:Math.random()*6})}
+function starsHTML(list){return '<div class="stars">'+list.map(q=>'<span><i class="'+(q[0]?'on':'')+'">★</i>'+esc(q[1])+'</span>').join('')+'</div>'}
+function starsSound(list){list.forEach((q,i)=>setTimeout(()=>{if(q[0]){SFX.don(i);vib(18)}else SFX.tap()},RM?0:i*450+120))}
 const L={};
 function earn(n,why,key,x,y){if(key){if(S.paid[key])return 0;S.paid[key]=1;save()}try{return window.Zukan&&Zukan.earn?(Zukan.earn(n,why,{x:x==null?W/2:x,y:y==null?H*.3:y})||0):0}catch(e){return 0}}
 function kk(){try{KK=window.Zukan&&Zukan.state?(Zukan.state().kakera||0):0}catch(e){KK=0}}
 function pop(t,x,y,cls,sub){const d=document.createElement('div');d.className='pop '+(cls||'');d.innerHTML=esc(t)+(sub?'<small>'+esc(sub)+'</small>':'');d.style.left=clamp(x,100,W-100)+'px';d.style.top=clamp(y,80,H-60)+'px';$('#pops').appendChild(d);setTimeout(()=>d.remove(),2000)}
 let sayT=0;function say(t,x,y,bad){const e=$('#say');e.innerHTML=t;e.className='kg'+(bad?' bad':'');e.style.left=clamp(x,160,W-160)+'px';e.style.top=clamp(y,130,H-20)+'px';e.classList.remove('hidden');clearTimeout(sayT);sayT=setTimeout(()=>e.classList.add('hidden'),3000)}
 function burst(x,y,cols,n){if(RM)n=Math.min(n,5);for(let i=0;i<n;i++){const a=Math.random()*6.28,s=60+Math.random()*200;parts.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s-60,r:2+Math.random()*4,c:cols[i%cols.length],life:1})}}
-function good(x,y,label,sub){S.combo++;S.good++;S.maxCombo=Math.max(S.maxCombo,S.combo);save();SFX.good();if(label)pop(label,x,y,'',sub);burst(x,y,['#E2C572','#F4EEDF','#C8A24A'],12)}
-function bad(x,y,msg){S.combo=0;S.miss++;if(ST)ST.mis++;save();SFX.bad();say(msg,x,y,true);if(!RM)shakeA=6}
+function good(x,y,label,sub){S.combo++;S.good++;S.maxCombo=Math.max(S.maxCombo,S.combo);save();SFX.good();if(label)pop(label,x,y,'',sub);burst(x,y,['#E2C572','#F4EEDF','#C8A24A'],18);juice(x,y)}
+function bad(x,y,msg){if(ST&&ST.tut){SFX.bad();say(msg+'<br><span style="font-size:13px">（れんしゅうなので 数えない）</span>',x,y,true);return}comboBreak(x,y);S.combo=0;S.miss++;if(ST)ST.mis++;save();SFX.bad();vib([30,40,30]);say(msg,x,y,true);if(!RM)shakeA=6}
 
 /* ===== 画面 ===== */
 function show(m){MODE=m;['#title','#mapUI','#stageUI','#test','#ov'].forEach(s=>$(s).classList.add('hidden'));
  if(m==='title')$('#title').classList.remove('hidden');if(m==='map')$('#mapUI').classList.remove('hidden');if(m==='stage')$('#stageUI').classList.remove('hidden');if(m==='test')$('#test').classList.remove('hidden');
- $('#bBack').classList.toggle('hidden',m==='title'||(m==='test'&&TEST_ONLY&&!INHUB));$('#bSnd').classList.toggle('hidden',m==='title');$('#say').classList.add('hidden');$('#bList').classList.toggle('hidden',!INHUB);layout()}
+ $('#bBack').classList.toggle('hidden',m==='title'||(m==='test'&&TEST_ONLY&&!INHUB));$('#bSnd').classList.toggle('hidden',m==='title');$('#say').classList.add('hidden');$('#bList').classList.toggle('hidden',!INHUB);if(HELP){if(m==='stage'||m==='map')HELP.show();else HELP.hide()}layout()}
 function ovOpen(html,after){$('#ovBox').innerHTML=html;$('#ov').classList.remove('hidden');$('#ovBox').scrollTop=0;if(after)after()}
-function ovClose(){$('#ov').classList.add('hidden')}
+function ovClose(){$('#ov').classList.add('hidden');$('#ov').style.zIndex=''}
 let slipT=0;function slip(h,b,sm){const e=$('#slip');e.classList.remove('mini');clearTimeout(slipT);if(!WIDE&&ST&&(ST.k==='b'||ST.k==='def'))slipT=setTimeout(()=>e.classList.add('mini'),5000);e.innerHTML=(h?'<div class="hd">'+h+'</div>':'')+'<b>'+b+'</b>'+(sm?'<span class="sm">'+sm+'</span>':'');e.classList.remove('hidden');e.style.animation='none';void e.offsetWidth;e.style.animation='sayin .3s ease-out'}
 
 /* ===== レイアウト ===== */
@@ -2284,7 +2313,7 @@ function layout(){const r=app.getBoundingClientRect();W=Math.max(300,r.width);H=
   L.cart={x:L.fE.x+L.fE.w*.98,y:L.fE.y+L.fE.h*.2};
  }
  layoutHand();
- const sl=$('#slip');if(WIDE){sl.style.left=(L.roll+130)+'px';sl.style.top='8px';sl.style.maxWidth=Math.min(620,W*.5)+'px'}else{sl.style.left='8px';sl.style.top=(L.hud+2)+'px';sl.style.maxWidth=(W-16)+'px'}
+ const sl=$('#slip');if(WIDE){sl.style.left=(L.roll+130)+'px';sl.style.top='8px';sl.style.maxWidth=Math.min(620,W*.5)+'px'}else{sl.style.left='8px';sl.style.top=(L.hud+2)+'px';sl.style.maxWidth=(W-16-(HELP&&MODE==='stage'?58:0))+'px'}
  if(MODE==='map')layoutMap();
 }
 function layoutHand(){L.cards=[];if(!ST)return;const n=Math.max(1,ST.hand?ST.hand.length:3),y=H-L.handH+6,h=L.handH-14-6;
@@ -2296,34 +2325,36 @@ function pathPt(t){const a=L.gO,b=L.p1,c=L.p2,d=L.gE,u=1-t;return{x:u*u*u*a.x+3*
 function flagSlots(box,n,mine){const out=[];const cols=Math.min(5,Math.max(2,Math.ceil(Math.sqrt(n*1.6))));const rows=Math.ceil(n/cols);for(let i=0;i<n;i++){const c=i%cols,r=Math.floor(i/cols);const fx=.18+(.62*(c+.5)/cols)+r*.05,fy=.34+(.5*(r+.5)/Math.max(rows,1));out.push({x:box.x+box.w*fx+(WIDE?0:0),y:box.y+box.h*fy})}return out}
 
 /* ===== ステージ ===== */
-function startStage(i){const d=STG[i];S.stage=i;save();
+function startStage(i,opt){opt=opt||{};const d=STG[i];if(!opt.keep){S.stage=i;save()}
  ST={i,d,k:d.k,phase:'',hand:[],sold:[],flags:d.flags||0,cap:0,lost:0,rt:3.5,mis:0,t:0,fx:[],sid:0,end:false,seal:null,cover:0,raid:[],store:10,stopped:0,wrongCut:0,passed:0,dur:45,paint:{powder:{},lime:{}},pc:'red',rs:[null,null],tries:0,sealed:false,deckN:0};
+ ST.tut=!!opt.tut;app.classList.toggle('tut',ST.tut);
  show('stage');
- if(d.k==='b'){ST.hand=[deal(),deal(),deal()];ST.phase='fight';slip(d.nm+'　'+d.tt,d.intro?'マグネシウムの札を 戦場へ ドラッグ！':'酸素を 受け取れる隊だけ 送りこめ',d.intro?'砦の 酸素の旗（O₂）を うばって 持ち帰る。敵方の 牛車より 先に。':'受け取れない札は 左の「陣幕」へ ドラッグして 見送る'+(d.blind?'（名札なし：模型で 見分ける）':''))}
+ if(d.k==='b'){ST.hand=ST.tut?['mg','mgo','mg'].map(sq=>({sq,id:++ST.sid,in:0})):[deal(),deal(),deal()];ST.phase='fight';slip(d.nm+'　'+d.tt,d.intro?'マグネシウムの札を 戦場へ ドラッグ！':'酸素を 受け取れる隊だけ 送りこめ',d.intro?'砦の 酸素の旗（O₂）を うばって 持ち帰る。敵方の 牛車より 先に。':'受け取れない札は 左の「陣幕」へ ドラッグして 見送る'+(d.blind?'（名札なし：模型で 見分ける）':''))}
  if(d.k==='seal'){ST.hand=shuffle(['c','co2','h2o','mgo']).map(sq=>({sq,id:++ST.sid}));ST.phase='send';slip(d.nm+'　'+d.tt,'酸素を 銅に 結び付けたまま 動かない 砦','この酸素を うばって 銅を 取りもどしたい。どの隊を 送りこむ？（ドラッグ）')}
  if(d.k==='def'){ST.hand=[];ST.phase='def';ST.spawn=1.2;slip(d.nm+'　'+d.tt,'酸素を うばえる隊だけ、指で 斬れ！','受け取れない物は 通してよい（斬ると まちがい）')}
  layout();SFX.taiko();
+ if(GD&&!opt.tut&&(d.k==='seal'||d.k==='def'))setTimeout(()=>{if(ST&&ST.i===i)stageCoach(d.k)},700);
 }
-function deal(){const d=ST.d,ok=d.pool.filter(k=>SQ[k].ok),ng=d.pool.filter(k=>!SQ[k].ok);ST.deckN++;let sq;if(!ng.length||Math.random()<.56)sq=ok[Math.floor(Math.random()*ok.length)];else sq=ng[Math.floor(Math.random()*ng.length)];return{sq,id:++ST.sid,in:0}}
+function deal(){if(ST.tut&&!ST.tutDis&&!(ST.hand||[]).some(c=>c&&c.sq==='mgo'))return{sq:'mgo',id:++ST.sid,in:0};const d=ST.d,ok=d.pool.filter(k=>SQ[k].ok),ng=d.pool.filter(k=>!SQ[k].ok);ST.deckN++;let sq;if(!ng.length||Math.random()<.56)sq=ok[Math.floor(Math.random()*ok.length)];else sq=ng[Math.floor(Math.random()*ng.length)];return{sq,id:++ST.sid,in:0}}
 function send(ci,p){const c=ST.hand[ci];if(!c)return;const sq=SQ[c.sq];ST.sold.push({sq:c.sq,id:c.id,t:0,st:'go',tt:0,lane:(c.id%3-1)*(WIDE?20:16),mols:sq.mols.slice()});SFX.taiko();
  if(ST.k==='seal'){ST.hand.splice(ci,1);layoutHand();return}
  ST.hand[ci]=null;setTimeout(()=>{if(ST&&ST.k==='b'&&!ST.end){const k=ST.hand.indexOf(null);if(k>=0){ST.hand[k]=deal()}}},380)}
 function dismiss(ci,p){const c=ST.hand[ci];if(!c)return;const sq=SQ[c.sq];
- if(!sq.ok){good(p.x,p.y-30,'見送り！',sq.n+'は 受け取れない');if(c.sq==='mgo'&&!S.scrolls[1]){earn(30,'rule','rule1');S.scrolls[1]=1;save();setTimeout(()=>pop('規則を見つけた！',W/2,H*.35,'big','燃えかすは 酸素を 受け取れない'),600)}}
+ if(!sq.ok){ST.tutDis=true;good(p.x,p.y-30,'見送り！',sq.n+'は 受け取れない');if(c.sq==='mgo'&&!S.scrolls[1]){earn(30,'rule','rule1');S.scrolls[1]=1;save();setTimeout(()=>pop('規則を見つけた！',W/2,H*.35,'big','燃えかすは 酸素を 受け取れない'),600)}}
  else bad(p.x,p.y-30,sq.n+'は 酸素を 受け取れた！<br><span style="font-size:13px">'+sq.eq+'</span>');
  ST.hand[ci]=null;setTimeout(()=>{if(ST&&ST.k==='b'&&!ST.end){const k=ST.hand.indexOf(null);if(k>=0)ST.hand[k]=deal()}},380)}
 
 /* ===== 更新 ===== */
 function update(dt){T+=dt;if(MODE==='map'||MODE==='stage')S.t+=dt;const s=ST;
  if(MODE==='stage'&&s){s.t+=dt;
-  if(s.k==='b'&&!s.end){s.rt-=dt;if(s.rt<=0&&s.flags>0){s.flags--;s.lost++;s.fx.push({k:'haul',t:0,from:flagSlots(L.fE,s.d.flags)[s.flags]});SFX.pon();s.rt=s.d.rival*(.85+Math.random()*.3)}}
+  if(s.k==='b'&&!s.end&&!s.tut){s.rt-=dt;if(s.rt<=0&&s.flags>0){s.flags--;s.lost++;s.fx.push({k:'haul',t:0,from:flagSlots(L.fE,s.d.flags)[s.flags]});SFX.pon();s.rt=s.d.rival*(.85+Math.random()*.3)}}
   s.sold.forEach(o=>{
    if(o.st==='go'){o.t+=dt/3.1;if(o.t>=1){o.t=1;const sq=SQ[o.sq];
      if(s.k==='seal'){if(sq.ok){o.st='enter';o.tt=0;good(L.gE.x,L.gE.y-40,'木炭の隊、突入！','酸素を 受け取れる 物質');s.phase='cover';setTimeout(()=>{if(ST===s)toPaint()},2300)}else{o.st='bounce';o.tt=0;bad(L.gE.x,L.gE.y-30,sq.why)}return}
      if(sq.ok){if(s.flags>0){s.flags--;o.st='take';o.tt=0;o.from=flagSlots(L.fE,s.d.flags)[s.flags];SFX.kane()}else{o.st='back';say('もう 旗が 残っていない',L.gE.x,L.gE.y-20)}}
      else{o.st='bounce';o.tt=0;bad(L.gE.x,L.gE.y-30,'はね返された！<br>'+sq.why+(s.d.blind?'<br><b>'+sq.n+'</b>':''))}}}
    else if(o.st==='take'){o.tt+=dt;if(o.tt>=.8){o.st='carry';o.mols=SQ[o.sq].prod.slice()}}
-   else if(o.st==='carry'){o.t-=dt/2.3;if(o.t<=0){o.dead=true;s.cap++;S.caps++;const sq=SQ[o.sq];S.combo++;S.good++;S.maxCombo=Math.max(S.maxCombo,S.combo);save();SFX.cap();pop(sq.eq,L.gO.x,L.gO.y-60,'',(s.d.blind?sq.n+' → '+sq.pn:'酸素を うばった！')+(S.combo>=3?'　'+S.combo+'連続':''));burst(L.gO.x,L.gO.y,['#E2C572','#E4572E','#F4EEDF'],16)}}
+   else if(o.st==='carry'){o.t-=dt/2.3;if(o.t<=0){o.dead=true;s.cap++;S.caps++;const sq=SQ[o.sq];S.combo++;S.good++;S.maxCombo=Math.max(S.maxCombo,S.combo);save();SFX.cap();pop(sq.eq,L.gO.x,L.gO.y-60,'',(s.d.blind?sq.n+' → '+sq.pn:'酸素を うばった！')+(S.combo>=3?'　'+S.combo+'連続':''));burst(L.gO.x,L.gO.y,['#E2C572','#E4572E','#F4EEDF'],RM?5:28);juice(L.gO.x,L.gO.y);s.flagFx={t:T}}}
    else if(o.st==='bounce'){o.tt+=dt;if(o.tt>.5)o.st='back'}
    else if(o.st==='back'){o.t-=dt/(o.sq&&SQ[o.sq].ok?2.4:4.2);if(o.t<=0)o.dead=true}
    else if(o.st==='enter'){o.tt+=dt;if(o.tt>1.2)o.dead=true}
@@ -2335,16 +2366,17 @@ function update(dt){T+=dt;if(MODE==='map'||MODE==='stage')S.t+=dt;const s=ST;
   if(s.k==='b'&&!s.end&&s.flags===0&&!s.sold.some(o=>o.st==='take'||o.st==='carry'))endBattle();
   if(s.k==='def'&&s.phase==='def')updDef(dt);
  }
- for(let i=parts.length-1;i>=0;i--){const q=parts[i];q.x+=q.vx*dt;q.y+=q.vy*dt;q.vy+=380*dt;q.life-=dt*1.1;if(q.life<=0)parts.splice(i,1)}
+ for(let i=parts.length-1;i>=0;i--){const q=parts[i];if(q.leaf){q.ph+=dt*3;q.x+=(q.vx+Math.sin(q.ph)*40)*dt;q.y+=q.vy*dt;q.rot+=q.vr*dt;q.life-=dt*.9}else{q.x+=q.vx*dt;q.y+=q.vy*dt;q.vy+=380*dt;q.life-=dt*1.1}if(q.life<=0||q.y>H+30)parts.splice(i,1)}
+ flashA=Math.max(0,flashA-dt*1.5);
  shakeA*=Math.pow(.02,dt)}
 
 /* ===== 戦の終わり ===== */
 function endBattle(){const s=ST,d=s.d;s.end=true;const win=s.cap>=s.lost,perfect=s.mis===0;
  setTimeout(()=>{if(ST!==s)return;let g=0;
   if(win){S.cleared[s.i]=true;S.scrolls[s.i]=1;if(s.i===1)S.scrolls[1]=1;if(perfect){S.perfect++;g+=earn(10,'first-try','b'+s.i)}if(s.i===6&&perfect)g+=earn(30,'rule','rule2');S.stage=Math.max(S.stage,s.i+1);save();SFX.fan()}else SFX.bad();
-  const diff=s.lost-s.cap;
+  const diff=s.lost-s.cap;const stl=[[win,'勝ち'],[win&&perfect,'無傷'],[win&&s.cap>=s.lost*2,'旗が倍']];if(win){confetti(90);flashA=.45}setTimeout(()=>starsSound(stl),350);
   const eqs=[...new Set(s.d.pool.filter(k=>SQ[k].ok))].map(k=>'<div class="eq">'+SQ[k].eq+'<span class="small">　'+SQ[k].n+' → '+SQ[k].pn+'</span></div>').join('');
-  ovOpen('<h2>'+d.nm+'　'+(win?'勝ち':'負け')+'</h2><p><span class="stamp'+(win?'':' no')+'">'+(win?'旗 '+s.cap+' 本':'あと '+(diff===0?1:diff)+' 本')+'</span>'+(perfect&&win?'<span class="stamp">無傷</span>':'')+'</p><p>うばった旗 <b>'+s.cap+'</b>　／　牛車に 運ばれた旗 <b>'+s.lost+'</b>　／　はね返された・見のがし <b>'+s.mis+'</b></p>'+
+  ovOpen('<h2>'+d.nm+'　'+(win?'勝ち':'負け')+'</h2>'+starsHTML(stl)+'<p><span class="stamp'+(win?'':' no')+'">'+(win?'旗 '+s.cap+' 本':'あと '+(diff===0?1:diff)+' 本')+'</span>'+(perfect&&win?'<span class="stamp">無傷</span>':'')+'</p><p>うばった旗 <b>'+s.cap+'</b>　／　牛車に 運ばれた旗 <b>'+s.lost+'</b>　／　はね返された・見のがし <b>'+s.mis+'</b></p>'+
    (win?'':'<p class="small">受け取れない隊を 送ると、はね返されて 時間を 失う。受け取れる隊を 迷わず 送ろう。</p>')+'<p class="small">この戦で 酸素を 受け取れた 物質：</p>'+eqs+(win?'<p class="small">作戦図「'+SCROLL[s.i].n+'」を 手に入れた。</p>':'')+
    '<div class="row" style="margin-top:10px">'+(win?'<button class="fu" id="rNext">絵巻を 先へ 繰る</button>':'<button class="fu" id="rAgain">もう一度 戦う</button><button class="fu w" id="rMap">絵巻へ</button>')+'</div>',()=>{
    if($('#rNext'))$('#rNext').onclick=()=>{SFX.tap();ovClose();toMap()};if($('#rAgain'))$('#rAgain').onclick=()=>{ovClose();startStage(s.i)};if($('#rMap'))$('#rMap').onclick=()=>{ovClose();toMap()}})},900)}
@@ -2370,26 +2402,27 @@ function doSeal(){const s=ST,rs=s.rs,prods=s.prods,r=sealCheck(prods,rs);s.tries
  const rec={v:1,koma:KOMA,game:GID,send:'C',sendText:'木炭（炭素）',pred:prods.join('+'),predText:prods.map(p=>PRODS[p]).join('と'),products:prods,productsText:prods.map(p=>PRODS[p]),reasons:rs.map(k=>REASONS[k].t),reasonIds:rs.slice(),consistent:r.ok,name:S.name||window.PLAYER_NAME||'',at:Date.now(),paint:{powder:s.pw,lime:s.lm}};
  try{localStorage.setItem(SEAL_KEY,JSON.stringify(rec))}catch(e){}
  S.sealed=true;S.seal=rec;S.cleared[s.i]=true;S.scrolls[s.i]=1;S.stage=Math.max(S.stage,s.i+1);let g=0;if(r.ok){g=earn(10,'predict','seal');S.combo++}save();
- s.phase='sealed';s.sealT=T;SFX.stamp();setTimeout(()=>SFX.fan(),400);burst(W/2,panel().y+panel().h*.5,['#B8472E','#E2C572'],24);
+ s.phase='sealed';s.sealT=T;SFX.stamp();setTimeout(()=>SFX.fan(),400);burst(W/2,panel().y+panel().h*.5,['#B8472E','#E2C572'],RM?6:40);if(!RM)shakeA=10;flashA=.5;vib([20,30,40]);setTimeout(()=>confetti(80),300);
  setTimeout(()=>{if(ST!==s)return;ovOpen('<h2>予言を 封印した</h2><p class="eq">試験管に残る物：'+PAINT[s.pw].n+'　／　石灰水：'+PAINT[s.lm].n+'</p><p>予言：<b>'+esc(rec.predText)+'</b>'+(prods[0]==='none'?'':' が できる')+'</p><p class="small">根拠：<br>'+rec.reasons.map(t=>'・'+esc(t)).join('<br>')+'</p><p>'+(r.ok?'<span class="stamp">筋が通った</span> 予言と 根拠が つながっている。':'根拠の つながりは、実験のあとで もう一度 考えよう。')+'</p><p class="small">この巻物を 開けるのは、還元の実験のあと（次の「酸素おとし」の はじめ）。当たりか 外れかは、実験の 結果が 決める。</p><div class="row"><button class="fu" id="rNext">絵巻を 先へ 繰る</button></div>',()=>{$('#rNext').onclick=()=>{ovClose();toMap()}})},1500)}
 
 /* ===== 最終戦：守り ===== */
 function updDef(dt){const s=ST;s.dur-=dt;if(s.dur<=0){s.phase='done';return endDef()}
  s.spawn-=dt;if(s.spawn<=0){const ok=Math.random()<.55,pool=ALL.filter(k=>!!SQ[k].ok===ok);s.raid.push({sq:pool[Math.floor(Math.random()*pool.length)],t:1,sp:1/clamp(4.6-(45-s.dur)*.04,2.8,4.6),id:++s.sid,lane:(Math.random()-.5)*(WIDE?40:30),cut:false});s.spawn=clamp(1.6-(45-s.dur)*.018,.75,1.6)}
- s.raid.forEach(o=>{if(o.dead)return;o.t-=dt*o.sp;if(o.t<=0){o.dead=true;const sq=SQ[o.sq];if(sq.ok){s.store=Math.max(0,s.store-1);S.combo=0;SFX.bad();pop('旗を うばわれた',L.gO.x,L.gO.y-40,'r',sq.eq)}else{s.passed++;if(!o.cut){S.combo++;S.good++;S.maxCombo=Math.max(S.maxCombo,S.combo)}SFX.pon()}}});
+ s.raid.forEach(o=>{if(o.dead)return;o.t-=dt*o.sp;if(o.t<=0){o.dead=true;const sq=SQ[o.sq];if(sq.ok){s.store=Math.max(0,s.store-1);comboBreak(L.gO.x,L.gO.y);S.combo=0;SFX.bad();pop('旗を うばわれた',L.gO.x,L.gO.y-40,'r',sq.eq)}else{s.passed++;if(!o.cut){S.combo++;S.good++;S.maxCombo=Math.max(S.maxCombo,S.combo)}SFX.pon()}}});
  s.raid=s.raid.filter(o=>!o.dead||o.fade<1);s.raid.forEach(o=>{if(o.dead&&o.fade!=null)o.fade+=dt*2})}
 function cutAt(a,b){const s=ST;s.raid.forEach(o=>{if(o.dead||o.cut)return;const p=raidPos(o);const dx=b.x-a.x,dy=b.y-a.y,l2=dx*dx+dy*dy||1;let t=((p.x-a.x)*dx+(p.y-a.y)*dy)/l2;t=clamp(t,0,1);const d=Math.hypot(a.x+dx*t-p.x,a.y+dy*t-p.y);
-  if(d<(WIDE?34:28)){const sq=SQ[o.sq];o.cut=true;if(sq.ok){o.dead=true;o.fade=0;s.stopped++;S.combo++;S.good++;S.maxCombo=Math.max(S.maxCombo,S.combo);SFX.swish();SFX.pon();burst(p.x,p.y,['#E2C572','#C8A24A','#F4EEDF'],14);if(S.combo%5===0)pop(S.combo+'連続！',p.x,p.y-40,'')}else{bad(p.x,p.y-20,'斬らなくてよい！<br>'+sq.why)}}});s.trail=(s.trail||[]).concat([{x:b.x,y:b.y,t:T}]).slice(-14)}
+  if(d<(WIDE?34:28)){const sq=SQ[o.sq];o.cut=true;if(sq.ok){o.dead=true;o.fade=0;s.stopped++;S.combo++;S.good++;S.maxCombo=Math.max(S.maxCombo,S.combo);SFX.swish();SFX.pon();burst(p.x,p.y,['#E2C572','#C8A24A','#F4EEDF'],RM?5:22);juice(p.x,p.y)}else{bad(p.x,p.y-20,'斬らなくてよい！<br>'+sq.why)}}});s.trail=(s.trail||[]).concat([{x:b.x,y:b.y,t:T}]).slice(-14)}
 function raidPos(o){const q=pathPt(clamp(o.t,0,1));return{x:q.x+(WIDE?0:o.lane),y:q.y+(WIDE?o.lane:0)}}
-function endDef(){const s=ST;S.def={stopped:s.stopped,store:s.store,wrong:s.mis};S.cleared[s.i]=true;S.scrolls[s.i]=1;S.stage=STG.length;save();if(s.store>=8)earn(10,'first-try','def');SFX.fan();
- ovOpen('<h2>最終戦　守りきった</h2><p><span class="stamp">斬った '+s.stopped+'</span><span class="stamp">蔵の旗 '+s.store+' / 10</span></p><p>見分けちがい <b>'+s.mis+'</b> 回　／　通してよい隊を 見送った <b>'+s.passed+'</b></p><p>酸素を うばうのは、<b>酸素を 受け取れる物質だけ</b>。燃えかすや 二酸化炭素・水は もう酸素と 結び付いているので、うばわない。</p><div class="row"><button class="fu" id="rNext">絵巻を 巻き終える</button></div>',()=>{$('#rNext').onclick=()=>{ovClose();allClear()}})}
+function endDef(){const s=ST;S.def={stopped:s.stopped,store:s.store,wrong:s.mis};S.cleared[s.i]=true;S.scrolls[s.i]=1;S.stage=STG.length;save();if(s.store>=8)earn(10,'first-try','def');SFX.fan();confetti(110);flashA=.45;
+ const stl=[[s.store>=4,'守った'],[s.store>=7,'蔵 7本 以上'],[s.mis===0,'見分け 満点']];setTimeout(()=>starsSound(stl),350);
+ ovOpen('<h2>最終戦　守りきった</h2>'+starsHTML(stl)+'<p><span class="stamp">斬った '+s.stopped+'</span><span class="stamp">蔵の旗 '+s.store+' / 10</span></p><p>見分けちがい <b>'+s.mis+'</b> 回　／　通してよい隊を 見送った <b>'+s.passed+'</b></p><p>酸素を うばうのは、<b>酸素を 受け取れる物質だけ</b>。燃えかすや 二酸化炭素・水は もう酸素と 結び付いているので、うばわない。</p><div class="row"><button class="fu" id="rNext">絵巻を 巻き終える</button></div>',()=>{$('#rNext').onclick=()=>{ovClose();allClear()}})}
 function allClear(){toMap();const fin=()=>ovOpen('<h2>絵巻、完</h2><p>8つの 砦を 攻めた。<br>酸素を 受け取れる 物質（マグネシウム・炭素・水素・銅）は、酸素と 結び付いて 酸化物に なる。<br>酸化銅の砦の 予言は、実験で 開けよう。</p><div class="recs"><div>プレイ時間<b>'+fmtT(S.t)+'</b></div><div>うばった旗<b>'+S.caps+'</b></div><div>最高 連続<b>'+S.maxCombo+'</b></div><div>封印した予言<b style="font-size:14px">'+esc(S.seal?S.seal.predText:'―')+'</b></div></div><div class="row"><button class="fu" id="fTest">確認テストへ</button></div><div class="row" style="margin-top:8px"><button class="fu w s" id="fScroll">作戦図の巻物</button><button class="fu k s zk" id="fGacha">ガチャ</button><button class="fu w s zk" id="fBook">📖 図鑑</button></div>',()=>{$('#fTest').onclick=()=>{ovClose();startTest()};$('#fScroll').onclick=scrollOpen;$('#fGacha').onclick=openGacha;$('#fBook').onclick=openBook;zkButtons()});
  if(!S.mc&&window.Zukan&&Zukan.mainClear){S.mc=true;save();try{Zukan.mainClear({onClose:fin})}catch(e){fin()}}else fin()}
 function fmtT(t){t=Math.round(t||0);return Math.floor(t/60)+'分'+String(t%60).padStart(2,'0')+'秒'}
 function scrollOpen(){const n=SCROLL.filter((_,i)=>S.scrolls[i]).length;ovOpen('<h2>作戦図の巻物　'+n+' / '+SCROLL.length+'</h2><div class="scrolls">'+SCROLL.map((c,i)=>'<div class="'+(S.scrolls[i]?'':'off')+'"><b>'+(S.scrolls[i]?esc(c.n):'？？？の巻')+'</b>'+(S.scrolls[i]?esc(c.d):STG[i].nm+'「'+esc(STG[i].tt)+'」で 手に入る')+'</div>').join('')+'</div>'+(S.seal?'<p class="small">封印中の予言：'+esc(S.seal.predText)+'（酸素おとし で 開く）</p>':'')+'<div class="row"><button class="fu w" id="sClose">とじる</button></div>',()=>{$('#sClose').onclick=()=>{SFX.tap();ovClose()}})}
 
 /* ===== 絵巻の道（地図） ===== */
-function toMap(){ST=null;show('map');const i=Math.min(S.stage,STG.length-1);$('#bGo').textContent=S.stage>=STG.length?'確認テストへ':STG[i].nm+'「'+STG[i].tt+'」へ 出陣';kk()}
+function toMap(){endTut();ST=null;show('map');const i=Math.min(S.stage,STG.length-1);$('#bGo').textContent=S.stage>=STG.length?'確認テストへ':STG[i].nm+'「'+STG[i].tt+'」へ 出陣';kk()}
 function layoutMap(){L.nodes=[];const n=STG.length;for(let i=0;i<n;i++){if(WIDE){const x=W-L.roll-90-(W-L.roll-200)*i/(n-1)+0,y=L.hud+80+(H-L.hud-260)*(.5+.35*Math.sin(i*1.3));L.nodes.push({x:x-20,y})}else{const y=L.hud+118+(H-L.hud-290)*i/(n-1),x=W*(.5+.3*Math.sin(i*1.25));L.nodes.push({x,y})}}}
 
 /* ===== ポインター ===== */
@@ -2399,7 +2432,7 @@ cv.addEventListener('pointerdown',e=>{ac();const p=pt(e);try{cv.setPointerCaptur
  if(MODE==='map'){const i=L.nodes?L.nodes.findIndex(q=>Math.hypot(q.x-p.x,q.y-p.y)<44):-1;if(i>=0&&i<=Math.min(S.stage,STG.length-1)){SFX.tap();startStage(i)}return}
  if(MODE!=='stage'||!ST)return;const s=ST;
  if(s.k==='def'&&s.phase==='def'){PD={k:'cut',last:p};return}
- if(s.phase==='paint'){const P=pots(),hit=P.find(r=>inR(p,r));if(hit){if(hit.k==='next'){if(paintDone()){SFX.tap();toReason()}else say('試験管の粉と 石灰水を、半分 以上 塗ろう',p.x,p.y-20)}else{s.pc=hit.k;SFX.tap()}return}PD={k:'paint'};paintAt(p);return}
+ if(s.phase==='paint'){const P=pots(),hit=P.find(r=>inR(p,r));if(hit){if(hit.k==='next'){if(paintDone()){SFX.tap();toReason()}else say('試験管の粉と 石灰水を、半分 以上 塗ろう',p.x,p.y-20)}else{s.pc=hit.k;s.pcPicked=1;SFX.tap()}return}PD={k:'paint'};paintAt(p);return}
  if(s.phase==='reason'){const rc=reasonCards().find(r=>inR(p,r));if(rc&&!s.rs.includes(rc.k)){PD={k:'reason',key:rc.k,x:p.x,y:p.y};SFX.tap();return}const si=slotRects().findIndex(r=>inR(p,r));if(si>=0&&s.rs[si]){s.rs[si]=null;SFX.tap()}return}
  if(s.phase==='stamp'){if(inR(p,stampRect(),6)){PD={k:'stamp',x:p.x,y:p.y};SFX.tap()}return}
  const ci=L.cards.findIndex((r,i)=>inR(p,r)&&s.hand[i]);if(ci>=0&&(s.phase==='fight'||s.phase==='send')){PD={k:'card',ci,x:p.x,y:p.y,sx:p.x,sy:p.y,id:s.hand[ci].id};SFX.tap();return}
@@ -2419,7 +2452,8 @@ addEventListener('keydown',e=>{if(e.key==='Escape'&&(MODE==='stage'||MODE==='map
 function draw(){ctx.save();ctx.clearRect(0,0,W,H);if(shakeA>.3)ctx.translate((Math.random()-.5)*shakeA,(Math.random()-.5)*shakeA);
  ctx.fillStyle='#E8DCC0';ctx.fillRect(-10,-10,W+20,H+20);if(TEX){ctx.fillStyle=TEX;ctx.fillRect(-10,-10,W+20,H+20)}
  if(MODE==='title')drawTitle();else if(MODE==='map'||MODE==='test')drawMap();else if(MODE==='stage')drawStage();
- parts.forEach(q=>{ctx.globalAlpha=clamp(q.life,0,1);ctx.fillStyle=q.c;ctx.fillRect(q.x-q.r/2,q.y-q.r/2,q.r,q.r)});ctx.globalAlpha=1;
+ parts.forEach(q=>{ctx.globalAlpha=clamp(q.life,0,1);ctx.fillStyle=q.c;if(q.leaf){ctx.save();ctx.translate(q.x,q.y);ctx.rotate(q.rot);ctx.scale(1,Math.abs(Math.cos(q.ph))+.15);ctx.fillRect(-q.r/2,-q.r*.35,q.r,q.r*.7);ctx.restore()}else ctx.fillRect(q.x-q.r/2,q.y-q.r/2,q.r,q.r)});ctx.globalAlpha=1;
+ if(flashA>.01){ctx.fillStyle='rgba(255,236,170,'+(RM?flashA*.4:flashA).toFixed(3)+')';ctx.fillRect(-10,-10,W+20,H+20)}
  drawRoller();ctx.restore()}
 function drawRoller(){if(!WIDE||MODE==='test')return;const x=0,w=L.roll;const g=ctx.createLinearGradient(x,0,x+w,0);g.addColorStop(0,'#5a3d24');g.addColorStop(.5,'#9c6b3c');g.addColorStop(1,'#4a3020');ctx.fillStyle=g;ctx.fillRect(x,0,w*.7,H);
  ctx.fillStyle='#2E4A7D';ctx.fillRect(w*.7,0,w*.3,H);ctx.fillStyle='rgba(226,197,114,.8)';for(let y=10;y<H;y+=22){ctx.beginPath();ctx.arc(w*.85,y,3,0,6.28);ctx.fill()}ctx.strokeStyle='#2A2622';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(w,0);ctx.lineTo(w,H);ctx.stroke()}
@@ -2486,7 +2520,7 @@ function drawHUD(){const s=ST;const x=W-66;txt(String(KK),x-8,31,{f:'h',w:'700',
   nobori(bx0+12,48,34,'#B8472E',true);txt(String(s.cap),bx0+38,32,{f:'h',w:'700',size:22,al:'left'});nobori(bx0+w2/2+10,48,34,'#F4EEDF',false);cart(bx0+w2/2+36,50,20);txt(String(s.lost),bx0+w2-8,32,{f:'h',w:'700',size:22,al:'right'});
   txt('残り '+s.flags,bx0+w2/2,62,{size:11,c:'#5b5247'})}
  if(s&&s.k==='def'){txt('⏱ '+Math.ceil(Math.max(0,s.dur)),gx-30,31,{f:'h',w:'700',size:22,al:'right'});txt('蔵 '+s.store+'/10',gx-100,31,{f:'h',w:'700',size:18,al:'right'})}
- if(s&&S.combo>=2&&s.k!=='seal')txt(S.combo+' 連続',W-80,74,{f:'h',w:'700',size:16,c:'#B8472E',st:'#F4EEDF',stw:4})}
+ if(s&&S.combo>=2&&s.k!=='seal')txt(S.combo+' 連続',W-150,74,{f:'h',w:'700',size:16,c:'#B8472E',st:'#F4EEDF',stw:4})}
 function drawStage(){const s=ST;
  cloud(L.roll-30,L.hud-4,W*.55,WIDE?40:30,3,.95);cloud(W*.5,L.hud+18,W*.6,WIDE?34:26,4,.9);
  drawGround();
@@ -2504,8 +2538,11 @@ function drawStage(){const s=ST;
  if(s.k==='b'||s.phase==='send')drawHand();
  if(s.phase==='paint')drawPots();
  if(s.phase==='stamp'||s.phase==='sealed')drawStampTool();
- drawHUD();
- if(s.k==='b'&&s.d.intro&&s.cap===0&&s.sold.length===0&&!PD&&L.cards[0]){const c=L.cards[0],k=(T*.8)%1,q=pathPt(.25);ctx.save();ctx.globalAlpha=.8*(1-k);ctx.fillStyle='#B8472E';ctx.beginPath();ctx.arc(lerp(c.x+c.w/2,q.x,k),lerp(c.y+c.h/2,q.y,k),14,0,6.28);ctx.fill();ctx.restore()}}
+ drawHUD();drawCombo()}
+function drawCombo(){if(S.combo>=5&&MODE==='stage'&&!RM){const q=pathPt(.5),g=ctx.createRadialGradient(q.x,q.y,10,q.x,q.y,Math.max(W,H)*.5);const a=.1+.06*Math.sin(T*5)+(S.combo>=10?.08:0);g.addColorStop(0,'rgba(226,197,114,'+a.toFixed(3)+')');g.addColorStop(1,'rgba(226,197,114,0)');ctx.fillStyle=g;ctx.fillRect(0,0,W,H)}
+ if(!comboFx)return;const k=(T-comboFx.t)/1.15;if(k>1){comboFx=null;return}const n=comboFx.n,q=pathPt(.5),sc=(RM?1:(k<.14?.4+k/.14*.9:1.3-.3*Math.min(1,(k-.14)/.2)))*(1+Math.min(.8,n*.05));
+ const col=n>=10?'hsl('+((T*360)%360|0)+',75%,42%)':n>=5?'#B8472E':n>=3?'#9c7a22':'#2A2622';ctx.save();ctx.globalAlpha=1-Math.max(0,(k-.7)/.3);ctx.translate(q.x,q.y-(WIDE?10:0)-k*20);ctx.scale(sc,sc);
+ txt(n+' 連続',0,0,{f:'h',w:'700',size:WIDE?40:30,c:col,st:'#F4EEDF',stw:8});ctx.restore()}
 function drawDef(){const s=ST;s.raid.forEach(o=>{const p=raidPos(o),r=WIDE?16:12;ctx.save();if(o.dead){ctx.globalAlpha=clamp(1-(o.fade||0),0,1);cloud(p.x-r*3,p.y-r,r*6,r*2,o.id,1);ctx.restore();return}
   ctx.fillStyle='rgba(42,38,34,.18)';ctx.beginPath();ctx.ellipse(p.x,p.y+r*1.2,r*1.6,r*.4,0,0,6.28);ctx.fill();if(o.cut){ctx.globalAlpha=.6}squad(p.x,p.y-(RM?0:Math.abs(Math.sin(T*9+o.id))*3),r,SQ[o.sq].mols);ctx.restore()});
  const tr=(s.trail||[]).filter(q=>T-q.t<.25);if(tr.length>1){ctx.save();ctx.strokeStyle='rgba(42,38,34,.8)';ctx.lineCap='round';for(let i=1;i<tr.length;i++){ctx.lineWidth=1+i*.6;ctx.beginPath();ctx.moveTo(tr[i-1].x,tr[i-1].y);ctx.lineTo(tr[i].x,tr[i].y);ctx.stroke()}ctx.restore()}}
@@ -2564,14 +2601,14 @@ function drawTitle(){L.hud=62;cloud(-40,H*.06,W*.7,H*.07,1,.95);cloud(W*.35,H*.2
  const r=WIDE?16:12;const q={x:(b1.x+b1.w+b2.x)/2,y:(b1.y+b1.h+b2.y+b2.h)/2};squad(q.x-r*4,q.y,r,['Mg','Mg']);squad(q.x+r*2,q.y+r*3,r,['CO2']);nobori(q.x-r*2.5,q.y-r*.5,r*4,'#B8472E',true)}
 
 let last=performance.now(),kkT=0;
-function loop(now){const dt=Math.min(.05,(now-last)/1000);last=now;try{update(dt);kkT-=dt;if(kkT<=0){kk();kkT=1}draw()}catch(e){console.error(e)}requestAnimationFrame(loop)}
+function loop(now){const dt=Math.min(.05,(now-last)/1000);last=now;try{if(!PAUSED)update(dt);kkT-=dt;if(kkT<=0){kk();kkT=1}draw()}catch(e){console.error(e)}requestAnimationFrame(loop)}
 
 /* ===== もどる ===== */
-$('#bBack').onclick=()=>{ac();SFX.tap();
+$('#bBack').onclick=()=>{ac();SFX.tap();if(GD&&GD.active())$('#ov').style.zIndex='2147482610';
  if(MODE==='stage'){ovOpen('<h2>絵巻へ もどる？</h2><p>進み具合は 保存されます。<br><span class="small">この戦は、次は はじめから。</span></p><div class="row"><button class="fu w" id="kNo">つづける</button><button class="fu" id="kYes">絵巻へ</button></div>',()=>{$('#kNo').onclick=ovClose;$('#kYes').onclick=()=>{ovClose();toMap()}});return}
  if(MODE==='map'){ovOpen('<h2>タイトルへ もどる？</h2><p>進み具合は 保存されます。</p><div class="row"><button class="fu w" id="kNo">つづける</button><button class="fu" id="kYes">タイトルへ</button></div>',()=>{$('#kNo').onclick=ovClose;$('#kYes').onclick=()=>{ovClose();toTitle()}});return}
  if(MODE==='test'){ovOpen('<h2>テストを やめる？</h2><p>確認テストは、次は はじめから。'+(TEST_ONLY?'':'本編の進み具合は 保存されています。')+'</p><div class="row"><button class="fu w" id="kNo">つづける</button><button class="fu" id="kYes">'+(TEST_ONLY?'一覧へ':'絵巻へ')+'</button></div>',()=>{$('#kNo').onclick=ovClose;$('#kYes').onclick=()=>{ovClose();if(TEST_ONLY){try{window.parent.postMessage({type:'rika-close-game'},'*')}catch(e){}}else toMap()}})}};
-function toTitle(){ST=null;show('title');$('#bCont').classList.toggle('hidden',!S.started);zkButtons()}
+function toTitle(){endTut();ST=null;show('title');$('#bCont').classList.toggle('hidden',!S.started);zkButtons()}
 
 /* ===== 確認テスト ===== */
 let TS=null;function playerName(){return window.PLAYER_NAME||S.name||''}
@@ -2600,11 +2637,58 @@ function setSnd(){$('#bSnd1').textContent=S.sound?'音　あり':'音　なし';
 function toggleSnd(){S.sound=!S.sound;save();setSnd();ac();SFX.tap()}
 function takeName(){const v=$('#nameIn').value.trim();if(v)S.name=v}
 $('#bStart').onclick=()=>{ac();SFX.tap();takeName();if(S.started&&S.stage>0&&!window.__yes){ovOpen('<h2>はじめから 攻める？</h2><p>砦は はじめから。<br><span class="small">作戦図の巻物と 封印した予言は そのまま。</span></p><div class="row"><button class="fu w" id="kNo">やめる</button><button class="fu" id="kYes">はじめから</button></div>',()=>{$('#kNo').onclick=ovClose;$('#kYes').onclick=()=>{ovClose();window.__yes=1;$('#bStart').click();window.__yes=0}});return}
- const keep={name:S.name,sound:S.sound,scrolls:S.scrolls,paid:S.paid,mc:S.mc,sealed:S.sealed,seal:S.seal,caps:S.caps};S=Object.assign(fresh(),keep);S.started=true;save();startStage(0)};
+ const keep={name:S.name,sound:S.sound,scrolls:S.scrolls,paid:S.paid,mc:S.mc,sealed:S.sealed,seal:S.seal,caps:S.caps};S=Object.assign(fresh(),keep);S.started=true;save();if(GD){GD.intro(INTRO).then(()=>{REPLAY=false;GD.tutorial(PRACTICE)})}else startStage(0)};
 $('#bCont').onclick=()=>{ac();SFX.tap();takeName();save();toMap()};
 $('#bGo').onclick=()=>{ac();SFX.tap();if(S.stage>=STG.length){startTest();return}startStage(Math.min(S.stage,STG.length-1))};
 $('#bSnd1').onclick=toggleSnd;$('#bSnd').onclick=toggleSnd;$('#bBook1').onclick=openBook;$('#bBook2').onclick=openBook;$('#bGacha').onclick=openGacha;$('#bScroll').onclick=scrollOpen;
 $('#bList').onclick=()=>{try{window.parent.postMessage({type:'rika-close-game'},'*')}catch(e){}};
+
+/* ===== 遊び方案内（Guide）：絵巻の札と朱の印で ===== */
+const INTRO={title:'第20回　酸素とりあい砦',learn:'燃える物は **酸素を受け取れる**。燃えかすは **もう受け取れない**。これを見分ける',how:'物質の札を **戦場へ ドラッグ** して、砦の 酸素の旗（O₂）を うばう',gesture:'drag'};
+function cardT(sq){if(!ST||!ST.hand)return null;const i=ST.hand.findIndex(c=>c&&c.sq===sq),r=L.cards&&L.cards[i];if(i<0||!r)return null;return{x:r.x+r.w/2,y:r.y+r.h/2,w:r.w,h:r.h,el:cv}}
+function endTut(){if(TUTON&&GD){TUTON=false;try{GD.tutorialEnd()}catch(e){}}else if(GD&&GD.active()){try{GD.skip()}catch(e){}}app.classList.remove('tut')}
+if(GD){
+ GD.setup({theme:{bg:'#F4EEDF',fg:'#2A2622',accent:'#B8472E',accentText:'#F4EEDF',font:"'Kaisei HarunoUmi',serif",bodyFont:"'Shippori Mincho',serif",radius:0,texture:'paper',line:'#2A2622',dim:'rgba(42,38,34,.52)',shadow:'6px 6px 0 #C8A24A',outline:'#F4EEDF',hand:'#F4EEDF',handLine:'#2A2622'},
+  sfx:k=>{ac();({step:()=>{SFX.good()},done:()=>SFX.cap(),clear:()=>SFX.fan(),open:()=>SFX.tap(),close:()=>SFX.tap(),cheer:()=>SFX.pon(),nudge:()=>SFX.pon()}[k]||(()=>{}))()},muted:()=>!S.sound});
+ PRACTICE={get label(){return W<560?'れんしゅう':'れんしゅう中　─ 第一戦'},clearText:'れんしゅうクリア！',block:true,
+  start:()=>{PAUSED=false;TUTON=true;startStage(0,{tut:true,keep:REPLAY});$('#slip').classList.add('hidden')},
+  steps:[
+   {gesture:'drag',target:()=>cardT('mg'),to:()=>{const q=pathPt(.32);return{x:q.x,y:q.y,r:46,el:cv}},until:()=>ST&&ST.sold.length>0,
+    text:'**マグネシウム**は 燃える＝酸素を 受け取れる。札を **戦場へ ドラッグ**！',praise:'出陣！'},
+   {gesture:'drag',target:()=>cardT('mgo'),to:()=>L.dis?{x:L.dis.x+L.dis.w/2,y:L.dis.y+L.dis.h/2,w:L.dis.w,h:L.dis.h,el:cv}:null,until:()=>ST&&ST.tutDis,
+    text:'**酸化マグネシウム**は 燃えかす＝もう酸素と 結び付いている。左の **陣幕へ ドラッグ** して 見送る'},
+   {gesture:'tap',label:'みる',dim:false,block:false,target:()=>({x:L.gO.x,y:L.gO.y,r:44,el:cv}),until:()=>ST&&ST.cap>0,
+    text:'隊が 砦で **酸素の旗** を うばって、自陣へ 帰ってくる…',praise:false}
+  ],
+  onExit:res=>{TUTON=false;app.classList.remove('tut');if(res.stopped||!ST||!ST.tut)return;
+   if(REPLAY){REPLAY=false;if(S.started)toMap();else toTitle();return}
+   ST.tut=false;ST.rt=4;slip(ST.d.nm+'　'+ST.d.tt,'ここからが 本番。敵の 牛車も 動き出す！','残りの 旗も マグネシウムの隊で うばいきろう')}};
+ HELP=GD.help({rules:['燃える物（**マグネシウム・木炭・水素・銅**）の札は **戦場へ ドラッグ** → 酸素の旗を うばって 帰る',
+   'もう酸素と 結び付いた物（**燃えかす・二酸化炭素・水・酸化銅**）と 燃えない食塩は **陣幕へ ドラッグ** して 見送る',
+   '敵の 牛車も 旗を 運ぶ。相手より 多く うばえば 勝ち。まちがえると 連続が 切れる',
+   '山場は 色を塗って 予言を 封印。最終戦は 酸素を うばえる隊だけ **指でなぞって 斬る**'],
+  onOpen:()=>{PAUSED=true},onClose:()=>{PAUSED=false},replay:()=>{if(ST&&ST.tut)return null;REPLAY=true;GD.tutorial(PRACTICE);return null},labels:{replay:'れんしゅうを もう一度'},
+  offset:{x:2,y:56},size:48,attention:true,show:false});
+ GD.tutorialButton('#bHow',()=>{ac();takeName();save();REPLAY=true;GD.tutorial(PRACTICE)});
+}else $('#bHow').classList.add('hidden');
+/* 山場・最終戦ではじめて出てくる操作は、その場で指が見せる（1回見たら次からは出ない） */
+function stageCoach(k){if(!GD||!ST)return;const s=ST;
+ if(k==='seal'){const band=()=>({x:W/2,y:H-L.handH/2,w:W-16,h:L.handH-8,el:cv}),fld=()=>{const q=pathPt(.3);return{x:q.x,y:q.y,r:46,el:cv}};
+  const potsA=()=>{const P=pots().filter(r=>r.k!=='next'),a=P[0],b=P[P.length-1];return{x:(a.x+b.x+b.w)/2,y:a.y+a.h/2,w:b.x+b.w-a.x+8,h:a.h+8,el:cv}};
+  const reg=k2=>()=>{const r=regions()[k2];return{x:r.x+r.w/2,y:r.y+r.h/2,w:r.w+16,h:r.h+16,el:cv}};
+  GD.coach([
+   {gesture:'drag',target:()=>{const b=band();return{x:b.x,y:b.y,r:34,el:cv}},area:band,to:fld,until:()=>ST!==s||s.phase!=='send',text:'酸化銅の 酸素を うばえそうな隊を **1つ えらんで、戦場へ ドラッグ**'},
+   {gesture:'tap',target:potsA,until:()=>ST!==s||s.pcPicked,text:'金雲の むこうを 予言しよう。まず **筆の色を タップ**',praise:'筆を とった'},
+   {gesture:'draw',target:reg('powder'),until:()=>ST!==s||cov('powder').f>=.5,text:'試験管に 残る粉の色を **指で 塗る**（半分 以上）'},
+   {gesture:'draw',target:reg('lime'),until:()=>ST!==s||cov('lime').f>=.5,text:'筆を 持ちかえて、**石灰水** も 塗る'},
+   {gesture:'tap',target:()=>{const r=pots().find(q=>q.k==='next');return{x:r.x+r.w/2,y:r.y+r.h/2,w:r.w,h:r.h,el:cv}},until:()=>ST!==s||s.phase!=='paint',text:'塗りおえたら **根拠を えらぶ** を タップ'},
+   {gesture:'drag',target:()=>{const R=reasonCards(),a=R[0],b=R[R.length-1];return{x:(a.x+b.x+b.w)/2,y:(a.y+b.y+b.h)/2,r:30,el:cv}},to:()=>{const r=slotRects()[0];return{x:r.x+r.w/2,y:r.y+r.h/2,w:r.w,h:r.h,el:cv}},until:()=>ST!==s||s.rs[0]||s.rs[1]||s.phase==='stamp'||s.phase==='sealed',
+    text:'予言の 根拠に なる札を **巻物の枠へ ドラッグ**（2枚）',dim:false},
+   {gesture:'drag',target:()=>{const r=stampRect();return{x:r.x+r.w/2,y:r.y+r.h/2,w:r.w,h:r.h,el:cv}},to:()=>{const P=panel();return{x:P.x+P.w*.7,y:P.y+P.h*.6,r:50,el:cv}},until:()=>ST!==s||s.phase==='sealed',
+    text:'朱の印を **巻物へ ドラッグ** して 封印！'}
+  ],{key:'sanso-toride-seal',nudgeMs:12000})}
+ if(k==='def')GD.coach([{gesture:'swipe',target:()=>{const q=pathPt(.55);return{x:q.x-(WIDE?0:60),y:q.y-(WIDE?60:0),r:34,el:cv}},dir:WIDE?'down':'right',dist:WIDE?130:130,dim:false,until:()=>ST!==s||s.stopped>0,
+   text:'道を 来る隊のうち、**酸素を うばえる物（燃える物）だけ** を **指でなぞって 斬る**'}],{key:'sanso-toride-def'})}
 
 makeTex();layout();
 try{window.Zukan&&Zukan.setup&&Zukan.setup({game:GID,koma:[KOMA]})}catch(e){}
