@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ma＝F岳 登頂RTA ～運動方程式の立て方～</title>
+<link href="https://fonts.googleapis.com/css2?family=DotGothic16&display=swap" rel="stylesheet">
+<style>
+:root{--y:#ffd84a;--c:#6fd3ff;--r:#ff6b6b;--g:#7dff8a;--gray:#888}
+*{box-sizing:border-box}
+html,body{margin:0;background:#000;color:#fff}
+body{font-family:'DotGothic16','Hiragino Kaku Gothic ProN',monospace;min-height:100vh;display:flex;flex-direction:column;align-items:center;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
+button{font-family:inherit;touch-action:manipulation}
+.hidden{display:none!important}
+.screen{width:min(96vw,820px);padding:24px 8px;text-align:center}
+h1{font-size:clamp(30px,6.5vw,54px);margin:8px 0;color:var(--y);letter-spacing:.04em;text-shadow:4px 4px 0 #a33}
+h2{font-size:26px;margin:6px 0;color:var(--y)}
+.sub{font-size:18px;margin-bottom:14px;color:#ccc}
+.story{white-space:pre-wrap;text-align:left;display:inline-block;font-size:17px;line-height:1.8;border:4px double #fff;padding:14px 18px;max-width:100%}
+.btn{background:#000;color:#fff;border:3px solid #fff;padding:10px 18px;margin:6px;font-size:20px;cursor:pointer;border-radius:4px}
+.btn:active{background:#fff;color:#000}
+.btn.big{font-size:24px;padding:12px 26px}
+.btn.y{border-color:var(--y);color:var(--y)}
+.btn.c{border-color:var(--c);color:var(--c)}
+.y{color:var(--y)}.c{color:var(--c)}.r{color:var(--r)}.g{color:var(--g)}.gray{color:var(--gray)}
+
+/* ゲーム画面 */
+#game{width:min(98vw,820px);padding:6px 4px 30px}
+#hud{display:flex;justify-content:space-between;align-items:center;gap:6px;flex-wrap:wrap;font-size:17px;padding:4px 2px}
+#hTime{font-size:24px;color:var(--y);min-width:110px;text-align:right}
+#hGear span{display:inline-block;width:26px;text-align:center}
+#hGear .no{opacity:.25;filter:grayscale(1)}
+#mt{position:relative;height:150px;border:3px solid #fff;background:linear-gradient(#0b1b3a,#1c3561);overflow:hidden}
+#mt svg{position:absolute;inset:0;width:100%;height:100%}
+#climber{position:absolute;font-size:28px;transform:translate(-50%,-85%);transition:left 1.2s steps(8),top 1.2s steps(8);z-index:3}
+.node{position:absolute;transform:translate(-50%,-50%);font-size:15px;z-index:2;text-align:center;line-height:1}
+.node small{display:block;font-size:10px;color:#fff;margin-top:2px;white-space:nowrap;background:rgba(0,0,0,.55);padding:0 3px}
+#penFx{position:absolute;right:8px;top:6px;font-size:26px;color:var(--r);opacity:0;transition:opacity .2s;z-index:4}
+#card{border:4px double #fff;margin-top:8px;padding:10px 12px}
+#stTitle{color:var(--y);font-size:19px;margin-bottom:4px}
+#prob{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-start}
+#story{flex:1 1 300px;font-size:17px;line-height:1.75}
+#diag{flex:0 1 330px;margin:0 auto}
+#diag svg{width:100%;height:auto;display:block}
+#eqs{margin-top:6px;font-size:18px;color:var(--g);line-height:1.6}
+#stepbox{border:4px double #fff;margin-top:8px;padding:10px 12px;min-height:200px}
+#stepNo{font-size:14px;color:var(--gray)}
+#q{font-size:20px;line-height:1.6;margin:4px 0 8px}
+.opts{display:flex;flex-wrap:wrap;gap:6px}
+.opt{flex:1 1 45%;text-align:left;background:#000;color:#fff;border:2px solid #fff;padding:10px 12px;font-size:18px;cursor:pointer;border-radius:3px;line-height:1.4}
+.opt.on{background:var(--y);color:#000;border-color:var(--y)}
+.opt:disabled{opacity:.35}
+.opt.okk{background:var(--g);color:#000;border-color:var(--g);opacity:1}
+.opt.ngg{border-color:var(--r);color:var(--r);opacity:1}
+.eq{display:flex;align-items:center;flex-wrap:wrap;gap:6px;min-height:58px;border:2px dashed var(--c);padding:6px;font-size:22px;margin-bottom:8px}
+.eq .slot{min-width:70px;min-height:42px;border:2px dotted #666;display:flex;align-items:center;justify-content:center;padding:0 6px;color:var(--gray);font-size:15px}
+.eq .rhs{display:flex;flex-wrap:wrap;gap:4px;align-items:center;flex:1;min-height:42px}
+.tile{background:#15233d;color:#fff;border:2px solid var(--c);padding:8px 12px;font-size:21px;cursor:pointer;border-radius:4px;min-width:48px}
+.tile.s{border-color:var(--y);color:var(--y);min-width:52px;font-size:24px;padding:4px 12px}
+.tile.l{border-color:#c9a0ff;background:#231538}
+.tile.used{opacity:.2;pointer-events:none}
+.lab{font-size:13px;color:var(--gray);margin:6px 0 2px}
+.pal{display:flex;flex-wrap:wrap;gap:6px}
+.ctrl{margin-top:10px;display:flex;gap:8px;flex-wrap:wrap}
+.ctrl .btn{margin:0}
+#fb{margin-top:10px;font-size:18px;line-height:1.6;min-height:1em}
+.calc{font-size:22px;line-height:1.8;border:2px solid var(--g);padding:10px 14px;display:inline-block}
+.stars{font-size:14px;color:var(--gray)}
+
+/* オーバーレイ */
+#ov{position:fixed;inset:0;background:rgba(0,0,0,.82);display:flex;align-items:center;justify-content:center;z-index:50;padding:12px}
+#ovBox{background:#000;border:4px double #fff;max-width:620px;width:100%;padding:18px;text-align:center;font-size:19px;line-height:1.7;max-height:92vh;overflow:auto}
+#ovBox .emo{font-size:52px}
+
+table{border-collapse:collapse;margin:10px auto;font-size:16px;text-align:left;max-width:760px}
+td{border:1px solid #666;padding:6px 8px;vertical-align:top}
+input{font:inherit;font-size:18px;padding:4px 8px;background:#000;color:#fff;border:2px solid #fff}
+.qbox{border:4px double #fff;padding:12px 14px;text-align:left;margin-top:10px}
+.spell{font-size:24px;letter-spacing:.12em;color:var(--y);border:2px dashed var(--y);display:inline-block;padding:4px 12px;margin-top:4px}
+.titles span{display:inline-block;border:2px solid var(--y);color:var(--y);padding:2px 10px;margin:3px;font-size:16px}
+</style>
+</head>
+<body>
+
+<!-- タイトル -->
+<div id="title" class="screen">
+  <div class="sub">～ 第1編 第2章 運動の法則 ～</div>
+  <h1>ma＝F岳<br>登頂RTA</h1>
+  <div class="story">標高 ma＝F メートル。
+運動方程式を 正しく立てた者だけが 登れる山がある。
+
+⛰ ルール
+・<span class="y">計算は ぜんぶゲームがやる。</span>
+　キミの仕事は「式を組み立てる」と「理由を選ぶ」だけ。
+・ミスすると <span class="r">♥体力が減り、タイムに＋10秒</span>。
+　体力0で 遭難 → その区間の入口へ（数値が変わる）。
+・「なぜ？」に正しく答えると <span class="c">装備</span>がもらえる。
+　装備がないと 次の区間へ進めない。
+・6区間を登りきれば 登頂。タイムを競え！</div>
+  <div style="margin-top:18px">
+    <button class="btn big y" onclick="startRun(false)">▶ 登山を はじめる</button>
+    <button class="btn big c hidden" id="bHardT" onclick="startRun(true)">🔥 ハードルート</button>
+  </div>
+  <div id="cont" style="margin-top:10px"></div>
+  <div style="margin-top:10px"><button class="btn" onclick="askSpell()">📜 ふっかつのじゅもん を いれる</button></div>
+</div>
+
+<!-- ゲーム -->
+<div id="game" class="hidden">
+  <div id="hud">
+    <span id="hArea"></span>
+    <span id="hHp"></span>
+    <span id="hGear"></span>
+    <span id="hTime">⏱ 00:00</span>
+  </div>
+  <div id="mt"><div id="mtIn"></div><div id="climber">🧗</div><div id="penFx">＋10秒</div></div>
+  <div id="card">
+    <div id="stTitle"></div>
+    <div id="prob"><div id="story"></div><div id="diag"></div></div>
+    <div id="eqs"></div>
+  </div>
+  <div id="stepbox">
+    <div id="stepNo"></div>
+    <div id="q"></div>
+    <div id="work"></div>
+    <div id="fb"></div>
+  </div>
+</div>
+
+<!-- 登頂 -->
+<div id="summit" class="screen hidden"></div>
+
+<!-- 確認テスト -->
+<div id="test" class="screen hidden">
+  <h2>📝 確認テスト</h2>
+  <div style="margin-bottom:10px">番号・名前：<input id="nameIn" size="16"></div>
+  <div id="tnum" class="y" style="margin-bottom:6px"></div>
+  <div class="qbox"><div id="tq" style="font-size:20px;line-height:1.6;margin-bottom:8px"></div><div class="opts" id="tch"></div></div>
+</div>
+<div id="result" class="screen hidden"></div>
+
+<div id="ov" class="hidden"><div id="ovBox"></div></div>
+
+<script>/*@SUBMIT_CARD_BEGIN*/
+/* ==========================================================
+   提出カード（全ゲーム共通） v2
+   ─ 確認テストの結果を「スクショ1枚」で提出できる形に表示する
+   ─ ゲーム側は SubmitCard.show({...}) を呼ぶだけ
+   ─ v2（2026-09-26）: rec に grade・koma、review に id・koma を足せる（無くても v1 と同じに動く）
+     保存と同時に、達成率（rika-zukan:<学年>:progress:v1 の 開いた・合格・満点・最高点）と
+     問題ごとの成績（rika-zukan:<学年>:qlog:v1）を更新する。合格＝確認テスト7割以上
+     はじめて合格したコマには、中2理科図鑑のかけら（pass）を渡す（window.Zukan があるとき）
+     「とじる」のあと、アンケート（window.Voice）を1ゲーム1回だけ出す（確認テストだけのモードでは出さない）
+   ─ このファイルの中身は build_collections.py が各ゲームの
+     「@SUBMIT_CARD_BEGIN」〜「@SUBMIT_CARD_END」の印の間へ同期する
+     （ゲーム側で直接いじらず、ここを直して build を実行する）
+   ─ 保存はこの端末のブラウザ内（localStorage）だけ。外への送信はしない
+   ========================================================== */
+(function(){
+  if (window.SubmitCard) return;
+  var KEY = 'mini-collection-records-v1';
+  var CSS = [
+    '#sc-ov{position:fixed;inset:0;z-index:2147483000;background:rgba(12,14,28,.78);display:flex;align-items:center;justify-content:center;padding:2vmin;overflow:auto;font-family:"Hiragino Maru Gothic ProN","Hiragino Sans","Zen Maru Gothic",sans-serif;-webkit-text-size-adjust:100%}',
+    '#sc-ov *{box-sizing:border-box}',
+    '#sc-card{width:min(96vw,760px);max-height:94vh;background:#fffdf8;color:#1d2433;border-radius:18px;box-shadow:0 20px 60px rgba(0,0,0,.45);overflow:hidden;display:flex;flex-direction:column;background-image:repeating-linear-gradient(0deg,transparent 0 31px,rgba(40,90,180,.07) 31px 32px)}',
+    '#sc-card .sc-band{background:#1d2433;color:#fff;padding:1.4vmin 2.6vmin;display:flex;align-items:center;gap:12px;font-weight:700;font-size:clamp(13px,1.9vmin,17px);letter-spacing:.08em}',
+    '#sc-card .sc-band .sc-tag{background:#e8384f;color:#fff;border-radius:6px;padding:2px 10px;letter-spacing:.2em}',
+    '#sc-card .sc-band .sc-col{margin-left:auto;opacity:.8;font-weight:500;letter-spacing:.02em}',
+    '#sc-card .sc-body{padding:2.2vmin 3vmin 2vmin;display:grid;grid-template-columns:1fr auto;gap:1.2vmin 3vmin;align-items:start}',
+    '#sc-card .sc-unit{grid-column:1/-1;font-size:clamp(15px,2.3vmin,20px);font-weight:700;color:#3a4460}',
+    '#sc-card .sc-unit small{display:block;font-size:.72em;font-weight:500;color:#6b7390;margin-top:2px}',
+    '#sc-card .sc-name{font-size:clamp(22px,4vmin,34px);font-weight:900;border-bottom:3px solid #1d2433;padding-bottom:4px;min-width:0;overflow-wrap:anywhere}',
+    '#sc-card .sc-name span{font-size:.5em;font-weight:700;color:#6b7390;margin-right:.6em}',
+    '#sc-card .sc-score{grid-row:span 2;text-align:center;border:4px solid #e8384f;border-radius:50%;width:clamp(120px,19vmin,170px);height:clamp(120px,19vmin,170px);display:flex;flex-direction:column;align-items:center;justify-content:center;color:#e8384f;transform:rotate(-6deg)}',
+    '#sc-card .sc-score b{font-size:clamp(46px,8vmin,72px);line-height:1;font-weight:900}',
+    '#sc-card .sc-score i{font-style:normal;font-weight:700;font-size:clamp(14px,2.2vmin,19px)}',
+    '#sc-card .sc-when{font-size:clamp(16px,2.6vmin,22px);font-weight:700}',
+    '#sc-card .sc-when span{font-size:.7em;color:#6b7390;margin-right:.6em}',
+    '#sc-card .sc-grid{grid-column:1/-1;display:grid;grid-template-columns:repeat(10,1fr);gap:.8vmin;margin-top:.6vmin}',
+    '#sc-card .sc-cell{border:2px solid #c9cfdd;border-radius:8px;text-align:center;padding:.4vmin 0 .6vmin;background:#fff}',
+    '#sc-card .sc-cell small{display:block;font-size:clamp(10px,1.5vmin,13px);color:#6b7390;font-weight:700}',
+    '#sc-card .sc-cell b{display:block;font-size:clamp(18px,3.2vmin,28px);line-height:1.1;font-weight:900}',
+    '#sc-card .sc-cell.o b{color:#e8384f}',
+    '#sc-card .sc-cell.x{background:#f1f3f8}',
+    '#sc-card .sc-cell.x b{color:#2a55c9}',
+    '#sc-card .sc-rec{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:.8vmin 1.4vmin;font-size:clamp(13px,2vmin,17px);margin-top:.4vmin}',
+    '#sc-card .sc-rec div{background:#eef1f8;border-radius:8px;padding:.6vmin 1.4vmin}',
+    '#sc-card .sc-rec b{margin-left:.4em}',
+    '#sc-card .sc-foot{font-size:clamp(11px,1.6vmin,13px);color:#6b7390;text-align:center;padding:0 2vmin 1.4vmin}',
+    '#sc-btns{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:1.6vmin}',
+    '#sc-btns button{font:inherit;font-weight:700;font-size:16px;padding:10px 20px;border-radius:999px;border:2px solid #fff;background:rgba(255,255,255,.12);color:#fff;cursor:pointer}',
+    '#sc-rev{width:min(96vw,760px);max-height:86vh;overflow:auto;background:#fffdf8;color:#1d2433;border-radius:18px;padding:20px 24px;font-size:16px;line-height:1.6}',
+    '#sc-rev h3{margin:0 0 10px;font-size:20px}',
+    '#sc-rev li{margin-bottom:10px}',
+    '#sc-rev .o{color:#e8384f;font-weight:900}#sc-rev .x{color:#2a55c9;font-weight:900}',
+    '#sc-wrap{display:flex;flex-direction:column;align-items:center}',
+    '#sc-card .sc-score em{font-style:normal;font-weight:900;font-size:clamp(12px,1.9vmin,15px);background:#e8384f;color:#fff;border-radius:999px;padding:1px 10px;margin-top:3px;letter-spacing:.1em}',
+    '#sc-card .sc-voice{grid-column:1/-1;font-size:clamp(12px,1.8vmin,15px);color:#3a4460;background:#fff4d6;border-radius:8px;padding:.5vmin 1.4vmin;overflow-wrap:anywhere}'
+  ].join('\n');
+
+  function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+  function strip(s){return String(s==null?'':s).replace(/<(?!\/?(sub|sup|b)>)[^>]*>/g,'')}
+  function fmtDate(ms){var d=new Date(ms),w='日月火水木金土'[d.getDay()];return d.getFullYear()+'年'+(d.getMonth()+1)+'月'+d.getDate()+'日('+w+') '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')}
+  function ensureCSS(){if(document.getElementById('sc-style'))return;var st=document.createElement('style');st.id='sc-style';st.textContent=CSS;document.head.appendChild(st)}
+  function load(){try{return JSON.parse(localStorage.getItem(KEY))||[]}catch(e){return[]}}
+  function store(rec){try{var a=load();a.unshift(rec);localStorage.setItem(KEY,JSON.stringify(a.slice(0,60)))}catch(e){}}
+
+  /* ---------- v2: 達成率と問題ごとの成績（端末の中だけ） ---------- */
+  function hash24(s){var h=0x811c9dc5;s=String(s);for(var i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,0x01000193)>>>0}return (h&0xffffff).toString(16)}
+  function rdj(k){try{var o=JSON.parse(localStorage.getItem(k));return o&&typeof o==='object'?o:null}catch(e){return null}}
+  function komaList(r){var k=r.koma;k=Array.isArray(k)?k.slice():(k?[k]:[]);(r.review||[]).forEach(function(v){if(v&&v.koma&&k.indexOf(v.koma)<0&&!(r.koma&&r.koma.length))k.push(v.koma)});return k.map(String).filter(function(x){return /^[a-z0-9]+-[a-z]+-\d+$/.test(x)})}
+  function isPass(r){var t=+r.total||0,sc=+r.score||0;return t>0&&sc*10>=t*7}
+  function record(r){
+    var out={newly:[],pass:isPass(r),koma:[]};
+    try{
+      var ks=komaList(r);out.koma=ks;
+      var grade=r.grade||(ks[0]&&ks[0].split('-')[0])||'';
+      var t=+r.total||0,sc=+r.score||0,at=r.at||Date.now();
+      if(grade&&ks.length){
+        var PK='rika-zukan:'+grade+':progress:v1',P=rdj(PK)||{v:1,koma:{},last:null};if(!P.koma||typeof P.koma!=='object')P.koma={};P.v=P.v||1;
+        ks.forEach(function(k){var p=P.koma[k];if(!p)p=P.koma[k]={open:null,main:null,pass:null,full:null,best:null,earnFirst:0,earnReplay:0,memorial:false};
+          if(!p.open)p.open=at;
+          if(t>0){var b=p.best;if(!b||!b.total||sc/t>b.score/b.total||(sc/t===b.score/b.total&&t>b.total))p.best={score:sc,total:t,at:at}}
+          if(out.pass&&!p.pass){p.pass=at;out.newly.push(k)}
+          if(t>0&&sc===t&&!p.full)p.full=at});
+        P.last={koma:ks[0],at:at};
+        localStorage.setItem(PK,JSON.stringify(P));
+      }
+      var byG={};(r.review||[]).forEach(function(v){if(!v||!v.id)return;var g=String(v.id).split('-')[0];if(!/^chu\d$/.test(g))g=grade;if(!g)return;(byG[g]=byG[g]||[]).push(v)});
+      Object.keys(byG).forEach(function(g){var QK='rika-zukan:'+g+':qlog:v1',Q=rdj(QK)||{v:1,q:{}};Q.v=Q.v||1;if(!Q.q||typeof Q.q!=='object')Q.q={};var mins=Math.floor(at/60000);
+        byG[g].forEach(function(v){var id=String(v.id),e=Q.q[id];if(!e&&Q.qh){var h=hash24(id);if(Q.qh[h]){e=Q.qh[h];delete Q.qh[h]}}e=e||[0,0,0,0,0];var ok=!!v.ok;
+          Q.q[id]=[(e[0]|0)+1,(e[1]|0)+(ok?0:1),ok?1:0,mins,ok?(e[4]|0)+1:0]});
+        localStorage.setItem(QK,JSON.stringify(Q))});
+      try{window.dispatchEvent(new Event('rika-zukan-change'))}catch(e){}
+    }catch(e){}
+    return out;
+  }
+  function payPass(res){
+    if(!res.newly.length||!window.Zukan||!Zukan.earn)return;
+    var got=0;res.newly.forEach(function(k){got+=Zukan.earn(30,'pass',{koma:k,silent:true})||0});
+    if(got>0&&Zukan.toast)setTimeout(function(){Zukan.toast('🎖 合格！ 中2理科図鑑のかけら <b>+'+got+'</b>')},500);
+  }
+
+  function cardHTML(r){
+    var marks=r.marks||[];
+    var cells=marks.map(function(ok,i){return '<div class="sc-cell '+(ok?'o':'x')+'"><small>'+(i+1)+'</small><b>'+(ok?'○':'×')+'</b></div>'}).join('');
+    var rec=(r.records||[]).map(function(x){return '<div>'+esc(x[0])+'<b>'+esc(x[1])+'</b></div>'}).join('');
+    return '<div id="sc-card">'+
+      '<div class="sc-band"><span class="sc-tag">提出</span>確認テスト 提出カード<span class="sc-col">'+esc(r.collection||'')+'</span></div>'+
+      '<div class="sc-body">'+
+        '<div class="sc-unit">'+esc(r.unit||'')+'<small>'+esc(r.game||'')+'</small></div>'+
+        '<div class="sc-name"><span>なまえ</span>'+esc(r.name||'（未入力）')+'</div>'+
+        '<div class="sc-score"><b>'+esc(r.score)+'</b><i>/ '+esc(r.total)+' 点</i>'+(r.koma&&isPass(r)?'<em>合格</em>':'')+'</div>'+
+        '<div class="sc-when"><span>受けた日時</span>'+fmtDate(r.at)+'</div>'+
+        '<div class="sc-grid">'+cells+'</div>'+
+        (rec?'<div class="sc-rec">'+rec+'</div>':'')+voiceLine(r)+
+      '</div>'+
+      '<div class="sc-foot">この画面をスクリーンショットして提出しよう</div>'+
+    '</div>';
+  }
+  function voiceLine(r){try{if(!window.Voice||!r.gameId)return '';var a=Voice.answer(r.gameId,r.grade);return a?'<div class="sc-voice">'+esc(Voice.answerText(a))+'</div>':''}catch(e){return ''}}
+  function reviewHTML(r){
+    return '<div id="sc-rev"><h3>解答と解説</h3><ol>'+(r.review||[]).map(function(v){
+      return '<li><span class="'+(v.ok?'o':'x')+'">'+(v.ok?'○':'×')+'</span> '+strip(v.q)+'<br>　正解：<b>'+strip(v.a)+'</b>'+(v.ok?'':'　<span style="color:#6b7390">（あなた：'+strip(v.y)+'）</span>')+'</li>'}).join('')+'</ol></div>';
+  }
+  function open(r,onClose,fromShow){
+    ensureCSS();
+    var ov=document.getElementById('sc-ov');if(ov)ov.remove();
+    ov=document.createElement('div');ov.id='sc-ov';
+    var mode='card';
+    function draw(){
+      ov.innerHTML='<div id="sc-wrap">'+(mode==='card'?cardHTML(r):reviewHTML(r))+
+        '<div id="sc-btns">'+(r.review&&r.review.length?'<button data-a="rev">'+(mode==='card'?'📖 解答を見る':'📝 提出カードにもどる')+'</button>':'')+
+        '<button data-a="close">とじる</button></div></div>';
+    }
+    draw();
+    ov.addEventListener('click',function(e){var b=e.target.closest&&e.target.closest('[data-a]');if(!b)return;
+      if(b.dataset.a==='rev'){mode=mode==='card'?'rev':'card';draw();ov.scrollTop=0}
+      else{ov.remove();if(onClose)onClose();if(fromShow&&window.Voice&&Voice.maybeAsk)setTimeout(function(){Voice.maybeAsk(r)},fromShow===2?0:250)}});
+    document.body.appendChild(ov);
+  }
+  window.SubmitCard={
+    /* r = {collection, unit, game, gameId, grade, koma:[コマID], name, score, total, marks:[bool],
+            records:[[label,value]], review:[{id,koma,q,a,y,ok}]}
+       at（日時）は自動で入る。保存して表示し、達成率と問題ごとの成績を更新する */
+    show:function(r,onClose){
+      r=Object.assign({},r);if(!r.at)r.at=Date.now();
+      if(!r.collection)r.collection=window.COLLECTION_NAME||'';
+      store(r);
+      var res=record(r);
+      try{if(window.parent&&window.parent!==window)window.parent.postMessage({type:'submit-card',rec:r},'*')}catch(e){}
+      open(r,onClose,1);payPass(res);return r;
+    },
+    reopen:function(r,onClose){open(r,onClose)},
+    isPass:isPass,
+    all:load,
+    KEY:KEY
+  };
+})();
+
+/*@SUBMIT_CARD_END*/</script>
+<script>
+'use strict';
+const G=9.8;
+const $=id=>document.getElementById(id);
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+const f2=x=>{let s=Number(x).toPrecision(2);if(/e/.test(s))s=String(Math.round(x));return s};
+const Y='#ffd84a',C='#6fd3ff';
+
+/* ===== 図のための道具 ===== */
+function svg(inner){return `<svg viewBox="0 0 360 240" xmlns="http://www.w3.org/2000/svg" font-family="DotGothic16,monospace">${inner}</svg>`}
+function A(x1,y1,x2,y2,c,lab,lx,ly,o){o=o||{};const g=Math.atan2(y2-y1,x2-x1),h=11,bx=x2-h*Math.cos(g),by=y2-h*Math.sin(g);
+  const p2=[bx+5.5*Math.sin(g),by-5.5*Math.cos(g)],p3=[bx-5.5*Math.sin(g),by+5.5*Math.cos(g)];
+  return `<line x1="${x1}" y1="${y1}" x2="${bx}" y2="${by}" stroke="${c}" stroke-width="${o.w||3}" ${o.dash?'stroke-dasharray="5 4"':''}/><polygon points="${x2},${y2} ${p2} ${p3}" fill="${c}"/>`+
+  (lab?`<text x="${lx}" y="${ly}" fill="${c}" font-size="${o.fs||14}" text-anchor="${o.anc||'middle'}">${lab}</text>`:'')}
+function T(x,y,s,c,anc,fs){return `<text x="${x}" y="${y}" fill="${c||'#fff'}" font-size="${fs||13}" text-anchor="${anc||'middle'}">${s}</text>`}
+function box(x,y,w,h,l1,l2){return `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="#333" stroke="#fff" stroke-width="2"/>`+T(x+w/2,y+h/2-2,l1)+(l2?T(x+w/2,y+h/2+14,l2):'')}
+
+/* ===== 6つの区間（プリント K12 類題9〜14 より） =====
+  step の種類
+   force … 力をすべて選ぶ（まちがうと♥−1）
+   tiles … タイルで式を組み立てる（まちがうと♥−1）
+   choice… 手順の選択（まちがうと♥−1）
+   why   … 理由の選択（1回勝負。まちがうと装備を取り逃す）
+   calc  … ゲームが計算して見せる
+*/
+const ST=[
+{area:'登山口',name:'区間1　登山口 ―氷の広場―',gear:{e:'🎒',n:'ザック'},
+ gen(){const m=pick(['0.50','1.0','2.0']),F1=pick(['2.0','3.0','4.0']),F2=pick(['6.0','7.0','8.0']);return{m,F1,F2,a:(+F1-+F2)/+m}},
+ story:v=>`なめらかな氷の上の 質量 <b>${v.m} kg</b> のザックを、右向きに <b>${v.F1} N</b>、左向きに <b>${v.F2} N</b> で 引っぱり合う。<br><span class="c">右向きを正</span>として、加速度 <i>a</i>〔m/s²〕を求めよう。`,
+ diag:(v,r)=>svg(`<rect x="20" y="172" width="320" height="12" fill="#9fdcff" opacity=".35"/><line x1="20" y1="172" x2="340" y2="172" stroke="#bfefff" stroke-width="2"/>`+T(40,204,'なめらかな氷','#9fdcff','start',12)+
+   box(150,122,60,50,'ザック',v.m+'kg')+A(210,147,295,147,Y,v.F1+' N',255,137)+A(150,147,65,147,Y,v.F2+' N',105,137)+T(318,153,'🧍','#fff','middle',22)+T(42,153,'🧍','#fff','middle',22)+
+   A(250,40,320,40,C,'正の向き',285,30,{w:2})),
+ steps:v=>[
+  {t:'tiles',q:'ザックの運動方程式を 組み立てよ。',lhsFixed:`${v.m}<i>a</i>`,
+   tiles:[{id:'F1',l:v.F1},{id:'F2',l:v.F2},{id:'mg',l:`${v.m}×9.8`}],ans:[['+','F1'],['-','F2']],
+   hint:'水平方向の力だけを使う。正の向きと逆向きの力には −。'},
+  {t:'why',q:`なぜ ${v.F2} の前は「−」？`,opts:[['左向きの力で、正の向き（右）と逆だから',1],['右の力より 大きいから',0],['引っぱる力は いつもマイナスだから',0],['ザックが 左へ動くから',0]],
+   exp:'符号は「正の向きと同じか、逆か」だけで決まる。力の大きさや、動く向きは関係ない。'},
+  {t:'calc',html:()=>`${v.m}<i>a</i> ＝ ${v.F1} − ${v.F2} ＝ ${f2(+v.F1-+v.F2)}<br><i>a</i> ＝ <b class="y">${f2(v.a)} m/s²</b>`},
+  {t:'why',q:`<i>a</i> がマイナス（${f2(v.a)}）になった。これは何を表す？`,opts:[['加速度が 左向き（正と逆向き）であること',1],['どこかで 計算ミスをしていること',0],['ザックが もうすぐ止まること',0],['加速度の大きさが 0 より小さいこと',0]],
+   exp:`マイナスは「向き」の情報。加速度は <b>左向きに ${f2(-v.a)} m/s²</b>。`}
+ ],
+ key:'力の符号は「正の向きと同じなら＋、逆なら−」。答えが−なら、正と逆向きという意味。'},
+
+{area:'2合目',name:'区間2　2合目 ―荷揚げリフト―',gear:{e:'🥾',n:'登山靴'},
+ gen(){const m=pick(['1.5','2.0','2.5']),a=pick(['0.20','0.40','0.50']);return{m,a,N:+m*(G+ +a),W:+m*G}},
+ story:v=>`荷揚げリフトの台に 質量 <b>${v.m} kg</b> の荷物をのせ、鉛直上向きに 一定の加速度 <b>${v.a} m/s²</b> で持ち上げる。<br>荷物が台から受ける 垂直抗力 <i>N</i>〔N〕を求めよう。（g＝9.8 m/s²）`,
+ diag:(v,r)=>svg(`<line x1="112" y1="182" x2="180" y2="22" stroke="#777" stroke-width="2"/><line x1="248" y1="182" x2="180" y2="22" stroke="#777" stroke-width="2"/><circle cx="180" cy="18" r="5" fill="#777"/>`+T(196,22,'ワイヤー','#999','start',12)+
+   `<rect x="100" y="182" width="160" height="10" fill="#8a6a3a" stroke="#fff"/>`+T(275,192,'台','#ccc','start',13)+box(150,132,60,50,'荷物',v.m+'kg')+
+   A(50,175,50,105,C,'<tspan>a＝'+v.a+'</tspan>',50,95,{w:2})+T(50,196,'m/s²',C,'middle',12)+
+   (r.has('o')?A(193,180,193,70,Y,'N',205,82,{anc:'start'})+A(167,157,167,234,Y,v.m+'×9.8',158,230,{anc:'end',fs:13}):'')),
+ steps:v=>[
+  {t:'force',q:'荷物が受ける力を すべて選べ。',reveal:'o',opts:[[`重力（${v.m}×9.8 N）`,1],['台からの 垂直抗力 N',1],['リフトのワイヤーが 引く力',0,'ワイヤーが引いているのは「台」。荷物には ふれていない。'],['上向きに 加速させる力',0,'「加速させる力」という特別な力は ない。加速は、力の合計の結果。']]},
+  {t:'tiles',q:'荷物の運動方程式を 組み立てよ（<span class="c">上向きが正</span>）。',lhsFixed:`${v.m}×${v.a}`,
+   tiles:[{id:'N',l:'N'},{id:'mg',l:`${v.m}×9.8`},{id:'a',l:v.a}],ans:[['+','N'],['-','mg']],
+   hint:'重力を 見落としていないか？ 下向きの力は −。'},
+  {t:'why',q:'垂直抗力 <i>N</i> と 重力、どちらが大きい？',opts:[['N が大きい。上向きに加速するには 上向きの合力が必要だから',1],['同じ。台の上で つりあっているから',0],['N が大きい。上に動いている間は いつも重くなるから',0],['重力が大きい。上に動くと 軽くなるから',0]],
+   exp:'等速で上がるなら N＝mg。「加速」しているから N＞mg。決め手は 動く向きではなく <b>加速度の向き</b>。'},
+  {t:'calc',html:()=>`${v.m}×${v.a} ＝ <i>N</i> − ${v.m}×9.8<br><i>N</i> ＝ ${+v.W.toFixed(2)} ＋ ${+(v.N-v.W).toFixed(2)} ＝ <b class="y">${f2(v.N)} N</b><br><span class="gray" style="font-size:17px">重力 ${+v.W.toFixed(2)} N より ${+(v.N-v.W).toFixed(2)} N 大きい ＝ 上向きに加速させる分</span>`}
+ ],
+ key:'加速しているときの垂直抗力は mg とは限らない。まず重力を見落とさない。'},
+
+{area:'4合目',name:'区間3　4合目 ―凍った急斜面―',gear:{e:'⛏️',n:'ピッケル'},
+ gen(){const m=pick(['2.0','4.0','5.0']),th=pick([30,45,60]);return{m,th,a:G*Math.sin(th*Math.PI/180)}},
+ story:v=>`傾きの角 <b>${v.th}°</b> のなめらかな斜面を、質量 <b>${v.m} kg</b> のそりが <b>すべり上がっている</b>。<br>そりの加速度の大きさ <i>a</i>〔m/s²〕を求めよう。`,
+ diag:(v,r)=>{const th=v.th*Math.PI/180,c=Math.cos(th),s=Math.sin(th),O=[30,215],L=240,E=[O[0]+L*c,O[1]-L*s],t=[c,-s],n=[-s,-c];
+   const pt=(p,k,d)=>[p[0]+k*d[0],p[1]+k*d[1]];const P=pt(O,135,t),Cc=pt(P,16,n);
+   const v1=pt(pt(P,30,t),10,n),v2=pt(pt(P,92,t),10,n),vl=pt(pt(v2,-20,t),22,n);
+   const q1=pt(pt(O,190,t),-24,n),q2=pt(pt(O,140,t),-24,n),ql=pt(q2,-16,n);
+   let g=`<polygon points="${O} ${E} ${E[0]},215" fill="#23405a" stroke="#fff" stroke-width="2"/><line x1="10" y1="215" x2="350" y2="215" stroke="#fff"/>`+
+     `<g transform="translate(${P[0]},${P[1]}) rotate(${-v.th})"><rect x="-20" y="-32" width="40" height="32" fill="#333" stroke="#fff" stroke-width="2"/>${T(0,-11,v.m+'kg')}</g>`+
+     T(O[0]+52,O[1]-7,v.th+'°')+A(v1[0],v1[1],v2[0],v2[1],C,'速度（上る）',vl[0],vl[1],{w:2,dash:1,fs:12})+A(q1[0],q1[1],q2[0],q2[1],C,'正',ql[0],ql[1],{w:2});
+   if(r.has('o'))g+=A(Cc[0],Cc[1],Cc[0],Cc[1]+68,Y,'重力',Cc[0]+8,Cc[1]+62,{anc:'start'})+A(Cc[0],Cc[1],Cc[0]+58*n[0],Cc[1]+58*n[1],Y,'N',Cc[0]+70*n[0],Cc[1]+70*n[1]+4);
+   return svg(g)},
+ steps:v=>[
+  {t:'choice',q:'斜面上の運動。どう分けて 式を立てる？',opts:[['斜面方向は 運動方程式、斜面に垂直な方向は 力のつりあいの式',1],['斜面方向は 力のつりあいの式、垂直な方向は 運動方程式',0],['水平方向は 運動方程式、鉛直方向は 力のつりあいの式',0],['斜面方向の式だけで よい（垂直方向は考えない）',0]],
+   hint:'そりは 斜面にそって動く。斜面に垂直な方向には 動かない（加速度0）。'},
+  {t:'force',q:'そりが受ける力を すべて選べ。',reveal:'o',opts:[['重力',1],['斜面からの 垂直抗力',1],['斜面を上っていく 勢いの力',0,'「勢い」は力ではない。上に動いているのは、さっきまでの速度が残っているだけ。'],['摩擦力',0,'なめらかな斜面なので、摩擦力は はたらかない。']]},
+  {t:'tiles',q:'斜面方向の運動方程式を 組み立てよ（<span class="c">斜面にそって下向きが正</span>）。',lhsFixed:`${v.m}<i>a</i>`,
+   tiles:[{id:'s',l:`${v.m}×9.8×sin${v.th}°`},{id:'c',l:`${v.m}×9.8×cos${v.th}°`},{id:'N',l:'N'}],ans:[['+','s']],
+   hint:'斜面方向の力は、重力の「斜面方向の成分」だけ。垂直抗力は 斜面に垂直なので入らない。'},
+  {t:'why',q:'すべり<b>上がっている</b>途中なのに、加速度が「下向き」なのは なぜ？',opts:[['斜面方向の力は 重力の成分（下向き）だけだから',1],['上る勢いの力が だんだん弱くなるから',0],['摩擦力が 下向きにはたらくから',0],['垂直抗力が そりを下へ押すから',0]],
+   exp:'速度が上向きでも、力が下向きなら 加速度は下向き。上りながら減速 → 一瞬止まる → 下り始める。'},
+  {t:'calc',html:()=>`${v.m}<i>a</i> ＝ ${v.m}×9.8×sin${v.th}°<br><i>a</i> ＝ 9.8×sin${v.th}° ＝ <b class="y">${f2(v.a)} m/s²</b>（斜面下向き）<br><span class="c" style="font-size:17px">質量が消えた！ 重くても軽くても 同じ加速度。</span>`}
+ ],
+ key:'斜面は「斜面方向＝運動方程式」「垂直方向＝力のつりあい」に分ける。速度の向き ≠ 加速度の向き。'},
+
+{area:'6合目',name:'区間4　6合目 ―雪原の荷物運び―',gear:{e:'🧤',n:'グローブ'},
+ gen(){const M=pick(['2.0','3.0','4.0']),m=pick(['1.0','2.0']),F=pick(['6.0','9.0','12']);const a=+F/(+M+ +m);return{M,m,F,a,f:+m*a}},
+ story:v=>`なめらかな雪原に 箱A（<b>${v.M} kg</b>）と 箱B（<b>${v.m} kg</b>）をくっつけて置き、Aを水平に <b>${v.F} N</b> で押す。<br>加速度 <i>a</i> と、AがBを押す力 <i>f</i> を求めよう。<span class="c">右向きが正</span>。`,
+ diag:(v,r)=>svg(`<rect x="20" y="185" width="320" height="12" fill="#ffffff" opacity=".25"/><line x1="20" y1="185" x2="340" y2="185" stroke="#fff" stroke-width="2"/>`+
+   box(100,105,80,80,'A',v.M+'kg')+box(180,135,56,50,'B',v.m+'kg')+A(30,150,100,150,Y,'手 '+v.F+'N',62,140)+A(250,40,320,40,C,'正の向き',285,30,{w:2})+
+   (r.has('B')?A(181,142,226,142,Y,'f',210,136,{fs:13}):'')+(r.has('A')?A(179,120,136,120,Y,'f',157,113):'')),
+ steps:v=>[
+  {t:'force',q:'まず <b>B</b>。Bが受ける「水平方向」の力を すべて選べ。',reveal:'B',opts:[['AがBを押す力 f',1],[`手が押す力 ${v.F} N`,0,'手がふれているのは Aだけ。Bには 直接はたらかない。'],['BがAを押す力',0,'これは「Aが受ける力」。Bの式には入れない。'],['動いている向きの 勢い',0,'勢いは力ではない。']]},
+  {t:'tiles',no:'②',q:'Bの運動方程式（②）を 組み立てよ。',lhs:[{id:'m',l:`${v.m}<i>a</i>`},{id:'M',l:`${v.M}<i>a</i>`},{id:'Mm',l:`(${v.M}+${v.m})<i>a</i>`}],lhsAns:'m',
+   tiles:[{id:'f',l:'f'},{id:'F',l:v.F}],ans:[['+','f']],hint:'Bの式には「Bの質量」と「Bが受ける力」だけ。'},
+  {t:'force',q:'次に <b>A</b>。Aが受ける「水平方向」の力を すべて選べ。',reveal:'A',opts:[[`手が押す力 ${v.F} N`,1],['BがAを押し返す力 f',1],['AがBを押す力',0,'これは「Bが受ける力」。Aの式には入れない。'],['Bの重さ',0,'Bの重力はBにはたらく。しかも鉛直方向。']]},
+  {t:'tiles',no:'①',q:'Aの運動方程式（①）を 組み立てよ。',lhs:[{id:'m',l:`${v.m}<i>a</i>`},{id:'M',l:`${v.M}<i>a</i>`},{id:'Mm',l:`(${v.M}+${v.m})<i>a</i>`}],lhsAns:'M',
+   tiles:[{id:'F',l:v.F},{id:'f',l:'f'}],ans:[['+','F'],['-','f']],hint:'BはAを どちら向きに押し返している？'},
+  {t:'why',q:'Aの式で <i>f</i> が「−」なのは なぜ？',opts:[['作用・反作用で、BはAを 左向きに押し返すから',1],['f は Bの力なので 引き算するから',0],['Aは 押す側なので 力を失うから',0],['Bのほうが 軽いから',0]],
+   exp:'AがBを右へ f で押すと、BもAを 同じ大きさ f で 左へ押し返す（作用・反作用）。'},
+  {t:'choice',q:'<i>a</i> を求めたい。①と②を どう組み合わせる？',opts:[['①＋②（f が消える）',1],['①−②',0],['①×②',0],['②だけで求まる',0]],hint:'わからない f を消したい。'},
+  {t:'calc',html:()=>`①＋②：(${v.M}+${v.m})<i>a</i> ＝ ${v.F}　→　<i>a</i> ＝ <b class="y">${f2(v.a)} m/s²</b><br>②に代入：<i>f</i> ＝ ${v.m}×${f2(v.a)} ＝ <b class="y">${f2(v.f)} N</b><br><span class="c" style="font-size:17px">文字で書くと　a＝F₀／(M＋m)、f＝mF₀／(M＋m)</span>`}
+ ],
+ key:'物体ごとに分けて、その物体が「受ける力」だけを書く。2式を足すと 内力 f が消える。'},
+
+{area:'8合目',name:'区間5　8合目 ―ザイルで引き上げ―',gear:{e:'🪢',n:'ザイル'},
+ gen(){const mA=pick(['0.20','0.40']),mB=pick(['0.30','0.60']),a0=pick([1.0,2.0,3.0,4.2]);const F=(Math.round((+mA+ +mB)*(G+a0)*10)/10).toFixed(1);const a=+F/(+mA+ +mB)-G;return{mA,mB,F,a,T:+mB*(a+G)}},
+ story:v=>`荷物A（<b>${v.mA} kg</b>）と 荷物B（<b>${v.mB} kg</b>）を 軽いザイル（ロープ）でつなぎ、Aを鉛直上向きに <b>${v.F} N</b> で引き上げる。<br>加速度 <i>a</i> と、ザイルがBを引く力 <i>T</i> を求めよう。<span class="c">上向きが正</span>。`,
+ diag:(v,r)=>svg(A(180,54,180,12,Y,v.F+' N',192,30,{anc:'start'})+`<line x1="180" y1="86" x2="180" y2="174" stroke="#c9a06a" stroke-width="3"/>`+
+   `<circle cx="180" cy="70" r="16" fill="#333" stroke="#fff" stroke-width="2"/><circle cx="180" cy="190" r="16" fill="#333" stroke="#fff" stroke-width="2"/>`+T(180,75,'A')+T(180,195,'B')+
+   T(120,74,v.mA+'kg','#ccc','end')+T(120,194,v.mB+'kg','#ccc','end')+T(150,134,'ザイル','#c9a06a','end',12)+A(60,150,60,95,C,'正',60,86,{w:2})+
+   (r.has('B')?A(193,174,193,140,Y,'T',205,160,{anc:'start'})+A(168,200,168,238,Y,v.mB+'×9.8',160,232,{anc:'end',fs:12}):'')+
+   (r.has('A')?A(193,86,193,120,Y,'T',205,110,{anc:'start'})+A(166,78,166,116,Y,v.mA+'×9.8',158,112,{anc:'end',fs:12}):'')),
+ steps:v=>[
+  {t:'force',q:'まず <b>B</b>。Bが受ける力を すべて選べ。',reveal:'B',opts:[[`重力（${v.mB}×9.8 N）`,1],['ザイルが Bを引く力 T',1],[`Aを引き上げる力 ${v.F} N`,0,`${v.F} N がはたらくのは A。Bは ザイルに引かれているだけ。`],['Aの重力',0,'Aの重力は Aにはたらく。Bの式には入れない。']]},
+  {t:'tiles',no:'②',q:'Bの運動方程式（②）を 組み立てよ。',lhs:[{id:'mA',l:`${v.mA}<i>a</i>`},{id:'mB',l:`${v.mB}<i>a</i>`},{id:'mAB',l:`(${v.mA}+${v.mB})<i>a</i>`}],lhsAns:'mB',
+   tiles:[{id:'T',l:'T'},{id:'gB',l:`${v.mB}×9.8`},{id:'F',l:v.F},{id:'gA',l:`${v.mA}×9.8`}],ans:[['+','T'],['-','gB']],hint:'Bにはたらく力は 2つだけ。'},
+  {t:'force',q:'次に <b>A</b>。Aが受ける力を すべて選べ。',reveal:'A',opts:[[`引き上げる力 ${v.F} N`,1],[`重力（${v.mA}×9.8 N）`,1],['ザイルが Aを引く力 T',1],['Bの重力',0,'Bの重力は Bにはたらく。Aには ザイルの力 T として伝わる。']]},
+  {t:'why',q:'ザイルが Aを引く力も、Bを引く力と 同じ <i>T</i> でよいのは なぜ？',opts:[['軽いロープは、両端で引く力の大きさが等しいから',1],['作用・反作用の関係だから',0],['AとBが 同じ加速度だから',0],['ロープが 止まっているから',0]],
+   exp:'ロープ自身の運動方程式は m<sub>糸</sub>a＝T<sub>B</sub>−T<sub>A</sub>。軽い（m<sub>糸</sub>＝0）から T<sub>A</sub>＝T<sub>B</sub>。作用・反作用は「ロープとA」「ロープとB」のペア。'},
+  {t:'tiles',no:'①',q:'Aの運動方程式（①）を 組み立てよ。',lhs:[{id:'mA',l:`${v.mA}<i>a</i>`},{id:'mB',l:`${v.mB}<i>a</i>`},{id:'mAB',l:`(${v.mA}+${v.mB})<i>a</i>`}],lhsAns:'mA',
+   tiles:[{id:'F',l:v.F},{id:'gA',l:`${v.mA}×9.8`},{id:'T',l:'T'},{id:'gB',l:`${v.mB}×9.8`}],ans:[['+','F'],['-','gA'],['-','T']],hint:'Aにはたらく力は 3つ。ザイルは Aを どちら向きに引いている？'},
+  {t:'why',q:'Aの式で <i>T</i> が「−」なのは なぜ？',opts:[['ザイルは Aを下向き（正と逆）に引くから',1],['T は Bの力だから',0],['Aは 引っぱられて上に動くから',0],['上にある物体の式では いつも引き算するから',0]],
+   exp:'ロープは つながった物体を「ロープのある方へ」引く。Aから見ると ロープは下にあるので 下向き。'},
+  {t:'choice',q:'<i>a</i> を求めたい。①と②を どう組み合わせる？',opts:[['①＋②（T が消える）',1],['①−②',0],['①×②',0],['①だけで求まる',0]],hint:'わからない T を消したい。'},
+  {t:'calc',html:()=>`①＋②：(${v.mA}+${v.mB})<i>a</i> ＝ ${v.F} − (${v.mA}+${v.mB})×9.8<br><i>a</i> ＝ <b class="y">${f2(v.a)} m/s²</b><br>②に代入：<i>T</i> ＝ ${v.mB}×(${f2(v.a)}+9.8) ＝ <b class="y">${f2(v.T)} N</b>`}
+ ],
+ key:'軽いロープの張力は 両端で等しい。ロープは物体を「ロープの方へ」引く。'},
+
+{area:'山頂直下',name:'区間6　山頂直下 ―滑車の岩壁―',gear:{e:'🔦',n:'ヘッドランプ'},
+ gen(){const mA=pick(['3.0','4.0','5.0']),mB=pick(['1.0','2.0']);const a=(+mA-+mB)*G/(+mA+ +mB);return{mA,mB,a,T:+mB*(a+G)}},
+ story:v=>`岩壁の上の 軽い滑車に 軽いロープをかけ、両端に 荷物A（<b>${v.mA} kg</b>）と 荷物B（<b>${v.mB} kg</b>）をつけて 静かに手をはなす。<br>加速度の大きさ <i>a</i> と、ロープの張力 <i>T</i> を求めよう。`,
+ diag:(v,r)=>svg(`<rect x="110" y="0" width="140" height="8" fill="#777"/><line x1="180" y1="8" x2="180" y2="20" stroke="#aaa" stroke-width="3"/><circle cx="180" cy="40" r="20" fill="#222" stroke="#fff" stroke-width="2"/><circle cx="180" cy="40" r="3" fill="#fff"/>`+
+   `<line x1="160" y1="40" x2="160" y2="112" stroke="#c9a06a" stroke-width="3"/><line x1="200" y1="40" x2="200" y2="150" stroke="#c9a06a" stroke-width="3"/>`+
+   box(145,112,30,30,'B')+box(182,150,36,46,'A')+T(135,132,v.mB+'kg','#ccc','end')+T(226,178,v.mA+'kg','#ccc','start')+
+   A(95,150,95,108,C,'a',85,132,{w:2})+A(290,150,290,192,C,'a',302,176,{w:2})+
+   (r.has('A')?A(212,150,212,108,Y,'T',224,118,{anc:'start'})+A(192,174,192,234,Y,v.mA+'×9.8',204,232,{anc:'start',fs:12}):'')+
+   (r.has('B')?A(170,112,170,76,Y,'T',176,100,{anc:'start'})+A(152,128,152,182,Y,v.mB+'×9.8',144,180,{anc:'end',fs:12}):'')),
+ steps:v=>[
+  {t:'choice',q:'Aは下降し、Bは上昇する。2つの加速度を 同じ <i>a</i> で表すには、正の向きを どうとる？',opts:[['Aは下向き、Bは上向きを正',1],['A・Bとも 上向きを正',0],['A・Bとも 下向きを正',0],['Aは上向き、Bは下向きを正',0]],
+   hint:'それぞれの「動く向き」を正にすると、どちらも a（＞0）で書ける。'},
+  {t:'force',q:'<b>A</b>が受ける力を すべて選べ。',reveal:'A',opts:[[`重力（${v.mA}×9.8 N）`,1],['ロープが Aを引く力 T',1],['Bの重力',0,'Bの重力は Bにはたらく。Aには ロープの力 T として伝わる。'],['滑車が Aを支える力',0,'滑車がふれているのは ロープ。Aに直接ふれていない。']]},
+  {t:'tiles',no:'①',q:'Aの運動方程式（①）を 組み立てよ（<span class="c">Aは下向きが正</span>）。',lhs:[{id:'mA',l:`${v.mA}<i>a</i>`},{id:'mB',l:`${v.mB}<i>a</i>`},{id:'mAB',l:`(${v.mA}+${v.mB})<i>a</i>`}],lhsAns:'mA',
+   tiles:[{id:'gA',l:`${v.mA}×9.8`},{id:'T',l:'T'},{id:'gB',l:`${v.mB}×9.8`}],ans:[['+','gA'],['-','T']],hint:'Aは下向きが正。重力は下向き、張力は上向き。'},
+  {t:'why',q:'Aの式で 重力が「＋」なのは なぜ？',opts:[['Aは下向きを正にしたので、下向きの重力は＋',1],['Aのほうが 重いから',0],['重力は いつも＋だから',0],['落ちている物体は 重力が大きくなるから',0]],
+   exp:'符号は「正の向き」との比較で決まる。だから Bの式では 重力は −（Bは上向きが正）。'},
+  {t:'force',q:'<b>B</b>が受ける力を すべて選べ。',reveal:'B',opts:[[`重力（${v.mB}×9.8 N）`,1],['ロープが Bを引く力 T',1],['Aの重力',0,'Aの重力は Aにはたらく。'],['上に動く 勢いの力',0,'勢いは力ではない。']]},
+  {t:'tiles',no:'②',q:'Bの運動方程式（②）を 組み立てよ（<span class="c">Bは上向きが正</span>）。',lhs:[{id:'mA',l:`${v.mA}<i>a</i>`},{id:'mB',l:`${v.mB}<i>a</i>`},{id:'mAB',l:`(${v.mA}+${v.mB})<i>a</i>`}],lhsAns:'mB',
+   tiles:[{id:'T',l:'T'},{id:'gB',l:`${v.mB}×9.8`},{id:'gA',l:`${v.mA}×9.8`}],ans:[['+','T'],['-','gB']],hint:'Bは上向きが正。'},
+  {t:'choice',q:'<i>a</i> を求めたい。①と②を どう組み合わせる？',opts:[['①＋②（T が消える）',1],['①−②',0],['①×②',0],['②だけで求まる',0]],hint:'わからない T を消したい。'},
+  {t:'calc',html:()=>`①＋②：(${v.mA}+${v.mB})<i>a</i> ＝ (${v.mA}−${v.mB})×9.8<br><i>a</i> ＝ <b class="y">${f2(v.a)} m/s²</b><br>②に代入：<i>T</i> ＝ ${v.mB}×(${f2(v.a)}+9.8) ＝ <b class="y">${f2(v.T)} N</b><br><span class="c" style="font-size:17px">文字で書くと　a＝(m<sub>A</sub>−m<sub>B</sub>)g／(m<sub>A</sub>＋m<sub>B</sub>)</span>`}
+ ],
+ key:'2物体が逆向きに動くときは、それぞれの運動の向きを正にとる。'}
+];
+
+/* ===== 確認テスト ===== */
+const TEST=[
+ {q:'運動方程式を立てるとき、いちばん最初（Step0）にやることは？',a:['どの物体について式を立てるかを決める','正の向きを決める','加速度を計算する','ma＝F と書く']},
+ {q:'糸で鉛直上向きに引かれて運動する 質量 m のおもり（糸の張力 T）。上向きを正とした運動方程式は？',a:['ma ＝ T − mg','ma ＝ T ＋ mg','ma ＝ mg − T','ma ＝ T']},
+ {q:'なめらかな水平面上の 2.0 kg の物体に、右向き 3.0 N、左向き 7.0 N の力を加えた。加速度は？',a:['左向きに 2.0 m/s²','右向きに 2.0 m/s²','左向きに 5.0 m/s²','右向きに 5.0 m/s²']},
+ {q:'上向きに加速しているエレベーターの床に立つ人。床からの垂直抗力 N と 重力 mg の関係は？',a:['N ＞ mg','N ＝ mg','N ＜ mg','N ＝ 0']},
+ {q:'なめらかな斜面（傾き θ）を すべり上がっている物体。加速度は？',a:['斜面下向きに g sinθ','斜面上向きに g sinθ','0（止まるまで変わらない）','斜面下向きに g cosθ']},
+ {q:'斜面上の運動で、斜面に垂直な方向について立てる式は？',a:['力のつりあいの式','運動方程式','作用・反作用の式','エネルギーの式']},
+ {q:'なめらかな面上で接触した A（質量 M）と B（質量 m）。Aを F₀ で押すとき、AがBを押す力は？',a:['mF₀／(M＋m)','F₀','MF₀／(M＋m)','0']},
+ {q:'軽い糸が 両端の物体を引く力の大きさは？',a:['両端で等しい','重い物体の側が大きい','引いている人の側が大きい','糸の長さによって変わる']},
+ {q:'定滑車にかけた糸の両端に おもりA（m<sub>A</sub>）とB（m<sub>B</sub>）（m<sub>A</sub>＞m<sub>B</sub>）。加速度の大きさは？',a:['(m<sub>A</sub>−m<sub>B</sub>)g／(m<sub>A</sub>＋m<sub>B</sub>)','g','(m<sub>A</sub>−m<sub>B</sub>)g','(m<sub>A</sub>＋m<sub>B</sub>)g／(m<sub>A</sub>−m<sub>B</sub>)']},
+ {q:'「上に動いている物体の加速度は、必ず上向き」。これは正しい？',a:['まちがい。加速度の向きは 合力の向きで決まる','正しい。動く向きと加速度の向きは いつも同じ','正しい。ただし 斜面のときだけ例外','まちがい。加速度は いつも下向き']}
+];
+
+/* ===== 状態 ===== */
+const S={hard:false,st:0,v:null,steps:[],si:0,hp:5,gear:[],miss:0,sonan:0,lost:0,pen:0,t0:0,timer:null,log:[],whyOK:true,rev:new Set(),eqs:[],runs:0,best:null,hardClear:false,busy:false};
+const MAXHP=()=>S.hard?3:5, PEN=()=>S.hard?20:10;
+
+/* ===== 山の絵 ===== */
+const SLOPE=x=>84-(x/64)*78;
+const NODES=[7,17,27,37,47,56,64].map(x=>[x,SLOPE(x)-1]);
+function mtSvg(){
+  let p='M0,100 V84 ';for(let x=0;x<=64;x+=4){const y=SLOPE(x);p+=`H${x} V${y.toFixed(1)} `}
+  for(let x=68;x<=100;x+=4){const y=6+(x-64)*1.5;p+=`H${x} V${y.toFixed(1)} `}p+='V100 Z';
+  let sn='M50,26 ';for(let x=52;x<=64;x+=4){sn+=`H${x} V${SLOPE(x).toFixed(1)} `}for(let x=68;x<=76;x+=4){sn+=`H${x} V${(6+(x-64)*1.5).toFixed(1)} `}sn+='V26 H72 V30 H64 V26 H58 V30 H50 Z';
+  let back='M40,100 ';for(let x=40;x<=100;x+=4){const y=Math.max(30,40+Math.abs(x-84)*2.2);back+=`H${x} V${y} `}back+='V100 Z';
+  return `<svg viewBox="0 0 100 100" preserveAspectRatio="none"><path d="${back}" fill="#2a3f63"/><path d="${p}" fill="#4d5b3c"/><path d="${sn}" fill="#f4f4f4"/>
+  ${[[10,14],[24,9],[84,12],[92,24],[33,20]].map(([x,y])=>`<rect x="${x}" y="${y}" width=".6" height="1.2" fill="#fff"/>`).join('')}</svg>`;
+}
+function drawMt(){
+  let h=mtSvg();
+  NODES.forEach(([x,y],i)=>{
+    if(i<6){const g=ST[i].gear,has=S.gear[i];h+=`<div class="node" style="left:${x}%;top:${y+6}%"><span style="${has?'':'opacity:.3;filter:grayscale(1)'}">${g.e}</span><small>${ST[i].area}</small></div>`}
+    else h+=`<div class="node" style="left:${x+5}%;top:${y+2}%">🚩<small>山頂</small></div>`;
+  });
+  $('mtIn').innerHTML=h;
+}
+function placeClimber(i,anim){const c=$('climber');if(!anim){c.style.transition='none';requestAnimationFrame(()=>c.style.transition='')}const [x,y]=NODES[i];c.style.left=x+'%';c.style.top=y+'%'}
+
+/* ===== HUD ===== */
+function hud(){
+  $('hArea').innerHTML=`<span class="y">${ST[S.st]?ST[S.st].area:'山頂'}</span>${S.hard?' <span class="r">HARD</span>':''}`;
+  $('hHp').innerHTML='<span class="r">'+'♥'.repeat(Math.max(0,S.hp))+'</span><span class="gray">'+'♡'.repeat(Math.max(0,MAXHP()-S.hp))+'</span>';
+  $('hGear').innerHTML=ST.map((s,i)=>`<span class="${S.gear[i]?'':'no'}">${s.gear.e}</span>`).join('');
+}
+const fmtT=s=>String(Math.floor(s/60)).padStart(2,'0')+':'+String(Math.floor(s%60)).padStart(2,'0');
+const total=()=>(Date.now()-S.t0)/1000+S.pen;
+function tick(){$('hTime').textContent='⏱ '+fmtT(total())}
+
+/* ===== 進行 ===== */
+function startRun(hard){
+  Object.assign(S,{hard,st:0,hp:hard?3:5,gear:[],miss:0,sonan:0,lost:0,pen:0,log:[],t0:Date.now()});
+  ['title','summit','result','test'].forEach(id=>$(id).classList.add('hidden'));$('game').classList.remove('hidden');
+  clearInterval(S.timer);S.timer=setInterval(tick,250);
+  drawMt();placeClimber(0,false);enterStage(0);window.scrollTo(0,0);
+}
+function enterStage(i){
+  S.st=i;S.saveSt=i;saveLocal(i);const st=ST[i];S.v=st.gen();S.steps=st.steps(S.v);S.si=0;S.whyOK=true;S.rev=new Set();S.eqs=[];
+  $('stTitle').textContent=st.name;$('story').innerHTML=st.story(S.v);drawDiag();$('eqs').innerHTML='';hud();renderStep();
+}
+function drawDiag(){$('diag').innerHTML=ST[S.st].diag(S.v,S.rev)}
+function next(){S.si++;if(S.si>=S.steps.length)stageClear();else renderStep()}
+
+function renderStep(){
+  const s=S.steps[S.si];S.busy=false;
+  $('stepNo').textContent=`STEP ${S.si+1} / ${S.steps.length}　`+{force:'💪 力を見つける',tiles:'🧱 式を組み立てる',choice:'🧭 手順を選ぶ',why:'❓ なぜ？（装備がかかっている・1回勝負）',calc:'🧮 ゲームが計算'}[s.t];
+  $('q').innerHTML=s.q||'';$('fb').innerHTML='';
+  ({force:rForce,tiles:rTiles,choice:rChoice,why:rWhy,calc:rCalc})[s.t](s);
+}
+function fb(h,cls){$('fb').innerHTML=`<span class="${cls||''}">${h}</span>`}
+function nextBtn(label){return `<div class="ctrl"><button class="btn y" onclick="next()">${label||'次へ ▶'}</button></div>`}
+
+function miss(s,detail){
+  S.miss++;S.pen+=PEN();S.hp--;hud();tick();
+  const p=$('penFx');p.textContent='＋'+PEN()+'秒';p.style.opacity=1;setTimeout(()=>p.style.opacity=0,700);
+  const key=ST[S.st].area+'｜'+(s.q||'').replace(/<[^>]+>/g,'');if(!S.log.some(l=>l.k===key))S.log.push({k:key,a:detail});
+  if(S.hp<=0){S.busy=true;setTimeout(sonan,500);return true}
+  return false;
+}
+function sonan(){
+  S.sonan++;
+  ov(`<div class="emo">🚁</div><h2>遭難……</h2>体力が つきた。<br>救助ヘリで <span class="y">${ST[S.st].area}</span> の入口まで 運ばれた。<br><span class="gray">（数値が変わって やり直し）</span>`,'もう一度 登る',()=>{S.hp=S.hard?2:3;enterStage(S.st)});
+}
+
+/* --- 力を選ぶ --- */
+function rForce(s){
+  const opts=shuffle(s.opts);
+  $('work').innerHTML=`<div class="opts">${opts.map((o,i)=>`<button class="opt" data-i="${i}">${o[0]}</button>`).join('')}</div><div class="ctrl"><button class="btn y" id="bGo">決定 ▶</button></div>`;
+  document.querySelectorAll('#work .opt').forEach(b=>b.onclick=()=>b.classList.toggle('on'));
+  $('bGo').onclick=()=>{
+    if(S.busy)return;
+    const sel=[...document.querySelectorAll('#work .opt')].map(b=>b.classList.contains('on'));
+    const wrong=opts.filter((o,i)=>sel[i]&&!o[1]),lack=opts.filter((o,i)=>!sel[i]&&o[1]);
+    if(!wrong.length&&!lack.length){
+      S.busy=true;if(s.reveal){S.rev.add(s.reveal);drawDiag()}
+      fb('⭕ 正解！ 図に 力の矢印がかきこまれた。','g');setTimeout(next,900);return;
+    }
+    let h='✕ ちがう……<br>'+wrong.map(o=>`<span class="r">・「${o[0]}」</span> → ${o[2]}`).join('<br>')+(lack.length?(wrong.length?'<br>':'')+'<span class="y">・まだ 見落としている力がある。</span>':'');
+    fb(h);if(miss(s,'正しい力：'+s.opts.filter(o=>o[1]).map(o=>o[0]).join('、')))return;
+  };
+}
+
+/* --- タイルで式を組み立てる --- */
+function rTiles(s){
+  S.eqL=null;S.eqR=[];
+  let tiles=s.tiles.slice();if(S.hard)tiles.push({id:'x98',l:'9.8'},{id:'xa',l:'a'});
+  tiles=shuffle(tiles);const lhs=s.lhs?shuffle(s.lhs):null;
+  $('work').innerHTML=`<div class="eq"><span id="eqL" class="slot">${s.lhsFixed||'左辺'}</span><span>＝</span><span class="rhs" id="eqR"><span class="gray" style="font-size:15px">ここに タイルをならべる</span></span></div>`+
+   (lhs?`<div class="lab">左辺（どの質量 × a？）</div><div class="pal">${lhs.map(t=>`<button class="tile l" data-l="${t.id}">${t.l}</button>`).join('')}</div>`:'')+
+   `<div class="lab">右辺（力と符号）</div><div class="pal" id="palR"><button class="tile s" data-s="+">＋</button><button class="tile s" data-s="-">－</button>${tiles.map(t=>`<button class="tile" data-q="${t.id}">${t.l}</button>`).join('')}</div>`+
+   `<div class="ctrl"><button class="btn" id="bClr">けす</button><button class="btn y" id="bGo">決定 ▶</button></div>`;
+  if(s.lhsFixed){$('eqL').style.color='#fff';$('eqL').style.borderColor='transparent';$('eqL').style.fontSize='22px'}
+  const lab=id=>tiles.find(t=>t.id===id).l;
+  const draw=()=>{
+    $('eqR').innerHTML=S.eqR.length?S.eqR.map((t,i)=>`<button class="tile ${t.s?'s':''}" data-k="${i}">${t.s?(t.s==='+'?'＋':'－'):lab(t.id)}</button>`).join(''):'<span class="gray" style="font-size:15px">ここに タイルをならべる</span>';
+    document.querySelectorAll('#eqR .tile').forEach(b=>b.onclick=()=>{S.eqR.splice(+b.dataset.k,1);draw()});
+    document.querySelectorAll('#palR .tile[data-q]').forEach(b=>b.classList.toggle('used',S.eqR.some(t=>t.id===b.dataset.q)));
+    if(lhs){const L=lhs.find(t=>t.id===S.eqL);$('eqL').innerHTML=L?L.l:'左辺';$('eqL').style.color=L?'#fff':'';$('eqL').style.fontSize=L?'22px':''}
+  };
+  document.querySelectorAll('#palR .tile').forEach(b=>b.onclick=()=>{S.eqR.push(b.dataset.s?{s:b.dataset.s}:{id:b.dataset.q});draw()});
+  document.querySelectorAll('#work .tile.l').forEach(b=>b.onclick=()=>{S.eqL=b.dataset.l;draw()});
+  $('eqL').onclick=()=>{if(lhs){S.eqL=null;draw()}};
+  $('bClr').onclick=()=>{S.eqR=[];if(lhs)S.eqL=null;draw()};
+  $('bGo').onclick=()=>{
+    if(S.busy)return;
+    if(lhs&&!S.eqL)return fb('左辺（質量 × a）を 選ぼう。','y');
+    const k=S.eqR;if(!k.length)return fb('右辺が からっぽ。','y');
+    const terms=[];let i=0;
+    while(i<k.length){let sg='+';if(k[i].s){sg=k[i].s;i++}else if(terms.length)return fb('式の形になっていない…… 項と項の間には「＋」か「−」を入れよう。','y');
+      if(i>=k.length||k[i].s)return fb('式の形になっていない…… 符号のあとには 力のタイルを置こう。','y');terms.push([sg,k[i].id]);i++}
+    const ans=s.ans,has=id=>terms.find(t=>t[1]===id);
+    const lhsOK=!lhs||S.eqL===s.lhsAns;
+    const extra=terms.filter(t=>!ans.some(a=>a[1]===t[1])),lack=ans.filter(a=>!has(a[1])),sign=ans.filter(a=>has(a[1])&&has(a[1])[0]!==a[0]);
+    if(lhsOK&&!extra.length&&!lack.length&&!sign.length){
+      S.busy=true;const L=s.lhsFixed||lhs.find(t=>t.id===S.eqL).l;
+      const eq=`${s.no?s.no+'　':''}${L} ＝ ${terms.map((t,j)=>(j===0&&t[0]==='+'?'':(t[0]==='+'?' ＋ ':' － '))+lab(t[1])).join('')}`;
+      S.eqs.push(eq);$('eqs').innerHTML=S.eqs.map(e=>'✔ '+e).join('<br>');
+      fb('⭕ 式が立った！','g');setTimeout(next,900);return;
+    }
+    const msg=[];
+    if(!lhsOK)msg.push('左辺の質量がちがう。<b>どの物体の式</b>を立てている？');
+    if(extra.length)msg.push('その物体に はたらいていない力（関係ない量）が 入っている。');
+    if(lack.length)msg.push('力が 足りない。');
+    if(sign.length)msg.push('向き（符号）が ちがう項がある。');
+    const right=(s.lhsFixed||lhs.find(t=>t.id===s.lhsAns).l)+' ＝ '+ans.map((a,j)=>(j===0&&a[0]==='+'?'':(a[0]==='+'?' ＋ ':' － '))+lab(a[1])).join('');
+    fb('✕ '+msg.join('<br>✕ ')+`<br><span class="c">ヒント：${s.hint}</span>`,'r');
+    miss(s,'正しい式：'+(s.no||'')+right);
+  };
+  draw();
+}
+
+/* --- 手順を選ぶ --- */
+function rChoice(s){
+  const opts=shuffle(s.opts);
+  $('work').innerHTML=`<div class="opts">${opts.map((o,i)=>`<button class="opt" data-i="${i}">${o[0]}</button>`).join('')}</div>`;
+  document.querySelectorAll('#work .opt').forEach(b=>b.onclick=()=>{
+    if(S.busy)return;const o=opts[+b.dataset.i];
+    if(o[1]){S.busy=true;b.classList.add('okk');fb('⭕ 正解！','g');setTimeout(next,800)}
+    else{b.disabled=true;b.classList.add('ngg');fb('✕ ちがう…… <span class="c">ヒント：'+s.hint+'</span>','r');miss(s,'正解：'+s.opts.find(o=>o[1])[0])}
+  });
+}
+
+/* --- なぜ？（1回勝負） --- */
+function rWhy(s){
+  const opts=shuffle(s.opts);
+  $('work').innerHTML=`<div class="opts">${opts.map((o,i)=>`<button class="opt" data-i="${i}">${o[0]}</button>`).join('')}</div><div id="whyNext"></div>`;
+  document.querySelectorAll('#work .opt').forEach(b=>b.onclick=()=>{
+    if(S.busy)return;S.busy=true;const o=opts[+b.dataset.i];
+    document.querySelectorAll('#work .opt').forEach((x,i)=>{x.disabled=true;if(opts[i][1])x.classList.add('okk')});
+    if(o[1])fb('⭕ その通り！ <span class="gray">'+s.exp+'</span>','g');
+    else{b.classList.add('ngg');S.whyOK=false;fb(`✕ ざんねん…… <span class="y">この区間の装備（${ST[S.st].gear.e}${ST[S.st].gear.n}）は 取り逃した。</span><br><span class="c">${s.exp}</span>`,'r');
+      const key=ST[S.st].area+'｜'+s.q.replace(/<[^>]+>/g,'');if(!S.log.some(l=>l.k===key))S.log.push({k:key,a:'正解：'+s.opts.find(o=>o[1])[0]})}
+    $('whyNext').innerHTML=nextBtn();
+  });
+}
+
+/* --- ゲームが計算 --- */
+function rCalc(s){
+  $('q').innerHTML='式が そろった。あとは ゲームが計算する。';
+  $('work').innerHTML=`<div class="calc">${s.html()}</div>`+nextBtn();
+}
+
+/* --- 区間クリア --- */
+function stageClear(){
+  const st=ST[S.st];
+  if(S.whyOK){
+    S.gear[S.st]=true;S.hp=Math.min(MAXHP(),S.hp+2);hud();drawMt();if(S.st<5){S.saveSt=S.st+1;saveLocal(S.saveSt)}
+    ov(`<div class="emo">${st.gear.e}</div><h2>${st.area} クリア！</h2><span class="c">${st.gear.n}</span> を 手に入れた！<br><span class="gray">山小屋で休んだ（♥＋2）</span><br><br><span class="y">📌 ${st.key}</span>${S.st<5?spellBox(S.st+1):''}`,
+      S.st===5?'🚩 山頂へ！':'▶ 次の区間へ',()=>climb());
+  }else{
+    S.lost++;
+    ov(`<div class="emo">🧱</div><h2>進めない！</h2>この先は <span class="c">${st.gear.e}${st.gear.n}</span> がないと 登れない。<br>「なぜ？」に正しく答えられなかったので 手に入らなかった……<br><br><span class="y">📌 ${st.key}</span><br><span class="gray">（数値が変わって もう一度）</span>${spellBox(S.st)}`,
+      '↩ この区間を もう一度',()=>enterStage(S.st));
+  }
+}
+function climb(){
+  placeClimber(S.st+1,true);
+  if(S.st===5){setTimeout(summit,1300);return}
+  setTimeout(()=>enterStage(S.st+1),1300);
+}
+
+/* --- 登頂 --- */
+function summit(){
+  clearInterval(S.timer);const t=total();S.runs++;
+  const newBest=S.best===null||t<S.best;if(newBest)S.best=t;if(S.hard)S.hardClear=true;
+  const titles=[];
+  if(S.miss===0)titles.push('🏅 ノーミス登頂');
+  if(S.lost===0)titles.push('🎒 装備一発コンプ');
+  if(S.sonan===0)titles.push('🚁 遭難ゼロ');
+  if(t<600)titles.push('⚡ 10分切り');
+  if(t<300)titles.push('🔥 5分切り');
+  if(S.hard)titles.push('💀 ハードルート踏破');
+  $('game').classList.add('hidden');const sm=$('summit');sm.classList.remove('hidden');
+  sm.innerHTML=`<div style="font-size:60px">🌅🚩</div><h1>登 頂 ！</h1>
+   <div style="font-size:22px">記録　<b class="y" style="font-size:44px">${fmtT(t)}</b>${newBest&&S.runs>1?'　<span class="r">自己ベスト更新！</span>':''}</div>
+   <div style="margin:6px 0 10px">❌ ミス ${S.miss}回（＋${S.miss*PEN()}秒）　🚁 遭難 ${S.sonan}回　🧱 装備取り逃し ${S.lost}回${S.best!==null?'　🏆 ベスト '+fmtT(S.best):''}</div>
+   <div class="titles">${titles.map(x=>`<span>${x}</span>`).join('')||'<span class="gray" style="border-color:#666">称号なし……次は取れる！</span>'}</div>
+   ${S.log.length?`<div class="qbox" style="margin-top:12px"><b class="y">【つまずいたところ】</b><br>${S.log.map(l=>`・${l.k}<br>　<span class="c">${l.a}</span>`).join('<br>')}</div>`:''}
+   <div style="margin-top:16px">
+    <button class="btn big y" onclick="startTest()">📝 確認テストへ</button><br>
+    <button class="btn c" onclick="startRun(false)">🔁 もう一度登る（数値が変わる）</button>
+    <button class="btn" style="border-color:var(--r);color:var(--r)" onclick="startRun(true)">🔥 ハードルート（♥3・ミス＋20秒・ダミー増）</button>
+   </div>`;
+  saveLocal(6);sm.insertAdjacentHTML('beforeend',spellBox(6,'ベスト記録の'));
+  $('bHardT').classList.remove('hidden');window.scrollTo(0,0);
+}
+
+/* --- 確認テスト --- */
+function startTest(){['summit','result','game'].forEach(id=>$(id).classList.add('hidden'));$('test').classList.remove('hidden');S.ti=0;S.tans=[];showTQ();window.scrollTo(0,0)}
+function showTQ(){
+  if(S.ti>=TEST.length)return testResult();
+  const q=TEST[S.ti],opts=shuffle(q.a);$('tnum').textContent='第'+(S.ti+1)+'問 ／ '+TEST.length+'問';$('tq').innerHTML=q.q;
+  $('tch').innerHTML=opts.map((o,i)=>`<button class="opt" data-i="${i}">${o}</button>`).join('');
+  document.querySelectorAll('#tch .opt').forEach(b=>b.onclick=()=>{const o=opts[+b.dataset.i];S.tans.push({q,ok:o===q.a[0],t:o});S.ti++;showTQ()});
+}
+function testResult(){
+  $('test').classList.add('hidden');const r=$('result');r.classList.remove('hidden');
+  const sc=S.tans.filter(a=>a.ok).length,name=$('nameIn').value.replace(/[<>&"]/g,'');
+  r.innerHTML=`<h2>確認テスト けっか</h2><div style="font-size:20px">${name?name+'　':''}<b style="font-size:44px" class="y">${sc}</b> / ${TEST.length} 点</div>`+
+   `<table>${S.tans.map((a,i)=>`<tr><td>${a.ok?'⭕':'❌'}</td><td>${i+1}. ${a.q.q}<br><span style="color:${a.ok?'#8f8':'#f88'}">あなた：${a.t}</span>${a.ok?'':'<br><span class="y">正解：'+a.q.a[0]+'</span>'}</td></tr>`).join('')}</table>`+
+   `<div>登山の記録：${S.best!==null?'🏆 ベスト '+fmtT(S.best)+'　':''}登頂 ${S.runs}回${S.hardClear?'　💀 ハード踏破':''}</div>`+
+   `<div style="margin-top:12px"><button class="btn y" onclick="SubmitCard.reopen(S.card)">📝 提出カードを表示</button><button class="btn c" onclick="startRun(false)">🔁 もう一度登る</button><button class="btn" style="border-color:var(--r);color:var(--r)" onclick="startRun(true)">🔥 ハードルート</button></div>`;
+  window.scrollTo(0,0);
+  const tOnly=window.GAME_MODE==='test';
+  S.card=SubmitCard.show({gameId:'ma-f-dake',unit:'高1物理　運動方程式の立て方',game:'ma＝F岳 登頂RTA'+(tOnly?'（確認テストのみ）':''),
+   name:name,score:sc,total:TEST.length,marks:S.tans.map(a=>a.ok),
+   records:tOnly?[['モード','確認テストだけ']]:[['ベスト',S.best!==null?fmtT(S.best):'—'],['登頂',S.runs+'回'],...(S.hardClear?[['ハード','踏破']]:[])],
+   review:S.tans.map(a=>({q:a.q.q,a:a.q.a[0],y:a.t,ok:a.ok}))});
+}
+
+/* --- オーバーレイ --- */
+function ov(html,label,fn){
+  $('ovBox').innerHTML=html+`<div style="margin-top:14px"><button class="btn big y" id="ovGo">${label}</button></div>`;$('ov').classList.remove('hidden');
+  $('ovGo').onclick=()=>{$('ov').classList.add('hidden');fn()};
+}
+
+/* ===== セーブ（自動セーブ＋ふっかつのじゅもん） =====
+   自動セーブ：このiPadの中（localStorage）だけに保存。外への送信はしない。
+   保存できない環境（アプリ内ブラウザ等）でも、じゅもんで再開できる。 */
+const SKEY='maf-dake-save-v1';
+const KANA='あいうえおかきくけこさしすせそたちつてとなにぬねのはひふへほまみむめもやゆよらりるれろわがぎぐげござじずぜぞだぢづでどばびぶべぼ';
+const FIELDS=[['st',3],['gear',6],['hp',3],['hard',1],['miss',6],['sonan',4],['lost',4],['el',12],['pen',10],['best',12],['runs',4],['hc',1]]; // 66bit
+function snap(st){
+  const running=S.t0&&!$('game').classList.contains('hidden');
+  return {st,gear:ST.reduce((b,_,i)=>b|(S.gear[i]?1<<i:0),0),hp:Math.max(1,S.hp),hard:S.hard?1:0,miss:S.miss,sonan:S.sonan,lost:S.lost,
+    el:st>5?0:Math.floor(running?(Date.now()-S.t0)/1000:(S.el||0)),pen:st>5?0:S.pen,best:S.best===null?4095:Math.floor(S.best),runs:S.runs,hc:S.hardClear?1:0};
+}
+function saveLocal(st){try{localStorage.setItem(SKEY,JSON.stringify(snap(st)))}catch(e){}}
+function loadLocal(){try{return JSON.parse(localStorage.getItem(SKEY)||'null')}catch(e){return null}}
+function encode(o){
+  let bits='';for(const [k,n] of FIELDS){const v=Math.max(0,Math.min((1<<n)-1,Math.round(o[k]||0)));bits+=v.toString(2).padStart(n,'0')}
+  const g=[];for(let i=0;i<11;i++)g.push(parseInt(bits.slice(i*6,i*6+6),2));
+  const chk=g.reduce((a,x,i)=>(a+x*(i+1))%64,0);
+  const out=g.map((x,i)=>KANA[(x+i*37+chk*11)%64]).concat(KANA[chk]).join('');
+  return out.slice(0,4)+' '+out.slice(4,8)+' '+out.slice(8);
+}
+function decode(str){
+  const c=[...String(str).replace(/[\s　・]/g,'')].map(ch=>KANA.indexOf(ch));
+  if(c.length!==12||c.some(x=>x<0))return null;
+  const chk=c[11],g=c.slice(0,11).map((x,i)=>((x-i*37-chk*11)%64+64*20)%64);
+  if(g.reduce((a,x,i)=>(a+x*(i+1))%64,0)!==chk)return null;
+  let bits=g.map(x=>x.toString(2).padStart(6,'0')).join(''),o={},p=0;
+  for(const [k,n] of FIELDS){o[k]=parseInt(bits.slice(p,p+n),2);p+=n}
+  if(o.st>6)return null;return o;
+}
+function spellBox(st,label){return `<div style="margin-top:12px;font-size:15px" class="gray">📜 ${label||''}ふっかつのじゅもん（写真に撮っておけば 続きから再開できる）<br><span class="spell">${encode(snap(st))}</span></div>`}
+function applySave(o){
+  S.best=o.best===4095?null:o.best;S.runs=o.runs;S.hardClear=!!o.hc;
+  if(S.runs>0)$('bHardT').classList.remove('hidden');
+}
+function resume(o){
+  applySave(o);
+  Object.assign(S,{hard:!!o.hard,hp:o.hp,gear:ST.map((_,i)=>!!(o.gear>>i&1)),miss:o.miss,sonan:o.sonan,lost:o.lost,pen:o.pen,log:[],t0:Date.now()-o.el*1000});
+  ['title','summit','result','test'].forEach(id=>$(id).classList.add('hidden'));$('game').classList.remove('hidden');
+  clearInterval(S.timer);S.timer=setInterval(tick,250);
+  drawMt();placeClimber(o.st,false);enterStage(o.st);window.scrollTo(0,0);
+}
+function titleInfo(){
+  const o=loadLocal();let h='';
+  if(o){applySave(o);
+    if(o.st<=5)h+=`<button class="btn big g" style="border-color:var(--g);color:var(--g)" id="bCont">▶ つづきから（${ST[o.st].area}・⏱${fmtT(o.el+o.pen)}${o.hard?'・HARD':''}）</button>`;
+    if(S.best!==null)h+=`<div class="y" style="margin-top:6px">🏆 自己ベスト ${fmtT(S.best)}　（登頂 ${S.runs}回${S.hardClear?'・💀 ハード踏破':''}）</div>`;
+  }
+  $('cont').innerHTML=h;if($('bCont'))$('bCont').onclick=()=>resume(o);
+}
+function askSpell(){
+  $('ovBox').innerHTML=`<div class="emo">📜</div><h2>ふっかつのじゅもん</h2><input id="spIn" style="width:100%;font-size:24px;text-align:center;letter-spacing:.1em" placeholder="ひらがな 12もじ" autocomplete="off"><div id="spMsg" class="r" style="min-height:1.6em;margin-top:6px"></div>
+   <div><button class="btn" id="spNo">やめる</button><button class="btn big y" id="spGo">じゅもんを となえる</button></div>`;
+  $('ov').classList.remove('hidden');$('spIn').focus();
+  $('spNo').onclick=()=>$('ov').classList.add('hidden');
+  $('spGo').onclick=()=>{const o=decode($('spIn').value);
+    if(!o){$('spMsg').textContent='じゅもんが ちがいます（12もじ・ひらがな）';return}
+    $('ov').classList.add('hidden');
+    if(o.st<=5)resume(o);else{applySave(o);try{localStorage.setItem(SKEY,JSON.stringify(o))}catch(e){}titleInfo()}
+  };
+}
+addEventListener('pagehide',()=>{if(!$('game').classList.contains('hidden'))saveLocal(S.saveSt)});
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&!$('game').classList.contains('hidden'))saveLocal(S.saveSt)});
+titleInfo();
+/* --- ミニゲーム集から「確認テストだけ」で開かれたとき --- */
+if(window.PLAYER_NAME)$('nameIn').value=window.PLAYER_NAME;
+if(window.GAME_MODE==='test'){$('title').classList.add('hidden');startTest()}
+</script>
+</body>
+</html>
