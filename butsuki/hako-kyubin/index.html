@@ -749,10 +749,11 @@ function nextRound(){
   const p=RUN.list[RUN.ri],mk=p.mk||RUN.st.make;
   const r=mk(p,RUN.ri);r.t=0;r.finished=false;RUN.round=r;RUN.tleft=RUN.timer;
   $('task').classList.remove('hidden');setTask(r);setDock(r.dock);layoutR();r.init&&r.init();
-  if(RUN.ri===0&&r.coach&&(!SV.coached[RUN.sid]||RUN.st.alwaysCoach))setTimeout(()=>{if(RUN.round===r&&!r.finished)coach(r.coach())},350);
+  r.ck=(RUN.ri===0||p.coach)?RUN.sid+(p.coach?':'+RUN.ri:''):null;
+  if(r.ck&&r.coach&&(!SV.coached[r.ck]||RUN.st.alwaysCoach))setTimeout(()=>{if(RUN.round===r&&!r.finished)coach(r.coach())},350);
 }
 function done(res){const r=RUN.round;if(!r||r.finished)return;r.finished=true;setDock([]);coachEnd();
-  if(RUN.ri===0&&r.coach){SV.coached[RUN.sid]=1;save()}
+  if(r.ck&&r.coach){SV.coached[r.ck]=1;save()}
   if(!res.noScore)award(res.grade,res.x??R.x+R.w/2,res.y??R.y+R.h/2,res.head);
   setTimeout(()=>{if(RUN.round===r)showExpl(res,r)},res.delay??750)}
 function award(gr,x,y,head){
@@ -945,40 +946,46 @@ function mkA1(p){
 
 /* ---------- A2 坂の上の綱引き（静止摩擦力の向きと大きさ） ---------- */
 function mkA2(p){
-  const th=p.th*D2R,Wsin=p.W*Math.sin(th),fs=Math.round((Wsin-p.F)*10)/10;
-  const S={f:0,st:'in',drag:false,off:0,v:0,tt:0,moved:false};let G={};
-  const dirTxt=v=>Math.abs(v)<.05?'0（はたらかない）':`斜面にそって${v>0?'上':'下'}向き ${f1(Math.abs(v))} N`;
-  const r={S,inp(){return S.st==='in'},giv:[['重さ W',`${p.W} N`],['斜面の角',`${p.th}°`],['引く力（斜面にそって上）',`${f1(p.F)} N`]],title:'静止摩擦力の向きは「すべりだしを妨げる向き」',
-    ask:'ハコは止まったまま。**赤い矢印（静止摩擦力）** をドラッグして 向きと大きさを決めて **決定**！',
-    expl:`重力の斜面方向の成分 W sin${p.th}° = ${p.W}×${f2(Math.sin(th))} = ${f1(Wsin)} N（下向き）<br>上向きを正としてつりあい：${f1(p.F)} + f − ${f1(Wsin)} = 0 → f = ${f1(fs)} → <b>${dirTxt(fs)}</b>`,
+  const th=p.th*D2R,flat=p.th===0,kin=!!p.kin,Wsin=p.W*Math.sin(th),fs=kin?-Math.round(p.mu2*p.W*10)/10:Math.round((Wsin-p.F)*10)/10;
+  const S={f:0,st:'in',drag:false,off:0,v:0,tt:0,moved:false};let G={};const fname=kin?'動摩擦力':'静止摩擦力';
+  const dirTxt=v=>Math.abs(v)<.05?'0（はたらかない）':flat?`${v>0?'右':'左'}向き ${f1(Math.abs(v))} N`:`斜面にそって${v>0?'上':'下'}向き ${f1(Math.abs(v))} N`;
+  const r={S,inp(){return S.st==='in'},
+    giv:kin?[['重さ W',`${p.W} N`],['動摩擦係数 μ′',p.mu2.toFixed(2)],['ようす','右へすべっている']]:flat?[['重さ W',`${p.W} N`],['静止摩擦係数 μ',p.mu.toFixed(2)],['水平に引く力',`${f1(p.F)} N`],['ようす','動かない']]:[['重さ W',`${p.W} N`],['斜面の角',`${p.th}°`],['引く力（斜面にそって上）',`${f1(p.F)} N`]],
+    title:kin?'動摩擦力 F′ = μ′N':flat?'止まっていれば 静止摩擦力 ＝ 引く力':'静止摩擦力の向きは「すべりだしを妨げる向き」',
+    ask:kin?'右へすべっているハコ。**赤い矢印（動摩擦力）** をドラッグして 向きと大きさを決めて **決定**！':'ハコは止まったまま。**赤い矢印（静止摩擦力）** をドラッグして 向きと大きさを決めて **決定**！',
+    expl:kin?`動摩擦力 F′ = μ′N = ${p.mu2.toFixed(2)} × ${p.W} = <b>${f1(-fs)} N</b>、向きは運動と逆（<b>左向き</b>）。すべっている間は 速さによらず一定`
+      :flat?`止まっている → 水平方向のつりあい：${f1(p.F)} − f = 0 → <b>f = ${f1(p.F)} N（左向き）</b><br>μN = ${p.mu.toFixed(2)}×${p.W} = ${f1(p.mu*p.W)} N は すべりだす直前の値（最大摩擦力）。まだ使わない！`:`重力の斜面方向の成分 W sin${p.th}° = ${p.W}×${f2(Math.sin(th))} = ${f1(Wsin)} N（下向き）<br>上向きを正としてつりあい：${f1(p.F)} + f − ${f1(Wsin)} = 0 → f = ${f1(fs)} → <b>${dirTxt(fs)}</b>`,
     dock:[{id:'zero',label:'0 にする',cls:'wht'},{id:'ok',label:'決定！',main:1}],
     btn(id,ev){if(S.st!=='in'||ev!=='tap')return;if(id==='zero'){S.f=0;S.moved=true}
       if(id==='ok'){S.st='res';const d=Math.abs(S.f-fs);const gr=d<.05?'P':(Math.sign(S.f)===Math.sign(fs)||Math.abs(fs)<.05)&&d<=.55?'Go':'M';S.gr=gr;S.net=p.F+S.f-Wsin;
-        done({grade:gr,x:G.cx,y:G.cy,head:gr==='P'?'つりあい!!':undefined,msg:gr==='P'?'力がつりあって ハコはピタッと止まったまま！':`あなたの答え：${dirTxt(S.f)}`})}},
+        if(kin)S.net=0;done({grade:gr,x:G.cx,y:G.cy,head:gr==='P'?(kin?'ズバリ!!':'つりあい!!'):undefined,msg:gr==='P'?(kin?'すべっている間ずっと この大きさ！':'力がつりあって ハコはピタッと止まったまま！'):`あなたの答え：${dirTxt(S.f)}`})}},
     down(x,y){if(S.st!=='in')return;S.drag=true;this.move(x,y)},
     move(x,y){if(!S.drag||S.st!=='in')return;const u=G.u,v=((x-G.ax)*u[0]+(y-G.ay)*u[1])/G.k;const nf=clamp(Math.round(v*2)/2,-20,20);if(nf!==S.f){S.f=nf;AU.tick(400+S.f*20)}S.moved=true},
     up(){S.drag=false},
-    update(dt){if(S.st==='res'&&S.gr!=='P'){S.tt+=dt;if(S.tt<.7){S.v+=Math.sign(S.net||1)*40*dt;S.off+=S.v*dt}}},
+    update(dt){if(kin&&G.ax&&Math.random()<.7)emit(2,G.ax-G.cs*.4,G.ay-2,{type:'spark',cols:[YEL,ORG,'#fff'],ang:Math.PI+.3,spread:.4,v0:100,v1:300,g:900,l0:.2,l1:.4});
+      if(S.st==='res'&&S.gr!=='P'&&!kin){S.tt+=dt;if(S.tt<.7){S.v+=Math.sign(S.net||1)*40*dt;S.off+=S.v*dt}}},
     draw(){
-      const fyB=R.y+R.h*.92,L=Math.min(R.w*.92/Math.cos(th),R.h*.82/Math.sin(th)),x0=R.x+(R.w-L*Math.cos(th))/2,y0=fyB,x1=x0+L*Math.cos(th),y1=y0-L*Math.sin(th);
+      const fyB=R.y+R.h*(flat?.72:.92),L=flat?R.w*.92:Math.min(R.w*.92/Math.cos(th),R.h*.82/Math.sin(th)),x0=R.x+(R.w-L*Math.cos(th))/2,y0=fyB,x1=x0+L*Math.cos(th),y1=y0-L*Math.sin(th);
       const u=[Math.cos(th),-Math.sin(th)],n=[-Math.sin(th),-Math.cos(th)];
       ink(()=>poly([[x0,y0],[x1,y1],[x1,H+10],[x0,H+10]]),'#8d8a92',3,0);
       ctx.save();poly([[x0,y0],[x1,y1],[x1,H],[x0,H]]);ctx.clip();ctx.fillStyle='rgba(255,255,255,.15)';for(let i=0;i<60;i++)ctx.fillRect(x0+(i*71)%(x1-x0),y1+(i*37)%(H-y1),3,3);ctx.restore();
       ctx.strokeStyle=YEL;ctx.lineWidth=6;line(x0,y0,x1,y1);ctx.strokeStyle=INK;ctx.lineWidth=3;line(x0,y0-3,x1,y1-3);
-      ctx.lineWidth=2.5;ctx.beginPath();ctx.arc(x0,y0,44,-th,0);ctx.stroke();txt(`${p.th}°`,x0+60,y0-14,{size:15,disp:true});
+      if(!flat){ctx.lineWidth=2.5;ctx.beginPath();ctx.arc(x0,y0,44,-th,0);ctx.stroke();txt(`${p.th}°`,x0+60,y0-14,{size:15,disp:true})}
       const cs=clamp(Math.min(R.w,R.h)*.2,44,110),s=L*.5+S.off,ax=x0+u[0]*s,ay=y0+u[1]*s,k=Math.min(R.w,R.h)*.024;
-      const cx=ax+n[0]*cs/2,cy=ay+n[1]*cs/2;G={cx,cy,ax,ay,u,k};
-      crate(ax,ay,cs,-th,{mood:S.st==='res'?(S.gr==='P'?'happy':'shock'):S.drag?'strain':'idle',label:`${p.W}N`});
-      const tx=x0+u[0]*L*.96,ty=y0+u[1]*L*.96;ink(()=>circ(tx+n[0]*cs*.5,ty+n[1]*cs*.5,cs*.22),'#666',3,3);
+      const cx=ax+n[0]*cs/2,cy=ay+n[1]*cs/2;G={cx,cy,ax,ay,u,k,cs};
+      if(kin){ctx.strokeStyle='rgba(255,255,255,.85)';ctx.lineWidth=4;for(let i=0;i<4;i++){const ly=ay-cs*(.2+i*.2),o=(TT*300+i*70)%120;line(ax-cs*.6-o,ly,ax-cs*.6-o-50,ly)}}
+      crate(ax,ay,cs,-th,{mood:kin?'strain':S.st==='res'?(S.gr==='P'?'happy':'shock'):S.drag?'strain':'idle',label:`${p.W}N`,look:kin?1:0});
+      if(kin)tag('→ すべっている',cx,ay-cs-24,{bg:WHT,size:13});
+      if(!kin){const tx=x0+u[0]*L*.96,ty=y0+u[1]*L*.96;ink(()=>circ(tx+n[0]*cs*.5,ty+n[1]*cs*.5,cs*.22),'#666',3,3);
       ctx.strokeStyle='#7a5a2a';ctx.lineWidth=5;line(cx+u[0]*cs*.5,cy+u[1]*cs*.5,tx+n[0]*cs*.5,ty+n[1]*cs*.5);
-      arrow(cx,cy,cx+u[0]*p.F*k,cy+u[1]*p.F*k,ORG,{label:`引く力 ${f1(p.F)} N`,lx:n[0]*30,ly:n[1]*30,ls:12});
-      arrow(cx,cy,cx,cy+p.W*k,BLU,{w:6,label:`重力 ${p.W} N`,lx:-50,ls:12});
-      if(S.st==='res'){arrow(cx,cy,cx-u[0]*Wsin*k,cy-u[1]*Wsin*k,'#7aa7ff',{dash:1,label:`W sin${p.th}° = ${f1(Wsin)} N`,lx:-20,ly:26,ls:12})}
-      if(Math.abs(S.f)>=.25)arrow(ax,ay,ax+u[0]*S.f*k,ay+u[1]*S.f*k,RED,{w:8,label:`静止摩擦力 ${f1(Math.abs(S.f))} N`,lx:-n[0]*34,ly:-n[1]*34,ls:13});
+      arrow(cx,cy,cx+u[0]*p.F*k,cy+u[1]*p.F*k,ORG,{label:`引く力 ${f1(p.F)} N`,lx:n[0]*30,ly:n[1]*30,ls:12})}
+      arrow(cx,cy,cx,cy+Math.min(p.W*k,R.h*.3),BLU,{w:6,label:`重力 ${p.W} N`,lx:-50,ls:12});
+      if(S.st==='res'&&!flat&&!kin){arrow(cx,cy,cx-u[0]*Wsin*k,cy-u[1]*Wsin*k,'#7aa7ff',{dash:1,label:`W sin${p.th}° = ${f1(Wsin)} N`,lx:-20,ly:26,ls:12})}
+      if(Math.abs(S.f)>=.25)arrow(ax,ay,ax+u[0]*S.f*k,ay+u[1]*S.f*k,RED,{w:8,label:`${fname} ${f1(Math.abs(S.f))} N`,lx:-n[0]*34,ly:-n[1]*34,ls:13});
       const hx=ax+u[0]*S.f*k,hy=ay+u[1]*S.f*k;if(S.st==='in'){ink(()=>circ(hx,hy,13+Math.sin(TT*6)*2),S.drag?YEL:WHT,3,2);txt('⇔',hx,hy,{size:13,disp:true})}
-      if(S.st==='res'&&S.gr==='P'){ctx.globalAlpha=.6+.4*Math.sin(TT*8);tag('ΣF = 0',cx,cy-cs*1.1,{bg:YEL,size:16,disp:true});ctx.globalAlpha=1}
+      if(S.st==='res'&&S.gr==='P'){ctx.globalAlpha=.6+.4*Math.sin(TT*8);tag(kin?'F′ = μ′N':'ΣF = 0',cx,cy-cs*1.1,{bg:YEL,size:16,disp:true});ctx.globalAlpha=1}
     },
-    coach(){return[{at:()=>({x:G.ax,y:G.ay}),to:()=>({x:G.ax-G.u[0]*70,y:G.ay-G.u[1]*70}),g:'drag',text:'接している所から **ドラッグ** で 赤い矢印をのばす（坂の上向き・下向き どちらにも）',until:()=>S.moved},
+    coach(){return[{at:()=>({x:G.ax,y:G.ay}),to:()=>({x:G.ax-G.u[0]*70,y:G.ay-G.u[1]*70}),g:'drag',text:flat?'接している所から **ドラッグ** で 赤い矢印をのばす（右向き・左向き どちらにも）':'接している所から **ドラッグ** で 赤い矢印をのばす（坂の上向き・下向き どちらにも）',until:()=>S.moved},
       {at:'d-ok',g:'tap',text:'向きと大きさが決まったら **決定！**',until:()=>S.st!=='in'}]}};
   return r;
 }
@@ -1074,7 +1081,7 @@ function mkA5(p){
   const muTxt=p.muTxt||p.mu.toFixed(2);
   const r={S,inp(){return S.st==='in'},giv:[['斜面の角',`${p.th}°`],['初速度 v₀',`${f1(p.v0)} m/s`],['動摩擦係数 μ′',muTxt]],title:"斜面をすべり上がる運動",
     ask:'坂をすべり上がって **いちばん高く上がる地点** に旗を置いて **発射**！',
-    expl:`斜面方向：ma = −mg sin30° − μ′mg cos30° → a = −g(1/2 + ${muTxt==='0（なめらか）'?'0':muTxt}×√3/2) = <b>−${p.aF}g</b><br>x = v₀²/(2|a|) = 7.0²/(2×${p.aF}×9.8) = 5×9.8/(${p.aF2}×9.8) = <b>${p.xF} m</b>（49 = 5×9.8 で g が消える）`,
+    expl:`斜面方向：ma = −mg sin30° − μ′mg cos30° → a = −g(1/2 + ${muTxt==='0（なめらか）'?'0':muTxt}×√3/2) = <b>−${p.aF}g</b>（= −${f2(aU)} m/s²）<br>x = v₀²/(2|a|) = 7.0²/(2×${p.aF}×9.8) = 5×9.8/(${p.aF2}×9.8) = <b>${p.xF} m</b>（49 = 5×9.8 で g が消える）`,
     dock:[{id:'go',label:'発射！',cls:'org',main:1}],
     btn(id,ev){if(S.st!=='in'||ev!=='tap')return;if(!S.moved){cheer('まず 旗をドラッグ！',W/2,H*.35);return}S.st='run';S.v=p.v0;AU.whoosh();shake(6)},
     down(x,y){if(S.st!=='in')return;S.drag=true;this.move(x,y)},
@@ -1446,6 +1453,66 @@ function mkC2(p){
   return r;
 }
 
+/* ---------- B2f 深さから圧力を求める（問43の向き） ---------- */
+function mkB2f(p){
+  const p0=1e5,rho=1e3,tru=p0+rho*g*p.h;const r=mkB2({p:tru,total:1}),S=r.S;S.pv=1.0;
+  const gp=()=>({x:R.x+R.w-Math.min(70,R.w*.16),y:R.y+Math.min(80,R.h*.2),r:Math.min(62,R.w*.14)});
+  Object.assign(r,{giv:[['水深 h',`${p.h} m`],['大気圧 p₀','1.0×10⁵ Pa'],['水の密度 ρ','1.0×10³ kg/m³']],
+    ask:`カプセルが水深 **${p.h} m** までもぐる。そこでの圧力 p′ を **上下ドラッグ**（圧力計の針が動く）で予想して **決定**！`,
+    expl:`p′ = p₀ + ρhg = 1.0×10<sup>5</sup> + 1.0×10<sup>3</sup>×${p.h}×9.8 = 1.0×10<sup>5</sup> + ${sci(rho*g*p.h,2)} = <b>${sci(tru,2)} Pa</b>`,
+    dock:[{id:'go',label:'決定！',cls:'tea',main:1}],
+    btn(id,ev){if(S.st!=='in'||ev!=='tap')return;if(S.h<p.h-.01){cheer('もぐり終わるまで待ってね',W/2,H*.4);return}S.st='res';AU.clank();S.needle=S.pv*1e5;S.tn=tru;
+      const err=Math.abs(S.pv-tru/1e5),gr=err<=.051?'P':err<=.151?'G':err<=.351?'Go':'M';
+      done({grade:gr,x:R.x+R.w*.5,y:R.y+R.h*.4,head:gr==='P'?'ドンピシャ!!':undefined,msg:`予想 ${f1(S.pv)}×10⁵ Pa（実際は ${sci(tru,2,false)} Pa）`,delay:1100})},
+    down(x,y){if(S.st!=='in')return;S.drag=true;S.y0=y;S.pv0=S.pv},
+    move(x,y){if(!S.drag||S.st!=='in')return;const nv=clamp(Math.round((S.pv0+(S.y0-y)*.012)*10)/10,0,7);if(nv!==S.pv){S.pv=nv;AU.tick(300+nv*80)}S.moved=true},
+    up(){S.drag=false}});
+  const bu=r.update;r.update=dt=>{if(S.st==='in'&&S.h<p.h){S.h=Math.min(p.h,S.h+dt*Math.max(8,p.h/1.6));if(Math.random()<.3)AU.bubble()}bu(dt)};
+  const bd=r.draw;r.draw=()=>{bd();if(S.st==='in'){const q=gp();dial(q.x,q.y,q.r*1.18,S.pv,7,{step:.5,big:1,title:'×10⁵Pa'});tag(`予想 ${f1(S.pv)}×10⁵ Pa`,q.x,q.y+q.r*1.18+16,{bg:YEL,size:13})}};
+  r.coach=()=>[{at:()=>({x:R.x+R.w*.5,y:R.y+R.h*.6}),to:()=>({x:R.x+R.w*.5,y:R.y+R.h*.6-110}),g:'drag',text:'**上へドラッグ** で 圧力計（右上）の針が上がる。下へで下がる',until:()=>S.moved&&!S.drag},{at:'d-go',g:'tap',text:'**決定！**',until:()=>S.st!=='in'}];
+  return r;
+}
+
+/* ---------- B7 浮力ばねばかり（問45・問46：F = ρVg は深さによらない） ---------- */
+function mkB7(p){
+  const fr=p.frac||1,V=p.dims[0]*p.dims[1]*p.dims[2],Vs=V*fr,F=Math.round(1000*Vs*g*10)/10;
+  const S={f:0,st:'in',drag:false,moved:false,hold:null,ht:0,acc:0,rd:null};let G={};
+  const cm=v=>`${+(v*100).toFixed(1)} cm`;
+  const setF=v=>{const nv=clamp(Math.round(v*10)/10,0,Math.ceil(p.W*1.2));if(nv!==S.f){S.f=nv;AU.tick(300+nv*8)}S.moved=true};
+  const r={S,inp(){return S.st==='in'},bg:'lab',
+    giv:[['物体',`${p.mat}（重さ ${f1(p.W)} N）`],['大きさ',p.dims.map(cm).join(' × ')],['水の密度 ρ','1.0×10³ kg/m³'],...(p.giv||[])],
+    title:'浮力 F = ρVg（V は押しのけた水の体積）',ask:p.ask,
+    expl:`V = ${p.dims.map(v=>f2(v)).join('×')} = ${sci(V,1)} m³${fr<1?` の半分 → ${sci(Vs,1)} m³`:''}<br>F = ρVg = 1.0×10<sup>3</sup> × ${sci(Vs,1)} × 9.8 = <b>${f1(F)} N</b>${p.deep?'<br>深くしても 押しのける体積 V は同じ → <b>浮力は変わらない</b>（上の面・下の面の水圧はどちらも大きくなるが、その差は同じ）':''}`,
+    dock:[{id:'dn',label:'▼',sub:'0.1 N',hold:1,cls:'wht'},{id:'up',label:'▲',sub:'0.1 N',hold:1,cls:'wht'},{id:'ok',label:'決定！',main:1}],
+    btn(id,ev){if(S.st!=='in')return;if(id==='up'||id==='dn'){S.hold=ev==='down'?id:null;S.ht=0;if(ev==='down')setF(S.f+(id==='up'?.1:-.1))}
+      if(id==='ok'&&ev==='tap'){if(S.f<=0){cheer('緑の矢印をのばそう',W/2,H*.4);return}S.st='res';AU.clank();const d=Math.abs(S.f-F),gr=d<.05?'P':d<=Math.max(.2,F*.03)?'G':d<=F*.1?'Go':'M';
+        done({grade:gr,x:G.cx,y:G.cy-40,head:gr==='P'?'ピタリ浮力!!':undefined,msg:`あなたの答え ${f1(S.f)} N → ばねばかりは ${f1(p.W)} − ${f1(F)} = ${f1(p.W-F)} N`})}},
+    down(x,y){if(S.st!=='in')return;S.drag=true;this.move(x,y)},
+    move(x,y){if(!S.drag||S.st!=='in')return;setF((G.cy-y)/G.k)},
+    up(){S.drag=false},
+    update(dt){if(S.st==='in'&&S.hold){S.ht+=dt;if(S.ht>.35){S.acc+=dt;const st=S.ht>1.6?.04:.08;if(S.acc>st){S.acc=0;setF(S.f+(S.hold==='up'?.1:-.1))}}}
+      const tgt=S.st==='in'?null:p.W-F;if(tgt!=null)S.rd=S.rd==null?p.W:S.rd+(tgt-S.rd)*Math.min(1,dt*3)},
+    draw(){
+      const fy=R.y+R.h*.98;floor(fy,0,W,'wood');const th=R.h*.62,tw=Math.min(R.w*.62,th*1.5),tx=R.x+(R.w-tw)/2,ty=fy-th,wl=ty+th*.14;
+      ctx.fillStyle='rgba(76,195,214,.55)';ctx.fillRect(tx,wl,tw,fy-wl);ctx.strokeStyle=INK;ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(tx,ty);ctx.lineTo(tx,fy);ctx.lineTo(tx+tw,fy);ctx.lineTo(tx+tw,ty);ctx.stroke();
+      const sc=clamp(R.h*1.2,160,620),bw=p.dims[0]*sc,bh=p.dims[2]*sc,cx=R.x+R.w*.5;
+      const cy=fr<1?wl:wl+(fy-wl-bh)*(p.deep?.6:.15)+bh/2;const k=Math.min(R.h*.2,fy-wl-bh*.5-(fy-wl-bh)*.6-14)/p.W;G={cx,cy,k};
+      const sy=R.y+4,sh=Math.min(R.h*.16,70);ink(()=>rrect(cx-26,sy,52,sh,8),'#e9e3d3',3,3);ink(()=>rrect(cx-20,sy+8,40,sh*.45,4),WHT,2,0);
+      txt(S.rd==null?'?? N':`${f1(S.rd)} N`,cx,sy+8+sh*.22,{size:12});txt('ばねばかり',cx,sy+sh-10,{size:9});
+      ctx.strokeStyle=INK;ctx.lineWidth=2.5;line(cx,sy+sh,cx,cy-bh/2);
+      if(fr>=1){const pt=(cy-bh/2-wl)/(fy-wl),pb=(cy+bh/2-wl)/(fy-wl),L0=R.h*.12;for(let i=-1;i<=1;i++){const x=cx+i*bw*.3;arrow(x,cy-bh/2-10-pt*L0,x,cy-bh/2-2,'#9fe8ff',{w:4,head:9,sh:1});arrow(x,cy+bh/2+10+pb*L0,x,cy+bh/2+2,'#9fe8ff',{w:4,head:9,sh:1})}}
+      ink(()=>rrect(cx-bw/2,cy-bh/2,bw,bh,4),'#c9ced6',3,4);ctx.fillStyle='rgba(255,255,255,.5)';ctx.fillRect(cx-bw/2+5,cy-bh/2+5,bw*.18,bh-10);
+      if(fr<1){ctx.fillStyle='rgba(76,195,214,.45)';ctx.fillRect(cx-bw/2,wl,bw,bh/2)}
+      arrow(cx+bw*.18,cy,cx+bw*.18,cy+p.W*k,BLU,{w:6,label:`重力 ${f1(p.W)} N`,lx:58,ls:12});
+      if(S.f>0)arrow(cx-bw*.18,cy,cx-bw*.18,cy-S.f*k,GRN,{w:8,label:`浮力 ${f1(S.f)} N`,lx:-62,ls:13});
+      if(S.st==='in'){const hy=cy-S.f*k;ink(()=>circ(cx-bw*.18,hy,12+Math.sin(TT*6)*2),S.drag?YEL:WHT,3,2);txt('⇕',cx-bw*.18,hy,{size:12,disp:true})}
+      else{ctx.setLineDash([6,4]);ctx.strokeStyle=GRN;ctx.lineWidth=3;line(cx-bw*.18-30,cy-F*k,cx-bw*.18+30,cy-F*k);ctx.setLineDash([]);tag(`正解 ${f1(F)} N`,cx-bw*.18-34,cy-F*k,{al:'r',bg:GRN,fg:'#fff',size:12})}
+      if(p.deep)tag('さっきより 深い！',tx+8,wl+22,{al:'l',bg:RED,fg:'#fff',size:13});
+    },
+    coach(){return[{at:()=>({x:G.cx,y:G.cy}),to:()=>({x:G.cx,y:G.cy-100}),g:'drag',text:'**上へドラッグ** で 緑の矢印（浮力）をのばす。▲▼ で 0.1 N ずつ',until:()=>S.moved&&!S.drag},{at:'d-ok',g:'tap',text:'**決定！**',until:()=>S.st!=='in'}]}};
+  return r;
+}
+
 /* =====================================================================
    面の一覧
    ===================================================================== */
@@ -1459,17 +1526,17 @@ const STG=[
   help:'F₀ = μN。上に荷物がのると N が増える。質量 m のときは N = mg。',f:'F₀ = μN',stk:['最大摩擦力','F₀ = μN'],
   rounds:()=>[{W:20,mu:.40},{W:50,mu:.30},{m:2.0,mu:.50},{W:30,load:10,mu:.35},{m:3.0,mu:.50}]},
  {id:'a2',zone:0,no:'陸2',name:'坂の上の綱引き',icon:'⛰️',make:mkA2,
-  learn:'静止摩擦力は **すべりだすのを妨げる向き**。引き方しだいで **上向きにも下向きにも** なる',how:'赤い矢印を **ドラッグ** で向きと大きさを決める → **決定**',
+  learn:'止まっている間の静止摩擦力は **引く力とつりあう大きさ**（μN ではない）。向きは **すべりだすのを妨げる向き** で、坂では **上向きにも下向きにも** なる',how:'赤い矢印を **ドラッグ** で向きと大きさを決める → **決定**',
   help:'斜面方向のつりあい：引く力 ＋ 静止摩擦力 ＝ W sinθ（上向きを正）。答えがマイナスなら下向き。',f:'F ＋ f − W sinθ ＝ 0',stk:['摩擦力の向き','すべりだしを妨げる向き'],
-  rounds:()=>[{W:10,th:30,F:2},{W:10,th:30,F:8},{W:10,th:30,F:5},{W:24,th:30,F:4},{W:16,th:30,F:14}]},
+  rounds:()=>[{W:20,th:0,mu:.40,F:5.0},{W:10,th:30,F:2},{W:10,th:30,F:8},{W:10,th:30,F:5},{W:24,th:30,F:4},{W:16,th:30,F:14}]},
  {id:'a3',zone:0,no:'陸3',name:'摩擦角チャレンジ',icon:'📐',make:mkA3,
   learn:'板をかたむけて すべりだす角 **θ₀（摩擦角）** では **μ = tan θ₀**。tan30° = 1/√3・tan45° = 1・tan60° = √3 を使う',how:'**上下ドラッグ** か ▲▼ で板をかたむける → すべる直前で **決定**',
   help:'tan 30° = 1/√3、tan 45° = 1、tan 60° = √3。tan メーターが故障した面は これを使う。',f:'μ = tan θ₀',stk:['摩擦角','μ = tan θ₀'],
   rounds:()=>[{deg:30,muTxt:'1/√3',showTan:1,hint:'tan 30° = 1/√3'},{deg:45,muTxt:'1',hint:'tan 45° = 1'},{deg:60,muTxt:'√3',hint:'tan 60° = √3'},{deg:30,muTxt:'1/√3',hint:'tan 30° = 1/√3'}]},
  {id:'a4',zone:0,no:'陸4',name:'すべり止めカーリング',icon:'🥌',make:mkA4,
-  learn:'すべっている間は **動摩擦力 F′ = μ′N** が一定。加速度 −μ′g は **質量によらない**',how:'止まる場所に **旗をドラッグ** → **発射**',
-  help:'a = −μ′g。止まるまでの距離 x = v₀² / (2μ′g)。重いハコも同じ距離で止まる。',f:"F′ = μ′N　a = −μ′g",stk:['動摩擦力',"F′ = μ′N"],
-  rounds:()=>[{m:10,v0:7.0,mu:.50,s:'asph'},{m:10,v0:7.0,mu:.25,s:'wood'},{m:40,v0:7.0,mu:.25,s:'wood'},{m:5,v0:7.0,mu:.10,s:'ice'},{m:20,v0:14,mu:.50,s:'asph'}]},
+  learn:'すべっている間は **動摩擦力 F′ = μ′N** が一定。加速度 −μ′g は **質量によらない**',how:'まず 動摩擦力の矢印を **ドラッグ**。つぎは 止まる場所に **旗をドラッグ** → **発射**',
+  help:'F′ = μ′N（すべっている間はいつも）。a = −μ′g。止まるまでの距離 x = v₀² / (2μ′g)。重いハコも同じ距離で止まる。',f:"F′ = μ′N　a = −μ′g",stk:['動摩擦力',"F′ = μ′N"],
+  rounds:()=>[{mk:mkA2,kin:1,W:30,mu2:.20,th:0},{m:10,v0:7.0,mu:.50,s:'asph',coach:1},{m:10,v0:7.0,mu:.25,s:'wood'},{m:40,v0:7.0,mu:.25,s:'wood'},{m:5,v0:7.0,mu:.10,s:'ice'},{m:20,v0:14,mu:.50,s:'asph'}]},
  {id:'a5',zone:0,no:'陸BOSS',name:'急坂の倉庫',icon:'🏭',make:mkA5,boss:'坂の主（さかのぬし）',bossShort:'坂の主',
   learn:'斜面をすべり上がるとき、重力の成分と動摩擦力が **どちらも下向き**：a = −g(sinθ + μ′cosθ)',how:'最高点に **旗をドラッグ** → **発射**',
   help:'a = −g(sinθ + μ′cosθ)、x = v₀²/(2|a|)。sin30° = 1/2、cos30° = √3/2。v₀ = 7.0 なら v₀² = 49 = 5×9.8 で g が約分できる。',f:'a = −g(sinθ + μ′cosθ)',stk:['坂の主','a = −g(sinθ+μ′cosθ)'],
@@ -1479,22 +1546,29 @@ const STG=[
   help:'面積は m² にしてから計算（2.0 cm = 0.020 m）。1 hPa = 1.0×10² Pa。',f:'p = F / S　[Pa]',stk:['圧力','p = F / S'],
   rounds:()=>[{kind:'ice',W:2.4,dims:[.30,.10,.020],lim:500},{kind:'clay',W:60,dims:[.50,.30,.20],target:600},{kind:'stamp',W:90,dims:[.60,.30,.10],target:3000,hpa:1},{board:1,W:600,lim:2000,wd:.50}]},
  {id:'b2',zone:1,no:'海2',name:'深海ダイブ便',icon:'🤿',make:mkB2,
-  learn:'水圧は **深さに比例**：p = ρhg。水中の物体が受ける圧力は **p′ = p₀ + ρhg**。圧力は面に **垂直**',how:'**ドラッグ** で深さを変える → **ブイ投下**',
+  learn:'水圧は **深さに比例**：p = ρhg。水中の物体が受ける圧力は **p′ = p₀ + ρhg**。圧力は面に **垂直**',how:'**ドラッグ** で深さを変える → **ブイ投下**。深さが決まっている面は、針を **ドラッグ** して圧力を予想',
   help:'大気圧ありなら h = (p′ − p₀)/(ρg)。「水圧だけ」と言われたら p₀ は足さない。',f:"p′ = p₀ + ρhg",stk:['水圧',"p′ = p₀ + ρhg"],
-  rounds:()=>[{p:1.98e5,total:1,d:2},{p:4.9e4,total:0},{p:2.96e5,total:1,d:2},{p:5.9e5,total:1}]},
+  rounds:()=>[{p:1.98e5,total:1,d:2},{mk:mkB2f,h:50,coach:1},{p:4.9e4,total:0},{p:2.96e5,total:1,d:2},{mk:mkB2f,h:10}]},
  {id:'b3',zone:1,no:'海3',name:'板はずれ実験',icon:'🧪',make:mkB3,
   learn:'水中の板は **下から水圧の力** で押し上げられる。浅くなると力が減り、mg と等しくなった所で外れる',how:'外れる深さに **赤い線をドラッグ** → **引き上げ開始**',
   help:'ρhgS = mg → h = m/(ρS)。大気圧 p₀S は上下で打ち消し合う。',f:'ρhgS = mg',stk:['板はずれ','h = m / (ρS)'],
   rounds:()=>[{m:.50,S:1.0e-2},{m:.30,S:5.0e-3},{m:.80,S:4.0e-3}]},
- {id:'b4',zone:1,no:'海4',name:'いかだ積み込み',icon:'🛟',make:mkB4,
+ {id:'b7',zone:1,no:'海4',name:'浮力ばねばかり',icon:'⚖️',make:mkB7,
+  learn:'**浮力 F = ρVg**。V は **押しのけた水の体積**（しずんでいる部分）。全部しずんでいれば **深さによらない**',how:'緑の矢印（浮力）を **上へドラッグ**（▲▼で 0.1 N ずつ）→ **決定**',
+  help:'F = ρVg。全部しずめば V は物体の体積、半分なら半分。深くしても V が同じなら F も同じ。ばねばかりの値 ＝ 重さ − 浮力。',f:'F = ρVg',stk:['ばねばかり','浮力は深さによらない'],
+  rounds:()=>[{mat:'アルミの立方体',W:26.5,dims:[.10,.10,.10],ask:'1辺 10 cm の立方体が **全部** 水にしずんでいる。**緑の矢印（浮力）** をのばして大きさを決めて **決定**！'},
+    {mat:'アルミの立方体',W:26.5,dims:[.10,.10,.10],deep:1,giv:[['しずめた深さ','さっきより深い']],ask:'同じ立方体を **もっと深く** しずめた。水圧は大きくなるけど、**浮力** はどうなる？ 矢印で答えて **決定**！'},
+    {mat:'アルミの立方体',W:26.5,dims:[.10,.10,.10],frac:.5,giv:[['しずんでいる部分','半分']],ask:'立方体の **半分だけ** 水にしずんでいる。浮力は？'},
+    {mat:'アルミの直方体',W:52.9,dims:[.10,.10,.20],ask:'10 cm × 10 cm × 20 cm の直方体が 全部しずんでいる。浮力は？'}]},
+ {id:'b4',zone:1,no:'海5',name:'いかだ積み込み',icon:'🛟',make:mkB4,
   learn:'**浮力 F = ρVg**（V は押しのけた流体の体積）。いかだ全体が沈むときの浮力が 支えられる限界',how:'荷物を **タップ** で積む → **進水**',
   help:'全体が沈んだときの浮力 ρVg ≧ (いかだ＋荷物)の重さ なら浮く。g は両辺で消えるので kg のまま比べてよい。',f:'F = ρVg',stk:['浮力','F = ρVg'],
   rounds:()=>[{L:1.0,Wd:1.0,H:.50,M:100},{L:2.0,Wd:1.0,H:.40,M:150},{L:2.0,Wd:1.5,H:.30,M:220},{L:1.2,Wd:1.0,H:.50,M:80}]},
- {id:'b5',zone:1,no:'海5',name:'何％出る？',icon:'🧊',make:mkB5,
+ {id:'b5',zone:1,no:'海6',name:'何％出る？',icon:'🧊',make:mkB5,
   learn:'**アルキメデスの原理**：流体中の物体は、押しのけた流体の **重さ** に等しい浮力を受ける',how:'ブロックの **線をドラッグ** で予想 → **入れる**',
   help:'浮いてつりあう：ρV沈g = ρ′Vg → 沈む割合 = ρ′/ρ。上に出る割合 = 1 − ρ′/ρ。',f:'沈む割合 ＝ ρ′ / ρ',stk:['アルキメデス','浮力 ＝ 押しのけた流体の重さ'],
   rounds:()=>[{obj:'氷',r1:920,r2:1000,liq:'水',oc:'#dff6ff'},{obj:'木',r1:600,r2:1000,liq:'水',oc:'#d9a066'},{obj:'木',r1:750,r2:1000,liq:'水',oc:'#c98a4b'},{obj:'氷',r1:920,r2:1150,liq:'食塩水',oc:'#dff6ff',col:'rgba(150,215,200,.65)'}]},
- {id:'b6',zone:1,no:'海6',name:'浮く？沈む？フリック',icon:'🫧',make:mkB6,
+ {id:'b6',zone:1,no:'海7',name:'浮く？沈む？フリック',icon:'🫧',make:mkB6,
   learn:'物体が浮く条件は **ρ′ < ρ**（物体の密度 < 液体の密度）。液体が変われば結果も変わる',how:'**上フリック＝浮く／下フリック＝沈む**。速いほど高得点',
   help:'密度の単位は kg/m³。水 1.0×10³、灯油 0.80×10³、水銀 13.6×10³。',f:"ρ′ < ρ なら浮く",stk:['浮く条件',"ρ′ < ρ"],
   rounds:()=>[{liq:'水',rho:1000,col:'rgba(76,195,214,.6)',items:shuffle(['ice','iron','wood','alu','cork','egg'])},
@@ -1502,7 +1576,7 @@ const STG=[
     {liq:'水銀',rho:13600,col:'rgba(180,186,196,.85)',items:shuffle(['iron','gold','cu','pb','alu'])},
     {liq:'濃い食塩水',rho:1200,col:'rgba(150,215,200,.65)',items:shuffle(['egg','ice','glass','pe','alu']),lim:4}]},
  {id:'c1',zone:2,no:'空1',name:'エアドロップ',icon:'🪂',make:mkC1,
-  learn:'空気の抵抗力は 速さに比例（R = kv）。速くなると抵抗が重力とつりあい、**終端速度** で一定になる',how:'パラシュートを **左右ドラッグ** で広げる → **投下**',
+  learn:'雨つぶが 1000 m 自由落下すると 140 m/s になる計算だが、実際は 10 m/s 程度。**空気の抵抗** のせい。抵抗力は 速さに比例（R = kv）。速くなると抵抗が重力とつりあい、**終端速度** で一定になる',how:'パラシュートを **左右ドラッグ** で広げる → **投下**',
   help:'終端速度：kv<sub>f</sub> = mg → v<sub>f</sub> = mg/k。k を大きくすると ゆっくり落ちる。',f:'v<sub>f</sub> = mg / k',stk:['終端速度','v<sub>f</sub> = mg / k'],
   rounds:()=>[{m:20,vt:4.9},{m:10,vt:2.0},{m:50,vt:7.0},{m:30,vt:4.2}]},
  {id:'c2',zone:2,no:'空2',name:'v-t グラフ予言',icon:'📈',make:mkC2,
@@ -1600,6 +1674,9 @@ const QB=[
  {q:'密度 ρ′ の物体を密度 ρ の液体に入れたとき、物体が浮く条件は？',a:['ρ′ < ρ','ρ′ > ρ','ρ′ = ρ','液体の深さで決まる'],ex:'浮力 ρVg ＞ 重力 ρ′Vg → ρ′ < ρ'},
  {q:'密度 0.92×10³ kg/m³ の氷を 密度 1.00×10³ kg/m³ の水に浮かべた。水面より上に出ている部分は 氷全体の何％？',a:['8 %','92 %','10 %','50 %'],ex:'沈む割合 = 0.92/1.00 = 92 % → 上に出るのは 8 %'},
  {q:'空気の抵抗力が R = kv で表される物体（質量 m）が落下するとき、終端速度 v_f は？',a:['mg / k','kmg','k / mg','mgk / 2'],ex:'kv_f = mg → v_f = mg/k'},
+ {q:'1 atm（気圧）はおよそ何 Pa？',a:['1.013×10⁵ Pa','1.013×10³ Pa','1.0×10² Pa','9.8×10⁴ Pa'],ex:'1 atm ≒ 1.013×10⁵ Pa ＝ 1013 hPa'},
+ {q:'傾き 30° のあらい斜面（動摩擦係数 √3/6）を、物体がすべり上がっている。加速度は？（斜面にそって上向きを正、g = 9.8 m/s²）',a:['−(3/4)g ≒ −7.4 m/s²','−(1/2)g ≒ −4.9 m/s²','−g = −9.8 m/s²','−(1/4)g ≒ −2.5 m/s²'],ex:'a = −g(sin30° + μ′cos30°) = −g(1/2 + √3/6×√3/2) = −(3/4)g'},
+ {q:'真空中で、質量のちがう2つの物体を同じ高さから同時に落とすと？',a:['同時に落ちる','重いほうが先に落ちる','軽いほうが先に落ちる','どちらも落ちない'],ex:'空気の抵抗がなければ、質量にかかわらず自由落下する'},
  {q:'空気の抵抗を受けて落ちる物体が 終端速度に達したあとの 加速度の大きさは？',a:['0','g','g / 2','だんだん大きくなる'],ex:'抵抗力と重力がつりあう → 合力 0 → 加速度 0'},
 ];
 const T={};
