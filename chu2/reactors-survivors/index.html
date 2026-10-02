@@ -225,6 +225,32 @@ body.land #eyRec{grid-template-columns:repeat(4,minmax(0,1fr))}
 #eyNew .who.new{animation:join .8s cubic-bezier(.2,1.6,.4,1) both}
 #eyNew .who.new b{background:#FF3B1F;color:#fff;padding:0 6px;font-style:italic}
 @keyframes join{0%{transform:translateY(40px) scale(.2);opacity:0;filter:brightness(4)}100%{transform:none;opacity:1}}
+/* 区画クリアの関門（2026-10-02） */
+#gate{background:#161616;z-index:22;overflow-y:auto;justify-content:flex-start;padding:calc(56px + env(safe-area-inset-top)) 14px 24px}
+#gate::before{content:"";position:fixed;inset:0;background:repeating-linear-gradient(12deg,rgba(47,123,255,.08) 0 40px,rgba(0,0,0,0) 40px 80px);pointer-events:none}
+#gate>*{position:relative}
+#gate .k{font-family:"Share Tech Mono",monospace;letter-spacing:.4em;font-size:14px;color:#2F7BFF}
+#gtT{margin:4px 0 6px;font-size:clamp(24px,3.4vw + 10px,52px);line-height:1.1;text-align:center}
+#gtSub{font-size:clamp(14px,.5vw + 12px,18px);text-align:center;margin-bottom:6px}
+#gtDots{display:flex;gap:8px;margin:4px 0 10px}
+#gtDots i{width:44px;height:14px;border:2px solid #F3F3F3;background:#222;transform:skewX(-20deg)}
+#gtDots i.on{background:#6fe08f;box-shadow:0 0 12px #6fe08f}
+#gtQ{text-align:center;max-width:760px}
+#gtQ .gpic{display:inline-flex;flex-direction:column;align-items:center;gap:4px;background:#F3F3F3;color:#161616;border:3px solid #000;box-shadow:5px 5px 0 #FF3B1F;padding:10px 18px 8px;min-width:180px}
+#gtQ .gpic svg{height:84px;width:auto}
+#gtQ .gpic b{font-size:clamp(18px,.8vw + 14px,26px)}
+#gtQ .gpic small{font-family:"Share Tech Mono",monospace;font-size:15px;color:#555}
+.gpair{display:flex;gap:6px;align-items:center;font-weight:900;font-size:18px}
+.gpair i{font-style:normal;border:2px solid #000;padding:8px 10px;color:#161616}
+#gtQ p{font-weight:900;font-size:clamp(17px,.8vw + 13px,24px);margin:12px 0 8px}
+#gtCh{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;width:min(96vw,720px)}
+body.land #gtCh{grid-template-columns:repeat(3,minmax(0,1fr))}
+.gch{display:flex;align-items:center;gap:8px;min-height:56px;padding:6px 10px;background:#F3F3F3;color:#161616;border:3px solid #000;box-shadow:4px 4px 0 var(--c,#888);font-family:inherit;font-weight:900;font-size:clamp(14px,.5vw + 12px,18px);text-align:left;cursor:pointer}
+.gch svg{width:30px;height:30px;flex:none}
+.gch.ok{background:#d9ffe3;box-shadow:4px 4px 0 #1a9a4a}
+.gch.ng{background:#ffd9d3;box-shadow:4px 4px 0 #FF3B1F}
+#gtEx{margin:12px 0 8px;max-width:760px;min-height:2em;line-height:1.6;font-weight:700;font-size:clamp(14px,.5vw + 12px,19px);text-align:center}
+#gtEx .gok{color:#6fe08f}#gtEx .gng{color:#FF6A55}
 /* リアクター・フィニッシュ（反応式） */
 #fin{background:rgba(6,6,6,.74);z-index:22;overflow-y:auto;justify-content:flex-start;padding:calc(62px + env(safe-area-inset-top)) 10px 20px}
 #fin .hd{text-align:center;margin-top:auto}#fin>#fMsg{margin-bottom:auto}
@@ -390,6 +416,17 @@ body.land.goldon #telop{bottom:214px}
   <div id="eyRule"></div>
   <div id="eyNew"></div>
   <button id="eyGo" class="big">つぎの区画へ ▶</button>
+</div>
+
+<div id="gate" class="ov hidden">
+  <div class="k">CHECKPOINT</div>
+  <h2 id="gtT" class="telop"></h2>
+  <div id="gtSub"></div>
+  <div id="gtDots"></div>
+  <div id="gtQ"></div>
+  <div id="gtCh"></div>
+  <div id="gtEx"></div>
+  <button id="gtGo" class="big hidden">つぎへ ▶</button>
 </div>
 
 <div id="fin" class="ov hidden">
@@ -3230,6 +3267,20 @@ function missWhy(r,k){
   return '';
 }
 
+/* 第3区画から：なぜ効かないかだけ言う（戦士名・方法＝答えは言わない） */
+const MISS_DMG=5;
+function missWhyOnly(r,k){const n=ET[k].nm;
+  if(ET[k].mass)return '天秤の盾！ 質量の札がついている';
+  if(PAIRS.includes(k))return '2つの物質の組だ。どうすれば反応する？';
+  if(r==='R'){if(k==='H2O')return '水を加熱しても水蒸気になるだけ（状態変化）';if(k==='CuO')return '酸化銅は加熱だけでは分解しない';if(SINGLE.includes(k))return '単体はそれ以上分解できない！'}
+  if(r==='S'){if(k==='CuO')return '酸化銅は電流では分解しない';if(SINGLE.includes(k))return '単体はそれ以上分解できない！';return n+'は電流で分ける物質ではない'}
+  if(r==='Y'){if(k==='CuO')return '酸化銅は硫黄とは反応しない';if(['NaHCO3','Ag2O','H2O'].includes(k))return n+'は化合物。硫黄と結び付ける相手ではない';return n+'は硫黄と結び付ける相手ではない'}
+  if(r==='B'){if(k==='CuO'||k==='Ag2O'||k==='H2O')return n+'はもう酸素と結び付いている！';return n+'に酸素を結び付けても反応しない'}
+  if(r==='K'){if(SINGLE.includes(k))return 'うばう酸素がない！（単体）';return n+'は、炭素で酸素をうばう相手ではない'}
+  if(r==='P')return n+'は、混ぜるだけで反応する組ではない';
+  if(r==='G')return 'マス・ゴールドは質量の札つきの手下にだけ';
+  return ''}
+
 /* ================= 技カード（理科として正しいカードだけが効く） ================= */
 const CARDS=[
  {id:'r1',r:'R',ok:1,nm:'試験管の口を少し下げて加熱',tx:'できた水が熱い底へ流れもどらない',ef:{dmg:['R',1.35]},ep:'第1回 封印ボックス'},
@@ -3396,7 +3447,7 @@ function phaseClear(){state='cine';G.combo=0;updCombo();SFX.fanfare();flash(.7);
   const st=[1,G.pc.maxC>=20?1:0,G.pc.miss<=3?1:0];G.stars[G.phase]=st;
   if(G.phase===3&&window.Zukan&&Zukan.earn)Zukan.earn(30,'rule',{x:W/2,y:H*.35});
   if(G.phase===5&&window.Zukan&&Zukan.earn)Zukan.earn(30,'rule',{x:W/2,y:H*.35});
-  setTimeout(()=>showEye(st),2300)}
+  setTimeout(()=>openGate(G.phase,()=>showEye(st)),2300)}
 function showEye(st){state='eye';showOnly('eye');const p=G.phase,pc=G.pc;
   $('eyT').innerHTML='第'+p+'区画「'+PH[p].nm+'」<br>防衛成功！';
   const sp=$('eyStars').children;for(let i=0;i<3;i++){sp[i].className='';sp[i].style.animationDelay=''}
@@ -3411,6 +3462,63 @@ function showEye(st){state='eye';showOnly('eye');const p=G.phase,pc=G.pc;
   G.phase=nx;G.newR=nx<=5?PH[nx].un.slice():[];G.cp=null;G.cp=snapFor(nx);save()}
 function snapFor(p){const o=snap();o.phase=p;return o}
 $('eyGo').onclick=()=>{AU.init();SFX.tick();startPhase(G.phase)};
+
+/* ================= 区画クリアの関門（2026-10-02 オーナー指摘「適当プレイヤーがクリアしちゃう」） =================
+   全員の通り道。ヒントなし・選択肢は毎回並べかえ・3問続けて正解で次の区画へ。外したら解説を読んでやり直し */
+const GPOOL={
+ 1:['r:Ag2O','r:NaHCO3','r:H2O'],
+ 2:['r:Fe','r:Cu','r:H2','r:C','r:H2O','r:NaHCO3','r:Ag2O'],
+ 3:['r:CuO','r:CuO','r:Mg','r:Cu','r:C','r:H2O','r:Ag2O'],
+ 4:['h:pCa','h:pNH','h:pCi','h:FeP','r:FeP','r:CuO'],
+ 5:['m:Cu','m:Mg','m:Cu','m:Mg','r:CuO','r:Fe','r:H2O']
+};
+const GNEED=3;
+let GT=null;
+function gShuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));const t=a[i];a[i]=a[j];a[j]=t}return a}
+function openGate(p,done){const pool=GPOOL[p];if(!pool||TEST){done();return}
+  state='gate';showOnly('gate');GT={p,done,streak:0,last:'',lock:0};
+  $('gtT').innerHTML='第'+p+'区画「'+PH[p].nm+'」<br>関門！';
+  $('gtSub').innerHTML='ヒントなし。<b>'+GNEED+'問 続けて</b>正解したら、次の区画へ進める';
+  gateNext()}
+function gateDots(){let h='';for(let i=0;i<GNEED;i++)h+='<i class="'+(i<GT.streak?'on':'')+'"></i>';$('gtDots').innerHTML=h}
+function gateNext(){gateDots();$('gtEx').innerHTML='';$('gtGo').classList.add('hidden');GT.lock=0;
+  const pool=GPOOL[GT.p];let spec;do{spec=pick(pool)}while(pool.length>1&&spec===GT.last);GT.last=spec;
+  const t=spec.split(':')[0],k=spec.split(':')[1];GT.q={t,k};const box=$('gtCh');box.innerHTML='';
+  let pic,ask,ch;
+  if(t==='m'){const m=pick(k==='Cu'?[2,4,6,8,10,12]:[1.5,3,4.5]),mn=k==='Cu'?'銅':'マグネシウム',r2=v=>Math.round(v*100)/100,need=r2(k==='Cu'?m/4:m*2/3),oth=r2(k==='Cu'?m*2/3:m/4);
+    GT.q.m=m;GT.q.need=need;
+    pic='<div class="gpic">'+molSVG(k==='Cu'?'dCu':'dMg',84)+'<b>'+mn+' '+fmtG(m)+'g</b></div>';
+    ask=mn+' <b>'+fmtG(m)+'g</b> と<b>過不足なく</b>結び付く酸素は何g？';
+    const vals=[need,oth,m,r2(need*2)].filter((v,i,a)=>v>0&&a.indexOf(v)===i);
+    ch=gShuffle(vals).map(v=>({lab:'酸素 '+fmtG(v)+'g',ok:v===need}))}
+  else{const T=ET[k];
+    pic='<div class="gpic">'+(T.pair?'<span class="gpair"><i style="background:'+T.pc[0]+'">'+esc(T.pair[0])+'</i>＋<i style="background:'+T.pc[1]+'">'+esc(T.pair[1])+'</i></span>':molSVG(k,84))+'<b>'+esc(T.nm)+'</b><small>'+esc(T.f)+'</small></div>';
+    if(t==='h'){ask=(T.pair?'この2つを混ぜると':'この反応が進むと')+'、まわりの温度は？';const sg=Math.sign(RX(k).heat||0);
+      ch=gShuffle([{lab:'上がる（熱を出す）',ok:sg>0},{lab:'下がる（熱をうばう）',ok:sg<0},{lab:'変わらない',ok:sg===0}])}
+    else{ask='この物質を反応させるには、どの方法？';
+      ch=gShuffle(['R','S','Y','B','K','P']).map(r=>({r,lab:RG[r].d,ok:T.ok.indexOf(r)>=0}))}}
+  GT.ch=ch;
+  $('gtQ').innerHTML=pic+'<p>'+ask+'</p>';
+  ch.forEach(c=>{const b=document.createElement('button');b.className='gch';
+    if(c.r){b.style.setProperty('--c',RG[c.r].c);b.innerHTML=helm(RG[c.r].c)+'<span>'+esc(c.lab)+'</span>'}else b.innerHTML='<span>'+esc(c.lab)+'</span>';
+    b.onclick=()=>gateAns(c,b);box.appendChild(b)});
+  window.Tekitou&&Tekitou.shown()}
+function gateAns(c,b){if(!GT||GT.lock)return;GT.lock=1;AU.init();const ok=!!c.ok,q=GT.q,k=q.k;
+  window.Tekitou&&Tekitou.answer(ok);
+  Array.from($('gtCh').children).forEach(x=>{x.disabled=true;if(x!==b)x.style.opacity='.35'});b.classList.add(ok?'ok':'ng');
+  let ex;
+  if(q.t==='m'){ex=(k==='Cu'?'銅：酸素＝4：1 → '+fmtG(q.m)+'g ÷ 4 ＝ ':'マグネシウム：酸素＝3：2 → '+fmtG(q.m)+'g × 2/3 ＝ ')+fmtG(q.need)+'g。結び付く酸素の質量は、金属の質量に比例する'}
+  else if(q.t==='h'){const h=RX(k).heat||0;ex=RX(k).eq+'。'+(h>0?'熱を出す反応（発熱反応）＝温度が上がる':'熱をうばう反応（吸熱反応）＝温度が下がる')}
+  else{const okR=ET[k].ok.split(''),rx=RX(k,ok?c.r:okR[0]);
+    ex=(ok?'':'「'+RG[c.r].d+'」では反応しない。'+missWhyOnly(c.r,k)+'　正解は「'+okR.map(r=>RG[r].d).join('」か「')+'」。')+rx.eq+(rx.ms?'（'+rx.ms+'）':'')}
+  const exEl=$('gtEx');exEl.innerHTML='<b class="'+(ok?'gok':'gng')+'">'+(ok?'○ 正解！':'× ざんねん')+'</b> <span>'+esc(ex).replace(/。。/g,'。')+'</span>';
+  if(ok){GT.streak++;SFX.good();gateDots();
+    if(GT.streak>=GNEED){exEl.insertAdjacentHTML('beforeend','<br><b class="gok" style="font-size:1.5em">関門突破！</b>');
+      const d=GT.done;setTimeout(()=>{SFX.fanfare();flash(.5)},700);setTimeout(()=>{GT=null;d()},2600);return}}
+  else{GT.streak=0;SFX.bad();vib(40);gateDots()}
+  const go=$('gtGo');go.classList.remove('hidden');go.textContent=ok?'つぎの問題 ▶':'もう一度（'+GNEED+'問 続けて正解で突破）▶';
+  if(window.Tekitou&&Tekitou.gate)Tekitou.gate(go,{el:exEl.querySelector('span'),ok})}
+$('gtGo').onclick=()=>{if(!GT)return;SFX.tick();gateNext()};
 
 /* ================= 怪獣カオス ================= */
 function startBoss(){state='cine';K={x:0,y:-330,hp:5,core:0,t:0,stompT:5,ent:0,alive:true,breathT:9,st:null};G.bossOn=true;
@@ -3461,7 +3569,8 @@ function tutor(dt){const T=G.tut;T.t+=dt;
 
 /* ================= 攻撃 ================= */
 function targets(){return E}
-function findTarget(r,range){let bv=null,bd=1e9,bi=null,bid=1e9;for(const e of E){const d=Math.hypot(e.x-G.hx,e.y-G.hy)-e.r;if(d>range)continue;const ok=valid(e,r);if(ok&&d<bd){bd=d;bv=e}if(!ok&&d<bid){bid=d;bi=e}}return bv?{e:bv,ok:true}:(bi?{e:bi,ok:false}:null)}
+/* 2026-10-02 オーナー指摘「適当プレイヤーがクリアしちゃう」: 効く相手を自動で探さない。いちばん近い手下を狙う＝迫る物質を見て、自分で戦士を選ぶ */
+function findTarget(r,range){let b=null,bd=1e9;for(const e of E){if(e.dead)continue;if(e.core&&K&&K.coreE!==e)continue;const d=Math.hypot(e.x-G.hx,e.y-G.hy)-e.r;if(d>range)continue;if(d<bd){bd=d;b=e}}return b?{e:b,ok:valid(b,r)}:null}
 function valid(e,r){return ET[e.k].ok.indexOf(r)>=0}
 function dmgOf(r){return(r==='S'?1.3:r==='K'?1.6:r==='Y'?1.3:r==='P'?.7:r==='B'?.9:1.1)*sv('dmg',r)*(1+.07*(G.lv-1))}
 function attack(dt){const r=G.ranger;if(r==='G'){goldTick(dt);return}
@@ -3479,7 +3588,9 @@ function attack(dt){const r=G.ranger;if(r==='G'){goldTick(dt);return}
   else if(r==='P'){PJ.push({k:'P',x:e.x,y:e.y,tx:e,t:0,T:.7,R:62*sv('area',r),D,tick:0})}}
 function miss(e,r){G.misses++;G.pc.miss++;const had=G.combo;breakCombo();e.ch=1.6;SFX.miss();vib(40);
   G.firstMiss[e.k]=1;
-  const now=tAll;if(!G.lastMiss||now-G.lastMiss>2.2||G.lastMissK!==e.k+r){G.lastMiss=now;G.lastMissK=e.k+r;const why=missWhy(r,e.k),hint=hintRanger(e.k);
+  /* 空振り＝反応しない物質に技がはね返される（同じ手下×同じ戦士は1回だけ） */
+  if(!G.tut){e.bnc=e.bnc||{};if(!e.bnc[r]){e.bnc[r]=1;G.hp-=MISS_DMG;SFX.hurt();glitch=Math.max(glitch,.15);floatT(G.hx,G.hy-44,'−'+MISS_DMG+' はね返された！','#FF3B1F',18,1)}}
+  const now=tAll;if(!G.lastMiss||now-G.lastMiss>2.2||G.lastMissK!==e.k+r){G.lastMiss=now;G.lastMissK=e.k+r;const early=G.phase<=2,why=early?missWhy(r,e.k):missWhyOnly(r,e.k),hint=early?hintRanger(e.k):'';
     telop('<b>×空振り</b>　'+esc(why)+(hint?'　→ <em>'+esc(hint)+'</em>':''),'bad',4.2)}
   floatT(e.x,e.y-e.r-8,'× 空振り','#bbb',17,.9)}
 function hurtE(e,D,r){if(!e||e.dead)return;if(e.core&&K&&K.coreE!==e)return;e.hp-=D;e.fl=.1;e.hitT=.15;e.vx-=(G.hx-e.x)*.4;e.vy-=(G.hy-e.y)*.4;
@@ -3857,7 +3968,7 @@ function hud(dt){if(FG)placeFinger();if(!G||state==='title'||state==='test')retu
     $('thBand').style.bottom=(20/60*100)+'%';$('thBand').style.height=(20/60*100)+'%';$('thV').textContent=Math.round(T)+'℃';$('thWx').textContent=G.wx==='cold'?'❄ 凍結光線':'🔥 灼熱光線';$('thWx').style.color=G.wx==='cold'?'#9fd8ff':'#ff8a6a'}}
 
 /* ================= 画面の切り替え ================= */
-function showOnly(id,keepHud){fingerOff();['title','hud','lv','eye','fin','dead','clear','test','mission'].forEach(k=>$(k).classList.add('hidden'));if(keepHud&&G)$('hud').classList.remove('hidden');$(id).classList.remove('hidden');if(id!=='hud')$('big').innerHTML=''}
+function showOnly(id,keepHud){fingerOff();['title','hud','lv','eye','gate','fin','dead','clear','test','mission'].forEach(k=>$(k).classList.add('hidden'));if(keepHud&&G)$('hud').classList.remove('hidden');$(id).classList.remove('hidden');if(id!=='hud')$('big').innerHTML=''}
 function toTitle(){state='title';showOnly('title');BGM.tier=0;armTitle()}
 function armTitle(){const sv=load();$('btnCont').classList.toggle('hidden',!sv);$('btnStart').innerHTML=sv?'▶ はじめから':'▶ はじめる';$('btnBook').classList.toggle('hidden',!window.Zukan);$('tList').classList.toggle('hidden',!INHUB);
   const L=$('tLogo');L.classList.remove('drop');void L.offsetWidth;L.classList.add('drop');setTimeout(()=>{SFX.boom(1);doShake(10)},550)}
@@ -3922,7 +4033,7 @@ resize();
 if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>{SPR={}});
 if(TEST){G=newGame();startTest()}else toTitle();
 requestAnimationFrame(loop);
-window.__RS={get G(){return G},get E(){return E},get state(){return state},henshin:r=>henshin(r),openLv:()=>{G.lvQ++},skipTo:p=>{G.phase=p;G.ranger=null;startPhase(p)},K:()=>K,finish:()=>{if(K){K.core=5;E=E.filter(e=>!e.core);finisherStart()}},eq:()=>FIN};
+window.__RS={get G(){return G},get E(){return E},get state(){return state},henshin:r=>henshin(r),openLv:()=>{G.lvQ++},skipTo:p=>{G.phase=p;G.ranger=null;startPhase(p)},K:()=>K,finish:()=>{if(K){K.core=5;E=E.filter(e=>!e.core);finisherStart()}},eq:()=>FIN,gate:p=>openGate(p,()=>{window.__gateDone=(window.__gateDone||0)+1}),gt:()=>GT,phaseClear:()=>phaseClear()};
 })();
 </script>
 </body>
