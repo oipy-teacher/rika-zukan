@@ -186,6 +186,8 @@ button:disabled{opacity:.4;cursor:default}
    ─ このファイルの中身は build_collections.py が各ゲームの
      「@SUBMIT_CARD_BEGIN」〜「@SUBMIT_CARD_END」の印の間へ同期する
      （ゲーム側で直接いじらず、ここを直して build を実行する）
+   ─ 2026-10-01: 適当プレイ番（guard.js）が減点したときは、records の「適当プレイ」の行を赤、「解きかた」の行を緑で出し、
+     点の丸に「減点前 ○点」を添える（減点は r.score に反映済みで届く。合格の判定も減点後の点）
    ─ 保存はこの端末のブラウザ内（localStorage）だけ。外への送信はしない
    ========================================================== */
 (function(){
@@ -227,6 +229,9 @@ button:disabled{opacity:.4;cursor:default}
     '#sc-rev .o{color:#e8384f;font-weight:900}#sc-rev .x{color:#2a55c9;font-weight:900}',
     '#sc-wrap{display:flex;flex-direction:column;align-items:center}',
     '#sc-card .sc-score em{font-style:normal;font-weight:900;font-size:clamp(12px,1.9vmin,15px);background:#e8384f;color:#fff;border-radius:999px;padding:1px 10px;margin-top:3px;letter-spacing:.1em}',
+    '#sc-card .sc-rec div.sc-bad{background:#fde3e4;color:#b3141c;font-weight:900;border:2px solid #e8384f}',
+    '#sc-card .sc-rec div.sc-good{background:#e2f5e6;color:#1d6b33;font-weight:700}',
+    '#sc-card .sc-score s{text-decoration:none;font-size:clamp(11px,1.6vmin,13px);line-height:1.25;text-align:center;color:#6b7390;font-weight:700;margin-top:2px}',
     '#sc-card .sc-voice{grid-column:1/-1;font-size:clamp(12px,1.8vmin,15px);color:#3a4460;background:#fff4d6;border-radius:8px;padding:.5vmin 1.4vmin;overflow-wrap:anywhere}'
   ].join('\n');
 
@@ -276,13 +281,13 @@ button:disabled{opacity:.4;cursor:default}
   function cardHTML(r){
     var marks=r.marks||[];
     var cells=marks.map(function(ok,i){return '<div class="sc-cell '+(ok?'o':'x')+'"><small>'+(i+1)+'</small><b>'+(ok?'○':'×')+'</b></div>'}).join('');
-    var rec=(r.records||[]).map(function(x){return '<div>'+esc(x[0])+'<b>'+esc(x[1])+'</b></div>'}).join('');
+    var rec=(r.records||[]).map(function(x){return '<div'+(x[0]==='適当プレイ'?' class="sc-bad"':x[0]==='解きかた'?' class="sc-good"':'')+'>'+esc(x[0])+'<b>'+esc(x[1])+'</b></div>'}).join('');
     return '<div id="sc-card">'+
       '<div class="sc-band"><span class="sc-tag">提出</span>確認テスト 提出カード<span class="sc-col">'+esc(r.collection||'')+'</span></div>'+
       '<div class="sc-body">'+
         '<div class="sc-unit">'+esc(r.unit||'')+'<small>'+esc(r.game||'')+'</small></div>'+
         '<div class="sc-name"><span>なまえ</span>'+esc(r.name||'（未入力）')+'</div>'+
-        '<div class="sc-score"><b>'+esc(r.score)+'</b><i>/ '+esc(r.total)+' 点</i>'+(r.koma&&isPass(r)?'<em>合格</em>':'')+'</div>'+
+        '<div class="sc-score"><b>'+esc(r.score)+'</b><i>/ '+esc(r.total)+' 点</i>'+(r.tekitou&&r.tekitou.full>0?'<s>ひび入り<br>減点前 '+esc(r.tekitou.raw)+'点</s>':'')+(r.koma&&isPass(r)?'<em>合格</em>':'')+(r.tekitou&&!r.tekitou.full?'<em style="background:linear-gradient(135deg,#f3c34a,#c8862a)">✨本物</em>':'')+'</div>'+
         '<div class="sc-when"><span>受けた日時</span>'+fmtDate(r.at)+'</div>'+
         '<div class="sc-grid">'+cells+'</div>'+
         (rec?'<div class="sc-rec">'+rec+'</div>':'')+voiceLine(r)+
@@ -2168,6 +2173,630 @@ window.ZUKAN_CARDS={"v": 1, "grade": "chu2", "name": "中2理科図鑑", "econom
   };
 })();
 
+/* ==========================================================
+   適当プレイ番（全ゲーム共通） v2  ─ Tekitou
+   ─ 2026-10-01 オーナー指示「適当に操作（連打とか、スキップとか）するとマイナスになる仕組み。
+     ゲームクリアが目的にならない仕組みが必要」を、全ゲームにまとめて入れるための部品
+   ─ v2（同日）: オーナー「黒板クエストの防止策がなかなか良かった」→ 黒板クエスト（shotoku-sansu-quest）の作りにそろえた
+       ・1回目から罰（注意だけの猶予はなし）。本編の罰は回数で重くなる（かけら 5→10→15→20）
+       ・罰のときは「ポキッ！」の札が出て2.6秒 操作できない。なぜダメかを一言で言う
+       ・解説はカラオケ読み（文字が読む速さで光る）。光り終わるまで「つぎへ」が押せない。押せないうちに4回押すと とばし読み
+       ・罰が1回でもあった確認テストは、提出カードに「ひび入り」と出る（罰なしは「本物」）
+   ─ v3（同日）: オーナー「化学反応式の係数合わせとか、適当に連打してたまたま一致」「理屈分かってないけど適当にやってクリアしちゃう奴ら多数」
+       「ゲームクリアが目的にならない仕組みを維持しつつ、やりたくなる・ドーパミンが出る・ギリギリ待たせないライン」
+       ・まぐれ判定：パズルの手数が必要な数よりずっと多く、しかも速い手で正解にたどり着いたら「まぐれ」
+       ・理屈チェック：まぐれ／罰のあとの本編クリアのときだけ、この回の問題を1問。考えて正解なら「本物！」、外したら解説をカラオケ読み＋かけら −10
+         （ふつうに遊んだ子は止めない＝待たせない）
+       ・ごほうび：考えてから正解すると金の「本物 ×n」が弾む。罰なしのテストは提出カードに金の「本物」
+       ・カラオケ読みは まちがい 9字/秒・正解 14字/秒・最長15秒（読ませるけど、待たせすぎない）
+   ─ 読み込むだけで次のことをする（ゲーム側の追加作業なし）
+       ・確認テスト（Quiz.test 〜 SubmitCard.show の間）
+           問題が出て2.5秒以内のまちがい …「あてずっぽう」テストの点 −1
+           連打（1秒に7回）               …「れんだ」テストの点 −1
+           前の答えから2秒以内に次を答える …「とばし読み」2回で −1
+           → 提出カードの点から引き、カードに理由と「ひび入り」を書く（合格の判定も引いたあとの点で行う）
+       ・ゲームの本編
+           ボタンの連打（1秒に7回・canvas は数えない） … かけら −5×回数（次にもらうかけらから引く）
+   ─ ゲーム側で使える呼び出し（なくても動く）
+       Tekitou.setup({mash:false})          … 連打そのものが遊びのゲームは本編の連打判定を切る
+       Tekitou.setup({onPenalty:fn, penaltyLabel:'スコア −50'}) … 図鑑を持たないゲーム：本編の罰をゲームの点で払う
+       data-mash-ok（属性）                  … その要素の中の連打は数えない
+       Tekitou.shown()                      … 本編で問題を出した瞬間（あてずっぽうの計測の起点）
+       Tekitou.answer(ok,{q})               … 本編・テストで○×が決まったとき（Quiz.check を使わないゲーム用）
+       Tekitou.gate(button,{text,ok,el})    … 解説をカラオケ読みさせ、読み終わるまでそのボタンを押せなくする
+       Tekitou.move()                       … パズルの1手（係数の＋/−・並べかえ・つまみ）ごとに呼ぶ
+       Tekitou.solved({min, q, onResult, defer}) … パズルが正解の形になった瞬間。min＝正解に最低いる手数（わからなければ省略）
+                                              defer:true＝アクションの最中なので止めず、まぐれは本編クリアのときの理屈チェックへ回す
+                                              まぐれなら理屈チェックを出し、onResult(本物か) を呼ぶ。戻り値＝まぐれだったか
+       Tekitou.check({q}).then(ok=>…)       … 理屈チェックを1問だけ出す（q 省略でこの回の問題から）
+       Tekitou.stats()                      … 今の回数
+   ─ このファイルは build / sync_one.py が各ゲームの ZUKAN（または GUARD）の印の間へ同期する（ゲーム側で直接いじらない）
+   ─ 外への送信はしない。保存はこの端末の localStorage（rika-tekitou:v1）だけ
+   ========================================================== */
+(function(){
+  if (window.Tekitou) return;
+
+  var CFG = {
+    mash:true,
+    mashN:7,  mashMs:1000,        /* この時間にこの回数たたいたら連打（黒板クエストと同じ 1秒に7回） */
+    guessMs:2500,                 /* 問題が出てからこれより早いまちがい＝あてずっぽう */
+    burstN:3, burstMs:2500,       /* 本編：この時間にこの回数まちがえたら あてずっぽう（黒板クエストと同じ） */
+    skipMs:2000,                  /* テスト：前の答えからこれより早い答え＝とばし読み */
+    lockMs:2600,                  /* 罰のあと操作できない時間（黒板クエストと同じ） */
+    debtMash:5, debtGuess:5, debtMax:20, /* 本編の罰（かけら）。回数×この量、上限あり */
+    readCps:9,                    /* カラオケ読みの速さ（字/秒）。中学生の黙読の遅い側 */
+    readCpsOk:14,                 /* 正解したときの解説は速く（待たせすぎない） */
+    readMax:15000,
+    luckyGapMs:800,               /* まぐれ判定：手と手の間がこれより短い（考えていない） */
+    debtLucky:10,                 /* 理屈チェックを外したときの罰（かけら） */
+    onPenalty:null,               /* 本編の罰をゲーム自身の点で払う： function(kind, n){…}（kind=mash/guess/skip・n=かけら換算の量） */
+    penaltyLabel:''               /* そのとき札に出す文字（例：'スコア −50'） */
+  };
+  var Z_PEN = 2147482950, Z_NOTE = 2147482900; /* Guide(…600)の上・提出カード(…3000)の下 */
+  var KEY = 'rika-tekitou:v1';
+
+  var S = {
+    inTest:false, t0:0, lastAt:0, seen:{}, inReview:false, told:false,
+    test:{guess:0, mash:0, skip:0, n:0},
+    game:{mash:0, guess:0, wrongs:[], shownAt:0, lastAt:0, k:0, lucky:0, sus:0, streak:0},
+    moves:[],
+    debt:0
+  };
+  var clicks = [], taps = [], lockUntil = 0, gates = [];
+
+  /* ---------------- 小道具 ---------------- */
+  function now(){ return Date.now(); }
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]}); }
+  function strip(s){ return String(s==null?'':s).replace(/<[^>]*>/g,'').replace(/\s+/g,''); }
+  function storeKey(){
+    var k = '';
+    try{ if(window.Zukan && Zukan._cur && Zukan._cur.koma && Zukan._cur.koma[0]) k = Zukan._cur.koma[0]; }catch(e){}
+    return k || (location.pathname + '|' + document.title);
+  }
+  function load(){
+    try{
+      var all = JSON.parse(localStorage.getItem(KEY)) || {}, o = all[storeKey()];
+      if(o){ S.debt = o.d|0; S.game.mash = o.m|0; S.game.guess = o.g|0; }
+    }catch(e){}
+  }
+  function save(){
+    try{
+      var all = JSON.parse(localStorage.getItem(KEY)) || {};
+      all[storeKey()] = {d:S.debt, m:S.game.mash, g:S.game.guess, at:now()};
+      localStorage.setItem(KEY, JSON.stringify(all));
+    }catch(e){}
+  }
+  var loaded = false;
+  function ensureLoaded(){ if(!loaded){ loaded = true; load(); } }
+  function emit(kind, extra){
+    try{ window.dispatchEvent(new CustomEvent('tekitou', {detail:Object.assign({kind:kind, test:S.inTest}, extra||{})})); }catch(e){}
+  }
+
+  /* ---------------- 見た目 ---------------- */
+  var FONT = '"Hiragino Maru Gothic ProN","Zen Maru Gothic","Hiragino Sans",sans-serif';
+  var CSS = [
+    /* ポキッ！の札（黒板クエストの .pen と同じ考え方：画面全体をおおって操作を止める） */
+    '.tk-pen{position:fixed;inset:0;z-index:'+Z_PEN+';display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(40,8,8,.6);',
+    ' pointer-events:all;touch-action:none;cursor:not-allowed;font-family:'+FONT+';overflow:hidden;animation:tkFade var(--tk-ms,2.6s) ease forwards}',
+    '.tk-pen .t0{font-size:clamp(15px,3vmin,20px);font-weight:900;color:#ffd6d6;letter-spacing:.2em;margin-bottom:6px}',
+    '.tk-pen .t1{font-size:clamp(38px,9vmin,72px);font-weight:900;color:#ff4b4b;letter-spacing:.04em;text-shadow:0 4px 0 #3a0909,0 0 24px rgba(255,80,80,.6);animation:tkDrop .5s cubic-bezier(.2,1.6,.4,1) both}',
+    '.tk-pen .t2{font-size:clamp(16px,3vmin,21px);font-weight:700;color:#fff;margin-top:10px;text-align:center;padding:0 22px;line-height:1.65;max-width:640px}',
+    '.tk-pen .t2 em{font-style:normal;color:#ffd54a}',
+    '.tk-pen .chalk{position:absolute;top:22%;left:50%;width:min(46vw,300px);height:18px;margin-left:min(-23vw,-150px);display:flex;gap:6px;transform:rotate(-12deg)}',
+    '.tk-pen .chalk i{flex:1;background:#f4f1e8;border-radius:4px;box-shadow:inset 0 -4px 0 rgba(0,0,0,.12)}',
+    '.tk-pen .chalk i:first-child{animation:tkSnapL .5s ease-out forwards}.tk-pen .chalk i:last-child{animation:tkSnapR .5s ease-out forwards}',
+    '.tk-pen .bar{position:absolute;left:0;bottom:0;height:7px;width:100%;background:#ff4b4b;transform-origin:left;animation:tkBar var(--tk-ms,2.6s) linear forwards}',
+    '@keyframes tkDrop{0%{opacity:0;transform:translateY(-40px) scale(1.6)}100%{opacity:1;transform:none}}',
+    '@keyframes tkSnapL{to{transform:translate(-14px,10px) rotate(-18deg)}}@keyframes tkSnapR{to{transform:translate(16px,18px) rotate(24deg)}}',
+    '@keyframes tkBar{from{transform:scaleX(1)}to{transform:scaleX(0)}}',
+    '@keyframes tkFade{0%{opacity:0}8%{opacity:1}88%{opacity:1}100%{opacity:0}}',
+    '@keyframes tkShake{0%,100%{transform:none}20%{transform:translate(-8px,2px)}40%{transform:translate(7px,-3px)}60%{transform:translate(-5px,3px)}80%{transform:translate(4px,-1px)}}',
+    /* 下に出る短いお知らせ */
+    '.tk-note{position:fixed;left:50%;bottom:max(16px,env(safe-area-inset-bottom));transform:translateX(-50%);z-index:'+Z_NOTE+';pointer-events:none;',
+    ' font-family:'+FONT+';font-weight:700;font-size:clamp(13px,2.4vmin,16px);line-height:1.6;',
+    ' background:rgba(20,24,40,.94);color:#fff;border-radius:14px;padding:10px 16px;max-width:min(92vw,600px);text-align:left;',
+    ' box-shadow:0 8px 24px rgba(0,0,0,.35);animation:tkNote var(--tk-ms,3.4s) ease forwards}',
+    '.tk-note em{font-style:normal;color:#ffd54a}.tk-note b{color:#ff8a8a}',
+    '@keyframes tkNote{0%{opacity:0;transform:translate(-50%,12px)}6%{opacity:1;transform:translate(-50%,0)}90%{opacity:1}100%{opacity:0}}',
+    /* カラオケ読み：まだ読んでいない字はうすく、今の字は光り、読んだ字は元の色 */
+    '.tk-kara .tk-kc{opacity:.3;transition:opacity .25s,text-shadow .4s}',
+    '.tk-kara .tk-kc.now{opacity:1;text-shadow:0 0 10px #ffd54a,0 0 2px currentColor}',
+    '.tk-kara .tk-kc.lit{opacity:1}',
+    /* 読み終わるまで押せない「つぎへ」 */
+    '.tk-gated{position:relative;filter:saturate(.3) brightness(.92);cursor:wait!important}',
+    '.tk-gated::after{content:"";position:absolute;left:0;bottom:0;height:4px;width:100%;background:currentColor;opacity:.75;transform-origin:left;border-radius:2px;animation:tkBar var(--tk-ms,3s) linear forwards;pointer-events:none}',
+    '.tk-ready{animation:tkPulse 1s ease-in-out 2}',
+    '@keyframes tkPulse{50%{transform:scale(1.06)}}',
+    /* 本物 ×n（ごほうび） */
+    '.tk-real{position:fixed;z-index:'+Z_NOTE+';transform:translate(-50%,-50%);pointer-events:none;font-family:'+FONT+';font-weight:900;font-size:clamp(17px,3.4vmin,24px);color:#fff6cf;',
+    ' background:linear-gradient(135deg,#f3c34a,#c8862a);border:2px solid #fff3c4;border-radius:999px;padding:4px 14px;box-shadow:0 6px 18px rgba(200,134,42,.55),0 0 22px rgba(255,214,100,.6);',
+    ' text-shadow:0 1px 0 #8a5a12;white-space:nowrap;animation:tkReal 1.3s cubic-bezier(.2,1.5,.4,1) forwards}',
+    '.tk-real b{font-size:1.15em}.tk-real small{display:block;font-size:.62em;text-align:center}',
+    '.tk-real.big{font-size:clamp(22px,4.6vmin,32px)}',
+    '@keyframes tkReal{0%{opacity:0;transform:translate(-50%,-30%) scale(.4)}18%{opacity:1;transform:translate(-50%,-60%) scale(1.15)}30%{transform:translate(-50%,-62%) scale(1)}80%{opacity:1}100%{opacity:0;transform:translate(-50%,-130%) scale(1)}}',
+    /* 理屈チェック */
+    '.tk-chk{position:fixed;inset:0;z-index:'+(Z_PEN+10)+';display:flex;align-items:center;justify-content:center;background:rgba(12,16,32,.72);padding:3vmin;font-family:'+FONT+'}',
+    '.tk-chk .tk-card{width:min(94vw,620px);max-height:92vh;overflow:auto;background:#fffdf6;color:#1d2433;border-radius:20px;padding:20px 22px;box-shadow:0 20px 60px rgba(0,0,0,.5);border:4px solid #f3c34a;animation:tkDrop .45s cubic-bezier(.2,1.6,.4,1) both}',
+    '.tk-chk .tk-h{font-weight:900;font-size:clamp(20px,3.6vmin,26px);color:#b06a10;display:flex;align-items:center;gap:10px;flex-wrap:wrap}',
+    '.tk-chk .tk-h span{font-size:.62em;background:#d8232a;color:#fff;border-radius:999px;padding:2px 10px}',
+    '.tk-chk .tk-sub{margin:6px 0 10px;font-size:clamp(13px,2.2vmin,15px);color:#5a6178;line-height:1.6}',
+    '.tk-chk .tk-q{font-weight:800;font-size:clamp(16px,2.8vmin,20px);line-height:1.6;margin:0 0 12px}',
+    '.tk-chk .tk-ch{display:grid;gap:8px}',
+    '.tk-chk .tk-ch button,.tk-chk .tk-next{font:inherit;font-weight:800;font-size:clamp(15px,2.5vmin,18px);text-align:left;padding:11px 14px;border-radius:12px;border:2px solid #c9cfdd;background:#fff;color:#1d2433;cursor:pointer}',
+    '.tk-chk .tk-ch button.ok{border-color:#2e9e57;background:#e2f5e6}.tk-chk .tk-ch button.ng{border-color:#d8232a;background:#fde3e4}',
+    '.tk-chk .tk-ex{margin-top:12px;line-height:1.7;font-size:clamp(14px,2.4vmin,17px)}',
+    '.tk-chk .tk-ex b{color:#d8232a}.tk-chk .tk-big{font-size:clamp(30px,6vmin,46px);font-weight:900;color:#c8862a;text-align:center;animation:tkDrop .5s cubic-bezier(.2,1.6,.4,1) both}',
+    '.tk-chk .tk-next{margin-top:12px;width:100%;text-align:center;background:#1d2433;color:#fff;border-color:#1d2433}',
+    '@media (prefers-reduced-motion:reduce){.tk-pen,.tk-pen *,.tk-note,.tk-ready,.tk-real,.tk-chk *{animation-duration:.01ms!important;animation-iteration-count:1!important}.tk-pen .bar{animation:none}}'
+  ].join('\n');
+  function ensureCSS(){
+    if(document.getElementById('tk-style') || !document.head) return;
+    var st = document.createElement('style'); st.id = 'tk-style'; st.textContent = CSS; document.head.appendChild(st);
+  }
+  function note(html, ms){
+    ensureCSS(); if(!document.body) return;
+    var old = document.querySelectorAll('.tk-note'); for(var i=0;i<old.length;i++) old[i].remove();
+    var d = document.createElement('div'); d.className = 'tk-note'; d.style.setProperty('--tk-ms', ((ms||3400)/1000) + 's');
+    d.innerHTML = html; document.body.appendChild(d); setTimeout(function(){ d.remove(); }, ms || 3400);
+  }
+  var WHY = {
+    mash:'れんだ しても 理科は 身につかない',
+    guess:'当てずっぽうは 考えたことに ならない',
+    skip:'解説を とばすと 同じところで また まちがえる'
+  };
+  var NAME = {mash:'れんだ', guess:'あてずっぽう', skip:'とばし読み'};
+  /* 罰の札：画面全体をおおって lockMs のあいだ操作を止める */
+  function pen(kind, cost, extra){
+    ensureCSS(); if(!document.body) return;
+    var ms = CFG.lockMs;
+    lockUntil = Math.max(lockUntil, now() + ms);
+    var old = document.querySelectorAll('.tk-pen'); for(var i=0;i<old.length;i++) old[i].remove();
+    var d = document.createElement('div'); d.className = 'tk-pen'; d.style.setProperty('--tk-ms', (ms/1000) + 's');
+    d.setAttribute('role', 'alert');
+    d.innerHTML = '<div class="chalk"><i></i><i></i></div>' +
+      '<div class="t0">' + esc(NAME[kind] || '') + '</div>' +
+      '<div class="t1">ポキッ！ ' + esc(cost) + '</div>' +
+      '<div class="t2">' + esc(WHY[kind] || '') + (extra ? '<br>' + extra : '') + '</div><div class="bar"></div>';
+    var kill = function(e){ e.preventDefault(); e.stopPropagation(); };
+    ['pointerdown','pointerup','mousedown','mouseup','touchstart','touchend','click'].forEach(function(t){ d.addEventListener(t, kill, {passive:false}); });
+    document.body.appendChild(d);
+    setTimeout(function(){ d.remove(); }, ms);
+    try{ if(navigator.vibrate) navigator.vibrate([60,40,120]); }catch(e){}
+    try{ if(!matchMedia('(prefers-reduced-motion:reduce)').matches && document.body.animate) document.body.animate([{transform:'translate(-8px,2px)'},{transform:'translate(7px,-3px)'},{transform:'translate(-5px,3px)'},{transform:'none'}], {duration:320}); }catch(e){}
+  }
+
+  /* ---------------- 本編の罰の払い方 ----------------
+     ゲームが onPenalty を渡していればゲーム自身の点で払う。なければ図鑑のかけら（次にもらう分から引く）。
+     どちらも無いゲームでは、操作を止めるだけ（数字は出さない）。回数が増えるほど重くなる */
+  function hasZukan(){ return !!(window.Zukan && Zukan.earn); }
+  function gameCost(base){ S.game.k++; return Math.min(CFG.debtMax, base * S.game.k); }
+  function costText(n){
+    if(typeof CFG.onPenalty === 'function') return CFG.penaltyLabel || '−';
+    if(hasZukan()) return 'かけら −' + n;
+    return '';
+  }
+  function pay(kind, n){
+    if(typeof CFG.onPenalty === 'function'){ try{ CFG.onPenalty(kind, n); }catch(e){} return; }
+    if(hasZukan()) S.debt += n;
+  }
+  function gamePenalty(kind, base){
+    ensureLoaded();
+    if(kind === 'guess') S.game.guess++; else S.game.mash++;
+    S.game.sus++; S.game.streak = 0;
+    var n = gameCost(base);
+    pay(kind, n); save();
+    pen(kind, costText(n), hasZukan() && typeof CFG.onPenalty !== 'function' ? 'つぎに もらう かけらから 引かれるよ' : '');
+    emit(kind, {cost:n});
+  }
+  function testPenalty(kind){
+    S.test[kind]++;
+    var extra = '確認テストの点 −1・提出カードが「ひび入り」になる';
+    if(kind === 'skip'){
+      if(S.test.skip % 2){ note('<b>とばし読み</b>　問題と解説、ちゃんと読んだ？ <em>あと1回で −1点</em>', 2400); emit('skip'); return; }
+    }
+    pen(kind, '−1点', extra);
+    emit(kind);
+  }
+
+  /* ---------------- 連打 ---------------- */
+  function excluded(t){
+    return !t || !t.closest || !!t.closest('#sc-ov,.zk-ov,.tk-pen,.tk-chk .tk-ch,[data-mash-ok]');
+  }
+  function isButton(t){
+    return !!t.closest('button,[role=button],a[href],input[type=button],input[type=submit],label,summary,.btn');
+  }
+  function onClick(e){
+    var t = e.target, at = now();
+    if(at < lockUntil){ e.preventDefault(); e.stopPropagation(); return; }
+    if(excluded(t)) return;
+    if(S.inTest && at - Math.max(S.lastAt, S.t0) > 180000) S.inTest = false; /* テストを途中でやめて本編へもどった */
+    clicks.push(at); if(clicks.length > 8) clicks.shift();
+    if(gateBlock(e)) return;
+    if(t.closest('canvas')) return;
+    if(!S.inTest && (!CFG.mash || !isButton(t))) return;
+    taps.push(at);
+    while(taps.length && at - taps[0] > CFG.mashMs) taps.shift();
+    if(taps.length >= CFG.mashN){
+      taps = []; e.preventDefault(); e.stopPropagation();
+      if(S.inTest) testPenalty('mash'); else gamePenalty('mash', CFG.debtMash);
+    }
+  }
+
+  /* ---------------- カラオケ読み ---------------- */
+  function karaoke(el, cps){
+    var chars = [];
+    (function walk(node){
+      var kids = [].slice.call(node.childNodes);
+      for(var i=0;i<kids.length;i++){
+        var c = kids[i];
+        if(c.nodeType === 3){
+          var txt = c.nodeValue; if(!txt) continue;
+          var frag = document.createDocumentFragment();
+          for(var j=0;j<txt.length;j++){
+            var ch = txt.charAt(j), sp = document.createElement('span');
+            sp.className = 'tk-kc'; sp.textContent = ch; frag.appendChild(sp);
+            var ms = /\s/.test(ch) ? 30 : 1000 / cps;
+            if(/[、，,]/.test(ch)) ms += 200; if(/[。！？!?]/.test(ch)) ms += 350;
+            chars.push({sp:sp, ms:ms});
+          }
+          c.parentNode.replaceChild(frag, c);
+        }else if(c.nodeType === 1 && !/^(SCRIPT|STYLE|SVG|svg|CANVAS|IMG|BUTTON|INPUT|TEXTAREA|SELECT)$/.test(c.tagName)){
+          if(c.tagName === 'BR' && chars.length) chars[chars.length-1].ms += 220;
+          walk(c);
+        }
+      }
+    })(el);
+    if(!chars.length) return null;
+    el.classList.add('tk-kara');
+    var total = 0; for(var k=0;k<chars.length;k++) total += chars[k].ms;
+    var i = 0, timer = 0, stopped = false;
+    function step(){
+      if(stopped || !el.isConnected) return;
+      if(i > 0) chars[i-1].sp.className = 'tk-kc lit';
+      if(i >= chars.length) return;
+      chars[i].sp.className = 'tk-kc now';
+      var ms = chars[i].ms; i++;
+      timer = setTimeout(step, ms);
+    }
+    step();
+    return {total:total, stop:function(){ stopped = true; clearTimeout(timer); chars.forEach(function(c){ c.sp.className = 'tk-kc lit'; }); }};
+  }
+  /* 解説の文が入っている、いちばん小さい見えている要素を探す */
+  function findTextEl(text){
+    var key = strip(text); if(key.length < 6) return null;
+    var head = key.slice(0, Math.min(16, key.length));
+    var all = document.body.getElementsByTagName('*'), best = null, bestLen = 1e9;
+    for(var i=0;i<all.length;i++){
+      var e = all[i];
+      if(/^(SCRIPT|STYLE|BUTTON|svg|SVG|HTML|BODY)$/.test(e.tagName) || e.closest('#sc-ov,.zk-ov,.tk-note,.tk-pen,svg')) continue;
+      var t = strip(e.textContent);
+      if(t.length >= bestLen || t.indexOf(head) < 0) continue;
+      var r = e.getBoundingClientRect(); if(r.width < 4 || r.height < 4) continue;
+      best = e; bestLen = t.length;
+    }
+    /* 見出し（「もう一歩」「正解：…」）ごと読ませるため、親が解説とほぼ同じ大きさなら親まで上がる */
+    while(best && best.parentElement && best.parentElement !== document.body){
+      var pl = strip(best.parentElement.textContent).length;
+      if(pl > key.length * 1.6 + 40 || best.parentElement.querySelector('button,input,select,canvas')) break;
+      best = best.parentElement;
+    }
+    return best;
+  }
+
+  /* ---------------- 解説の「つぎへ」を読み終わるまで止める ---------------- */
+  var NEXT_RE = /^(▶|→|＞|>)?\s*(つぎ|次|NEXT|Next|next|答え合わせ|こたえあわせ|結果|けっか)/;
+  function textOf(b){ return String(b.textContent || b.value || '').trim(); }
+  function visible(el){
+    if(!el || !el.isConnected || el.disabled) return false;
+    var r = el.getBoundingClientRect(); if(r.width < 2 || r.height < 2) return false;
+    var cs = getComputedStyle(el); return cs.visibility !== 'hidden' && cs.display !== 'none' && +cs.opacity > 0.05;
+  }
+  function nextButtons(){
+    var out = [], bs = document.querySelectorAll('button,[role=button],input[type=button]');
+    for(var i=0;i<bs.length;i++){ var b = bs[i]; if(excluded(b)) continue; if(NEXT_RE.test(textOf(b)) && visible(b)) out.push(b); }
+    return out;
+  }
+  function gate(btn, opt){
+    if(!btn) return;
+    opt = opt || {};
+    var ms = opt.ms, el = opt.el || null, kara = null;
+    if(ms == null){
+      if(!el && opt.text) el = findTextEl(opt.text);
+      if(el) kara = karaoke(el, opt.ok ? CFG.readCpsOk : CFG.readCps);
+      if(kara) ms = kara.total + 300;
+      else { var n = strip(opt.text || '').length; ms = n ? n / (opt.ok ? CFG.readCpsOk : CFG.readCps) * 1000 : (opt.ok ? 700 : 1200); }
+    }
+    ms = Math.min(CFG.readMax, ms);
+    if(ms <= 0) return;
+    ensureCSS();
+    var g = {b:btn, until:now() + ms, tries:0, kara:kara};
+    gates.push(g);
+    btn.classList.add('tk-gated'); btn.style.setProperty('--tk-ms', (ms/1000) + 's');
+    g.timer = setTimeout(function(){ ungate(g, true); }, ms);
+  }
+  function ungate(g, ready){
+    var i = gates.indexOf(g); if(i >= 0) gates.splice(i, 1);
+    clearTimeout(g.timer);
+    if(g.kara) g.kara.stop();
+    if(g.b){ g.b.classList.remove('tk-gated'); if(ready && g.b.isConnected){ g.b.classList.add('tk-ready'); setTimeout(function(){ g.b.classList.remove('tk-ready'); }, 2100); } }
+  }
+  function gateBlock(e){
+    if(!gates.length) return false;
+    var t = e.target, at = now();
+    for(var i=gates.length-1;i>=0;i--){
+      var g = gates[i];
+      if(!g.b.isConnected){ ungate(g); continue; }
+      if(at >= g.until){ ungate(g, true); continue; }
+      if(g.b === t || g.b.contains(t)){
+        e.preventDefault(); e.stopPropagation();
+        g.tries++;
+        if(g.tries >= 4){
+          g.tries = 0;
+          if(S.inTest){ S.test.skip += 2; pen('skip', '−1点', '確認テストの点 −1・提出カードが「ひび入り」になる'); emit('skip'); }
+          else gamePenalty('skip', CFG.debtMash);
+        }else{
+          note('📖 光る文字を 目で追って 読もう　<em>あと ' + Math.ceil((g.until - at) / 1000) + ' 秒</em>', 1500);
+        }
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /* ---------------- 確認テスト ---------------- */
+  function startTest(){
+    S.inTest = true; S.t0 = now(); S.lastAt = 0; S.seen = {};
+    S.test = {guess:0, mash:0, skip:0, n:0};
+    if(!S.told){
+      S.told = true;
+      setTimeout(function(){
+        note('📝 <em>確認テストのルール</em><br>● 問題が出てすぐ（2.5秒以内）の<b>まちがい</b> → あてずっぽう <b>−1点</b><br>● <b>連打</b>（1秒に7回） → <b>−1点</b><br>● 解説を<b>とばす</b>（光り終わる前に何度も押す・すぐ次を答える） → <b>−1点</b><br>罰があると 提出カードが「<b>ひび入り</b>」になる。わからない問題は、考えてから答えよう。', 5600);
+      }, 350);
+    }
+  }
+  function prevClickBefore(at){
+    /* 答えを決めたクリック（いまから0.4秒以内）の、ひとつ前のクリック＝「つぎへ」を押した時刻 */
+    var i = clicks.length - 1;
+    if(i >= 0 && at - clicks[i] < 400) i--;
+    return i >= 0 ? clicks[i] : 0;
+  }
+  function onTestAnswer(q, ok){
+    var key = q && (q.id || q.q) ? String(q.id || strip(q.q)) : '#' + S.test.n;
+    if(S.seen[key]) return;
+    S.seen[key] = 1;
+    var at = now(), gap = at - (S.lastAt || S.t0);
+    S.lastAt = at; S.test.n++;
+    var think = gap;
+    if(!q || q.t === 'choice' || q.t == null){ var p = prevClickBefore(at); if(p && p > (S.t0 - 50)) think = Math.min(gap, at - p); }
+    if(!ok && think < CFG.guessMs) testPenalty('guess');
+    else if(S.test.n > 1 && gap < CFG.skipMs) testPenalty('skip');
+    else if(ok && think >= CFG.guessMs) praise();
+    if(!ok) S.game.streak = 0;
+    /* 解説をカラオケ読みさせ、新しく出た「つぎへ」を読み終わるまで止める */
+    var ex = q ? (q.ex || q.exp || '') : '';
+    var before = nextButtons();
+    setTimeout(function(){
+      var after = nextButtons(), fresh = [];
+      for(var i=0;i<after.length;i++) if(before.indexOf(after[i]) < 0) fresh.push(after[i]);
+      if(!fresh.length) return;
+      var ms = null, el = ex ? findTextEl(ex) : null, kara = el ? karaoke(el, ok ? CFG.readCpsOk : CFG.readCps) : null;
+      if(kara) ms = kara.total + 300;
+      for(var j=0;j<fresh.length;j++) gate(fresh[j], ms != null ? {ms:ms} : ex ? {text:ex, ok:ok, el:null} : {ms: ok ? 700 : 1200});
+      if(kara && fresh.length) gates[gates.length-1].kara = kara;
+    }, Math.max(40, lockUntil - now() + 40)); /* ポキッ！の札が消えてから読み始める */
+  }
+  function penalty(){
+    return S.test.guess + S.test.mash + Math.floor(S.test.skip / 2);
+  }
+  function fmtTime(ms){ var s = Math.round(ms/1000); return Math.floor(s/60) + '分' + String(s%60).padStart(2,'0') + '秒'; }
+
+  /* ---------------- 本編の○×（ゲームが Tekitou.answer を呼んだとき） ---------------- */
+  function onGameAnswer(ok){
+    var at = now(), from = Math.max(S.game.shownAt || 0, S.game.lastAt || 0), think = from ? at - from : 1e9;
+    S.game.lastAt = at;
+    /* 子どもが押した（離した）直後に決まった正誤だけを数える。時間で自動に進む場面（流れてきた・ぶつかった）の正誤は数えない */
+    var byHand = at - lastInputAt < 600;
+    if(!byHand) { if(!ok) S.game.streak = 0; return; }
+    if(ok) { S.game.wrongs = []; if(think >= CFG.guessMs) praise(); return; }
+    S.game.streak = 0;
+    S.game.wrongs.push(at);
+    while(S.game.wrongs.length && at - S.game.wrongs[0] > CFG.burstMs) S.game.wrongs.shift();
+    var fast = think < CFG.guessMs, burst = S.game.wrongs.length >= CFG.burstN;
+    if(!(fast || burst)) return;
+    S.game.wrongs = [];
+    gamePenalty('guess', CFG.debtGuess);
+  }
+
+  /* ---------------- ごほうび：考えてから正解したら金の「本物 ×n」 ---------------- */
+  function praise(){
+    ensureCSS(); if(!document.body) return;
+    S.game.streak++;
+    var n = S.game.streak, d = document.createElement('div');
+    var x = lastPt[0] || innerWidth / 2, y = lastPt[1] || innerHeight * .4;
+    d.className = 'tk-real' + (n >= 5 ? ' big' : '');
+    d.style.left = Math.max(70, Math.min(innerWidth - 70, x)) + 'px'; d.style.top = Math.max(40, y - 30) + 'px';
+    d.innerHTML = '✨ 本物' + (n >= 2 ? ' <b>×' + n + '</b>' : '') + (n === 5 ? '<small>じっくり名人！</small>' : n === 10 ? '<small>理屈マスター！</small>' : '');
+    document.body.appendChild(d); setTimeout(function(){ d.remove(); }, 1300);
+  }
+  var lastPt = [0, 0], lastInputAt = 0;
+  window.addEventListener('pointerdown', function(e){ lastPt = [e.clientX, e.clientY]; lastInputAt = now(); }, true);
+  ['pointerup','click','keydown'].forEach(function(t){ window.addEventListener(t, function(){ lastInputAt = now(); }, true); });
+
+  /* ---------------- まぐれ判定（パズルの手） ---------------- */
+  function median(a){ if(!a.length) return 1e9; var b = a.slice().sort(function(x,y){return x-y}); return b[b.length >> 1]; }
+  function solved(o){
+    o = o || {};
+    var mv = S.moves.slice(), n = mv.length, gaps = [];
+    for(var i=1;i<n;i++) gaps.push(mv[i] - mv[i-1]);
+    S.moves = [];
+    var min = +o.min || 0;
+    var many = min ? (n >= Math.max(min * 2 + 4, min + 6)) : (n >= 12);
+    var lucky = many && median(gaps) < CFG.luckyGapMs;
+    if(!lucky){
+      if(n && (!min || n <= min + 2)) praise();
+      if(o.onResult) try{ o.onResult(true); }catch(e){}
+      return false;
+    }
+    S.game.lucky++; S.game.sus++; S.game.streak = 0;
+    emit('lucky', {moves:n, min:min});
+    if(o.defer){
+      /* アクションの最中は止めない：まぐれを覚えておき、本編クリアのときに理屈チェック */
+      note('🔍 <b>まぐれ？</b>　手あたりしだいに さわって 合っただけ かも。<br><em>クリアのときに 理屈チェック</em>が 出るよ', 3000);
+      if(o.onResult) try{ o.onResult(false); }catch(e){}
+      return true;
+    }
+    riddle({q:o.q, title:'まぐれ？', sub:'手あたりしだいに さわって 合っただけ かも。<br>理屈が わかっているか 1問で たしかめよう'}).then(function(ok){
+      if(o.onResult) try{ o.onResult(ok); }catch(e){}
+    });
+    return true;
+  }
+
+  /* ---------------- 理屈チェック（1問） ---------------- */
+  function shuffle(a){ a = a.slice(); for(var i=a.length-1;i>0;i--){ var j = Math.floor(Math.random()*(i+1)), t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
+  function pickQ(){
+    try{
+      if(!window.Quiz || !Quiz.all) return null;
+      var all = Quiz.all().filter(function(q){ return q.t === 'choice' && q.choices && q.choices.length >= 2 && !q.fig; });
+      var k = '';
+      try{ k = (Zukan._cur.koma || [])[0] || ''; }catch(e){}
+      var mine = all.filter(function(q){ return !k || q.koma === k; });
+      var pool = mine.length ? mine : all;
+      return pool.length ? pool[Math.floor(Math.random() * pool.length)] : null;
+    }catch(e){ return null; }
+  }
+  var riddleOpen = false;
+  function riddle(o){
+    return new Promise(function(res){
+      var q = o.q || pickQ();
+      if(!q || riddleOpen || !document.body){ res(true); return; }
+      riddleOpen = true; ensureCSS();
+      var shown = shuffle(q.choices), t0 = now(), done = false;
+      var d = document.createElement('div'); d.className = 'tk-chk';
+      d.innerHTML = '<div class="tk-card"><div class="tk-h">🔍 理屈チェック' + (o.title ? '<span>' + esc(o.title) + '</span>' : '') + '</div>' +
+        '<p class="tk-sub">' + (o.sub || 'クリアの前に 1問だけ。ちゃんと わかってクリアしたか たしかめよう') + '</p>' +
+        '<p class="tk-q"></p><div class="tk-ch"></div><div class="tk-ex"></div><div class="tk-go"></div></div>';
+      d.querySelector('.tk-q').textContent = String(q.q || '').replace(/<[^>]*>/g, '');
+      var box = d.querySelector('.tk-ch');
+      shown.forEach(function(c){
+        var b = document.createElement('button'); b.type = 'button'; b.textContent = String(c).replace(/<[^>]*>/g, '');
+        b.onclick = function(){
+          if(done) return; done = true;
+          var ok = c === q.choices[0], think = now() - t0;
+          [].forEach.call(box.children, function(x){ x.disabled = true; if(x.textContent === String(q.choices[0]).replace(/<[^>]*>/g, '')) x.className = 'ok'; else if(x === b) x.className = 'ng'; });
+          var ex = d.querySelector('.tk-ex'), go = d.querySelector('.tk-go');
+          if(ok && think >= CFG.guessMs){
+            ex.innerHTML = '<div class="tk-big">本物！ ✨</div>';
+            praise(); S.game.sus = 0; S.game.lucky = 0;
+            setTimeout(function(){ d.remove(); riddleOpen = false; res(true); }, 1400);
+            return;
+          }
+          ex.innerHTML = (ok ? '<b>正解。でも 早すぎ！</b> 考えてから 答えよう<br>' : '<b>もう一歩</b> 正解：' + esc(String(q.choices[0]).replace(/<[^>]*>/g, '')) + '<br>') + esc(String(q.ex || '').replace(/<[^>]*>/g, ''));
+          ensureLoaded();
+          var n = CFG.debtLucky; pay('lucky', n); save();
+          var nb = document.createElement('button'); nb.type = 'button'; nb.className = 'tk-next'; nb.textContent = 'わかった（' + (costText(n) || 'もう一度 考えよう') + '）';
+          nb.onclick = function(){ if(nb.classList.contains('tk-gated')) return; d.remove(); riddleOpen = false; res(false); };
+          go.appendChild(nb);
+          var kara = karaoke(ex, CFG.readCps);
+          gate(nb, {ms: kara ? kara.total + 300 : 2500});
+          if(kara && gates.length) gates[gates.length - 1].kara = kara;
+        };
+        box.appendChild(b);
+      });
+      document.body.appendChild(d);
+    });
+  }
+
+  /* ---------------- 共通部品へのつなぎ ---------------- */
+  function hookQuiz(){
+    var Q = window.Quiz; if(!Q || Q.__tk) return; Q.__tk = 1;
+    var test = Q.test, check = Q.check, review = Q.review;
+    if(test) Q.test = function(){ var r = test.apply(this, arguments); startTest(); return r; };
+    if(check) Q.check = function(q, ans){
+      var ok = check.apply(this, arguments);
+      if(!S.inReview){ try{ if(S.inTest) onTestAnswer(q, ok); }catch(e){} }
+      return ok;
+    };
+    if(review) Q.review = function(){ S.inReview = true; try{ return review.apply(this, arguments); } finally { S.inReview = false; } };
+  }
+  function hookCard(){
+    var C = window.SubmitCard; if(!C || C.__tk) return; C.__tk = 1;
+    var show = C.show;
+    C.show = function(r, onClose){
+      try{
+        if(r && S.t0){
+          ensureLoaded();
+          r = Object.assign({}, r);
+          var raw = +r.score || 0, full = penalty(), p = Math.min(raw, full), rows = (r.records || []).slice(), why = [];
+          if(S.test.guess) why.push('あてずっぽう ' + S.test.guess + '回');
+          if(S.test.mash) why.push('連打 ' + S.test.mash + '回');
+          if(S.test.skip) why.push('とばし読み ' + S.test.skip + '回');
+          if(full > 0){ r.score = raw - p; rows.push(['適当プレイ', 'ひび入り −' + full + '点（' + why.join('・') + '）' + (full > p ? '　※0点より下にはならない' : '')]); }
+          else if(why.length){ rows.push(['適当プレイ', why.join('・')]); }
+          else rows.push(['解きかた', '◎ 本物（罰なし・じっくり解いた）']);
+          rows.push(['テストの時間', fmtTime(now() - S.t0)]);
+          if(S.game.mash || S.game.guess) rows.push(['ゲーム中の連打・あてずっぽう', (S.game.mash + S.game.guess) + '回']);
+          r.records = rows;
+          r.tekitou = {raw:raw, penalty:p, full:full, guess:S.test.guess, mash:S.test.mash, skip:S.test.skip, game:S.game.mash + S.game.guess};
+        }
+      }catch(e){}
+      S.inTest = false; S.t0 = 0;
+      return show.call(this, r, onClose);
+    };
+  }
+  function hookZukan(){
+    var Zk = window.Zukan; if(!Zk || Zk.__tk || !Zk.earn) return; Zk.__tk = 1;
+    var earn = Zk.earn;
+    Zk.earn = function(n, why, opt){
+      ensureLoaded();
+      if(S.debt > 0 && why !== 'pass'){
+        n = Math.floor(Number(n) || 0);
+        var cut = Math.min(S.debt, n);
+        if(cut > 0){
+          S.debt -= cut; n -= cut; save();
+          if(!(opt && opt.silent)) setTimeout(function(){ note('<b>連打・あてずっぽう・とばし読み</b>の罰で かけら <em>−' + cut + '</em>', 2600); }, 600);
+        }
+        if(n <= 0) return 0;
+      }
+      return earn.call(this, n, why, opt);
+    };
+  }
+  /* 本編クリア：まぐれ・罰があったときだけ理屈チェックを1問はさむ（ふつうに遊んだ子は止めない） */
+  function hookClear(){
+    var Zk = window.Zukan; if(!Zk || Zk.__tkc || !Zk.mainClear) return; Zk.__tkc = 1;
+    var mc = Zk.mainClear;
+    Zk.mainClear = function(opt){
+      var self = this, args = arguments;
+      if(S.game.sus > 0 && window.GAME_MODE !== 'test'){
+        riddle({title:'クリアの前に', sub:'このプレイでは 連打・あてずっぽう・まぐれが あった。<br>理屈が わかっているか 1問で たしかめよう'}).then(function(){ S.game.sus = 0; mc.apply(self, args); });
+        return 0;
+      }
+      return mc.apply(this, arguments);
+    };
+  }
+  function hookAll(){ hookQuiz(); hookCard(); hookZukan(); hookClear(); }
+
+  window.addEventListener('click', onClick, true);
+
+  window.Tekitou = {
+    setup: function(o){ if(o) for(var k in o) if(Object.prototype.hasOwnProperty.call(CFG, k)) CFG[k] = o[k]; hookAll(); },
+    shown: function(){ S.game.shownAt = now(); S.moves = []; if(S.inTest) S.lastAt = now(); },
+    move: function(){ var t = now(), l = S.moves[S.moves.length-1]; if(l && t - l < 60) return; /* 同じ1手で2回呼ばれたものはまとめる */ S.moves.push(t); if(S.moves.length > 400) S.moves.shift(); },
+    solved: solved,
+    check: function(o){ return riddle(o || {}); },
+    answer: function(ok, o){ hookAll(); if(S.inTest) onTestAnswer(o && o.q, !!ok); else onGameAnswer(!!ok); },
+    startTest: function(){ startTest(); },
+    gate: gate,
+    karaoke: function(el, o){ ensureCSS(); return karaoke(el, (o && o.cps) || CFG.readCps); },
+    stats: function(){ ensureLoaded(); return {test:Object.assign({penalty:penalty(), inTest:S.inTest}, S.test), game:{mash:S.game.mash, guess:S.game.guess}, debt:S.debt}; },
+    config: CFG,
+    _hook: hookAll
+  };
+
+  hookAll();
+  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', hookAll);
+  window.addEventListener('load', hookAll);
+})();
+
 /*@ZUKAN_END*/</script>
 <script>
 'use strict';
@@ -2367,6 +2996,7 @@ function startCup(pr){const r=pr?ROOMS[0]:curRoom();let c,T;
  if(pr)P.phase='aim';
  if(r.pair&&!pr){const i=S.ci%2;if(i===0){const c2=r.cups[S.ci+1];P.pair={a:{v:c.v,rm:c.rm,dew:dewOf(c.v),line:null},b:{v:c2.v,rm:c2.rm,dew:dewOf(c2.v),line:null},step:'aimA'}}
   else{const prev=S._pair||null;P.pair=prev;if(P.pair)P.pair.step='cupB';P.line=prev?prev.b.line:null;P.phase=P.line==null?'aim':'ready'}}
+ if(!pr&&!c.tut)window.Tekitou&&Tekitou.shown();
  setScene('play');guideForPhase()}
 function guideForPhase(){const r=P.room,c=P.cup;let h='';
  if(P.practice&&P.phase!=='cool'&&!P.noCoach&&window.Guide){setGuide('');return}
@@ -2394,6 +3024,7 @@ function stopCup(auto){if(P.phase!=='cool')return;Snd.stir(false);
  if(!auto&&!P.win&&P.holdT<.25){P.phase='ready';guideForPhase();return}
  if(P.practice&&!auto&&P.T>P.dew+1){P.phase='ready';Snd.early();pop('まだ くもっていない！',L.cup.x+L.cup.w/2,L.cup.y-10,'w','もう一度 長おしして 冷やそう');guideForPhase();return}
  P.phase='result';const REC=P.practice!=='replay';const stop=Math.round(P.T*10)/10,gap=stop-P.dew,ok=Math.abs(gap)<=1.0001,tut=!!P.cup.tut,lineOk=tut?true:Math.abs(P.line-P.dew)<=1.0001,both=ok&&lineOk;
+ if(!P.practice&&!tut){window.Tekitou&&Tekitou.move();if(ok)window.Tekitou&&Tekitou.solved({min:1});}
  P.res={stop,gap,ok,lineOk,both,auto};
  const rr=REC?(S.roomRes[S.ri]||(S.roomRes[S.ri]={n:0,ok:0})):{n:0,ok:0};
  if(REC){S.tot++;if(ok)S.good++;if(both&&!tut)S.hits++;if(S.bestGap==null||Math.abs(gap)<S.bestGap)S.bestGap=Math.abs(gap);

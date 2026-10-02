@@ -637,6 +637,8 @@ header{display:flex;align-items:center;gap:10px 18px;flex-wrap:wrap;margin-botto
    ─ このファイルの中身は build_collections.py が各ゲームの
      「@SUBMIT_CARD_BEGIN」〜「@SUBMIT_CARD_END」の印の間へ同期する
      （ゲーム側で直接いじらず、ここを直して build を実行する）
+   ─ 2026-10-01: 適当プレイ番（guard.js）が減点したときは、records の「適当プレイ」の行を赤、「解きかた」の行を緑で出し、
+     点の丸に「減点前 ○点」を添える（減点は r.score に反映済みで届く。合格の判定も減点後の点）
    ─ 保存はこの端末のブラウザ内（localStorage）だけ。外への送信はしない
    ========================================================== */
 (function(){
@@ -678,6 +680,9 @@ header{display:flex;align-items:center;gap:10px 18px;flex-wrap:wrap;margin-botto
     '#sc-rev .o{color:#e8384f;font-weight:900}#sc-rev .x{color:#2a55c9;font-weight:900}',
     '#sc-wrap{display:flex;flex-direction:column;align-items:center}',
     '#sc-card .sc-score em{font-style:normal;font-weight:900;font-size:clamp(12px,1.9vmin,15px);background:#e8384f;color:#fff;border-radius:999px;padding:1px 10px;margin-top:3px;letter-spacing:.1em}',
+    '#sc-card .sc-rec div.sc-bad{background:#fde3e4;color:#b3141c;font-weight:900;border:2px solid #e8384f}',
+    '#sc-card .sc-rec div.sc-good{background:#e2f5e6;color:#1d6b33;font-weight:700}',
+    '#sc-card .sc-score s{text-decoration:none;font-size:clamp(11px,1.6vmin,13px);line-height:1.25;text-align:center;color:#6b7390;font-weight:700;margin-top:2px}',
     '#sc-card .sc-voice{grid-column:1/-1;font-size:clamp(12px,1.8vmin,15px);color:#3a4460;background:#fff4d6;border-radius:8px;padding:.5vmin 1.4vmin;overflow-wrap:anywhere}'
   ].join('\n');
 
@@ -727,13 +732,13 @@ header{display:flex;align-items:center;gap:10px 18px;flex-wrap:wrap;margin-botto
   function cardHTML(r){
     var marks=r.marks||[];
     var cells=marks.map(function(ok,i){return '<div class="sc-cell '+(ok?'o':'x')+'"><small>'+(i+1)+'</small><b>'+(ok?'○':'×')+'</b></div>'}).join('');
-    var rec=(r.records||[]).map(function(x){return '<div>'+esc(x[0])+'<b>'+esc(x[1])+'</b></div>'}).join('');
+    var rec=(r.records||[]).map(function(x){return '<div'+(x[0]==='適当プレイ'?' class="sc-bad"':x[0]==='解きかた'?' class="sc-good"':'')+'>'+esc(x[0])+'<b>'+esc(x[1])+'</b></div>'}).join('');
     return '<div id="sc-card">'+
       '<div class="sc-band"><span class="sc-tag">提出</span>確認テスト 提出カード<span class="sc-col">'+esc(r.collection||'')+'</span></div>'+
       '<div class="sc-body">'+
         '<div class="sc-unit">'+esc(r.unit||'')+'<small>'+esc(r.game||'')+'</small></div>'+
         '<div class="sc-name"><span>なまえ</span>'+esc(r.name||'（未入力）')+'</div>'+
-        '<div class="sc-score"><b>'+esc(r.score)+'</b><i>/ '+esc(r.total)+' 点</i>'+(r.koma&&isPass(r)?'<em>合格</em>':'')+'</div>'+
+        '<div class="sc-score"><b>'+esc(r.score)+'</b><i>/ '+esc(r.total)+' 点</i>'+(r.tekitou&&r.tekitou.full>0?'<s>ひび入り<br>減点前 '+esc(r.tekitou.raw)+'点</s>':'')+(r.koma&&isPass(r)?'<em>合格</em>':'')+(r.tekitou&&!r.tekitou.full?'<em style="background:linear-gradient(135deg,#f3c34a,#c8862a)">✨本物</em>':'')+'</div>'+
         '<div class="sc-when"><span>受けた日時</span>'+fmtDate(r.at)+'</div>'+
         '<div class="sc-grid">'+cells+'</div>'+
         (rec?'<div class="sc-rec">'+rec+'</div>':'')+voiceLine(r)+
