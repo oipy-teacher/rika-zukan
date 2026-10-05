@@ -2346,6 +2346,7 @@ const G = {
   mode:'cpu', lv:0, P:[], cur:0, T:0, tid:0, over:false, acting:false,
   seen:{}, log:{craft:0,craftOk:0,quiz:0,quizOk:0,rxn:0,rxnOk:0}
 };
+const OVERTIME=30;  /* 2人あわせて この手番数を こえたら 延長戦（ふつうは ここまでに 決着がつく） */
 function newPlayer(hero, cpu){
   return {hero, cpu:!!cpu, hp:100, max:100, hand:Array.from({length:7},()=>pick(DECK)), power:1, guard:false, boost:false, flinch:false,
     st:{craft:0,craftOk:0,quiz:0,quizOk:0,rxn:0,rxnOk:0}};
@@ -2496,6 +2497,16 @@ async function startTurn(){
   if(G.over) return;
   G.tid++; const tid=G.tid; G.T++;
   const p=me();
+  /* 2026-10-05 延長戦：2人とも ずっと まちがえても 必ず決着がつくように、手番が 長びいたら
+     手番のはじめに 体力が 少しずつ へる（へり方は だんだん大きくなる）。答えて攻撃する遊び方は そのまま */
+  if(G.T>OVERTIME){
+    const n=G.T-OVERTIME, d=Math.min(30,4+2*n);
+    G.hideHand=true; render(); SFX.fizzle();
+    setHP(p,p.hp-d);
+    await say((n===1?'<b>延長戦</b>。ここからは 手番のはじめに 体力が へっていく（だんだん 大きく）。<br>':'')+`延長戦：${esc(label(p))}の 体力 −${d}`, {hold:n===1?2200:1100});
+    if(tid!==G.tid) return;
+    if(p.hp<=0) return victory(1-G.cur);
+  }
   if(p.skipNext){
     p.skipNext=false; G.hideHand=true; render();
     SFX.fizzle();
@@ -3064,7 +3075,25 @@ function begin(heroes, mode, lv){
 function penaltySkip(kind){
   if(kind==='lucky') return;
   if(G.over || !G.P.length || me().cpu) return;
+  me().tk=(me().tk||0)+1;  /* 提出カード用：この1戦・この人の 連打・あてずっぽう */
   me().skipNext=true; render();
+}
+/* 2026-10-05 提出カードの「ゲーム中の連打・あてずっぽう」は、共通部品だと この端末の通算（前の生徒の分まで）になる。
+   このゲームでは、その1戦の その人の分だけに 書きかえる（共通部品より先に 包んでおき、共通部品が足した行を直す） */
+if(window.SubmitCard && !SubmitCard.__tk){
+  const _show=SubmitCard.show;
+  SubmitCard.show=function(r, onClose){
+    try{
+      if(r && Array.isArray(r.records)){
+        const h=TQ&&TQ.hero, pl=h&&G.P.find(p=>p.hero===h), n=pl?(pl.tk|0):0;
+        const KEY='ゲーム中の連打・あてずっぽう';
+        r=Object.assign({}, r, {records:r.records.filter(x=>!(x&&x[0]===KEY))});
+        if(n) r.records.push([KEY, n+'回']);
+        if(r.tekitou) r.tekitou=Object.assign({}, r.tekitou, {game:n});
+      }
+    }catch(e){}
+    return _show.call(this, r, onClose);
+  };
 }
 if(window.Tekitou) Tekitou.setup({onPenalty:penaltySkip, penaltyLabel:'つぎの手番は お休み'});
 

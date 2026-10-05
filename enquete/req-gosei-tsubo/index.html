@@ -86,6 +86,9 @@ sup{font-size:.6em;vertical-align:.55em;line-height:0}
 .go:active{transform:translateY(3px);box-shadow:0 1px 0 var(--sumi)}
 .sub2{font:700 16px/1 var(--gothic);color:var(--sumi);background:#EDE6D6;border:2px solid var(--sumi);box-shadow:0 3px 0 var(--sumi);padding:12px 16px;min-height:50px;margin-top:10px;margin-left:6px;border-radius:2px}
 .fb{margin-top:10px}
+/* 2026-10-05 縦画面で「壺に火を入れる」が板の外に出ないよう、板の下端に貼り付ける */
+.firebar{position:sticky;bottom:-14px;z-index:3;margin:8px -14px -14px;padding:0 14px 12px;background-color:var(--sekkai);border-top:2px solid var(--sumi);box-shadow:0 -6px 10px -6px rgba(38,33,27,.35)}
+.firebar+.fb:not(:empty){margin-top:22px}
 .good{font-size:20px;font-weight:900;color:var(--rokushou)}
 .bad{font-size:19px;font-weight:900;color:var(--sabi)}
 .ex{font-size:17px;line-height:1.75;margin:6px 0 0;padding:8px 10px;background:rgba(255,255,255,.45);border-left:0;border-top:2px solid var(--sumi)}
@@ -160,6 +163,8 @@ sup{font-size:.6em;vertical-align:.55em;line-height:0}
 .bigb{min-width:132px;min-height:58px;font:800 18px/1.1 var(--gothic);background:var(--sekkai);color:var(--sumi);border:2px solid var(--sumi);box-shadow:0 4px 0 #0B0806;border-radius:2px}
 .bigb:active{transform:translateY(3px);box-shadow:0 1px 0 #0B0806}
 #ctrl.off{opacity:.35;pointer-events:none}
+/* 2026-10-05 縦画面では、板を使う間（十字キーが押せない間）は操作の段をしまって板を広げる */
+@media (max-aspect-ratio:1/1){#ctrl.off{display:none}}
 /* 重ね札（節目の解説・テスト） */
 #ov{position:fixed;inset:0;background:rgba(16,12,9,.86);display:flex;align-items:center;justify-content:center;z-index:50;padding:12px}
 #ov.hide{display:none}
@@ -2663,7 +2668,7 @@ function openPot(){
     else{const R=RX[r.id];inner='<span class="rn">'+R.n+'</span><span class="ins">'+r.ins.map(f=>chipSub(f)).join('<span class="arrow">＋</span>')+'</span>'}
     h+='<button class="rc'+(r.can?'':' off')+(r.done?' done':'')+'" data-i="'+i+'"'+(r.can?'':' aria-disabled="true"')+'>'+inner+(r.done?'<span class="sm" style="font-size:12px;color:#2F7D68;font-weight:800">作ったことがある</span>':'')+'</button>';
   });
-  h+='</div><button class="sub2" id="potClose">壺から はなれる</button>';
+  h+='</div><div class="firebar"><button class="sub2" id="potClose" style="margin-left:0">壺から はなれる</button></div>';
   if(!rs.some(r=>r.can))h+='<p class="lead" style="margin-top:8px">材料が たりない。坑道で '+(F.lv==='model'||F.lv==='formula'?'かけら':'びん・かけら')+'を 拾ってこよう。</p>';
   board.innerHTML=h;board.scrollTop=0;
   board.querySelectorAll('.rc').forEach(b=>b.onclick=()=>{const r=rs[+b.dataset.i];if(!r.can){SFX.bump();return}
@@ -2727,7 +2732,7 @@ function coefStep(R,terms,model,r){
     h+='</div><div class="tally">';
     els.forEach(s=>{const a=L[s]||0,b=Rr[s]||0,ok=a===b;
       h+='<span class="el">'+s+'</span>'+(model?'<span class="dots">'+('<i style="--c:'+elColor(s)+'"></i>').repeat(a)+'</span>':'<span>左 <b>'+a+'</b></span>')+'<span>｜</span>'+(model?'<span class="dots">'+('<i style="--c:'+elColor(s)+'"></i>').repeat(b)+'</span>':'<span>右 <b>'+b+'</b></span>')+'<span class="st '+(ok?'ok':'ng')+'">'+(ok?'そろった':'ちがう')+'</span>'});
-    h+='</div><div><button class="go" id="fire">壺に 火を入れる</button><button class="sub2" id="back">やめる</button></div><div class="fb" id="fb"></div>';
+    h+='</div><div class="firebar"><button class="go" id="fire">壺に 火を入れる</button><button class="sub2" id="back">やめる</button></div><div class="fb" id="fb"></div>';
     board.innerHTML=h;
     board.querySelectorAll('.cb').forEach(b=>b.onclick=()=>{const t=terms[+b.dataset.k],v=+b.dataset.v;const nc=Math.max(1,Math.min(6,t.c+v));if(nc===t.c)return;t.c=nc;SFX.coef(v>0);window.Tekitou&&Tekitou.move();const st=board.scrollTop;render();board.scrollTop=st});
     $('back').onclick=()=>{say('壺の中身は 元にもどった。');play()};
@@ -2784,7 +2789,7 @@ function openBag(){
   else h+='<p class="lead">使える道具は まだない。壺で 物質を作ると 道具になる。</p>';
   h+='<div class="bh" style="font-size:16px;margin-top:12px">壺の材料</div><div class="mats">';
   const shs=Object.keys(G.bag.sh);shs.forEach(s=>h+=chipEl(s,true));mats.forEach(f=>h+=chipSub(f));if(!shs.length&&!mats.length)h+='<span class="lead">なし</span>';
-  h+='</div><button class="sub2" id="bagClose">とじる</button>';
+  h+='</div><div class="firebar"><button class="sub2" id="bagClose" style="margin-left:0">とじる</button></div>';
   board.innerHTML=h;board.scrollTop=0;
   board.querySelectorAll('.it button').forEach(b=>b.onclick=()=>useItem(b.dataset.k));
   $('bagClose').onclick=()=>play();
@@ -2962,8 +2967,8 @@ syncTg();
 
 /* 罰（連打・あてずっぽう・とばし読み）＝ 坑道がゆれて 敵が1ターン動く */
 if(window.Tekitou)Tekitou.setup({onPenalty:function(kind){
-  if(!G.map||G.mode==='test'||G.mode==='title')return;
-  setTimeout(()=>{enemiesAct();markSeen();hud();G.log.unshift('<b>坑道がゆれた！</b> 敵が 1ターン 動いた（'+({mash:'連打',guess:'あてずっぽう',skip:'とばし読み'}[kind]||'')+'）');if(G.mode==='play')renderLog();if(G.P.hp<=0&&G.mode==='play')knockedOut()},400);
+  if(!G.map||G.mode==='test'||G.mode==='title'||G.fi>=FLOORS.length)return;
+  setTimeout(()=>{if(G.fi>=FLOORS.length||G.mode==='test')return;enemiesAct();markSeen();hud();G.log.unshift('<b>坑道がゆれた！</b> 敵が 1ターン 動いた（'+({mash:'連打',guess:'あてずっぽう',skip:'とばし読み'}[kind]||'')+'）');if(G.mode==='play')renderLog();if(G.P.hp<=0&&G.mode==='play')knockedOut()},400);
 },penaltyLabel:'敵が 1ターン 動く'});
 
 /* テスト用の窓口（動作確認だけに使う） */

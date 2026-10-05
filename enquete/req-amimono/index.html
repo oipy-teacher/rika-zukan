@@ -2130,13 +2130,13 @@ function similar(a,pool,k){
 
 /* ======================= 毛糸玉の絵 ======================= */
 function yarn(s,px,o){
-  o=o||{};const e=EL[s],d=shade(e.c,-.3),tc=lum(e.c)>.58?'#2a2622':'#fffaf0',fs=s.length>1?21:26;
+  o=o||{};const e=EL[s],d=shade(e.c,-.3),tc=lum(e.c)>.58?'#2a2622':'#fffaf0',fs=s.length>1?21:(s==='H'?32:26);/* 2026-10-05 小さく描かれる水素Hは字を大きく */
   const fuzz=e.g?`<circle cx="30" cy="30" r="26.5" fill="none" stroke="${shade(e.c,lum(e.c)>.6?-.12:.25)}" stroke-width="3" stroke-dasharray="1.2 2.6" stroke-linecap="round"/>`:'';
   const lame=e.m?`<g stroke="#fffdf4" stroke-width="1.7" stroke-linecap="round" opacity=".95"><path d="M15 17l3 1.2M41 11l3 2M45 37l3 .8M18 41l2 2.2M37 47l3-.6M11 30l2.6.4"/></g>`:'';
   return `<svg viewBox="0 0 64 66" width="${px}" height="${Math.round(px*66/64)}" aria-hidden="true">
 ${o.shadow===false?'':'<ellipse cx="32" cy="61" rx="19" ry="3.4" fill="rgba(0,0,0,.22)"/>'}
 ${o.tail===false?'':`<path d="M51 42 q9 5 5 12 q-3 5 4 7" fill="none" stroke="${d}" stroke-width="2.6" stroke-linecap="round"/>`}
-${fuzz}<circle cx="30" cy="30" r="25" fill="${e.c}"/>
+${fuzz}<circle cx="30" cy="30" r="25" fill="${e.c}"${lum(e.c)>.8?' stroke="#7d7466" stroke-width="2.4"':''}/>
 <g fill="none" stroke="${d}" stroke-width="2" stroke-linecap="round" opacity=".8"><path d="M9 21 Q30 36 51 19"/><path d="M6 33 Q30 48 54 31"/><path d="M13 45 Q31 53 47 45"/><path d="M19 8 Q37 26 35 54"/><path d="M33 6 Q48 22 45 48"/></g>
 ${lame}${o.label===false?'':`<text x="30" y="31" text-anchor="middle" dominant-baseline="central" font-size="${fs}" font-weight="800" fill="${tc}" stroke="${e.c}" stroke-width="6" paint-order="stroke" stroke-linejoin="round" font-family="Avenir Next,Helvetica Neue,Arial,sans-serif">${s}</text>`}
 </svg>`;
@@ -2259,15 +2259,27 @@ applySfx();applyCalm();
 /* ===== メジャー（進み具合） ===== */
 const STAGES=[{key:'p',lab:'ワッペン'},{key:'b',lab:'あみぐるみ'},{key:'c',lab:'編み図'},{key:'t',lab:'確認テスト'}];
 let PLAN=[12,11,11,12];
+/* 2026-10-05 おまけ注文が増えても区切りの名前が重ならないよう、各区切りに「名前が入る最小幅」を持たせる */
+let SEG=[];
 function drawTape(){
-  const tot=PLAN.reduce((a,b)=>a+b,0);let acc=0,h='<div id="pin"></div>';
-  STAGES.forEach((s,i)=>{const x=acc/tot*100;h+=`<div class="cut" style="left:${x}%"></div><div class="lab" style="left:${x}%">${s.lab}</div>`;acc+=PLAN[i]});
-  $('tape').innerHTML=h;movePin();
+  const tp=$('tape'),W=Math.max(160,tp.clientWidth||600),tot=PLAN.reduce((a,b)=>a+b,0);
+  const mn=STAGES.map(s=>Math.min(100/STAGES.length,(s.lab.length*11.5+14)/W*100));
+  const fixed=STAGES.map(()=>false);let w=PLAN.map(p=>p/tot*100);
+  for(let k=0;k<STAGES.length;k++){
+    let changed=false;w.forEach((x,i)=>{if(!fixed[i]&&x<mn[i]){fixed[i]=true;changed=true}});
+    const fsum=mn.reduce((a,m,i)=>a+(fixed[i]?m:0),0),free=PLAN.reduce((a,p,i)=>a+(fixed[i]?0:p),0);
+    w=PLAN.map((p,i)=>fixed[i]?mn[i]:(free?p/free*(100-fsum):0));if(!changed)break;
+  }
+  let acc=0,h='<div id="pin"></div>';SEG=[];
+  STAGES.forEach((s,i)=>{SEG.push({x:acc,w:w[i]});h+=`<div class="cut" style="left:${acc}%"></div><div class="lab" style="left:${acc}%">${s.lab}</div>`;acc+=w[i]});
+  tp.innerHTML=h;movePin();
 }
 function movePin(){
-  const tot=PLAN.reduce((a,b)=>a+b,0);let before=0;for(let i=0;i<S.stage;i++)before+=PLAN[i];
-  const inStage=Math.min(S.qi,PLAN[S.stage]||0);const p=$('pin');if(p)p.style.left=Math.min(100,(before+inStage)/tot*100)+'%';
+  const p=$('pin');if(!p)return;const sg=SEG[S.stage];
+  if(!sg){p.style.left='100%';return}
+  const n=PLAN[S.stage]||1,inStage=Math.min(S.qi,n);p.style.left=Math.min(100,sg.x+sg.w*inStage/n)+'%';
 }
+window.addEventListener('resize',()=>{if(SEG.length)drawTape()});
 
 /* ===== 解説（型紙のメモ）：読み終わるまで「つぎへ」が押せない ===== */
 function note(o){
@@ -2540,6 +2552,21 @@ async function pickBlank(r,f,btn){
 }
 function sideAtoms(R,side){const terms=[...R.L,...R.R],nL=R.L.length,out=[];terms.forEach((f,i)=>{if((side==='L')===(i<nL))for(let c=0;c<S.k[i];c++)out.push(...atomsOf(f))});return out}
 const gcd=(a,b)=>b?gcd(b,a%b):a;
+/* 2026-10-05 ヒントは原子の過不足から「ふやす／へらす」を正しく言う（いつも「ふやす」だと、へらすのが正解の場面で逆へ誘う）
+   足りない側を ふやすか、多い側を へらすと そろう。そのうち、正しい係数に近づく方を1つだけ言う */
+function knitHint(R,e,L,Rr){
+  const terms=[...R.L,...R.R],nL=R.L.length,shortL=(L[e]||0)<(Rr[e]||0);
+  const has=i=>atomsOf(terms[i]).includes(e),side=i=>i<nL?'左':'右';
+  let pick=null;
+  for(let i=0;i<terms.length&&!pick;i++){if(!has(i))continue;
+    const onShort=(i<nL)===shortL;
+    if(onShort&&S.k[i]<R.k[i])pick={i,up:true};
+    else if(!onShort&&S.k[i]>R.k[i])pick={i,up:false};}
+  const gap=Math.abs((L[e]||0)-(Rr[e]||0)),sh=shortL?'左':'右',lo=shortL?'右':'左';
+  if(!pick)return `<span class="sym">${e}</span> は ${sh}が ${gap}つ 足りない。${sh}を ふやすか、${lo}を へらして そろえよう。`;
+  const f=terms[pick.i];
+  return `<span class="sym">${e}</span> は ${sh}が ${gap}つ 足りない（${lo}が 多い）。${pick.up?`${sh}の <b>${SN(f)}（<span class="sym">${fm(f)}</span>）</b> を <b>ふやして</b> みよう。`:`${lo}の <b>${SN(f)}（<span class="sym">${fm(f)}</span>）</b> を <b>へらして</b> みよう。`}`;
+}
 async function tryKnit(r){
   if(S.busy)return;S.busy=true;const R=r.r;
   const L=countOf(sideAtoms(R,'L')),Rr=countOf(sideAtoms(R,'R'));
@@ -2553,6 +2580,7 @@ async function tryKnit(r){
     T()&&T().solved({min:Math.max(1,min),q:rxQ(R)});
     $('knit').disabled=true;$('tally').innerHTML='';
     await flyKnit(R);
+    if(S.stage>2)return; /* 糸が飛んでいる間に「確認テストだけ」に切りかえたとき */
     S.done.c++;AU.big();
     $('chart').insertAdjacentHTML('beforeend',`<div class="done-label">編めた！</div>`);
     const cnt=keys.map(e=>`<span class="sym">${e}</span> ${L[e]}つ`).join('・');
@@ -2566,7 +2594,7 @@ async function tryKnit(r){
     return `<div class="trow"><div>${yarn(e,38,{tail:false,shadow:false})}</div><div class="bar"><em>左</em>${dot(a)}</div><div class="bar"><em>右</em>${dot(c)}</div>${msg}</div>`}).join('');
   let why;
   if(bal)why=`数は そろっているけれど、係数が 全部 ${g} で割れる。係数は <b>いちばん小さい整数</b> にする。`;
-  else{const bad=keys.filter(e=>(L[e]||0)!==(Rr[e]||0));why=`${bad.map(e=>`<span class="sym">${e}</span>（${EL[e].n}）`).join('・')} の玉の数が 左右で ちがう。毛糸は 消えないし 増えないので、このままでは 編めない。足りない側のモチーフを ふやしてみよう。`}
+  else{const bad=keys.filter(e=>(L[e]||0)!==(Rr[e]||0));why=`${bad.map(e=>`<span class="sym">${e}</span>（${EL[e].n}）`).join('・')} の玉の数が 左右で ちがう。毛糸は 消えないし 増えないので、このままでは 編めない。${knitHint(R,bad[0],L,Rr)}`}
   $('tally').innerHTML=`<div class="tally"><h4>糸の勘定（左＝反応の前／右＝反応の後）</h4>${rows}<div class="ex" id="tallyEx">${why}</div><div class="acts"><button class="act sub" id="fix">なおす</button></div></div>`;
   $('knit').disabled=true;
   const fix=$('fix');try{$('tally').scrollIntoView({block:'end',behavior:S.calm?'auto':'smooth'})}catch(e){}
