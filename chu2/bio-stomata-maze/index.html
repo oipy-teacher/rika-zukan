@@ -57,6 +57,13 @@ canvas{display:block}
 .wd.sm{min-height:44px;font-size:16px;padding:4px 14px}
 .wd:active{transform:translateY(2px);box-shadow:inset 0 0 0 2px rgba(255,240,210,.35),0 1px 0 #2B1A0E}
 .wd[disabled]{opacity:.45}
+.tryCh{display:flex;flex-direction:column;gap:8px;margin:6px 0}
+.tryCh .wd{min-height:46px;font-size:17px;padding:4px 14px;text-align:left;justify-content:flex-start}
+.tryCh .wd.ok{background-color:#CFE3B0;outline:3px solid #2E6B14}
+.tryCh .wd.ok[disabled]{opacity:1}
+.tryCh .wd.ng{opacity:.5;text-decoration:line-through}
+.tryFb{min-height:3.4em;font-size:15px}
+.tryFb b.o{color:#2E6B14}.tryFb b.x{color:#9A2A14}
 .yb{background-image:repeating-linear-gradient(135deg,#E0B77A 0 10px,#8B5A2B 10px 20px,#F1DDB0 20px 30px,#C98A55 30px 40px);}
 /* ---------- タイトル ---------- */
 #tcv{position:absolute;inset:0;width:100%;height:100%}
@@ -3910,7 +3917,7 @@ const INHUB=!!window.COLLECTION_NAME||(function(){try{return window.parent!==win
 const KAN=['一','二','三','四','五','六','七','八'];
 
 /* ================= セーブ ================= */
-function fresh(){return{v:1,name:'',unl:0,stars:[0,0,0,0,0,0,0,0],best:[0,0,0,0,0,0,0,0],flags:{up:0,low:0},hits:0,deliv:0,judg:0,specs:{},firsts:{},mute:false,tilt:null,sealed:false,opened:false,done:false}}
+function fresh(){return{v:1,name:'',unl:0,stars:[0,0,0,0,0,0,0,0],best:[0,0,0,0,0,0,0,0],flags:{up:0,low:0},hits:0,deliv:0,judg:0,specs:{},firsts:{},mute:false,tilt:null,sealed:false,opened:false,checked:false,introRead:false,done:false}}
 function load(){try{const s=JSON.parse(localStorage.getItem(SKEY)||'null');if(s&&s.v===1){const f=fresh();return Object.assign(f,s,{flags:Object.assign(f.flags,s.flags||{}),specs:Object.assign({},s.specs||{}),firsts:Object.assign({},s.firsts||{})})}}catch(e){}return fresh()}
 let SV=load();
 function save(){try{localStorage.setItem(SKEY,JSON.stringify(SV))}catch(e){}}
@@ -3958,14 +3965,14 @@ try{document.documentElement.style.setProperty('--wood','url('+WT.grey.toDataURL
 /* ================= 盤（8枚） ================= */
 const R=18;
 const BD=[
- {nm:'はじめの一枚',leaf:'ツユクサ',say:'細長い葉。表皮がはがしやすく、観察によく使われる。',balls:[['co2','B','cell'],['co2','B','cell']],low:[.55],up:[],par:80,
+ {nm:'はじめの一枚',leaf:'ツユクサ',say:'細長い葉。表皮（葉の表面をおおう うすい皮）がはがしやすく、けんび鏡の観察によく使われる。',balls:[['co2','B','cell'],['co2','B','cell']],low:[.55],up:[],par:80,
   tip:'二酸化炭素（黒と赤のつぶ）を、葉の中の <b>緑の細胞</b>へ。盤を <b>傾けて</b>転がそう'},
  {nm:'上か下か',leaf:'ツバキ',say:'厚くてつやのある葉。',balls:[['co2','A','cell'],['co2','B','cell'],['co2','A','cell']],low:[.28,.74],up:[],par:130,
   tip:'つぶは 葉の <b>上</b>から来た。<b>どちらの面</b>に 通れるすき間が あるだろう？'},
  {nm:'酸素を外へ',leaf:'サクラ',say:'ふちにぎざぎざのある葉。',balls:[['o2','P','out'],['o2','P','out'],['o2','P','out']],low:[.2,.52,.82],up:[],par:110,
   tip:'葉の中で できた <b>酸素</b>（赤い2つぶ）を、<b>外の空気</b>へ 出そう'},
  {nm:'水蒸気を外へ',leaf:'ホウセンカ',say:'細長い葉。茎が太く水をよく吸う。',balls:[['h2o','V','out'],['co2','A','cell'],['h2o','V','out']],low:[.33,.66],up:[.86],vein:.5,par:130,
-  tip:'<b>葉脈</b>から来た水が <b>水蒸気</b>（白赤白のつぶ）になって 外へ出る'},
+  tip:'<b>葉脈</b>（葉のすじ＝根から吸った水の通り道）から来た水が、<b>水蒸気</b>（気体になった水・白赤白のつぶ）になって 外へ出る'},
  {nm:'どっちが裏？',leaf:'アジサイ',say:'大きく、ふちにぎざぎざのある葉。',flip:1,balls:[['co2','B','cell'],['o2','P','out'],['h2o','V','out']],low:[.22,.58,.86],up:[],vein:.4,par:140,
   tip:'この葉は <b>裏返し</b>に はめこまれている…？ <b>細胞の並び方</b>を よく見よう'},
  {nm:'水に浮く葉',leaf:'スイレン',say:'水面に浮かぶ丸い葉。葉の裏は水につかっている。',water:1,balls:[['co2','A','cell'],['o2','P','out'],['h2o','V','out'],['co2','A','cell']],low:[],up:[.18,.45,.72,.9],vein:.6,par:150,
@@ -4179,7 +4186,7 @@ function crossCheck(b,px,py){const B=G.B;for(const s of B.sto){const ey=epiY(B,s
     else if(G.def.flip)setCap('すき間は <b>すき間の多い細胞の側</b>に あった。こちらが 葉の <b>裏</b>',5);
     else if(G.def.water)setCap('水に浮く葉は <b>空気にふれる面</b>に 出入り口がある',5);
     else if(G.def.prac){}
-    else if(!SV.firsts.pass){SV.firsts.pass=1;save();setCap('すき間が あった！ 形は 霧で見えない。<b>旗</b>を立てておこう',4)}}
+    else if(!SV.firsts.pass){SV.firsts.pass=1;save();setCap('すき間が あった！ この出入り口のすき間が <b>気孔</b>。形は 霧で見えない。<b>旗</b>を立てておこう',5)}}
    if(!G.def.prac)save()}
   else{pop(s.x,ey+(ey<B.H/2?-40:50),'通った','#C9E3A8')}}}}
 function deliver(b){G.done++;G.combo++;G.maxC=Math.max(G.maxC,G.combo);G.judg++;if(!G.def.prac){SV.deliv++;SV.judg++;save()}
@@ -4299,9 +4306,11 @@ $('bCal').onclick=()=>{TILT.b0=null;SFX.click();setCap('いまの持ち方を <b
 let MHIT=[];
 function openMap(){G=null;rollSet(0);show('scMap');const tot=SV.stars.reduce((a,b)=>a+b,0);const nxt=Math.min(SV.unl,BD.length-1);
  $('mInfo').textContent='★ '+tot+' / 24　標本 '+Object.keys(SV.specs).length+' / 8　盤をタップで やり直しも';
- $('btnGo').textContent=SV.unl>=BD.length?(SV.sealed?'第一盤から もう一度':'秘密箱へ（予想をしまう）'):'第'+KAN[nxt]+'盤へ';
- $('btnSealM').hidden=!SV.sealed;$('btnSealM').textContent=SV.opened?'秘密箱の中身を見る':'秘密箱をひらく（観察のあと）';
- $('btnTestM').hidden=!SV.sealed;$('btnBookM').hidden=!Z()}
+ const pend=SV.sealed&&!SV.checked;
+ $('btnGo').textContent=pend?'秘密箱をひらく（答え合わせ）':SV.unl>=BD.length?(SV.sealed?'第一盤から もう一度':'秘密箱へ（予想をしまう）'):'第'+KAN[nxt]+'盤へ';
+ $('btnSealM').hidden=!SV.sealed||pend;$('btnSealM').textContent='答え合わせを もう一度';
+ $('btnTestM').hidden=!(SV.sealed&&SV.checked);$('btnBookM').hidden=!Z();
+ if(!SV.introRead&&window.Guide&&window.GAME_MODE!=='test'){SV.introRead=true;save();Guide.intro(INTRO)}}
 function drawSpec(c,i){const g=c.getContext('2d');const W=c.width;g.clearRect(0,0,W,W);g.save();g.translate(W/2,W/2);g.beginPath();g.arc(0,0,W/2-4,0,TAU);g.fillStyle=pat(g,WT.walnut,0,.7);g.fill();g.strokeStyle='#E0B77A';g.lineWidth=5;g.stroke();
  const L=[
   ()=>{g.beginPath();g.moveTo(-60,20);g.quadraticCurveTo(0,-40,62,-24);g.quadraticCurveTo(10,10,-60,20);},
@@ -4325,16 +4334,16 @@ function drawMap(){if(scene!=='map')return;const g=mcx;g.setTransform(DPR,0,0,DP
   g.font='16px sans-serif';g.fillStyle='#4C9A2A';g.fillText('★'.repeat(SV.stars[i])+'☆'.repeat(3-SV.stars[i]),x+w/2,y+h-b-8);
   if(open)MHIT.push({x,y,w,h,i})}}
 mcv.addEventListener('pointerdown',e=>{if(scene!=='map')return;for(const h of MHIT){if(e.clientX>h.x&&e.clientX<h.x+h.w&&e.clientY>h.y&&e.clientY<h.y+h.h){actx();rollInit();askTiltOnce();startBoard(h.i);return}}});
-$('btnGo').onclick=()=>{actx();rollInit();askTiltOnce();if(SV.unl>=BD.length){if(!SV.sealed){openSeal();return}startBoard(0);return}startBoard(Math.min(SV.unl,BD.length-1))};
+$('btnGo').onclick=()=>{actx();rollInit();askTiltOnce();if(SV.sealed&&!SV.checked){openBox({toTest:true});return}if(SV.unl>=BD.length){if(!SV.sealed){openSeal();return}startBoard(0);return}startBoard(Math.min(SV.unl,BD.length-1))};
 $('btnBookM').onclick=()=>{try{Z().openBook()}catch(e){}};
-$('btnTestM').onclick=()=>startTest();
+$('btnTestM').onclick=()=>{if(!SV.checked){openBox({toTest:true});return}startTest()};
 $('btnSealM').onclick=()=>openBox();
 let asked=false;function askTiltOnce(){if(asked)return;asked=true;askTilt()}
 
 /* ================= 秘密箱（封印） ================= */
 const SK={marks:[],strokes:[],cur:null};
 function openSeal(){G=null;rollSet(0);SK.marks=[];SK.strokes=[];SK.cur=null;show('scSeal');
- $('sealLead').innerHTML='8枚の盤で立てた旗：<b>表側 '+SV.flags.up+'本・裏側 '+SV.flags.low+'本</b>。<br>本物の葉では、気体の出入り口の すき間は どこに・どんな形で あるだろう？ 観察で 確かめるまで ひみつ。';sealLayout()}
+ $('sealLead').innerHTML='8枚の盤で立てた旗：<b>表側 '+SV.flags.up+'本・裏側 '+SV.flags.low+'本</b>。<br>本物の葉では、気体の出入り口のすき間（<b>気孔</b>）は どこに・どんな形で あるだろう？ しまったら、すぐに ふたを開けて 答え合わせ。';sealLayout()}
 function sealLayout(){if(scene!=='seal')return;['skA','skB'].forEach(id=>{const c=$(id);const r=c.getBoundingClientRect();const q=Math.min(2,window.devicePixelRatio||1);c.width=Math.round(r.width*q);c.height=Math.round(r.height*q)});drawSk()}
 function skGeo(){const c=$('skA');const W=c.width,H=c.height;return {W,H,x0:W*.08,x1:W*.92,yU:H*.3,yL:H*.72}}
 function drawSk(){const c=$('skA'),g=c.getContext('2d');const {W,H,x0,x1,yU,yL}=skGeo();g.clearRect(0,0,W,H);
@@ -4365,27 +4374,68 @@ $('bSeal').onclick=()=>{if($('bSeal').disabled)return;actx();const up=SK.marks.f
  SV.sealed=true;SV.done=true;save();SFX.box();setTimeout(()=>SFX.box(),420);
  const got=zEarn(10,'predict',innerWidth/2,innerHeight/2);
  ovOpen('<h2>秘密箱に しまった</h2><div class="sub">寄木のからくりで ふたが閉じた</div><canvas id="boxC" width="400" height="260" style="width:100%;max-width:360px;display:block;margin:6px auto"></canvas>'+
-  '<p style="text-align:center">あなたの予想：<b>'+esc(wt)+'</b>／形のスケッチ 線 '+SK.strokes.length+'本<br>学校で 葉の表面を けんび鏡で 観察したら、作業台の「秘密箱をひらく」で 答え合わせ。</p>'+
-  '<div class="btns"><button class="wd gr" id="oTest">さいごの確認テストへ</button></div>');
+  '<p style="text-align:center">あなたの予想：<b>'+esc(wt)+'</b>／形のスケッチ 線 '+SK.strokes.length+'本<br>では、ふたを開けて 本物と くらべよう。</p>'+
+  '<div class="btns"><button class="wd gr" id="oTest">ふたを開けて 答え合わせ</button></div>');
  drawBox($('boxC'),0);let t=0;const iv=setInterval(()=>{t+=.05;if(!$('boxC')){clearInterval(iv);return}drawBox($('boxC'),Math.min(1,t));if(t>=1)clearInterval(iv)},30);
- $('oTest').onclick=()=>{ovClose();const z=Z();if(z&&z.mainClear){try{z.mainClear({onClose:startTest})}catch(e){startTest()}}else startTest()}};
+ $('oTest').onclick=()=>{ovClose();openBox({toTest:true})}};
+function goTest(){ovClose();const z=Z();if(z&&z.mainClear){try{z.mainClear({onClose:startTest})}catch(e){startTest()}}else startTest()}
 function drawBox(c,k){const g=c.getContext('2d');const W=c.width,H=c.height;g.clearRect(0,0,W,H);
  g.save();g.translate(W/2,H*.58);g.fillStyle='rgba(0,0,0,.35)';g.beginPath();g.ellipse(0,80,150,18,0,0,TAU);g.fill();
  g.fillStyle='#2B1A0E';g.fillRect(-140,-50,280,120);yosegiBand(g,-138,-48,276,30,false);yosegiBand(g,-138,-12,276,30,false);yosegiBand(g,-138,24,276,30,false);g.strokeStyle='#1E1008';g.lineWidth=3;g.strokeRect(-140,-50,280,120);
  const lx=(1-k)*-120;g.save();g.translate(lx,0);g.fillStyle=pat(g,WT.maple,0,1);g.fillRect(-146,-70,292,26);yosegiBand(g,-140,-68,280,22,false);g.strokeStyle='#1E1008';g.strokeRect(-146,-70,292,26);g.restore();
  if(k>=1){g.font='800 30px "Shippori Mincho",serif';g.textAlign='center';g.fillStyle='#F1DDB0';g.fillText('封',0,-86)}g.restore()}
-function openBox(){const r=readSeal();if(!r){openSeal();return}
+function openBox(opt){opt=opt||{};const r=readSeal();if(!r){openSeal();return}
  const first=!SV.opened;
- ovOpen('<h2>秘密箱を ひらく</h2><div class="sub">葉の表面を けんび鏡で 観察した？（まだなら 下の図で 確かめよう）</div>'+
+ ovOpen('<h2>答え合わせ ①</h2><div class="sub">秘密箱を ひらいた。あなたの予想と 本物を くらべよう（1 / 3）</div>'+
   '<div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center"><div style="text-align:center"><canvas id="myC" width="360" height="360" style="width:150px;height:150px"></canvas><div style="font-size:13px">あなたの予想</div></div>'+
   '<div style="text-align:center"><canvas id="realC" width="360" height="360" style="width:150px;height:150px"></canvas><div style="font-size:13px">本物（葉の裏の表面の例）</div></div></div>'+
-  '<p>気体の出入り口は、<b>三日月の形をした2つの細胞に はさまれた すき間</b>。これを <b>気孔</b>という。多くの植物では <b>葉の裏側に多い</b>（水に浮くスイレンの葉は 表側）。</p>'+
-  '<p style="text-align:center">あなたの予想：'+esc(r.slots&&r.slots.where?r.slots.where.t:'')+'</p><div class="btns"><button class="wd gr" id="oC">とじる</button></div>');
+  '<p>気体の出入り口は、<b>三日月の形をした2つの細胞に はさまれた すき間</b>。これが <b>気孔</b>。</p>'+
+  '<p style="text-align:center">あなたの予想：'+esc(r.slots&&r.slots.where?String(r.slots.where.t).replace(/^すき間の場所の予想：/,''):'')+'</p>'+
+  '<p>・多くの植物では、気孔は <b>葉の裏側に多い</b>（盤でも 裏の面に すき間が多かった）。<br>・水に浮く スイレンの葉は、空気にふれる <b>表側</b>に気孔がある。<br>・気孔を通るのは <b>二酸化炭素（入る）・酸素（出る）・水蒸気（出る）</b>。<br>・ほかの表面（表皮）は 細胞がすき間なく並び、通れない。気孔が無ければ 気体は 出入りできない。<br>・断面の見分け方：緑の細胞が すき間なく並ぶ側が <b>表</b>、すき間の多い細胞の側（気孔が多い）が <b>裏</b>。</p>'+
+  '<div class="btns"><button class="wd gr" id="oC">つぎへ（どうやって 確かめる？）</button></div>');
  const my=$('myC').getContext('2d');my.fillStyle='#FDFBF2';my.beginPath();my.arc(180,180,176,0,TAU);my.fill();my.lineWidth=8;my.strokeStyle='#2B1A0E';my.stroke();my.lineCap='round';my.strokeStyle='#1F4A10';my.lineWidth=5;
  ((r.sketch&&r.sketch.shape)||[]).forEach(s=>{my.beginPath();s.forEach((p,i)=>{const x=180+p[0]/500*176,y=180+p[1]/500*176;i?my.lineTo(x,y):my.moveTo(x,y)});my.stroke()});
  drawReal($('realC'));SFX.box();
  if(first){SV.opened=true;save();if(r.slots&&r.slots.where&&r.slots.where.id==='lower'){setTimeout(()=>{zEarn(15,'hit',innerWidth/2,innerHeight/2);SFX.clear()},500)}}
- $('oC').onclick=()=>{ovClose();openMap()}}
+ $('oC').onclick=()=>tryCard(TRY[0],()=>revealMicro(opt))}
+function revealMicro(opt){SFX.click();
+ const st=(n,t)=>'<div style="display:flex;gap:10px;align-items:center;margin:6px 0"><b style="flex:none;width:30px;height:30px;border-radius:50%;background:#3A2414;color:#F1DDB0;display:flex;align-items:center;justify-content:center">'+n+'</b><span>'+t+'</span></div>';
+ ovOpen('<h2>答え合わせ ②</h2><div class="sub">確かめ方その1：けんび鏡で 気孔を見る（2 / 3）</div>'+
+  '<svg viewBox="0 0 400 120" style="width:100%;display:block;margin:4px 0"><rect x="10" y="30" width="110" height="60" rx="30" fill="#6FA84A" stroke="#2B1A0E" stroke-width="3"/><path d="M60 60 q30 -40 70 -30" fill="none" stroke="#F1DDB0" stroke-width="8" stroke-linecap="round"/><text x="65" y="112" text-anchor="middle" font-size="14" fill="#2B1A0E">裏の表皮をはがす</text>'+
+  '<rect x="160" y="50" width="110" height="26" fill="#E7F2F5" stroke="#2B1A0E" stroke-width="3"/><rect x="195" y="40" width="40" height="12" fill="#CFE7EE" stroke="#2B1A0E" stroke-width="2"/><text x="215" y="112" text-anchor="middle" font-size="14" fill="#2B1A0E">プレパラート</text>'+
+  '<circle cx="345" cy="60" r="42" fill="#EEF3E2" stroke="#2B1A0E" stroke-width="4"/><ellipse cx="337" cy="60" rx="8" ry="20" fill="#8DBA5A" stroke="#35661C" stroke-width="2"/><ellipse cx="353" cy="60" rx="8" ry="20" fill="#8DBA5A" stroke="#35661C" stroke-width="2"/><ellipse cx="345" cy="60" rx="3" ry="13" fill="#2B1A0E"/><text x="345" y="118" text-anchor="middle" font-size="14" fill="#2B1A0E">見えた気孔</text></svg>'+
+  '<p>気孔は とても小さく、葉を丸ごとのせても 厚くて見えない。葉の <b>表皮</b>（表面の うすい皮）だけを使う。</p>'+
+  st(1,'葉の <b>裏の表皮</b>を うすくはがす（写し取ってもよい）')+st(2,'スライドガラスにのせ、<b>水を1てき</b>落とす')+st(3,'<b>カバーガラス</b>をかける（これで プレパラートの完成）')+st(4,'はじめは <b>低い倍率</b>で見て、それから 倍率を上げる')+
+  '<div class="btns"><button class="wd gr" id="oC">つぎへ</button></div>');
+ $('oC').onclick=()=>tryCard(TRY[1],()=>revealVapor(opt))}
+function revealVapor(opt){SFX.click();
+ ovOpen('<h2>答え合わせ ③</h2><div class="sub">確かめ方その2：出ていく水蒸気で くらべる（3 / 3）</div>'+
+  '<p>気孔からは <b>水蒸気</b>が出ていく。だから「水蒸気がたくさん出る側 ＝ 気孔が多い側」と分かる。</p>'+
+  '<svg viewBox="0 0 400 110" style="width:100%;display:block;margin:4px 0"><line x1="40" y1="55" x2="360" y2="55" stroke="#35661C" stroke-width="10" stroke-linecap="round"/><path d="M120 50 v-38 h160 v38" fill="#E7F2F5" fill-opacity=".5" stroke="#2B1A0E" stroke-width="3"/><path d="M120 60 v38 h160 v-38" fill="#CFE7EE" stroke="#2B1A0E" stroke-width="3"/>'+
+  '<circle cx="150" cy="88" r="4" fill="#5B8FA8"/><circle cx="185" cy="80" r="3" fill="#5B8FA8"/><circle cx="220" cy="90" r="4" fill="#5B8FA8"/><circle cx="255" cy="82" r="3" fill="#5B8FA8"/><text x="300" y="30" font-size="14" fill="#2B1A0E">表側：くもらない</text><text x="300" y="98" font-size="14" fill="#2B1A0E">裏側：くもる</text></svg>'+
+  '<p>・<b>透明な容器ではさむ</b>：しばらくすると <b>裏側の容器だけ</b> 内側がくもる（水てきがつく）。</p>'+
+  '<p>・<b>ワセリン</b>（べたべたした油）を ぬると、ぬった所の気孔が <b>ふさがり</b>、気体が出入りできなくなる。<br>　例：何もぬらない枝 6.0 mL ／表にぬる 5.2 mL ／裏にぬる 1.6 mL（水の減った量）。<b>裏をふさぐと ぐっと減らなくなった</b> → 水蒸気は おもに裏から出る。</p>'+
+  '<p>・<b>塩化コバルト紙</b>：青い紙で、水にふれると <b>赤（桃色）</b>に変わる。葉の表と裏に同時にはると、<b>裏の紙が先に</b>変わる。</p>'+
+  '<p style="text-align:center">どの実験も 答えは同じ：<b>気孔は 葉の裏側に多い</b></p>'+
+  '<div class="btns"><button class="wd gr" id="oC">つぎへ（やってみよう）</button></div>');
+ $('oC').onclick=()=>tryCard(TRY[2],()=>{if(opt.toTest)goTest();else{ovClose();openMap()}},opt.toTest?'さいごの確認テストへ':'作業台へ もどる',()=>{SV.checked=true;save()})}
+/* やってみよう（答え合わせのあとに1問ずつ。テストとは別の場面。選択肢は出すたびにまぜる） */
+const TRY=[
+ {sub:'答え合わせ ① のおさらい',q:'ある葉の断面を見たら、<b>上側</b>は すき間の多い細胞で 気孔もあった。<b>下側</b>は 緑の細胞が すき間なく並んでいた。この葉の <b>裏側</b>は どっち？',ok:'上側（すき間が多く、気孔がある側）',ng:['下側（緑の細胞がすき間なく並ぶ側）','これだけでは 決められない'],
+  why:'すき間が多く 気孔がある側が <b>裏</b>。この断面は 葉を上下さかさに置いて見ていた。',whyNg:'緑の細胞が すき間なく並ぶ側は <b>表</b>。気孔がある側は どっちだった？'},
+ {sub:'答え合わせ ② のおさらい',q:'プレパラートができた。けんび鏡で 気孔をさがすとき、<b>はじめ</b>は どの倍率で見る？',ok:'低い倍率',ng:['高い倍率','いちばん高い倍率から 下げていく'],
+  why:'低い倍率は 見える範囲が広く、見たい所を さがしやすい。見つけてから 倍率を上げる。',whyNg:'高い倍率は 見える範囲がせまく、さがしにくい。'},
+ {sub:'答え合わせ ③ のおさらい',q:'ある植物の葉の表と裏に、青い塩化コバルト紙を 同時にはった。すると <b>表の紙が先に</b> 赤（桃色）に変わった。この葉の気孔は？',ok:'表側に多い',ng:['裏側に多い','気孔は どこにもない'],
+  why:'紙が先に変わった側から 水蒸気が多く出た ＝ 気孔が多い。スイレンのように 表に多い葉もある。',whyNg:'先に変わったのは どちらの紙？ 水蒸気が多く出る側が 気孔の多い側。'}];
+function tryCard(o,next,btn,onOk){try{SFX.click()}catch(e){}
+ const op=[{t:o.ok,ok:1}].concat(o.ng.map(t=>({t,ok:0})));for(let i=op.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));const x=op[i];op[i]=op[j];op[j]=x}
+ ovOpen('<h2>やってみよう</h2><div class="sub">'+o.sub+'</div><p>'+o.q+'</p><div class="tryCh">'+op.map((c,k)=>'<button class="wd tryB" data-k="'+k+'">'+esc(c.t)+'</button>').join('')+'</div>'+
+  '<p class="tryFb" aria-live="polite"></p><div class="btns"><button class="wd gr" id="oC" disabled>'+(btn||'つぎへ')+'</button></div>');
+ const body=$('ovBody'),fb=body.querySelector('.tryFb');
+ body.querySelectorAll('.tryB').forEach(b=>b.onclick=()=>{const c=op[+b.dataset.k];
+  if(c.ok){try{SFX.ok()}catch(e){}b.classList.add('ok');body.querySelectorAll('.tryB').forEach(x=>x.disabled=true);fb.innerHTML='<b class="o">○ そのとおり！</b> '+o.why;$('oC').disabled=false;if(onOk)onOk()}
+  else{try{SFX.ng()}catch(e){}b.classList.add('ng');b.disabled=true;fb.innerHTML='<b class="x">× ちがう。</b> '+o.whyNg+' もう一度 えらぼう。'}});
+ $('oC').onclick=()=>{if($('oC').disabled)return;next()}}
 function drawReal(c){const g=c.getContext('2d');const W=c.width;g.save();g.beginPath();g.arc(W/2,W/2,W/2-4,0,TAU);g.clip();g.fillStyle='#EEF3E2';g.fillRect(0,0,W,W);
  const r=mul(4);g.strokeStyle='#7C8E6A';g.lineWidth=2.4;
  for(let i=0;i<18;i++){const x=r()*W,y=r()*W;g.beginPath();for(let a=0;a<=TAU+.01;a+=TAU/14){const rr=48+Math.sin(a*5+i)*10;const px=x+Math.cos(a)*rr*1.2,py=y+Math.sin(a)*rr;a?g.lineTo(px,py):g.moveTo(px,py)}g.stroke()}
@@ -4426,9 +4476,9 @@ let arm=false;
 $('btnStart').onclick=()=>{actx();rollInit();askTiltOnce();SV.name=$('nameIn').value.trim();const has=hasSave()&&(SV.unl>0||SV.sealed);
  if(has&&!arm){arm=true;$('btnStart').textContent='本当に はじめから？（記録が消える）';setTimeout(()=>{arm=false;initTitle()},3500);return}
  if(arm){const nm=SV.name,mu=SV.mute,tl=SV.tilt;SV=fresh();SV.name=nm;SV.mute=mu;SV.tilt=tl}arm=false;save();
- if(!window.Guide){startBoard(0);return}if(busy)return;busy=true;Guide.intro(INTRO).then(()=>{busy=false;Guide.tutorial(PRACTICE)})};
+ if(!window.Guide){startBoard(0);return}if(busy)return;busy=true;Guide.intro(INTRO).then(()=>{busy=false;SV.introRead=true;save();Guide.tutorial(PRACTICE)})};
 let busy=false,PDONE=false;
-const INTRO={title:'第6回 気孔ラビリンス',learn:'葉の表面は 細胞がすき間なく並ぶ。気体が出入りできるのは **表面のすき間** だけ',
+const INTRO={title:'第6回 気孔ラビリンス',learn:'葉の表面（表皮）は 細胞がすき間なく並ぶ。気体が出入りできるのは **表面のすき間** だけ。このすき間を **気孔** という。\n出入りする気体は 3つ：**二酸化炭素**（入る）・**酸素**（出る）・**水蒸気**（出る）',
  how:'画面を **押したまま ドラッグ** して盤を傾け、気体のつぶを転がす',gesture:'drag'};
 function ballPt(){const b=G&&G.balls[0];const p=b?bScr(b.x,b.y):(G?bScr(G.B.pracX,G.B.pal1+R+8):{x:innerWidth/2,y:innerHeight/2});return {x:p.x,y:p.y,r:Math.max(30,R*SC*1.9)}}
 function colArea(){if(!G)return {x:innerWidth/2,y:innerHeight/2,w:120,h:200};const B=G.B,a=bScr(B.pracX,B.target.y),c=bScr(B.pracX,B.H);return {x:a.x,y:(a.y+c.y)/2,w:Math.max(110,(B.target.w+60)*SC),h:c.y-a.y+20}}
@@ -4436,7 +4486,7 @@ const PSTEPS=[
  {gesture:'drag',target:ballPt,to:()=>{const p=ballPt();return {x:p.x,y:p.y-Math.min(150,innerHeight*.18)}},area:colArea,until:()=>!!(G&&G.B.sto[0]&&G.B.sto[0].found),praise:false,place:'above',
   text:'二酸化炭素のつぶを 葉の中へ。画面を **押したまま 上へ** ドラッグすると 盤が傾く'},
  {gesture:'drag',target:ballPt,to:()=>{const p=ballPt();return {x:p.x,y:p.y-Math.min(150,innerHeight*.18)}},area:colArea,until:()=>!!(G&&G.done>=1),praise:false,place:'above',
-  text:'霧の中の **すき間** を通った！ そのまま上へ、光っている **緑の細胞** まで'},
+  text:'霧の中の **すき間（気孔）** を通った！ そのまま上へ、光っている **緑の細胞** まで'},
  {gesture:'drag',target:ballPt,to:()=>{const p=ballPt();return {x:p.x,y:p.y+Math.min(150,innerHeight*.18)}},area:colArea,until:()=>!!(G&&G.done>=2),praise:false,place:'above',
   text:'こんどは 葉の中でできた **酸素** を 外の空気へ。**下へ** ドラッグ'}];
 const PRACTICE={label:'れんしゅう中',bandAt:'bottom',steps:PSTEPS,clearText:'れんしゅうクリア！',start:()=>{actx();rollInit();startPractice()},
@@ -4453,7 +4503,7 @@ $('bBack').onclick=()=>{actx();SFX.click();const tm=window.GAME_MODE==='test';
  if(scene==='title'||(tm&&scene==='test')){if(INHUB){try{window.parent.postMessage({type:'rika-close-game'},'*')}catch(e){}}return}
  if(scene==='play'&&G&&G.def.prac){PT.id=null;rollSet(0);if(window.Guide)Guide.tutorialEnd();G=null;show('scTitle');initTitle();return}
  bkFrom=scene;if(scene==='play'&&G){G.paused=true;PT.id=null;rollSet(0)}
- $('bkSub').textContent=scene==='play'?'進み具合は保存されます（この盤は 次は はじめから）。作業台へ もどります。':scene==='seal'?'描いた予想は まだ しまっていません。作業台へ もどります。':scene==='test'?'確認テストは 次は さいしょから。進み具合は保存されています。':'進み具合は保存されます。タイトルへ もどります。';
+ $('bkSub').textContent=scene==='play'?'進み具合は保存されます（この盤は 次は はじめから）。作業台へ もどります。':scene==='seal'?(SV.sealed?'予想は 秘密箱に しまってあります。作業台の「秘密箱をひらく（答え合わせ）」から 答え合わせを見てから、確認テストへ。':'描いた予想は まだ しまっていません。作業台へ もどります。'):scene==='test'?'確認テストは 次は さいしょから。進み具合は保存されています。':'進み具合は保存されます。タイトルへ もどります。';
  $('bkOv').hidden=false};
 $('bkNo').onclick=()=>{$('bkOv').hidden=true;if(bkFrom==='play'&&G&&$('ov').hidden)G.paused=false};
 $('bkGo').onclick=()=>{$('bkOv').hidden=true;ovClose();if(bkFrom==='map'){show('scTitle');initTitle()}else{G=null;T=null;openMap()}};
@@ -4511,9 +4561,6 @@ if(window.Guide){
 let AUTO=null;
 window.GAME_ID=GAME_ID;
 try{window.Zukan&&Zukan.setup({game:GAME_ID,koma:[KOMA]})}catch(e){}
-window.__sm={get G(){return G},startPractice,bScr,get SC(){return SC},get SV(){return SV},startBoard,openMap,openSeal,openBox,startTest,
- autoTilt(on){AUTO=on?autoPilot:null},
- sim(sec){let n=0;const f=AUTO;AUTO=autoPilot;while(n<sec*60&&G&&!G.over){update(1/60);n++}AUTO=f;return {t:+(n/60).toFixed(1),over:G&&G.over,done:G&&G.done,hits:G&&G.hits,found:G&&G.B.sto.filter(s=>s.found).length,left:G&&(G.balls.length+G.queue.length)}}};
 // 自動の傾き（画面確認用）：目標に向かう簡単な道さがし
 function autoPilot(){if(!G||!G.balls.length)return {x:0,y:0};const b=G.balls[0],B=G.B;let tx,ty;
  const topE=Math.min(epiY(B,'up'),epiY(B,'low')),botE=Math.max(epiY(B,'up'),epiY(B,'low'));

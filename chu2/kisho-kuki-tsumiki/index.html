@@ -3848,7 +3848,7 @@ const SAMP={
 };
 
 /* ===== セーブ ===== */
-function fresh(){return {v:1,name:'',started:false,stars:{},samp:[],paid:{},mc:false,sound:true,t:0,hits:0,tries:0,maxRows:0,maxP:0}}
+function fresh(){return {v:1,name:'',started:false,stars:{},samp:[],paid:{},seen:{},mc:false,sound:true,t:0,hits:0,tries:0,maxRows:0,maxP:0}}
 let S=fresh();
 try{const s=JSON.parse(localStorage.getItem(SKEY)||'null');if(s&&s.v===1)S=Object.assign(fresh(),s)}catch(e){}
 function save(){try{localStorage.setItem(SKEY,JSON.stringify(S))}catch(e){}}
@@ -3921,10 +3921,47 @@ function startRound(i,sto){const st=shufPulls(sto||RND[i]);if(window.BGM)BGM.moo
  for(let r=0;r<st.rows;r++)R.rows.push([mkBox(25),mkBox(25),mkBox(25)]);
  R.maxRows=st.rows+Math.ceil(st.tasks.filter(t=>t.t!=='baro'&&t.t!=='cup').length/3)+1;
  parts.length=0;pops.length=0;MODE='play';show([]);geo();if(st.tut)startTask();else openBrief()}
-function openBrief(){const st=R.st,n=R.i+1;
+function openBrief(){teach(R.i,openBrief0)}
+function openBrief0(){const st=R.st,n=R.i+1;
  const list=st.tasks.map(t=>'<li>'+taskText(t)+'</li>').join('');
  ovOpen('<div class="kk">TOWER No.'+n+(st.boss?'　ボス':'')+'</div><h2>'+st.nm+'</h2><p>'+st.brief+'</p><p class="small">作業メモ：</p><ul>'+list+'</ul>'+(st.intro?'':'<p class="note">弱すぎ・強すぎ・針や はかりの まちがいは、どれも塔が1回ゆれる。<b>3回で くずれる</b>。</p>')+'<div class="btns"><button class="cut t" id="oGo">塔にとりかかる</button></div>');
  $('oGo').onclick=()=>{ac();sfx.paper();ovClose();startTask()}}
+
+/* ===== まなぶ札（2026-10-06 夜間改修・初心者向け）: 塔の注文メモの前に、まだ読んでいない札を先に出す（地図・つづきから入っても） ===== */
+const LESSON=[
+ {k:'hpa',at:0,no:'1',h:'大気圧と hPa（ヘクトパスカル）',
+  body:'<p>前の回で、<b>1 m² あたりにかかる力</b>を<b>圧力</b>といい、単位は <b>Pa（パスカル）</b>だった（1 m² あたり 1 N の力で 1 Pa）。</p>'+
+  '<p>空気にも重さがある。地球をつつむ空気の重さで、地面や物がおされる圧力を<b>大気圧（気圧）</b>という。</p>'+
+  '<p>大気圧は大きな数になるので、<b>hPa（ヘクトパスカル）</b>で表す。<span class="lbl">1 hPa ＝ 100 Pa</span><br>海面近くの大気圧（1気圧）は約 <b>1013 hPa</b> ＝ 101300 Pa。</p>'+
+  '<p class="note"><b>このゲームのきまり：</b>空気の箱1個は、下を <b>25 hPa</b> おす。ある段が受ける押しは、<b>その段より上にある箱の合計</b>。<br>やって見せる：上に箱が3個 → 25＋25＋25 ＝ <b>75 hPa</b>。</p>',
+  quiz:{q:'上に箱が5個のっている段は、何 hPa でおされている？',opts:[['125 hPa',1],['25 hPa',0],['5 hPa',0]],ok:'正解！ 25 × 5 ＝ 125 hPa。',ng:'箱1個が 25 hPa。上にある5個ぶんを全部たそう。'}},
+ {k:'bag',at:5,no:'2',h:'高い所ほど気圧は小さい',
+  body:'<p>高い所ほど、その上にある空気が少ない。だから<b>大気圧は小さい</b>。</p>'+
+  '<p class="note">高さと気圧のめやす：海面 約1013 hPa ／ 1000 m 約900 hPa ／ 富士山頂（3776 m）約630〜650 hPa ／ <b>約5.5 km で地上の約半分（約500 hPa）</b> ／ 10 km（飛行機）約260 hPa</p>'+
+  '<p>袋の中の空気も、<b>中から外へおし返している</b>。地上でとじたおかしの袋を山の上に持っていくと、外の大気圧が小さくなり、中からおす力がまさって<b>ぱんぱんにふくらむ</b>。</p>',
+  quiz:{q:'山の上で口をとじた空のペットボトルを、ふもとまで持って下りた。ボトルはどうなる？',opts:[['へこむ',1],['ふくらむ',0],['変わらない',0]],ok:'正解！ ふもとは上にある空気が多く、気圧が大きい。外からおす力が、中からおし返す力よりまさって へこむ。',ng:'ふもとは山の上より気圧が大きい？小さい？ 外からおす力と、中からおし返す力をくらべよう。'}},
+ {k:'can',at:6,no:'3',h:'空気 1 L の重さをはかる実験',
+  body:'<p>出した空気の体積は、<b>水を満たしたメスシリンダーを水そうにさかさに立て</b>、その中に空気を集めると目盛りで読める（水と空気が入れかわる）。</p>'+
+  '<p class="note">手順：① 空気をつめたスプレー缶の質量をはかる → ② 水の中のメスシリンダーに空気を 1 L 移す → ③ もう一度、缶の質量をはかる → ④ はじめとあとの質量の差を求める（それが 1 L の空気の質量）</p>'+
+  '<p>空気 1 L は約 1.2 g。出した（つめた）体積 × 1.2 g ＝ 軽く（重く）なった質量。例：2 L → 1.2 × 2 ＝ 2.4 g。</p>',
+  quiz:{q:'スプレー缶から空気を 4 L 出した。缶はおよそ何 g 軽くなる？（空気 1 L ＝ 1.2 g）',opts:[['4.8 g',1],['1.2 g',0],['5.2 g',0]],ok:'正解！ 1.2 × 4 ＝ 4.8 g。出した空気の重さだけ軽くなる。',ng:'空気 1 L が 1.2 g。4 L ぶんなら 1.2 を4倍しよう。'}},
+ {k:'allway',at:7,no:'4',h:'大気圧は、あらゆる向きからおす',
+  body:'<p>大気圧は上からだけでなく、<b>横からも下からも、あらゆる向きから</b>物をおしている。</p>'+
+  '<p class="note">・少しの水を入れて熱した空き缶の口を水につけると、中の水蒸気が水にもどって中の気体がへり、まわりの大気圧に<b>ぐしゃっとつぶされる</b>。<br>・水を満たしたコップに厚紙でふたをしてさかさにしても、<b>下から大気圧がおす</b>ので水が落ちない。</p>'+
+  '<p>大気圧の大きさは <b>力 ＝ 圧力 × 面積</b> で力にできる。やって見せる：1000 hPa ＝ 100000 Pa。0.5 m² の面なら 100000 × 0.5 ＝ <b>50000 N</b>。</p>',
+  quiz:{q:'1000 hPa の大気が、0.2 m² の板をおす力はおよそ何 N？',opts:[['20000 N',1],['200 N',0],['5000 N',0]],ok:'正解！ 1000 hPa ＝ 100000 Pa。100000 × 0.2 ＝ 20000 N。',ng:'まず hPa を Pa に（×100）。それに面積 0.2 をかけよう。'}}];
+function shuf(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function teach(i,then){const q=LESSON.filter(l=>l.at<=i&&!(S.seen&&S.seen[l.k]));let j=0;
+ const nx=()=>{if(j>=q.length){then();return}const l=q[j++];
+  const mark=()=>{S.seen=S.seen||{};S.seen[l.k]=1;save();ovClose();nx()};
+  /* 札は2枚：読む札 → やってみよう（答えを押しても札は作り直さず、返しの欄だけ書き換える） */
+  ovOpen('<div class="kk">まなぶ '+l.no+'</div><h2>'+l.h+'</h2>'+l.body+'<div class="btns"><button class="cut t" id="lGo">'+(l.quiz?'やってみよう ▶':'わかった')+'</button></div>');
+  $('lGo').onclick=()=>{ac();sfx.paper();if(!l.quiz){mark();return}
+   const ops=shuf(l.quiz.opts);
+   ovOpen('<div class="kk">まなぶ '+l.no+'　やってみよう</div><p><b>'+l.quiz.q+'</b></p><div id="lq" style="display:flex;flex-direction:column;gap:10px">'+ops.map((o,k)=>'<button class="cut y" data-k="'+k+'">'+o[0]+'</button>').join('')+'</div><p id="lqr" style="font-weight:700;min-height:1.5em" aria-live="polite"></p><div class="btns"><button class="cut t" id="lGo2" disabled>わかった</button></div>');
+   $('lGo2').onclick=()=>{if($('lGo2').disabled)return;ac();sfx.paper();mark()};
+   document.querySelectorAll('#lq .cut').forEach(b=>b.onclick=()=>{ac();const ok=ops[+b.dataset.k][1];$('lqr').innerHTML=ok?l.quiz.ok:'<span style="color:var(--terra)">'+l.quiz.ng+'</span>';sfx.paper();if(ok){$('lGo2').disabled=false;document.querySelectorAll('#lq .cut').forEach(x=>x.disabled=true)}else b.disabled=true})}};
+ nx()}
 function taskText(t){if(t.t==='cup')return '紙コップの台に、空気の箱をのせる';if(t.t==='pull')return '下から <b>'+t.r+'段目</b> の箱を抜いて、てっぺんへ';if(t.t==='make')return '缶に空気をつめて <b>'+t.g+' g</b> 重くする → 箱に';
  if(t.t==='out')return t.L?'缶から空気を <b>'+t.L+' L</b> 出して、何 g 軽くなるか見る':'缶から空気を出して <b>'+t.g+' g</b> 軽くする → 箱に';if(t.t==='baro')return (t.r?'山頂（'+t.r+'段目の上）':'ふもと（地面）')+'の気圧計の針を予想で合わせる';return ''}
 function startTask(){startTask0();if(R&&R.st&&R.st.tut)R.msg=null} // れんしゅうは指の手ほどきで（文字の案内は出さない）
@@ -4247,7 +4284,7 @@ $('bTest').onclick=()=>{ac();startTest()};
 /* ===== 確認テスト ===== */
 let TS=null;function playerName(){return window.PLAYER_NAME||S.name||''}
 function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
-function startTest(){if(!window.Quiz)return;MODE='test';R=null;TS={qs:Quiz.test(),i:0,ans:[]};show(['test']);renderQ()}
+function startTest(){if(!window.Quiz)return;if(!TEST_ONLY&&LESSON.some(l=>!(S.seen&&S.seen[l.k]))){MODE='brief';R=null;show([]);teach(99,()=>{ovClose();startTest()});return}MODE='test';R=null;TS={qs:Quiz.test(),i:0,ans:[]};show(['test']);renderQ()}
 function renderQ(){const q=TS.qs[TS.i],box=$('tbox');
  box.innerHTML='<div class="tno">確認テスト　No.'+(TS.i+1)+' / '+TS.qs.length+'</div><div class="prog">'+TS.qs.map((_,i)=>'<i class="'+(i<TS.i?'on':'')+'"></i>').join('')+'</div><div class="tq">'+q.q+'</div>'+(q.fig?'<div class="fig2">'+q.fig+'</div>':'')+'<div id="ta"></div>';
  const ta=$('ta');
@@ -4317,21 +4354,19 @@ if(GD){
   onExit:res=>{if(R&&R.st&&R.st.tut)startRound(PR_NEXT||0)}};
  HELP=GD.help({title:'空気の箱ジェンガ',
   rules:['箱を **長おし** すると引く力がたまる。**上にある箱の重さの合計** になったら **離す**',
+   '**hPa（ヘクトパスカル）** は圧力の単位。1 hPa ＝ 100 Pa。地上の大気圧は約 1013 hPa',
    '箱1個 ＝ **25 hPa**（2 L つめた箱は 50 hPa）。弱すぎ・強すぎ・針や はかりのまちがいで塔がゆれ、3回でくずれる',
    '**空気入れ** をタップで 0.5 L つめて **はかる**。空気 1 L ≒ **1.2 g**',
    '缶の口を **長おし** で空気を出し、ちょうどの量で **離す**',
    '地面の押し（**大気圧**）＝ 上にある空気ぜんぶの重さ。高い所ほど小さい'],
   onOpen:()=>{HPAUSE=true},onClose:()=>{HPAUSE=false},
   replay:'tutorial',offset:LY.land?{x:112}:{x:0,y:58},show:false,attention:true});
- GD.tutorialButton('#bHow',()=>{ac();sfx.paper();if(!S.started){S.name=$('nameIn').value.trim()||S.name;S.started=true;save()}GD.tutorial(PRACTICE)});
+ GD.tutorialButton('#bHow',()=>{ac();sfx.paper();if(!S.started){S.name=$('nameIn').value.trim()||S.name;S.started=true;save()}show([]);teach(0,()=>GD.tutorial(PRACTICE))});
 }else{$('bHow').classList.add('hidden')}
 function startWithGuide(){
  GD.intro({title:'第4回　空気の箱ジェンガ',
   learn:'空気にも **重さ** がある（1 L ≒ 1.2 g）。**大気圧** は上に積もった **空気の重さ**',
-  how:'箱を **長おし** して、上にある空気の重さぶんの力で **離して** 抜く',gesture:'hold'}).then(()=>GD.tutorial(PRACTICE))}
-window.__game={LY:()=>LY,boxC,hitC,S:()=>S,R:()=>R,RND,startRound,toMap,startTest,mode:()=>MODE,step:dt=>update(dt),load:r=>loadAbove(r),ground,
- hold(kind,info,v){beginHold(kind,info);R.hold.v=v;R.hold.acc=v/TICK*TICK_T+.001;R.hold.n=Math.floor(R.hold.acc/TICK_T);releaseHold()},
- pump,measure,valve(L){R.scale.flow=true;R.scale.cyl=L;valveEnd()},cup:cupDrop,ov:()=>!$('ov').classList.contains('hidden'),closeOv:()=>{const b=document.querySelector('#ovBox .cut');if(b)b.click()},geo:()=>R&&R.geo};
+  how:'箱を **長おし** して、上にある空気の重さぶんの力で **離して** 抜く',gesture:'hold'}).then(()=>{show([]);teach(0,()=>GD.tutorial(PRACTICE))})}
 if(TEST_ONLY)startTest();else toTitle();
 requestAnimationFrame(loop);
 </script>

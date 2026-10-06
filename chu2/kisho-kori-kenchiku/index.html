@@ -3873,7 +3873,7 @@ const TOOLS={
 };
 
 /* ===== セーブ ===== */
-function fresh(){return {v:1,name:'',started:false,stars:{},tools:[],paid:{},mc:false,sound:true,t:0,floors:0,clean:0,perfect:0,holes:0}}
+function fresh(){return {v:1,name:'',started:false,stars:{},tools:[],paid:{},seen:{},mc:false,sound:true,t:0,floors:0,clean:0,perfect:0,holes:0}}
 let S=fresh();
 try{const s=JSON.parse(localStorage.getItem(SKEY)||'null');if(s&&s.v===1)S=Object.assign(fresh(),s)}catch(e){}
 function save(){try{localStorage.setItem(SKEY,JSON.stringify(S))}catch(e){}}
@@ -3958,8 +3958,43 @@ function startStage(i,tut){const st=stageCopy(i);if(window.BGM)BGM.mood(st.boss&
 function mkCracks(){const cs=[];for(let k=0;k<9;k++){const side=k%3-1;let x=(side*.45+(Math.random()-.5)*.3),y=0;const pts=[[x,y]];const ang=Math.PI/2+side*.9+(Math.random()-.5)*.8;for(let j=0;j<7;j++){const a=ang+(Math.random()-.5)*1.1;x+=Math.cos(a)*.22;y+=Math.abs(Math.sin(a))*.16+.03;pts.push([x,y])}cs.push(pts)}return cs}
 function curBlock(){const st=G.st;if(st.mode==='pierce'){const h=st.holes[G.hole];return h?blk(h):null}return G.q<st.blocks.length?blk(st.blocks[G.q]):null}
 
+
+/* ===== まなぶ札（2026-10-06 夜間改修・初心者向け）: 課題の注文書の前に、まだ読んでいない札を先に出す（地図・つづきから入っても） ===== */
+const LESSON=[
+ {k:'pa',at:0,no:'1',h:'力（N）と 圧力（Pa）',
+  body:'<p><b>力</b>の大きさは <b>N（ニュートン）</b> ではかる。地球が物を引く力（<b>重力</b>）は、<b>1 kg の物で約 10 N</b>（100 g で 1 N）。だから 1階 100 kg ＝ 1000 N。</p>'+
+  '<p>氷が割れるかどうかは、力の大きさだけでなく、<b>1 m² あたりにどれだけの力がかかるか</b>で決まる。これを<b>圧力</b>という。</p>'+
+  '<p><span class="eq">圧力（Pa）＝ 力（N）÷ 面積（m²）</span></p>'+
+  '<p>単位は <b>Pa（パスカル）</b>。<b>1 m² あたり 1 N</b> の力がはたらくときが 1 Pa。</p>'+
+  '<p class="note"><b>やって見せる：</b>1000 N を 1 m² の板で受ける → 1000 ÷ 1 ＝ <b>1000 Pa</b>。<br>同じ 1000 N を 2 m² で受ける → 1000 ÷ 2 ＝ <b>500 Pa</b>（面積2倍で圧力は半分）。</p>'+
+  '<p class="small">きまり：力2倍→圧力2倍。面積2倍→圧力半分。力2倍・面積4倍→圧力半分。<br>置く面を変えても重力（力）は同じ。変わるのは面積と圧力。物の高さは圧力に関係ない。<br>大きな圧力は <b>hPa（ヘクトパスカル）</b>でも表す。<b>1 hPa ＝ 100 Pa</b>（天気予報の気圧で使う）。</p>',
+  quiz:{q:'1800 N を 3 m² の板で受けると、圧力は何 Pa？',opts:[['600 Pa',1],['5400 Pa',0],['1800 Pa',0]],ok:'正解！ 1800 ÷ 3 ＝ 600 Pa。',ng:'圧力＝力÷面積。1800 を 3 でわろう。'}},
+ {k:'unit',at:3,no:'2',h:'kg と cm を、N と m² に直す',
+  body:'<p>圧力の式に入れる前に、単位をそろえる。</p>'+
+  '<p><span class="eq">kg → N：×10（100 g → 1 N）</span>　<span class="eq">cm² → m²：÷10000</span></p>'+
+  '<p class="note"><b>やって見せる：</b>4 kg の箱を、20 cm × 20 cm の面で置く。<br>① 力：4 kg → 40 N<br>② 面積：20×20 ＝ 400 cm² → 400 ÷ 10000 ＝ 0.04 m²<br>③ 圧力：40 ÷ 0.04 ＝ 4000 ÷ 4 ＝ <b>1000 Pa</b>（わる数とわられる数に100をかけると楽）</p>'+
+  '<p class="small">50 cm × 50 cm ＝ 2500 cm² ＝ 0.25 m²。人が両足で立つときは、面積は片足の2倍。</p>',
+  quiz:{q:'40 cm × 50 cm は何 m²？',opts:[['0.2 m²',1],['2000 m²',0],['20 m²',0]],ok:'正解！ 2000 cm² ÷ 10000 ＝ 0.2 m²。',ng:'まず cm² にする（40×50＝2000）。それを 10000 でわる。'}},
+ {k:'limit',at:4,no:'3',h:'のせられる力・必要な面積',
+  body:'<p>圧力＝力÷面積 は、ならべかえて使える。</p>'+
+  '<p><span class="eq">のせられる力 ＝ 上限の圧力 × 面積</span></p><p><span class="eq">必要な面積 ＝ 力 ÷ 上限の圧力</span></p>'+
+  '<p class="note"><b>やって見せる：</b>上限 6000 Pa、台 0.8 m² → 6000 × 0.8 ＝ <b>4800 N</b> までのせられる。<br>1500 N を 3000 Pa 以下にしたい → 1500 ÷ 3000 ＝ <b>0.5 m²</b> 以上の面積がいる。</p>',
+  quiz:{q:'4000 Pa をこえると割れる氷に、0.3 m² の台を置く。何 N までのせられる？',opts:[['1200 N',1],['4000 N',0],['13333 N',0]],ok:'正解！ のせられる力＝上限×面積＝4000 × 0.3 ＝ 1200 N。',ng:'のせられる力 ＝ 上限の圧力 × 面積。4000 に 0.3 をかけよう。'}}];
+function shuf(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function teach(i,then){const q=LESSON.filter(l=>l.at<=i&&!(S.seen&&S.seen[l.k]));let j=0;
+ const nx=()=>{if(j>=q.length){then();return}const l=q[j++];
+  const mark=()=>{S.seen=S.seen||{};S.seen[l.k]=1;save();ovClose();nx()};
+  /* 札は2枚：読む札 → やってみよう（答えを押しても札は作り直さず、返しの欄だけ書き換える） */
+  ovOpen('<div class="col" style="--c:'+C.blue+'">学<div class="cs"></div></div><div class="bd"><div class="kk">まなぶ '+l.no+'</div><h2>'+l.h+'</h2>'+l.body+'<div class="btns"><button class="bx r" id="lGo"><span class="dot"></span>'+(l.quiz?'やってみよう ▶':'わかった')+'</button></div></div>');
+  $('lGo').onclick=()=>{ac();sfx.wood();if(!l.quiz){mark();return}
+   const ops=shuf(l.quiz.opts);
+   ovOpen('<div class="col" style="--c:'+C.red+'">試<div class="ct"></div></div><div class="bd"><div class="kk">まなぶ '+l.no+'　やってみよう</div><p><b>'+l.quiz.q+'</b></p><div id="lq" style="display:flex;flex-direction:column;gap:8px">'+ops.map((o,k)=>'<button class="bx s w" data-k="'+k+'">'+o[0]+'</button>').join('')+'</div><p id="lqr" style="font-weight:700;min-height:1.5em" aria-live="polite"></p><div class="btns"><button class="bx r" id="lGo2" disabled><span class="dot"></span>わかった</button></div></div>');
+   $('lGo2').onclick=()=>{ac();sfx.wood();mark()};
+   document.querySelectorAll('#lq .bx').forEach(b=>b.onclick=()=>{ac();const ok=ops[+b.dataset.k][1];$('lqr').innerHTML=ok?l.quiz.ok:'<span style="color:'+C.red+'">'+l.quiz.ng+'</span>';sfx.tap();if(ok){$('lGo2').disabled=false;document.querySelectorAll('#lq .bx').forEach(x=>x.disabled=true)}else b.disabled=true})}};
+ nx()}
 /* 注文書（課題のはじめ） */
-function openOrder(){const st=G.st,i=G.i;const n=String(i+1).padStart(2,'0');if(G.tutOn){MODE='play';placeAct();return} // れんしゅうは指の手ほどきで始める
+function openOrder(){if(G.tutOn){openOrder0();return}teach(G.i,openOrder0)}
+function openOrder0(){const st=G.st,i=G.i;const n=String(i+1).padStart(2,'0');if(G.tutOn){MODE='play';placeAct();return} // れんしゅうは指の手ほどきで始める
  let extra='';
  if(i===0&&PREV&&PREV.predText)extra='<p class="note">前回（雪原わたり）のきみの予想：'+esc(PREV.predText)+'<br>「同じ重さでも、面積が小さいほど深くしずむ」── ここでは<b>数</b>で確かめる。</p>';
  if(st.mode==='lock')extra+='<p class="note">板を土台に並べてから「着工する」。着工したら板は足せない。</p>';
@@ -4380,7 +4415,7 @@ $('bTest').onclick=()=>{ac();startTest()};
 
 /* ===== 確認テスト ===== */
 let TS=null;function playerName(){return window.PLAYER_NAME||S.name||''}
-function startTest(){if(!window.Quiz)return;MODE='test';G=null;TS={qs:Quiz.test(),i:0,ans:[]};show(['test']);$('bSnd').classList.remove('hidden');renderQ()}
+function startTest(){if(!window.Quiz)return;if(!TEST_ONLY&&LESSON.some(l=>!(S.seen&&S.seen[l.k]))){MODE='brief';G=null;show([]);teach(STG.length-1,()=>{ovClose();startTest()});return}MODE='test';G=null;TS={qs:Quiz.test(),i:0,ans:[]};show(['test']);$('bSnd').classList.remove('hidden');renderQ()}
 function renderQ(){const q=TS.qs[TS.i],box=$('tbox');
  box.innerHTML='<div class="tno"><i></i>確認テスト　第'+(TS.i+1)+'問 / '+TS.qs.length+'</div><div class="prog">'+TS.qs.map((_,i)=>'<i class="'+(i<TS.i?'on':'')+'"></i>').join('')+'</div><div class="tq">'+q.q+'</div>'+(q.fig?'<div class="fig2">'+q.fig+'</div>':'')+'<div id="ta"></div>';
  const ta=$('ta');
@@ -4403,7 +4438,7 @@ function showTestResult(){const r=TS.card||{};$('tbox').innerHTML='<div class="t
 function zkButtons(){const has=!!(window.Zukan&&Zukan.openBook);document.querySelectorAll('.zk').forEach(b=>b.classList.toggle('hidden',!has))}
 function openBook(){try{window.Zukan&&Zukan.openBook&&Zukan.openBook({unit:'kisho'})}catch(e){}}
 function openGacha(){try{window.Zukan&&Zukan.openGacha&&Zukan.openGacha({box:'kisho'})}catch(e){}}
-$('bStart').onclick=()=>{ac();sfx.wood();const nm=$('nameIn').value.trim()||S.name,keep={sound:S.sound,tools:S.tools,paid:S.paid,mc:S.mc,stars:S.stars,floors:S.floors,clean:S.clean,perfect:S.perfect,holes:S.holes,t:S.t};
+$('bStart').onclick=()=>{ac();sfx.wood();const nm=$('nameIn').value.trim()||S.name,keep={sound:S.sound,tools:S.tools,paid:S.paid,seen:S.seen,mc:S.mc,stars:S.stars,floors:S.floors,clean:S.clean,perfect:S.perfect,holes:S.holes,t:S.t};
  if(S.started&&Object.keys(S.stars).length){S.name=nm;save();if(GD)startWithGuide();else startStage(0);return}
  S=fresh();Object.assign(S,keep);S.name=nm;S.started=true;save();if(GD)startWithGuide();else startStage(0)};
 $('bCont').onclick=()=>{ac();sfx.wood();const v=$('nameIn').value.trim();if(v)S.name=v;save();toMap()};
@@ -4451,20 +4486,18 @@ if(GD){
  HELP=GD.help({title:'氷の上の建築家',
   rules:['**画面をタップ** すると、ゆれるクレーンから階が落ちる（真上で落とすと「ぴったり」）',
    '棚の **板を土台へドラッグ**（タップでも）して面積を広げる。のせる前の板はタップで外せる',
-   '**圧力 ＝ 力 ÷ 面積**（1 kg → 10 N、1 m² ＝ 10000 cm²）',
+   '**N（ニュートン）** は力の単位。1 kg の物にはたらく重力 ≒ 10 N（100 g → 1 N）',
+   '**圧力 ＝ 力 ÷ 面積**。単位 **Pa（パスカル）**＝1 m² あたり 1 N（1 m² ＝ 10000 cm²・1 hPa ＝ 100 Pa）',
    '圧力が **上限** をこえると、ひびが走って氷が割れる',
    '上限ぎりぎりの **いちばん小さい土台** ほど ★ が増える'],
   onOpen:()=>{HPAUSE=true},onClose:()=>{HPAUSE=false},
   replay:'tutorial',offset:LY.land?{x:112}:{x:0,y:58},show:false,attention:true});
- GD.tutorialButton('#bHow',()=>{ac();sfx.wood();if(!S.started){S.name=$('nameIn').value.trim()||S.name;S.started=true;save()}GD.tutorial(PRACTICE)});
+ GD.tutorialButton('#bHow',()=>{ac();sfx.wood();if(!S.started){S.name=$('nameIn').value.trim()||S.name;S.started=true;save()}show([]);teach(0,()=>GD.tutorial(PRACTICE))});
 }else{$('bHow').classList.add('hidden')}
 function startWithGuide(){
  GD.intro({title:'第3回　氷の上の建築家',
   learn:'**圧力 ＝ 力 ÷ 面積**。同じ重さでも **面積を広げる** と圧力は小さくなる',
-  how:'**タップ** で階を落として積み、割れる前に **板をドラッグ** で土台に足す',gesture:'tap'}).then(()=>GD.tutorial(PRACTICE))}
-window.__game={LY:()=>LY,trayC,baseC,hookC,S:()=>S,G:()=>G,STG,drop,addTile,act,startStage,toMap,startTest,mode:()=>MODE,swing:()=>swingPos(),topX:()=>G&&topX(),step:dt=>update(dt),
- aimDrop(){if(!G)return false;const s=G.st.sw||1.6;const tx=topX();const amp=Math.min(LY.SW*.3,LY.bw*1.25);const cx=pierceX();const v=Math.max(-1,Math.min(1,(tx-cx)/amp));const a=Math.asin(v);G.swT=a/s;return drop()},
- minArea:(i,F,L)=>minArea(STG[i],F,L),ov:()=>!$('ov').classList.contains('hidden'),closeOv:()=>{const b=document.querySelector('#ovBox .bx');if(b)b.click()}};
+  how:'**タップ** で階を落として積み、割れる前に **板をドラッグ** で土台に足す',gesture:'tap'}).then(()=>{show([]);teach(0,()=>GD.tutorial(PRACTICE))})}
 if(TEST_ONLY)startTest();else toTitle();
 requestAnimationFrame(loop);
 </script>

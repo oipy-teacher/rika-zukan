@@ -92,7 +92,7 @@ button:disabled{opacity:.45;cursor:default}
 /* 遊ぶ画面のHUD */
 #cap{position:absolute;left:168px;top:calc(10px + env(safe-area-inset-top));max-width:calc(100% - 420px);background:var(--yel);border:4px solid var(--ink);box-shadow:4px 4px 0 var(--ink);padding:3px 12px;font-family:var(--fh);font-size:17px;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #cap small{font-family:var(--fb);font-size:12px;margin-left:6px}
-#tix{position:absolute;right:70px;top:calc(8px + env(safe-area-inset-top));display:flex;gap:8px;align-items:center}
+#tix{position:absolute;right:128px;top:calc(8px + env(safe-area-inset-top));display:flex;gap:8px;align-items:center}
 .tk{background:#fff;border:4px solid var(--ink);box-shadow:4px 4px 0 var(--ink);padding:2px 10px;font-family:var(--fh);font-size:17px;white-space:nowrap}
 .tk b{font-weight:400;color:var(--red);font-size:22px}
 #tray{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(8px + env(safe-area-inset-bottom));display:flex;gap:10px}
@@ -163,6 +163,17 @@ body.port #bossBar{top:auto;bottom:calc(118px + env(safe-area-inset-bottom));fon
 .ch button:active{transform:translate(3px,3px);box-shadow:1px 1px 0 var(--ink)}
 .numrow{display:flex;gap:8px;align-items:center;margin-top:10px}.numrow input{flex:1;min-width:0;font:inherit;font-size:22px;padding:10px;border:4px solid var(--ink);background:#fff}
 .ord{min-height:30px;margin:8px 0}.ord div{padding:6px 10px;background:#D6EEF8;border:3px solid var(--ink);margin:4px 0;font-size:15px}
+/* 教える札（まなぶ） */
+.lfig{background:#fff;border:3px solid var(--ink);margin:8px 0;padding:4px;text-align:center}
+.lfig svg{display:block;width:100%;height:auto;max-height:42vh}
+.ltab{width:100%;border-collapse:collapse;margin:6px 0;font-size:14px;background:#fff}
+.ltab td,.ltab th{border:2px solid var(--ink);padding:3px 6px;text-align:center}
+.ltab th{background:var(--yel);font-family:var(--fh);font-weight:400}
+.lq{display:grid;gap:8px;margin-top:8px}
+.lq button{min-height:48px;padding:6px 12px;font-family:var(--fb);font-weight:800;font-size:16px;text-align:left;border:4px solid var(--ink);box-shadow:4px 4px 0 var(--ink);background:#fff}
+.lq button.ok{background:#C9F2C0}.lq button.ng{background:#FFD9D1}
+.lres{min-height:24px;margin-top:6px;font-size:15px;scroll-margin-bottom:110px}
+.lbar{position:sticky;bottom:-16px;display:flex;gap:12px;justify-content:center;align-items:center;margin:12px -18px -16px;padding:10px 18px 12px;background:var(--bg);border-top:3px solid var(--ink);z-index:2}.lbar .bam{font-size:26px;min-height:56px;padding:6px 28px}
 /* 演出 */
 #flash{position:absolute;inset:0;pointer-events:none;opacity:0;z-index:12}
 .bnr{position:absolute;left:50%;top:40%;z-index:14;pointer-events:none;font-family:var(--fh);font-size:clamp(34px,6vw,72px);white-space:nowrap;color:var(--yel);background:var(--red);border:5px solid var(--ink);padding:4px 26px;box-shadow:9px 9px 0 var(--ink);
@@ -184,6 +195,7 @@ body.shake #app{animation:shk .28s}
    <div class="namebox" id="nameRow">なまえ<input id="nameIn" maxlength="16" placeholder="（空でも遊べる）" autocomplete="off"></div>
    <button class="bam" id="bStart">はじめる！</button>
    <button class="pnl y hidden" id="bCont">つづきから</button>
+   <button class="pnl s c" id="bHow">あそびかた（れんしゅう）</button>
    <div class="row"><button class="pnl s zk" id="bBookT">📖 図鑑</button></div>
   </div>
  </div>
@@ -192,7 +204,7 @@ body.shake #app{animation:shk .28s}
   <div class="mhead pe">町の通りを守れ！ 全9話<small id="mInfo"></small></div>
   <div id="panels" class="pe"></div>
   <div class="mbtn pe"><button class="bam" id="bNext" style="font-size:24px;min-height:54px">つぎの話へ！</button>
-   <button class="pnl s c" id="bStk">ステッカー帳</button><button class="pnl s y zk" id="bGacha">ガチャ</button><button class="pnl s zk" id="bBookM">📖 図鑑</button><span class="kk zk" id="kkM"></span></div>
+   <button class="pnl s c" id="bLearn">📘 まなぶ帳</button><button class="pnl s c" id="bStk">ステッカー帳</button><button class="pnl s y zk" id="bGacha">ガチャ</button><button class="pnl s zk" id="bBookM">📖 図鑑</button><span class="kk zk" id="kkM"></span></div>
  </div>
 
  <div id="scPlay" class="scr hidden">
@@ -4217,8 +4229,8 @@ function ovOpen(h){$('#ovBox').innerHTML=h;$('#ov').classList.remove('hidden');$
 function ovClose(){$('#ov').classList.add('hidden')}
 function toggleSnd(){S.sound=!S.sound;save();if(S.sound){ac();sfx.tap()}backBtn()}
 $('#bSnd').onclick=toggleSnd;
-function toTitle(){MODE='title';G=null;show(['scTitle']);$('#bCont').classList.toggle('hidden',!S.started);zk()}
-function toMap(){MODE='map';G=null;SEL=null;show(['scMap']);renderMap()}
+function toTitle(){MODE='title';G=null;if(HELP)HELP.hide();show(['scTitle']);$('#bCont').classList.toggle('hidden',!S.started);zk()}
+function toMap(){MODE='map';G=null;SEL=null;if(HELP)HELP.hide();show(['scMap']);renderMap()}
 function renderMap(){const pn=$('#panels');pn.innerHTML='';const port=L.port;pn.style.gridTemplateColumns=port?'repeat(3,1fr)':'repeat(5,1fr)';
  ST.forEach((st,i)=>{const b=document.createElement('button');const lock=i>S.next;b.className='pan'+(lock?' lock':'')+(i===Math.min(S.next,NS-1)&&!S.stars[i]?' cur':'');
   const bgc=st.night?'#1D3557':st.boss?'#E63946':['#FFC914','#5BC0EB','#FF8C42','#8BD17C','#FF7AA2'][i%5];b.style.background=bgc;b.style.backgroundImage='radial-gradient(circle,rgba(0,0,0,.18) 1.8px,transparent 2px)';b.style.backgroundSize='9px 9px';
@@ -4243,11 +4255,12 @@ function stkDraw(c,id,s){c.save();c.fillStyle=id==='lock'?'#ccc':'#FFF6DA';c.fil
  else if(id==='night'){c.fillStyle=NAVY;c.fillRect(3,3,s-6,s-6);wxSym(c,m,m,s*.12,RD.warm)}
  else if(id==='boss'){blob(c,[[m,m-s*.1,s*.2],[m-s*.18,m+s*.05,s*.15],[m+s*.18,m+s*.05,s*.15]],'#2B2D42',2.5);otext(c,'王',m,m,s*.28,YEL)}
  c.restore()}
-function openBrief(i){const st=ST[i];MODE='play';G=mkGame(i);if(window.BGM)BGM.mood('calm');G.sciShown={};G.pause=true;layout();show(['scPlay','ov']);mkTray();
+function openBrief(i){lessonGate(i,()=>openBrief0(i))}
+function openBrief0(i){const st=ST[i];MODE='play';if(HELP)HELP.show();G=mkGame(i);if(window.BGM)BGM.mood('calm');G.sciShown={};G.pause=true;layout();show(['scPlay','ov']);mkTray();
  const legend=IK.map(k=>'<span>'+IT[k].nm+' → '+BK[IT[k].vs].nm+'（'+IT[k].lab+'）</span>').join('');
  ovOpen('<div class="capb">第'+(i+1)+'話</div><h2>'+esc(st.nm)+'<small>'+esc(st.sub)+'　／　通り×'+st.n+'　／　そなえ券×'+G.tix+'　／　守る通り '+needSafe(st)+'本以上</small></h2><p>'+st.tip+'</p>'+(i<2?'<div class="legend">'+legend+'</div>':'')+
   '<p class="sm">天気の帯は<b>西から</b>進み、<b>最初に出会った備え</b>とぶつかる。合っていれば止まる。合わない備えはこわれる。</p><div class="row"><button class="bam" id="bBr">作戦タイム！</button></div>');
- $('#bBr').onclick=()=>{sfx.start();ovClose();G.pause=false;hud();if(i===0)tipShow(st.tip)}}
+ $('#bBr').onclick=()=>{sfx.start();ovClose();G.pause=false;hud();if(i===0&&!S.tut&&window.Guide&&Guide.tutorial){runTut()}else if(i===0)tipShow(st.tip)}}
 function startRun(){if(!G||G.run)return;const placed=G.items.length;if(placed===0&&G.si>0){tipShow('まだ何も置いていない！ 天気図を見て、<b>来る順に</b>備えを置こう。',1);return}G.run=true;SEL=null;if(window.BGM)BGM.mood(G.st.boss?'tense':'normal');sfx.start();banner('スタート！');hud()}
 $('#bGo').onclick=()=>{ac();startRun()};
 $('#bFF').onclick=()=>{if(!G)return;G.ff=G.ff>1?1:2.2;sfx.tap();hud()};
@@ -4286,7 +4299,7 @@ function fmtT(t){t=Math.round(t);return Math.floor(t/60)+'分'+String(t%60).padS
 
 /* ===== 確認テスト ===== */
 let TS=null;function playerName(){return window.PLAYER_NAME||S.name||''}
-function startTest(){if(!window.Quiz)return;MODE='test';G=null;TS={qs:Quiz.test(),i:0,ans:[]};show(['scTest']);renderQ()}
+function startTest(){if(!window.Quiz)return;if(!TEST_ONLY){const L=lessonList(99,false);if(L.length){lessonShow(L,()=>startTest());return}}MODE='test';G=null;TS={qs:Quiz.test(),i:0,ans:[]};show(['scTest']);renderQ()}
 function renderQ(){const q=TS.qs[TS.i],box=$('#tbox');
  box.innerHTML='<span class="tno">確認テスト　第'+(TS.i+1)+'問 / '+TS.qs.length+'</span><div class="prog">'+TS.qs.map((_,i)=>'<i class="'+(i<TS.i?'on':'')+'"></i>').join('')+'</div><div class="tq">'+q.q+'</div>'+(q.fig?'<div class="fig2">'+q.fig+'</div>':'')+'<div id="ta"></div>';
  const ta=$('#ta');
@@ -4309,7 +4322,81 @@ function zk(){const has=!!(window.Zukan&&Zukan.openBook);document.querySelectorA
 function openBook(){try{window.Zukan&&Zukan.openBook&&Zukan.openBook({unit:'kisho'})}catch(e){}}
 function openGacha(){try{window.Zukan&&Zukan.openGacha&&Zukan.openGacha({box:'kisho'})}catch(e){}}
 $('#bBookT').onclick=openBook;$('#bBookM').onclick=openBook;$('#bGacha').onclick=openGacha;
-$('#bStart').onclick=()=>{ac();sfx.start();const nm=$('#nameIn').value.trim()||S.name,snd=S.sound;S=fresh();S.name=nm;S.sound=snd;S.started=true;save();openBrief(0)};
+/*@LESSON_ZT*/
+/* ===== まなぶ（教える札）: 使う前に教える。続きから・地図から入っても、まだ読んでいない札を先に出す ===== */
+const SV_FRONT='<svg viewBox="0 0 520 210" xmlns="http://www.w3.org/2000/svg" font-family="sans-serif" font-weight="bold">'+
+ '<rect x="0" y="0" width="520" height="210" fill="#FFE3C8"/><text x="318" y="40" font-size="20" fill="#E63946">暖気（暖かい空気）</text><text x="318" y="62" font-size="14" fill="#111">軽い→上へ</text>'+
+ '<path d="M0 60 L300 175 L0 175 Z" fill="#CDEBF5" stroke="#111" stroke-width="3"/><text x="18" y="150" font-size="20" fill="#1F6FEB">寒気（冷たい空気）</text><text x="18" y="168" font-size="13" fill="#111">重い→下へもぐる</text>'+
+ '<rect x="0" y="175" width="520" height="35" fill="#8BD17C" stroke="#111" stroke-width="3"/><text x="10" y="199" font-size="15" fill="#111">地面</text>'+
+ '<path d="M150 118 L210 60" stroke="#E63946" stroke-width="3"/><rect x="190" y="30" width="96" height="28" fill="#FFC914" stroke="#111" stroke-width="2"/><text x="238" y="50" font-size="17" text-anchor="middle">前線面</text>'+
+ '<circle cx="300" cy="175" r="9" fill="#E63946" stroke="#111" stroke-width="3"/><path d="M300 175 L360 120" stroke="#E63946" stroke-width="3"/><rect x="336" y="92" width="74" height="28" fill="#FFC914" stroke="#111" stroke-width="2"/><text x="373" y="112" font-size="17" text-anchor="middle">前線</text></svg>';
+function svFrontMark(x1,y1,x2,y2,k){/* 前線の線と記号（半円＝温暖・三角＝寒冷。記号は進む向き＝東の側に付ける） */let s='<line x1="'+x1+'" y1="'+y1+'" x2="'+x2+'" y2="'+y2+'" stroke="'+(k==='w'?'#E63946':'#1F6FEB')+'" stroke-width="6"/>';
+ const dl=Math.hypot(x2-x1,y2-y1),tx=(x2-x1)/dl,ty=(y2-y1)/dl;let nx=-ty,ny=tx;if(nx<0){nx=-nx;ny=-ny}const n=4,r=9;
+ for(let i=1;i<=n;i++){const t=i/(n+1),x=x1+(x2-x1)*t,y=y1+(y2-y1)*t;const ax=x-tx*r,ay=y-ty*r,bx=x+tx*r,by=y+ty*r;
+  if(k==='w'){const sw=(tx*ny-ty*nx)>0?0:1;s+='<path d="M'+ax.toFixed(1)+' '+ay.toFixed(1)+' A'+r+' '+r+' 0 0 '+sw+' '+bx.toFixed(1)+' '+by.toFixed(1)+' Z" fill="#E63946" stroke="#111" stroke-width="2"/>'}
+  else s+='<path d="M'+ax.toFixed(1)+' '+ay.toFixed(1)+' L'+(x+nx*16).toFixed(1)+' '+(y+ny*16).toFixed(1)+' L'+bx.toFixed(1)+' '+by.toFixed(1)+' Z" fill="#1F6FEB" stroke="#111" stroke-width="2"/>'}return s}
+const SV_LOW='<svg viewBox="0 0 520 300" xmlns="http://www.w3.org/2000/svg" font-family="sans-serif" font-weight="bold">'+
+ '<rect width="520" height="300" fill="#fff"/>'+
+ '<path d="M220 110 L320 230 L120 230 Z" fill="#FFE3C8" opacity=".9"/>'+
+ '<ellipse cx="220" cy="110" rx="60" ry="40" fill="none" stroke="#1D3557" stroke-opacity=".5" stroke-width="2"/><ellipse cx="220" cy="110" rx="120" ry="80" fill="none" stroke="#1D3557" stroke-opacity=".5" stroke-width="2"/><ellipse cx="220" cy="110" rx="185" ry="125" fill="none" stroke="#1D3557" stroke-opacity=".5" stroke-width="2"/>'+
+ '<text x="402" y="40" font-size="13" fill="#1D3557">輪の線＝等圧線</text>'+
+ svFrontMark(220,110,330,232,'w')+svFrontMark(220,110,110,232,'c')+
+ '<circle cx="220" cy="110" r="20" fill="#E63946" stroke="#111" stroke-width="3"/><text x="220" y="117" font-size="20" fill="#fff" text-anchor="middle">低</text>'+
+ '<text x="335" y="262" font-size="15" fill="#E63946">温暖前線（半円）</text><text x="30" y="262" font-size="15" fill="#1F6FEB">寒冷前線（三角）</text>'+
+ '<rect x="350" y="150" width="160" height="46" fill="#D6EEF8" stroke="#111" stroke-width="2"/><text x="430" y="170" font-size="14" text-anchor="middle">温暖前線の前（東）</text><text x="430" y="189" font-size="14" text-anchor="middle" fill="#1D3557">弱い雨が長く降る</text>'+
+ '<rect x="170" y="190" width="100" height="26" fill="#FFC914" stroke="#111" stroke-width="2"/><text x="220" y="208" font-size="14" text-anchor="middle">2本の間＝暖気</text>'+
+ '<rect x="6" y="150" width="140" height="46" fill="#CDEBF5" stroke="#111" stroke-width="2"/><text x="76" y="170" font-size="14" text-anchor="middle">寒冷前線の後ろ</text><text x="76" y="189" font-size="14" text-anchor="middle" fill="#1D3557">寒気（冷える）</text>'+
+ '<text x="500" y="290" font-size="15" text-anchor="end">西 ← → 東へ進む</text><text x="12" y="22" font-size="14">北が上</text></svg>';
+function svSym(k,x,y){let s='<circle cx="'+x+'" cy="'+y+'" r="15" fill="#fff" stroke="#111" stroke-width="3"/>';
+ if(k==='hare')s+='<line x1="'+x+'" y1="'+(y-15)+'" x2="'+x+'" y2="'+(y+15)+'" stroke="#111" stroke-width="3"/>';
+ if(k==='kumo')s+='<circle cx="'+x+'" cy="'+y+'" r="7" fill="none" stroke="#111" stroke-width="3"/>';
+ if(k==='ame')s='<circle cx="'+x+'" cy="'+y+'" r="15" fill="#111" stroke="#111" stroke-width="3"/>';
+ if(k==='rai')s='<circle cx="'+x+'" cy="'+y+'" r="15" fill="#111"/><path d="M'+(x+18)+' '+(y-20)+' l-8 20 h8 l-6 22 l16 -28 h-8 l6 -14 Z" fill="#FFC914" stroke="#111" stroke-width="1.5"/>';return s}
+const SV_SYM='<svg viewBox="0 0 520 150" xmlns="http://www.w3.org/2000/svg" font-family="sans-serif" font-weight="bold" font-size="15" text-anchor="middle">'+
+ '<rect width="520" height="150" fill="#fff"/>'+svSym('kai',50,40)+'<text x="50" y="80">快晴</text>'+svSym('hare',130,40)+'<text x="130" y="80">晴れ</text>'+svSym('kumo',210,40)+'<text x="210" y="80">くもり</text>'+svSym('ame',290,40)+'<text x="290" y="80">雨</text>'+svSym('rai',370,40)+'<text x="375" y="80">雷雨</text>'+
+ '<line x1="455" y1="55" x2="455" y2="5" stroke="#111" stroke-width="3"/><line x1="455" y1="10" x2="468" y2="14" stroke="#111" stroke-width="3"/><line x1="455" y1="18" x2="468" y2="22" stroke="#111" stroke-width="3"/>'+svSym('kai',455,70).replace('cy="70"','cy="70"')+
+ '<text x="455" y="104" font-size="13">線が北へ＝北の風</text><text x="455" y="122" font-size="13">羽根2本＝風力2</text>'+
+ '<text x="210" y="125" font-size="14" fill="#1D3557">線は「風が吹いてくる方」へのびる（北から吹く風＝北の風）</text></svg>';
+const LS={
+ a:{t:'まなぶ ①',h:'暖かい空気と冷たい空気の「境目」',q:{ask:'暖気と寒気の境目の面が、<b>地面と交わる線</b>を何という？',ch:['前線','前線面','等圧線'],ok:0,good:'正解！ 境目の<b>面</b>が前線面、それが<b>地面と交わる線</b>が前線。',bad:'ちがう。境目の<b>面</b>が前線面。面が地面と交わってできる<b>線</b>は？'},b:()=>'<p>空気には、<b>暖気</b>（暖かい空気）と<b>寒気</b>（冷たい空気）がある。冷たい空気は重く、暖かい空気は軽いので、ぶつかっても<b>すぐには混ざらない</b>。</p><div class="lfig">'+SV_FRONT+'</div><p>2つの空気の境目の面を<b>前線面</b>、前線面が<b>地面と交わる線</b>を<b>前線</b>という。前線が通ると、その町の空気が入れかわるので、天気・風・気温が変わる。</p>'},
+ b:{t:'まなぶ ②',h:'温帯低気圧＝前線をつれた低気圧',q:{ask:'<b>三角の記号</b>の前線（寒冷前線）は、低気圧の中心から、ふつうどちらへのびる？',ch:['南西','南東','北東'],ok:0,good:'正解！ 寒冷前線（三角）は<b>南西</b>へ、温暖前線（半円）は南東へのびる。',bad:'ちがう。図を思い出そう。半円の温暖前線は南東。三角の寒冷前線は？'},b:()=>'<p><b>低気圧</b>は、まわりより気圧が低い所（天気図の「低」）。日本の近くでは、<b>温暖前線と寒冷前線をつれた低気圧</b>（<b>温帯低気圧</b>）が、<b>西から東へ</b>進んでくる。</p><div class="lfig">'+SV_LOW+'</div><p class="sm">・<b>温暖前線</b>（半円の記号）は中心から<b>南東</b>へ、<b>寒冷前線</b>（三角の記号）は<b>南西</b>へのびる。<br>・2本の前線にはさまれた所は<b>暖気</b>。寒冷前線の後ろ（西）は<b>寒気</b>。温暖前線の前（東）では<b>弱い雨が長く</b>降る。<br>・まわりの輪の線は<b>等圧線</b>（気圧が同じ所を結んだ線）。</p>'},
+ c:{t:'まなぶ ③',h:'町の天気は、いつも同じ順に変わる',q:{ask:'ある町で、<b>強い雨が短く</b>降った。このあと、ふつうどうなる？',ch:['北寄りの風に変わり、寒くなる','南寄りの風に変わり、暖かくなる','弱い雨が長く降りはじめる'],ok:0,good:'正解！ 強く短い雨は③（寒冷前線）。そのあとは④＝<b>北寄りの風で寒くなる</b>。',bad:'ちがう。強く短い雨は③の寒冷前線。順番で③の次は？'},b:()=>'<p>温帯低気圧が町の北を通ると、町は「温暖前線の前 → 2本の間 → 寒冷前線の後ろ」の順に入っていく。だから天気は<b>いつも同じ順</b>。</p><div class="seq"><div><b>① 弱い雨</b>温暖前線の前。乱層雲の雨が<b>長く</b></div><div><b>② 暖かい</b>温暖前線が通過。雨がやみ<b>南寄りの風</b>で気温が上がる</div><div><b>③ 強い雨</b>寒冷前線が通過。積乱雲の雨が<b>短く激しく</b>・雷・突風</div><div><b>④ 寒い</b>寒冷前線の後ろ。<b>北寄りの風</b>で気温が急に下がる</div></div><p>雨は①と③の<b>2回</b>ある。「雨が降った＝寒冷前線」と決めつけない。<b>弱く長いか・強く短いか</b>、そのあと<b>暖かくなるか・寒くなるか</b>で見分ける。</p><p class="sm">このゲームでは：<b>傘</b>→①　<b>うすぎ</b>→②　<b>雨戸</b>→③　<b>上着</b>→④。天気が来る側（西）から、この順に並べれば町を守れる。</p>'},
+ d:{t:'まなぶ ④',h:'天気図の小窓の読み方',q:{ask:'小窓で、その通りが<b>寒冷前線より西</b>（後ろ）にある。いま、その通りは？',ch:['寒気の中（北寄りの風で寒い）','温暖前線の前（弱い雨）','暖気の中（暖かい）'],ok:0,good:'正解！ 寒冷前線の後ろ（西）は<b>寒気</b>。もう④の「寒い」になっている。',bad:'ちがう。寒冷前線の後ろ（西）にあるのは、暖気？寒気？'},b:()=>'<p>第2話から、遊ぶ画面の<b>すみに天気図の小窓</b>が出る。<b>北が上・西が左</b>（縦の画面では西が上）。</p><div class="lfig">'+SV_LOW+'</div><p class="sm">・赤い「低」＝低気圧の中心。輪の線＝<b>等圧線</b>。<br>・<b>半円の線＝温暖前線</b>、<b>三角の線＝寒冷前線</b>。黄色い四角＝町（通りの並び）。<br>・その通りが温暖前線より<b>東</b>なら①から、<b>2本の間</b>ならもう暖気の中なので③から来る。</p>'},
+ e:{t:'まなぶ ⑤',h:'見張り台の記録の読み方',q:{ask:'見張り台の記録が「<b>晴れ・北西の風・気温が低い・気圧↑</b>」。見張り台はいまどこ？',ch:['寒気の中（寒冷前線が通った）','温暖前線の前','暖気の中（温暖前線が通った）'],ok:0,good:'正解！ 北寄りの風で気温が低く、気圧が上がっていく＝<b>寒冷前線が通ったあと</b>。',bad:'ちがう。北西の風・気温が低い・気圧が上がっていく、は表のどの行？'},b:()=>'<p>見張り台は町より<b>西</b>にあるので、町より<b>先に</b>天気が来る。記録には天気記号・風向・気温・気圧が出る。</p><div class="lfig">'+SV_SYM+'</div><table class="ltab"><tr><th>見張り台の記録</th><th>いまの場所</th></tr><tr><td>弱い雨・東寄りの風・気圧↓（下がっている）</td><td>温暖前線の前</td></tr><tr><td>くもり・<b>南寄り</b>の風・気温が<b>上がった</b></td><td>暖気の中（温暖前線が通った）</td></tr><tr><td>強い雨・雷・<b>北寄り</b>の風・気温が下がる</td><td>寒冷前線が通っている</td></tr><tr><td>晴れ・北西の風・気温が低い・気圧↑（上がっていく）</td><td>寒気の中（寒冷前線が通った）</td></tr></table><p class="sm">気圧は、低気圧の中心が近づくあいだは<b>下がり</b>、寒冷前線が通ったあとは<b>上がっていく</b>。</p>'},
+ f:{t:'まなぶ ⑥',h:'夜は、記録の「変わり目」で読む',q:{fig:()=>'<table class="ltab"><tr><th>時刻</th><th>天気</th><th>風向</th><th>気温</th><th>気圧</th></tr><tr><td>0時</td><td>雨</td><td>東</td><td>12℃</td><td>1005↓</td></tr><tr><td>3時</td><td>くもり</td><td>南南西</td><td>18℃</td><td>1001↓</td></tr><tr><td>6時</td><td>くもり</td><td>南西</td><td>19℃</td><td>1000↓</td></tr><tr><td>9時</td><td>強い雨</td><td>北北西</td><td>13℃</td><td>1002↑</td></tr><tr><td>12時</td><td>晴れ</td><td>北西</td><td>8℃</td><td>1008↑</td></tr></table>',ask:'上の記録で、<b>寒冷前線</b>が通ったのはいつごろ？',ch:['6時〜9時','3時〜6時','0時〜3時','9時〜12時'],ok:0,good:'正解！ 9時に<b>北寄りの風・強い雨</b>に変わり、気温が19℃→13℃に下がり、気圧が↑に変わった。',bad:'ちがう。寒冷前線の合図は<b>北寄りの風に変わり、気温が急に下がる</b>こと。どの時刻とどの時刻の間で起きた？'},
+  b:()=>'<p>夜は雲が見えない。そのときは記録が<b>どこで変わったか</b>を見る。</p><p>・<b>温暖前線が通った合図</b>：風が<b>南寄り</b>に変わり、気温が<b>上がる</b><br>・<b>寒冷前線が通った合図</b>：風が<b>北寄り</b>に変わり、気温が<b>急に下がる</b>・気圧が<b>上がっていく</b></p>'+'<table class="ltab"><tr><th>時刻</th><th>天気</th><th>風向</th><th>気温</th><th>気圧</th></tr><tr><td>0時</td><td>雨</td><td>東</td><td>12℃</td><td>1005↓</td></tr><tr><td>3時</td><td>くもり</td><td>南南西</td><td>18℃</td><td>1001↓</td></tr><tr><td>6時</td><td>くもり</td><td>南西</td><td>19℃</td><td>1000↓</td></tr><tr><td>9時</td><td>強い雨</td><td>北北西</td><td>13℃</td><td>1002↑</td></tr><tr><td>12時</td><td>晴れ</td><td>北西</td><td>8℃</td><td>1008↑</td></tr></table>'+'<p class="sm"><b>例</b>：0時は東の風で12℃、3時は南南西の風で18℃。風が南寄りに変わり気温が上がった → <b>温暖前線が通ったのは0時〜3時</b>。</p>'},
+ g:{t:'まなぶ ⑦',h:'前線は、あと何時間で来る？',q:{ask:'温暖前線が町の西<b>80km</b>にあり、1時間に<b>20km</b>で東へ進む。町に来るのは？',ch:['4時間後','3時間後','6時間後'],ok:0,good:'正解！ 80÷20＝<b>4時間後</b>。',bad:'ちがう。<b>きょり÷速さ</b>。80÷20を計算しよう。'},
+  b:()=>'<p>前線は低気圧といっしょに、だいたい同じ速さで西から東へ進む。町に来るまでの時間は</p><p style="font-size:20px;text-align:center"><b>時間 ＝ きょり ÷ 速さ</b></p><p><b>例</b>：寒冷前線が町の西<b>120km</b>、1時間に<b>40km</b>で進む → 120÷40＝<b>3時間後</b>に町を通る。</p>'}};
+const LS_AT={0:['a','b','c'],1:['d','e'],4:['f'],7:['g']};
+function lessonList(i,all){const r=[];Object.keys(LS_AT).map(Number).sort((a,b)=>a-b).forEach(k=>{if(k<=i)LS_AT[k].forEach(id=>{if(all||!(S.ls&&S.ls[id]))r.push(id)})});return r}
+function lessonShow(ids,done){if(!ids.length){done&&done();return}const id=ids[0],L0=LS[id],fin=ids.length===1?'わかった！':'つぎへ ▶';
+ if(G)G.pause=true;
+ const next=()=>{sfx.tap();S.ls=S.ls||{};S.ls[id]=1;save();ovClose();lessonShow(ids.slice(1),done)};
+ const page1=()=>{ovOpen('<div class="capb">'+L0.t+'</div><h2>'+L0.h+'</h2>'+L0.b()+'<div class="lbar"><button class="bam" id="lsOk">'+(L0.q?'やってみよう ▶':fin)+'</button></div>');
+  $('#lsOk').onclick=L0.q?()=>{sfx.tap();page2()}:next};
+ const page2=()=>{const q=L0.q;ovOpen('<div class="capb">'+L0.t+'　やってみよう</div><h2>'+L0.h+'</h2>'+(q.fig?q.fig():'')+'<p style="margin-top:10px"><b>やってみよう：</b>'+q.ask+'</p><div class="lq" id="lqB"></div><div class="lres" id="lqR"></div><div class="lbar"><button class="pnl s" id="lsBk">◀ もどる</button><button class="bam" id="lsOk" disabled>'+fin+'</button></div>');
+  const bx=$('#lqB');q.ch.map((c,j)=>[c,j]).sort(()=>Math.random()-.5).forEach(([c,j])=>{const b=document.createElement('button');b.textContent=c;
+   b.onclick=()=>{const ok=j===q.ok;b.classList.add(ok?'ok':'ng');$('#lqR').innerHTML=ok?q.good:q.bad;if(ok){sfx.tier();bx.querySelectorAll('button').forEach(x=>x.disabled=true);$('#lsOk').disabled=false}else{sfx.bad();b.disabled=true}$('#lqR').scrollIntoView({block:'nearest'})};bx.appendChild(b)});
+  $('#lsBk').onclick=()=>{sfx.tap();page1()};$('#lsOk').onclick=next};
+ page1()}
+function lessonGate(i,then){lessonShow(lessonList(i,false),then)}
+$('#bLearn').onclick=()=>{sfx.tap();lessonShow(lessonList(Math.min(S.next,NS-1),true),()=>{})};
+/* 遊び方（共通部品 Guide）: はじめの1枚・れんしゅう（第1話のはじめて）・右上の？ */
+let HELP=null;
+try{if(window.Guide){Guide.setup({theme:{bg:'#FFF6DA',fg:'#111',accent:'#E63946',accentText:'#FFC914',font:'"Reggae One","Hiragino Sans",sans-serif',bodyFont:'"M PLUS 1p","Hiragino Sans",sans-serif',radius:0,texture:'dots',line:'#111',dim:'rgba(29,53,87,.55)',shadow:'8px 8px 0 #111',outline:'#111',hand:'#fff',handLine:'#111'},muted:()=>!S.sound});
+ HELP=Guide.help({title:'前線がくる町',learn:'温帯低気圧が通ると、天気は **弱い雨→暖かい→強い雨→寒い** の順に変わる',how:'下の **備えカード** を、通りの **マスへドラッグ**（カードをタップ→マスをタップでもよい）。作戦タイムに並べたら **スタート！**',
+  rules:['天気の帯は **西** から進み、最初に出会った備えとぶつかる','合う備え：**傘**＝弱い雨／**うすぎ**＝暖かい南風／**雨戸**＝激しい雷雨／**上着**＝冷たい北風','合わない備えはこわれ、帯は先へ進む。家に入ると明かりが消える','地図の **📘 まなぶ帳** で、前線・天気図・記録の読み方をいつでも読み直せる'],
+  onOpen:()=>{if(G)G.pause=true},onClose:()=>{if(G&&$('#ov').classList.contains('hidden'))G.pause=false},replay:'tutorial',offset:{x:64}});HELP.hide()}}catch(e){HELP=null}
+function introThen(next){if(window.Guide&&Guide.intro){Guide.intro({title:'前線がくる町',learn:'温帯低気圧が通ると、町の天気は **弱い雨→暖かい→強い雨→寒い** の順に変わる',how:'下の **備えカード** を通りの **マスへドラッグ**。天気が来る側（西）から順に並べて、家を守ろう',gesture:'drag'}).then(next,next)}else next()}
+function tutLoad(){if(G&&G.si===0&&!G.run&&MODE==='play'){ovClose();G.pause=false;return}MODE='play';G=mkGame(0);G.sciShown={};G.pause=false;layout();show(['scPlay']);mkTray();if(HELP)HELP.show();hud()}
+function runTut(){const cellXY=j=>()=>{const p=P(j+.5,0);return{x:p.x,y:p.y,r:Math.max(22,L.sz*.4)}};
+ Guide.tutorial({start:tutLoad,steps:[
+  {gesture:'drag',target:'.card[data-k="umb"]',to:cellXY(1),until:()=>G&&G.items.some(it=>it.k==='umb'),text:'**傘** のカードを、光る **1番のマス** へドラッグ（いちばん先に来るのは①弱い雨）'},
+  {gesture:'drag',target:'.card[data-k="shirt"]',to:cellXY(2),until:()=>G&&['shirt','shut','coat'].every(k=>G.items.some(it=>it.k===k)),text:'同じように **2番＝うすぎ・3番＝雨戸・4番＝上着** を置こう（②暖かい→③強い雨→④寒い）'},
+  {gesture:'tap',target:'#bGo',until:()=>G&&G.run,text:'並べたら **スタート！** 天気が西から来る'}],
+  onExit:()=>{S.tut=1;save()}})}
+try{if(window.Guide&&Guide.tutorialButton)Guide.tutorialButton('#bHow',()=>{ac();if(!S.started){S.started=true;save()}lessonGate(0,()=>{runTut()})});else $('#bHow').onclick=()=>{lessonGate(0,()=>openBrief(0))}}catch(e){}
+$('#bStart').onclick=()=>{ac();sfx.start();const nm=$('#nameIn').value.trim()||S.name,snd=S.sound;S=fresh();S.name=nm;S.sound=snd;S.started=true;save();introThen(()=>openBrief(0))};
 $('#bCont').onclick=()=>{ac();sfx.tap();const v=$('#nameIn').value.trim();if(v)S.name=v;save();toMap()};
 
 /* ===== ループ ===== */
@@ -4323,7 +4410,6 @@ function solve(emptyOnly){const g=G;g.lanes.forEach(ln=>{if(emptyOnly&&g.items.s
  need.forEach(b=>{const e=span(g,ln.l,b,g.t)[1];const k=BK[b.k].need;for(let i=0;i<C;i++){const u=i+.5;if(u<=e||g.items.some(it=>it.l===ln.l&&it.cell===i&&!it.used))continue;
    const ok=placed.every(pp=>{const e2=span(g,ln.l,pp.b,g.t)[1];return u<e2||u>pp.u});if(!ok)continue;
    g.items.push({k,l:ln.l,cell:i,u,plan:true,used:false,t0:TT});g.tix--;placed.push({b,u});break}})});hud()}
-window.__game={S:()=>S,G:()=>G,mode:()=>MODE,openBrief,startRun,solve,toMap,startTest,step:dt=>{for(let i=0;i<dt*30;i++)upd(1/30)},solveRun:()=>solve(true),tryPlace,P,cellP:(l,i)=>P(i+.5,l),closeOv:ovClose,ff:v=>{G.ff=v},span:(l,b)=>span(G,l,b,G.t)};
 if(TEST_ONLY){startTest()}else toTitle();
 requestAnimationFrame(loop);
 </script>

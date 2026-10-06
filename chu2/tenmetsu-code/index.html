@@ -85,6 +85,30 @@ button{font-family:inherit;cursor:pointer;touch-action:manipulation}
 .card b{display:block;color:var(--a);font-weight:normal}
 .card.off{opacity:.3;border-style:dashed}
 .mBtns{display:flex;flex-wrap:wrap;gap:10px;margin-top:10px}
+/* 解読マニュアル（まなぶ）：用語と決まりを「その前」に教える（2026-10-06 初心者向け） */
+#scrLearn{display:flex;align-items:flex-start;justify-content:center;overflow:auto;background:rgba(0,0,0,.72);pointer-events:auto;z-index:44;padding:calc(64px + env(safe-area-inset-top)) 12px 40px}
+#scrLearn .win{width:min(700px,96vw);max-height:none;margin:auto}
+#scrLearn .win h2{font-size:clamp(24px,4.6vw,36px)}
+#lKick{font:14px var(--fd);color:var(--g);letter-spacing:.14em;margin-bottom:4px}
+#lFig{margin:10px 0 2px;border:1px solid var(--dim);background:#010601;padding:6px}
+#lFig svg{display:block;width:100%;height:auto;max-height:30vh}
+#lP p{margin:8px 0 0;font:16.5px/1.8 var(--fd);color:var(--g)}
+#lP p b,.lAsk b,.lWhy b{color:var(--a);font-weight:normal}
+.lAsk{margin-top:12px;padding-top:10px;border-top:1px dashed var(--g);font:17px/1.6 var(--fd);color:#EFFFE8}
+.lOpts{display:grid;gap:8px;margin-top:8px}
+.lOpts .btn{text-align:left;justify-content:flex-start;line-height:1.4;padding:8px 14px;font-size:17px}
+.lWhy{margin-top:8px;font:16px/1.6 var(--fd);min-height:1em;color:var(--g)}
+.lFoot{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:14px}
+#lPg{font:15px var(--fd);color:var(--g)}
+/* 第2周：札を画面の高さ（733・768）に収める。横長では「図と説明」と「やってみよう」を2列に */
+@media (orientation:landscape) and (min-width:900px){#scrLearn{padding:12px 2vw}
+ #scrLearn .win{width:min(1120px,96vw);display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);column-gap:24px;align-content:start;align-items:start}
+ #scrLearn .win>*{grid-column:1/-1}
+ #scrLearn .win.wf.wq>#lFig{grid-column:1;grid-row:3}#scrLearn .win.wf.wq>#lP{grid-column:1;grid-row:4}#scrLearn .win.wf.wq>#lQ{grid-column:2;grid-row:3/span 2}
+ #scrLearn .win.wf:not(.wq)>#lFig{grid-column:1;grid-row:3}#scrLearn .win.wf:not(.wq)>#lP{grid-column:2;grid-row:3}
+ #scrLearn .win.wq:not(.wf)>#lP{grid-column:1;grid-row:3}#scrLearn .win.wq:not(.wf)>#lQ{grid-column:2;grid-row:3}
+ #lFig svg{max-height:42vh}#scrLearn .win.wq .lAsk{border-top:0;margin-top:0;padding-top:0} #scrLearn .win>.lFoot{margin-top:8px}}
+@media (max-height:820px){#lP p{font-size:15.5px;line-height:1.6;margin-top:5px}#scrLearn .win h2{font-size:clamp(22px,3.4vw,30px)}.lOpts .btn{min-height:42px;padding:6px 14px;font-size:16px}}
 /* クリア */
 #scrClear,#scrEnd,#scrBackC{display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.6);pointer-events:auto}
 .win{background:var(--bg);border:3px solid var(--g);box-shadow:0 0 30px rgba(57,255,20,.45),inset 0 0 30px rgba(57,255,20,.12);padding:16px 20px 18px;width:min(560px,92vw);max-height:92vh;overflow:auto}
@@ -188,6 +212,12 @@ button{font-family:inherit;cursor:pointer;touch-action:manipulation}
 <div class="scr hidden" id="scrBackC" style="z-index:45"><div class="win" style="width:min(460px,92vw)">
   <h2 id="bcT" style="font-size:32px">中断する？</h2><div class="sub" id="bcSub"></div>
   <div class="row"><button class="btn" id="bcNo">つづける</button><button class="btn am" id="bcGo">◀ もどる</button></div>
+</div></div>
+
+<div class="scr hidden" id="scrLearn"><div class="win">
+  <div id="lKick"></div><h2 id="lT"></h2>
+  <div id="lFig" class="hidden"></div><div id="lP"></div><div id="lQ"></div>
+  <div class="lFoot"><span id="lPg"></span><button class="btn am" id="lNext">次へ</button></div>
 </div></div>
 
 <button id="bBack">◀ もどる</button>
@@ -3922,7 +3952,7 @@ function layout(){var m=PORT?8:14;L.m=m;L.scr={x:m,y:m,w:W-2*m,h:H-2*m};var s=L.
 var scene='title',G=null,T=0,SH=0,FL=0,FLC=GR,PARTS=[],POPS=[],CB_POP=0,GLITCH=0;
 var PROBE_REV=false;
 function boxesOf(si){var S=STAGES[si];return S.boxes==='gen'?genBoxes():S.boxes.map(function(b){return Object.assign({},b)})}
-function startStage(si){var S=STAGES[si];if(window.BGM)BGM.mood(S.timed&&!S.prac?'tense':'normal');
+function startStage(si){var nk=needL(si);if(nk.length){teachKeys(nk,function(){startStage(si)});return}var S=STAGES[si];if(window.BGM)BGM.mood(S.timed&&!S.prac?'tense':'normal');
   G={si:si,S:S,boxes:boxesOf(si),bi:0,phase:'read',t:0,wrong:0,judge:0,first:0,combo:0,maxCombo:0,prac:!!S.prac,left:S.timed||0,done:false,msg:[],sendI:0,chip:null,decodedN:0,flash:0,speed:0,lastStroke:null};
   PROBE_REV=false;MSGT='';MSGS='';$('bFlip').textContent='LED ⇄ 向き';setupBox();setScene('play');clearExp();
   var n={rev:'新しい箱：**光らない** ことがある。LEDは決まった向きにしか電流を通さない。**LED ⇄ 向き** で向きを変えられる',
@@ -3930,7 +3960,7 @@ function startStage(si){var S=STAGES[si];if(window.BGM)BGM.mood(S.timed&&!S.prac
     pair:'新：**緑と黄のLED** を逆向きに並べた探り棒。電流の向きで光る色が変わる',
     named:'新：**正体の分かる箱**。名前だけで決めず、振ってすじで確かめよう',
     scope:'山場：LEDが消えた！ **オシロスコープ** で読む。暗室を **横になぞる** と電圧の波形が出る',
-    mix:'LED・2色・波形がまざる。東日本は **50Hz**、西日本は **60Hz**'}[S.intro];
+    mix:'LED・2色・波形がまざる。東日本は **50Hz**、西日本は **60Hz**（周波数）'}[S.intro];
   if(n)note(n,5200);if(S.timed)note('時限暗号！ **100秒** で10箱。連続で解くと時間がのびる',3800)}
 function curBox(){return G&&G.phase==='read'?G.boxes[G.bi]:null}
 function setupBox(){var b=curBox();if(!b)return;b.swung=0;b.x=L.box.x;b.y=L.box.y;b.drop=1;b.tries=0;b.shown=false;clearExp();SFX.blip()}
@@ -4283,16 +4313,59 @@ function buildMap(){var n=STAGES.length-1,done=0;for(var i=1;i<=n;i++)if(SV.star
     d.innerHTML=has?'<b>'+esc(s.n)+'</b>'+(s.k==='d'?'直流':'交流')+'　'+'★★★'.slice(0,s.r)+'<br>'+esc(SRC_NOTE[id]):'<b>？？？</b>まだ開けていない';cd.appendChild(d)});
   $('bToTest').disabled=!SV.done;$('bToTest').textContent=SV.done?'📋 確認テストへ':'📋 確認テスト（指令08のあと）'}
 function getName(){return(window.PLAYER_NAME||$('nameIn').value||SV.name||'').trim()}
-function toTest(){if(HELP)HELP.hide();var z=Zk();if(z&&z.mainClear&&!TEST){try{z.mainClear({onClose:startTest});return}catch(e){}}startTest()}
-$('bToTest').onclick=function(){if(SV.done)startTest()};
+function toTest(){if(HELP)HELP.hide();teachKeys(needL(99),toTest1)}
+function toTest1(){var z=Zk();if(z&&z.mainClear&&!TEST){try{z.mainClear({onClose:startTest});return}catch(e){}}startTest()}
+$('bToTest').onclick=function(){if(SV.done)teachKeys(needL(99),startTest)};
 function openBook(){var z=Zk();if(z&&z.openBook)z.openBook()}
 $('bBook1').onclick=openBook;$('bBook2').onclick=openBook;$('eBook').onclick=openBook;
 $('bGacha').onclick=function(){var z=Zk();if(z&&z.openGacha)z.openGacha()};
 if(!Zk())['bBook1','bBook2','bGacha','eBook'].forEach(function(id){$(id).classList.add('hidden')});
 
+
+/* ================= 解読マニュアル（まなぶ）：用語と決まりを「その前」に教える（2026-10-06 初心者向け） ================= */
+var LRN=null;
+function svgC(inner,vb){return '<svg viewBox="'+(vb||'0 0 420 170')+'" xmlns="http://www.w3.org/2000/svg" font-family="DotGothic16,monospace" fill="none" stroke="#39FF14" stroke-width="2">'+inner+'</svg>'}
+function tC(t,x,y,col,sz,anc){return '<text x="'+x+'" y="'+y+'" fill="'+(col||'#39FF14')+'" stroke="none" font-size="'+(sz||15)+'" text-anchor="'+(anc||'middle')+'">'+t+'</text>'}
+function ledC(x,y,on,flip){var d=flip?-1:1;return '<polygon points="'+(x-12*d)+','+(y-12)+' '+(x-12*d)+','+(y+12)+' '+(x+10*d)+','+y+'" '+(on?'fill="#FFB000" stroke="#FFB000"':'')+'/><path d="M'+(x+10*d)+' '+(y-12)+' V'+(y+12)+'"/>'+(on?'<path d="M'+(x+2)+' '+(y-18)+' l6 -8 M'+(x+12)+' '+(y-14)+' l8 -6" stroke="#FFB000"/>':'')}
+function shuf(a){for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1)),t=a[i];a[i]=a[j];a[j]=t}return a}
+var LC={
+ base:{k:'TX-33 解読マニュアル',p:[
+  {t:'直流と交流',fig:svgC(tC('直流',50,48,'#FFB000',18)+'<path d="M80 50 H380" stroke-width="3"/><path d="M360 42 l14 8 l-14 8"/>'+tC('向きが一定（乾電池）',230,30,'#39FF14',13)+tC('交流',50,128,'#FFB000',18)+'<path d="M80 130 H170 M260 130 H350"/><path d="M155 122 l14 8 l-14 8"/><path d="M190 130 H250"/><path d="M205 122 l-14 8 l14 8"/><path d="M335 122 l14 8 l-14 8"/>'+tC('→ ← → 向きが周期的に入れかわる（コンセント）',230,160,'#39FF14',12)),
+   p:'**直流**＝電流の **向きが一定** の電流。乾電池から流れる電流は直流。\n**交流**＝電流の **向きが周期的に入れかわる** 電流。家庭のコンセントから取り出せる電流は交流。',
+   q:{ask:'自動車の **バッテリー**（電池のなかま）から流れる電流は、向きがずっと同じ。この電流は？',c:['直流','交流','誘導電流'],why:'向きが一定＝直流。乾電池と同じ。向きが入れかわる＝交流。',hint:'「直」は、まっすぐ一方へ。'}},
+  {t:'LED（発光ダイオード）',fig:svgC(ledC(110,80,true)+'<path d="M40 80 H98 M120 80 H180"/>'+tC('＋ → 向きが合う：光る',110,130,'#FFB000',14)+ledC(310,80,false,true)+'<path d="M240 80 H298 M320 80 H380"/>'+tC('向きが逆：光らない',310,130,'#39FF14',14)),
+   p:'**LED** は **発光ダイオード** のこと（テストでは「発光ダイオード」と書く）。\n発光ダイオードは **決まった向きにしか電流を通さない**。だから **向きが合うときだけ光る**。つなぐ向きが逆だと、導線がつながっていても光らない。\n豆電球はどちらの向きでも光るので、直流か交流かの見分けには使えない。',
+   q:{ask:'乾電池につないで光っていた発光ダイオード。**乾電池の向きだけ** を逆にすると？',c:['光らなくなる','もっと明るく光る','点滅する'],why:'発光ダイオードは決まった向きにしか電流を通さない。電池を逆にすると向きが合わなくなり、光らない。',hint:'発光ダイオードは「決まった向き」にしか電流を通さなかったね。'}},
+  {t:'光のすじで見分ける',fig:svgC('<path d="M40 50 H380" stroke="#39FF14" stroke-width="6" stroke-linecap="round"/>'+tC('直流：光り続ける → 1本のつながった線',210,30,'#39FF14',13)+'<path d="M40 120 H380" stroke="#39FF14" stroke-width="6" stroke-dasharray="14 16" stroke-linecap="round"/>'+tC('交流：向きが入れかわるたびに消える → 点線',210,150,'#39FF14',13)),
+   p:'発光ダイオードを電源につないで、暗い所で **すばやく横に動かす** と、光のすじが残る。\n**直流** なら光り続けるので **1本のつながった線**。**交流** なら向きが入れかわるたびに消えるので **点線**。\n**すばやく** 動かすほど、点と点の間が離れて点線がはっきり見える（ゆっくりだと、つぶれて線に見える）。',
+   q:{ask:'ある電源につないだ発光ダイオードを、暗い所ですばやく動かすと、光のすじが **点線** になった。この電源は？',c:['交流','直流','どちらとも言えない'],why:'点線＝光ったり消えたりしている＝向きが入れかわっている。だから交流。',hint:'光り続けるのはどっちの電流だった？'},last:'端末へ ▶'}
+ ]},
+ hz:{k:'TX-33 解読マニュアル　追加',p:[
+  {t:'周波数（Hz）',fig:svgC('<path d="M20 85 H400" stroke="#1b5e10"/>'+tC('0',12,90,'#1b5e10',12)+(function(){var d='M20 85';for(var i=0;i<=380;i+=4){d+=' L'+(20+i)+' '+(85-50*Math.sin(i/380*5*2*Math.PI)).toFixed(1)}return '<path d="'+d+'" stroke-width="2.5"/>'})()+tC('（1秒に50回くり返す波の、はじめの5回）',210,160,'#39FF14',12)),
+   p:'交流が **1秒間にくり返す回数** を **周波数** といい、単位は **Hz（ヘルツ）**。\n家庭のコンセントの交流は、**東日本 50Hz**・**西日本 60Hz**。\n発光ダイオード **1個** は、向きが合うときだけ光るので、1回のくり返しに1回だけ光る。50Hzなら **1秒間に50回** 点灯する（100回ではない）。',
+   q:{ask:'西日本（60Hz）のコンセントに、発光ダイオードを **1個** つないだ。1秒間に何回点灯する？',c:['60回','120回','30回'],why:'向きが合うのは1回のくり返しに1回。60Hzなら1秒に60回。',hint:'1個の発光ダイオードは、向きが合うときだけ光る。くり返し1回につき何回？'},last:'指令07へ ▶'}
+ ]}
+};
+var LAT=[[1,'base'],[7,'hz']];
+function needL(upto){if(!SV.lrn)SV.lrn={};var out=[];if(TEST)return out;LAT.forEach(function(a){if(a[0]<=upto&&!SV.lrn[a[1]]&&out.indexOf(a[1])<0)out.push(a[1])});return out}
+function teachKeys(keys,done){if(!keys.length){done();return}var pages=[];keys.forEach(function(k){LC[k].p.forEach(function(pg){pages.push({pg:pg,k:LC[k].k})})});
+  LRN={p:pages,i:0,done:function(){keys.forEach(function(k){SV.lrn[k]=1});save();done()}};if(HELP)HELP.hide();showLearn()}
+function showLearn(){var L0=LRN,it=L0.p[L0.i],pg=it.pg;show('scrLearn',true);$('lKick').textContent=it.k;$('lT').textContent=pg.t;
+  var cd0=document.querySelector('#scrLearn .win');cd0.classList.toggle('wf',!!pg.fig);cd0.classList.toggle('wq',!!pg.q);
+  var f=$('lFig');if(pg.fig){f.innerHTML=pg.fig;f.classList.remove('hidden')}else{f.innerHTML='';f.classList.add('hidden')}
+  $('lP').innerHTML=pg.p.split('\n').map(function(x){return '<p>'+mdb(x)+'</p>'}).join('');
+  var q=$('lQ'),nb=$('lNext');q.innerHTML='';nb.textContent=L0.i+1>=L0.p.length?(pg.last||'わかった'):'次へ';$('lPg').textContent=L0.p.length>1?(L0.i+1)+' / '+L0.p.length:'';
+  if(pg.q){var qq=pg.q;nb.classList.add('hidden');q.innerHTML='<div class="lAsk">&gt; やってみよう：'+mdb(qq.ask)+'</div><div class="lOpts"></div><div class="lWhy"></div>';var box=q.querySelector('.lOpts'),wy=q.querySelector('.lWhy');
+    shuf(qq.c.map(function(t,i){return{t:t,ok:i===0}})).forEach(function(o){var b=document.createElement('button');b.className='btn sm';b.textContent=o.t;
+      b.onclick=function(){ac();if(o.ok){SFX.blip();[].forEach.call(box.children,function(x){x.disabled=true});b.disabled=false;b.className='btn am sm';wy.innerHTML='<b>そのとおり。</b>'+mdb(qq.why);nb.classList.remove('hidden');setTimeout(function(){try{nb.scrollIntoView({behavior:RM?'auto':'smooth',block:'nearest'})}catch(e){}},60)}
+        else{SFX.err();b.disabled=true;wy.innerHTML='<b>ちがう。</b>'+mdb(qq.hint||'もう一度、上の説明を読んでみよう');try{wy.scrollIntoView({block:'nearest'})}catch(e){}}};box.appendChild(b)})}
+  else nb.classList.remove('hidden');
+  $('scrLearn').scrollTop=0}
+$('lNext').onclick=function(){ac();var L0=LRN;if(!L0)return;L0.i++;if(L0.i>=L0.p.length){show('scrLearn',false);LRN=null;SFX.open(3);if(L0.done)L0.done();return}SFX.key();showLearn()};
+
 /* ================= 遊び方案内（Guide） ================= */
 var PRAC_RET=null;
-var INTRO={title:'第33回　光のすじ暗号',learn:'**直流** は電流の向きが一定、**交流** は向きが周期的に入れかわる。LEDを振ると 直流＝**1本の線**、交流＝**点線**',
+var INTRO={title:'第33回　光のすじ暗号',learn:'**直流** は電流の向きが一定、**交流** は向きが周期的に入れかわる。**LED（発光ダイオード）** を振ると 直流＝**1本の線**、交流＝**点線**',
   how:'暗室を指で **速くなぞって** LEDを振る → 箱を **直流／交流の口へドラッグ**',gesture:'swipe'};
 function roomT(){var r=L.room;return{x:r.x+r.w*.2,y:r.y+r.h*.45,r:40,el:cv}}
 function boxT(){var b=curBox();return b?{x:b.x,y:b.y,r:L.box.r*1.1,el:cv}:null}
@@ -4316,9 +4389,9 @@ var PRACTICE={label:'れんしゅう中（練習の指令）',bandAt:'bottom',
   clearText:'れんしゅうクリア！',
   onClear:function(){SV.pracDone=true;save()},
   onExit:function(){var r=PRAC_RET;PRAC_RET=null;if(!r)return;G=null;if(r==='stage1')startStage(1);else setScene(r)}};
-function startPractice(ret){PRAC_RET=ret;if(window.Guide)Guide.tutorial(PRACTICE);else startStage(0)}
-function helpRules(){var r=['暗室を指で **速くなぞる**＝箱につないだLEDを振る','**1本の線**＝直流（向きが一定）／**点線**＝交流（向きが入れかわる）','すじを見てから、箱を **直流／交流の口** へドラッグ（振る前は決められない）',
-  '光らないときは **LEDの向き** が電流と逆（**LED ⇄ 向き**）','2色LED：**1色だけ**＝直流／**緑と黄が交互**＝交流','オシロスコープ：**一直線**＝直流／**0を横切る波**＝交流','返信：電源をタップ → 帯を横になぞって指定のすじを描く'];
+function startPractice(ret){teachKeys(needL(1),function(){PRAC_RET=ret;if(window.Guide)Guide.tutorial(PRACTICE);else startStage(0)})}
+function helpRules(){var r=['**LED**＝**発光ダイオード**。決まった向きにしか電流を通さず、向きが合うときだけ光る','暗室を指で **速くなぞる**＝箱につないだLEDを振る','**1本の線**＝直流（向きが一定）／**点線**＝交流（向きが入れかわる）','すじを見てから、箱を **直流／交流の口** へドラッグ（振る前は決められない）',
+  '光らないときは **LEDの向き** が電流と逆（**LED ⇄ 向き**）','2色LED：**1色だけ**＝直流／**緑と黄が交互**＝交流','オシロスコープ：**一直線**＝直流／**0を横切る波**＝交流','返信：電源をタップ → 帯を横になぞって指定のすじを描く','**周波数**＝交流が1秒間にくり返す回数（単位 **Hz**）。東日本50Hz・西日本60Hz。LED1個なら1秒に50回（60回）光る'];
   if(G&&!G.prac)r.push('この指令：'+G.S.b);return r}
 if(window.Guide){
   Guide.setup({theme:{bg:'#031303',fg:GR,accent:AM,accentText:BG,font:FD,bodyFont:FD,radius:0,texture:'scan',line:GR,dim:'rgba(0,0,0,.6)',shadow:'0 0 18px rgba(57,255,20,.4)',outline:BG,hand:'#EFFFE8',handLine:BG},
@@ -4326,7 +4399,7 @@ if(window.Guide){
     muted:function(){return muted},title:INTRO.title,learn:INTRO.learn,how:INTRO.how});
   HELP=Guide.help({rules:[],offset:{x:66},size:48,show:false,attention:true,replay:function(){PRAC_RET='map';G=null;Guide.tutorial(PRACTICE);return null},
     onOpen:function(){if(G)G.paused=true},onClose:function(){if(G)G.paused=false}});
-  Guide.tutorialButton('#bHow',function(){ac();PRAC_RET='title';Guide.tutorial(PRACTICE)});
+  Guide.tutorialButton('#bHow',function(){ac();startPractice('title')});
 }else $('bHow').classList.add('hidden');
 $('bStart').onclick=function(){ac();SFX.sweep();SV.name=$('nameIn').value.trim()||SV.name;save();var first=!SV.pracDone&&SV.unl<=1&&!SV.stars[1];
   if(!window.Guide){if(first)startStage(0);else setScene('map');return}
@@ -4335,7 +4408,7 @@ $('bCont').onclick=function(){ac();SV.name=$('nameIn').value.trim()||SV.name;sav
 
 /* ================= 確認テスト ================= */
 var TQ=[],TI=0,TA=[],TOK=[],CARD=null;
-function startTest(){G=null;setScene('test');TQ=window.Quiz?Quiz.test():[];TI=0;TA=[];TOK=[];$('scrTest').scrollTop=0;showQ()}
+function startTest(){if(!TEST&&needL(99).length){teachKeys(needL(99),startTest);return}G=null;setScene('test');TQ=window.Quiz?Quiz.test():[];TI=0;TA=[];TOK=[];$('scrTest').scrollTop=0;showQ()}
 function lamps(){$('tLamps').innerHTML=TQ.map(function(q,i){return'<i class="'+(i<TOK.length?(TOK[i]?'ok':'ng'):i===TI?'cur':'')+'"></i>'}).join('')}
 function showQ(){if(TI>=TQ.length)return finishTest();var q=TQ[TI];$('tNo').textContent='Q'+(TI+1)+' / '+TQ.length;lamps();
   $('tQ').textContent=q.q;var f=$('tFig');if(q.fig){f.innerHTML=q.fig;f.classList.remove('hidden')}else{f.innerHTML='';f.classList.add('hidden')}
@@ -4373,7 +4446,6 @@ if(window.PLAYER_NAME){$('nameIn').value=window.PLAYER_NAME;$('nmRow').classList
 if(!(SV.pracDone||SV.unl>1))$('bCont').classList.add('hidden');
 if(TEST)startTest();else setScene('title');
 requestAnimationFrame(frame);
-window.__TC={G:function(){return G},L:function(){return L},SV:function(){return SV},scene:function(){return scene},start:startStage,laneRect:function(){return laneRect()},probeRev:function(){return PROBE_REV}};
 })();
 </script>
 <script>window.ZUKAN_COUNTER={"db": "https://rika-zukan-rank-default-rtdb.asia-southeast1.firebasedatabase.app", "id": "tenmetsu-code"};

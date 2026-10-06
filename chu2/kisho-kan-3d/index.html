@@ -100,6 +100,7 @@ body.port #hint{bottom:112px;font-size:16px;white-space:normal;width:max-content
 .bill::before{content:"";position:absolute;right:-5px;top:-5px;width:70px;height:70px;background:var(--red);clip-path:polygon(0 0,100% 0,100% 100%)}
 .bill h2{font-family:var(--fh);font-weight:400;font-size:28px;margin:0 50px 10px 0;line-height:1.2}
 .bill p{font-size:16px;line-height:1.65;margin:8px 0}
+.bill .rule{border-left:6px solid var(--red);padding:6px 10px;background:rgba(200,16,46,.07)} /* まなぶ札 2026-10-06 */
 .small{font-size:13.5px;line-height:1.55}
 .row{display:flex;gap:14px;flex-wrap:wrap;justify-content:center;margin-top:12px}
 .stars{display:flex;gap:10px;justify-content:center;margin:8px 0}
@@ -3859,7 +3860,7 @@ const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;'
 const clamp=(v,a,b)=>v<a?a:v>b?b:v, rnd=(a,b)=>a+Math.random()*(b-a);
 
 /* ===== 保存 ===== */
-function fresh(){return{v:1,name:'',started:false,clr:{},stars:{},coll:{},paid:{},t:0,falls:0,cleared:false,mc:false,sound:true,best:{}}}
+function fresh(){return{v:1,name:'',started:false,clr:{},stars:{},coll:{},paid:{},seen:{},t:0,falls:0,cleared:false,mc:false,sound:true,best:{}}}
 let S;try{S=Object.assign(fresh(),JSON.parse(localStorage.getItem(SKEY))||{})}catch(e){S=fresh()}
 function save(){try{localStorage.setItem(SKEY,JSON.stringify(S))}catch(e){}}
 
@@ -4202,8 +4203,44 @@ function fallNow(g){if(g.fall)return;const ons=g.cups.filter(c=>c.st==='on');let
 function respawnAfterFall(g){respawnAt(g,findGood(g,Math.max(40,g.cp)));const b=bodyTarget(g);g.body.x=b.x;g.body.y=b.y;g.body.a=0}
 function failStage(g,cause){g.done=true;sfx.bad();const R=RULES[cause];ovOpen('<h2>'+esc(R[0])+'</h2><p>'+esc(R[1])+'</p><div class="row"><button class="slab" id="fRe"><span>もう一度</span></button><button class="slab p s" id="fMap"><span>塔の地図</span></button></div>');$('#fRe').onclick=()=>{ovClose();startStage(g.si)};$('#fMap').onclick=()=>{ovClose();toMap()}}
 
+
+/* ===== まなぶ札（2026-10-06 夜間改修・初心者向け）: その面に入る前に、まだ読んでいない札を先に出す（地図・つづきから入っても） ===== */
+const LESSON=[
+ {k:'hpa',at:0,no:'1',h:'大気圧と、押しつける力',
+  body:'<p>空気の重さで、物がまわりの空気から押される圧力を<b>大気圧（気圧）</b>という。圧力の単位は <b>Pa（パスカル）</b>＝1 m² あたり 1 N の力（N は力の大きさの単位）。</p>'+
+  '<p>大気圧は大きな数なので <b>hPa（ヘクトパスカル）</b>で表す。<b>1 hPa ＝ 100 Pa</b>。地上の大気圧は約 1013 hPa ＝ 101300 Pa。</p>'+
+  '<p class="rule">押しつける力（N）＝ 圧力（Pa）× 面積（m²）</p>'+
+  '<p><b>やって見せる：</b>外の気圧 1000 hPa ＝ 100000 Pa。吸盤の中の空気をほとんど押し出し、面積が 0.005 m² なら、<br>100000 × 0.005 ＝ <b>500 N</b> で壁に押しつけられる（体を支えるには 450 N いる）。</p>'+
+  '<p>吸盤は「吸いつく」のではない。<b>中の空気が少なく、まわりの空気が外から押しつけている</b>。</p>',
+  quiz:{q:'100000 Pa の大気圧が、0.002 m² の面を押す力は？',opts:[['200 N',1],['2000 N',0],['50 N',0]],ok:'正解！ 100000 × 0.002 ＝ 200 N。',ng:'力＝圧力×面積。100000 に 0.002 をかけよう（1000 分の 2 倍）。'}},
+ {k:'allway',at:2,no:'2',h:'大気圧は、あらゆる向きから押す',
+  body:'<p>大気圧は上からだけではない。<b>空気にふれているすべての面を、外から面に垂直に</b>押す。天井の吸盤は、<b>下にある空気が上向きに</b>押しつけている。</p>'+
+  '<p class="rule">身近な例：<br>・水を満たしたコップに厚紙をのせてさかさにしても落ちない → <b>下から大気圧が厚紙を押し上げる</b><br>・ストローで飲める → ストローの中の空気を減らすと、<b>まわりの大気圧が飲み物の表面を押して</b>飲み物が上がる</p>',
+  quiz:{q:'スポイトのゴム球を押したまま先を水に入れ、指をはなすと水が入ってくる。水を中へ押し入れているのは？',opts:[['まわりの大気圧が、水面を押している',1],['ゴム球が、水を引っぱっている',0],['水が、自分で上がってくる',0]],ok:'正解！ ゴム球の中の空気がへり、まわりの大気圧が水面を押して、水がスポイトの中へ入る。',ng:'「吸う・引っぱる」ではなかったね。まわりの空気が何を押しているか考えよう。'}},
+ {k:'can',at:3,no:'3',h:'空き缶を大気圧でつぶす実験',
+  body:'<p>手順：① 缶に少しの水を入れる → ② 加熱して、口から湯気を十分に出す（湯気が中の空気を追い出す）→ ③ 火を止め、トングで缶をはさむ → ④ 缶の口を下にして冷たい水につける</p>'+
+  '<p class="rule">冷やすと中の水蒸気が水にもどり、中の気体がへって<b>中の気圧が下がる</b>。外の大気圧が<b>あらゆる向きから</b>押してつぶす。中の空気が少ないほど、強くつぶれる。</p>'+
+  '<p>ふたを開けたままの缶がつぶれないのは、<b>中にも空気があり、外と同じ大きさで押し返している</b>から。</p>',
+  quiz:{q:'湯気を出した缶の口を下にして、冷たい水につけた。その直後、缶の中の気圧はどうなる？',opts:[['下がる',1],['上がる',0],['変わらない',0]],ok:'正解！ 中の水蒸気が水にもどって気体がへるので、中の気圧が下がる。だから外の大気圧に押されてつぶれる。',ng:'冷やすと、中の水蒸気は何にもどる？ 中の気体がへると、中から押し返す力はどうなるかな。'}},
+ {k:'vac',at:5,no:'4',h:'まわりの空気をぬくと？',
+  body:'<p><b>ベルジャー</b>（ガラスのおおい）に物を入れ、ポンプで中の空気をぬくと、まわりの気圧が下がる。</p>'+
+  '<p class="rule">・吸盤：押しつけていたまわりの空気がへる → <b>はずれて落ちる</b><br>・ふたを閉めたペットボトルや袋：中の空気の押しがまさる → <b>あらゆる向きにふくらむ</b>（山の上でおかしの袋がふくらむのも同じ）</p>',
+  quiz:{q:'口をしばった、少しふくらませた風船をベルジャーに入れて、中の空気をぬいた。風船はどうなる？',opts:[['大きくふくらむ',1],['しぼむ',0],['変わらない',0]],ok:'正解！ まわりの気圧が下がり、風船の中の空気が押し広げる力がまさる。',ng:'まわりの空気をぬくと、外から押す力は小さくなる。中の空気の押しとくらべよう。'}}];
+function shuf(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function teach(i,then){const q=LESSON.filter(l=>l.at<=i&&!(S.seen&&S.seen[l.k]));let j=0;
+ const nx=()=>{if(j>=q.length){backBtn();then();return}const l=q[j++];$('#bBack').classList.add('hidden');
+  const mark=()=>{S.seen=S.seen||{};S.seen[l.k]=1;save();ovClose();nx()};
+  /* 札は2枚：読む札 → やってみよう（答えを押しても札は作り直さず、返しの欄だけ書き換える） */
+  ovOpen('<p style="color:var(--red);font-size:14px;margin:0">まなぶ '+l.no+'</p><h2>'+l.h+'</h2>'+l.body+'<div class="row" style="margin-top:12px"><button class="slab" id="lGo"><span>'+(l.quiz?'やってみよう ▶':'わかった')+'</span></button></div>');
+  $('#lGo').onclick=()=>{ac();sfx.tap();if(!l.quiz){mark();return}
+   const ops=shuf(l.quiz.opts);
+   ovOpen('<p style="color:var(--red);font-size:14px;margin:0">まなぶ '+l.no+'　やってみよう</p><p><b>'+l.quiz.q+'</b></p><div id="lq" style="display:flex;flex-direction:column;gap:12px;padding:0 10px">'+ops.map((o,k)=>'<button class="slab p s" data-k="'+k+'"><span>'+o[0]+'</span></button>').join('')+'</div><p id="lqr" style="font-weight:700;min-height:1.5em" aria-live="polite"></p><div class="row" style="margin-top:12px"><button class="slab" id="lGo2" disabled style="opacity:.35"><span>わかった</span></button></div>');
+   $('#lGo2').onclick=()=>{if($('#lGo2').disabled)return;ac();sfx.tap();mark()};
+   document.querySelectorAll('#lq .slab').forEach(b=>b.onclick=()=>{ac();sfx.tap();const ok=ops[+b.dataset.k][1];$('#lqr').innerHTML=ok?l.quiz.ok:'<span style="color:var(--red)">'+l.quiz.ng+'</span>';if(ok){$('#lGo2').disabled=false;$('#lGo2').style.opacity='';document.querySelectorAll('#lq .slab').forEach(x=>x.disabled=true)}else{b.disabled=true;b.style.opacity='.4'}})}};
+ nx()}
 /* ===== ステージの始まり・クリア ===== */
-function startStage(i,tut){G=newStage(i);if(tut){G.tut=true;G.hintStep=-1}MODE='play';show(['play']);backBtn();$('#hTw').classList.toggle('hidden',!G.st.limit);if(window.BGM)BGM.mood('normal');
+function startStage(i,tut){if(tut){startStage0(i,tut);return}teach(i,()=>startStage0(i))}
+function startStage0(i,tut){G=newStage(i);if(tut){G.tut=true;G.hintStep=-1}MODE='play';show(['play']);backBtn();$('#hTw').classList.toggle('hidden',!G.st.limit);if(window.BGM)BGM.mood('normal');
  slip(String(i+1).padStart(2,'0')+'　'+G.st.nm,G.st.goal+(G.st.cup==='small'?'（小さな吸盤）':''),2.6);hudUpdate(true)}
 function clearStage(g){if(g.done)return;g.done=true;if(!GD)sfx.fan();else if(g.tut)GD.tutorialClear();else GD.celebrate(g.st.boss?'頂上！':'突破！');FLASH=RM?0:.6;buzz([20,40,30]);const i=g.si;const first=!S.clr[i];S.clr[i]=1;
  const nf=g.falls===0;const pr=g.predAll>0||g.gates.length?(g.predHits===g.predAll&&g.canFirst):g.t<=g.st.par;
@@ -4352,7 +4389,7 @@ function toMap(){tutStop();MODE='map';G=null;show(['map']);backBtn();$('#slip').
  $('#bTest').classList.toggle('hidden',!S.cleared);zkButtons()}
 $('#bNext').onclick=()=>{sfx.tap();if(S.cleared)startTest();else startStage(nextStage())};
 $('#bTest').onclick=()=>startTest();
-$('#bStart').onclick=()=>{ac();sfx.tap();const nm=$('#nameIn').value.trim()||S.name,snd=S.sound,keep={coll:S.coll,paid:S.paid,mc:S.mc,clr:S.clr,stars:S.stars,cleared:S.cleared,best:S.best};S=fresh();Object.assign(S,keep);S.name=nm;S.sound=snd;S.started=true;save();if(GD)startWithGuide();else startStage(0)};
+$('#bStart').onclick=()=>{ac();sfx.tap();const nm=$('#nameIn').value.trim()||S.name,snd=S.sound,keep={coll:S.coll,paid:S.paid,seen:S.seen,mc:S.mc,clr:S.clr,stars:S.stars,cleared:S.cleared,best:S.best};S=fresh();Object.assign(S,keep);S.name=nm;S.sound=snd;S.started=true;save();if(GD)startWithGuide();else startStage(0)};
 $('#bCont').onclick=()=>{ac();sfx.tap();const v=$('#nameIn').value.trim();if(v)S.name=v;save();toMap()};
 $('#bBook1').onclick=openBook;$('#bBook2').onclick=openBook;$('#bGacha').onclick=openGacha;
 $('#bShelf').onclick=shelf;$('#bShelf1').onclick=shelf;
@@ -4369,7 +4406,7 @@ function shelf(){sfx.tap();const cans=Object.keys(CANS).map(id=>{const on=!!S.co
 
 /* ===== 確認テスト ===== */
 let TS=null;function playerName(){return window.PLAYER_NAME||S.name||''}
-function startTest(){if(!window.Quiz)return;tutStop();MODE='test';G=null;TS={qs:Quiz.test(),i:0,ans:[]};show(['test']);backBtn();$('#slip').classList.add('hidden');renderQ()}
+function startTest(){if(!window.Quiz)return;tutStop();if(!TEST_ONLY&&LESSON.some(l=>!(S.seen&&S.seen[l.k]))){MODE='brief';G=null;show([]);$('#slip').classList.add('hidden');teach(99,()=>{ovClose();startTest()});return}MODE='test';G=null;TS={qs:Quiz.test(),i:0,ans:[]};show(['test']);backBtn();$('#slip').classList.add('hidden');renderQ()}
 function renderQ(){const q=TS.qs[TS.i],box=$('#tbox');
  box.innerHTML='<span class="tno">確認テスト　'+(TS.i+1)+' / '+TS.qs.length+'</span><div class="prog">'+TS.qs.map((_,i)=>'<i class="'+(i<TS.i?'on':'')+'"></i>').join('')+'</div><div class="tq">'+q.q+'</div>'+(q.fig?'<div class="fig2">'+q.fig+'</div>':'')+'<div id="ta"></div>';
  const ta=$('#ta');
@@ -4448,21 +4485,18 @@ if(GD){
  HELP=GD.help({title:'吸盤ウォールクライム',
   rules:['吸盤を **ドラッグ** して、とどく壁（ガラス・金属）へ。はなすとつく',
    '**長おし** で吸盤の中の空気を押し出す。押しつける力が **450 N** をこえると体を支えられる',
+   '**hPa（ヘクトパスカル）** は気圧の単位。1 hPa ＝ 100 Pa（1 Pa ＝ 1 m² あたり 1 N）',
    '押しつける力 ＝（外の気圧 − 吸盤の中の気圧）× 面積。レンガ・ひびは空気が入るのでつかない',
    '天井でも横でも、空気は **外の空気の側から** 押す（あらゆる向き）',
    '缶の門：**加熱 → ふた → 矢印で予言 → 冷水をドラッグ**。中の空気が減ると、外の空気が四方から押してつぶす'],
   onOpen:()=>{HPAUSE=true},onClose:()=>{HPAUSE=false},
   replay:'tutorial',offset:{x:62},show:false,attention:true});
- GD.tutorialButton('#bHow',()=>{ac();sfx.tap();if(!S.started){S.name=$('#nameIn').value.trim()||S.name;S.started=true;save()}GD.tutorial(PRACTICE)});
+ GD.tutorialButton('#bHow',()=>{ac();sfx.tap();if(!S.started){S.name=$('#nameIn').value.trim()||S.name;S.started=true;save()}teach(0,()=>GD.tutorial(PRACTICE))});
 }else{$('#bHow').classList.add('hidden')}
 function startWithGuide(){
  GD.intro({title:'第5回　吸盤ウォールクライム',
   learn:'大気圧は **上からだけでなく、あらゆる向き** から押す。吸盤も缶も **まわりの空気に押されて** いる',
-  how:'吸盤を **ドラッグ** で上の壁へ、**長おし** で中の空気を押し出して体を支える',gesture:'drag'}).then(()=>GD.tutorial(PRACTICE))}
-window.__game={cupS,aboveS,force:c=>force(G,c),at:s=>at(G,s),w2s:(x,y)=>w2s(x,y),S:()=>S,G:()=>G,mode:()=>MODE,startStage,toMap,toTitle,startTest,step:(dt,n)=>{for(let i=0;i<(n||1);i++)update(dt||1/60)},
- auto(n){const g=G;for(let k=0;k<(n||1);k++){if(!g||g.done)return;const lo=g.cups[0].s<g.cups[1].s?0:1,an=g.cups[1-lo];let best=null;for(let s=an.s+REACH;s>an.s+30;s-=6){const p=at(g,s);if(p.m==='none'||p.m==='brick'||p.m==='crack')continue;if(Math.hypot(p.x-an.x,p.y-an.y)>REACH)continue;if(g.gates.some(q=>!q.open&&s>q.s-10))continue;best=s;break}if(best==null)return;
-  const c=g.cups[lo];c.st='air';g.drag={i:lo,tgt:null};const p=at(g,best);g.drag.tgt={x:p.x,y:p.y,s:best,m:p.m,nx:p.nx,ny:p.ny,ok:true};endDrag(g);if(g.mode==='predict'){g.pred.ang=Math.atan2(-p.ny,p.nx);lockPred(g)}g.sq=true;g.sqI=lo;for(let i=0;i<60;i++)update(1/30);g.sq=false;for(let i=0;i<20;i++)update(1/30)}},
- can(){const g=G,q=g.gates.find(z=>!z.open);if(!q)return;q.burn=true;for(let i=0;i<200;i++)update(1/30);q.burn=false;q.st='capped';q.pred.fill(1);pour(g,q);for(let i=0;i<90;i++)update(1/30)}};
+  how:'吸盤を **ドラッグ** で上の壁へ、**長おし** で中の空気を押し出して体を支える',gesture:'drag'}).then(()=>teach(0,()=>GD.tutorial(PRACTICE)))}
 if(TEST_ONLY){startTest()}else toTitle();
 requestAnimationFrame(frame);
 })();

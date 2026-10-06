@@ -73,6 +73,8 @@ button{font:inherit;color:inherit;cursor:pointer;touch-action:manipulation;borde
 .sheet h2 small{display:block;font-family:var(--font);font-size:.5em;color:var(--yel);text-shadow:0 0 8px rgba(255,230,109,.7);margin-top:4px}
 .sheet p{margin:8px 0;font-size:clamp(15px,.6vw + 12px,19px);line-height:1.7}
 .sheet .btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:16px}
+.sheet .btns.lsStick{position:sticky;bottom:-18px;margin:12px -22px -18px;padding:10px 0 12px;background:rgba(12,12,20,.97);box-shadow:0 -8px 14px rgba(12,12,20,.9)}
+.sheet .qch .neo[disabled]{cursor:default}
 .goal{display:flex;gap:8px;justify-content:center;margin:10px 0;font-size:15px;flex-wrap:wrap}
 .goal span{border:1.5px solid rgba(255,230,109,.6);border-radius:8px;padding:4px 10px;color:var(--yel)}
 .ledg{width:100%;border-collapse:collapse;margin:6px 0 4px;font-size:15px}
@@ -3891,7 +3893,7 @@ function buildStat(song){const W=cv.width,H=cv.height,c=mk(W,H),g=c.getContext('
 
 /* =================== 6. 曲（セットリスト） =================== */
 const SONGS=[
- {name:'はじめの一拍',tempo:[[0,60]],pulses:[0],cyc:12,lamps:['head'],nw:'光が部屋に入る瞬間にタップ',tip:'全身からもどった青い光（静脈血）は、まず右心房へ。光が入る瞬間に、その部屋をタップ！'},
+ {name:'はじめの一拍',tempo:[[0,60]],pulses:[0],cyc:12,lamps:['head'],nw:'光が部屋に入る瞬間にタップ',tip:'全身からもどった青い光（酸素が少ない血液＝静脈血）は、大静脈を通って、まず右心房へ。光が入る瞬間に、その部屋をタップ！'},
  {name:'肺へ、全身へ',tempo:[[0,66]],pulses:[0],cyc:16,lamps:['head','arm','belly'],nw:'全身のランプを消さない',tip:'右心室→肺動脈→肺で赤に→肺静脈→左心房→左心室→大動脈→全身。ランプが消えないように。'},
  {name:'ふたつの心房',tempo:[[0,62]],pulses:[0,2],cyc:14,lamps:['head','arm','belly'],nw:'左右の部屋をいっしょにタップ',tip:'心房は左右いっしょに縮み、つぎに心室が左右いっしょに縮む。2本の指で同時に！'},
  {name:'弁のバラード',tempo:[[0,62]],pulses:[0],cyc:16,lamps:['head','arm','belly','legs'],hold:true,nw:'心室は長押し＝弁が逆流を防ぐ',tip:'心室は、光が動脈へ出ていくまで押し続けよう。弁が閉じて逆流しない。はなすと逆流！'},
@@ -3900,6 +3902,8 @@ const SONGS=[
  {name:'フルボディ・ツアー',tempo:[[0,78]],pulses:[0,2],cyc:20,lamps:['head','arm','belly','legs'],hold:true,nw:'同時押し＋長押しのフルセット',tip:'同時押しと長押しがいっしょに来る。全身のランプを守りきろう。'},
  {name:'アンコール',tempo:[[0,76],[26,90],[50,102]],pulses:[0,2],cyc:22,lamps:['head','arm','belly','legs'],hold:true,blackout:'half',legsFast:true,boss:true,nw:'すべてが合わさるアンコール（ボス）',tip:'暗転・長押し・速くなる拍動。最後の1拍まで、全身に血液を届けよう。'}
 ];
+/* 2026-10-06 初心者向け: 第1曲の前の「れんしゅう」（ゆっくり3周・指さしつき・★なし） */
+const PRACTICE={name:'れんしゅう',tempo:[[0,52]],pulses:[0],cyc:3,lamps:['head'],practice:true,nw:'光が入る瞬間に、その部屋をタップ',tip:'👆の出た部屋を、光が入る瞬間にタップ。右心房→右心室→（肺で赤に）→左心房→左心室の順に光が進む。'};
 const THR=[.5,.72,.88],WIN={P:.06,G:.105,O:.155},LEAD=4;
 /* 2026-10-02 適当プレイ対策: 空打ちは −0.3ノーツ分／第3曲からは心房（帰ってくる部屋）に合図のリングを出さない＝光がどの部屋へ帰るかを自分で見きわめる */
 const EMPTY_PEN=.3,WRONG_PEN=1,RING_ATRIA_UNTIL=2;
@@ -3911,8 +3915,8 @@ function timeBeat(t){const T=G.song.tempo;let acc=0;for(let i=0;i<T.length;i++){
 function bpmAt(b){const T=G.song.tempo;let v=T[0][1];for(const s of T)if(b>=s[0])v=s[1];return v}
 function songTime(){if(!G||!G.t0)return 0;const n=G.paused?G.pauseAt:performance.now()/1000;return n-G.t0-G.pauseAcc}
 function curBeat(){return G?timeBeat(songTime()):0}
-function newSong(i){const song=SONGS[i];G={i,song,notes:[],pulses:[],fx:[],pops:[],combo:0,maxC:0,score:0,judged:0,counts:{P:0,G:0,O:0,M:0},paused:true,ended:false,t0:0,pauseAcc:0,pauseAt:0,
- lamp:{},lampOut:false,outSet:{},shake:0,flash:0,flashC:'#fff',tier:0,banner:null,ticker:[],holds:{},keyDown:{},laps:0,capShown:{},tutor:i===0&&!SV.tut.s1};
+function newSong(i){const song=i<0?PRACTICE:SONGS[i];G={i,song,notes:[],pulses:[],fx:[],pops:[],combo:0,maxC:0,score:0,judged:0,counts:{P:0,G:0,O:0,M:0},paused:true,ended:false,t0:0,pauseAcc:0,pauseAt:0,
+ lamp:{},lampOut:false,outSet:{},shake:0,flash:0,flashC:'#fff',tier:0,banner:null,ticker:[],holds:{},keyDown:{},laps:0,capShown:{},tutor:i<0||(i===0&&!SV.tut.s1)};
  ['lung'].concat(song.lamps).forEach(k=>G.lamp[k]=1);
  song.pulses.forEach((o,pi)=>{const P={i:pi,notes:[]};for(let c=0;c<song.cyc;c++){const b=LEAD+o+4*c;const tgt=song.lamps[(c+pi)%song.lamps.length];
   [['RA',0],['RV',.5],['LA',2],['LV',2.5]].forEach(([pad,d])=>{const n={pad,b:b+d,p:pi,c,tgt,grade:null,hold:!!song.hold&&pad[1]==='V',fed:false};P.notes.push(n);G.notes.push(n)})}G.pulses.push(P)});
@@ -3920,7 +3924,7 @@ function newSong(i){const song=SONGS[i];G={i,song,notes:[],pulses:[],fx:[],pops:
  G.notes.sort((a,b)=>a.t-b.t);G.endBeat=Math.max(...G.notes.map(n=>n.b))+1.5;G.endT=beatTime(G.endBeat);
  const iv=beatTime(LEAD+song.lamps.length*4/song.pulses.length)-beatTime(LEAD);G.decay=.42/iv;G.lungDecay=.55/(beatTime(LEAD+4/song.pulses.length)-beatTime(LEAD));
  STAT=null;return G}
-function startSong(){G.paused=false;G.t0=performance.now()/1000;G.pauseAcc=0;MUS.start();MUS.step=0;G.banner={txt:SONGS[G.i].name,t:0,col:C.yel};tick('♪ '+G.song.name+' ─ '+G.song.tip)}
+function startSong(){G.paused=false;G.t0=performance.now()/1000;G.pauseAcc=0;MUS.start();MUS.step=0;G.banner={txt:G.song.name,t:0,col:C.yel};tick('♪ '+G.song.name+' ─ '+G.song.tip)}
 function pauseG(on){if(!G)return;if(on&&!G.paused){G.paused=true;G.pauseAt=performance.now()/1000}else if(!on&&G.paused){G.paused=false;G.pauseAcc+=performance.now()/1000-G.pauseAt}}
 function tick(t){if(G){G.ticker.push({t,x:null})}}
 
@@ -3943,7 +3947,7 @@ function judge(n,gr,id){n.grade=gr;const pts={P:1,G:.7,O:.4,M:0}[gr];n.pts=pts;G
  G.shake=Math.max(G.shake,gr==='P'?4:2);if(t>=1)G.flash=Math.max(G.flash,.08);
  if(n.hold){n.holding=true;G.holds[id==null?'k'+n.pad:id]=n}
  try{if(gr==='P')Z()&&Z().earn(1,'first-try',{silent:true})}catch(e){}
- if(G.tutor&&G.judged>=6){G.tutor=false;SV.tut.s1=1;save()}
+ if(G.tutor&&G.judged>=6&&!G.song.practice){G.tutor=false;SV.tut.s1=1;save()}
  /* 1周ぜんぶPERFECT（ワンラップ） */if(n.pad==='LV'&&gr==='P'){const P=G.pulses[n.p].notes.filter(q=>q.c===n.c);if(P.every(q=>q.grade==='P')){G.laps++;SV.tot.laps++;lapFx(n)}}
  [['c30',30],['c60',60],['c100',100]].forEach(([k,m])=>{if(G.combo===m)badge(k)})}
 function release(id){if(!G)return;const n=G.holds[id];if(!n)return;delete G.holds[id];if(!n.holding)return;n.holding=false;const t=songTime();
@@ -3975,7 +3979,7 @@ function pulseState(P,b){const N=P.notes;let i=-1;for(let k=0;k<N.length;k++){if
  if(n.pad==='RV'){const u=(b-n.b)/((nx?nx.b:n.b+1.5)-n.b);return {seg:'pul',u,n,col:u>=L.uLung?C.red:C.blu,br}}
  if(n.pad==='LA')return {seg:'la2lv',u:(b-n.b)/((nx?nx.b:n.b+.5)-n.b),n,col:C.red,br};
  const u=(b-n.b)/((nx?nx.b:n.b+1.5)-n.b);if(!nx&&u>1)return null;return {seg:'body',u,n,col:u>=L.body.paths[n.tgt].uL?C.blu:C.red,br}}
-function endSong(){G.ended=true;MUS.stop();const acc=G.score/G.notes.length;let st=0;THR.forEach((t,k)=>{if(acc>=t)st=k+1});if(G.lampOut&&st>2)st=2;
+function endSong(){G.ended=true;MUS.stop();const acc=G.score/G.notes.length;if(G.song.practice){SV.tut.prac=1;save();setTimeout(()=>practiceDone(acc),700);return}let st=0;THR.forEach((t,k)=>{if(acc>=t)st=k+1});if(G.lampOut&&st>2)st=2;
  const i=G.i,prev=SV.stars[i],rec=acc*100>SV.best[i]+.4;SV.stars[i]=Math.max(prev,st);SV.best[i]=Math.max(SV.best[i],Math.round(acc*1000)/10);
  if(st>0){if(!G.lampOut){['lung'].concat(G.song.lamps).forEach(k=>badge('L_'+k,true))}if(i===NS-1)badge('encore',true);try{Z()&&Z().earn(15,'rule',{silent:true})}catch(e){}}
  ['RA','RV','LA','LV'].forEach(k=>{if(SV.tot[k]>=40)badge('C_'+k,true)});
@@ -4128,15 +4132,113 @@ function drawMap(dt){const g=ctx;g.setTransform(1,0,0,1,0,0);g.drawImage(wall(),
   g.globalCompositeOperation='lighter';glow(g,cx,cy-s*.2,s*.08,C.red,.5+.5*Math.max(0,Math.sin(NOW*6)));g.globalCompositeOperation='source-over';
   neonText(g,'めぐる範囲',cx,cy+s*.58,16,C.wht,1,'center',FONT)}}
 function mapTap(x,y){mapRows().forEach((r,i)=>{if(x>=r[0]&&x<=r[0]+r[2]&&y>=r[1]&&y<=r[1]+r[3]){const open=i===0||SV.stars[i-1]>0;if(open){SFX.click();openIntro(i)}else SFX.empty()}})}
-$('btnLedger').onclick=()=>{ac();SFX.click();openLedger()};$('btnBookM').onclick=()=>{ac();try{Z().openBook()}catch(e){}};$('btnGachaM').onclick=()=>{ac();try{Z().openGacha()}catch(e){}};$('btnTestM').onclick=()=>{ac();SFX.click();startTest()};
+$('btnLedger').onclick=()=>{ac();SFX.click();openLedger()};$('btnBookM').onclick=()=>{ac();try{Z().openBook()}catch(e){}};$('btnGachaM').onclick=()=>{ac();try{Z().openGacha()}catch(e){}};$('btnTestM').onclick=()=>{ac();SFX.click();teach(unreadLessons(NS),startTest)};
 
 /* =================== 15. 曲のはじめ・おわり =================== */
-function openIntro(i){newSong(i);show('intro');const s=SONGS[i],bpm=s.tempo.map(x=>x[1]);const n=G.notes.length;
+function openIntro0(i){newSong(i);show('intro');const s=SONGS[i],bpm=s.tempo.map(x=>x[1]);const n=G.notes.length;
  ov('<h2>#'+(i+1)+'　'+esc(s.name)+'<small>新しいこと：'+esc(s.nw)+'</small></h2><p>'+esc(s.tip)+'</p>'+
  '<div class="goal"><span>BPM '+bpm.join('→')+'</span><span>ノーツ '+n+'</span><span>★1 精度'+THR[0]*100+'%</span><span>★2 '+THR[1]*100+'%</span><span>★3 '+THR[2]*100+'%＋ランプ無事</span>'+(SV.best[i]?'<span>最高 '+SV.best[i]+'%</span>':'')+'</div>'+
  (i>=RING_ATRIA_UNTIL?'<p style="font-size:14px;text-align:center;color:#FFE66D">この曲から <b>心房には合図のリングが出ない</b>。全身・肺からもどる光が、どちらの心房に入るかを見きわめよう。空打ち・部屋ちがいは減点。</p>':'<p style="font-size:14px;text-align:center;opacity:.85">空打ち・部屋ちがい（光が入っていない部屋を押す）は減点。</p>')+'<p style="font-size:14px;opacity:.8;text-align:center">'+(matchMedia('(pointer:fine)').matches?'キーボード：D＝右心房 F＝右心室 J＝左心房 K＝左心室':'部屋を指でタップ（同時押しは2本の指で）')+'</p>'+
  '<div class="btns"><button class="neo red big" id="goSt">スタート</button></div>');
  $('goSt').onclick=()=>{ac();ovClose();SFX.on();show('play');startSong()}}
+
+/* =================== 15b. まなぶ札（2026-10-06 初心者向け改修） ===================
+   曲の前に、まだ読んでいない札を先に出す（はじめる・つづきから・セットリスト・つぎの曲・確認テストのどこから入っても）。 */
+const NEO_SVG='<svg viewBox="0 0 340 200" style="width:100%;max-width:440px;max-height:30vh;display:block;margin:6px auto;background:#07070c;border-radius:12px">';
+const SVG_ROOMS=NEO_SVG.replace('0 0 340 200','0 0 340 230')+
+ '<text x="170" y="18" fill="#9a9aa8" font-size="12" text-anchor="middle">正面から見た図（向かって左が体の右）</text>'+
+ '<g style="filter:drop-shadow(0 0 4px #3D8BFF)" fill="none" stroke="#3D8BFF" stroke-width="3"><rect x="52" y="34" width="112" height="70" rx="10"/><rect x="52" y="112" width="112" height="96" rx="10"/></g>'+
+ '<g style="filter:drop-shadow(0 0 4px #FF2E4C)" fill="none" stroke="#FF2E4C"><rect x="176" y="34" width="112" height="70" rx="10" stroke-width="3"/><rect x="176" y="112" width="112" height="96" rx="10" stroke-width="8"/></g>'+
+ '<g fill="#F4F1EA" font-size="15" text-anchor="middle" font-weight="800"><text x="108" y="66">右心房</text><text x="232" y="66">左心房</text><text x="108" y="162">右心室</text><text x="232" y="162">左心室</text></g>'+
+ '<g fill="#cfcfe0" font-size="11" text-anchor="middle"><text x="108" y="86">血液が入ってくる</text><text x="232" y="86">血液が入ってくる</text><text x="108" y="182">肺へ送り出す</text><text x="232" y="182">全身へ送り出す</text><text x="232" y="198">（壁がいちばん厚い）</text></g>'+
+ '<g stroke="#FFE66D" stroke-width="3" style="filter:drop-shadow(0 0 3px #FFE66D)"><path d="M92 108 l16 0 M124 108 l16 0 M216 108 l16 0 M248 108 l16 0"/></g>'+
+ '<text x="170" y="112" fill="#FFE66D" font-size="12" text-anchor="middle">弁</text>'+
+ '<text x="22" y="72" fill="#cfcfe0" font-size="12" text-anchor="middle">上</text><text x="22" y="164" fill="#cfcfe0" font-size="12" text-anchor="middle">下</text></svg>';
+const SVG_VESSEL=NEO_SVG+
+ '<defs><marker id="ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" fill="#FFE66D"/></marker></defs>'+
+ '<path d="M108 100 C108 64 150 56 170 78 C190 56 232 64 232 100 C232 132 196 152 170 170 C144 152 108 132 108 100Z" fill="none" stroke="#FF2E4C" stroke-width="3" style="filter:drop-shadow(0 0 4px #FF2E4C)"/>'+
+ '<text x="170" y="112" fill="#F4F1EA" font-size="16" text-anchor="middle" font-weight="800">心臓</text>'+
+ '<path d="M236 90 L318 52" stroke="#FFE66D" stroke-width="3" marker-end="url(#ah)"/><text x="262" y="44" fill="#FFE66D" font-size="13" font-weight="800">動脈</text><text x="250" y="96" fill="#cfcfe0" font-size="11">心臓から出ていく</text>'+
+ '<path d="M22 52 L104 90" stroke="#FFE66D" stroke-width="3" marker-end="url(#ah)"/><text x="30" y="44" fill="#FFE66D" font-size="13" font-weight="800">静脈</text><text x="18" y="96" fill="#cfcfe0" font-size="11">心臓にもどってくる</text>'+
+ '<circle cx="40" cy="160" r="9" fill="#FF2E4C" style="filter:drop-shadow(0 0 5px #FF2E4C)"/><text x="56" y="164" fill="#F4F1EA" font-size="12">動脈血＝酸素が多い</text>'+
+ '<circle cx="200" cy="160" r="9" fill="#3D8BFF" style="filter:drop-shadow(0 0 5px #3D8BFF)"/><text x="216" y="164" fill="#F4F1EA" font-size="12">静脈血＝酸素が少ない</text>'+
+ '<text x="170" y="192" fill="#9a9aa8" font-size="11" text-anchor="middle">血管の名前＝流れる向き／血液の名前＝酸素の量</text></svg>';
+const SVG_LOOPS=NEO_SVG.replace('0 0 340 200','0 0 340 290')+
+ '<defs><marker id="ab" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" fill="#3D8BFF"/></marker><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" fill="#FF2E4C"/></marker></defs>'+
+ '<rect x="120" y="12" width="100" height="40" rx="12" fill="none" stroke="#FF8FA3" stroke-width="3"/><text x="170" y="38" fill="#F4F1EA" font-size="15" text-anchor="middle" font-weight="800">肺</text>'+
+ '<rect x="120" y="236" width="100" height="40" rx="12" fill="none" stroke="#FFE66D" stroke-width="3"/><text x="170" y="262" fill="#F4F1EA" font-size="15" text-anchor="middle" font-weight="800">全身の細胞</text>'+
+ '<g fill="none" stroke-width="2.5"><rect x="128" y="108" width="40" height="32" rx="5" stroke="#3D8BFF"/><rect x="172" y="108" width="40" height="32" rx="5" stroke="#FF2E4C"/><rect x="128" y="144" width="40" height="36" rx="5" stroke="#3D8BFF"/><rect x="172" y="144" width="40" height="36" rx="5" stroke="#FF2E4C" stroke-width="4"/></g>'+
+ '<g fill="#F4F1EA" font-size="10" text-anchor="middle"><text x="148" y="128">右心房</text><text x="192" y="128">左心房</text><text x="148" y="166">右心室</text><text x="192" y="166">左心室</text></g>'+
+ '<path d="M128 166 L80 166 L80 32 L116 32" fill="none" stroke="#3D8BFF" stroke-width="3" marker-end="url(#ab)"/><text x="74" y="100" fill="#3D8BFF" font-size="12" text-anchor="end">肺動脈</text>'+
+ '<path d="M224 32 L260 32 L260 124 L216 124" fill="none" stroke="#FF2E4C" stroke-width="3" marker-end="url(#ar)"/><text x="266" y="84" fill="#FF2E4C" font-size="12">肺静脈</text>'+
+ '<path d="M212 166 L290 166 L290 256 L224 256" fill="none" stroke="#FF2E4C" stroke-width="3" marker-end="url(#ar)"/><text x="296" y="214" fill="#FF2E4C" font-size="12">大動脈</text>'+
+ '<path d="M116 256 L50 256 L50 124 L124 124" fill="none" stroke="#3D8BFF" stroke-width="3" marker-end="url(#ab)"/><text x="44" y="200" fill="#3D8BFF" font-size="12" text-anchor="end">大静脈</text>'+
+ '<text x="170" y="76" fill="#FFE66D" font-size="13" text-anchor="middle" font-weight="800">肺循環（上の輪）</text><text x="170" y="214" fill="#FFE66D" font-size="13" text-anchor="middle" font-weight="800">体循環（下の輪）</text></svg>';
+const LESSONS=[
+ {k:'how',before:0,h:'このライブのしくみ<small>はじめに：何をするゲーム？</small>',b:
+  '<p>心臓は、血液を全身へ送り出す<b>ポンプ</b>。ステージの真ん中のネオンが心臓で、<b>4つの部屋</b>に分かれている。</p>'+
+  '<p>血液は<b>光の玉</b>になって流れてくる。光が部屋に<b>入る瞬間に、その部屋をタップ</b>すると、部屋が縮んで光が次へ送り出される（パソコンは D F J K キー）。</p>'+
+  '<p>青い光＝酸素が少ない血液、赤い光＝酸素が多い血液。赤い光が全身の<b>ランプに酸素を届ける</b>。ランプを消さずに曲の最後まで行けばクリア。</p>'+
+  '<p style="color:#FFE66D">まず心臓のつくりを1枚で見て、ゆっくりの「れんしゅう」から始めよう。</p>'},
+ {k:'rooms',before:0,h:'心臓の4つの部屋<small>まなぶ：心房・心室・弁</small>',b:SVG_ROOMS+
+  '<p>上の2つが<b>心房</b>＝血液がもどってきて<b>入る部屋</b>。下の2つが<b>心室</b>＝血液を<b>送り出す部屋</b>。</p>'+
+  '<p>図は<b>正面から見た図</b>。向かい合った人の心臓なので、<b>向かって左が体の右</b>（右心房・右心室）になる。</p>'+
+  '<p>心房が縮む → 血液は<b>心室へ</b>。心室が縮む → 血液は<b>動脈（心臓から出ていく血管）へ送り出される</b>。この、心臓が縮んだりゆるんだりする動きを<b>拍動</b>という。</p>'+
+  '<p>部屋の出口には<b>弁</b>がある。弁は<b>血液の逆流を防ぎ、一方向に流す</b>。</p>'+
+  '<p><b>左心室の壁がいちばん厚い</b>。全身へ強い力で血液を送り出すから。</p>',
+  tr:{q:'<b>心房</b>が縮むと、中の血液はどこへ行く？',a:'すぐ下の心室へ流れこむ',w:['動脈へ送り出される','肺へ直接もどる','流れが止まる'],ok:'心房が縮む → 心室へ。心室が縮む → 動脈へ。',ng:'心房は「入る部屋」、そのすぐ下が「送り出す部屋」。心房が縮むと血液はどこへ押される？'}},
+ {k:'vessel',before:1,h:'動脈と静脈・動脈血と静脈血<small>まなぶ：名前の決まり方がちがう</small>',b:SVG_VESSEL+
+  '<p><b>血管の名前は「流れる向き」</b>で決まる。心臓から<b>出ていく</b>血管＝<b>動脈</b>／心臓に<b>もどる</b>血管＝<b>静脈</b>。</p>'+
+  '<p><b>血液の名前は「酸素の量」</b>で決まる。酸素が多い＝<b>動脈血</b>（赤い光）／酸素が少なく二酸化炭素が多い＝<b>静脈血</b>（青い光）。</p>'+
+  '<p><b>肺</b>では、血液が二酸化炭素を出し、酸素を受け取る → 静脈血が<b>動脈血</b>に。<br><b>全身の細胞</b>のそばでは、細胞に酸素をわたし、細胞から二酸化炭素を受け取る → 動脈血が<b>静脈血</b>に。</p>'+
+  '<p style="color:#FFE66D">引っかけ注意：<b>肺動脈</b>は心臓から出る血管なので「動脈」。でも中は、肺へ行く前の<b>静脈血</b>（青）。<b>肺静脈</b>は心臓にもどる血管なので「静脈」。でも中は、肺を通った後の<b>動脈血</b>（赤）。</p>',
+  tr:{q:'<b>肺静脈</b>を流れる血液について、正しいものは？',a:'動脈血で、肺から心臓へ向かう',w:['静脈血で、肺から心臓へ向かう','動脈血で、心臓から肺へ向かう','静脈血で、心臓から肺へ向かう'],ok:'「静脈」＝心臓にもどる向き。肺を通った後なので中は酸素の多い動脈血。',ng:'血管の名前は「向き」、血液の名前は「酸素の量」。肺静脈は心臓へもどる向きで、肺を通った後の血液。'}},
+ {k:'loops',before:1,h:'血液がめぐる2つの道<small>まなぶ：肺循環と体循環</small>',b:SVG_LOOPS+
+  '<p><b>肺循環</b>：右心室 → 肺動脈 → 肺 → 肺静脈 → 左心房（肺で酸素をもらう道）</p>'+
+  '<p><b>体循環</b>：左心室 → <b>大動脈</b> → 全身 → <b>大静脈</b> → 右心房（全身に酸素を届ける道）</p>'+
+  '<p>全身からもどった血液が<b>最初に入るのは右心房</b>。肺からもどった血液は<b>左心房</b>に入る。次の曲から、この2つの道を光が通る。</p>',
+  tr:{q:'<b>肺</b>からもどってきた血液が、最初に入る部屋はどれ？',a:'左心房',w:['右心房','左心室','右心室'],ok:'肺 → 肺静脈 → 左心房。',ng:'もどってきた血液が入るのは「心房」。肺循環の終わりは右と左のどちら？図の上の輪を見よう。'}},
+ {k:'pulse',before:4,calc:true,h:'拍動と、送り出す血液の量<small>まなぶ：運動すると拍動が速くなるわけ</small>',b:
+  '<p>心臓が1回縮んでゆるむ＝<b>拍動</b>1回。1分間の拍動の回数を<b>拍動数</b>という。</p>'+
+  '<p>運動すると、筋肉などの細胞が<b>酸素や養分をたくさん使う</b>。だから心臓は拍動を速くして、<b>全身の細胞に酸素や養分を多く届ける</b>（次の曲でテンポが上がるのはこのため）。</p>'+
+  '<p style="color:#FFE66D"><b>1分間に送り出す血液の量 ＝ 1回に送り出す量 × 1分間の拍動数</b></p>'+
+  '<p>例：1回に60mL、1分間に80回 → 60 × 80 ＝ <b>4800mL</b></p>'}
+];
+function unreadLessons(upTo){SV.tut.learn=SV.tut.learn||{};return LESSONS.filter(l=>l.before<=upTo&&!SV.tut.learn[l.k])}
+function shuf(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function teach(list,next){if(!list.length){next();return}const l=list[0],last=list.length===1;
+ const done=()=>{SV.tut.learn[l.k]=1;save();SFX.click();ovClose();teach(list.slice(1),next)};
+ const nxt=last?'わかった ▶':'わかった ▶ 次の札へ';
+ const btn=l.calc?'':'<div class="btns lsStick"><button class="neo red big" id="lsOk">'+(l.tr?'わかった ▶ やってみよう':nxt)+'</button></div>';
+ const calc=l.calc?'<div class="lsTry"><p><b>やってみよう：</b>1回に50mL、1分間に90回のとき、1分間に送り出す血液は何mL？</p><div class="numRow" style="justify-content:center"><input id="lsIn" inputmode="decimal"><b>mL</b></div><p id="lsFb" style="text-align:center;min-height:1.7em"></p></div><div class="btns lsStick"><button class="neo red" id="lsChk">これで決める</button></div>':'';
+ ov('<h2>'+l.h+'</h2>'+l.b+calc+btn,true);$('ov').querySelector('.sheet').scrollTop=0;
+ if(l.calc){$('lsChk').onclick=()=>{ac();const v=parseFloat(String($('lsIn').value).replace(/[０-９．]/g,c=>String.fromCharCode(c.charCodeAt(0)-0xFEE0)));const fb=$('lsFb');
+   if(v===4500){SFX.lap();fb.innerHTML='<span style="color:#FFE66D">◯ 正解！ 50 × 90 ＝ 4500mL</span>';$('lsChk').textContent=nxt;$('lsChk').onclick=done}
+   else{SFX.miss();fb.innerHTML='<span style="color:#9ec5ff">もう一度。1回に送り出す量（50mL）に、1分間の回数（90回）をかけよう。</span>'}
+   fb.scrollIntoView({block:'nearest'})}}
+ else if(l.tr)$('lsOk').onclick=()=>{SFX.click();tryCard(l,nxt,done)};
+ else $('lsOk').onclick=done}
+/* やってみよう（説明の札のつぎの1枚）。選択肢は出すたびにまぜる。押しても札は作り直さず、返しの欄だけ書きかえる */
+function tryCard(l,nxt,done){const t=l.tr,ops=shuf([t.a].concat(t.w));
+ ov('<h2>やってみよう<small>'+l.h.replace(/<small>.*$/,'')+'</small></h2><p>'+t.q+'</p><div class="qch" id="lsCh">'+ops.map((o,i)=>'<button class="neo" data-i="'+i+'"><span class="L">'+'ABCD'[i]+'</span>'+o+'</button>').join('')+'</div><p id="lsFb" style="min-height:1.7em;text-align:center"></p><div class="btns lsStick"><button class="neo red big" id="lsOk" disabled style="opacity:.4">'+nxt+'</button></div>',true);
+ $('ov').querySelector('.sheet').scrollTop=0;
+ $('lsCh').querySelectorAll('button').forEach(b=>b.onclick=()=>{ac();const o=ops[+b.dataset.i],fb=$('lsFb');
+  if(o===t.a){SFX.lap();b.style.boxShadow='0 0 14px #FFE66D';fb.innerHTML='<span style="color:#FFE66D">◯ 正解！ '+t.ok+'</span>';$('lsCh').querySelectorAll('button').forEach(x=>x.disabled=true);const k=$('lsOk');k.disabled=false;k.style.opacity=1;k.onclick=done}
+  else{SFX.miss();b.classList.add('done');fb.innerHTML='<span style="color:#9ec5ff">ちがうよ。'+t.ng+'</span>'}
+  fb.scrollIntoView({block:'nearest'})})}
+function openIntro(i){ac();teach(unreadLessons(i),()=>{if(i===0&&!SV.tut.prac)openPractice();else openIntro0(i)})}
+function openPractice(){newSong(-1);show('intro');
+ ov('<h2>れんしゅう<small>本番の前に、ゆっくり3周</small></h2>'+
+  '<p>青い光が<b>右心房</b>に入る瞬間に、右心房をタップ。光は右心室へ → 右心室をタップ → 肺で赤くなって<b>左心房</b>へ → 左心房をタップ → <b>左心室</b>をタップ → 全身のランプへ。</p>'+
+  '<p style="color:#FFE66D">どこを押すかは「ここ！👆」が教えてくれる。光が部屋の真ん中に来た時に押そう。★はつかないので、まちがえても大丈夫。</p>'+
+  '<p style="font-size:14px;opacity:.8;text-align:center">'+(matchMedia('(pointer:fine)').matches?'キーボード：D＝右心房 F＝右心室 J＝左心房 K＝左心室（指やマウスで部屋を押してもよい）':'部屋を指でタップ')+'</p>'+
+  '<div class="btns"><button class="neo red big" id="goSt">れんしゅう スタート</button></div>');
+ $('goSt').onclick=()=>{ac();ovClose();SFX.on();show('play');startSong()}}
+function practiceDone(acc){scene='result';backBtn();
+ ov('<h2 style="text-align:center">れんしゅう おわり！<small>うまく押せた割合 '+Math.round(acc*100)+'%</small></h2>'+
+  '<p>光の順番は <b>右心房 → 右心室 → 肺 → 左心房 → 左心室 → 全身 → 右心房…</b>。いよいよ本番 #1。本番では「ここ！👆」は最初の数回だけ出る。</p>'+
+  '<div class="btns"><button class="neo red big" id="pGo">本番 #1 へ</button><button class="neo" id="pAgain">もう一度れんしゅう</button></div>');
+ $('pGo').onclick=()=>{ovClose();openIntro0(0)};$('pAgain').onclick=()=>{ovClose();openPractice()}}
 function showResult(st,acc,rec,first){scene='result';backBtn();const i=G.i,c=G.counts;
  ov('<h2 style="text-align:center">'+(st>0?'SONG CLEAR!':'もう一度！')+'<small>#'+(i+1)+'　'+esc(G.song.name)+'</small></h2><div id="stBox" style="display:flex;justify-content:center;gap:10px;font-size:58px;line-height:1.1;min-height:68px"></div>'+
  (rec&&st>0?'<p style="text-align:center;color:#FFE66D;margin:0">✨ 新記録！</p>':'')+
@@ -4148,7 +4250,8 @@ function showResult(st,acc,rec,first){scene='result';backBtn();const i=G.i,c=G.c
   if(k<st)setTimeout(()=>{s.style.color='#FFE66D';s.style.textShadow='0 0 10px #FFE66D,0 0 30px #FFE66D';s.style.transform='scale(1.35)';setTimeout(()=>s.style.transform='scale(1)',180);SFX.star(k);if(G){G.shake=9;sparks(pw/2+(k-1)*70,ph*.3,[C.yel,C.red,C.wht],26)}vib(40)},500+k*450)}
  if(st>0)setTimeout(()=>{SFX.fan();if(G)confetti(100)},500+st*450);
  const nx=$('rNext');if(nx)nx.onclick=()=>{ovClose();openIntro(i+1)};$('rAgain').onclick=()=>{ovClose();openIntro(i)};$('rMap').onclick=()=>{ovClose();openMap()};const rc=$('rClear');if(rc)rc.onclick=()=>{ovClose();goClear()}}
-function goClear(){const z=Z();if(z&&z.mainClear){try{z.mainClear({onClose:startTest})}catch(e){startTest()}}else startTest()}
+function goClear(){teach(unreadLessons(99),goClear0)}
+function goClear0(){const z=Z();if(z&&z.mainClear){try{z.mainClear({onClose:startTest})}catch(e){startTest()}}else startTest()}
 
 /* =================== 16. 確認テスト =================== */
 let T=null;
@@ -4175,13 +4278,12 @@ function finishTest(){const qs=T.qs,answers=T.ans;const review=Quiz.review(qs,an
 let last=performance.now();
 function frame(now){const dt=Math.min(.05,(now-last)/1000);last=now;NOW+=dt;
  try{if(scene==='title')drawTitle(dt);else if(scene==='map')drawMap(dt);else if(scene==='test'){ctx.setTransform(1,0,0,1,0,0);ctx.drawImage(wall(),0,0)}
-  else if(G){step(dt);fxStep(dt);drawPlay(dt);if(window.__hbBot)window.__hbBot()}}catch(e){console.error(e)}
+  else if(G){step(dt);fxStep(dt);drawPlay(dt);}}catch(e){console.error(e)}
  requestAnimationFrame(frame)}
 window.addEventListener('resize',resize);resize();setMute(!!SV.mute);
 try{window.Zukan&&Zukan.setup({game:GAME_ID,koma:[KOMA]})}catch(e){}
 if(document.fonts&&document.fonts.load){Promise.all([document.fonts.load('40px "Rampart One"'),document.fonts.load('800 16px "Murecho"')]).then(()=>{STAT=null;TITLE=null}).catch(()=>{})}
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&scene==='play'&&G&&!G.paused){pauseG(true);$('bBack').click()}});
-window.__hb={get G(){return G},get SV(){return SV},openIntro,startTest,openMap,press,release,songTime,get scene(){return scene},go(){const b=$('goSt');b&&b.click()}};
 if(window.GAME_MODE==='test')startTest();else openTitle();
 requestAnimationFrame(frame);
 </script>

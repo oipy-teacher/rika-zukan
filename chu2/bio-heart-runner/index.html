@@ -182,6 +182,10 @@ body.tall #mapIn{grid-template-columns:1fr;gap:30px;padding-left:14px;padding-ri
 .card p{font-size:18px;line-height:1.65;margin:10px 0}
 .card p b{color:var(--r);font-weight:400}
 .card .row{display:flex;flex-wrap:wrap;gap:14px 18px;justify-content:center;margin-top:16px}
+.card .row.lsStick{position:sticky;bottom:-16px;margin:14px -18px -20px;padding:12px 0 14px;background:var(--p2)}
+.lsCh{display:flex;flex-direction:column;gap:10px;margin:8px 0}
+.lsCh button{font:inherit;font-size:18px;text-align:left;padding:10px 14px;background:#fff;border:3px solid #141414;box-shadow:4px 4px 0 #141414;cursor:pointer;color:#141414}
+.lsCh button.ng{opacity:.4}.lsCh button.ok{background:#C0122C;color:#fff}
 .pop{animation:pop .35s cubic-bezier(.2,1.6,.4,1) both}
 @keyframes pop{0%{transform:scale(.6) rotate(-4deg);opacity:0}100%{transform:none;opacity:1}}
 .newel{display:inline-block;background:var(--r);color:#fff;padding:4px 12px;transform:skewX(-12deg);font-size:18px;margin:4px 0}
@@ -4431,13 +4435,68 @@ function startRace(si,opt){opt=opt||{};ovClose();show('scPlay');resize();G=newRa
  $('hStage').innerHTML='<span>'+esc(STAGES[si].name)+'</span>';$('lockNote').hidden=true;$('warn').textContent='';$('hNext')._h='';
  renderLevers();PARTS.length=0;POPS.length=0;BAN=null;RAYS=0;
  if(STAGES[si].tut){G.count=0;G.started=false}}
-function openPrep(si){endTut();SEL=si;const st=STAGES[si];show('scPlay');resize();G=newRace(si);G.paused=true;flowInit();$('hStage').innerHTML='<span>'+esc(st.name)+'</span>';renderLevers();$('warn').textContent='';$('lockNote').hidden=true;
+function openPrep0(si){endTut();SEL=si;const st=STAGES[si];show('scPlay');resize();G=newRace(si);G.paused=true;flowInit();$('hStage').innerHTML='<span>'+esc(st.name)+'</span>';renderLevers();$('warn').textContent='';$('lockNote').hidden=true;
  const b=SV.best[si],tg=starT(G);
  ovOpen('<div class="hd red">'+esc(st.name)+'</div>'+(st.newel?'<p><span class="newel">NEW</span><br>'+md(st.newel)+'</p>':'')+
   '<p style="font-size:16px">★3：<b>'+tg[0].toFixed(1)+'秒</b> 以内　／　★2：'+tg[1].toFixed(1)+'秒 以内'+(b?'<br>ベスト '+b.toFixed(1)+'秒（ゴーストが走ります）':'')+'</p>'+
   '<p style="font-size:15px">スタートの前に、最初の強さ（'+G.segs[0].D+'段）にレバーを合わせておくと <b>先読み</b>。</p>'+
   '<div class="row"><button class="sl red big pulse" id="pGo"><span>位置について</span></button><button class="sl pale sm" id="pMap"><span>プログラムへ</span></button></div>');
  $('pGo').onclick=()=>{ovClose();actx();G.paused=false;SFX.whistle()};$('pMap').onclick=()=>{ovClose();G=null;openMap()}}
+
+/* ================= まなぶ札（2026-10-06 初心者向け改修） =================
+   レースの前に、まだ読んでいない札を先に出す（はじめる・つづきから・プログラム・次のレース・確認テストのどこから入っても） */
+const TB='<table style="margin:8px auto;border-collapse:collapse;font-size:15px;background:#fff;outline:3px solid #141414">';
+const td=(t,h)=>'<td style="border:2px solid #141414;padding:4px 10px;'+(h?'background:#141414;color:#F6F2E8':'')+'">'+t+'</td>';
+const LESSONS=[
+ {k:'words',before:0,h:'拍動・脈拍・呼吸数',b:
+  '<p><b>拍動</b>＝心臓が縮んだりゆるんだりして、血液を送り出す動き。1分間の回数が<b>拍動数</b>。</p>'+
+  '<p><b>脈拍</b>＝拍動で送り出された血液の勢いが<b>動脈</b>（心臓から出ていく血管）に伝わったもの。手首などでさわって数えられる。1回の拍動ごとに動脈が1回ふくらむので、<b>脈拍数 ≒ 拍動数</b>。</p>'+
+  '<p><b>呼吸数</b>＝1分間に息を吸ってはく回数。</p>'+
+  '<p>数え方：<b>15秒</b>数えて<b>4倍</b>する（15秒の4倍が1分）。<br>例：15秒で18回 → 18 × 4 ＝ <b>72回</b></p>',
+  calc:{q:'15秒で17回だった。1分間の脈拍数は何回？',a:68,unit:'回',ok:'17 × 4 ＝ 68回',hint:'15秒の4倍が1分。17に4をかけよう。'}},
+ {k:'cell',before:2,h:'細胞は酸素で何をしている？',b:
+  '<p>体じゅうの細胞は、血液が運んできた<b>養分</b>を<b>酸素</b>で分解して、生きるための<b>エネルギー</b>を取り出している（細胞による呼吸）。このとき<b>二酸化炭素と水</b>が出る。</p>'+
+  '<p>筋肉の細胞のまわりの細い血管（<b>毛細血管</b>）で、血液は細胞に<b>酸素をわたし</b>、細胞から<b>二酸化炭素を受け取る</b>。だから通りぬけた後の血液は<b>酸素が減り、二酸化炭素が増えている</b>。</p>'+
+  '<p>その二酸化炭素は、血液で<b>肺</b>へ運ばれ、<b>はく息</b>から体の外へ出る。</p>'+
+  '<p>走ると：①筋肉の細胞が酸素を多く使う → ②呼吸数と拍動数が増える → ③肺で多く取り入れ、血液が速く運ぶ → ④毛細血管から細胞へ多くの酸素がわたされる</p>',
+  tr:{q:'細胞が養分を分解してエネルギーを取り出すとき、使う気体はどれ？',a:'酸素',w:['二酸化炭素','ちっ素','水蒸気'],ok:'酸素で養分を分解する。そのとき二酸化炭素と水が出る。',ng:'血液が肺で受け取って、細胞まで運んでくる気体はどれ？'}},
+ {k:'amount',before:3,h:'出入りする量の計算',b:
+  '<p><b>1分間に送り出す血液 ＝ 1回の拍動で送る量 × 拍動数</b><br><b>1分間に出入りする空気 ＝ 1回の呼吸の量 × 呼吸数</b></p>'+
+  '<p>例1：1回の呼吸で400mL、呼吸数が1分間に20回 → 400 × 20 ＝ <b>8000mL</b></p>'+
+  '<p>例2：拍動数が70回から140回になった（1回に送る量は同じ）→ 140 ÷ 70 ＝ 2 → 送り出す血液も<b>2倍</b></p>',
+  calc:{q:'1回の呼吸で400mL、呼吸数が1分間に25回。1分間に出入りする空気は何mL？',a:10000,unit:'mL',ok:'400 × 25 ＝ 10000mL',hint:'1回の量（400mL）× 1分間の回数（25回）。'}},
+ {k:'cool',before:NST,h:'ゴールのあと、どうなる？',b:
+  '<p>決勝のあと、歩いてクールダウン。ある人の記録（1分間の回数）：</p>'+
+  TB+'<tr>'+td('',1)+td('走る前',1)+td('直後',1)+td('3分後',1)+td('6分後',1)+'</tr><tr>'+td('拍動数',1)+td('72')+td('140')+td('100')+td('76')+'</tr><tr>'+td('呼吸数',1)+td('18')+td('40')+td('26')+td('19')+'</tr></table>'+
+  '<p>運動の<b>直後にどちらも増え</b>、時間がたつと<b>だんだん元にもどっていく</b>（すぐにはもどらない）。細胞が使う酸素が減っていくから。</p>'+
+  '<p>調べるときは：<b>同じ人</b>が<b>同じ測り方（同じ時間）</b>で測り、調べたいこと（運動の強さ）<b>だけ</b>を変えて比べる。1回で決めず、何度か測る。</p>',
+  tr:{q:'<b>呼吸数</b>の記録（1分間の回数）：'+TB+'<tr>'+td('走る前',1)+td('直後',1)+td('3分後',1)+td('6分後',1)+'</tr><tr>'+td('18')+td('40')+td('26')+td('19')+'</tr></table>6分後の呼吸数から言えることは？',a:'19回。だんだん元にもどっていた',w:['40回のまま。運動をやめても変わらない','18回。止まった瞬間にすぐもどった','60回。時間がたつほど増え続けた'],ok:'直後に増え、時間がたつとだんだん元にもどる。',ng:'表の「6分後」の列を見よう。走る前の値と比べてどう？'}}
+];
+function unreadL(upTo){SV.learn=SV.learn||{};return LESSONS.filter(l=>l.before<=upTo&&!SV.learn[l.k])}
+function shuf(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function teach(list,next){if(!list.length){next();return}const l=list[0],c=l.calc,t=l.tr,last=list.length===1;
+ const nxt=last?'わかった':'わかった ▶ 次の札へ';
+ const done=()=>{SV.learn[l.k]=1;save();SFX.click();ovClose();teach(list.slice(1),next)};
+ ovOpen('<div class="hd red">まなぶ</div><p style="font-size:22px;margin-top:0"><b>'+l.h+'</b></p><div style="text-align:left">'+l.b+'</div>'+
+  '<div class="row lsStick"><button class="sl red big" id="lsOk"><span>'+(c||t?'わかった ▶ やってみよう':nxt)+'</span></button></div>');
+ $('ov').scrollTop=0;
+ if(c||t)$('lsOk').onclick=()=>{SFX.click();tryCard(l,nxt,done)};else $('lsOk').onclick=done}
+/* やってみよう（説明の札のつぎの1枚）。選択肢は出すたびにまぜる。押しても札は作り直さず、返しの欄だけ書きかえる */
+function tryCard(l,nxt,done){const c=l.calc,t=l.tr,head='<div class="hd red">やってみよう</div><p style="font-size:16px;margin:0 0 4px;color:#8E8A80">'+l.h+'</p>';
+ if(c){ovOpen(head+'<p style="text-align:left">'+c.q+'</p><p><input id="lsIn" inputmode="decimal" style="font:inherit;font-size:22px;width:8ch;text-align:center;border:3px solid #141414;padding:4px"> '+c.unit+'</p><p id="lsFb" style="min-height:1.6em;font-size:16px"></p>'+
+   '<div class="row lsStick"><button class="sl red big" id="lsOk"><span>これで決める</span></button></div>');$('ov').scrollTop=0;
+  $('lsOk').onclick=()=>{actx();const v=parseFloat(String($('lsIn').value).replace(/[０-９．]/g,ch=>String.fromCharCode(ch.charCodeAt(0)-0xFEE0)));
+   if(v===c.a){SFX.good();$('lsFb').innerHTML='<b>◯ 正解！ '+c.ok+'</b>';$('lsOk').innerHTML='<span>'+nxt+'</span>';$('lsOk').onclick=done}
+   else{SFX.bad();$('lsFb').textContent='もう一度。'+c.hint}
+   $('lsFb').scrollIntoView({block:'nearest'})};return}
+ const ops=shuf([t.a].concat(t.w));
+ ovOpen(head+'<p style="text-align:left">'+t.q+'</p><div id="lsCh" class="lsCh">'+ops.map((o,i)=>'<button data-i="'+i+'">'+o+'</button>').join('')+'</div><p id="lsFb" style="min-height:1.6em;font-size:16px"></p>'+
+  '<div class="row lsStick"><button class="sl red big" id="lsOk" disabled style="opacity:.35"><span>'+nxt+'</span></button></div>');$('ov').scrollTop=0;
+ $('lsCh').querySelectorAll('button').forEach(bt=>bt.onclick=()=>{actx();const o=ops[+bt.dataset.i];
+  if(o===t.a){SFX.good();bt.classList.add('ok');$('lsFb').innerHTML='<b>◯ 正解！ '+t.ok+'</b>';$('lsCh').querySelectorAll('button').forEach(x=>x.disabled=true);const k=$('lsOk');k.disabled=false;k.style.opacity=1;k.onclick=done}
+  else{SFX.bad();bt.classList.add('ng');$('lsFb').textContent='ちがうよ。'+t.ng}
+  $('lsFb').scrollIntoView({block:'nearest'})})}
+function openPrep(si){endTut();teach(unreadL(si),()=>openPrep0(si))}
 function md(s){return esc(s).replace(/\*\*(.+?)\*\*/g,'<b>$1</b>')}
 function starT(g){return g.st.exp?[g.ideal*1.45,g.ideal*1.75]:[g.ideal*1.05+1,g.ideal*1.18+2.5]}
 function finishRace(g){g.done=true;bgmStop();const si=g.si;
@@ -4464,7 +4523,8 @@ function finishRace(g){g.done=true;bgmStop();const si=g.si;
  $('rNext').onclick=()=>{clearInterval(iv);ovClose();if(last){goClear()}else openPrep(si+1)};
  $('rRe').onclick=()=>{clearInterval(iv);openPrep(si)};$('rMap').onclick=()=>{clearInterval(iv);ovClose();G=null;openMap()}}
 const STAR='<svg viewBox="0 0 100 100"><rect x="8" y="8" width="84" height="84" fill="#C0122C" transform="rotate(8 50 50)"/><path d="M50 16 L59 41 L86 41 L64 57 L72 84 L50 67 L28 84 L36 57 L14 41 L41 41Z" fill="#F6F2E8" stroke="#141414" stroke-width="4"/></svg>';
-function goClear(){G=null;const first=!SV.mainDone;SV.mainDone=true;save();const z=Z();if(first&&z&&z.mainClear){try{z.mainClear({onClose:startTest})}catch(e){startTest()}}else startTest()}
+function goClear(){G=null;teach(unreadL(NST),goClear0)}
+function goClear0(){G=null;const first=!SV.mainDone;SV.mainDone=true;save();const z=Z();if(first&&z&&z.mainClear){try{z.mainClear({onClose:startTest})}catch(e){startTest()}}else startTest()}
 
 /* ================= 大会プログラム（マップ） ================= */
 function openMap(){endTut();show('scMap');ovClose();G=null;SEL=clamp(Math.min(SEL,SV.reach),1,NST-1);if(SEL<1)SEL=1;renderMap()}
@@ -4488,7 +4548,7 @@ function graphSVG(){const w=460,h=300,x0=56,y0=250,gw=340,gh=210;let s='<svg vie
  return s+'</svg>'}
 $('mGo').onclick=()=>{actx();SFX.click();openPrep(SEL)};
 $('mBook').onclick=()=>{try{Z().openBook()}catch(e){}};$('mGacha').onclick=()=>{try{Z().openGacha()}catch(e){}};
-$('mTest').onclick=()=>{actx();startTest()};
+$('mTest').onclick=()=>{actx();teach(unreadL(NST),startTest)};
 
 /* ================= 表紙 ================= */
 function showTitle(){G=null;show('scTitle');resize();initTitle();const lg=$('logo');lg.classList.remove('drop');void lg.offsetWidth;lg.classList.add('drop');setTimeout(()=>{if(AC)SFX.whistle()},700)}
@@ -4500,7 +4560,7 @@ $('btnStart').onclick=async()=>{actx();SV.name=$('nameIn').value.trim();
  if(armed){const nm=SV.name,mu=SV.mute;SV=fresh();SV.name=nm;SV.mute=mu;armed=false}
  save();SFX.fan();TUTFROM='start';
  await Guide.intro({title:'第28回　走れ！ハートランナー',learn:'運動すると 細胞が使う酸素が増える。だから **呼吸数と拍動数が そろって増える**',how:'看板の強さに **呼吸と拍動のレバーを同じ段** に。スワイプでレーンを変えて よける',gesture:'tap',button:'タップして ウォームアップへ'});
- Guide.tutorial(PRACTICE)};
+ teach(unreadL(0),()=>Guide.tutorial(PRACTICE))};
 $('btnCont').onclick=()=>{actx();SV.name=$('nameIn').value.trim()||SV.name;save();SFX.click();openMap()};
 $('btnBookT').onclick=()=>{try{Z().openBook()}catch(e){}};
 
@@ -4571,7 +4631,6 @@ try{
   onOpen:()=>{if(G)G.paused=true},onClose:()=>{if(G&&$('ov').hidden)G.paused=false},replay:'tutorial',offset:{x:62},attention:true,show:false});
  Guide.tutorialButton('#btnHow',()=>{actx();TUTFROM='how';Guide.tutorial(PRACTICE)});
 }catch(e){console.error(e);$('btnHow').hidden=true}
-window.__hr={get G(){return G},get SV(){return SV},startRace,openPrep,openMap,startTest,setLevel,laneMove,step:dt=>update(dt)};
 buildLevers();muteIcon();resize();
 if(window.GAME_MODE==='test'){startTest()}else{showTitle()}
 requestAnimationFrame(frame);

@@ -155,6 +155,23 @@ button{font-family:var(--fh);cursor:pointer;touch-action:manipulation}
 }
 .inhub #scrTitle{padding-top:calc(78px + env(safe-area-inset-top))}
 @media (prefers-reduced-motion:reduce){.pulse,.logo h1 span,.roll{animation:none}}
+/* 規則の石板（はじめての錠の前に教える） */
+#scrLearn{z-index:40;pointer-events:auto;background:rgba(20,17,13,.75)}
+#scrLearn .pnl{width:min(720px,calc(100% - 20px));padding-bottom:0}
+#scrLearn .btns{position:sticky;bottom:0;margin:8px -20px 0;padding:10px 20px 14px;background:linear-gradient(rgba(59,53,44,0),#3B352C 30%)}
+#scrLearn .lk{font:700 13px var(--fb);letter-spacing:.18em;color:#C9A227;margin-bottom:4px}
+#scrLearn h2{font-size:30px}
+#lFig{margin:10px 0;padding:8px;background:#F4ECDA;border:3px solid #7A6A3A}
+#lFig svg{display:block;width:100%;height:auto;max-height:24vh}
+#lP p{margin:6px 0;font:700 16px/1.7 var(--fb)}
+#lP b{color:#E9C44A}
+#lQ .ask{margin-top:10px;padding:8px 12px;font:700 16px/1.5 var(--fb);color:#1E1A14;background:var(--tile),#C9A227;border:3px solid #1B1814}
+#lQ .opts{display:flex;flex-wrap:wrap;gap:12px;margin-top:12px}
+#lQ .opts .st{flex:0 1 auto;font-family:var(--fb);font-weight:700}
+#lQ .why{margin-top:10px;font:700 15px/1.6 var(--fb)}
+#lQ .why b{color:#8FE3B0;margin-right:.4em}#lQ .why b.ng{color:#FF9A7A}
+@media (max-width:560px){#scrLearn h2{font-size:24px}#lP p{font-size:15px}}
+#scrLearn .btns{align-items:center}#scrLearn .btns #lPg{flex:0 0 auto;font:700 14px var(--fb);color:#CFC3A8}
 .gd-cheer span.ch{display:inline-block;border:0;background:none;box-shadow:none;padding:0;margin:0;min-height:0;width:auto;height:auto;gap:0;font:inherit;color:inherit;text-align:inherit}
 </style>
 </head>
@@ -231,6 +248,15 @@ button{font-family:var(--fh);cursor:pointer;touch-action:manipulation}
 <div id="scrBack" class="scr hidden"><div class="pnl slab">
   <h2>もどりますか？<small id="bkSub">進み具合は保存されます。</small></h2>
   <div class="btns"><button class="st i" id="bkNo">つづける</button><button class="st r" id="bkGo">もどる</button></div>
+</div></div>
+
+<div id="scrLearn" class="scr hidden"><div class="pnl slab">
+  <div class="lk" id="lKick"></div>
+  <h2 id="lT"></h2>
+  <div id="lFig" class="hidden"></div>
+  <div id="lP"></div>
+  <div id="lQ"></div>
+  <div class="btns"><span id="lPg"></span><button class="st" id="lNext">つぎへ</button></div>
 </div></div>
 
 <button class="st r hidden" id="bBack" aria-label="もどる">◀ もどる</button>
@@ -4232,7 +4258,7 @@ function newRun(){SV.run=freshRun();SV.run.maxL=4+Math.min(3,SV.bonusL||0);SV.ru
 function enterFloor(fl,opt){opt=opt||{};var sp=roomSpec(fl);if(window.BGM)BGM.mood(sp.boss?'tense':'normal');G={fl:fl,sp:sp,boss:sp.boss||0,locks:sp.locks.map(function(l){var k={type:l.type,v:l.v||'',lv:l.lv||1,solved:false,tried:false};TY[l.type].init(k);return k}),li:0,phase:'lock',trapped:false,walk:0,door:0,prac:fl===0,hero:0};
   scene='run';setScene('run');hud();capDef();if(!G.prac)window.Tekitou&&Tekitou.shown();if(!G.prac&&SV.run)save();
   if(!G.prac&&!RM){G.enter=1}
-  var ty=G.locks[0].type;if(!G.prac)firstCoach(ty);
+  var ty=G.locks[0].type;if(!G.prac)lockIntro(ty);
   SFX.door()}
 function lk(){return G&&G.locks[G.li]}
 function capDef(){var k=lk();if(!k)return;cap(TY[k.type].cap(k))}
@@ -4249,12 +4275,13 @@ function solve(k){if(k.solved)return;k.solved=true;if(!G.prac){window.Tekitou&&T
   if(!G.prac&&SV.run){SV.run.locks++;if(first)SV.run.first++;save()}
   if(first&&!G.prac&&!TEST){var z=Zk();if(z&&z.earn)z.earn(10,'first-try',{x:p.x,y:p.y-100})}
   cap(first?'一発で開いた！ '+CARDS_HINT(k):'開いた！ '+CARDS_HINT(k),'ok');hud();Gd('tou-solved');
-  setTimeout(function(){if(!G||lk()!==k)return;G.li++;if(G.li>=G.locks.length)roomClear();else{capDef();hud();firstCoach(lk().type);if(!G.prac)window.Tekitou&&Tekitou.shown()}},RM?600:1500)}
+  setTimeout(function(){if(!G||lk()!==k)return;G.li++;if(G.li>=G.locks.length)roomClear();else{capDef();hud();lockIntro(lk().type);if(!G.prac)window.Tekitou&&Tekitou.shown()}},RM?600:1500)}
 function CARDS_HINT(k){return{meter:'電流計は **直列**、電圧計は **並列**。',ohm:'**電圧＝抵抗×電流**。',heat:'**電力量＝電力×時間**。',static:'同じ種類は **しりぞけ合い**、ちがう種類は **引き合う**。',beam:'電子は **−極から** 出て、**＋** のほうへ曲がる。',compass:'**右ねじ**：⊙なら反時計回り。',force:'片方逆で力は逆、**両方逆でもとどおり**。',induct:'**動かしている間だけ**、速いほど大きい。'}[k.type]||''}
 function trap(k,why){k.tried=true;G.trapped=true;if(!G.prac)window.Tekitou&&Tekitou.answer(false);SFX.ng();SHAKE=12;FLASH=.45;FLASHC='#FF6A4A';vib([30,40,30]);
   var p=toS(0,0);for(var i=0;i<14;i++)FX.push({x:p.x+(Math.random()-.5)*200,y:p.y-100,vx:(Math.random()-.5)*80,vy:0,t:0,life:1.2,col:pick([STONE,LSTONE,'#5A4E3E']),r:10+Math.random()*10,k:'tile'});
   if(G.prac){cap('おしい！ '+why,'ng');return}
-  var R=SV.run;if(R.shield>0){R.shield--;cap('罠！ 守りの石がくだけて灯は守られた。'+why,'ng')}
+  var R=SV.run;SV.tf=SV.tf||{};if(!SV.tf[k.type]){SV.tf[k.type]=1;cap('おしい！ はじめての錠なので、灯は消えない。'+why,'ng')}
+  else if(R.shield>0){R.shield--;cap('罠！ 守りの石がくだけて灯は守られた。'+why,'ng')}
   else{R.light--;R.trapped++;cap('罠！ 灯が1つ消えた。'+why,'ng');pop(p.x,p.y-60,'−1 灯',RED,34)}
   if(REROLL[k.type]){REROLL[k.type](k);cap(($('cap').innerHTML||'')+' <b>錠の条件が変わった。</b>','ng');window.Tekitou&&Tekitou.shown()}
   save();hud();if(R.light<=0)setTimeout(fall,1400)}
@@ -4309,7 +4336,7 @@ function finishRun(why){var R=SV.run||freshRun();var top=why==='top';if(top){SV.
   var go=function(){scene='res';setScene('res');$('rT').firstChild.nodeValue=top?'塔をのぼりきった！':'時間いっぱい！';$('rSub').textContent=top?'最上階の番人をこえ、単元のすべての規則を使いこなした。':'第'+(G?G.fl:R.floor)+'階まで到達。のこりは確認テストで。';
     $('rRecs').innerHTML=[['到達した階',(top?16:(G?G.fl:R.floor))+' 階'],['のぼった時間',fmtT(R.t)],['一発で開けた錠',R.first+' / '+R.locks],['規則の石板',Object.keys(SV.cards).length+' / '+CARDS.length]].map(function(x){return'<div>'+esc(x[0])+'<b>'+esc(x[1])+'</b></div>'}).join('');SFX.fan()};
   var z=Zk();if(top&&z&&z.mainClear&&!TEST){try{z.mainClear({onClose:go});return}catch(e){}}go()}
-$('rTest').onclick=function(){ac();startTest()};$('rBook').onclick=openBook;
+$('rTest').onclick=function(){ac();teachRest(startTest)};$('rBook').onclick=openBook;
 function fmtT(s){s=Math.round(s||0);return Math.floor(s/60)+'分'+('0'+s%60).slice(-2)+'秒'}
 
 /* ---------------- はじめての錠には、指で1手だけ見せる ---------------- */
@@ -4325,6 +4352,123 @@ var COACH={
 function scr(x,y,r){var q=toS(x,y);return{x:q.x,y:q.y,r:r*AP.u+8}}
 function firstCoach(t){if(!window.Guide||!COACH[t]||SV.seen[t]||TEST)return;SV.seen[t]=1;save();setTimeout(function(){if(scene==='run'&&lk()&&lk().type===t)Guide.coach(COACH[t](),{praise:'いいね！'})},900)}
 function cheerL(t){if(window.Guide){var q=toS(0,-120);Guide.cheer(t,{x:q.x,y:q.y})}else cap(t)}
+
+
+/* ================= 規則の石板（はじめての錠の前に教える）2026-10-06 初心者向け ================= */
+var LRN=null;
+function teach(kick,pages,done){LRN={k:kick,p:pages,i:0,done:done};if(HELP)HELP.hide();showLearn()}
+function lEnd(){var it=document.querySelector('#scrLearn .pnl');if(it)try{it.scrollTo({top:it.scrollHeight,behavior:RM?'auto':'smooth'})}catch(e){it.scrollTop=it.scrollHeight}}
+function showLearn(){var L=LRN,pg=L.p[L.i];$('scrLearn').classList.remove('hidden');$('lKick').textContent=L.k;$('lT').textContent=pg.t;
+  var f=$('lFig');if(pg.fig){f.innerHTML=pg.fig;f.classList.remove('hidden')}else{f.innerHTML='';f.classList.add('hidden')}
+  $('lP').innerHTML=pg.p.split('\n').map(function(x){return '<p>'+md(x)+'</p>'}).join('');
+  var q=$('lQ'),nb=$('lNext');q.innerHTML='';nb.textContent=L.i+1>=L.p.length?(pg.last||'わかった'):'つぎへ';$('lPg').textContent=L.p.length>1?(L.i+1)+' / '+L.p.length:'';
+  if(pg.q){var qq=pg.q;nb.classList.add('hidden');q.innerHTML='<div class="ask">やってみよう：'+md(qq.ask)+'</div><div class="opts"></div><div class="why"></div>';var box=q.querySelector('.opts'),wy=q.querySelector('.why');
+    sh(qq.c.map(function(t,i){return{t:t,ok:i===0}})).forEach(function(o){var b=document.createElement('button');b.className='st i sm';b.textContent=o.t;
+      b.onclick=function(){ac();if(o.ok){SFX.ok(3);[].forEach.call(box.children,function(x){x.disabled=true});b.disabled=false;b.className='st t sm';wy.innerHTML='<b>そのとおり。</b>'+md(qq.why);nb.classList.remove('hidden');setTimeout(lEnd,60)}
+        else{SFX.ng();b.disabled=true;wy.innerHTML='<b class="ng">ちがう。</b>'+md(qq.hint||'もう一度、上の説明を読んでみよう');setTimeout(lEnd,60)}};box.appendChild(b)})}
+  else nb.classList.remove('hidden');
+  var pn=document.querySelector('#scrLearn .pnl');if(pn)pn.scrollTop=0}
+$('lNext').onclick=function(){ac();var L=LRN;if(!L)return;L.i++;if(L.i>=L.p.length){$('scrLearn').classList.add('hidden');LRN=null;SFX.place();if(HELP&&scene==='run')HELP.show();if(L.done)L.done();return}SFX.tap();showLearn()};
+
+/* ---- 図（石板の絵）。色は塔の石の色 ---- */
+var IK='#2E2A24',RD='#A8322D',BL='#2B5C8F',GD='#C9A227',TL='#2F7F7A',CR='#F4ECDA';
+function svgW(vb,inner){return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="'+vb+'" font-family="sans-serif" font-weight="700">'+inner+'</svg>'}
+function tX(x,y,t,sz,col,an){return '<text x="'+x+'" y="'+y+'" font-size="'+(sz||13)+'" text-anchor="'+(an||'middle')+'" fill="'+(col||IK)+'">'+t+'</text>'}
+function loopIn(o){o=o||{};var L=50,Rr=262,T=34,B=160,M=97,s='',i;
+  s+='<rect x="'+L+'" y="'+T+'" width="'+(Rr-L)+'" height="'+(B-T)+'" fill="none" stroke="'+IK+'" stroke-width="2.5"/>';
+  if(o.par){var px=Rr+42;s+='<polyline points="'+Rr+','+(M-36)+' '+px+','+(M-36)+' '+px+','+(M+36)+' '+Rr+','+(M+36)+'" fill="none" stroke="'+IK+'" stroke-width="2.5"/><circle cx="'+Rr+'" cy="'+(M-36)+'" r="4" fill="'+IK+'"/><circle cx="'+Rr+'" cy="'+(M+36)+'" r="4" fill="'+IK+'"/>'+
+    '<circle cx="'+px+'" cy="'+M+'" r="15" fill="#fff" stroke="'+IK+'" stroke-width="2.5"/>'+tX(px,M+6,o.par.k,17)}
+  s+='<rect x="'+(L-16)+'" y="'+(M-13)+'" width="32" height="26" fill="'+CR+'"/><line x1="'+(L-15)+'" y1="'+(M-6)+'" x2="'+(L+15)+'" y2="'+(M-6)+'" stroke="'+IK+'" stroke-width="2.5"/><line x1="'+(L-7)+'" y1="'+(M+6)+'" x2="'+(L+7)+'" y2="'+(M+6)+'" stroke="'+IK+'" stroke-width="6"/>'+tX(L-24,M-1,'＋',16,RD)+tX(L-24,M+14,'−',16,IK);
+  if(o.batLab)s+=tX(L+20,M-2,'＋極（長い線）',12,RD,'start')+tX(L+20,M+14,'−極（短い線）',12,IK,'start');
+  if(o.lit)s+='<circle cx="'+Rr+'" cy="'+M+'" r="26" fill="#FFD66E" opacity=".55"/>';
+  s+='<circle cx="'+Rr+'" cy="'+M+'" r="14" fill="'+(o.lit?'#FFE9A8':'#fff')+'" stroke="'+IK+'" stroke-width="2.5"/><path d="M'+(Rr-9)+' '+(M-9)+'L'+(Rr+9)+' '+(M+9)+'M'+(Rr+9)+' '+(M-9)+'L'+(Rr-9)+' '+(M+9)+'" stroke="'+IK+'" stroke-width="2.5"/>'+tX(Rr-22,M+5,'豆電球',13,IK,'end');
+  (o.m||[]).forEach(function(m){var y=m.w==='bot'?B:T;s+='<circle cx="'+m.x+'" cy="'+y+'" r="15" fill="#fff" stroke="'+IK+'" stroke-width="2.5"/>'+tX(m.x,y+6,m.k||'A',17);if(m.lab)s+=tX(m.x,m.w==='bot'?y-23:y+36,m.lab,13,TL)});
+  if(o.arr){var mx=(L+Rr)/2-40;s+='<path d="M'+(mx-8)+' '+(T-7)+'L'+(mx+8)+' '+T+'L'+(mx-8)+' '+(T+7)+'Z" fill="'+RD+'"/><path d="M'+(mx+8)+' '+(B-7)+'L'+(mx-8)+' '+B+'L'+(mx+8)+' '+(B+7)+'Z" fill="'+RD+'"/>'+
+    '<path d="M'+(Rr-7)+' '+(B-30)+'L'+Rr+' '+(B-14)+'L'+(Rr+7)+' '+(B-30)+'Z" fill="'+RD+'"/><path d="M'+(L-7)+' '+(T+30)+'L'+L+' '+(T+14)+'L'+(L+7)+' '+(T+30)+'Z" fill="'+RD+'"/>'+tX(mx,T-12,'電流の向き',12,RD)}
+  if(o.flow){var pth='M'+L+' '+(M-14)+'L'+L+' '+T+'L'+Rr+' '+T+'L'+Rr+' '+B+'L'+L+' '+B+'Z';for(i=0;i<10;i++){s+='<circle r="4.5" fill="'+GD+'" stroke="'+IK+'" stroke-width="1"'+(RM?' cx="'+(L+(Rr-L)*i/10)+'" cy="'+T+'"':'')+'>'+(RM?'':'<animateMotion dur="7s" repeatCount="indefinite" begin="-'+(i*.7).toFixed(1)+'s" path="'+pth+'"/>')+'</circle>'}}
+  (o.n||[]).forEach(function(n){s+=tX(n[0],n[1],n[2],n[4]||13,n[5]||IK,n[3]||'middle')});
+  return s}
+function arrowR(x1,y,x2,col){return '<path d="M'+x1+' '+y+'H'+(x2-10)+'" stroke="'+col+'" stroke-width="4"/><path d="M'+x2+' '+y+'l-12 -7v14z" fill="'+col+'"/>'}
+function arrowL(x1,y,x2,col){return '<path d="M'+x1+' '+y+'H'+(x2+10)+'" stroke="'+col+'" stroke-width="4"/><path d="M'+x2+' '+y+'l12 -7v14z" fill="'+col+'"/>'}
+function res(x,y,lab){return '<rect x="'+(x-30)+'" y="'+(y-11)+'" width="60" height="22" fill="#fff" stroke="'+IK+'" stroke-width="2.5"/>'+tX(x,y+5,lab,13)}
+var FIG={
+ loop:function(){return svgW('0 0 330 200',loopIn({arr:1,flow:1,lit:1,batLab:1}))},
+ sp:function(){return svgW('0 0 330 200',loopIn({m:[{w:'top',x:150,k:'A',lab:'電流計（直列）'}],par:{k:'V'},n:[[326,156,'電圧計（並列）','end',13,TL]]}))},
+ ohm:function(){return svgW('0 0 340 190','<rect x="10" y="10" width="320" height="56" fill="#fff" stroke="'+GD+'" stroke-width="3"/>'+tX(170,45,'電圧（V）＝ 抵抗（Ω）× 電流（A）',17,IK)+
+   tX(170,92,'例：10Ω × 0.40A ＝ 4.0V',16,TL)+
+   '<line x1="40" y1="140" x2="300" y2="140" stroke="'+IK+'" stroke-width="2.5"/>'+res(110,140,'20Ω')+res(220,140,'30Ω')+tX(170,178,'直列につなぐと  20Ω＋30Ω ＝ 50Ω',14,RD))},
+ heat:function(){var s='<rect x="20" y="20" width="130" height="70" fill="#fff" stroke="'+IK+'" stroke-width="2.5"/><path d="M35 70 q8 -30 16 0 q8 -30 16 0 q8 -30 16 0 q8 -30 16 0 q8 -30 16 0 q8 -30 16 0" fill="none" stroke="'+RD+'" stroke-width="3"/>'+tX(85,44,'6V-9W',18)+
+   tX(165,40,'6Vを加えると',14,IK,'start')+tX(165,64,'9Wの電力になる',14,RD,'start')+
+   '<rect x="10" y="110" width="320" height="56" fill="#fff" stroke="'+GD+'" stroke-width="3"/>'+tX(170,136,'電力量（J）＝ 電力（W）× 時間（秒）',17)+tX(170,158,'例：9W × 20秒 ＝ 180J',14,TL);return svgW('0 0 340 180',s)},
+ static:function(){var s='<rect x="20" y="30" width="120" height="18" rx="9" fill="#7FB7C9" stroke="'+IK+'" stroke-width="2"/>'+tX(80,24,'ストロー',13,BL);
+   for(var i=0;i<4;i++)s+=tX(38+i*28,45,'−',16,BL);
+   s+='<path d="M20 70 q60 -12 120 0 l-4 40 q-56 10 -112 0z" fill="#fff" stroke="'+IK+'" stroke-width="2"/>'+tX(80,128,'ティッシュ',13);for(i=0;i<4;i++)s+=tX(40+i*27,96,'＋',16,RD);
+   s+=tX(80,150,'こすると 電子（−）が',12,IK)+tX(80,166,'ストローへ移る',12,IK);
+   function ball(x,y,sg){return '<circle cx="'+x+'" cy="'+y+'" r="15" fill="#fff" stroke="'+IK+'" stroke-width="2"/>'+tX(x,y+6,sg,18,sg==='＋'?RD:BL)}
+   s+=ball(205,45,'−')+ball(285,45,'−')+arrowL(195,45,170,RD)+arrowR(295,45,322,RD)+tX(245,82,'同じ種類 → しりぞけ合う',12,RD);
+   s+=ball(195,125,'＋')+ball(295,125,'−')+arrowR(212,125,240,TL)+arrowL(278,125,250,TL)+tX(245,162,'ちがう種類 → 引き合う',12,TL);return svgW('0 0 340 180',s)},
+ beam:function(){var s='<rect x="20" y="40" width="300" height="90" rx="45" fill="#DDEBE6" stroke="'+IK+'" stroke-width="2"/><rect x="30" y="68" width="10" height="34" fill="'+BL+'"/>'+tX(35,150,'−極',13,BL)+'<rect x="300" y="68" width="10" height="34" fill="'+RD+'"/>'+tX(305,150,'＋極',13,RD)+
+   '<rect x="130" y="50" width="80" height="7" fill="'+RD+'"/>'+tX(170,32,'＋の板',13,RD)+'<rect x="130" y="113" width="80" height="7" fill="'+BL+'"/>'+tX(170,150,'−の板',13,BL)+
+   '<path d="M42 85 H130 Q170 85 205 62" fill="none" stroke="'+TL+'" stroke-width="4" stroke-dasharray="7 4"/><path d="M205 62 l-12 2 l6 9z" fill="'+TL+'"/>'+tX(80,76,'電子の流れ',12,TL);return svgW('0 0 340 165',s)},
+ compass:function(){var s='<circle cx="170" cy="95" r="62" fill="none" stroke="'+GD+'" stroke-width="3" stroke-dasharray="6 5"/>';
+   [[232,95,0,-1],[108,95,0,1],[170,33,-1,0],[170,157,1,0]].forEach(function(a){s+='<path d="M'+(a[0]+a[2]*8)+' '+(a[1]+a[3]*8)+'l'+(-a[2]*12-a[3]*7)+' '+(-a[3]*12+a[2]*7)+'l'+(a[3]*14)+' '+(-a[2]*14)+'z" fill="'+GD+'"/>'});
+   s+='<circle cx="170" cy="95" r="16" fill="#fff" stroke="'+IK+'" stroke-width="2.5"/><circle cx="170" cy="95" r="5" fill="'+IK+'"/>';
+   function cp(x,y,up){return '<circle cx="'+x+'" cy="'+y+'" r="20" fill="#fff" stroke="'+TL+'" stroke-width="2.5"/><path d="M'+x+' '+(y+(up?-16:16))+'L'+(x-6)+' '+y+'L'+(x+6)+' '+y+'z" fill="'+RD+'"/><path d="M'+x+' '+(y+(up?16:-16))+'L'+(x-6)+' '+y+'L'+(x+6)+' '+y+'z" fill="#bbb"/>'+tX(x+(up?0:0),y+(up?-24:34),'N',12,RD)}
+   s+=cp(280,95,1)+cp(60,95,0)+tX(170,22,'上から見た図（⊙：電流が手前へ）',12)+tX(170,186,'⊙なら反時計回り ／ ⊗なら時計回り',13,RD);return svgW('0 0 340 195',s)},
+ force:function(){var s='<rect x="40" y="16" width="130" height="26" fill="'+RD+'"/>'+tX(105,34,'N',15,'#fff')+'<rect x="40" y="118" width="130" height="26" fill="'+BL+'"/>'+tX(105,136,'S',15,'#fff')+
+   '<circle cx="105" cy="80" r="13" fill="#fff" stroke="'+IK+'" stroke-width="2"/><circle cx="105" cy="80" r="4" fill="'+IK+'"/>'+arrowR(122,80,165,GD)+tX(150,70,'力',13,GD);
+   var rows=[['電流だけ逆','→ 逆向き',RD],['磁石だけ逆','→ 逆向き',RD],['両方とも逆','→ もとと同じ',TL]];rows.forEach(function(r,i){s+=tX(195,48+i*34,r[0],14,IK,'start')+tX(285,48+i*34,r[1],14,r[2],'start')});return svgW('0 0 380 160',s)},
+ induct:function(){var s='';for(var i=0;i<6;i++)s+='<ellipse cx="90" cy="'+(90+i*12)+'" rx="44" ry="10" fill="none" stroke="#B8703A" stroke-width="4"/>';
+   s+='<rect x="76" y="6" width="28" height="34" fill="'+RD+'"/>'+tX(90,28,'S',13,'#fff')+'<rect x="76" y="40" width="28" height="34" fill="'+BL+'"/>'+tX(90,62,'N',13,'#fff')+'<path d="M126 20 v40" stroke="'+IK+'" stroke-width="3"/><path d="M126 66 l-7 -12h14z" fill="'+IK+'"/>'+tX(150,40,'近づける',12,IK,'start');
+   s+='<path d="M134 150 H200 V120" fill="none" stroke="'+IK+'" stroke-width="2"/><path d="M46 150 V170 H240 V120" fill="none" stroke="'+IK+'" stroke-width="2"/><circle cx="222" cy="100" r="30" fill="#fff" stroke="'+IK+'" stroke-width="2.5"/><path d="M222 112 L240 82" stroke="'+RD+'" stroke-width="3"/>'+tX(222,124,'検流計',11);
+   s+=tX(268,40,'近づける → 右',13,IK,'start')+tX(268,62,'遠ざける → 左',13,IK,'start')+tX(268,84,'止める → 0',13,RD,'start')+tX(268,106,'S極にする → 逆',13,IK,'start');return svgW('0 0 400 180',s)}};
+
+var T_LOCK={
+ meter:[{t:'電流・電圧・抵抗 ─ 塔の言葉',fig:'loop',
+  p:'電池と豆電球を導線で **輪のように** つなぐと、電流が流れて豆電球が光る。この電気の通り道を **回路** という。\n**電流**＝回路を流れる電気の流れ。単位は **A（アンペア）**。電池の **＋極**（記号の長い線）から出て、**−極**（短い線）へもどる向き。\n**電圧**＝電流を流そうとする はたらきの大きさ。単位は **V（ボルト）**。\n**抵抗**＝電流の流れにくさ。単位は **Ω（オーム）**。',
+  q:{ask:'「電流の流れにくさ」を表す量と、その単位は？',c:['抵抗・Ω（オーム）','電圧・V（ボルト）','電流・A（アンペア）'],why:'流れにくさは抵抗、単位はΩ。電圧はV、電流はA。',hint:'3つの言葉の説明を、もう一度見比べよう'}},
+  {t:'電流計は直列・電圧計は並列',fig:'sp',
+  p:'**直列**＝回路の **切れ目に入れる** つなぎ方。**並列**＝豆電球などの **両はしをまたぐ** つなぎ方。\n**電流計**（Ⓐ）は電流をはかる計器。はかりたい所に **直列**。並列にすると大きな電流が流れて危ない。\n**電圧計**（Ⓥ）は電圧をはかる計器。はかりたい部分に **並列**。直列にすると、電流がほとんど流れない。\n電流の大きさが分からないときは、電流計の **−端子はいちばん大きい値（5A）から** つなぐ。直列回路では、電流はどこで測っても同じ大きさ。',
+  q:{ask:'電流計は、豆電球とどうつなぐ？',c:['直列（切れ目に入れる）','並列（両はしをまたぐ）'],why:'電流計は直列。電圧計が並列。',hint:'電流計は、電流が全部その中を通るようにつなぐ'}}],
+ ohm:[{t:'オームの法則 ─ 電圧＝抵抗×電流',fig:'ohm',
+  p:'電圧・抵抗・電流には決まった関係がある：**電圧（V）＝抵抗（Ω）×電流（A）**。\n例：10Ωの抵抗器に 0.40A を流すには、10×0.40＝**4.0V** の電圧を加える。\nこの錠では、電流計の針が目標の電流をさすように、つまみで電圧を合わせる。',
+  q:{ask:'5Ωの抵抗器に 0.60A を流すには、何Vの電圧が必要？',c:['3.0V','0.12V','5.6V'],why:'電圧＝抵抗×電流＝5×0.60＝3.0V。',hint:'電圧＝抵抗×電流。5 に 0.60 をかけよう'}},
+  {t:'直列の抵抗と、電流の求め方',fig:'ohm',
+  p:'抵抗器を **直列** につなぐと、回路全体の抵抗は **足し算**：20Ω＋30Ω＝50Ω。\n電流を求めたいときは、式を入れかえて **電流＝電圧÷抵抗**。\n例：20Ωと30Ωの直列に 10V → 全体は50Ω → 10÷50＝**0.20A**。',
+  q:{ask:'5Ωと10Ωを直列につなぎ、3.0V を加えた。流れる電流は？',c:['0.20A','0.60A','45A'],why:'全体の抵抗は5＋10＝15Ω。電流＝3.0÷15＝0.20A。',hint:'まず抵抗を足して全体の抵抗を出し、電圧をそれでわる'}}],
+ heat:[{t:'電力 ─ 電熱線の「6V-9W」',fig:'heat',
+  p:'**電力**＝電気が1秒あたりにする はたらきの大きさ。単位は **W（ワット）**。**電力＝電圧×電流**（1Vで1Aなら1W）。\n電熱線の「**6V-9W**」は、「**6Vの電圧を加えると、9Wの電力になる**」という意味。\n同じ電圧で同じ時間流すなら、**電力（W）の大きい電熱線ほど発熱が多い**（水の温度がよく上がる）。',
+  q:{ask:'6V-6W と 6V-18W に 6V を加えて、同じ時間流した。発熱が多いのは？',c:['6V-18W','6V-6W','どちらも同じ'],why:'同じ時間なら、電力の大きい方が発熱が多い。',hint:'Wの数が大きいほど…'}},
+  {t:'電力量 ─ 電力×時間',fig:'heat',
+  p:'流した時間もふくめた電気の量が **電力量**。単位は **J（ジュール）**。**電力量（J）＝電力（W）×時間（秒）**。\n例：9Wで20秒流すと、9×20＝**180J**。\nこの炉では、目標のJを電力でわると、流す秒数がわかる。例：36J を 9W でこめるなら、36÷9＝**4秒**。\n実験で電力量を求める順：① 電圧と電流をはかる → ② 電力（電圧×電流）を求める → ③ 流した時間（秒）をはかる → ④ 電力量（電力×時間）を求める。',
+  q:{ask:'6W の電熱線で 30J をこめるには、何秒流す？',c:['5秒','180秒','24秒'],why:'時間＝電力量÷電力＝30÷6＝5秒。',hint:'電力量＝電力×時間。6×□＝30'}}],
+ static:[{t:'静電気 ─ こすると＋と−に分かれる',fig:'static',
+  p:'ちがう2つの物をこすり合わせると、**−の電気をもつ小さな粒（電子）** が一方へ移る。電子をもらった方が **−**、わたした方が **＋** の電気を帯びる。これが **静電気**。\nストローをティッシュでこすると、**ストローは−、ティッシュは＋**。\n**同じ種類（＋と＋、−と−）はしりぞけ合い、ちがう種類（＋と−）は引き合う**。だから、同じようにこすった2本のストロー（どちらも−）は、しりぞけ合う。',
+  q:{ask:'−の玉に、こすったティッシュ（＋）を近づけると？',c:['引き合う','しりぞけ合う','何も起こらない'],why:'＋と−はちがう種類なので、引き合う。',hint:'同じ種類はしりぞけ合い、ちがう種類は引き合う'}}],
+ beam:[{t:'光のすじ ─ 電子の流れ',fig:'beam',
+  p:'空気をぬいたガラス管に大きな電圧を加えると、**−極から光のすじ** が出る（**真空放電**）。\nこの光のすじは、**電子** という、**−の電気をもつ とても小さな粒** の流れ。電子は **−極から出て、＋極へ** 向かう。\n管を上下の電極板ではさむと、電子は−なので **＋の板のほうへ引かれて曲がる**（−の板からは しりぞけられる）。',
+  q:{ask:'光のすじが、下の板のほうへ曲がった。下の板は？',c:['＋','−'],why:'電子は−の電気。＋の板へ引かれて曲がる。',hint:'電子は−の電気。−と＋は引き合う'}}],
+ compass:[{t:'電流がつくる磁界 ─ 右ねじ',fig:'compass',
+  p:'**磁界**＝磁石の力がはたらく空間。方位磁針の **N極がさす向き** が、その場所の **磁界の向き**。\n導線に電流を流すと、導線のまわりに **輪のような磁界** ができる。向きは **右ねじ**：電流の向きにねじが進むように回すとき、**ねじを回す向き** が磁界の向き。\n上から見た図の記号：**⊙＝電流が手前（こちら）へ**（矢の先が見える）、**⊗＝奥へ**（矢の羽根が見える）。**⊙なら反時計回り、⊗なら時計回り**。\n図の⊙では、導線の右の方位磁針のN極は **上**、左では **下** をさす。',
+  q:{ask:'⊗（電流が奥へ）のとき、上から見た磁界の向きは？',c:['時計回り','反時計回り'],why:'⊗は⊙の逆。磁界も逆になり、時計回り。',hint:'⊙なら反時計回り。⊗はその逆'}}],
+ force:[{t:'磁界の中の電流が受ける力',fig:'force',
+  p:'磁石の磁界の中で導線に電流を流すと、導線は **力を受けて動く**（つるした導線は、ブランコのようにふれる）。電流を大きくする・強い磁石にすると、力は大きい。\n力の向きは、**電流の向き** と **磁界の向き**（磁石のN・Sの向き）で決まる。\n**どちらか1つを逆にすると、力は逆向き**。**両方とも逆にすると、逆の逆で、もとと同じ向き**。',
+  q:{ask:'導線が右へふれた。電流の向きだけを逆にすると？',c:['左へふれる','右へふれる','ふれない'],why:'1つだけ逆にすると、力も逆向き。',hint:'1つ逆なら逆向き、2つとも逆ならもとどおり'}}],
+ induct:[{t:'電磁誘導 ─ 動かしている間だけ',fig:'induct',
+  p:'コイルに磁石を近づけたり遠ざけたりすると、**電池がなくても、コイルに電流が流れる**。これを **電磁誘導**、流れる電流を **誘導電流** という。小さな電流の向きは **検流計** の針でわかる。\n電流が流れるのは **磁石（またはコイル）を動かしている間だけ**。止めると0。\n**近づける↔遠ざける**、**N極↔S極** のどちらかを逆にすると、誘導電流も逆向き（針が反対へ）。\n大きくするには：**速く動かす・強い磁石・巻数の多いコイル**（色や形をかえても変わらない）。発電機もこのしくみ。',
+  q:{ask:'N極を近づけると、針が右にふれた。N極を遠ざけると？',c:['左にふれる','右にふれる','ふれない'],why:'近づける↔遠ざけるで、誘導電流の向きは逆。',hint:'動かす向きを逆にすると…'}}]};
+function pagesOf(t){return(T_LOCK[t]||[]).map(function(p){var o={};for(var k in p)o[k]=p[k];o.fig=p.fig&&FIG[p.fig]?FIG[p.fig]():'';return o})}
+var LOCK_ORDER=['meter','ohm','heat','static','beam','compass','force','induct'];
+/* はじめての錠の前に、その規則を教える（それから指の手ほどき） */
+function lockIntro(t){if(!G||G.prac||TEST||(SV.lt&&SV.lt[t])||!T_LOCK[t]){firstCoach(t);return}
+  var g=G;G.paused=true;
+  teach('はじめての錠 ─ '+(NAME[t]||'')+'の規則',pagesOf(t),function(){SV.lt=SV.lt||{};SV.lt[t]=1;save();if(G===g){G.paused=false;if(HELP&&scene==='run')HELP.update({rules:helpRules()});firstCoach(t)}})}
+/* 塔に入る前（はじめての人）：計器の台座とオームの錠の規則 */
+function teachBasics(next){teach('塔の入口の石板',pagesOf('meter').concat(pagesOf('ohm')),function(){SV.lt=SV.lt||{};SV.lt.meter=1;SV.lt.ohm=1;save();next()})}
+/* 確認テストの前：まだ出会っていない錠の規則も教えておく */
+function teachRest(next){if(TEST){next();return}var rest=LOCK_ORDER.filter(function(t){return!(SV.lt&&SV.lt[t])});if(!rest.length){next();return}
+  var pg=[];rest.forEach(function(t){pg=pg.concat(pagesOf(t))});pg[pg.length-1].last='確認テストへ';
+  teach('まだ出会っていない錠の規則 ─ テストの前に',pg,function(){SV.lt=SV.lt||{};rest.forEach(function(t){SV.lt[t]=1});save();next()})}
 
 /* ---------------- 入力 ---------------- */
 function loc(e){var r=cv.getBoundingClientRect();return{x:e.clientX-r.left,y:e.clientY-r.top}}
@@ -4396,7 +4540,7 @@ var SCR=['scrTitle','scrRun','scrChest','scrAltar','scrFall','scrRes','scrTest',
 function showScr(){var on=[].slice.call(arguments);SCR.forEach(function(id){$(id).classList.toggle('hidden',on.indexOf(id)<0)})}
 var INHUB=!!window.COLLECTION_NAME||(function(){try{return window.parent!==window}catch(e){return true}})();if(INHUB)document.body.classList.add('inhub');
 var HELP=null;
-function setScene(s){scene=s;var map={title:['scrTitle'],run:['scrRun'],chest:['scrRun','scrChest'],altar:['scrRun','scrAltar'],fall:['scrRun','scrFall'],res:['scrRun','scrRes'],test:['scrTest'],end:['scrEnd']};showScr.apply(null,map[s]||[]);
+function setScene(s){scene=s;if((s==='res'||s==='test')&&window.Guide&&Guide.active&&Guide.active())try{Guide.skip()}catch(e){}var map={title:['scrTitle'],run:['scrRun'],chest:['scrRun','scrChest'],altar:['scrRun','scrAltar'],fall:['scrRun','scrFall'],res:['scrRun','scrRes'],test:['scrTest'],end:['scrEnd']};showScr.apply(null,map[s]||[]);
   bgKey='';mkBG();var b=$('bBack');b.classList.toggle('hidden',s==='title'&&!INHUB);b.textContent=s==='title'?'◀ 一覧へ':'◀ もどる';$('bMute').classList.remove('hidden');$('bMute').textContent=muted?'🔇':'🔊';
   if(HELP){if(s==='run'){HELP.show();HELP.update({rules:helpRules()})}else HELP.hide()}}
 var backFrom=null;
@@ -4413,7 +4557,7 @@ function refreshTitle(){$('bCont').classList.toggle('hidden',!(SV.run&&SV.run.fl
 
 /* ---------------- 遊び方案内（Guide） ---------------- */
 var PRAC_RET=null;
-var INTRO={title:'第35回　電流の塔',learn:'回路・電力・静電気・電子・磁界・電磁誘導の **規則をぜんぶ使って** 錠を開ける',how:'装置を **ドラッグ・タップ・長おし** で動かして、扉の錠を開けて上の階へ',gesture:'drag'};
+var INTRO={title:'第35回　電流の塔',learn:'電流・電圧・電力・静電気・電子・磁界・電磁誘導の **規則を使って** 錠を開ける。**はじめての錠の前には、その規則を石板で教える**（前の回を遊んでいなくても大丈夫）',how:'装置を **ドラッグ・タップ・長おし** で動かして、扉の錠を開けて上の階へ',gesture:'drag'};
 var PRACTICE={label:'れんしゅう中',
   start:function(){enterFloor(0)},
   steps:[
@@ -4426,7 +4570,7 @@ var PRACTICE={label:'れんしゅう中',
   onClear:function(){var z=Zk();if(z&&z.earn&&!TEST)z.earn(10,'first-try',{x:W/2,y:H/2})},
   onExit:function(){var r=PRAC_RET;PRAC_RET=null;SV.tut=1;save();G=null;if(!r)return;if(r==='run')startRunFresh();else{setScene('title');refreshTitle()}}};
 function startRunFresh(){newRun();enterFloor(1)}
-function helpRules(){return['装置は **ドラッグ・タップ・長おし** で動かす。扉の錠（◆）を全部開けると上の階へ','罠（まちがい）で **灯が1つ消える**。全部消えると区切りの階（1・6・11階）へもどる','罠にかからずに開けると **宝箱**（★3 65%・★4 30%・★5 5%）','祭壇では **効く要因** をえらぶと装備が増える（色・かざりは効かない）','30分の砂時計が落ちきったら、その階でおしまい→確認テスト']}
+function helpRules(){return['装置は **ドラッグ・タップ・長おし** で動かす。扉の錠（◆）を全部開けると上の階へ','罠（まちがい）で **灯が1つ消える**。全部消えると区切りの階（1・6・11階）へもどる','罠にかからずに開けると **宝箱**（★3 65%・★4 30%・★5 5%）','祭壇では **効く要因** をえらぶと装備が増える（色・かざりは効かない）','30分の砂時計が落ちきったら、その階でおしまい→確認テスト','はじめての錠の前には規則の石板が出る。どの錠も、はじめての罠では灯は消えない'].concat(G&&lk()&&!G.prac?['この錠の規則：'+CARDS_HINT(lk())]:[])}
 if(window.Guide){
   Guide.setup({theme:{bg:'#3B352C',fg:'#EFE4CC',accent:'#E9C44A',accentText:'#1E1A14',font:FH,bodyFont:FB,radius:4,texture:'grid',line:'#C9A227',dim:'rgba(15,13,10,.55)',shadow:'0 0 0 3px #7A6A3A,0 10px 24px rgba(0,0,0,.6)',outline:'#1B1814',hand:'#EFE4CC',handLine:'#1B1814'},
     sfx:function(k){if(muted)return;({step:function(){SFX.ok(1)},done:function(){SFX.ok(4)},clear:SFX.fan,open:SFX.door,close:SFX.tap,cheer:function(){SFX.ok(2)},nudge:SFX.tap}[k]||function(){})()},
@@ -4434,11 +4578,11 @@ if(window.Guide){
   HELP=Guide.help({rules:[],offset:{x:0},size:48,show:false,attention:true,labels:{replay:'れんしゅうをもう一度'},
     replay:function(){PRAC_RET='title';Guide.tutorial(PRACTICE);return null},
     onOpen:function(){if(G)G.paused=true},onClose:function(){if(G&&$('scrBack').classList.contains('hidden'))G.paused=false}});
-  Guide.tutorialButton('#bHow',function(){ac();PRAC_RET='title';Guide.tutorial(PRACTICE)});
+  Guide.tutorialButton('#bHow',function(){ac();PRAC_RET='title';if(SV.lt&&SV.lt.meter&&SV.lt.ohm)Guide.tutorial(PRACTICE);else teachBasics(function(){Guide.tutorial(PRACTICE)})});
 }else $('bHow').classList.add('hidden');
 $('bStart').onclick=function(){ac();SFX.bell();SV.name=$('nameIn').value.trim()||SV.name;save();var first=!SV.tut;
-  if(!window.Guide){startRunFresh();return}
-  Guide.intro(INTRO).then(function(){if(first){PRAC_RET='run';Guide.tutorial(PRACTICE)}else startRunFresh()})};
+  if(!window.Guide){startRunFresh();return}/* Guide が無いときは、各錠のはじめに lockIntro が教える */
+  Guide.intro(INTRO).then(function(){if(first){if(SV.lt&&SV.lt.meter&&SV.lt.ohm){PRAC_RET='run';Guide.tutorial(PRACTICE)}else teachBasics(function(){PRAC_RET='run';Guide.tutorial(PRACTICE)})}else startRunFresh()})};
 $('bCont').onclick=function(){ac();SFX.bell();SV.name=$('nameIn').value.trim()||SV.name;save();if(SV.run&&SV.run.floor<=16)enterFloor(SV.run.floor);else startRunFresh()};
 
 /* ---------------- 確認テスト ---------------- */
@@ -4480,7 +4624,7 @@ function frame(now){var dt=Math.min(.05,(now-last)/1000);last=now;T+=dt;c.setTra
   else{c.drawImage(BGC,0,0,W,H)}
   hudAcc+=dt;if(hudAcc>1&&scene==='run'){hudAcc=0;hud()}
   requestAnimationFrame(frame)}
-document.addEventListener('visibilitychange',function(){if(document.hidden&&G)G.paused=true;else if(!document.hidden&&G&&$('scrBack').classList.contains('hidden'))G.paused=false});
+document.addEventListener('visibilitychange',function(){if(document.hidden&&G)G.paused=true;else if(!document.hidden&&G&&$('scrBack').classList.contains('hidden')&&!LRN)G.paused=false});
 
 /* ---------------- はじまり ---------------- */
 resize();
@@ -4489,7 +4633,7 @@ if(window.PLAYER_NAME){$('nameIn').value=window.PLAYER_NAME;$('nmRow').classList
 refreshTitle();
 if(TEST)startTest();else setScene('title');
 requestAnimationFrame(frame);
-window.__TOU={G:function(){return G},lk:lk,scene:function(){return scene},SV:function(){return SV},AP:function(){return AP},toS:toS,enter:enterFloor,newRun:newRun,TY:TY};
+
 })();
 </script>
 <script>window.ZUKAN_COUNTER={"db": "https://rika-zukan-rank-default-rtdb.asia-southeast1.firebasedatabase.app", "id": "denryu-no-tou"};

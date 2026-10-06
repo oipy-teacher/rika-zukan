@@ -78,6 +78,7 @@ input{-webkit-user-select:text;user-select:text}
 /* 暖簾の見出しつきの窓 */
 .ov{position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center}
 #dlg{background:rgba(19,40,66,.28);padding:12px}
+@media (max-height:800px){.lmc .nh{padding:8px 18px 12px;margin-bottom:6px}.lmc .bd{line-height:1.5}.lmc .bd p{margin:6px 0}.lmc .row{margin-top:8px}.lmc .take{margin-top:6px}}
 #dlg .box,#conf .box,#book .box{position:relative;width:min(94vw,620px);max-height:92vh;overflow-y:auto;background-color:var(--cloth);background-image:var(--weave);padding:0 0 18px;border-radius:2px;
   box-shadow:0 0 0 4px var(--ai),0 0 0 6px var(--cloth),0 0 0 10px var(--ai),0 14px 0 10px rgba(19,40,66,.25);touch-action:pan-y}
 .nh{position:relative;margin:0 0 12px;padding:14px 18px 20px;font-family:var(--hd);font-weight:400;font-size:clamp(22px,1.6vw + 14px,32px);color:var(--cloth);text-align:center;line-height:1.2;
@@ -4514,7 +4515,25 @@ function trapFall(){R.trapped=true;scene='fall';strip('会計… 数字が足り
  setTimeout(()=>{scene='stall';dlg('<div class="nh shu">床がぬけた！<small>影絵の小屋のしかけ</small></div><div class="bd"><p>てんびんの数字は <b>'+f2(R.before)+' → '+f2(R.read)+' g</b>。減った <b>'+f2(R.before-R.read)+' g</b> は、消えたのではない。</p><p>貝がらとうすい塩酸の反応で出る<b>二酸化炭素は無色で見えない</b>。見えなくても、<b>容器の口から外へ出ていった</b>だけ。</p></div><div class="take">あわは液の中で見えていた。口から上へ昇る「見えない風船」を、網でさらってみよう。</div><div class="row"><button class="fuda" id="tRe">もう一度（見えない風船をつかまえる）</button></div>');
   $('tRe').onclick=()=>{SFX.tap();closeDlg();startStall(STI)}},1500)}
 function bossWin(){scene='stall';strip('大花火！ 総和はそろった',false);fireworks(RM?2:7);earn(100,'boss',{id:GID+'-yagura'});earn(30,'rule');S.done=true;save();
- setTimeout(()=>{const fin=()=>showClear();if(window.Zukan&&Zukan.mainClear)Zukan.mainClear({onClose:fin});else fin()},RM?800:3000)}
+ setTimeout(()=>{const fin=()=>showClear();limitLesson(()=>{if(window.Zukan&&Zukan.mainClear)Zukan.mainClear({onClose:fin});else fin()})},RM?800:3000)}
+/* ---------- 後夜祭の帳場：塩酸を足しても、ある所で減り方が止まる（2026-10-06 初心者向けに追加） ---------- */
+function limitLesson(done,okLabel){
+ const tb=rows=>'<table style="margin:6px auto;border-collapse:collapse;font-weight:700;text-align:center">'+['塩酸 [cm³]','反応前の全体 [g]','反応後の全体 [g]','減った分＝にげた気体 [g]'].map((h,i)=>'<tr><th style="padding:2px 8px;border-bottom:1px solid #8FA6C2;text-align:left;font-size:.85em">'+h+'</th>'+rows.map(r=>'<td style="padding:2px 8px;border-bottom:1px solid #8FA6C2'+(i===3&&r[3]==='0.80'?';color:#D2452B':'')+'">'+r[i]+'</td>').join('')+'</tr>').join('')+'</table>';
+ const rows=[['10','90.00','89.70','0.30'],['20','100.00','99.40','0.60'],['30','110.00','109.20','0.80'],['40','120.00','119.20','0.80']];
+ dlg('<div class="lmc"><div class="nh">後夜祭の帳場<small>塩酸を どんどん足すと？</small></div><div class="bd">'+
+  '<p>貝がら <b>1.50 g</b>（ふたなし）に、うすい塩酸を 10・20・30・40 cm³ と変えて加えた。にげた気体は、いつもの式で出す。</p>'+
+  '<p style="text-align:center"><b>にげた気体 ＝ 反応前の全体 − 反応後の全体</b><br>例：90.00 − 89.70 ＝ <b>0.30 g</b></p>'+tb(rows)+
+  '<p>0.30 → 0.60 と増えたのに、30 cm³ から <b style="color:#D2452B">0.80 g で止まった</b>。<b>貝がらが全部反応して残っていない</b>から。塩酸を足しても相手がいないので、気体は出ない。</p></div>'+
+  '<div class="take">片方の物質が全部反応したら、気体はそれ以上ふえない。減った分は一定になる。</div><div class="row"><button class="fuda" id="lmNext">やってみよう ▶</button></div></div>');
+ $('lmNext').onclick=()=>{SFX.tap();
+  const ch=shuffle(['129.20','129.00','130.00']);
+  dlg('<div class="nh">やってみよう<small>塩酸 50 cm³ のとき</small></div><div class="bd"><p>同じ貝がら 1.50 g に、塩酸を <b>50 cm³</b> 加えた。反応前の全体は <b>130.00 g</b>。反応後の全体は何 g？</p>'+
+   '<p style="text-align:center;font-size:.9em">ヒント：貝がらはもう全部反応できる量。減る分は？</p><div class="row" id="lmCh">'+ch.map(c=>'<button class="fuda ai sm" data-v="'+c+'">'+c+' g</button>').join('')+'</div><p id="lmMsg" style="text-align:center;min-height:1.5em"></p></div><div class="row"><button class="fuda hidden" id="lmOk">'+(okLabel||'大花火のしめへ')+' ▶</button></div>');
+  [].forEach.call($('lmCh').querySelectorAll('button'),b=>b.onclick=()=>{const v=b.dataset.v;
+   if(v==='129.20'){SFX.hit();$('lmMsg').innerHTML='<b>正解！</b> 減る分は 0.80 g で止まったまま。130.00 − 0.80 ＝ <b>129.20 g</b>';$('lmOk').classList.remove('hidden');S.limitSeen=true;save()}
+   else if(v==='129.00'){SFX.miss();$('lmMsg').innerHTML='0.20 g ずつ増え続けると考えた？ 貝がらはもう全部反応したので、減る分は <b>0.80 g のまま</b>。'}
+   else{SFX.miss();$('lmMsg').innerHTML='ふたなしで気体は出るので、軽くなる。減る分は表の「止まった値」を使おう。'}});
+  $('lmOk').onclick=()=>{SFX.tap();closeDlg();done&&done()}}}
 
 /* ---------- 封印（コマ26）を開ける ---------- */
 function openSealDlg(){const seal=readSeal();const tilt=seal.slots.tilt.id;
@@ -4704,7 +4723,7 @@ $('btnBook').onclick=()=>{window.Zukan&&Zukan.openBook()};$('clBook').onclick=()
 function showClear(){scene='clear';R=null;balls.length=0;bgKey='';setUI();fireworks(RM?1:4);
  $('clRec').innerHTML='クリアタイム <b>'+fmtT(S.t)+'</b>　／　つかまえた気体 <b>'+S.caught+'個</b>　／　予想の的中 <b>'+S.predOK+' / '+S.predN+'</b>　／　最大連続的中 <b>'+S.maxCombo+'</b>';
  $('clBook').classList.toggle('hidden',!window.Zukan)}
-$('toTest').onclick=()=>{AU.init();SFX.tap();startTest()};
+$('toTest').onclick=()=>{AU.init();SFX.tap();if(!TEST&&!S.limitSeen){$('clear').classList.add('hidden');limitLesson(()=>startTest(),'確認テストへ');return}startTest()};
 
 /* ================= 確認テスト ================= */
 let TQ=[],TA=[],TI=0;
@@ -4757,7 +4776,8 @@ if(window.Guide){
       '容器は押したまま **横へずらして かたむける**。ふた・ビーカー・バーナーは **ドラッグ** で動かす',
       '空へにげる風船は **網** でつかまえる（画面を押したまま動かす）。にがすと てんびんの数字が下がる',
       '**熱のゆらめき** はつかまえない（熱には質量がない）',
-      '**ふたを閉めた容器** では、気体が出ても数字は変わらない'],
+      '**ふたを閉めた容器** では、気体が出ても数字は変わらない',
+      '片方（貝がら・石灰石など）が **全部反応したら**、塩酸を足しても気体はもう出ない。減った分は一定になる'],
     onOpen:()=>{PAUSED=true},onClose:()=>{PAUSED=false;last=performance.now()}});
   HELP.hide();
 }
@@ -4771,12 +4791,6 @@ window.Zukan&&Zukan.setup&&Zukan.setup({game:GID,koma:[KOMA]});
 window.Zukan&&Zukan.onChange&&Zukan.onChange(refreshKK);
 if(TEST){startTest()}else toTitle();
 requestAnimationFrame(loop);
-
-/* 自動テスト用の窓口（画面には出ない） */
-window.__nk={prac:()=>PRAC,paused:()=>PAUSED,mapNodes:()=>mapNodes,contGeo:()=>contGeo(),netR:()=>netR(),P:(u,v)=>P(u,v),get S(){return S},get R(){return R},get scene(){return scene},balls,start:i=>{S.started=true;startStall(i)},
- phase:()=>R&&R.phase,setPred:v=>{R.dial.v=v;R.dial.ang=angOf(v);lockDial();nextPhase()},tip:()=>startReaction(),lid:()=>{R.lidOn=true},
- catchAll:()=>{balls.forEach(b=>{if(b.st==='up'&&b.kind==='gas')catchBall(b)})},net:(x,y)=>{net.on=true;net.x=x;net.y=y;net.px=x;net.py=y+40},netOff:()=>{net.on=false},
- goggles:()=>{S.goggles=true;nextPhase()},next:()=>nextPhase(),finish:()=>finishPart(),map:()=>toMap(),clearAll:()=>{STALLS.forEach(s=>S.cleared[s.id]=1);save()}};
 })();
 </script>
 <script>window.ZUKAN_COUNTER={"db": "https://rika-zukan-rank-default-rtdb.asia-southeast1.firebasedatabase.app", "id": "nigeru-kitai"};

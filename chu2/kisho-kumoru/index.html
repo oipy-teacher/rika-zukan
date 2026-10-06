@@ -86,6 +86,10 @@ button:disabled{opacity:.4;cursor:default}
 .panel .no{font-family:var(--fh);font-size:16px;color:var(--p);letter-spacing:.1em}
 .panel .btns{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end;margin-top:14px}
 .panel .btns .chk{flex:1 1 auto}
+/*@LEARN2*/.lfig{text-align:center;margin:4px 0 8px}.lfig svg{width:100%;height:auto;max-height:30vh}.lfig.sm2 svg{max-height:24vh}
+.lch{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}.lch .chk{font-family:var(--fb,inherit);font-size:16px;letter-spacing:0;line-height:1.35;min-height:50px;padding:6px 10px}.lch .chk.ng{opacity:.35}.lch .chk.ok{border-color:var(--y);color:var(--y)}.lch.one{grid-template-columns:1fr}
+.lfb{min-height:24px;margin:8px 0 0!important;font-size:16px!important;line-height:1.55}.lfb.bad{color:#F2A7A0}.lfb.good{color:var(--y)}
+.lfoot{position:sticky;bottom:-18px;margin:12px -22px -18px;padding:10px 22px 14px;background:#223f30;border-top:1px solid rgba(242,242,234,.2);display:flex;gap:10px;z-index:2}.lfoot .chk{flex:1 1 auto}.lfoot .chk.bk{flex:0 0 auto}.lfoot .chk[disabled]{opacity:.3;pointer-events:none}
 .panel .rule{border:2px dashed rgba(247,201,72,.8);border-radius:14px 22px 16px 20px;padding:10px 14px;margin:10px 0;font-family:var(--fh);font-size:20px;color:var(--y);text-align:center;line-height:1.45}
 .shelf{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:10px}
 .wide .shelf{grid-template-columns:repeat(5,1fr)}
@@ -3986,7 +3990,7 @@ let scene='title',P=null,T0=performance.now(),PAUSED=false,PFIRST=false,COMBO_T=
 function curRoom(){return ROOMS[S.ri]}
 function cupsOf(r){return r.final?[]:r.cups}
 function finalCup(){const R=Math.random,T=18+Math.floor(R()*13),dew=Math.max(3,Math.min(T-3,3+Math.floor(R()*(T-5))));return {v:SAT[dew],T,rm:['1組の教室','職員室','図書室','体育館','保健室','放送室','美術室'][Math.floor(R()*7)]}}
-function startRoom(ri,resume){S.ri=ri;if(!resume){S.ci=0;S.roomRes[ri]={n:0,ok:0}}save();const r=ROOMS[ri];
+function startRoom(ri,resume){if(learnGate(ri,()=>startRoom(ri,resume)))return;S.ri=ri;if(!resume){S.ci=0;S.roomRes[ri]={n:0,ok:0}}save();const r=ROOMS[ri];
  if(r.final&&!resume)S.finalChain=0;if(window.BGM){BGM.mood('normal');BGM.level(r.final?2:1)}
  const go=()=>{startCup()};
  if(resume&&S.ci>0){go();return}
@@ -4111,11 +4115,11 @@ function doSeal(){const [ra,wi,ex]=SEAL.lines,d=ra-wi;const id=d>.5?'rain':d<-.5
 function sealText(){const sl=S.seal&&S.seal.slots;if(!sl)return 'なし';return sl.day.t+'（根拠：'+sl.day.reason+'）／理科室の露点 '+sl.dew.t}
 
 /* ===== クリア・確認テスト ===== */
-function clearScreen(){const done=()=>{panel('<div class="stampC">名人</div><h2>くもる寸前の名人</h2><div class="recs"><div>クリアタイム<b>'+fmt(S.elapsed)+'</b></div><div>1℃以内で止めた<b>'+S.good+' / '+S.tot+'</b></div><div>予想の線も的中<b>'+S.hits+'回</b></div><div>いちばん近かった差<b>'+(S.bestGap!=null?f1(S.bestGap)+'℃':'—')+'</b></div></div>'+(hasZ()?'<p style="text-align:center"><button class="chk s" id="ovBook">📖 図鑑</button></p>':''),[['📝 確認テストへ','y',startTest]]);const b=$('ovBook');if(b)b.onclick=openBook};
+function clearScreen(){if(learnGate('kotae',clearScreen))return;const done=()=>{panel('<div class="stampC">名人</div><h2>くもる寸前の名人</h2><div class="recs"><div>クリアタイム<b>'+fmt(S.elapsed)+'</b></div><div>1℃以内で止めた<b>'+S.good+' / '+S.tot+'</b></div><div>予想の線も的中<b>'+S.hits+'回</b></div><div>いちばん近かった差<b>'+(S.bestGap!=null?f1(S.bestGap)+'℃':'—')+'</b></div></div>'+(hasZ()?'<p style="text-align:center"><button class="chk s" id="ovBook">📖 図鑑</button></p>':''),[['📝 確認テストへ','y',startTest]]);const b=$('ovBook');if(b)b.onclick=openBook};
  toMap(true);if(window.Zukan&&Zukan.mainClear&&!S.mainDone){S.mainDone=1;save();try{Zukan.mainClear({onClose:done})}catch(e){done()}}else done()}
 let TS=null;
 function playerName(){return window.PLAYER_NAME||S.name||''}
-function startTest(){hidePanel();if(!window.Quiz){return}TS={qs:Quiz.test(),i:0,ans:[]};setScene('test');renderQ()}
+function startTest(){hidePanel();if(!window.Quiz){return}if(learnGate('test',startTest))return;TS={qs:Quiz.test(),i:0,ans:[]};setScene('test');renderQ()}
 function renderQ(){const q=TS.qs[TS.i],box=$('tbox');let h='<div class="tno">確認テスト　第'+(TS.i+1)+'問 / '+TS.qs.length+'</div><div class="prog">'+TS.qs.map((_,i)=>'<i class="'+(i<=TS.i?'on':'')+'"></i>').join('')+'</div><div class="tq">'+q.q+'</div>'+(q.fig?'<div class="fig2">'+q.fig+'</div>':'')+'<div id="tA"></div><div id="tFb"></div>';
  box.innerHTML=h;const A=$('tA');
  if(q.t==='choice'){const d=document.createElement('div');d.className='ch';q.shown.forEach(c=>{const b=document.createElement('button');b.textContent=c;b.onclick=()=>{if(TS.ans[TS.i]!==undefined)return;b.classList.add('sel');answer(c)};d.appendChild(b)});A.appendChild(d)}
@@ -4202,7 +4206,7 @@ const PRACTICE={label:'れんしゅう中 ─ 理科室のコップ',get bandAt(
  ],
  onExit:res=>{if(!res.cleared&&P&&P.practice&&scene==='play'){if(P.practice==='replay'&&res.stopped)return;P.noCoach=true;if(P.phase!=='result')guideForPhase()}}};
 let HELPC=null;
-function beginFirst(){if(!window.Guide){startRoom(0);return}Guide.intro(INTRO).then(()=>{PFIRST=true;Guide.tutorial(PRACTICE)})}
+function beginFirst(){if(!window.Guide){startRoom(0);return}Guide.intro(INTRO).then(()=>{PFIRST=true;if(!learnGate(0,()=>Guide.tutorial(PRACTICE)))Guide.tutorial(PRACTICE)})}
 if(window.Guide){
  Guide.setup({theme:GTHEME,title:INTRO.title,learn:INTRO.learn,how:INTRO.how,
   sfx:k=>{unlockAudio();if(k==='step')Snd.good(0);else if(k==='done')Snd.good(2);else if(k==='clear')Snd.fanfare();else if(k==='open')Snd.chalk(2);else if(k==='close'||k==='nudge')Snd.tap();else if(k==='cheer')Snd.fog()},
@@ -4210,7 +4214,7 @@ if(window.Guide){
  HELPC=Guide.help({rules:['温度計を **なぞる** と、くもりそうな温度に **予想の線** が引ける','コップを **長おし** で冷やす。表面が **くもり始めたら はなす**','止めた温度が **露点から1℃以内** なら成功。予想の線も当たれば かけら','水蒸気の **粒が多い部屋ほど、高い温度でくもる**（右のグラフがヒント）'],
   onOpen:()=>{PAUSED=true;if(P&&P.phase==='cool'&&!P.win){P.phase='ready';P.T=P.roomT;Snd.stir(false);guideForPhase()}},onClose:()=>{PAUSED=false},
   replay:'tutorial',offset:{x:60},attention:true,show:false});
- Guide.tutorialButton('#bHow',()=>{unlockAudio();Snd.chalk();PFIRST=false;Guide.tutorial(PRACTICE)});
+ Guide.tutorialButton('#bHow',()=>{unlockAudio();Snd.chalk();PFIRST=false;if(!learnGate(0,()=>Guide.tutorial(PRACTICE)))Guide.tutorial(PRACTICE)});
 }else $('bHow').classList.add('hidden');
 document.addEventListener('pointerdown',e=>{if(e.target&&e.target.closest&&e.target.closest('.chk'))vib(8)},true);
 $('bStart').onclick=()=>{unlockAudio();Snd.chalk();if(S.started)panel('<h2>はじめから？</h2><p>いまの進み具合（★・くもった物の棚）は消えます。</p>',[['やめる','',()=>{}],['はじめから','y',doStart]]);else doStart()};
@@ -4440,14 +4444,71 @@ addEventListener('resize',resize);
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&P&&P.phase==='cool'&&!P.win){stopCup()}});
 
 /* 自動テスト用の窓口（画面には出ない） */
-window.__KM={get S(){return S},get P(){return P},get L(){return L},MAPN:()=>MAPN,thP,SEALTH:()=>SEALTH,dewOf,setScene,startRoom,startCup,
- cupRect:()=>L.cup,thXY:t=>thP(L.th,t),sealXY:(i,t)=>thP(SEALTH[i],t)};
-
 /* ===== 起動 ===== */
 try{window.Zukan&&Zukan.setup&&Zukan.setup({game:GID,koma:[KOMA]})}catch(e){}
 resize();zk();
 if(window.PLAYER_NAME){$('nameIn').value=window.PLAYER_NAME;$('nameRow').classList.add('hidden')}else if(S.name)$('nameIn').value=S.name;
 $('bCont').classList.toggle('hidden',!S.started);
+/* ===== まなぶ（夜間改修 2026-10-06：初心者向け。露点・実験のやり方・飽和水蒸気量を、使う前に教える） ===== */
+const LSAT=[[8,8.3],[9,8.8],[10,9.4],[11,10.0],[12,10.7],[13,11.4],[14,12.1],[15,12.8],[16,13.6],[17,14.5],[18,15.4],[19,16.3],[20,17.3]];
+const LSVG={
+ cup:'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 150" font-size="13" font-family="Klee One,sans-serif" fill="none" stroke-linecap="round">'
+  +'<path d="M110 40 L118 128 L182 128 L190 40" stroke="#F2F2EA" stroke-width="3"/><path d="M114 70 L186 70" stroke="#9CCFE0" stroke-width="2" stroke-dasharray="5 4"/>'
+  +'<rect x="152" y="14" width="16" height="92" rx="8" stroke="#F2F2EA" stroke-width="2.5"/><path d="M155 80 l4 -6 l4 6 l-4 5z M155 95 l4 -6 l4 6 l-4 5z" stroke="#9CCFE0" stroke-width="2"/>'
+  +[[116,84],[121,100],[117,114],[184,82],[180,98],[185,112],[124,120]].map(p=>'<circle cx="'+p[0]+'" cy="'+p[1]+'" r="3.2" fill="#9CCFE0" stroke="none"/>').join('')
+  +'<text x="205" y="60" fill="#F7C948" stroke="none">氷の入った試験管</text><text x="205" y="78" fill="#F7C948" stroke="none">でかき混ぜて冷やす</text>'
+  +'<text x="20" y="96" fill="#9CCFE0" stroke="none">表面に</text><text x="20" y="114" fill="#9CCFE0" stroke="none">水滴＝くもり</text>'
+  +'<text x="150" y="146" text-anchor="middle" fill="#F2F2EA" stroke="none">金属のコップ（くみ置きの水）</text></svg>',
+ curve:(hl)=>{const X=t=>40+(t-4)*12,Y=v=>140-v*5.2;let s='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 330 168" font-size="11" font-family="Klee One,sans-serif">';
+  s+='<path d="M40 14 V140 H310" fill="none" stroke="#F2F2EA" stroke-width="2"/>';
+  [5,10,15,20].forEach(v=>{s+='<text x="34" y="'+(Y(v)+4)+'" text-anchor="end" fill="#F2F2EA">'+v+'</text><path d="M40 '+Y(v)+' H310" stroke="rgba(242,242,234,.18)"/>'});
+  [5,10,15,20,25].forEach(t=>{s+='<text x="'+X(t)+'" y="154" text-anchor="middle" fill="#F2F2EA">'+t+'</text>'});
+  s+='<text x="12" y="10" fill="#F2F2EA">水蒸気 g/m³</text><text x="306" y="166" text-anchor="end" fill="#F2F2EA">気温 ℃</text>';
+  const SATF=[4.8,5.2,5.6,5.9,6.4,6.8,7.3,7.8,8.3,8.8,9.4,10.0,10.7,11.4,12.1,12.8,13.6,14.5,15.4,16.3,17.3,18.3,19.4,20.6,21.8,23.1];
+  s+='<polyline fill="none" stroke="#F7C948" stroke-width="3" points="'+SATF.map((v,t)=>t>=4?X(t)+','+Y(v):null).filter(Boolean).join(' ')+'"/><text x="'+X(22.6)+'" y="'+(Y(21.8)-6)+'" fill="#F7C948" text-anchor="end">飽和水蒸気量（満杯の量）</text>';
+  if(hl){const V=10.7,D=12;s+='<circle cx="'+X(20)+'" cy="'+Y(V)+'" r="5" fill="#F2A7A0"/><text x="'+(X(20)+8)+'" y="'+(Y(V)+20)+'" fill="#F2A7A0">20℃の空気</text><text x="'+(X(20)+8)+'" y="'+(Y(V)+34)+'" fill="#F2A7A0">水蒸気10.7g</text>';
+   s+='<path d="M'+(X(20)-7)+' '+Y(V)+' H'+(X(D)+7)+'" stroke="#9CCFE0" stroke-width="2.5" stroke-dasharray="6 4" marker-end="url(#ar)"/><defs><marker id="ar" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8z" fill="#9CCFE0"/></marker></defs>';
+   s+='<text x="'+((X(20)+X(D))/2)+'" y="'+(Y(V)+18)+'" text-anchor="middle" fill="#9CCFE0">冷やす</text><circle cx="'+X(D)+'" cy="'+Y(V)+'" r="5" fill="#9CCFE0"/><path d="M'+X(D)+' '+Y(V)+' V140" stroke="#9CCFE0" stroke-dasharray="3 3"/><text x="'+X(D)+'" y="134" text-anchor="middle" fill="#9CCFE0">露点12℃</text>'}
+  return s+'</svg>'},
+ tbl:(hiT)=>{let s='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 330 124" font-size="13" font-family="Klee One,sans-serif">';
+  [LSAT.slice(0,7),LSAT.slice(7)].forEach((row,r)=>{const y0=r*62;s+='<text x="4" y="'+(y0+22)+'" fill="#F2F2EA">気温℃</text><text x="4" y="'+(y0+48)+'" fill="#F2F2EA" font-size="11">飽和水蒸気量g</text>';
+   row.forEach((a,i)=>{const x=114+i*32,hit=a[0]===hiT;if(hit)s+='<rect x="'+(x-15)+'" y="'+(y0+6)+'" width="30" height="50" rx="5" fill="none" stroke="#F7C948" stroke-width="2"/>';s+='<text x="'+x+'" y="'+(y0+22)+'" text-anchor="middle" fill="'+(hit?'#F7C948':'#F2F2EA')+'">'+a[0]+'</text><text x="'+x+'" y="'+(y0+48)+'" text-anchor="middle" font-size="12" fill="'+(hit?'#F7C948':'#F2F2EA')+'">'+a[1].toFixed(1)+'</text>'})});
+  return s+'</svg>'}
+};
+const LFIG=s=>'<div style="text-align:center;margin:4px 0 8px">'+s+'</div>';
+const LEARN={
+ roten:{cards:[
+  {h:'露点ってなに？',fig:LSVG.cup,b:'<p>空気の中には、目に見えない<b>水蒸気</b>（水が気体になったもの）がまじっている。空気を冷やしていくと、ある温度で水蒸気が<b>水滴に変わり始める</b>（これを<b>凝結</b>という）。この温度が<b>露点</b>。</p><p>コップの表面がくもり始めたときの水温＝その部屋の空気の露点。</p><p style="font-size:15px">同じしくみ：冷たい飲み物のコップの外側につく水滴／冬の朝、暖房した部屋の窓ガラスの内側のくもり／寒い日の白い息（白く見えるのは水蒸気ではなく、冷やされてできた小さな水滴）。</p>',
+   q:{q:'コップの水を冷やしていったら、水温15℃で表面がくもり始めた。この部屋の空気の露点は？',ch:['15℃','0℃','部屋の気温と同じ','100℃'],a:0,hint:'くもり始めた＝空気中の水蒸気が水滴に変わり始めた。そのときの温度が露点。',ok:'くもり始めた水温15℃が、この部屋の空気の露点。'}},
+  {h:'理科室の実験のやり方',b:'<p>① くみ置きの水（室温と同じ温度）を<b>金属製のコップ</b>に入れ、水温を測る<br>② 氷を入れた試験管で、<b>ゆっくりかき混ぜて</b>水温を下げる<br>③ コップの表面が<b>くもり始めたら</b>、そのときの水温を読む<br>④ 読んだ水温を、その部屋の空気の<b>露点</b>とする</p><p><b>金属のコップを使うわけ</b>：金属は熱を伝えやすいので、コップの表面にふれている空気の温度が<b>水温とほぼ同じ</b>になる。だから水温を読めば、くもり始めた空気の温度が分かる。</p>',
+   q:{q:'コップの表面がくもり始めた。このとき読むのは？',ch:['コップの中の水温','部屋の気温','試験管の中の氷の温度'],a:0,hint:'金属のコップは熱を伝えやすいので、表面にふれている空気の温度は、中の何とほぼ同じ？',ok:'コップの中の水温。金属なので、表面の空気の温度＝水温とみなせる。'}}]},
+ howa:{cards:[
+  {h:'飽和水蒸気量（満杯の量）',fig:LSVG.curve(0),b:'<p>1m³の空気がふくむことのできる水蒸気の<b>いちばん多い量</b>＝<b>飽和水蒸気量</b>（満杯の量）。<b>気温が高いほど大きい</b>（黄色い曲線）。右の記録のグラフの点も、この曲線にそってならぶ。</p><p>空気を冷やしたりあたためたりしても、水滴にならない限り、中の<b>水蒸気の量は変わらない</b>。変わるのは飽和水蒸気量（満杯の量）のほう。</p>',
+   q:{q:'25℃で水蒸気8gをふくむ空気を、15℃まで冷やした（15℃の満杯の量は12.8g。水滴はできない）。中の水蒸気の量は？',ch:['8gのまま変わらない','増える','減る'],a:0,hint:'水滴にならない限り、空気の中の水蒸気は出ても入ってもいない。変わるのは「満杯の量」。',ok:'8gのまま。変わるのは飽和水蒸気量（満杯の量）。'}},
+  {h:'冷やしていくと露点',fig:LSVG.curve(1),b:'<p>冷やすと点は<b>左へ</b>動き、曲線にぶつかった温度が<b>露点</b>。このとき空気は水蒸気で満杯＝<b>湿度100％</b>（湿度は空気のしめりぐあいを％で表したもの）。もっと冷やすと、入りきらない分が水滴になる。水蒸気が多い空気ほど、<b>高い温度</b>で曲線にぶつかる＝露点が高い。</p>'},
+  {h:'表から露点を読む',fig:LSVG.tbl(10),figTry:LSVG.tbl(0),fig2:LSVG.tbl(18),b:'<p>例：空気1m³に水蒸気 <b>9.4g</b>。</p><p>① 飽和水蒸気量の表で <b>9.4</b> を探す<br>② その上の気温を読む → <b>10℃</b><br>③ 10℃まで冷やすと満杯になる → 露点は <b>10℃</b></p>',
+   q:{q:'こんどは自分で。水蒸気 15.4g の空気の露点は？（上の表を使う）',ch:['15℃','18℃','20℃','16℃'],a:1,fig:1,hint:'表の下の段で 15.4 を探して、その上の気温を読む。',ok:'15.4g → 18℃。'}}]},
+ kotae:{cards:[
+  {h:'答え合わせ',b:'',dyn:1,q:{q:'同じ部屋で除湿機を使って水蒸気を減らした（室温は同じ）。くもり始める温度は？',ch:['前より低くなる','前より高くなる','変わらない'],a:0,hint:'水蒸気が少ないほど、たくさん冷やさないと満杯にならない。',ok:'水蒸気が減ると、露点は低くなる（もっと冷やさないとくもらない）。'}}]}
+};
+function kotaeBody(){const sl=S.seal&&S.seal.slots;const mine=sl?'<p>きみの予想：<b>'+esc(sl.day.t)+'</b>'+(sl.day.id==='rain'?' → <b>正解！</b>':' → 結果は下のとおり')+'</p>':'';
+ return mine+'<div class="rule">雨の日の理科室のほうが、<br>高い温度でくもり始める（露点が高い）</div><p><b>理由</b>：雨の日の空気は水蒸気が多く、冬の晴れた日の空気は乾いていて水蒸気が少ない。水蒸気が多い空気ほど、少し冷えただけで満杯（湿度100％）になり、くもり始める。</p><p>実験の日の露点は、その日の空気にふくまれる水蒸気の量しだい。本物のコップで確かめよう。</p>'}
+function learned(k){return !!(S.learn&&S.learn[k])}
+function learnNeed(x){const n=[];if(x==='kotae')return S.sealed&&!learned('kotae')?['kotae']:[];if(!learned('roten'))n.push('roten');if((x==='test'||x>=2)&&!learned('howa'))n.push('howa');if(x==='test'&&S.sealed&&!learned('kotae'))n.push('kotae');return n}
+function learnGate(x,then){if(TEST_ONLY)return false;const n=learnNeed(x);if(!n.length)return false;learnRun(n,then);return true}
+function learnRun(keys,then){const pages=[];keys.forEach(k=>LEARN[k].cards.forEach(c=>{const o=Object.assign({},c);pages.push({c:o,try:0});if(o.q)pages.push({c:o,try:1})}));let pi=0;
+ const mix=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const r=Math.floor(Math.random()*(i+1));[a[i],a[r]]=[a[r],a[i]]}return a};
+ const step=()=>{const P0=pages[pi],c=P0.c,last=pi===pages.length-1,nx=last?'わかった！ 先へ':(pages[pi+1].try?'やってみよう ▶':'つぎへ ▶');
+  let h='<div class="no">まなぶ　'+(pi+1)+' / '+pages.length+'</div>';
+  if(!P0.try){h+='<h2>'+c.h+'</h2>'+(c.fig?'<div class="lfig">'+c.fig+'</div>':'')+(c.dyn?kotaeBody():c.b)+'<div class="lfoot">'+(pi>0?'<button class="chk s bk" id="lBk">◀ もどる</button>':'')+'<button class="chk y" id="lNx">'+nx+'</button></div>'}
+  else{const long=c.q.ch.some(t=>t.length>14);h+='<h2>やってみよう</h2>'+(c.q.fig&&c.fig?'<div class="lfig sm2" id="lFig">'+(c.done&&c.fig2?c.fig2:(c.figTry||c.fig))+'</div>':'')+'<p>'+c.q.q+'</p><div class="lch'+(long?' one':'')+'" id="lCh">'+mix(c.q.ch.map((t,j)=>[t,j])).map(x=>'<button class="chk" data-j="'+x[1]+'">'+x[0]+'</button>').join('')+'</div><p class="lfb" id="lFb"></p><div class="lfoot"><button class="chk s bk" id="lBk">◀ 説明</button><button class="chk y" id="lNx" disabled>'+nx+'</button></div>'}
+  const o=$('ov');o.classList.remove('hidden');$('ovBox').innerHTML=h;$('ovBox').scrollTop=0;
+  if(P0.try){const fb=$('lFb'),bn=$('lNx');
+   $('ovBox').querySelectorAll('#lCh .chk').forEach(b=>b.onclick=()=>{unlockAudio();if(c.done)return;if(+b.dataset.j===c.q.a){c.done=1;b.classList.add('ok');fb.className='lfb good';fb.innerHTML='<b>正解！</b> '+c.q.ok;bn.disabled=false;if(c.fig2&&$('lFig'))$('lFig').innerHTML=c.fig2;Snd.good(1)}else{b.classList.add('ng');fb.className='lfb bad';fb.innerHTML='ちがうよ。'+c.q.hint;Snd.miss();vib([10,40,10])}fb.scrollIntoView({block:'nearest'})});
+   if(c.done){fb.className='lfb good';fb.innerHTML='<b>正解！</b> '+c.q.ok;bn.disabled=false}}
+  const bk=$('lBk');if(bk)bk.onclick=()=>{unlockAudio();Snd.tap();pi--;step()};
+  $('lNx').onclick=()=>{unlockAudio();Snd.tap();pi++;if(pi<pages.length){step();return}S.learn=S.learn||{};keys.forEach(k=>S.learn[k]=1);save();hidePanel();then&&then()}};
+ step()}
 if(TEST_ONLY){setScene('test');startTest()}else setScene('title');
 if(document.fonts&&document.fonts.load){document.fonts.load('40px "Zen Kurenaido"').then(()=>{drawBoard()}).catch(()=>{})}
 requestAnimationFrame(frame);

@@ -4125,7 +4125,7 @@ function success(){var D=D_(),cap=r2(massOf(E)),pc=petCenter();E.done=1;A.happy=
  if(E.mis===0){S.perfect++;earn(10,'first-try',pc[0],pc[1])}
  var cuAm={};S.ledger.forEach(function(x){if(x.mt==='Cu')cuAm[x.m0]=1});
  if(!S.ruleA){S.ruleA=1;setTimeout(function(){earn(30,'rule',pc[0],pc[1]-40)},900)}
- if(!S.ruleB&&Object.keys(cuAm).length>=3){S.ruleB=1;setTimeout(function(){earn(30,'rule',pc[0],pc[1]-40);msg('発見！ 上限は、銅の量で変わる（量が多いほど、結び付く酸素も多い）',6)},1500)}
+ if(!S.ruleB&&Object.keys(cuAm).length>=3){S.ruleB=1;setTimeout(function(){earn(30,'rule',pc[0],pc[1]-40);msg('発見！ 上限は、銅の量で変わる。銅を2倍にすると、結び付く酸素も2倍（比例）',7)},1500)}
  S.egg=E.prac&&PRAC_KEEP!=null?Math.max(PRAC_KEEP,E.i+1):E.i+1;save();if(E.prac){setTimeout(function(){if(window.Guide)Guide.tutorialClear()},RM?300:1500)}
  setTimeout(function(){if(scene==='play'){scene='eggclear';A.happy=0;A.starT=0;A.starPlayed=0;confetti(110);save()}},RM?400:2300)}
 
@@ -4549,7 +4549,7 @@ function btnUp(k){PRESS[k]=0;
  else if(scene==='bossintro'){if(k==='A')bossStart()}
  else if(scene==='boss'){if(k==='C')bossSubmit()}
  else if(scene==='bossend'){if(k==='A'){if(S.boss&&S.boss.ok>=4)finishMain();else bossStart(true)}}
- else if(scene==='clear'){if(k==='A')startTest();else if(k==='B'){window.Zukan&&Zukan.openBook&&Zukan.openBook()}else if(k==='C')toTitle()}}
+ else if(scene==='clear'){if(k==='A'){if(!TEST&&S&&!S.propSeen)propLesson(startTest,0,'確認テストへ ▶');else startTest()}else if(k==='B'){window.Zukan&&Zukan.openBook&&Zukan.openBook()}else if(k==='C')toTitle()}}
 addEventListener('keydown',function(e){if(e.repeat||scene==='test'||!$('dlg').classList.contains('hidden'))return;if(document.activeElement===$('nameIn')&&e.key!=='Enter')return;
  var k={a:'A',z:'A',' ':'A',b:'B',x:'B',c:'C'}[e.key.toLowerCase()];if(e.key==='Enter'&&scene==='title')k='A';
  if(k){e.preventDefault();AU.init();btnDown(k)}if((e.key==='d'||e.key==='D')&&scene==='play'){SFX.key();declare()}});
@@ -4566,7 +4566,7 @@ function titleCont(){S=load();if(!S){titleStart();return}if(!NAME)NAME=S.name||'
  if(S.ph==='boss'||S.ph==='bossintro'){goBossIntro();return}
  if(S.ph==='bossend'){scene='bossend';return}
  if(S.egg>=EGGS.length){goBossIntro();return}
- if(E&&E.i===S.egg&&!E.done){E.holding=0;E.T=20;scene='play';S.ph='play';return}
+ if(E&&E.i===S.egg&&!E.done){E.holding=0;E.T=20;scene='play';S.ph='play';if(needProp(S.egg))propLesson();return}
  goIntro(S.egg)}
 /* 上限の見当（同じ金属の記録があるたまご）：記録の比から上限を見当づけてから育てる */
 var EST=null;
@@ -4578,9 +4578,38 @@ function makeEst(i){var D=EGGS[i],ok=r2(D.m0+capO(D)),L0=null;S.ledger.forEach(f
 function estPick(j){if(!EST||j==null||j>=EST.ch.length)return;var ok=Math.abs(EST.ch[j]-EST.ok)<.001,D=EGGS[EST.i];window.Tekitou&&Tekitou.answer(ok);EST=null;startEgg();
  if(ok){S.pt+=50;SFX.hit();msg('○ 見当どおり！ 本当にそこまで育つか、加熱して確かめよう',3.5)}
  else{E.gas=Math.max(1,E.gas-1);mistake('見当ちがい（ガス −1）。上限の質量は '+MN(D)+'の量に比例する。「上限の記録」の 金属→上限 の倍率はいつも同じ')}}
-function goIntro(i){EST=null;S.egg=i;S.ph='intro';E=null;S.E=null;scene='intro';save();if(HELP)HELP.show()}
+
+/* ---------- 先に学ぶ画面（2026-10-06 初心者向けに追加）：式 → 数を入れた例 → やってみよう（正解するまで次へ進めない） ---------- */
+var PROP_PAGES=[
+ {h:'上限は 銅の量に比例する',
+  b:'<p style="margin:6px 0">これまでの記録（銅 → 上限）</p><table style="margin:4px auto;border-collapse:collapse;font-size:15px">'+
+   '<tr><th style="padding:2px 8px;text-align:left">銅</th><td style="padding:2px 6px;white-space:nowrap">0.40 g</td><td style="padding:2px 6px;white-space:nowrap">0.60 g</td><td style="padding:2px 6px;white-space:nowrap">0.80 g</td></tr>'+
+   '<tr><th style="padding:2px 8px;text-align:left">上限</th><td style="padding:2px 6px;white-space:nowrap">0.50 g</td><td style="padding:2px 6px;white-space:nowrap">0.75 g</td><td style="padding:2px 6px;white-space:nowrap">1.00 g</td></tr>'+
+   '<tr><th style="padding:2px 8px;text-align:left">結び付いた酸素</th><td style="padding:2px 6px;white-space:nowrap">0.10 g</td><td style="padding:2px 6px;white-space:nowrap">0.15 g</td><td style="padding:2px 6px;white-space:nowrap">0.20 g</td></tr></table>'+
+   '<p style="margin:6px 0">銅を <b>2倍</b>（0.40→0.80）にすると、結び付く酸素も <b>2倍</b>（0.10→0.20）。こういう関係を <b>比例</b> という。</p>'+
+   '<p style="margin:6px 0;text-align:center"><b>結び付く酸素 ＝ 銅 ÷ 4</b><br><b>上限 ＝ 銅 ＋ 結び付く酸素</b><br>例：銅 2.00 g → 酸素 2.00 ÷ 4 ＝ 0.50 → 上限 2.00 ＋ 0.50 ＝ <b>2.50 g</b></p>',
+  a:'銅 1.60 g の上限は？',c:[['2.00 g'],['1.80 g','0.20 g を足しただけ？ 酸素は 1.60 ÷ 4 ＝ 0.40 g。'],['3.20 g','2倍は「銅を2倍にしたとき」。ここは 1.60 ＋ 1.60÷4。']],ok:'1.60 ÷ 4 ＝ 0.40、1.60 ＋ 0.40 ＝ 2.00 g'},
+ {h:'原子で見ると 1個に1個',
+  b:'<p style="margin:6px 0">断面の原子のモデルを思い出そう。黒い <b>酸化銅（CuO）</b> は、<b>銅原子1個</b> と <b>酸素原子1個</b> の組。</p>'+
+   '<p style="margin:6px 0">銅原子1個には、酸素原子は1個までしか結び付かない。だから上限がある。</p>'+
+   '<p style="margin:6px 0;text-align:center"><b>結び付く酸素原子の数 ＝ 銅原子の数</b><br>例：銅原子 4個 → 酸素原子 <b>4個</b>（CuO が4組）</p>',
+  a:'銅原子 6個をすべて酸化銅にすると、結び付く酸素原子は何個？',c:[['6個'],['3個','CuO は1個に1個。半分にはならない。'],['12個','O の右下に数字はない＝酸素原子は1個。']],ok:'CuO は1個に1個。6個 → 6個'}
+];
+function propLesson(done,i,endLabel){i=i||0;var pg=PROP_PAGES[i];if(!pg){S.propSeen=1;save();if(done)done();return}
+ var ch=shuffle(pg.c.map(function(c,k){return {t:c[0],ok:k===0,why:c[1]||''}}));
+ $('dlgT').innerHTML='<div style="font-size:18px">'+pg.h+'<small>先に学ぶ（'+(i+1)+' / '+PROP_PAGES.length+'）</small></div><div style="font-weight:500;font-size:15px;line-height:1.55;text-align:left">'+pg.b+
+  '<div style="border-top:2px dashed #253021;margin-top:8px;padding-top:6px"><b>やってみよう</b>　'+pg.a+'<div id="ppCh" style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:6px"></div><div id="ppMsg" style="min-height:1.5em;text-align:center;margin-top:4px"></div></div></div>';
+ var box=$('ppCh');ch.forEach(function(c){var b=document.createElement('button');b.className='pbtn';b.style.minWidth='88px';b.textContent=c.t;
+  b.onclick=function(){if(c.ok){SFX.hit();$('ppMsg').innerHTML='<b>正解！</b> '+pg.ok;nx.style.visibility='visible';[].forEach.call(box.querySelectorAll('button'),function(x){x.disabled=true})}else{SFX.ng();$('ppMsg').innerHTML=c.why}};box.appendChild(b)});
+ var R=$('dlgR');R.innerHTML='';var nx=document.createElement('button');nx.className='pbtn go';nx.textContent=i+1<PROP_PAGES.length?'つぎへ ▶':(endLabel||'すすむ ▶');nx.style.visibility='hidden';
+ nx.onclick=function(){SFX.key();if(i+1<PROP_PAGES.length)propLesson(done,i+1,endLabel);else{$('dlg').classList.add('hidden');propLesson(done,i+1)}};R.appendChild(nx);
+ var bx=$('dlg').querySelector('.box');if(bx){bx.style.maxHeight='100%';bx.style.overflowY='auto'}
+ $('dlg').classList.remove('hidden')}
+function goIntro(i){EST=null;S.egg=i;S.ph='intro';E=null;S.E=null;scene='intro';save();if(HELP)HELP.show();if(needProp(i))propLesson()}
+/* 先に学ぶ画面は、4つ目のたまご以降・ボスの入口で、まだ見ていなければ出す（つづきから・読み込み直しでも通る） */
+function needProp(i){return i>=3&&S&&!S.propSeen&&!TEST&&!PRAC}
 function startEgg(){if(window.BGM)BGM.mood('normal');if(PRAC&&!STARTING_PRAC)endPractice();E=newEgg(S.egg);S.E=E;S.ph='play';scene='play';if(HELP)HELP.show();A.happy=0;A.sad=0;A.reveal=0;MSG.life=0;SFX.hatch();save()}
-function goBossIntro(){scene='bossintro';S.ph='bossintro';E=null;save()}
+function goBossIntro(){scene='bossintro';S.ph='bossintro';E=null;save();if(needProp(EGGS.length))propLesson()}
 function bossStart(retry){if(window.BGM)BGM.mood('tense');if(retry)varyBoss();else BREC=null;S.boss={k:0,t:150,ok:0,line:null,tap:null,show:0,last:-1};S.ph='boss';scene='boss';MSG.life=0;save();window.Tekitou&&Tekitou.shown()}
 function finishMain(){S.cleared=1;S.ph='clear';save();var go=function(){scene='clear'};
  if(window.Zukan&&Zukan.mainClear){try{Zukan.mainClear({onClose:go})}catch(e){go()}}else go();scene='clear'}
@@ -4659,7 +4688,9 @@ if(window.Guide){
       '**冷めてから** Ⓒ はかる。熱いままだと表示がゆれて読めない',
       '粉が多い銅くんは Ⓑ **まぜる** で、中の銅も空気（酸素）にふれさせる',
       'はかった値が **2回続けて同じ** になったら **じょうげん！**（途中で宣言すると断面が見える）',
-      '予想ピンのたまごは、グラフのピンを **指で上下** に動かして予想してから はかる'],
+      '予想ピンのたまごは、グラフのピンを **指で上下** に動かして予想してから はかる',
+      '上限は金属の量に **比例**（銅を2倍→酸素も2倍）。銅なら 結び付く酸素＝銅÷4、上限＝銅＋酸素',
+      '酸化銅 CuO は 銅原子1個と酸素原子1個の組。だから結び付く酸素には上限がある'],
     onOpen:function(){PAUSED=true;if(E&&E.holding)heatEnd()},onClose:function(){PAUSED=false;last=performance.now()}});
   HELP.hide();placeHelp();
 }
@@ -4694,11 +4725,6 @@ layout();
 if(document.fonts&&document.fonts.ready)document.fonts.ready.then(function(){layout()}).catch(function(){});
 if(TEST)startTest();else toTitle();
 requestAnimationFrame(frame);
-/* 自動テスト用の読み取り口 */
-window.__DK={prac:function(){return PRAC},paused:function(){return PAUSED},get S(){return S},get E(){return E},get scene(){return scene},get L(){return L},EGGS:EGGS,BOSSG:BOSSG,btnDown:btnDown,btnUp:btnUp,declare:declare,heatEnd:heatEnd,setPin:setPin,massOf:massOf,
- complete:function(){return E&&complete(E)},bossAns:bossAns,heatStart:heatStart,heatTick:heatTick,stir:stir,weigh:weigh,weighDone:weighDone,
- startEgg:startEgg,goIntro:goIntro,titleStart:titleStart,bossStart:bossStart,bossSubmit:bossSubmit,goBossIntro:goBossIntro,finishMain:finishMain,get MSG(){return MSG},
- setScene:function(s){scene=s},setS:function(o){S=o;E=o.E||null}};
 })();
 </script>
 <script>window.ZUKAN_COUNTER={"db": "https://rika-zukan-rank-default-rtdb.asia-southeast1.firebasedatabase.app", "id": "dou-kun"};

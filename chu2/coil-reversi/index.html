@@ -109,6 +109,31 @@ button{font-family:inherit;cursor:pointer;touch-action:manipulation;color:inheri
 #toast.ok b{color:#0E1726;background:#FFD9C8;padding:0 3px}
 #toast.w b{color:#D2451B}
 
+/* ===== ルールブック（まなぶ）：用語と決まりを「その前」に教える（2026-10-06 初心者向け） ===== */
+#scrLearn{z-index:30;overflow:auto;align-items:flex-start;padding:calc(66px + env(safe-area-inset-top)) 12px 40px}
+#scrLearn .card{width:min(700px,96vw);text-align:left;margin:auto}
+#scrLearn .card h2{font-size:clamp(24px,4.4vw,32px)}
+#lFig{margin:12px 0 4px;background:#0E1726;padding:6px;clip-path:polygon(10px 0,100% 0,100% calc(100% - 10px),calc(100% - 10px) 100%,0 100%,0 10px)}
+#lFig svg{display:block;width:100%;height:auto;max-height:30vh}
+#lP p{margin:8px 0 0;font-size:16.5px;line-height:1.75}
+#lP p b,.lAsk b,.lWhy b{color:var(--or)}
+.lAsk{margin-top:14px;padding-top:10px;border-top:2px dashed #3E5A80;font-size:17px;font-weight:700;line-height:1.6}
+.lOpts{display:grid;gap:8px;margin-top:8px}
+.lOpts .btn{justify-content:flex-start;text-align:left;font-size:18px;line-height:1.3;padding:8px 16px}
+.lWhy{margin-top:8px;font-size:16px;line-height:1.6;min-height:1em}
+#lPg{font:700 15px var(--fn);color:#9FB3CC;align-self:center}
+/*2col*/
+/* 第2周：札を画面の高さ（733・768）に収める。横長では「図と説明」と「やってみよう」を2列に */
+@media (orientation:landscape) and (min-width:900px){#scrLearn{padding:12px 2vw}
+ #scrLearn .card{width:min(1120px,96vw);display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);column-gap:24px;align-content:start;align-items:start}
+ #scrLearn .card>*{grid-column:1/-1}
+ #scrLearn .card.wf.wq>#lFig{grid-column:1;grid-row:2}#scrLearn .card.wf.wq>#lP{grid-column:1;grid-row:3}#scrLearn .card.wf.wq>#lQ{grid-column:2;grid-row:2/span 2}
+ #scrLearn .card.wf:not(.wq)>#lFig{grid-column:1;grid-row:2}#scrLearn .card.wf:not(.wq)>#lP{grid-column:2;grid-row:2}
+ #scrLearn .card.wq:not(.wf)>#lP{grid-column:1;grid-row:2}#scrLearn .card.wq:not(.wf)>#lQ{grid-column:2;grid-row:2}
+ #lFig svg{max-height:42vh}#scrLearn .card.wq .lAsk{border-top:0;margin-top:0;padding-top:0} #scrLearn .card .btns{margin-top:8px}}
+@media (max-height:820px){#lP p{font-size:15px;line-height:1.6;margin-top:5px}#scrLearn .card{padding:16px 20px 14px}#scrLearn .card h2{font-size:clamp(20px,3.2vw,26px)}.lOpts .btn{min-height:42px;padding:6px 14px;font-size:16px}}
+#scrVs .tip{margin-top:10px;padding:8px 12px;font-size:15px;line-height:1.6;text-align:left;background:#0E1726}
+
 /* ===== 試合前・試合後・一時停止・もどる ===== */
 .cover{pointer-events:auto;display:flex;align-items:center;justify-content:center;padding:18px;background:rgba(14,23,38,.6)}
 .card{width:min(580px,94vw);padding:22px 22px 20px;text-align:center}
@@ -250,6 +275,12 @@ button{font-family:inherit;cursor:pointer;touch-action:manipulation;color:inheri
   <div class="card facet"><h2><small>RESULT</small>検定おわり</h2><div id="eName" style="margin-top:6px"></div>
     <div class="big" id="eScore"></div>
     <div class="col"><button class="btn facet o" id="eCard">📝 提出カードを表示</button><button class="btn facet w sm" id="eBook">📖 図鑑</button><button class="btn facet sm" id="eMap">トーナメント表へ</button></div></div>
+</div>
+
+<div id="scrLearn" class="scr cover hidden">
+  <div class="card facet"><h2><small id="lKick"></small><span id="lT"></span></h2>
+    <div id="lFig" class="hidden"></div><div id="lP"></div><div id="lQ"></div>
+    <div class="btns"><span id="lPg"></span><button class="btn facet o" id="lNext">次へ</button></div></div>
 </div>
 
 <div id="scrBack" class="scr cover hidden">
@@ -4089,7 +4120,7 @@ function drawFX(dt){for(var i=PT.length-1;i>=0;i--){var p=PT[i];p.t+=dt;if(p.t>p
 var scene='title',G=null;
 var RP=.034,RM_=.052,GW=.11;
 function calibOf(O){if(O.cal==='rand')return[Math.random()<.5?1:-1,Math.random()<.5?1:-1];return O.cal.slice()}
-function startMatch(i,opts){opts=opts||{};var O=OPP[i];ac();if(window.BGM)BGM.mood(O.boss?'tense':'normal');
+function startMatch(i,opts){opts=opts||{};var O=OPP[i];ac();if(!O.prac&&!TEST&&!(SV.lrn&&SV.lrn.base)){teachBase(function(){startMatch(i,opts)});return}if(window.BGM)BGM.mood(O.boss?'tense':'normal');
   var cal=calibOf(O);
   G={oi:i,O:O,prac:!!O.prac,boss:!!O.boss,calY:cal[0],calC:cal[1],sy:0,sc:0,time:0,combo:0,best:0,comboT:0,miss:0,first:0,reads:0,readN:0,judg:0,
     p:{u:.25,v:0,vu:0,vv:0,face:1,flipT:0},m:{u:.12,v:0,vu:0,vv:0},cm:{u:.9,v:0,vu:0,vv:0},
@@ -4301,7 +4332,7 @@ function placeNodes(){var box=$('mNodes');box.innerHTML='';var pts=mapPts();
   $('bToTest').disabled=!SV.done}
 
 /* ================= 場面 ================= */
-var SCR=['scrTitle','scrMap','scrRun','scrVs','scrClear','scrPause','scrTest','scrEnd'];
+var SCR=['scrTitle','scrMap','scrRun','scrVs','scrClear','scrPause','scrTest','scrEnd','scrLearn'];
 function showScr(){var on=[].slice.call(arguments);SCR.forEach(function(id){$(id).classList.toggle('hidden',on.indexOf(id)<0)})}
 var INHUB=!!window.COLLECTION_NAME||(function(){try{return window.parent!==window}catch(e){return true}})();
 function backBtn(){var b=$('bBack'),on=scene!=='title'||INHUB;b.classList.toggle('hidden',!on);b.textContent=scene==='title'?'◀ 一覧へ':'◀ もどる';$('scrBack').classList.add('hidden')}
@@ -4322,8 +4353,9 @@ $('bPause').onclick=function(){if(!G)return;G.paused=true;showScr('scrRun','scrP
 $('pGo').onclick=function(){if(G)G.paused=false;showScr('scrRun')};
 $('pMap').onclick=function(){if(window.Guide&&Guide.active()){PRAC_RET=null;Guide.skip()}G=null;setScene('map')};
 $('bMute').onclick=function(){muted=!muted;try{localStorage.setItem(SKEY+':mute',muted?'1':'0')}catch(e){}$('bMute').textContent=muted?'×':'♪'};
-function toTest(){var z=Zk();if(z&&z.mainClear&&!TEST){try{z.mainClear({onClose:startTest});return}catch(e){}}startTest()}
-$('bToTest').onclick=function(){if(SV.done)startTest()};
+function toTest(){teachBase(toTest1)}
+function toTest1(){var z=Zk();if(z&&z.mainClear&&!TEST){try{z.mainClear({onClose:startTest});return}catch(e){}}startTest()}
+$('bToTest').onclick=function(){if(SV.done)teachBase(startTest)};
 function openBook(){var z=Zk();if(z&&z.openBook)z.openBook()}
 $('bBook1').onclick=openBook;$('bBook2').onclick=openBook;$('eBook').onclick=openBook;
 $('bGacha').onclick=function(){var z=Zk();if(z&&z.openGacha)z.openGacha()};
@@ -4333,7 +4365,7 @@ function getName(){return(window.PLAYER_NAME||$('nameIn').value||SV.name||'').tr
 /* ================= 遊び方案内（Guide） ================= */
 var HELP=null,PRAC_RET=null;
 var INTRO={title:'第31回　コイル・ホッケー',
-  learn:'磁石を **近づける⇄遠ざける**、**N⇄S** を入れかえると、誘導電流の向き（針）は **逆** になる',
+  learn:'磁石をコイルに近づけたり遠ざけたりすると、コイルに電流が流れる（**電磁誘導**・その電流＝**誘導電流**）。**近づける⇄遠ざける**、**N⇄S** を入れかえると、誘導電流の向き（検流計の針）は **逆** になる',
   how:'マレットを **ドラッグ** してパックを打つ。お題の向きに針が振れるよう **反転** でN・Sを選ぶ',gesture:'drag'};
 function puckT(){if(!G)return null;var s=L.T2S(G.p.u,G.p.v);return{x:s[0],y:s[1],r:Math.max(28,RP*L.s*1.6),el:cv}}
 function malT(){if(!G)return null;var s=L.T2S(G.m.u,G.m.v);return{x:s[0],y:s[1],r:Math.max(30,RM_*L.s*1.4),el:cv}}
@@ -4350,7 +4382,7 @@ var PRACTICE={label:'れんしゅう中',
   clearText:'れんしゅうクリア！',
   onClear:function(){var z=Zk();if(z&&z.earn)try{z.earn(10,'first-try')}catch(e){}},
   onExit:function(){var r=PRAC_RET;PRAC_RET=null;if(!r)return;G=null;if(r==='m1')startMatch(1);else setScene(r)}};
-function helpRules(){var r=['自分の陣地を **ドラッグ** ＝マレットを動かしてパックを打つ','お題の向きに **その検流計の針** が振れたゴールだけが得点。ちがう向きでゴールすると **相手に1点**（お題も変わる）','基準の札：**N極を近づける → 右（または左）**。そこから考える','**近づける⇄遠ざける** で針は逆／**N⇄S** で逆／両方変えると **元と同じ**','打つとパックは **手前のコイルから遠ざかる**、相手のコイルには **近づく**','**反転** ＝パックのN・Sを入れかえる（自分の陣地にあるとき）','相手が打つ前に **手前の針の向きを宣言**。当たるとバリアではね返す'];
+function helpRules(){var r=['自分の陣地を **ドラッグ** ＝マレットを動かしてパックを打つ','**誘導電流**＝磁石やコイルを動かしたとき（電磁誘導）コイルに流れる電流。**検流計** の針（0が真ん中）で向きが分かる','磁石を **止める** と針は0。**コイルの方** を動かしても同じ（近づく・遠ざかるが大事）','お題の向きに **その検流計の針** が振れたゴールだけが得点。ちがう向きでゴールすると **相手に1点**（お題も変わる）','基準の札：**N極を近づける → 右（または左）**。そこから考える','**近づける⇄遠ざける** で針は逆／**N⇄S** で逆／両方変えると **元と同じ**','打つとパックは **手前のコイルから遠ざかる**、相手のコイルには **近づく**','**反転** ＝パックのN・Sを入れかえる（自分の陣地にあるとき）','相手が打つ前に **手前の針の向きを宣言**。当たるとバリアではね返す'];
   if(G&&!G.prac&&G.O.nw)r.push('この試合：'+G.O.nw);return r}
 if(window.Guide){
   Guide.setup({theme:{bg:'#243752',fg:'#F2F4F3',accent:'#FF6B35',accentText:'#FFFFFF',font:'"Stick",sans-serif',bodyFont:'"Hiragino Sans","Yu Gothic",sans-serif',radius:0,texture:'none',
@@ -4360,16 +4392,52 @@ if(window.Guide){
   HELP=Guide.help({rules:[],offset:{x:112},size:48,show:false,attention:true,labels:{replay:'れんしゅうをもう一度'},
     replay:function(){PRAC_RET='map';Guide.tutorial(PRACTICE);return null},
     onOpen:function(){if(G)G.paused=true},onClose:function(){if(G&&$('scrPause').classList.contains('hidden')&&$('scrVs').classList.contains('hidden'))G.paused=false}});
-  Guide.tutorialButton('#bHow',function(){ac();PRAC_RET='title';Guide.tutorial(PRACTICE)});
+  Guide.tutorialButton('#bHow',function(){ac();PRAC_RET='title';teachBase(function(){Guide.tutorial(PRACTICE)})});
 }else $('bHow').classList.add('hidden');
 $('bStart').onclick=function(){ac();SFX.big();SV.name=$('nameIn').value.trim()||SV.name;if(!SV.startAt)SV.startAt=Date.now();save();var first=!(SV.stars[1]&&SV.stars[1][0]);
   if(!window.Guide){if(first)startMatch(1);else setScene('map');return}
-  Guide.intro(INTRO).then(function(){if(first){PRAC_RET='m1';Guide.tutorial(PRACTICE)}else setScene('map')})};
+  Guide.intro(INTRO).then(function(){if(first){PRAC_RET='m1';teachBase(function(){Guide.tutorial(PRACTICE)})}else setScene('map')})};
 $('bCont').onclick=function(){ac();SV.name=$('nameIn').value.trim()||SV.name;save();setScene('map')};
 
 /* ================= 確認テスト（検定台） ================= */
 var TQ=[],TI=0,TA=[],TOK=[],CARD=null;
-function startTest(){scene='test';G=null;showScr('scrTest');backBtn();HELP&&HELP.hide();TQ=window.Quiz?Quiz.test():[];TI=0;TA=[];TOK=[];$('scrTest').scrollTop=0;showQ()}
+
+/* ================= ルールブック（まなぶ）：用語と決まりを「その前」に教える（2026-10-06 初心者向け） ================= */
+var LRN=null;
+function svgP(inner,vb){return '<svg viewBox="'+(vb||'0 0 420 170')+'" xmlns="http://www.w3.org/2000/svg" font-family="Chakra Petch,Stick,sans-serif" fill="none" stroke="#F2F4F3" stroke-width="2">'+inner+'</svg>'}
+function tP(t,x,y,col,sz,anc){return '<text x="'+x+'" y="'+y+'" fill="'+(col||'#F2F4F3')+'" stroke="none" font-size="'+(sz||15)+'" text-anchor="'+(anc||'middle')+'"'+(/^[NS0]$/.test(t)?' font-family="Chakra Petch,Helvetica,sans-serif" font-weight="700"':'')+'>'+t+'</text>'}
+function magP(x,y,nRight){var a=nRight?'#3FA7D6':'#FF6B35',b=nRight?'#FF6B35':'#3FA7D6';return '<polygon points="'+x+','+y+' '+(x+36)+','+y+' '+(x+36)+','+(y+30)+' '+x+','+(y+30)+'" fill="'+a+'" stroke="none"/><polygon points="'+(x+36)+','+y+' '+(x+72)+','+y+' '+(x+72)+','+(y+30)+' '+(x+36)+','+(y+30)+'" fill="'+b+'" stroke="none"/>'+tP(nRight?'S':'N',x+18,y+21,'#fff',16)+tP(nRight?'N':'S',x+54,y+21,'#fff',16)}
+function coilP(x,y){var s='';for(var i=0;i<6;i++)s+='<ellipse cx="'+(x+i*10)+'" cy="'+y+'" rx="6" ry="26" stroke="#C9793A" stroke-width="3"/>';return s}
+function arP(x1,x2,y){var d=x2>x1?1:-1;return '<path d="M'+x1+' '+y+' H'+x2+'" stroke="#F2F4F3" stroke-width="3"/><polygon points="'+x2+','+y+' '+(x2-9*d)+','+(y-6)+' '+(x2-9*d)+','+(y+6)+'" fill="#F2F4F3" stroke="none"/>'}
+function gP(x,y,dir){var a=(-90+dir*35)*Math.PI/180,r=26;return '<path d="M'+(x-r)+' '+y+' A'+r+' '+r+' 0 0 1 '+(x+r)+' '+y+'"/>'+tP('0',x,y-r-4,'#9FB3CC',11)+'<path d="M'+x+' '+y+' L'+(x+Math.cos(a)*(r-3)).toFixed(1)+' '+(y+Math.sin(a)*(r-3)).toFixed(1)+'" stroke="#FF6B35" stroke-width="3"/>'}
+function shuf(a){for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1)),t=a[i];a[i]=a[j];a[j]=t}return a}
+var LC={base:{k:'RULE BOOK — 台のルール',p:[
+  {t:'磁石を動かすと、コイルに電流が流れる',fig:svgP(magP(40,60,true)+arP(130,175,75)+tP('近づける',152,58,'#F2F4F3',14)+coilP(200,75)+'<path d="M200 101 V140 H330 V115 M250 101 V128 H300" stroke="#C9793A"/>'+gP(330,112,1)+tP('検流計（0が真ん中）',330,160,'#9FB3CC',13)),
+   p:'磁石をコイルに **近づけたり遠ざけたり** すると、コイルの中の磁界（磁石の力がはたらく空間）が変わり、コイルに電流が流れる。これを **電磁誘導**、流れる電流を **誘導電流** という。\n**検流計** は0が真ん中の針。誘導電流の **向き** で右にも左にも振れる。\n磁石を **止める** と磁界は変わらないので、針は **0**。',
+   q:{ask:'磁石をコイルの中で **止めた**。検流計の針は？',c:['0を指す','右に振れたまま','左に振れたまま'],why:'止めるとコイルの中の磁界が変わらない。だから誘導電流は流れない。',hint:'電流が流れるのは「動かしている間」だけだったね。'}},
+  {t:'基準の札から考える',fig:svgP(tP('基準：N極を近づける → 右',210,28,'#FF6B35',17)+tP('近づける ⇄ 遠ざける … 逆',210,66,'#F2F4F3',16)+tP('N ⇄ S … 逆',210,98,'#F2F4F3',16)+tP('両方かえる … 逆の逆＝基準と同じ',210,130,'#F2F4F3',16)+tP('速さ・巻数・磁石の強さ … 向きは変わらない（大きさが変わる）',210,160,'#9FB3CC',12)),
+   p:'針がどちらに振れるかは、コイルの巻き方やつなぎ方でも変わる。だから実験では、はじめに **N極を近づけたときの向きを確かめて「基準」にする**（この台では毎試合「基準の札」が出る）。\nそこから考える：\n・**近づける ⇄ 遠ざける** を入れかえる → 針は **逆**\n・**N極 ⇄ S極** を入れかえる → 針は **逆**\n・**両方** 入れかえる → 逆の逆で **基準と同じ**\n誘導電流の向きを逆にしたいときは、**極を入れかえる** か **動かす向きを逆にする**。速さ・巻数・磁石の強さを変えても向きは変わらない。',
+   q:{ask:'巻き方が逆の台。基準は「N極を近づける → **左**」。**N極を遠ざける** と針は？',c:['右','左','振れない'],why:'近づける⇄遠ざけるで1回逆。基準の左の逆で、右。',hint:'基準はこの台では「左」。そこから「逆」が何回あるか数えよう。'}},
+  {t:'コイルを動かしても同じ',fig:svgP(magP(40,60,true)+tP('止めたまま',76,52,'#9FB3CC',13)+coilP(220,75)+arP(212,160,128)+tP('コイルを近づける＝磁石を近づけるのと同じ',210,160,'#F2F4F3',14)),
+   p:'大事なのは、磁石とコイルが **近づくか・遠ざかるか**。\n磁石を止めて **コイルの方を近づける** のは、磁石を近づけるのと同じ。コイルを遠ざけるのは、磁石を遠ざけるのと同じ。\n磁石をコイルに上から落として **通りぬけさせる** と、近づくときと遠ざかるときで針は **逆**（右に振れたあと、左に振れる）。',
+   q:{ask:'基準は「N極を近づける → 右」。磁石を止めて、**コイルの方をS極に近づけた**。針は？',c:['左','右','振れない'],why:'コイルを近づける＝磁石を近づけるのと同じ。近づけるは基準と同じで、S極なので1回逆＝左。',hint:'動いたのがコイルでも「近づいた」ことに変わりはない。あとは極がNかSか。'},last:'台へ ▶'}
+]}};
+function teachBase(done){if(!SV.lrn)SV.lrn={};if(TEST||SV.lrn.base){done();return}var pages=LC.base.p.map(function(pg){return{pg:pg,k:LC.base.k}});
+  LRN={p:pages,i:0,done:function(){SV.lrn.base=1;save();done()}};if(HELP)HELP.hide();showLearn()}
+function showLearn(){var L0=LRN,it=L0.p[L0.i],pg=it.pg;$('scrLearn').classList.remove('hidden');$('lKick').textContent=it.k;$('lT').textContent=pg.t;
+  var cd0=document.querySelector('#scrLearn .card');cd0.classList.toggle('wf',!!pg.fig);cd0.classList.toggle('wq',!!pg.q);
+  var f=$('lFig');if(pg.fig){f.innerHTML=pg.fig;f.classList.remove('hidden')}else{f.innerHTML='';f.classList.add('hidden')}
+  $('lP').innerHTML=pg.p.split('\n').map(function(x){return '<p>'+rich(x)+'</p>'}).join('');
+  var q=$('lQ'),nb=$('lNext');q.innerHTML='';nb.textContent=L0.i+1>=L0.p.length?(pg.last||'わかった'):'次へ';$('lPg').textContent=L0.p.length>1?(L0.i+1)+' / '+L0.p.length:'';
+  if(pg.q){var qq=pg.q;nb.classList.add('hidden');q.innerHTML='<div class="lAsk">やってみよう：'+rich(qq.ask)+'</div><div class="lOpts"></div><div class="lWhy"></div>';var box=q.querySelector('.lOpts'),wy=q.querySelector('.lWhy');
+    shuf(qq.c.map(function(t,i){return{t:t,ok:i===0}})).forEach(function(o){var b=document.createElement('button');b.className='btn facet w sm';b.textContent=o.t;
+      b.onclick=function(){ac();if(o.ok){SFX.coin();[].forEach.call(box.children,function(x){x.disabled=true});b.disabled=false;b.className='btn facet o sm';wy.innerHTML='<b>そのとおり。</b>'+rich(qq.why);nb.classList.remove('hidden');setTimeout(function(){try{nb.scrollIntoView({behavior:RM?'auto':'smooth',block:'nearest'})}catch(e){}},60)}
+        else{SFX.nogoal();b.disabled=true;wy.innerHTML='<b>ちがう。</b>'+rich(qq.hint||'もう一度、上の説明を読んでみよう');try{wy.scrollIntoView({block:'nearest'})}catch(e){}}};box.appendChild(b)})}
+  else nb.classList.remove('hidden');
+  $('scrLearn').scrollTop=0}
+$('lNext').onclick=function(){ac();var L0=LRN;if(!L0)return;L0.i++;if(L0.i>=L0.p.length){$('scrLearn').classList.add('hidden');LRN=null;SFX.big();if(L0.done)L0.done();return}SFX.tick();showLearn()};
+
+function startTest(){if(!TEST&&!(SV.lrn&&SV.lrn.base)){teachBase(startTest);return}scene='test';G=null;showScr('scrTest');backBtn();HELP&&HELP.hide();TQ=window.Quiz?Quiz.test():[];TI=0;TA=[];TOK=[];$('scrTest').scrollTop=0;showQ()}
 function lampsBar(){$('tLamps').innerHTML=TQ.map(function(q,i){return'<i class="'+(i<TOK.length?(TOK[i]?'ok':'ng'):i===TI?'cur':'')+'"></i>'}).join('')}
 function showQ(){if(TI>=TQ.length)return finishTest();var q=TQ[TI];$('tNo').textContent=(TI+1)+' / '+TQ.length;lampsBar();
   $('tQ').textContent=q.q;var f=$('tFig');if(q.fig){f.innerHTML=q.fig;f.classList.remove('hidden')}else{f.innerHTML='';f.classList.add('hidden')}
@@ -4419,7 +4487,6 @@ if(window.PLAYER_NAME){$('nameIn').value=window.PLAYER_NAME;$('nmRow').classList
 if(!(SV.unl>1||SV.stars[1]))$('bCont').classList.add('hidden');
 if(TEST){startTest()}else setScene('title');
 requestAnimationFrame(frame);
-window.__CR={G:function(){return G},L:function(){return L},start:startMatch,scene:function(){return scene},SV:function(){return SV}};
 })();
 </script>
 <script>window.ZUKAN_COUNTER={"db": "https://rika-zukan-rank-default-rtdb.asia-southeast1.firebasedatabase.app", "id": "coil-reversi"};

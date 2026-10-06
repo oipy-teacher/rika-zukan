@@ -106,6 +106,7 @@ body.port #tBox{left:6%;right:6%;bottom:5%}
 .op{font-size:16px;line-height:1.7;margin:6px 0;font-weight:500}
 .op b{color:var(--bl)}
 .oBtns{display:flex;flex-wrap:wrap;gap:12px;margin-top:16px}
+#ovIn.vls .oBtns.vlF{position:sticky;bottom:-22px;margin:10px -24px -22px;padding:10px 24px 12px;background:#fff;border-top:1px solid rgba(17,17,17,.2)}#vqR{scroll-margin-bottom:80px}#ovIn.vls .op{margin:4px 0;line-height:1.6}#ovIn.vls svg{max-height:26vh}
 .stats{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:0;margin:10px 0;border-top:3px solid #111}
 .stats div{padding:6px 8px 8px 0;border-bottom:1px solid #ccc}
 .stats small{display:block;font-size:12px;font-weight:700;color:var(--g2)}
@@ -3899,7 +3900,7 @@ const RD=[
  {day:1,tod:'朝',dur:70,st:['root','A'],light:.7,wonly:1,fert:0,target:10,tk:'w',tip:'根の標識をタップ → 水のトラックを 道管へ'},
  {day:1,tod:'昼',dur:95,st:['root','A','B'],light:1,fert:0,target:12,tk:'s',tip:'葉でできた養分は 師管へ。根へは 下り線'},
  {day:1,tod:'夕',dur:105,st:['root','A','B','bud'],light:.55,fert:.3,target:14,tk:'s',tip:'つぼみは上、根は下。肥料分は どっち？'},
- {day:1,tod:'夜',dur:95,st:['root','A','B','bud'],light:0,night:1,fert:.25,target:10,tk:'s',tip:'夜は光合成なし。たくわえたデンプンは 変えてから運ぶ'},
+ {day:1,tod:'夜',dur:95,st:['root','A','B','bud'],light:0,night:1,fert:.25,target:10,tk:'s',tip:'夜は光合成なし。たくわえたデンプンは 変えてから運ぶ（だから朝の葉はデンプンが少ない）'},
  {day:2,tod:'朝',dur:105,st:['root','A','B','fruit','C','bud'],light:.7,fert:.3,target:18,tk:'s',tip:'実と葉Cが 加わった'},
  {day:2,tod:'昼',dur:115,st:['root','A','B','fruit','C','bud'],light:1,rush:1,fert:.25,target:28,tk:'s',tip:'山場：日ざしが強い！ 養分トラックが どっと出る'},
  {day:2,tod:'夕',dur:105,st:['root','A','B','fruit','C','bud','shoot'],light:.55,fert:.3,target:20,tk:'s',hideLegend:1,tip:'いちばん上の新芽も 養分を待っている。案内板は外した'},
@@ -3990,7 +3991,7 @@ function initTitle(){tutStop();if(window.PLAYER_NAME){$('nameIn').value=window.P
 let startArm=false;
 $('btnStart').onclick=()=>{actx();SFX.sw();SV.name=$('nameIn').value.trim();const any=hasSave()&&(SV.round>0||SV.clr.some(Boolean));
  if(any&&!startArm){startArm=true;$('btnStart').textContent='本当に はじめから？';setTimeout(()=>{startArm=false;if(scene==='title')initTitle()},3500);return}
- if(startArm){const nm=SV.name,mu=SV.mute;SV=fresh();SV.name=nm;SV.mute=mu;startArm=false}save();buzz(10);if(GD)startWithGuide();else startRound(0)};
+ if(startArm){const nm=SV.name,mu=SV.mute;SV=fresh();SV.name=nm;SV.mute=mu;startArm=false}save();buzz(10);if(GD)startWithGuide();else if(!SV.firsts.vl1)vtIntro(()=>startRound(0));else startRound(0)};
 $('btnCont').onclick=()=>{actx();SFX.sw();SV.name=$('nameIn').value.trim()||SV.name;save();openMap()};
 $('btnBookT').onclick=()=>{try{Z().openBook()}catch(e){}};
 
@@ -4002,14 +4003,14 @@ function openMap(){tutStop();show('scMap');G=null;
  RD.forEach((r,i)=>{if(i%4===0){const l=document.createElement('div');l.className='dayL';l.textContent=r.day+'日目';d.appendChild(l)}
   const b=document.createElement('button');const lock=i>SV.round;b.className='rd'+(lock?' lock':'')+(SV.clr[i]?' done':'')+(i===SV.round&&!SV.clr[i]?' next':'')+(r.night?' night':'');
   b.innerHTML='<span class="n">'+pad2(i+1)+'</span><span class="t">'+r.tod+'</span><span class="s">'+(SV.clr[i]?'<b>'+'★'.repeat(SV.stars[i])+'</b>'+'☆'.repeat(3-SV.stars[i]):lock?'――':'交差点 '+(r.st.length)+'')+'</span>';
-  if(!lock)b.onclick=()=>{actx();SFX.sw();startRound(i)};d.appendChild(b)});
+  if(!lock)b.onclick=()=>{actx();SFX.sw();if(!SV.firsts.vl1)vtIntro(()=>startRound(i));else startRound(i)};d.appendChild(b)});
  $('btnTestM').hidden=!SV.done;$('btnBookM').hidden=!Z();$('btnGachaM').hidden=!Z();
 }
 $('btnShopM').onclick=()=>{actx();openShop(null)};
 $('btnSignM').onclick=()=>{actx();openSigns()};
 $('btnBookM').onclick=()=>{try{Z().openBook()}catch(e){}};
 $('btnGachaM').onclick=()=>{try{Z().openGacha()}catch(e){}};
-$('btnTestM').onclick=()=>{actx();startTest()};
+$('btnTestM').onclick=()=>{actx();vtAfter(startTest)};
 function openSigns(){let h='<h3 class="oh">通り道図鑑</h3><p class="op">区の中で「理科として正しい運び方」をすると、標識が1枚ずつ手に入る。</p><div class="signs">';
  SIGNS.forEach(s=>{const got=SV.signs[s.id];h+='<div class="si '+(got?s.c:'no')+'"><div class="a">'+(got?s.a:'?')+'</div><div><div class="h">'+(got?esc(s.h):'まだ')+'</div>'+(got?'<div class="d">'+esc(s.d)+'</div>':'')+'</div></div>'});
  h+='</div><div class="oBtns"><button class="sg w noar" id="sgX">とじる</button></div>';ovOpen(h);$('sgX').onclick=()=>ovClose()}
@@ -4030,7 +4031,44 @@ function openShop(next){if(G)G.paused=true;
 /* ================= 本編 ================= */
 const cv=$('cv'),ctx=cv.getContext('2d');
 let G=null,TID=0;
-function startRound(i,TP){const r=TP||RD[i];if(window.BGM)BGM.mood(r&&r.final?'tense':'normal');show('scPlay');ovClose();document.body.classList.toggle('night',!!r.night);
+/* ================= 路線ガイド・断面の案内板（2026-10-06 夜間改修・初心者向け） ================= */
+function vtMix(n){const a=[...Array(n).keys()];for(let i=n-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function vtLesson(pages,then,i){i=i||0;const P=pages[i];if(!P){$('ovIn').classList.remove('vls');ovClose();then&&then();return}
+ const last=i===pages.length-1;
+ ovOpen('<p class="op" style="font-weight:700;font-size:13px;letter-spacing:.1em;margin:0">'+P.ey+'　'+(i+1)+' / '+pages.length+'</p><h3 class="oh">'+P.h+'</h3>'+P.body+(P.quiz?'<p class="op" style="border-top:3px solid #111;padding-top:8px;font-weight:900">やってみよう：'+P.quiz.q+'</p><div class="oBtns" id="vqB">'+vtMix(P.quiz.ch.length).map(k=>'<button class="sg w noar sm" data-k="'+k+'">'+P.quiz.ch[k]+'</button>').join('')+'</div><p class="op" id="vqR"></p>':'')+'<div class="oBtns vlF"><button class="sg" id="vqGo"'+(P.quiz?' hidden':'')+'>'+(last?(P.endLab||'わかった'):'次へ')+'</button></div>');
+ $('ovIn').classList.add('vls');
+ const go=$('vqGo');go.onclick=()=>{SFX.sw();vtLesson(pages,then,i+1)};
+ if(P.quiz)$('vqB').querySelectorAll('button').forEach(b=>b.onclick=()=>{const k=+b.dataset.k;if(k===P.quiz.ok){SFX.pinpon();$('vqR').innerHTML='<b style="background:'+YE+';padding:0 6px">○ そのとおり</b>　'+P.quiz.why;$('vqB').querySelectorAll('button').forEach(x=>x.disabled=true);go.hidden=false;setTimeout(()=>$('vqR').scrollIntoView({block:'nearest'}),30)}else{SFX.bubu();b.disabled=true;$('vqR').innerHTML='<b>× ちがう</b>　'+P.quiz.hint+'　もう一度えらぼう。';$('vqR').scrollIntoView({block:'nearest'})}})}
+const VT_SVG=(w,h,inner)=>'<svg viewBox="0 0 '+w+' '+h+'" style="width:100%;max-width:'+(w+40)+'px;display:block;margin:8px auto" font-family=\'"Zen Kaku Gothic New",sans-serif\' font-weight="700">'+inner+'</svg>';
+function vbundle(x,y,a,b,rot){/* 左半分＝道管(青)・右半分＝師管(黄)。rotで向きを変える */return '<g transform="translate('+x+' '+y+') rotate('+rot+')"><path d="M0 '+(-b)+' A'+a+' '+b+' 0 0 0 0 '+b+'Z" fill="'+BL+'"/><path d="M0 '+(-b)+' A'+a+' '+b+' 0 0 1 0 '+b+'Z" fill="'+YE+'"/><ellipse rx="'+a+'" ry="'+b+'" fill="none" stroke="#111" stroke-width="2"/></g>'}
+function vtIntro(then){
+ vtLesson([{ey:'路線ガイド',h:'2本の管と 運ぶもの',body:
+  VT_SVG(360,120,'<rect x="10" y="14" width="40" height="26" fill="'+BL+'"/><text x="62" y="34" font-size="20">道管</text><text x="130" y="34" font-size="14">根で吸った水・水にとけた肥料分　↑上りだけ</text>'+
+   '<rect x="10" y="58" width="40" height="26" fill="'+YE+'"/><text x="62" y="78" font-size="20">師管</text><text x="130" y="78" font-size="14">葉でつくられた養分　↑上り・↓下り</text>'+
+   '<text x="10" y="112" font-size="14">道管と師管が集まった束 ＝ 維管束（葉では 葉脈）</text>')+
+  '<p class="op">養分は、根・つぼみ・実・新芽など、<b>必要な所へ 上にも下にも</b> 運ばれる。</p>',
+  quiz:{q:'道管と師管が集まって 束になったものを 何という？',ch:['維管束','根毛','気孔'],ok:0,why:'道管と師管の束が維管束。葉では、この維管束が葉脈になっている。',hint:'図のいちばん下の行を読んでみよう。'}},
+ {ey:'路線ガイド',h:'デンプンは そのままでは運べない',body:
+  VT_SVG(360,90,'<g font-size="14"><rect x="4" y="20" width="76" height="40" fill="#fff" stroke="#111" stroke-width="2"/><text x="42" y="45" text-anchor="middle">デンプン</text><text x="92" y="46">→</text>'+
+   '<rect x="108" y="20" width="100" height="40" fill="#fff" stroke="#111" stroke-width="2"/><text x="158" y="38" text-anchor="middle">水にとけやすい</text><text x="158" y="54" text-anchor="middle">物質（糖）</text><text x="216" y="46">→</text>'+
+   '<rect x="232" y="20" width="56" height="40" fill="'+YE+'"/><text x="260" y="45" text-anchor="middle">師管</text><text x="296" y="46">→</text><text x="304" y="38">いも・根で</text><text x="304" y="56">デンプン</text></g>')+
+  '<p class="op">葉の光合成でできた <b>デンプン</b> は水にとけにくい。<b>水にとけやすい物質</b>（糖）に変わってから <b>師管</b> を通り、根やいも・実などで <b>再びデンプン</b> などになってたくわえられる。<br>ジャガイモのいものデンプンも、もとは <b>葉の光合成</b> でできたもの。</p>',
+  quiz:{q:'サツマイモのいもにデンプンがたまる。葉から いもへ運ばれるとき、養分は どんなすがた？',ch:['水にとけやすい物質（糖）','デンプンのまま','水にとけない つぶ'],ok:0,why:'デンプンは水にとけにくいので、水にとけやすい物質に変わって師管を通り、いもで再びデンプンになる。',hint:'デンプンは水にとけやすい？　師管を通れるのは？'},endLab:'路線へ出る'}],()=>{SV.firsts.vl1=1;save();then&&then()})}
+function vtAfter(then){
+ if(SV.firsts.vl2){then&&then();return}
+ vtLesson([{ey:'断面の案内板',h:'管は 体のどこを通っている？',body:
+  VT_SVG(380,170,
+   '<circle cx="70" cy="70" r="58" fill="#fff" stroke="#111" stroke-width="2"/>'+[0,60,120,180,240,300].map(d=>{const t=d*Math.PI/180;return vbundle(70+Math.cos(t)*36,70+Math.sin(t)*36,15,10,d)}).join('')+'<text x="70" y="150" font-size="13" text-anchor="middle">茎（輪切り）</text>'+
+   '<circle cx="190" cy="70" r="46" fill="#fff" stroke="#111" stroke-width="2"/><circle cx="190" cy="70" r="16" fill="'+BL+'"/>'+[0,90,180,270].map(d=>{const t=d*Math.PI/180;return '<circle cx="'+(190+Math.cos(t+.78)*22)+'" cy="'+(70+Math.sin(t+.78)*22)+'" r="6" fill="'+YE+'"/>'}).join('')+'<text x="190" y="150" font-size="13" text-anchor="middle">根（輪切り）</text>'+
+   '<rect x="250" y="44" width="124" height="52" fill="#fff" stroke="#111" stroke-width="2"/><text x="312" y="38" font-size="11" text-anchor="middle">葉の表</text><text x="312" y="112" font-size="11" text-anchor="middle">葉の裏</text>'+vbundle(312,70,16,22,90)+'<text x="312" y="150" font-size="13" text-anchor="middle">葉脈（断面）</text>')+
+  '<p class="op">青＝道管・黄＝師管。<b>茎</b>：維管束の <b>中心側が道管、外側が師管</b>。<b>根</b>：道管は <b>中心</b>。<b>葉脈</b>：<b>表側が道管、裏側が師管</b>。<br>色水を吸わせると、赤く染まるのは水の通り道の <b>道管</b>。</p>',
+  quiz:{q:'根の輪切りで、道管が集まっているのは？',ch:['中心','いちばん外側の表面','根毛の先'],ok:0,why:'根では道管は中心に集まっている（図のまん中の青）。',hint:'根の図で、青い道管はどこにある？'}},
+ {ey:'断面の案内板',h:'師管が切れると？　夜のあいだに？',body:
+  '<p class="op"><b>幹の輪はぎ</b>：木の幹の表面近くを輪の形にはぎ取ると、外側にある <b>師管が切れる</b>。葉から下へ運ばれてきた養分がそこで止まってたまり、<b>はぎ取った所のすぐ上がふくらむ</b>。</p>'+
+  '<p class="op"><b>夕方と朝の葉</b>：同じ株の、よく日に当たった葉を <b>夕方</b> と <b>次の朝</b> につみ、同じ方法でヨウ素液（デンプンがあると青紫になる液）で調べる。ちがうのは時刻だけ。<br>→ 朝の葉の方が色が変わりにくい。昼にできたデンプンが、<b>夜のあいだに水にとけやすい物質に変わって運び出された</b> から（夜の区で、デンプンを変換して運んだのと同じ）。</p>',
+  quiz:{q:'枝の途中の皮を輪の形にはぎ取った。その下の根に、葉でできた養分は 届く？',ch:['届かなくなる','前より よく届く','変わらず届く'],ok:0,why:'外側の師管が切れるので、葉からの養分は切れた所で止まり、下へは届かない。',hint:'はぎ取ると切れるのは 外側の師管。師管は 何の通り道？'},endLab:'さいごの確認テストへ'}],()=>{SV.firsts.vl2=1;save();then&&then()})}
+
+function startRound(i,TP){if(!TP&&window.GAME_MODE!=='test'&&!SV.firsts.vl1){vtIntro(()=>startRound(i,TP));return}const r=TP||RD[i];if(window.BGM)BGM.mood(r&&r.final?'tense':'normal');show('scPlay');ovClose();document.body.classList.toggle('night',!!r.night);
  const st={};r.st.forEach(k=>{const s=STN[k];st[k]={k,s,q:[],tmr:1.5+Math.random(),sw:0,w:.7,g:0,prod:1+Math.random()*2,starch:s.kind==='leaf'?2+SV.upg.store:0,wilted:false,growT:0}});
  // 最初の標識は わざと ちがう向き（最初の判断）
  if(st.root)st.root.sw=(i===0||TP)?1:0;
@@ -4129,7 +4167,7 @@ function roundEnd(){const g=G;if(!g)return;const i=g.i,r=g.r;if(GD)GD.celebrate(
  [...$('vtS').children].forEach((e,k)=>{if(k<st)setTimeout(()=>{e.classList.add('on');tone(660*Math.pow(1.26,k),.3,'triangle',.07);tone(110,.2,'sine',.12);buzz(18);if(GD)GD.cheer('★',{target:e,size:.7,sound:false,sparks:12})},500+k*420)});
  const b=(id,f)=>{const e=$(id);if(e)e.onclick=f};
  b('reS',()=>openShop(i+1));b('reN',()=>{ovClose();startRound(i+1)});b('reM',()=>{ovClose();openMap()});b('reG',()=>{try{Z().openGacha()}catch(e){}});
- b('reT',()=>{ovClose();goClear()});G.paused=true}
+ b('reT',()=>{ovClose();vtAfter(goClear)});G.paused=true}
 function goClear(){const z=Z();if(z&&z.mainClear){try{z.mainClear({onClose:startTest})}catch(e){startTest()}}else startTest()}
 
 /* ---- 入力（標識のタップ） ---- */
@@ -4263,7 +4301,7 @@ function hudPort(c,fg){const g=G,r=g.r;
 
 /* ================= さいごの確認テスト ================= */
 let T=null;
-function startTest(){if(!window.Quiz){alert('問題データがありません');return}G=null;ovClose();show('scTest');T={qs:Quiz.test(),i:0,ans:[]};renderQ()}
+function startTest(){if(window.GAME_MODE!=='test'&&!SV.firsts.vl2){vtAfter(startTest);return}if(!window.Quiz){alert('問題データがありません');return}G=null;ovClose();show('scTest');T={qs:Quiz.test(),i:0,ans:[]};renderQ()}
 function renderQ(){const q=T.qs[T.i];$('qNo').textContent=pad2(T.i+1);$('qOf').textContent='/ '+T.qs.length;$('qText').textContent=q.q;const f=$('qFig');if(q.fig){f.innerHTML=q.fig;f.hidden=false}else{f.innerHTML='';f.hidden=true}
  const A=$('qArea');A.innerHTML='';$('scTest').scrollTop=0;const L='ABCDE';
  const mk=(c,k)=>{const b=document.createElement('button');b.className='qc';b.innerHTML='<i>'+L[k]+'</i><span></span>';b.lastChild.textContent=c;return b};
@@ -4350,12 +4388,7 @@ if(GD){
 function startWithGuide(){
  GD.intro({title:'第14回　維管束インターチェンジ',
   learn:'水・肥料分は **道管** を上へ。葉でできた養分は **師管** で 上にも下にも',
-  how:'**標識をタップ** して、トラックを正しい管へ流す',gesture:'tap'}).then(()=>GD.tutorial(PRACTICE))}
-window.__vt={signC,chipC,get scene(){return scene},get G(){return G},get SV(){return SV},startRound,startTest,openMap,openShop,states,
- // 自動の交通整理（テスト用）: 先頭の車に合う向きへ標識を合わせる
- auto(){if(!G)return;Object.values(G.st).forEach(o=>{const ss=states(o);if(!ss.length||!o.q.length)return;const tr=o.q[0];let want;
-  if(tr.cargo==='w'||tr.cargo==='f')want='x';else if(tr.cargo==='d')want='cv';else{const d=G.st[tr.dest];const du=d.s.kind==='root'?0:d.s.u;want=du>o.s.u?'pu':'pd'}
-  const j=ss.indexOf(want);if(j>=0)o.sw=j})}};
+  how:'**標識をタップ** して、トラックを正しい管へ流す',gesture:'tap'}).then(()=>new Promise(r=>{if(SV.firsts.vl1)r();else vtIntro(r)})).then(()=>GD.tutorial(PRACTICE))}
 if(window.GAME_MODE==='test'){startTest()}else{show('scTitle');initTitle()}
 requestAnimationFrame(frame);
 })();

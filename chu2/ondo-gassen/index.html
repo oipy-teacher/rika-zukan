@@ -137,6 +137,33 @@ body.land #tFig svg{width:100%;max-height:56vh}
 @keyframes cfall{to{transform:translate(var(--dx),108vh) rotate(var(--r))}}
 @media (prefers-reduced-motion:reduce){.cstars span{animation:none;opacity:1}}
 @media (prefers-reduced-motion:reduce){.cb:active,.ans:active{transform:none}}
+/* まなぶページ（黒板の板書）2026-10-06 初心者向け */
+#scrLearn{z-index:44;background:rgba(10,20,15,.55)}
+#lBox{width:min(720px,100%);max-height:100%;overflow:auto}
+#lKick{font-size:13px;letter-spacing:.22em;color:#F2D675}
+#lT{margin:4px 0 8px}
+#lFig{margin:6px 0;background:#1c2c23;border:2px dashed rgba(244,244,240,.35);padding:6px}
+#lFig svg{display:block;width:100%;height:auto;max-height:32vh}
+#lP p{margin:6px 0;font-size:16px;line-height:1.75}
+#lP b{color:#FF9C84}
+#lQ .ask{margin-top:10px;font-size:16px;line-height:1.55;padding:8px 12px;border:2px solid #FF9C84;color:#F2D675}
+#lQ .opts{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+#lQ .lopt{min-height:46px;padding:8px 14px;font:inherit;font-size:15px;text-align:left;line-height:1.35;cursor:pointer;border:2px solid rgba(244,244,240,.8);background:rgba(244,244,240,.06);color:#F4F4F0}
+#lQ .lopt.ok{background:#9ED6EA;border-color:#9ED6EA;color:#23352B}
+#lQ .lopt[disabled]:not(.ok){opacity:.4}
+#lQ .why{margin-top:8px;font-size:15px;line-height:1.65}
+#lQ .why b{color:#9ED6EA}#lQ .why b.ng{color:#FF9C84}
+#lBox .btns{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;margin-top:12px}
+#lPg{margin-right:auto;align-self:center;font-size:14px;letter-spacing:.1em}
+#lBox{padding:16px 22px 18px;color:#F4F4F0}#lT{font-size:clamp(24px,3.4vw,32px)}#lP b{font-weight:700}#lP i{color:#9ED6EA;font-style:normal;font-weight:700}#lQ .lopt{font-family:inherit}
+
+/* 2026-10-06 仕上げ：横長の画面（1180×733・1024×768）では図を左・文と問いを右に並べ、札を画面の高さに収める */
+@media (min-width:900px) and (orientation:landscape){
+ #lBox.hasFig{width:min(1080px,96vw)!important;max-width:none;display:grid;grid-template-columns:minmax(0,43%) minmax(0,1fr);grid-template-areas:"k k" "t t" "f p" "f q" "f ft";grid-template-rows:auto auto auto auto 1fr;column-gap:22px;align-content:start}
+ #lBox.hasFig #lKick{grid-area:k}#lBox.hasFig #lT{grid-area:t}#lBox.hasFig #lFig{grid-area:f;align-self:start;margin-top:4px}#lBox.hasFig #lP{grid-area:p}#lBox.hasFig #lQ{grid-area:q}#lBox.hasFig .btns{grid-area:ft;align-self:end}
+ #lBox.hasFig #lFig svg{max-height:62vh}
+}
+@media (max-height:820px){#lP p{font-size:15px;line-height:1.6;margin:4px 0}#lQ .ask{margin-top:8px}#lQ .opts{margin-top:8px}#lQ .why{margin-top:6px}#lBox .btns{margin-top:10px}}
 </style>
 </head>
 <body>
@@ -165,7 +192,7 @@ body.land #tFig svg{width:100%;max-height:56vh}
     <div class="mbox"><h3>この試合</h3><div class="stat" id="mapStat"></div></div>
     <div class="mbox"><h3>反応の玉の図鑑 <span id="mapCnt" style="font-size:14px;color:#F4F4F0"></span></h3><div class="rxs" id="mapRx"></div></div>
   </div>
-  <div class="mbtns"><button id="mapBook" class="cb sm hidden">📖 図鑑</button><button id="mapNext" class="cb big">次の陣地へ</button></div>
+  <div class="mbtns"><button id="mapLearn" class="cb sm">📘 板書</button><button id="mapBook" class="cb sm hidden">📖 図鑑</button><button id="mapNext" class="cb big">次の陣地へ</button></div>
 </div></div>
 
 <div id="confirm" class="ov hidden" data-gd-pass><div class="board">
@@ -181,6 +208,7 @@ body.land #tFig svg{width:100%;max-height:56vh}
   <div class="mbtns"><button id="clBook" class="cb sm hidden">📖 図鑑</button><button id="toTest" class="cb big">黒板の小テストへ</button></div>
 </div></div>
 
+<div id="scrLearn" class="ov hidden"><div class="board" id="lBox"><div id="lKick"></div><h2 id="lT"></h2><div id="lFig" class="hidden"></div><div id="lP"></div><div id="lQ"></div><div class="btns"><span id="lPg"></span><button class="cb" id="lNext">次へ</button></div></div></div>
 <div id="test" class="ov hidden">
   <div class="top"><span class="ck">黒板の小テスト（確認テスト）</span><span class="ck" id="tNo">1 / 10</span></div>
   <div class="paper"><div id="tQ"></div><div id="tFig"></div><div id="tA"></div><div id="tFb"></div></div>
@@ -3920,7 +3948,7 @@ var ST=[
 
 /* ================= 保存 ================= */
 var G=null,R=null,state='title',NAME=window.PLAYER_NAME||'';
-function fresh(){return{v:1,stage:0,rx:{},st:{throw:0,ok:0,err:0,melt:0,freeze:0,cover:0,vent:0,best:0,time:0,lose:0},done:0,name:NAME}}
+function fresh(){return{v:1,stage:0,rx:{},st:{throw:0,ok:0,err:0,melt:0,freeze:0,cover:0,vent:0,best:0,time:0,lose:0},done:0,name:NAME,lrn:{}}}
 function saveGame(){if(!G||TEST)return;try{localStorage.setItem(SAVE,JSON.stringify(G))}catch(e){}}
 function loadGame(){try{var o=JSON.parse(localStorage.getItem(SAVE));if(o&&o.v===1&&o.st)return o}catch(e){}return null}
 
@@ -4219,8 +4247,8 @@ function endTut(){document.body.classList.remove('tut');if(TUTON&&GD){TUTON=fals
 function toTitle(){endTut();if(HELP)HELP.hide();state='title';R=null;showOv('title');var sv=loadGame();$('btnCont').classList.toggle('hidden',!sv);$('btnStart').textContent=sv?'はじめから':'合戦はじめ！';
   $('btnBook').classList.toggle('hidden',!window.Zukan);armed=false;backBtn();renderBg()}
 function startGame(cont){AU.init();var sv=loadGame();if(!cont&&sv&&!armed){armed=true;$('btnStart').textContent='もう一度おすと最初から';return}
-  G=cont&&sv?sv:fresh();if(!cont)G.name=NAME;else if(!NAME)NAME=G.name||'';if(G.done){showClear();return}saveGame();if(!cont&&GD&&G.stage===0){GD.intro(INTRO).then(function(){REPLAY=false;GD.tutorial(PRACTICE)});return}openStage(G.stage)}
-function openStage(si){endTut();if(window.BGM)BGM.mood('calm');if(HELP)HELP.hide();state='card';newRun(si);renderBg();var d=ST[si];$('cdTag').textContent=d.boss?'最後の陣':'第'+(si+1)+'陣';$('cdTitle').textContent=d.nm;$('cdBody').innerHTML=d.intro;$('cdBtn').textContent=d.boss?'大将に挑む！':'はじめ！';showOv('card');backBtn()}
+  G=cont&&sv?sv:fresh();if(!cont)G.name=NAME;else if(!NAME)NAME=G.name||'';if(G.done){showClear();return}saveGame();if(!cont&&GD&&G.stage===0){GD.intro(INTRO).then(function(){teachOnce('pre',LRN_PRE,function(){REPLAY=false;GD.tutorial(PRACTICE)})});return}openStage(G.stage)}
+function openStage(si){if(!TEST&&G){if(!G.lrn)G.lrn={};if(!G.lrn.pre){teachOnce('pre',LRN_PRE,function(){openStage(si)});return}if(LRN_ST[si]&&!G.lrn['s'+si]){teachOnce('s'+si,LRN_ST[si],function(){openStage(si)});return}}endTut();if(window.BGM)BGM.mood('calm');if(HELP)HELP.hide();state='card';newRun(si);renderBg();var d=ST[si];$('cdTag').textContent=d.boss?'最後の陣':'第'+(si+1)+'陣';$('cdTitle').textContent=d.nm;$('cdBody').innerHTML=d.intro;$('cdBtn').textContent=d.boss?'大将に挑む！':'はじめ！';showOv('card');backBtn()}
 $('cdBtn').onclick=function(){AU.init();if(!R)return;if(R.ended){openStage(R.si);return}$('card').classList.add('hidden');state='play';R.paused=false;if(window.BGM)BGM.mood(ST[R.si]&&ST[R.si].boss?'tense':'normal');backBtn();SFX.chalk();if(HELP)HELP.show();
   hint('gog','まず 保護眼鏡をタップ',6)};
 function win(){R.ended=true;R.paused=true;SFX.win();R.winAnim=1;
@@ -4245,7 +4273,7 @@ $('toTest').onclick=function(){startTest()};$('clBook').onclick=function(){windo
 
 /* ================= 確認テスト ================= */
 var TQ=[],TA=[],TI=0;
-function startTest(){endTut();if(HELP)HELP.hide();state='test';R=null;showOv('test');backBtn();TQ=window.Quiz?Quiz.test():[];TA=[];TI=0;showQ()}
+function startTest(){if(!TEST&&G){if(!G.lrn)G.lrn={};var miss=[],ks=['pre'].concat(Object.keys(LRN_ST).map(function(i){return 's'+i}));ks.forEach(function(k){if(!G.lrn[k])miss=miss.concat(k==='pre'?LRN_PRE:LRN_ST[k.slice(1)])});if(miss.length){teach('黒板の板書（テストの前に）',miss,function(){ks.forEach(function(k){G.lrn[k]=1});saveGame();startTest()});return}}endTut();if(HELP)HELP.hide();state='test';R=null;showOv('test');backBtn();TQ=window.Quiz?Quiz.test():[];TA=[];TI=0;showQ()}
 function showQ(){var q=TQ[TI];if(!q){finishTest();return}$('test').scrollTop=0;$('tNo').textContent=(TI+1)+' / '+TQ.length;$('tQ').textContent=q.q;$('tFig').innerHTML=q.fig||'';$('tFb').innerHTML='';var A=$('tA');A.innerHTML='';
   if(q.t==='choice'){q.shown.forEach(function(c){var b=document.createElement('button');b.className='ans';b.textContent=c;b.onclick=function(){answer(c,b)};A.appendChild(b)})}
   else if(q.t==='num'){var row=document.createElement('div');row.className='numrow';row.innerHTML='<input id="numIn" inputmode="decimal" autocomplete="off"><span style="font-weight:700;font-size:18px">'+esc(q.unit||'')+'</span>';
@@ -4301,6 +4329,56 @@ $('btnBook').onclick=function(){window.Zukan&&Zukan.openBook()};
 if(window.PLAYER_NAME){$('nameIn').value=window.PLAYER_NAME;$('nameBox').classList.add('hidden')}
 window.Zukan&&Zukan.setup&&Zukan.setup({game:GID,koma:KOMA});
 /* ===== 遊び方案内（Guide）：黒板とチョーク ===== */
+
+/* ================= まなぶページ（黒板の板書）：言葉・計算を「その前」に教える（2026-10-06 初心者向け） ================= */
+var LRN=null;
+function fmtL(t){return esc(t).replace(/\*\*(.+?)\*\*/g,'<b>$1</b>')}
+function teachOnce(key,pages,done){var ST0=G;if(!ST0.lrn)ST0.lrn={};if(ST0.lrn[key]||!pages){done&&done();return}teach('黒板の板書',pages,function(){ST0.lrn[key]=1;saveGame();done&&done()})}
+function mnShuf(a){for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1)),t=a[i];a[i]=a[j];a[j]=t}return a}
+function teach(kick,pages,done){LRN={k:kick,p:pages,i:0,done:done};if(HELP&&HELP.hide)HELP.hide();showLearn()}
+function showLearn(){var L0=LRN,pg=L0.p[L0.i];$('scrLearn').classList.remove('hidden');$('lKick').textContent=L0.k;$('lT').textContent=pg.t;
+ var f=$('lFig');var fg=typeof pg.fig==='function'?pg.fig():pg.fig;$('lBox').classList.toggle('hasFig',!!fg);if(fg){f.innerHTML=fg;f.classList.remove('hidden')}else{f.innerHTML='';f.classList.add('hidden')}
+ $('lP').innerHTML=pg.p.split('\n').map(function(x){return '<p>'+fmtL(x)+'</p>'}).join('');
+ var q=$('lQ'),nb=$('lNext');q.innerHTML='';nb.textContent=L0.i+1>=L0.p.length?'わかった！':'次へ';$('lPg').textContent=L0.p.length>1?(L0.i+1)+' / '+L0.p.length:'';
+ if(pg.q){var qq=pg.q;nb.classList.add('hidden');q.innerHTML='<div class="ask">やってみよう：'+fmtL(qq.ask)+'</div><div class="opts"></div><div class="why"></div>';var box=q.querySelector('.opts'),wy=q.querySelector('.why');
+  mnShuf(qq.c.map(function(t,i){return{t:t,ok:i===0}})).forEach(function(o){var b=document.createElement('button');b.className='lopt';b.textContent=o.t;
+   b.onclick=function(){try{ac()}catch(e){}if(o.ok){SFX.xylo(3);[].forEach.call(box.children,function(x){x.disabled=true});b.disabled=false;b.classList.add('ok');wy.innerHTML='<b>そのとおり！</b>　'+fmtL(qq.why);nb.classList.remove('hidden');setTimeout(function(){try{nb.scrollIntoView({behavior:'smooth',block:'nearest'})}catch(e){}},60)}
+    else{SFX.bad();b.disabled=true;wy.innerHTML='<b class="ng">ちがう。</b>　'+fmtL(qq.hint||'もう一度、上の説明を読んでみよう');setTimeout(function(){try{wy.scrollIntoView({behavior:'smooth',block:'nearest'})}catch(e){}},60)}};box.appendChild(b)})}
+ else nb.classList.remove('hidden');
+ $('lBox').scrollTop=0}
+$('lNext').onclick=function(){SFX.chalk();var L0=LRN;if(!L0)return;L0.i++;if(L0.i>=L0.p.length){$('scrLearn').classList.add('hidden');LRN=null;if(L0.done)L0.done();return}showLearn()};
+function fT(x,y,t,sz,col,a){return '<text x="'+x+'" y="'+y+'" font-size="'+(sz||14)+'" fill="'+(col||'#222')+'" text-anchor="'+(a||'middle')+'" font-weight="700">'+t+'</text>'}
+function fW(w,h,b){return '<svg viewBox="0 0 '+w+' '+h+'" xmlns="http://www.w3.org/2000/svg" font-family="Hiragino Sans,Yu Gothic,sans-serif">'+b+'</svg>'}
+function fA(x,y,len,col){col=col||'#222';return '<path d="M'+x+' '+y+'h'+len+'" stroke="'+col+'" stroke-width="3"/><path d="M'+(x+len)+' '+(y-7)+'l12 7-12 7z" fill="'+col+'"/>'}
+
+var CW='#F4F4F0',CH='#FF9C84',CC='#9ED6EA',CY='#F2D675';
+function thermo(x,y,lv,col){return '<rect x="'+(x-7)+'" y="'+y+'" width="14" height="70" rx="7" fill="none" stroke="'+CW+'" stroke-width="2"/><circle cx="'+x+'" cy="'+(y+76)+'" r="10" fill="'+col+'"/><rect x="'+(x-3)+'" y="'+(y+70-lv)+'" width="6" height="'+(lv+2)+'" fill="'+col+'"/>'}
+var LRN_PRE=[
+ {t:'熱が出る反応・熱を奪う反応',fig:fW(460,130,thermo(40,14,30,CW)+fA(64,50,30,CW)+thermo(122,14,60,CH)+fT(130,118,'上がった',13,CH)+fT(176,52,'熱を出す',14,CH,'start')+fT(176,74,'＝発熱反応',14,CH,'start')+thermo(270,14,30,CW)+fA(294,50,30,CW)+thermo(352,14,8,CC)+fT(360,118,'下がった',13,CC)+fT(372,52,'熱を奪う',14,CC,'start')+fT(372,74,'＝吸熱反応',14,CC,'start')),
+  p:'化学変化が起こると、**熱の出入り** がある。\n熱をまわりに出して **温度が上がる** 化学変化 ＝ **発熱反応**（例：化学かいろ・燃焼）。この合戦では **あつい玉**。\nまわりから熱を奪って **温度が下がる** 化学変化 ＝ **吸熱反応**。この合戦では **つめたい玉**。\n化学変化には、温度が **上がるもの** も、**下がるもの** もある。',
+  q:{ask:'2つの物質を混ぜたら、温度計が 20℃ から 12℃ に **下がった**。この化学変化は？',c:['吸熱反応','発熱反応','燃焼'],why:'温度が下がった → まわりから熱を **奪った**（吸った）→ **吸熱反応**。',hint:'「熱を奪う」→ 熱を「吸う」反応'}}
+];
+var LRN_ST={
+ 1:[{t:'加熱をやめても続く反応（鉄＋硫黄）',fig:fW(460,110,'<path d="M60 40h300a20 20 0 0 1 0 40H60z" fill="none" stroke="'+CW+'" stroke-width="2"/><rect x="62" y="44" width="80" height="32" fill="'+CH+'"/><rect x="142" y="44" width="150" height="32" fill="#8d8f86"/>'+fT(102,100,'赤くなった所',12,CH)+fT(216,100,'まだの所（鉄と硫黄）',12,CW)+fA(150,30,60,CY)+fT(180,22,'熱が伝わって次々に反応',12,CY)),
+  p:'鉄粉と硫黄の混合物の **上の方だけ** を加熱し、赤くなったところで加熱をやめる。それでも反応は **最後まで進む**。\n鉄と硫黄が結び付くと **熱が出る（発熱反応）**。その熱で、となりの部分も次々に反応するから。',
+  q:{ask:'加熱をやめたのに、赤くなった部分が混合物の下のほうへ広がっていった。鉄と硫黄の反応は？',c:['発熱反応（自分の熱で、となりも反応する）','吸熱反応（まわりの熱を奪う）','熱の出入りはない'],why:'**発熱反応** の熱で、となりが次々に反応する。',hint:'加熱をやめても進むのは、どこかから熱が来ているから'}}],
+ 3:[{t:'つめたい玉：塩化アンモニウム＋水酸化バリウム',fig:fW(460,130,'<path d="M150 30v80h90v-80" fill="none" stroke="'+CW+'" stroke-width="2.5"/><path d="M138 30h114" stroke="'+CC+'" stroke-width="5"/>'+fT(320,30,'水でぬらしたろ紙',13,CC,'start')+fT(320,50,'（アンモニアを吸収）',12,CW,'start')+'<rect x="152" y="86" width="86" height="22" fill="#d9d6c8"/>'+thermo(200,10,10,CC)+fT(60,70,'温度が',13,CC)+fT(60,90,'下がる',13,CC)),
+  p:'**塩化アンモニウム** と **水酸化バリウム** を混ぜると、まわりから熱を奪い **温度が下がる**（吸熱反応）。\nこのとき鼻をさすにおいの **アンモニア** が出る。体に害があり、**水にとても溶けやすい**。だから **水でぬらしたろ紙** をかぶせて吸収させ、部屋の **換気** もする。\n実験の順：①保護眼鏡・換気　②2つの粉を入れ **はじめの温度** をはかる　③ぬれたろ紙をかぶせる　④かき混ぜながら温度を記録',
+  q:{ask:'この実験で、部屋の **換気** をするのはなぜ？',c:['出てくるアンモニアが体に害があるから','部屋を冷やすため','反応に酸素が要るから'],why:'鼻をさすにおいの **アンモニア** は体に害がある。だから換気し、ぬれたろ紙でも吸収する。',hint:'この実験で出てくる気体は？それは体にどう？'}},
+  {t:'何℃下がった？',fig:fW(460,120,thermo(80,10,50,CW)+fT(80,116,'はじめ 20℃',12,CW)+fA(110,50,60,CW)+thermo(210,10,14,CC)+fT(210,116,'あと 8℃',12,CC)+fT(350,50,'20 − 8',20,CC)+fT(350,80,'＝ 12℃ 下がった',16,CC)),
+  p:'**下がった温度 ＝ はじめの温度 − あとの温度**\n例：はじめ 20℃ → あと 8℃ なら、20 − 8 ＝ **12℃** 下がった。\n温度が下がった → まわりから熱を奪った → **吸熱反応**。',
+  q:{ask:'2つの物質を混ぜると、23℃ から 9℃ になった。何℃下がった？',c:['14℃','32℃','9℃'],why:'23 − 9 ＝ **14℃**。',hint:'はじめの温度 − あとの温度'}}],
+ 4:[{t:'名前で見分ける：上がる反応・下がる反応',fig:fW(460,150,'<path d="M230 8v134" stroke="'+CW+'" stroke-width="2"/>'+fT(115,24,'温度が上がる（発熱反応）',14,CH)+['鉄粉＋酸素（化学かいろ）','鉄＋硫黄','エタノールの燃焼','酸化カルシウム＋水（加熱式の弁当）','マグネシウム＋うすい塩酸'].map(function(t,i){return fT(14,50+i*20,t,12,CW,'start')}).join('')+fT(345,24,'温度が下がる（吸熱反応）',14,CC)+['塩化アンモニウム＋','　水酸化バリウム','炭酸水素ナトリウム＋','　クエン酸（水溶液）'].map(function(t,i){return fT(244,50+i*20,t,12,CW,'start')}).join('')),
+  p:'温度が **上がる**（発熱反応）：化学かいろ（鉄粉＋酸素）・鉄＋硫黄・エタノールの燃焼・**酸化カルシウム＋水**（ひもを引くと温まる弁当）・マグネシウム＋うすい塩酸\n温度が **下がる**（吸熱反応）：塩化アンモニウム＋水酸化バリウム・**炭酸水素ナトリウム＋クエン酸**（水溶液を混ぜると二酸化炭素が出る）\nここからは名前だけの玉もまざる。この表で見分けよう（陣地の地図の「📘 板書」で、いつでも見返せる）。',
+  q:{ask:'混ぜると温度が **上がる**（発熱反応の）組み合わせは？',c:['酸化カルシウムと水','炭酸水素ナトリウムとクエン酸の水溶液','塩化アンモニウムと水酸化バリウム'],why:'酸化カルシウム＋水は **発熱反応**（加熱式の弁当）。ほかの2つは温度が下がる。',hint:'表の「上がる」の行を見よう'}}],
+ 5:[{t:'温度のグラフの読み方',fig:fW(460,170,'<path d="M50 14V150H440" stroke="'+CW+'" stroke-width="2" fill="none"/><path d="M50 82H440" stroke="rgba(244,244,240,.35)" stroke-dasharray="5 5"/>'+fT(56,76,'まわりの温度',11,CW,'start')+'<path d="M50 82C90 82 100 30 150 30S300 78 440 80" stroke="'+CH+'" stroke-width="3.5" fill="none"/><path d="M50 82C90 82 100 134 150 134S300 86 440 84" stroke="'+CC+'" stroke-width="3.5" fill="none"/>'+fT(160,22,'A：上がった（発熱反応）',13,CH,'start')+fT(160,150,'B：下がった（吸熱反応）',13,CC,'start')+fT(436,166,'時間 →',12,CW,'end')),
+  p:'混ぜてからの温度をグラフにすると、**上に山** ができれば温度が上がった（発熱反応）、**下に谷** ができれば下がった（吸熱反応）。上の図では **B** が吸熱反応。\n反応が終わると熱の出入りがなくなるので、温度は **まわりの温度（室温）にもどっていく**。下がった温度も、しばらくすると上がって、まわりの温度に近づく。',
+  q:{ask:'**発熱反応** で上がった温度は、反応が終わったあと、しばらくするとどうなる？',c:['まわりの温度に近づいて下がっていく','さらに上がり続ける','そのまま変わらない'],why:'反応が終わると熱が出なくなり、まわりへ熱が逃げて **まわりの温度にもどる**。吸熱反応の谷も同じく、まわりの温度へもどる。',hint:'グラフの線の右はしは、どこに近づいている？'}}],
+ 6:[{t:'熱の出入りを、式で書く',fig:fW(300,150,fT(150,34,'A ＋ B → C ＋ 熱',22,'#FF9C84')+fT(150,58,'熱が出る ＝ 発熱反応',15,'#FF9C84')+fT(150,104,'A ＋ B ＋ 熱 → C',22,'#9ED6EA')+fT(150,128,'熱を奪う ＝ 吸熱反応',15,'#9ED6EA')),
+  p:'化学変化の式に **熱** を書くことがある。\n**矢印の右（できる側）に「＋熱」** → 反応すると熱が **出てくる** → **発熱反応**。\n**矢印の左（反応する側）に「＋熱」** → 反応に熱を **取りこむ**（まわりから奪う）→ **吸熱反応**。\nここからは、実験メモにこの式がまざる。',
+  q:{ask:'「鉄 ＋ 硫黄 → 硫化鉄 ＋ 熱」と表される反応は？',c:['発熱反応','吸熱反応','どちらでもない'],why:'「＋熱」が **矢印の右（できる側）** → 熱が出てくる → **発熱反応**。',hint:'「熱」は、矢印の右と左のどちらにある？'}}]
+};
+$('mapLearn').onclick=function(){SFX.chalk();var all=LRN_PRE.slice();Object.keys(LRN_ST).forEach(function(i){all=all.concat(LRN_ST[i])});teach('黒板の板書（読み返し）',all,null)};
 var INTRO={title:'第24回　あつい玉・つめたい玉合戦',learn:'化学変化には **熱が出る（温度が上がる）** ものと **熱を奪う（温度が下がる）** ものがある',how:'温度計を見て、玉を **ドラッグで投げる**。あつい玉は **相手の氷**・つめたい玉は **自分のかべ** へ',gesture:'drag'};
 function hand(){return{x:L.hand[0],y:L.hand[1],r:L.hr*1.3}}
 function handArea(){return L.land?hand():null}
@@ -4334,7 +4412,6 @@ layout();
 if(document.fonts&&document.fonts.load){document.fonts.load('20px "Zen Kurenaido"').catch(function(){})}
 if(TEST)startTest();else toTitle();
 requestAnimationFrame(frame);
-window.__OG={get R(){return R},get G(){return G},get L(){return L},get state(){return state},RX:RX,ST:ST,openStage:openStage,targetAt:function(x,y){return targetAt(x,y)}};
 })();
 </script>
 <script>window.ZUKAN_COUNTER={"db": "https://rika-zukan-rank-default-rtdb.asia-southeast1.firebasedatabase.app", "id": "ondo-gassen"};

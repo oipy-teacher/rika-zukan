@@ -121,6 +121,7 @@ button{font:inherit;color:inherit;cursor:pointer;touch-action:manipulation;borde
 .memo .blue{color:var(--blue)}
 .memo .red{color:var(--red)}
 .memo .go{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-top:16px}
+.memo .go.nbF{position:sticky;bottom:-24px;margin:12px -30px -24px;padding:10px 30px 14px;background:var(--paper)}.memo.nbs p{margin:6px 0;line-height:1.55}.memo.nbs h2{font-size:clamp(26px,3.4vw,34px)}#nqR{scroll-margin-bottom:100px}.memo.nbs .rule{font-size:clamp(16px,1.9vw,19px);line-height:1.55;margin:8px 0}
 .memo .rule{font-family:var(--hand);font-size:clamp(20px,2.4vw,26px);color:var(--blue);border-left:4px solid var(--blue);padding:4px 12px;margin:10px 0}
 .memo .ic{display:block;margin:6px auto;max-width:100%}
 .memo .stars{font-family:var(--hand);font-size:34px;color:var(--blue);letter-spacing:.2em;text-align:center}
@@ -4062,7 +4063,7 @@ let KAK=0,kakT=0;
 function refreshKak(){try{KAK=Z()?Zukan.state().kakera:0}catch(e){KAK=0}}
 function earn(n,why,x,y){let got=0;try{if(Z())got=Zukan.earn(n,why,{koma:KOMA,x:x,y:y})||0}catch(e){}refreshKak();return got}
 
-function startPage(i,TP){
+function startPage(i,TP){if(!TEST_ONLY&&!SV.asked.nb1){nbIntroCard(()=>startPage(i,TP));return}
  const P=TP||PAGES[i];if(window.BGM)BGM.mood(P.timer?'tense':'normal');const C=P.cols.length;
  G={pi:i,P,C,R:P.rows,cols:P.cols,grid:[],stuck:[],clearing:[],tray:[null,null,null],drag:null,erasers:P.erasers||(i>=3?2:(i>=1&&!TP?1:0)),bots:P.final?0:3,ask:!TP&&!P.final&&i>=1,q:[],offN:0,offLesson:false,
   combo:0,idle:0,cleared:0,stuckN:0,maxCombo:0,score:0,over:false,t:0,time:P.timer||0,plans:[],eraseMode:false,shake:0,coach:!TP&&i===0&&!SV.asked.coach,tut:!!TP,tutN:0,firstStuck:{},hover:null,seniorFixed:0,seniorN:0,sets:0};
@@ -4538,8 +4539,8 @@ function sealMemo(fromClear,got){
  openMemo(`<h2>計画書を 封印した <small>結果は、理科室の実験で確かめよう</small></h2>
   <p><b class="blue">変える条件</b>：${esc(r.factorName)}（鉢Aと鉢Bで これだけちがう）<br><b class="blue">そろえる条件</b>：${esc(r.keep.join('・'))}<br><b class="blue">わたしの予想</b>：${esc(r.pred)}<br><b class="blue">やり方</b>：${esc(r.method)}</p>
   ${got?'<p class="blue">かけら +'+got+'（根拠つきの予想）</p>':''}
-  <div class="go">${fromClear?'<button class="pb blue big" id="smT"><span>確認テストへ</span></button>':'<button class="pb blue" id="smX"><span>とじる</span></button>'}<button class="pb sm ${Z()?'':'hide'}" id="smB"><span>📖 図鑑</span></button></div>`);
- if($('smT'))$('smT').onclick=()=>{closeMemo();const go=()=>startTest();if(Z()&&Zukan.mainClear){try{Zukan.mainClear({onClose:go})}catch(e){go()}}else go()};
+  <div class="go">${fromClear?'<button class="pb blue big" id="smT"><span>'+(SV.asked.nb2?'確認テストへ':'答え合わせを見る')+'</span></button>':'<button class="pb blue" id="smX"><span>とじる</span></button>'}<button class="pb sm ${Z()?'':'hide'}" id="smB"><span>📖 図鑑</span></button></div>`);
+ if($('smT'))$('smT').onclick=()=>{closeMemo();const go=()=>nbAnswerCard(startTest);if(Z()&&Zukan.mainClear){try{Zukan.mainClear({onClose:go})}catch(e){go()}}else go()};
  if($('smX'))$('smX').onclick=()=>closeMemo();
  $('smB').onclick=()=>{try{Zukan.openBook()}catch(e){}};
 }
@@ -4594,11 +4595,12 @@ function openIndex(){
   d.innerHTML=(own?'<canvas width="120" height="120"></canvas>':'')+'<span>'+(own?esc(F[f].s)+'だけ<br>変える':'？')+'</span>';cards.appendChild(d);
   if(own){const cn=d.querySelector('canvas');const g=cn.getContext('2d');g.scale(1,1);pot(g,36,104,78,{},INK,j);pot(g,86,104,78,{[f]:1},BLUE,j+3)}});
  $('mhN').textContent=Object.keys(SV.cards).length+' / 8';
- $('bTestI').classList.toggle('hide',!SV.cleared);
+ $('bTestI').classList.toggle('hide',!SV.cleared);$('bTestI').innerHTML='<span>'+(SV.asked.nb2?'確認テストへ':'答え合わせ → 確認テスト')+'</span>';
  $('bBookI').classList.toggle('hide',!Z());
 }
-$('bTestI').onclick=()=>{AU.init();startTest()};
+$('bTestI').onclick=()=>{AU.init();nbAnswerCard(startTest)};
 function intro(i){
+ if(!SV.asked.nb1){nbIntroCard(()=>intro(i));return}
  const P=PAGES[i];
  G=null;scene='intro';FLOAT.length=0;$('index').classList.remove('on');$('title').classList.remove('on');$('bBack').classList.remove('hide');$('bBack').innerHTML='<b>◀</b> もどる';
  openMemo(`<h2>p.${i+1} ${esc(P.t)} <small>${P.final?'さいごのページ':'分かる計画を '+P.goal+' 行 書こう'+(P.timer?'（'+P.timer+'秒）':'')}</small></h2>
@@ -4617,9 +4619,54 @@ function intro(i){
 }
 function drawTileMini(g,x,y,s,f){g.drawImage(tileSprite(1,f,s),x,y,s,s);g.drawImage(tileSprite(0,f==='light'?'water':'light',s),x+s+4,y,s,s)}
 
+/* ================= 実験ノートの見返し・答え合わせ（2026-10-06 夜間改修・初心者向け） ================= */
+function nbMix(n){const a=[...Array(n).keys()];for(let i=n-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function nbLesson(pages,then,i){i=i||0;const P=pages[i];if(!P){$('mc').classList.remove('nbs');closeMemo();then&&then();return}
+ const last=i===pages.length-1;
+ openMemo('<h2>'+P.h+' <small>'+P.ey+'　'+(i+1)+' / '+pages.length+'</small></h2>'+P.body+(P.quiz?'<div class="rule" style="color:var(--ink);border-color:var(--ink)">やってみよう：'+P.quiz.q+'</div><div class="go" id="nqB">'+nbMix(P.quiz.ch.length).map(k=>'<button class="pb sm" data-k="'+k+'"><span>'+P.quiz.ch[k]+'</span></button>').join('')+'</div><p id="nqR"></p>':'')+'<div class="go nbF"><button class="pb blue big'+(P.quiz?' hide':'')+'" id="nbGo"><span>'+(last?(P.endLab||'わかった'):'次へ')+'</span></button></div>');
+ $('mc').classList.add('nbs');
+ const go=$('nbGo');go.onclick=()=>{SFX.flip();nbLesson(pages,then,i+1)};
+ if(P.quiz)$('nqB').querySelectorAll('button').forEach(b=>b.onclick=()=>{const k=+b.dataset.k;if(k===P.quiz.ok){SFX.good();$('nqR').innerHTML='<b class="blue">○ そのとおり。</b>'+P.quiz.why;$('nqB').querySelectorAll('button').forEach(x=>x.disabled=true);go.classList.remove('hide');setTimeout(()=>$('nqR').scrollIntoView({block:'nearest'}),30)}else{SFX.bad();b.disabled=true;$('nqR').innerHTML='<b class="red">× ちがう。</b>'+P.quiz.hint+'　もう一度えらぼう。';$('nqR').scrollIntoView({block:'nearest'})}})}
+function svgRow(cells){/* cells: [[見出し, A, B, ...], ...] */const cw=74,x0=96,rh=26,W2=x0+cw*(cells[0].length-1)+4;let s='<svg viewBox="0 0 '+W2+' '+(rh*cells.length+8)+'" style="width:100%;max-width:440px;display:block;margin:6px auto" font-family="Zen Kurenaido,sans-serif">';
+ cells.forEach((r,j)=>{r.forEach((t,k)=>{const x=k===0?6:x0+cw*(k-1)+cw/2;s+='<text x="'+x+'" y="'+(rh*j+20)+'" font-size="15" '+(k?'text-anchor="middle"':'')+' fill="'+(j===0?'#2E86AB':'#40434E')+'">'+t+'</text>'});s+='<line x1="4" y1="'+(rh*j+27)+'" x2="'+(W2-2)+'" y2="'+(rh*j+27)+'" stroke="rgba(64,67,78,.35)"/>'});return s+'</svg>'}
+const SVG_FU='<svg viewBox="0 0 300 160" style="width:100%;max-width:340px;display:block;margin:6px auto" font-family="Zen Kurenaido,sans-serif"><path d="M150 154 Q46 96 150 8 Q254 96 150 154Z" fill="#f4f1e2" stroke="#40434E" stroke-width="2"/><path d="M150 146 Q84 96 150 24 Q216 96 150 146Z" fill="#8fc97a"/><path d="M150 150 V14" stroke="#40434E" stroke-width="1.2"/><rect x="150" y="46" width="78" height="62" fill="#b9bec7" fill-opacity=".72" stroke="#6b7079" stroke-width="1.5"/>'+
+ '<g font-size="15" fill="#40434E"><text x="120" y="132">ア</text><text x="70" y="100">イ</text><text x="166" y="82">ウ</text><text x="206" y="104">エ</text></g><text x="189" y="42" font-size="11" text-anchor="middle" fill="#40434E">アルミはく</text><text x="4" y="138" font-size="12" fill="#40434E">緑＝葉緑体あり</text><text x="4" y="154" font-size="12" fill="#40434E">白いふち＝ふ</text></svg>';
+function nbIntroCard(then){
+ nbLesson([{ey:'実験ノートの見返し',h:'デンプンの調べ方',body:
+  '<p>光合成でできる養分が <b>デンプン</b>。葉にデンプンができたかで、光合成をしたかが分かる。</p>'+
+  '<p><b class="blue">ヨウ素液</b>：デンプンがあると <b>青紫色</b> に変わる液。<br><b class="blue">脱色</b>：葉の緑色を、あたためたエタノールでぬくこと。緑のままだと青紫が見えにくいので、色をぬいてからヨウ素液につける。</p>',
+  quiz:{q:'ヨウ素液につける前に、葉をエタノールで脱色するのはなぜ？',ch:['緑色をぬいて、青紫色を見やすくするため','デンプンをふやすため','葉をやわらかくして切りやすくするため'],ok:0,why:'緑のままだと、ヨウ素液の青紫が見えにくい。だから先に緑をぬく。',hint:'ヨウ素液はデンプンがあると青紫になる。葉が緑のままだと、その色は見やすい？'}},
+ {ey:'実験ノートの見返し',h:'実験の順番',body:
+  '<div class="rule">① 前の日に暗い所に置く（もとからあったデンプンをなくす）<br>② 条件を変えて、光を数時間当てる<br>③ 葉をあたためたエタノールで脱色する<br>④ ヨウ素液につけて色を見る</div>'+
+  '<p>①がないと、実験の前からあったデンプンで青紫になってしまい、実験中にできたのか分からない。</p>',
+  quiz:{q:'光を当てた<b>あと</b>、すぐ次にやることは？',ch:['葉をエタノールで脱色する','ヨウ素液につける','暗い所に置く'],ok:0,why:'光を当てる → 脱色 → ヨウ素液 の順。色をぬいてから、ヨウ素液で調べる。',hint:'ヨウ素液の色は、葉が緑のままだと見やすい？'}},
+ {ey:'実験ノートの見返し',h:'このノートで書くのは「計画」',body:
+  '<p>鉢Aと鉢Bを並べて、<b class="blue">1つの条件だけ</b> を変え、ほかは全部そろえる。結果に差が出たら、その1つの条件のせいだと言える。</p>'+
+  '<div class="rule">1つの条件だけを変えて、ほかをそろえて比べる実験 ＝ 対照実験</div>'+
+  '<p>2つ以上変えると、どちらのせいか決められない。何も変えないと、何も分からない。</p>',
+  quiz:{q:'鉢Aと鉢Bで「温度」と「二酸化炭素」の2つを変えた。鉢Aの方がデンプンが多かった。言えることは？',ch:['どちらのせいか決められない','温度が関係すると言える','二酸化炭素が関係すると言える'],ok:0,why:'2つ変えると、差がどちらの条件のせいか分からない。',hint:'変えた条件はいくつ？　2つ変えると、どちらのせい？'},endLab:'計画表をひらく'}],()=>{SV.asked.nb1=1;save();then&&then()})}
+const KEKKA={light:'鉢A（光を当てる）だけ青紫。<b>光合成には光が必要</b>。',water:'水は光合成の材料（二酸化炭素と水からデンプンをつくる）。水が足りない鉢Bは <b>デンプンができにくい</b>。',temp:'5℃の鉢Bは光合成のはたらきがにぶく、<b>デンプンが少ない</b>。',co2:'二酸化炭素をなくした鉢Bは青紫にならない。<b>光合成には二酸化炭素が必要</b>。',size:'どちらも青紫。株の大きさは、光合成をするかどうかには <b>関係しない</b>。',dark:'前の日も明るい所だった鉢Bには、<b>もとからのデンプンが残る</b>。実験中にできたのか分からなくなる。だから前の日は暗い所に置く。',plant:'光を当てると、植物ありの容器だけ <b>二酸化炭素がへる</b>。植物なしではへらないので、植物のはたらきだと言える。',color:'どちらも青紫。鉢の色は <b>関係しない</b>（関係ないことも、1つだけ変えれば確かめられる）。'};
+function nbAnswerCard(then){
+ if(SV.asked.nb2){then&&then();return}
+ const f=SV.seal&&SV.seal.factor;
+ nbLesson([{ey:'答え合わせ',h:'計画の結果は？',body:
+  (f?'<p>あなたの計画：「<b class="blue">'+esc(F[f].n)+'</b>」だけを変えて比べる。<br>予想：'+esc(SV.seal.pred)+'</p><div class="rule">結果：'+KEKKA[f]+'</div>':'')+
+  '<p>教科書の実験の結果：<br>・光を当てた葉だけ青紫 → <b>光が必要</b><br>・二酸化炭素をなくした袋の葉は青紫にならない → <b>二酸化炭素が必要</b><br>・植物なしの容器は二酸化炭素がへらない → へったのは <b>植物のはたらき</b></p>',
+  quiz:{q:'水草を入れた試験管に光を当てたら、気体の量が変わった。「水草のはたらき」と言い切るために用意するとよいのは？',ch:['水草を入れない試験管（ほかは同じ）','水草を2本入れた試験管','光をもっと強くした試験管'],ok:0,why:'水草なしで変わらなければ、変わったのは水草のはたらきだと言える。',hint:'「水草があるか ないか」だけがちがう物を、もう1つ用意するには？'}},
+ {ey:'答え合わせ',h:'ふ入りの葉で 2つ調べる',body:
+  '<p><b>ふ</b>：葉の白い部分。葉緑体（緑色のつぶ）がない。ふ入りの葉の一部をアルミはくでおおって光を当て、脱色してヨウ素液につける。</p>'+SVG_FU+
+  '<p>青紫になるのは <b>ア</b>（緑で、光が当たった所）だけ。</p><div class="rule">アとイ（ちがいは 緑かふか だけ）→ 葉緑体が必要<br>アとウ（ちがいは 光 だけ）→ 光が必要</div><p>イとウのように、ちがいが2つある組では何も言えない。</p>',
+  quiz:{q:'ウとエを比べると、ちがう条件は？',ch:['緑かふか（葉緑体）だけ','光だけ','緑かふかと光の2つ'],ok:0,why:'ウもエもアルミはくの下（光なし）。ちがうのは葉緑体があるかだけ。',hint:'ウとエは、どちらもアルミはくの下？'}},
+ {ey:'答え合わせ',h:'鉢がふえても「ちがい1つ」の組をさがす',body:
+  '<p>4つの鉢（ほかの条件はすべて同じ）。</p>'+svgRow([['','A','B','C','D'],['温度','20℃','5℃','20℃','5℃'],['二酸化炭素','あり','あり','なし','なし']])+
+  '<p>AとB・CとD → ちがいは <b>温度</b> だけ。AとC・BとD → ちがいは <b>二酸化炭素</b> だけ。AとD・BとC → ちがいが2つで言えない。<br>だから、この4つの鉢で分かる条件は <b class="blue">温度と二酸化炭素の2個</b>。</p>'+
+  '<p>計画の図に、<b>調べたいこと以外</b>（株の大きさ・置き場所など）のちがいがかくれていないかも、いつも確かめる。</p>',
+  quiz:{q:'上の表で、AとDを比べると何が分かる？',ch:['何も言えない（ちがいが2つ）','温度が関係するか','二酸化炭素が関係するか'],ok:0,why:'AとDは温度も二酸化炭素もちがう。',hint:'AとDは、温度と二酸化炭素のどちらがちがう？'},endLab:'確認テストへ'}],()=>{SV.asked.nb2=1;save();then&&then()})}
+
 /* ================= 確認テスト ================= */
 let TS=null;
 function startTest(){
+ if(!TEST_ONLY&&!SV.asked.nb2){nbAnswerCard(startTest);return}
  if(!window.Quiz){alert('問題データがありません');return}
  G=null;closeMemo();setScene('test');TS={qs:Quiz.test(),i:0,ans:[]};renderQ();
 }
@@ -4742,8 +4789,7 @@ if(GD){
 function startWithGuide(){
  GD.intro({title:'第11回　条件そろえラボ',
   learn:'**変える条件を1つだけ** にして、ほかは **そろえる**。そうすれば、光合成に何が関係するか分かる',
-  how:'タイルを計画表へ **ドラッグ**。ちがい（≠）が **ちょうど1つ** の行が消える',gesture:'drag'}).then(()=>GD.tutorial(PRACTICE))}
-window.__plan={trayC,cellC,boxC,gapC,get scene(){return scene},get G(){return G},get SV(){return SV},startPage,openSeal,startTest,openIndex,place,fits,discard,eraseAt,anyFit,get LY(){return LY}};
+  how:'タイルを計画表へ **ドラッグ**。ちがい（≠）が **ちょうど1つ** の行が消える',gesture:'drag'}).then(()=>new Promise(r=>{if(SV.asked.nb1)r();else nbIntroCard(r)})).then(()=>GD.tutorial(PRACTICE))}
 if(TEST_ONLY){startTest()}else{initTitle()}
 requestAnimationFrame(frame);
 })();

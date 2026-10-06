@@ -103,6 +103,32 @@ button{font-family:inherit;cursor:pointer;touch-action:manipulation;color:inheri
 #ribbon em{font-style:normal;color:var(--rose);font-weight:700}
 #ribbon b{color:var(--sage)}
 
+/* ===== 灯りの手帖（まなぶ）：用語と決まりを「その前」に教える（2026-10-06 初心者向け） ===== */
+#scrLearn{z-index:30;overflow:auto;align-items:flex-start;padding:calc(66px + env(safe-area-inset-top)) 14px 40px}
+#scrLearn .card{width:min(680px,96vw);text-align:left;margin:auto}
+#scrLearn .card h2{font-size:clamp(22px,4vw,30px)}
+#lFig{margin:12px 0 4px;background:#FBF6E8;border:1.5px solid var(--ink);border-radius:16px 16px 4px 4px;padding:6px}
+#lFig svg{display:block;width:100%;height:auto;max-height:30vh}
+#lP p{margin:8px 0 0;font-size:17px;line-height:1.75}
+#lP p b,.lAsk b,.lWhy b{color:var(--rose)}
+.lAsk{margin-top:14px;padding-top:10px;border-top:1.5px dashed var(--gold);font-size:17px;font-weight:700;line-height:1.6}
+.lOpts{display:grid;gap:8px;margin-top:8px}
+.lOpts .btn{justify-content:flex-start;text-align:left;line-height:1.4;padding:8px 16px;letter-spacing:.02em;font-size:16px}
+.lWhy{margin-top:8px;font-size:16px;line-height:1.6;min-height:1em}
+#lPg{font:600 italic 16px var(--fn);color:var(--sage);align-self:center}
+#scrStreet .tip{margin-top:10px;padding:8px 12px;font-size:15.5px;line-height:1.65;text-align:left;background:#FBF6E8;border:1.5px dashed var(--gold);border-radius:12px 12px 4px 4px}
+#scrStreet .tip b{color:var(--sage)}
+/* 第2周：札を画面の高さ（733・768）に収める。横長では「図と説明」と「やってみよう」を2列に */
+@media (orientation:landscape) and (min-width:900px){#scrLearn{padding:12px 2vw}
+ #scrLearn .card{width:min(1120px,96vw);display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);column-gap:24px;align-content:start;align-items:start}
+ #scrLearn .card>*{grid-column:1/-1}
+ #scrLearn .card.wf.wq>#lFig{grid-column:1;grid-row:2}#scrLearn .card.wf.wq>#lP{grid-column:1;grid-row:3}#scrLearn .card.wf.wq>#lQ{grid-column:2;grid-row:2/span 2}
+ #scrLearn .card.wf:not(.wq)>#lFig{grid-column:1;grid-row:2}#scrLearn .card.wf:not(.wq)>#lP{grid-column:2;grid-row:2}
+ #scrLearn .card.wq:not(.wf)>#lP{grid-column:1;grid-row:2}#scrLearn .card.wq:not(.wf)>#lQ{grid-column:2;grid-row:2}
+ #lFig svg{max-height:42vh}#scrLearn .card.wq .lAsk{border-top:0;margin-top:0;padding-top:0} #scrLearn .card .btns{margin-top:8px}}
+@media (max-height:820px){#lP p{font-size:15.5px;line-height:1.6;margin-top:5px}#scrLearn .card{padding:16px 20px 14px}#scrLearn .card h2{font-size:clamp(20px,3.2vw,26px)}.lOpts .btn{min-height:42px;padding:6px 14px}#scrStreet .card{padding:16px 20px 14px}#scrStreet .tip{margin-top:6px}}
+#sQ .lAsk{margin-top:10px;font-size:16px}#sQ .lOpts .btn{min-height:42px}
+
 /* ===== 通りの始まり・クリア・一時停止・もどる ===== */
 .cover{pointer-events:auto;display:flex;align-items:center;justify-content:center;padding:18px;background:rgba(29,53,51,.42)}
 .card{width:min(560px,94vw);padding:22px 22px 20px;text-align:center}
@@ -206,8 +232,14 @@ button{font-family:inherit;cursor:pointer;touch-action:manipulation;color:inheri
 </div>
 
 <div id="scrStreet" class="scr cover hidden">
-  <div class="card plq"><h2><small id="sNo"></small><span id="sName"></span></h2><p id="sNew"></p>
+  <div class="card plq"><h2><small id="sNo"></small><span id="sName"></span></h2><p id="sNew"></p><p id="sTip" class="tip hidden"></p><div id="sQ"></div>
     <div class="btns"><button class="btn g" id="sGo">灯しにいく</button></div></div>
+</div>
+
+<div id="scrLearn" class="scr cover hidden">
+  <div class="card plq"><h2><small id="lKick"></small><span id="lT"></span></h2>
+    <div id="lFig" class="hidden"></div><div id="lP"></div><div id="lQ"></div>
+    <div class="btns"><span id="lPg"></span><button class="btn g" id="lNext">次へ</button></div></div>
 </div>
 
 <div id="scrClear" class="scr cover hidden">
@@ -3938,23 +3970,34 @@ function rep(t,n){var a=[];for(var i=0;i<n;i++)a.push(t);return a}
 var STAGES=[
   {n:'れんしゅうの小径',ev:['plain','plain'],prac:1,d:0},
   {n:'はじまりの通り',ev:rep('plain',6),d:0,par:60,
-    nw:'磁石の玉を **上下に動かす** と検流計が振れて、灯りに光が流れる。**止めると0**。'},
+    nw:'磁石の玉を **上下に動かす** と検流計が振れて、灯りに光が流れる。**止めると0**。',
+    tip:'手帖：コイルの中の **磁界が変わる** 間だけ、**誘導電流** が流れる（**電磁誘導**）。磁石を止めると磁界は変わらない → 針は0'},
   {n:'行列の通り',ev:rep('proc',5),d:1,par:80,
-    nw:'灯りの精の行列が通りすぎるまで、**動かし続けて** 灯りを消さないで。止めると行列も止まる。'},
+    nw:'灯りの精の行列が通りすぎるまで、**動かし続けて** 灯りを消さないで。止めると行列も止まる。',
+    tip:'手帖：誘導電流が流れ続けるのは、磁界が **変わり続けている** 間だけ。動かし続けよう'},
   {n:'つたの通り',ev:['stuck','plain','stuck','stuck','plain','stuck','stuck'],d:2,par:90,
-    nw:'!!磁石がつたにからまって動かない!!ことがある。さあ、どうする？'},
+    nw:'!!磁石がつたにからまって動かない!!ことがある。さあ、どうする？',
+    tip:'手帖：大事なのは、**磁石とコイルの位置関係が変わる** こと。磁石が動けなくても、**コイルの方を動かせば** コイルの中の磁界は変わる'},
   {n:'玉の市場',ev:rep('bob',8),d:3,par:110,
-    nw:'糸の先につける **玉を自分で選ぶ**。どの玉でも電流は流れる？'},
+    nw:'糸の先につける **玉を自分で選ぶ**。どの玉でも電流は流れる？',
+    tip:'手帖：磁界をつくるのは **磁石**。鉄・銅・ガラス・木の玉は磁石ではないので、出し入れしても磁界は変わらない。磁石なら **N極が下でもS極が下でも** 流れる（針の向きは逆）',
+    tq:{ask:'**銅の玉**（磁石ではない）をコイルに出し入れした。針は？',c:['振れない','右に振れる','左右に振れる'],why:'銅の玉は磁石ではないので、コイルの中の磁界は変わらない。だから流れない。',hint:'磁界をつくるのは何だった？'}},
   {n:'ほどけた導線の坂',ev:['loose','bob','loose','stuck','loose','bob','loose','stuck'],d:4,par:110,
-    nw:'!!導線がはずれている!!ことがある。つながっていないと…？'},
+    nw:'!!導線がはずれている!!ことがある。つながっていないと…？',
+    tip:'手帖：電流は、**回路が1周つながっている** ときだけ流れる。はずれた導線は、先を検流計の端子へ'},
   {n:'蜻蛉の運河',ev:['moth1','moth1','moth2','moth2','moth2','moth3','moth3','moth3'],d:5,par:150,
-    nw:'蜻蛉が **金の輪に入った瞬間** だけ灯す。早く動かすと光って逃げられる。**止めれば0**。'},
+    nw:'蜻蛉が **金の輪に入った瞬間** だけ灯す。早く動かすと光って逃げられる。**止めれば0**。',
+    tip:'手帖：動かした瞬間に流れ、止めれば0。**止めて待つ**ことも、電磁誘導の使い方'},
   {n:'いっしょの橋',ev:['together','together','loose','together','stuck','together','bob','together'],d:6,par:120,
-    nw:'!!コイルが磁石といっしょに動いてしまう!!仕掛け。いっしょに動くと…？'},
+    nw:'!!コイルが磁石といっしょに動いてしまう!!仕掛け。いっしょに動くと…？',
+    tip:'手帖：磁石とコイルが **同じ速さでいっしょに動く** と、位置関係は変わらない → コイルの中の磁界も変わらない → 流れない'},
   {n:'発電機の塔',ev:rep('gen',6),d:7,par:110,
-    nw:'ハンドルを **ぐるぐる回す** と、磁石がコイルのそばで回り続ける。**発電機** も同じしくみ。'},
+    nw:'ハンドルを **ぐるぐる回す** と、磁石がコイルのそばで回り続ける。**発電機** も同じしくみ。',
+    tip:'手帖：**発電機**＝磁石（またはコイル）を回し続けて磁界を変え続け、電磁誘導で電流をつくる装置。回すのをやめると電流も止まる。発電所の発電機も同じ（タービンで回す）。**乾電池** は電磁誘導ではなく、中の薬品の変化で電流をつくる',
+    tq:{ask:'電磁誘導で電流をつくって **いない** のはどれ？',c:['乾電池','手回し発電機','発電所の発電機'],why:'乾電池は中の薬品の変化で電流をつくる。発電機は磁石（コイル）を回して磁界を変え続ける＝電磁誘導。',hint:'磁石もコイルも回していないのはどれ？'}},
   {n:'大時計塔',ev:null,boss:1,d:9,par:200,time:210,
-    nw:'夜明けまでに **12の灯り** をすべてともせ！ これまでの仕掛けが全部出る。'}
+    nw:'夜明けまでに **12の灯り** をすべてともせ！ これまでの仕掛けが全部出る。',
+    tip:'手帖：これまでの手帖をぜんぶ使う。迷ったら「コイルの中の磁界は変わっている？」'}
 ];
 function bossEvents(){var base=['plain','stuck','bob','loose','together','moth2','gen','stuck','bob','together','loose','moth2'];
   for(var i=base.length-1;i>1;i--){var j=1+Math.floor(Math.random()*i);var t=base[i];base[i]=base[j];base[j]=t}return base}
@@ -4271,13 +4314,18 @@ function newEvent(G){var e={type:G.evs[G.li],t:0,miss:false,hinted:false,moved:0
   // 新しい仕掛けが初めて出たら、一言だけ
   var first={stuck:'磁石が動かない！ さあ、どうする？',bob:'玉を選んで、糸の先へドラッグ',loose:'導線がはずれている…',together:'コイルが糸でつながっている…？',gen:'ハンドルをぐるぐる回そう'}[t];
   if(first&&!G.seen[t]){G.seen[t]=1;ribbon(first,'',2600)}}
-function startStage(i,opts){opts=opts||{};var S=STAGES[i];ac();
+function startStage(i,opts){opts=opts||{};var S=STAGES[i];ac();if(!S.prac&&!TEST&&!(SV.lrn&&SV.lrn.base)){teachBase(function(){startStage(i,opts)});return}
   G={si:i,S:S,boss:!!S.boss,evs:S.boss?bossEvents():S.ev.slice(),li:0,litCount:0,combo:0,best:0,comboT:0,miss:0,first:0,judg:0,time:0,
     my:L.rest,mv:0,drag:null,rel:0,relV:0,cur:0,curHold:0,needle:0,nv:0,coilOff:0,coilV:0,gAng:0,gW:0,gLast:null,mode:'yoyo',bob:'magN',
     lamps:[],seen:{},won:false,paused:false,flyQ:0,stillIn:0,upOn:false,downOn:false,everOn:false,bossLeft:S.time||0,prac:!!S.prac,pracDone:false};
   for(var k=0;k<G.evs.length;k++)G.lamps.push({lit:false,fill:0,pop:0,flick:0});G.lx=lampXs(G.lamps.length);
   newEvent(G);setScene('run');if(window.BGM)BGM.mood(G.boss?'tense':'normal');updHud();
-  if(!S.prac&&!opts.noIntro){G.paused=true;$('sNo').textContent=S.boss?'DERNIER — 最後の通り':'RUE No.'+i+' — 第'+i+'の通り';$('sName').textContent=S.n;$('sNew').innerHTML=rich(S.nw);$('scrStreet').classList.remove('hidden')}}
+  if(!S.prac&&!opts.noIntro){G.paused=true;$('sNo').textContent=S.boss?'DERNIER — 最後の通り':'RUE No.'+i+' — 第'+i+'の通り';$('sName').textContent=S.n;$('sNew').innerHTML=rich(S.nw);$('sTip').innerHTML=S.tip?rich(S.tip):'';$('sTip').classList.toggle('hidden',!S.tip);streetQ(S.tq);$('scrStreet').classList.remove('hidden')}}
+function streetQ(qq){var q=$('sQ'),go=$('sGo');q.innerHTML='';go.classList.remove('hidden');if(!qq)return;go.classList.add('hidden');
+  q.innerHTML='<div class="lAsk">やってみよう：'+rich(qq.ask)+'</div><div class="lOpts"></div><div class="lWhy"></div>';var box=q.querySelector('.lOpts'),wy=q.querySelector('.lWhy');
+  shuf(qq.c.map(function(t,i){return{t:t,ok:i===0}})).forEach(function(o){var b=document.createElement('button');b.className='btn p sm';b.textContent=o.t;
+    b.onclick=function(){ac();if(o.ok){SFX.ok();[].forEach.call(box.children,function(x){x.disabled=true});b.disabled=false;b.className='btn g sm';wy.innerHTML='<b>そのとおり。</b>'+rich(qq.why);go.classList.remove('hidden');setTimeout(function(){try{go.scrollIntoView({block:'nearest'})}catch(e){}},60)}
+      else{SFX.bad();b.disabled=true;wy.innerHTML='<b>ちがう。</b>'+rich(qq.hint||'もう一度、手帖を読んでみよう');try{wy.scrollIntoView({block:'nearest'})}catch(e){}}};box.appendChild(b)})}
 $('sGo').onclick=function(){ac();SFX.bell();$('scrStreet').classList.add('hidden');if(G)G.paused=false};
 function updHud(){if(!G)return;$('hudT').textContent=G.S.prac?'れんしゅう':G.S.n;var z=Zk()&&Zk().state?Zk().state():null;
   $('hudS').textContent='灯 '+G.litCount+' / '+G.lamps.length+(G.boss?'　夜明けまで '+Math.max(0,Math.ceil(G.bossLeft))+'s':'')+(z?'　かけら '+z.kakera:'')}
@@ -4463,7 +4511,7 @@ function placeNodes(){var box=$('mNodes');box.innerHTML='';var pts=mapPts();
   $('bToTest').disabled=!SV.done}
 
 /* ================= 場面の切りかえ ================= */
-var SCR=['scrTitle','scrMap','scrRun','scrStreet','scrClear','scrPause','scrTest','scrEnd'];
+var SCR=['scrTitle','scrMap','scrRun','scrStreet','scrClear','scrPause','scrTest','scrEnd','scrLearn'];
 function showScr(){var on=[].slice.call(arguments);SCR.forEach(function(id){$(id).classList.toggle('hidden',on.indexOf(id)<0)})}
 var INHUB=!!window.COLLECTION_NAME||(function(){try{return window.parent!==window}catch(e){return true}})();
 function backBtn(){var b=$('bBack'),on=scene!=='title'||INHUB;b.classList.toggle('hidden',!on);b.textContent=scene==='title'?'◀ 一覧へ':'◀ もどる';$('scrBack').classList.add('hidden')}
@@ -4484,8 +4532,9 @@ $('bPause').onclick=function(){if(!G)return;G.paused=true;humSet(false);showScr(
 $('pGo').onclick=function(){if(G)G.paused=false;showScr('scrRun')};
 $('pMap').onclick=function(){if(window.Guide&&Guide.active()){PRAC_RET=null;Guide.skip()}G=null;setScene('map')};
 $('bMute').onclick=function(){muted=!muted;try{localStorage.setItem(SKEY+':mute',muted?'1':'0')}catch(e){}$('bMute').textContent=muted?'✕':'♪';if(muted)humSet(false)};
-function toTest(){var z=Zk();if(z&&z.mainClear&&!TEST){try{z.mainClear({onClose:startTest});return}catch(e){}}startTest()}
-$('bToTest').onclick=function(){if(SV.done)startTest()};
+function toTest(){teachBase(toTest1)}
+function toTest1(){var z=Zk();if(z&&z.mainClear&&!TEST){try{z.mainClear({onClose:startTest});return}catch(e){}}startTest()}
+$('bToTest').onclick=function(){if(SV.done)teachBase(startTest)};
 function openBook(){var z=Zk();if(z&&z.openBook)z.openBook()}
 $('bBook1').onclick=openBook;$('bBook2').onclick=openBook;$('eBook').onclick=openBook;
 $('bGacha').onclick=function(){var z=Zk();if(z&&z.openGacha)z.openGacha()};
@@ -4495,7 +4544,7 @@ function getName(){return(window.PLAYER_NAME||$('nameIn').value||SV.name||'').tr
 /* ================= 遊び方案内（Guide） ================= */
 var HELP=null,PRAC_RET=null;
 var INTRO={title:'第30回　ハツデン・ヨーヨー',
-  learn:'コイルの中で磁石を **動かしている間だけ** 電流が流れる。**止めると0**',
+  learn:'コイルの中で磁石を **動かしている間だけ** 電流が流れる（**電磁誘導**・その電流＝**誘導電流**）。**止めると0**',
   how:'画面を **上下にドラッグ** して、磁石のヨーヨーをコイルに出し入れする',gesture:'drag'};
 function magT(){return{x:L.cx,y:G?G.my:L.rest,r:Math.max(30,L.magL*.5),el:cv}}
 function coilT(){return{x:L.cx,y:L.coilY+L.coilH*.3,r:Math.max(30,L.coilH*.5),el:cv}}
@@ -4504,7 +4553,7 @@ function lampT(){var lp=G&&G.lamps[G.li];return lp&&lp.hx?{x:lp.hx,y:lp.hy,r:Mat
 var PRACTICE={label:'れんしゅう中',
   start:function(){startStage(0,{noIntro:true})},
   steps:[
-    {gesture:'drag',target:magT,to:coilT,until:function(){return G&&G.downOn},place:'below',text:'磁石の玉を **下へドラッグ** して、コイルに入れよう'},
+    {gesture:'drag',target:magT,to:coilT,until:function(){return G&&G.downOn},place:'below',text:'磁石の玉を **下へドラッグ** して、コイルに入れよう。**検流計**（電流の向きを見る針）を見ていてね'},
     {gesture:'drag',target:coilT,to:upT,until:function(){return G&&G.upOn},place:'below',praise:'針が反対に！',text:'こんどは **上へ** 引きぬこう。針はどっちに振れる？'},
     {gesture:'hold',target:coilT,holdMs:900,until:function(){return G&&G.stillIn>.9},place:'below',praise:'針は0！',text:'コイルに **入れたまま止めて** みよう。針は…？'},
     {gesture:'swipe',dir:'down',dist:120,target:magT,until:function(){return G&&G.litCount>=1},place:'below',praise:'灯った！',text:'**上下に動かし続けて**、街灯に光をためよう'},
@@ -4513,7 +4562,7 @@ var PRACTICE={label:'れんしゅう中',
   clearText:'れんしゅうクリア！',
   onClear:function(){var z=Zk();if(z&&z.earn)try{z.earn(10,'first-try')}catch(e){}},
   onExit:function(){var r=PRAC_RET;PRAC_RET=null;if(!r)return;G=null;if(r==='stage1')startStage(1);else setScene(r)}};
-function helpRules(){var r=['画面を **上下にドラッグ** ＝ヨーヨーを動かす（はなすと手元へ戻る）','コイルの中で磁石を **動かしている間だけ** 電流が流れる。**止めると0**','つたで動かない → **コイルの方** を動かす（上下にドラッグ）','玉は **磁石** だけ（N極が下でもS極が下でも流れる）','導線がはずれていたら、先を **検流計の端子** へドラッグ','コイルがいっしょに動くときは **留め金** をタップ','蜻蛉は **輪に入るまで止めて待ち**、入ったら動かす','発電機：ハンドルを **ぐるぐる** 回し続ける'];
+function helpRules(){var r=['画面を **上下にドラッグ** ＝ヨーヨーを動かす（はなすと手元へ戻る）','**電磁誘導**＝コイルの中の磁界が変わると電流が流れること。その電流＝**誘導電流**','**検流計**＝小さな電流が流れたか・どっち向きかを針で見る（0が真ん中）','**磁界**＝磁石の力がはたらく空間','コイルの中で磁石を **動かしている間だけ** 電流が流れる。**止めると0**','つたで動かない → **コイルの方** を動かす（上下にドラッグ）','玉は **磁石** だけ（N極が下でもS極が下でも流れる）','導線がはずれていたら、先を **検流計の端子** へドラッグ','コイルがいっしょに動くときは **留め金** をタップ','蜻蛉は **輪に入るまで止めて待ち**、入ったら動かす','発電機：ハンドルを **ぐるぐる** 回し続ける'];
   if(G&&!G.prac)r.push('この通り：'+G.S.nw.replace(/!!/g,''));return r}
 if(window.Guide){
   Guide.setup({theme:{bg:'#F1E9D2',fg:'#2E2A22',accent:'#4E6E58',accentText:'#F1E9D2',font:'"Hina Mincho",serif',bodyFont:'"Hina Mincho",serif',radius:22,texture:'paper',
@@ -4523,16 +4572,52 @@ if(window.Guide){
   HELP=Guide.help({rules:[],offset:{x:112},size:46,show:false,attention:true,labels:{replay:'れんしゅうをもう一度'},
     replay:function(){PRAC_RET='map';Guide.tutorial(PRACTICE);return null},
     onOpen:function(){if(G)G.paused=true;humSet(false)},onClose:function(){if(G&&$('scrPause').classList.contains('hidden')&&$('scrStreet').classList.contains('hidden'))G.paused=false}});
-  Guide.tutorialButton('#bHow',function(){ac();PRAC_RET='title';Guide.tutorial(PRACTICE)});
+  Guide.tutorialButton('#bHow',function(){ac();PRAC_RET='title';teachBase(function(){Guide.tutorial(PRACTICE)})});
 }else $('bHow').classList.add('hidden');
 $('bStart').onclick=function(){ac();SFX.bell();SV.name=$('nameIn').value.trim()||SV.name;if(!SV.startAt)SV.startAt=Date.now();save();var first=!(SV.stars[1]&&SV.stars[1][0]);
   if(!window.Guide){if(first)startStage(1);else setScene('map');return}
-  Guide.intro(INTRO).then(function(){if(first){PRAC_RET='stage1';Guide.tutorial(PRACTICE)}else setScene('map')})};
+  Guide.intro(INTRO).then(function(){if(first){PRAC_RET='stage1';teachBase(function(){Guide.tutorial(PRACTICE)})}else setScene('map')})};
 $('bCont').onclick=function(){ac();SV.name=$('nameIn').value.trim()||SV.name;save();setScene('map')};
+
+
+/* ================= 灯りの手帖（まなぶ）：用語と決まりを「その前」に教える（2026-10-06 初心者向け） ================= */
+var LRN=null;
+function shuf(a){for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1)),t=a[i];a[i]=a[j];a[j]=t}return a}
+function svgA(inner,vb){return '<svg viewBox="'+(vb||'0 0 420 180')+'" xmlns="http://www.w3.org/2000/svg" font-family="Hina Mincho,serif" fill="none" stroke="#2E2A22" stroke-width="2">'+inner+'</svg>'}
+function tA(t,x,y,col,sz,anc){return '<text x="'+x+'" y="'+y+'" fill="'+(col||'#2E2A22')+'" stroke="none" font-size="'+(sz||15)+'" text-anchor="'+(anc||'middle')+'">'+t+'</text>'}
+function coilA(x,y){var s='';for(var i=0;i<6;i++)s+='<ellipse cx="'+x+'" cy="'+(y+i*12)+'" rx="34" ry="7" stroke="#B8703A" stroke-width="3"/>';return s}
+function magA(x,y,nDown){return '<rect x="'+(x-11)+'" y="'+y+'" width="22" height="34" fill="'+(nDown?'#3E6A8A':'#B5483A')+'"/><rect x="'+(x-11)+'" y="'+(y+34)+'" width="22" height="34" fill="'+(nDown?'#B5483A':'#3E6A8A')+'"/>'+tA(nDown?'S':'N',x,y+23,'#F1E9D2',15)+tA(nDown?'N':'S',x,y+57,'#F1E9D2',15)}
+function gauge(x,y,ang,lab){var r=34,a=(-90+ang)*Math.PI/180;return '<path d="M'+(x-r)+' '+y+' A'+r+' '+r+' 0 0 1 '+(x+r)+' '+y+'" stroke="#2E2A22"/><path d="M'+x+' '+(y-r)+' v6" />'+tA('0',x,y-r-5,'#2E2A22',11)+'<path d="M'+x+' '+y+' L'+(x+Math.cos(a)*(r-4)).toFixed(1)+' '+(y+Math.sin(a)*(r-4)).toFixed(1)+'" stroke="#B5483A" stroke-width="3"/>'+(lab?tA(lab,x,y+20,'#4E6E58',13):'')}
+var LC={base:{k:'Carnet — 灯りの手帖',p:[
+  {t:'磁石・磁界・コイル',fig:svgA(magA(110,30,true)+'<path d="M80 98 C60 60 60 40 99 30 M140 98 C160 60 160 40 121 30" stroke="#4E6E58" stroke-dasharray="5 5"/>'+tA('磁界',110,156,'#4E6E58',14)+tA('（磁石の力がはたらく空間）',110,174,'#4E6E58',12)+coilA(300,66)+tA('コイル',300,160,'#B8703A',14)+tA('＝導線をぐるぐる巻いたもの',300,176,'#B8703A',12)),
+   p:'**磁界**＝磁石の力がはたらく空間。磁石に近いほど強い。\n**コイル**＝導線をぐるぐる巻いたもの。\n磁石をコイルに近づけたり、入れたり出したりすると、**コイルの中の磁界が強くなったり弱くなったり（＝変わる）** する。'},
+  {t:'検流計 ── 小さな電流の「向き」を見る針',fig:svgA(gauge(80,110,35,'右に振れる')+gauge(210,110,0,'0（流れていない）')+gauge(340,110,-35,'左に振れる'),'0 55 420 95'),
+   p:'**検流計**＝とても小さな電流が流れたか、**どっち向きか** を針で見る道具。**0が真ん中** にあり、電流の向きで **右にも左にも** 振れる。\n電圧計や電源装置ではなく、検流計を使うのは、コイルと磁石でできる電流が **とても小さく、向きも変わる** から。',
+   q:{ask:'検流計の針が、さっきとは **逆の左** に振れた。何が分かる？',c:['電流が、右に振れたときと逆向きに流れた','電流が流れていない','電池が切れかけている'],why:'検流計は0が真ん中。振れる向きで電流の向きが分かる。',hint:'「0が真ん中」で、電流の向きで右にも左にも振れる道具だったね。'}},
+  {t:'電磁誘導と誘導電流',fig:svgA(magA(70,8,true)+'<path d="M70 82 v16" stroke="#C98B2B" stroke-width="3"/><path d="M63 92 l7 8 l7 -8" stroke="#C98B2B" stroke-width="3"/>'+coilA(70,104)+tA('入れる',70,190,'#2E2A22',13)+magA(210,60,true)+coilA(210,104)+tA('中で止める',210,190,'#2E2A22',13)+magA(350,8,true)+'<path d="M350 98 v-16" stroke="#C98B2B" stroke-width="3"/><path d="M343 88 l7 -8 l7 8" stroke="#C98B2B" stroke-width="3"/>'+coilA(350,104)+tA('引き出す',350,190,'#2E2A22',13)+tA('針は右',118,40,'#B5483A',15)+tA('針は0',258,40,'#B5483A',15)+tA('針は左',366,40,'#B5483A',15,'start'),'0 0 420 194'),
+   p:'コイルの中の **磁界が変わる** と、コイルに電圧が生じて **電流が流れる**。この現象を **電磁誘導**、そのとき流れる電流を **誘導電流** という。\n磁石を **入れている間** は針が右に振れる → **中で止める** と磁界が変わらないので **0** → **引き出している間** は入れたときと **逆の左** に振れる。\n大事なのは「動かしている間だけ」。そして、電流が流れるのは **回路が1周つながっている** ときだけ。',
+   q:{ask:'入れたときに針が右に振れた磁石を、こんどは **引き出している間**。針は？',c:['左に振れる','右に振れる','0のまま'],why:'引き出すと、入れたときと逆向きに磁界が変わる。だから誘導電流も逆向き＝左。',hint:'3コマの図の右はし。引き出すと、入れたときと同じ向き？逆？'}},
+  {t:'やってみよう：時間で考える',p:'針が振れているのは、**動かしている時間だけ**。\n例：0〜1秒は動かす（振れる1秒）→ 1〜3秒は中で止める（0）→ 3〜6秒は動かす（振れる3秒）。振れていたのは **1＋3＝4秒**。',
+   q:{ask:'0〜2秒動かし、2〜4秒止め、4〜7秒動かした。針が振れていたのは合計何秒？',c:['5秒','7秒','3秒'],why:'動かしたのは0〜2秒（2秒）と4〜7秒（3秒）。2＋3＝5秒。',hint:'止めていた2〜4秒は、針は0。動かした時間だけ足そう。'},last:'ヨーヨーへ ▶'}
+]}};
+function teachBase(done){if(!SV.lrn)SV.lrn={};if(TEST||SV.lrn.base){done();return}var pages=LC.base.p.map(function(pg){return{pg:pg,k:LC.base.k}});
+  LRN={p:pages,i:0,done:function(){SV.lrn.base=1;save();done()}};if(HELP)HELP.hide();showLearn()}
+function showLearn(){var L0=LRN,it=L0.p[L0.i],pg=it.pg;$('scrLearn').classList.remove('hidden');$('lKick').textContent=it.k;$('lT').textContent=pg.t;
+  var cd0=document.querySelector('#scrLearn .card');cd0.classList.toggle('wf',!!pg.fig);cd0.classList.toggle('wq',!!pg.q);
+  var f=$('lFig');if(pg.fig){f.innerHTML=pg.fig;f.classList.remove('hidden')}else{f.innerHTML='';f.classList.add('hidden')}
+  $('lP').innerHTML=pg.p.split('\n').map(function(x){return '<p>'+rich(x)+'</p>'}).join('');
+  var q=$('lQ'),nb=$('lNext');q.innerHTML='';nb.textContent=L0.i+1>=L0.p.length?(pg.last||'わかった'):'次へ';$('lPg').textContent=L0.p.length>1?(L0.i+1)+' / '+L0.p.length:'';
+  if(pg.q){var qq=pg.q;nb.classList.add('hidden');q.innerHTML='<div class="lAsk">やってみよう：'+rich(qq.ask)+'</div><div class="lOpts"></div><div class="lWhy"></div>';var box=q.querySelector('.lOpts'),wy=q.querySelector('.lWhy');
+    shuf(qq.c.map(function(t,i){return{t:t,ok:i===0}})).forEach(function(o){var b=document.createElement('button');b.className='btn p sm';b.textContent=o.t;
+      b.onclick=function(){ac();if(o.ok){SFX.ok();[].forEach.call(box.children,function(x){x.disabled=true});b.disabled=false;b.className='btn g sm';wy.innerHTML='<b>そのとおり。</b>'+rich(qq.why);nb.classList.remove('hidden');setTimeout(function(){try{nb.scrollIntoView({behavior:RM?'auto':'smooth',block:'nearest'})}catch(e){}},60)}
+        else{SFX.bad();b.disabled=true;wy.innerHTML='<b>ちがう。</b>'+rich(qq.hint||'もう一度、上の説明を読んでみよう');try{wy.scrollIntoView({block:'nearest'})}catch(e){}}};box.appendChild(b)})}
+  else nb.classList.remove('hidden');
+  $('scrLearn').scrollTop=0}
+$('lNext').onclick=function(){ac();var L0=LRN;if(!L0)return;L0.i++;if(L0.i>=L0.p.length){$('scrLearn').classList.add('hidden');LRN=null;SFX.bell();if(L0.done)L0.done();return}SFX.tick();showLearn()};
 
 /* ================= 確認テスト（調律の書） ================= */
 var TQ=[],TI=0,TA=[],TOK=[],CARD=null;
-function startTest(){scene='test';G=null;showScr('scrTest');backBtn();HELP&&HELP.hide();TQ=window.Quiz?Quiz.test():[];TI=0;TA=[];TOK=[];$('scrTest').scrollTop=0;showQ()}
+function startTest(){if(!TEST&&!(SV.lrn&&SV.lrn.base)){teachBase(startTest);return}scene='test';G=null;showScr('scrTest');backBtn();HELP&&HELP.hide();TQ=window.Quiz?Quiz.test():[];TI=0;TA=[];TOK=[];$('scrTest').scrollTop=0;showQ()}
 function lampsBar(){$('tLamps').innerHTML=TQ.map(function(q,i){return'<i class="'+(i<TOK.length?(TOK[i]?'ok':'ng'):i===TI?'cur':'')+'"></i>'}).join('')}
 function showQ(){if(TI>=TQ.length)return finishTest();var q=TQ[TI];$('tNo').textContent=(TI+1)+' / '+TQ.length;lampsBar();
   $('tQ').textContent=q.q;var f=$('tFig');if(q.fig){f.innerHTML=q.fig;f.classList.remove('hidden')}else{f.innerHTML='';f.classList.add('hidden')}
@@ -4581,8 +4666,6 @@ if(window.PLAYER_NAME){$('nameIn').value=window.PLAYER_NAME;$('nmRow').classList
 if(!(SV.unl>1||SV.stars[1]))$('bCont').classList.add('hidden');
 if(TEST){startTest()}else setScene('title');
 requestAnimationFrame(frame);
-/* テスト用の窓口（自動操作の確かめに使う。遊びには影響しない） */
-window.__HC={G:function(){return G},L:function(){return L},start:startStage,scene:function(){return scene},SV:function(){return SV}};
 })();
 </script>
 <script>window.ZUKAN_COUNTER={"db": "https://rika-zukan-rank-default-rtdb.asia-southeast1.firebasedatabase.app", "id": "hatsuden-change"};

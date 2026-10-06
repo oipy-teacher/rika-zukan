@@ -179,8 +179,32 @@ button{font-family:inherit;cursor:pointer;touch-action:manipulation}
 @keyframes rainbow{0%{color:#ffe08a}33%{color:#fff8ea}66%{color:#9fe0e6}100%{color:#ffe08a}}
 .cf{position:fixed;top:-14px;z-index:60;pointer-events:none;width:var(--w);height:var(--h);background:var(--c);border-radius:50% 45% 55% 40%;animation:cfall var(--t) cubic-bezier(.3,.2,.6,1) forwards}
 @keyframes cfall{to{transform:translate(var(--dx),108vh) rotate(var(--r))}}
+/* 水盤の手引き（まなぶページ）2026-10-06 初心者向け */
+#scrLearn{z-index:44;background:rgba(15,42,58,.55)}
+#lBox{width:min(700px,100%);max-height:100%;overflow:auto}
+#lKick{font-size:13px;letter-spacing:.24em;color:#b8351a}
+#lFig{margin:6px 0;background:#fffaf0;border:1px solid rgba(20,35,44,.25);padding:6px}
+#lFig svg{display:block;width:100%;height:auto;max-height:32vh}
+#lP p{margin:6px 0;font-size:16px;line-height:1.75}
+#lP b{color:#b8351a}
+#lQ .ask{margin-top:10px;font-size:16px;line-height:1.55;padding:8px 10px 8px 18px}
+#lQ .opts{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+#lQ .opts .pot{text-align:left;line-height:1.35}
+#lQ .opts .pot.ok{background:var(--teal);border-color:var(--teal);color:#fff8ea}
+#lQ .opts .pot[disabled]:not(.ok){opacity:.4}
+#lQ .why{margin-top:8px;font-size:15px;line-height:1.65}
+#lQ .why b{color:var(--teal)}#lQ .why b.ng{color:#b8351a}
+#lPg{margin-right:auto;align-self:center;font-size:14px;letter-spacing:.1em}
 @media (max-width:700px){#scrTest .sheet{grid-template-columns:1fr}.h2{font-size:21px}.rec{grid-template-columns:1fr}#mHead{max-width:calc(100% - 180px)}#mHead b{font-size:16px}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+/* 2026-10-06 仕上げ：横長の画面（1180×733・1024×768）では図を左・文と問いを右に並べ、札を画面の高さに収める */
+@media (min-width:900px) and (orientation:landscape){
+ #lBox.hasFig{width:min(1080px,96vw)!important;max-width:none;display:grid;grid-template-columns:minmax(0,43%) minmax(0,1fr);grid-template-areas:"k k" "t t" "f p" "f q" "f ft";grid-template-rows:auto auto auto auto 1fr;column-gap:22px;align-content:start}
+ #lBox.hasFig #lKick{grid-area:k}#lBox.hasFig #lT{grid-area:t}#lBox.hasFig #lFig{grid-area:f;align-self:start;margin-top:4px}#lBox.hasFig #lP{grid-area:p}#lBox.hasFig #lQ{grid-area:q}#lBox.hasFig .btns{grid-area:ft;align-self:end}
+ #lBox.hasFig #lFig svg{max-height:62vh}
+}
+@media (max-height:820px){#lP p{font-size:15px;line-height:1.6;margin:4px 0}#lQ .ask{margin-top:8px}#lQ .opts{margin-top:8px}#lQ .why{margin-top:6px}#lBox .btns{margin-top:10px}}
 </style>
 </head>
 <body>
@@ -214,7 +238,7 @@ button{font-family:inherit;cursor:pointer;touch-action:manipulation}
 <div id="scrMap" class="scr hidden">
   <div class="slip" id="mHead"></div>
   <div id="mNodes"></div>
-  <div id="mFoot"><button class="drop cream sm" id="bShelf">🪨 標本箱</button><button class="drop cream sm" id="bBook2">📖 図鑑</button><button class="drop teal sm" id="bGacha">🎁 ガチャ</button><button class="drop sm" id="bToTest">📜 答え合わせへ</button></div>
+  <div id="mFoot"><button class="drop cream sm" id="bShelf">🪨 標本箱</button><button class="drop cream sm" id="bBook2">📖 図鑑</button><button class="drop teal sm" id="bGacha">🎁 ガチャ</button><button class="drop cream sm" id="bLearn">📘 手引き</button><button class="drop sm" id="bToTest">📜 答え合わせへ</button></div>
 </div>
 
 <div id="scrCard" class="scr hidden"><div class="sheet panel" id="cardBox"></div></div>
@@ -238,6 +262,7 @@ button{font-family:inherit;cursor:pointer;touch-action:manipulation}
   </div>
 </div>
 
+<div id="scrLearn" class="scr hidden"><div class="sheet panel" id="lBox"><div id="lKick" class="mincho"></div><p class="h2" id="lT"></p><div id="lFig" class="hidden"></div><div id="lP"></div><div id="lQ"></div><div class="btns"><span id="lPg"></span><button class="drop" id="lNext">次へ</button></div></div></div>
 <div id="scrEnd" class="scr hidden"><div class="sheet panel" id="endBox"></div></div>
 
 <div id="scrBack" class="scr hidden" data-gd-pass style="z-index:45;background:rgba(15,42,58,.55)">
@@ -3894,7 +3919,7 @@ function mix(c,d,k){var a=hex(c),b=hex(d);return'rgb('+a.map(function(v,i){retur
 function lighten(c,k){return mix(c,'#ffffff',k)}function darken(c,k){return mix(c,'#000000',k)}
 
 /* ================= セーブ ================= */
-function fresh(){return{v:1,name:'',seal:null,unl:1,stars:{},best:{},spec:{},rec:{},cuG:0,feN:0,t:0,clearT:0,done:0,maxCombo:0,maxFall:0,shots:0,miss:0,rules:{},cleared:{}}}
+function fresh(){return{v:1,name:'',seal:null,unl:1,stars:{},best:{},spec:{},rec:{},cuG:0,feN:0,t:0,clearT:0,done:0,maxCombo:0,maxFall:0,shots:0,miss:0,rules:{},cleared:{},lrn:{}}}
 var SV=fresh();try{var o0=JSON.parse(localStorage.getItem(SKEY));if(o0&&o0.v===1)SV=Object.assign(fresh(),o0)}catch(e){}
 function save(){try{localStorage.setItem(SKEY,JSON.stringify(SV))}catch(e){}}
 var MUTE=false;try{MUTE=JSON.parse(localStorage.getItem('rika-zukan:profile:v1')||'{}').mute===true}catch(e){}
@@ -4033,9 +4058,9 @@ var ST=[
  {n:'水素の水盤',ammo:['C','H2','O2'],w:{CuO:6,Cu:4,C:1},rows:6,goal:19,drop:7,lucky:1,
   news:['C'],newA:['H2'],learn:['H2>CuO','O2>C'],tip:'<b>水素</b>も酸化銅の酸素をうばう（水ができる）。はりついた炭素の泡は、酸素で燃やして消せる。'},
  {n:'白い光の水盤',ammo:['C','H2','O2'],w:{CuO:5,Cu:3,Mg:2,MgO:2},noTop:['MgO'],rows:7,goal:19,drop:6,lucky:1,
-  news:['Mg','MgO'],learn:['O2>Mg'],tip:'白い<b>酸化マグネシウム</b>の酸素は、炭素にも水素にもうばえない。支えを切って落とそう。'},
+  news:['Mg','MgO'],learn:['O2>Mg'],tip:'<b>マグネシウム</b>は光を出して激しく燃え（酸化）、白い<b>酸化マグネシウム</b>になる。その酸素は、炭素にも水素にもうばえない（マグネシウムのほうが酸素と結び付きやすい）。支えを切って落とそう。'},
  {n:'さびの水盤',ammo:['C','O2'],w:{CuO:4,Cu:2,Fe:3,FeO:4},rows:7,goal:21,drop:6,lucky:2,
-  news:['Fe','FeO'],learn:['C>FeO','O2>Fe'],tip:'赤茶色の<b>酸化鉄</b>（さび）も、炭素で酸素をうばえば鉄にもどる。'},
+  news:['Fe','FeO'],learn:['C>FeO','O2>Fe'],tip:'鉄がさびるのは、鉄がゆっくり酸素と結び付く<b>酸化</b>。赤茶色の<b>酸化鉄</b>（さび）も、炭素で酸素をうばえば鉄にもどる（還元）。'},
  {n:'まざる水盤',ammo:['C','O2'],w:{CuO:4,Cu:3,Mg:2,MgO:2,Fe:2,FeO:3,C:1},noTop:['MgO'],rows:7,goal:24,drop:5,lucky:2,
   news:[],learn:[],tip:'ぜんぶ まざった。どの泡に、どの玉なら反応するか。天井が下がるのも速い。'},
  {n:'二酸化炭素の水盤',ammo:['C','O2','Mg'],w:{CuO:5,Cu:2,CO2:4},rows:7,goal:20,drop:6,lucky:1,
@@ -4043,7 +4068,7 @@ var ST=[
  {n:'三つどもえの水盤',ammo:['C','O2','H2','Mg'],w:{CuO:4,Cu:3,Mg:2,MgO:2,CO2:3,O2:1},noTop:['MgO'],rows:7,goal:24,drop:5,lucky:2,
   news:['O2'],learn:[],tip:'4つの玉を使い分ける。酸素と結び付きやすい順は　マグネシウム＞炭素＞銅。'},
  {n:'高炉',boss:1,ammo:['C','O2'],w:{FeO:9,Fe:2,C:1},rows:6,goal:30,drop:0,push:15,lucky:3,
-  news:[],learn:[],tip:'ボス。<b>鉄鉱石</b>（酸化鉄）とコークスが上から次々に投入される。コークス（炭素）で酸素をうばい、鉄を取り出せ！'}
+  news:[],learn:[],tip:'ボス。製鉄所の<b>高炉</b>では、<b>鉄鉱石</b>（鉄と酸素が結び付いた酸化鉄）の酸素を<b>コークス</b>（石炭を蒸し焼きにした炭素）にうばわせて（還元）鉄を取り出す。投入される鉄鉱石から、鉄を取り出せ！'}
 ];
 var ORE={FeO:'鉄鉱石'};
 function tname(t,G){return (G&&G.st.boss&&ORE[t])||TY[t].n}
@@ -4376,7 +4401,7 @@ $('bBack').onclick=function(){ac();SFX.tap();
  $('bkSub').textContent=scene==='play'?'進み具合は保存されます（クリアした水盤・標本・かけらはそのまま。この水盤は次にはじめから）。':scene==='test'?'答え合わせは、次はさいしょから。水盤の進み具合は保存されています。':'進み具合は保存されます。';
  $('bkGo').textContent=scene==='map'?'タイトルへ':'水盤めぐりへ';$('scrBack').classList.remove('hidden')};
 $('bkNo').onclick=function(){$('scrBack').classList.add('hidden');if(G&&!(HELP&&HELP.isOpen()))G.paused=false};
-$('bkGo').onclick=function(){$('scrBack').classList.add('hidden');if(backFrom==='map'||backFrom==='seal'&&!SV.seal){toTitle()}else{G=null;toMap()}};
+$('bkGo').onclick=function(){$('scrBack').classList.add('hidden');if(backFrom==='map'||backFrom==='seal'){toTitle()}else{G=null;toMap()}};
 
 function endTut(){document.body.classList.remove('tut');if(TUTON&&GD){TUTON=false;try{GD.tutorialEnd()}catch(e){}}else if(GD&&GD.active()){try{GD.skip()}catch(e){}}}
 function toTitle(){endTut();scene='title';G=null;showScr('scrTitle');$('bCont').classList.toggle('hidden',!(SV.seal||SV.unl>1))}
@@ -4386,7 +4411,7 @@ function getName(){return(window.PLAYER_NAME||$('nameIn').value||SV.name||'').tr
 var PRODS={cu:'銅',co2:'二酸化炭素',o2:'酸素',mgo:'酸化マグネシウム',none:'何もできない'};
 var TRUTH=['cu','co2'];
 function readSeal(){try{var o=JSON.parse(localStorage.getItem(SEALKEY)||'null');return o&&Array.isArray(o.products)&&o.products.length?o:null}catch(e){return null}}
-function toSeal(){scene='seal';showScr('scrSeal');var seal=readSeal(),box=$('sealBox');
+function toSeal(){if(!SV.lrn.pre&&!TEST){teachOnce('pre',LRN_PRE,toSeal);return}scene='seal';showScr('scrSeal');var seal=readSeal(),box=$('sealBox');
  if(seal){var pred=seal.products.filter(function(p){return PRODS[p]});
   box.innerHTML='<p class="h2">封印を開ける<small class="mincho">「酸素とりあい砦」で封印した予言が届いた</small></p>'+
   '<div class="env" id="env"><div class="inside">酸化銅の砦へ送りこむ：<b>'+esc(seal.sendText||'木炭（炭素）')+'</b><br>できる物の予言：<b style="font-size:20px">'+esc(pred.map(function(p){return PRODS[p]}).join('と')||'―')+'</b>'+
@@ -4442,17 +4467,18 @@ function judge(src){var p=(SV.seal&&SV.seal.pred)||[],hitN=p.filter(function(x){
  var a=Math.max(34,Math.min(46,W*.08)),box=$('sealBox'),cw=Math.min(460,box.clientWidth-40),x0=cw*.06,xc=cw*.62;
  box.innerHTML='<p class="h2" style="text-align:center;font-size:28px">'+(full?'◎ 予言的中！':hitN?'○ 半分的中':'予言とのズレ')+'</p>'+
   '<p class="lead" style="text-align:center">予言：<b>'+esc(p.map(function(x){return PRODS[x]}).join('と')||'―')+'</b>　／　結果（'+esc(src)+'）：<b>銅</b>と<b>二酸化炭素</b>'+(g?'<br>かけら +'+g:'')+(!full?'<br><span style="font-size:14px">ズレた所こそ、いちばん記憶に残る発見。</span>':'')+'</p>'+
-  '<div class="eqline">2CuO ＋ C → 2Cu ＋ CO₂</div><div class="modelbox" id="mdl" style="width:'+cw+'px;height:'+Math.round(a*2.3+44)+'px">'+
+  '<p class="lead" style="font-size:15px">石灰水が白くにごった → 出た気体は <b>二酸化炭素</b>。　赤っぽく、こすると金属光沢 → 残った物は <b>銅</b>。</p><div class="eqline">2CuO ＋ C → 2Cu ＋ CO₂</div><div class="modelbox" id="mdl" style="width:'+cw+'px;height:'+Math.round(a*2.3+44)+'px">'+
   atomHTML('Cu',a,x0,20,'a1')+atomHTML('O',a,x0+a*.8,20,'o1')+atomHTML('Cu',a,x0,20+a*1.25,'a2')+atomHTML('O',a,x0+a*.8,20+a*1.25,'o2')+atomHTML('C',a,xc,20+a*.62,'c1')+
   '<div class="mlabel" id="l1" style="left:'+(x0+a)+'px;top:'+(20+a*2.3)+'px;opacity:0"><span class="re">酸素をうばわれた＝還元</span></div><div class="mlabel" id="l2" style="left:'+(xc+a*.5)+'px;top:'+(20+a*2.3)+'px;opacity:0"><span class="ox">酸素を受け取った＝酸化</span></div></div>'+
   '<p class="lead">炭素が、酸化銅の<b>酸素をうばった</b>。酸化銅は<span class="re">還元</span>され、炭素は<span class="ox">酸化</span>された。<br>還元と酸化は<b>酸素をやりとりする逆向きの反応</b>で、<b>同時に</b>起こる。</p>'+
   '<div class="btns"><button class="drop" id="gGo">水盤へ ▶</button></div>';
  setTimeout(function(){var o1=$('o1'),o2=$('o2');if(!o1)return;o1.style.left=(xc-a*.8)+'px';o1.style.top=(20+a*.62)+'px';o2.style.left=(xc+a*.8)+'px';o2.style.top=(20+a*.62)+'px';SFX.react(5);
   setTimeout(function(){if($('l1')){$('l1').style.opacity=1;$('l2').style.opacity=1}},RM?50:900)},RM?100:700);
- $('gGo').onclick=function(){SFX.tap();toMap(true)}}
+ $('gGo').onclick=function(){SFX.tap();teachOnce('read',LRN_READ,function(){toMap(true)})}}
 
 /* ================= 水盤めぐり（地図） ================= */
-function toMap(auto){endTut();scene='map';G=null;showScr('scrMap');
+function toJudge(){endTut();scene='seal';G=null;showScr('scrSeal');labAsk()}
+function toMap(auto){if(!TEST){if(!SV.lrn.pre){teachOnce('pre',LRN_PRE,function(){toMap(auto)});return}if(SV.seal&&SV.seal.hit==null){toJudge();return}if(!SV.seal){toSeal();return}if(!SV.lrn.read){teachOnce('read',LRN_READ,function(){toMap(auto)});return}}endTut();scene='map';G=null;showScr('scrMap');
  var zs=window.Zukan&&Zukan.state?Zukan.state():null,ns=SPEC.filter(function(s){return SV.spec[s.id]}).length;
  $('mHead').innerHTML='<b>水盤めぐり</b><span>銅 '+SV.cuG.toFixed(1)+' g　標本 '+ns+'/'+SPEC.length+(zs?'　かけら '+zs.kakera:'')+'</span>';
  var box=$('mNodes');box.innerHTML='';ST.forEach(function(st,i){var b=document.createElement('button');b.className='node slip'+(i===SV.unl-1&&!SV.done?' cur':'');var s=SV.stars[i]||[];
@@ -4461,7 +4487,7 @@ function toMap(auto){endTut();scene='map';G=null;showScr('scrMap');
  placeNodes();
  $('bToTest').classList.toggle('hidden',!SV.done);$('bGacha').classList.toggle('hidden',!(window.Zukan&&Zukan.openGacha));$('bBook2').classList.toggle('hidden',!(window.Zukan&&Zukan.openBook));
  if(auto&&SV.unl===1&&!SV.stars[0])setTimeout(function(){if(scene==='map')toCard(0)},RM?100:500)}
-function toCard(i){scene='card';var st=ST[i];showScr('scrCard');var R=Math.max(22,Math.min(28,W*.05));
+function toCard(i){if(LRN_ST[i]&&!SV.lrn['s'+i]){teachOnce('s'+i,LRN_ST[i],function(){toCard(i)});return}scene='card';var st=ST[i];showScr('scrCard');var R=Math.max(22,Math.min(28,W*.05));
  var items=(st.newA||(i===0?st.ammo:[])).map(function(t){return '<div class="it slip"><img src="'+spriteURL(t,R)+'" alt="">玉：'+esc(AMMO[t])+'</div>'}).concat((st.news||[]).map(function(t){return '<div class="it slip"><img src="'+spriteURL(t,R)+'" alt="">'+esc(TY[t].n)+'</div>'}));
  var eqs=(st.learn||[]).map(function(k){var R2=RX[k];return '<div class="slip" style="margin:6px 0"><span style="font-size:17px">'+esc(R2.eq)+'</span><br>'+(R2.k==='redox'?'<span class="re">還元：'+esc(R2.re)+'</span>　<span class="ox">酸化：'+esc(R2.ox)+'</span>　→ 泡が落ちる':'<span class="ox">酸化：'+esc(R2.ox)+'</span>'+(R2.k==='burn'?'（燃えて消える）':'　→ その場で色が変わる'))+'</div>'}).join('');
  $('cardBox').innerHTML='<p class="h2">'+(st.boss?'BOSS　':'')+'第'+(i+1)+'の水盤　'+esc(st.n)+'<small class="mincho">目標：'+(st.boss?'鉄':'金属')+'を '+Math.round(st.goal*(L.land?13:(W<520?8:11))/10)+' 個 取り出す　／　'+(st.boss?'鉄鉱石が '+st.push+' 秒ごとに投入される':'天井は '+st.drop+' 発ごとに下がる')+'</small></p>'+
@@ -4500,7 +4526,7 @@ function toShelf(){scene='shelf';showScr('scrShelf');$('shelfBox').innerHTML='<p
 
 /* ================= 確認テスト ================= */
 var TQ=[],TI=0,TA=[],TOK=[],CARD=null;
-function toTest(){var z=window.Zukan;if(z&&z.mainClear&&!TEST&&SV.done&&!toTest.shown){toTest.shown=1;try{z.mainClear({onClose:startTest});return}catch(e){}}startTest()}
+function toTest(){if(!TEST){if(!SV.lrn.pre){teachOnce('pre',LRN_PRE,toTest);return}if(!SV.seal){toSeal();return}if(SV.seal.hit==null){toJudge();return}if(!SV.lrn.read){teachOnce('read',LRN_READ,toTest);return}}var z=window.Zukan;if(z&&z.mainClear&&!TEST&&SV.done&&!toTest.shown){toTest.shown=1;try{z.mainClear({onClose:startTest});return}catch(e){}}startTest()}
 function startTest(){scene='test';G=null;showScr('scrTest');TQ=window.Quiz?Quiz.test():[];TI=0;TA=[];TOK=[];showQ()}
 function lamps(){$('tLamps').innerHTML=TQ.map(function(q,i){return '<i class="'+(i<TOK.length?(TOK[i]?'ok':'ng'):i===TI?'cur':'')+'"></i>'}).join('')}
 function showQ(){if(TI>=TQ.length)return finishTest();var q=TQ[TI];$('tNo').textContent='第'+(TI+1)+'問 ／ '+TQ.length;lamps();$('scrTest').scrollTop=0;
@@ -4540,13 +4566,64 @@ $('bShelf').onclick=function(){SFX.tap();toShelf()};$('bToTest').onclick=functio
 if(!(window.Zukan&&Zukan.openBook))$('bBook1').classList.add('hidden');
 $('bStart').onclick=function(){ac();SFX.plop();SV.name=$('nameIn').value.trim()||SV.name;
  if(SV.seal&&SV.unl>1&&!confirm('はじめから遊びますか？（標本とかけらはそのまま）'))return;
- var keep={name:SV.name,spec:SV.spec,rec:SV.rec,rules:SV.rules,maxCombo:SV.maxCombo,maxFall:SV.maxFall,cuG:SV.cuG,feN:SV.feN,done:SV.done,clearT:SV.clearT,stars:SV.stars,best:SV.best,seal:SV.seal&&SV.seal.hit!=null?SV.seal:null};
- SV=Object.assign(fresh(),keep);if(keep.done)SV.unl=ST.length;save();if(GD){GD.intro(INTRO).then(function(){REPLAY=false;GD.tutorial(PRACTICE)})}else if(SV.seal)toMap(true);else toSeal()};
-$('bCont').onclick=function(){ac();SFX.plop();SV.name=$('nameIn').value.trim()||SV.name;save();if(!SV.seal||SV.seal.hit==null)toSeal();else toMap()};
+ var keep={name:SV.name,spec:SV.spec,rec:SV.rec,rules:SV.rules,maxCombo:SV.maxCombo,maxFall:SV.maxFall,cuG:SV.cuG,feN:SV.feN,done:SV.done,clearT:SV.clearT,stars:SV.stars,best:SV.best,lrn:SV.lrn,seal:SV.seal&&SV.seal.hit!=null?SV.seal:null};
+ SV=Object.assign(fresh(),keep);if(keep.done)SV.unl=ST.length;save();if(GD){GD.intro(INTRO).then(function(){teachOnce('pre',LRN_PRE,function(){REPLAY=false;GD.tutorial(PRACTICE)})})}else if(SV.seal)toMap(true);else toSeal()};
+$('bCont').onclick=function(){ac();SFX.plop();SV.name=$('nameIn').value.trim()||SV.name;save();if(!SV.seal)toSeal();else toMap()};
 /* もどる・音・もどる確認は #stage（fixed）の外へ出す：れんしゅう中の暗幕より上に出せるように */
 ['scrBack','bBack','bMute'].forEach(function(id){document.body.appendChild($(id))});
 window.Zukan&&Zukan.setup&&Zukan.setup({game:GID,koma:[KOMA]});
 paperTextures();
+
+/* ================= 水盤の手引き：言葉・計算を「その前」に教える（2026-10-06 初心者向け） ================= */
+var LRN=null;
+function fmtL(t){return esc(t).replace(/\*\*(.+?)\*\*/g,'<b>$1</b>')}
+function teachOnce(key,pages,done){if(SV.lrn[key]||!pages){done&&done();return}teach('水盤の手引き',pages,function(){SV.lrn[key]=1;save();done&&done()})}
+function mnShuf(a){for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1)),t=a[i];a[i]=a[j];a[j]=t}return a}
+function teach(kick,pages,done){LRN={k:kick,p:pages,i:0,done:done};if(HELP&&HELP.hide)HELP.hide();showLearn()}
+function showLearn(){var L0=LRN,pg=L0.p[L0.i];$('scrLearn').classList.remove('hidden');$('lKick').textContent=L0.k;$('lT').textContent=pg.t;
+ var f=$('lFig');$('lBox').classList.toggle('hasFig',!!pg.fig);if(pg.fig){f.innerHTML=pg.fig;f.classList.remove('hidden')}else{f.innerHTML='';f.classList.add('hidden')}
+ $('lP').innerHTML=pg.p.split('\n').map(function(x){return '<p>'+fmtL(x)+'</p>'}).join('');
+ var q=$('lQ'),nb=$('lNext');q.innerHTML='';nb.textContent=L0.i+1>=L0.p.length?'わかった！':'次へ';$('lPg').textContent=L0.p.length>1?(L0.i+1)+' / '+L0.p.length:'';
+ if(pg.q){var qq=pg.q;nb.classList.add('hidden');q.innerHTML='<div class="ask slip">やってみよう：'+fmtL(qq.ask)+'</div><div class="opts"></div><div class="why"></div>';var box=q.querySelector('.opts'),wy=q.querySelector('.why');
+  mnShuf(qq.c.map(function(t,i){return{t:t,ok:i===0}})).forEach(function(o){var b=document.createElement('button');b.className='pot';b.textContent=o.t;
+   b.onclick=function(){ac();if(o.ok){SFX.react(6);[].forEach.call(box.children,function(x){x.disabled=true});b.disabled=false;b.classList.add('ok');wy.innerHTML='<b>そのとおり！</b>　'+fmtL(qq.why);nb.classList.remove('hidden');setTimeout(function(){try{nb.scrollIntoView({behavior:'smooth',block:'nearest'})}catch(e){}},60)}
+    else{SFX.bad();b.disabled=true;wy.innerHTML='<b class="ng">ちがう。</b>　'+fmtL(qq.hint||'もう一度、上の説明を読んでみよう');setTimeout(function(){try{wy.scrollIntoView({behavior:'smooth',block:'nearest'})}catch(e){}},60)}};box.appendChild(b)})}
+ else nb.classList.remove('hidden');
+ $('lBox').scrollTop=0}
+$('lNext').onclick=function(){SFX.tap();var L0=LRN;if(!L0)return;L0.i++;if(L0.i>=L0.p.length){$('scrLearn').classList.add('hidden');LRN=null;if(L0.done)L0.done();return}showLearn()};
+$('bLearn').onclick=function(){SFX.tap();var all=LRN_PRE.concat(LRN_READ);[2,6].forEach(function(i){all=all.concat(LRN_ST[i])});teach('水盤の手引き（読み返し）',all,null)};
+/* 図：原子の玉（この水盤の泡と同じ色） */
+function aT(sy,x,y,r){var e=EL[sy];r=r||17;return '<circle cx="'+x+'" cy="'+y+'" r="'+r+'" fill="'+e[0]+'" stroke="rgba(0,0,0,.35)" stroke-width="1.5"/><text x="'+x+'" y="'+(y+5)+'" font-size="'+(sy.length>1?13:15)+'" font-weight="700" fill="'+e[1]+'" text-anchor="middle">'+sy+'</text>'}
+function tT(x,y,t,sz,c,a){return '<text x="'+x+'" y="'+y+'" font-size="'+(sz||14)+'" fill="'+(c||'#14232C')+'" text-anchor="'+(a||'middle')+'" font-weight="700">'+t+'</text>'}
+function figW(w,h,b){return '<svg viewBox="0 0 '+w+' '+h+'" xmlns="http://www.w3.org/2000/svg" font-family="Kosugi,Hiragino Sans,sans-serif">'+b+'</svg>'}
+var ARW=function(x,y){return '<path d="M'+x+' '+y+'h34" stroke="#14232C" stroke-width="3"/><path d="M'+(x+34)+' '+(y-7)+'l12 7-12 7z" fill="#14232C"/>'};
+var LRN_PRE=[
+ {t:'酸化 ＝ 酸素と結び付くこと',fig:figW(440,104,aT('Cu',40,44)+tT(76,50,'＋',22)+aT('O',112,44)+ARW(146,44)+aT('Cu',228,44)+aT('O',260,44)+tT(58,90,'銅（赤っぽい）',13)+tT(112,90,'酸素',13)+tT(244,90,'酸化銅（黒い）',13)+tT(380,40,'酸素と',14,'#b8351a')+tT(380,60,'結び付いた',14,'#b8351a')+tT(380,80,'＝ 酸化',16,'#b8351a')),
+  p:'物質が **酸素と結び付く** 変化を **酸化** という。酸化でできた物を **酸化物** という。\n赤っぽい **銅** を加熱すると、空気中の酸素と結び付いて黒い **酸化銅** になる（銅 ＋ 酸素 → 酸化銅）。\n**鉄がさびる**・**マグネシウムが光を出して燃える**・**木炭が燃えて二酸化炭素になる** も、全部「酸素と結び付く」＝ **酸化**。',
+  q:{ask:'銅が酸素と結び付いて、黒い酸化銅になった。この変化は？',c:['酸化','還元','分解'],why:'酸素と結び付く変化が **酸化**。',hint:'「酸素と結び付く」変化の名前を、上の説明でさがそう'}},
+ {t:'還元 ＝ 酸化物が酸素をうばわれること',fig:figW(460,112,aT('Cu',30,36)+aT('O',62,36)+aT('Cu',30,78)+aT('O',62,78)+tT(96,64,'＋',22)+aT('C',128,58)+ARW(160,58)+aT('Cu',240,36)+aT('Cu',240,78)+tT(272,64,'＋',22)+aT('O',304,58)+aT('C',336,58)+aT('O',368,58)+tT(46,108,'酸化銅',13)+tT(128,108,'炭素',13)+tT(240,108,'銅',13)+tT(336,108,'二酸化炭素',13)+tT(8,14,'酸素をうばわれた＝還元',12,'#1f5f69','start')+tT(336,20,'酸素を受け取った＝酸化',12,'#b8351a')),
+  p:'黒い酸化銅に **炭素** の粉を混ぜて加熱すると、炭素が酸化銅から **酸素をうばう**。\n酸化物が **酸素をうばわれる** 変化を **還元** という。酸化銅は還元されて、赤っぽい **銅** にもどる。\n酸素をうばった炭素は、酸素と結び付いたので **酸化** され、**二酸化炭素** になって出ていく。\nだから **還元と酸化は、酸素をやりとりする逆向きの反応で、同時に起こる**。\n炭素がうばえるのは、炭素のほうが銅より **酸素と結び付きやすい** から。\nこの水盤では、泡（物質）に玉を撃って、この酸素のやりとりを起こす。',
+  q:{ask:'黒い **酸化鉄** に炭素を混ぜて加熱すると、**鉄** と二酸化炭素ができた。「還元された」のは？',c:['酸化鉄（酸素をうばわれた）','炭素（酸素を受け取った）','鉄'],why:'酸素を **うばわれた** 酸化鉄が還元。うばった炭素は **酸化** された。銅のときと同じしくみ。',hint:'還元は「酸素をうばわれる」こと。酸素をなくしたのはどれ？'}}
+];
+var LRN_READ=[
+ {t:'実験の結果の読み方',fig:labSVG(2,'w','r'),
+  p:'**石灰水が白くにごった** → 出てきた気体は **二酸化炭素**（石灰水を白くにごらせるのは二酸化炭素）。\n試験管に残った **赤っぽい物質** を、薬さじで **こすると金属光沢**（金属の光り方）が出る → 金属の **銅** だと確かめられる。黒い酸化銅は、こすっても光らない。',
+  q:{ask:'加熱のあと、試験管の中の物を薬さじでこすったら、ピカッと光った。この物は？',c:['銅（金属なので光る）','酸化銅（黒い粉）','炭素（黒い粉）'],why:'こすって **金属光沢** が出るのは金属。だから **銅**。黒い酸化銅や炭素は光らない。',hint:'こすって光るのは、金属だけ（上の説明の2行目）'}},
+ {t:'軽くなった分 ＝ うばわれた酸素',fig:figW(440,118,'<rect x="20" y="16" width="250" height="34" fill="#2b2d33"/>'+tT(145,39,'酸化銅 4.00 g',15,'#fff')+'<rect x="20" y="64" width="200" height="34" fill="#C8773C"/>'+tT(120,87,'銅 3.20 g',15,'#fff')+'<rect x="222" y="64" width="48" height="34" fill="#E4572E"/>'+tT(246,87,'酸素',12,'#fff')+tT(246,114,'0.80 g',13,'#b8351a')+tT(360,46,'酸化銅',14)+tT(360,66,'＝ 銅 ＋ 酸素',14)+tT(360,92,'4.00−3.20',14,'#b8351a')+tT(360,110,'＝ 0.80 g',14,'#b8351a')),
+  p:'酸化銅は **銅と酸素** が結び付いた物。だから\n**うばわれた酸素 ＝ 酸化銅 − 銅**　例：酸化銅 4.00 g から銅 3.20 g → 4.00 − 3.20 ＝ **0.80 g**\nまた、化学変化の前と後で、**全部の質量の合計は変わらない**（原子の組み合わせが変わるだけで、原子はなくならない）。\n前：酸化銅 4.00 ＋ 炭素 0.30 ＝ **4.30 g**　／　後：銅 3.20 ＋ 二酸化炭素 □\n→ 気体になって出ていった **二酸化炭素 ＝ 4.30 − 3.20 ＝ 1.10 g**',
+  q:{ask:'酸化銅 6.00 g から、銅が 4.80 g 取り出せた。うばわれた酸素は何 g？',c:['1.20 g','4.80 g','10.80 g'],why:'酸化銅 − 銅 ＝ 6.00 − 4.80 ＝ **1.20 g**。',hint:'「酸化銅 − 銅」で計算しよう'}},
+ {t:'銅：酸素 ＝ 4：1',fig:figW(440,96,[0,1,2,3].map(function(k){return '<rect x="'+(20+k*62)+'" y="14" width="58" height="40" fill="#C8773C"/>'+tT(49+k*62,40,'銅',15,'#fff')}).join('')+'<rect x="268" y="14" width="58" height="40" fill="#E4572E"/>'+tT(297,40,'酸素',14,'#fff')+tT(173,80,'酸化銅を5つ分に分けると、銅が4つ分・酸素が1つ分',13)+tT(392,40,'5つ分',15,'#b8351a')),
+  p:'銅と酸素は、いつも **質量の比 4：1** で結び付く。\nつまり酸化銅を **5つ分** に分けると、**銅が4つ分・酸素が1つ分**。\n例：酸化銅 10 g → 1つ分は 10 ÷ 5 ＝ 2 g → 銅は 2 × 4 ＝ **8 g**（10 × 4/5 と同じ）\nこの水盤でも、酸化銅の泡1個（1.00 g）から、銅が **0.80 g** ずつ瓶にたまる。',
+  q:{ask:'酸化銅 2.5 g をすべて還元すると、銅は何 g 取り出せる？',c:['2.0 g','0.5 g','10 g'],why:'1つ分は 2.5 ÷ 5 ＝ 0.5 g。銅は 0.5 × 4 ＝ **2.0 g**。',hint:'まず酸化銅を5つに分けて、1つ分を出そう'}}
+];
+var LRN_ST={
+ 2:[{t:'水素も、酸化銅の酸素をうばう',fig:figW(440,90,aT('Cu',30,40)+aT('O',62,40)+tT(94,46,'＋',22)+aT('H',124,40,14)+aT('H',150,40,14)+ARW(176,40)+aT('Cu',252,40)+tT(282,46,'＋',22)+aT('H',314,40,14)+aT('O',344,40)+aT('H',374,40,14)+tT(46,82,'酸化銅',13)+tT(137,82,'水素',13)+tT(252,82,'銅',13)+tT(344,82,'水',13)),
+  p:'加熱した酸化銅に **水素** を送ると、水素が酸素をうばって **銅** と **水** ができる（CuO ＋ H₂ → Cu ＋ H₂O）。\n酸化銅は酸素をうばわれて **還元**、水素は酸素を受け取って **酸化** された（水になった）。\nまた、炭素や水素の泡に **酸素** の玉を当てると燃えて消える（炭素 → 二酸化炭素、水素 → 水）。これも酸化。',
+  q:{ask:'CuO ＋ H₂ → Cu ＋ H₂O で、「酸化された」のは？',c:['水素（酸素を受け取って水になった）','酸化銅','銅'],why:'酸素を **受け取った** 水素が酸化された（水になった）。酸化銅は還元された。',hint:'酸化は「酸素と結び付く」こと。酸素を受け取ったのはどれ？'}}],
+ 6:[{t:'マグネシウムは、二酸化炭素からも酸素をうばう',fig:figW(460,100,aT('Mg',28,30)+aT('Mg',28,72)+tT(62,58,'＋',22)+aT('O',92,52)+aT('C',124,52)+aT('O',156,52)+ARW(186,52)+aT('Mg',262,30)+aT('O',294,30)+aT('Mg',262,72)+aT('O',294,72)+tT(326,58,'＋',22)+aT('C',360,52)+tT(278,98,'酸化マグネシウム（白）',12)+tT(360,86,'炭素（黒）',12)+tT(124,90,'二酸化炭素',12)),
+  p:'火をつけた **マグネシウム** を **二酸化炭素** の中に入れると、燃え続ける。\nマグネシウムが二酸化炭素の **酸素をうばい**、白い **酸化マグネシウム** と黒い **炭素** ができる（2Mg ＋ CO₂ → 2MgO ＋ C）。\n二酸化炭素は酸素をうばわれて **還元**（炭素になった）、マグネシウムは **酸化** された。\n**酸素と結び付きやすい順：マグネシウム ＞ 炭素 ＞ 銅**。結び付きやすい物が、結び付きにくい物から酸素をうばえる。',
+  q:{ask:'では、熱い **銅** を二酸化炭素の中に入れたら、銅は二酸化炭素から酸素をうばえる？',c:['うばえない（銅は炭素より酸素と結び付きにくい）','うばえる（熱いから）','うばえる（銅は金属だから）'],why:'酸素をうばえるのは、相手より **酸素と結び付きやすい** 物だけ。銅は炭素より結び付きにくいので、うばえない。',hint:'うばえるのは、相手より酸素と結び付きやすい物。順番の中で銅はどこ？'}}]
+};
 /* ===== 遊び方案内（Guide）：見返し紙と しずくの判 ===== */
 var INTRO={title:'第21回　酸素おとし',learn:'炭素が 酸化銅の **酸素をうばう（還元）**。酸化と還元は **逆向きで、同時に** 起こる',how:'水盤を **なぞって ねらい、はなして 撃つ**',gesture:'drag'};
 function launcherT(){return{x:L.lx,y:L.ly-L.r*.4,r:Math.max(26,L.r*1.3)}}
@@ -4584,8 +4661,6 @@ if(document.fonts&&document.fonts.ready)document.fonts.ready.then(function(){mkS
 if(TEST)startTest();else toTitle();
 requestAnimationFrame(frame);
 document.addEventListener('visibilitychange',function(){if(document.hidden&&G&&scene==='play'){G.paused=true;backFrom='play';$('bkSub').textContent='一時停止中。進み具合は保存されます。';$('bkGo').textContent='水盤めぐりへ';$('scrBack').classList.remove('hidden')}});
-/* 自動操作での確かめ用の窓口（遊びには影響しない） */
-window.__SO={aim:function(a){if(G)G.aim=a},rx:function(k){return !!RX[k]},G:function(){return G},SV:function(){return SV},L:function(){return L},start:startStage,fire:fire,setAim:setAim,scene:function(){return scene},cellX:cellX,cellY:cellY,rack:rackPos,toMap:toMap,toSeal:toSeal,guide:function(){return G&&guide()}};
 })();
 </script>
 <script>window.ZUKAN_COUNTER={"db": "https://rika-zukan-rank-default-rtdb.asia-southeast1.firebasedatabase.app", "id": "sanso-otoshi"};

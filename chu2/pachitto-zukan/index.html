@@ -63,6 +63,8 @@ button{font-family:var(--fh);cursor:pointer;touch-action:manipulation;color:inhe
 .sheet h2 small{display:block;font:600 14px/1.5 var(--fb);color:var(--ink);margin-top:6px}
 .sheet p{font:600 15px/1.7 var(--fb);margin:6px 0}
 .btns{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}.btns .wa{flex:1 1 auto}
+.pzq{border:2px dashed var(--r);padding:8px 12px;margin:10px 0 0}.pzq .btns{margin-top:6px}.pzm{min-height:1.4em}.pzbox{background:rgba(255,255,255,.6);border-left:5px solid var(--r);padding:8px 12px;margin:8px 0;font:600 15px/1.7 var(--fb)}.pzfig{display:block;width:100%;max-width:420px;height:auto;margin:6px auto;background:#fff}
+@media (max-height:800px) and (min-width:700px){#panel.sheet,#panel{padding:16px 22px}#panel h2{font-size:25px;margin-bottom:4px}#panel h2 small{margin-top:2px}#panel p{line-height:1.55;margin:4px 0}.pzbox{line-height:1.55;padding:5px 10px;margin:5px 0}.pzfig{max-width:240px;margin:4px auto}.pzq{margin-top:6px;padding:6px 10px}.pzq .wa.sm{min-height:40px;font-size:15px;padding:0 10px}#pzqN{margin-top:8px}}
 .center{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:66px 14px 14px}
 .center .sheet{width:min(580px,94vw);max-height:calc(100% - 16px);overflow:auto}
 #scrTitle .tbox{position:absolute;left:50%;transform:translateX(-50%);bottom:5vh;width:min(460px,90vw);display:flex;flex-direction:column;gap:10px}
@@ -3911,6 +3913,41 @@ const STALLS=[
 const PRED={big:{n:'大きくパチッ',c:RED},small:{n:'小さくパチッ',c:MUS},none:{n:'起こらない',c:GRY}};
 const REASONS=[{id:'seen',n:'身の回りで似た組を見た'},{id:'diff',n:'ちがう物どうしだから'},{id:'same',n:'同じ物どうしだから'},{id:'guess',n:'なんとなく'}];
 
+
+/* ================= 本部の札・答え合わせ（初めての人へ・2026-10-06 夜間改修） =================
+   計画の屋台の前に「計画の立て方」、確認テストの前に「封を開けて答え合わせ（実験の結果と理由）」を必ず通す。
+   「やってみよう」は正解するまで次へ進めない */
+const PZFIG_RUB='<svg class="pzfig" viewBox="0 0 340 150"><rect width="340" height="150" fill="#fff"/><text x="80" y="18" font-size="13" font-weight="800" text-anchor="middle" fill="#3A2E26">こする前</text><rect x="20" y="28" width="56" height="70" fill="#E9DCC6" stroke="#3A2E26" stroke-width="2"/><rect x="86" y="28" width="56" height="70" fill="#DCE6EA" stroke="#3A2E26" stroke-width="2"/><text x="48" y="58" font-size="15" text-anchor="middle" fill="#C8553D">＋＋＋</text><text x="48" y="82" font-size="15" text-anchor="middle" fill="#2B5D8A">−−−</text><text x="114" y="58" font-size="15" text-anchor="middle" fill="#C8553D">＋＋＋</text><text x="114" y="82" font-size="15" text-anchor="middle" fill="#2B5D8A">−−−</text><text x="80" y="118" font-size="11" font-weight="700" text-anchor="middle" fill="#3A2E26">＋と−が同じだけ</text><path d="M160 63h22l-6-6M182 63l-6 6" stroke="#3A2E26" stroke-width="2.5" fill="none"/><text x="258" y="18" font-size="13" font-weight="800" text-anchor="middle" fill="#3A2E26">こすったあと</text><rect x="196" y="28" width="56" height="70" fill="#E9DCC6" stroke="#3A2E26" stroke-width="2"/><rect x="264" y="28" width="56" height="70" fill="#DCE6EA" stroke="#3A2E26" stroke-width="2"/><text x="224" y="58" font-size="15" text-anchor="middle" fill="#C8553D">＋＋＋</text><text x="224" y="82" font-size="15" text-anchor="middle" fill="#2B5D8A">−</text><text x="292" y="58" font-size="15" text-anchor="middle" fill="#C8553D">＋＋＋</text><text x="292" y="82" font-size="15" text-anchor="middle" fill="#2B5D8A">−−−−−</text><path d="M236 108q22 14 44 0" stroke="#2B5D8A" stroke-width="2.5" fill="none"/><path d="M280 108l-8 0M280 108l-3 -7" stroke="#2B5D8A" stroke-width="2.5"/><text x="224" y="136" font-size="12" font-weight="800" text-anchor="middle" fill="#C8553D">＋を帯びる</text><text x="292" y="136" font-size="12" font-weight="800" text-anchor="middle" fill="#2B5D8A">−を帯びる</text><text x="258" y="122" font-size="10" font-weight="700" text-anchor="middle" fill="#2B5D8A">−の粒が移る</text></svg>';
+const PZFIG_FORCE='<svg class="pzfig" viewBox="0 0 340 120"><rect width="340" height="120" fill="#fff"/><text x="80" y="18" font-size="13" font-weight="800" text-anchor="middle" fill="#3A2E26">ちがう種類（＋と−）</text><circle cx="36" cy="62" r="20" fill="#F3D2C9" stroke="#C8553D" stroke-width="2"/><text x="36" y="68" font-size="18" text-anchor="middle" fill="#C8553D">＋</text><circle cx="124" cy="62" r="20" fill="#D6E3EE" stroke="#2B5D8A" stroke-width="2"/><text x="124" y="68" font-size="18" text-anchor="middle" fill="#2B5D8A">−</text><path d="M60 62h14M74 62l-5-4M74 62l-5 4M100 62h-14M86 62l5-4M86 62l5 4" stroke="#3A2E26" stroke-width="2.5" fill="none"/><text x="80" y="104" font-size="12" font-weight="800" text-anchor="middle" fill="#3A2E26">引き合う（引力）</text><text x="258" y="18" font-size="13" font-weight="800" text-anchor="middle" fill="#3A2E26">同じ種類（−と−）</text><circle cx="230" cy="62" r="20" fill="#D6E3EE" stroke="#2B5D8A" stroke-width="2"/><text x="230" y="68" font-size="18" text-anchor="middle" fill="#2B5D8A">−</text><circle cx="286" cy="62" r="20" fill="#D6E3EE" stroke="#2B5D8A" stroke-width="2"/><text x="286" y="68" font-size="18" text-anchor="middle" fill="#2B5D8A">−</text><path d="M206 62h-14M192 62l5-4M192 62l5 4M310 62h14M324 62l-5-4M324 62l-5 4" stroke="#3A2E26" stroke-width="2.5"/><text x="258" y="104" font-size="12" font-weight="800" text-anchor="middle" fill="#3A2E26">しりぞけ合う（斥力）</text></svg>';
+function pzResult(){const P=SV.plan||[];if(!P.length)return '<div class="pzbox">ある班の結果：<br>・ストロー × ティッシュ → <b>パチッ・引き合った</b><br>・毛糸 × ポリ袋 → <b>パチッ・引き合った</b><br>・ストロー × ストロー（同じ物どうし） → <b>何も起こらない</b></div>';
+ let hit=0;const rows=P.map(q=>{const res=q.same?'起こらない':'起こる（引き合った）';const ok=q.same?q.pred==='none':q.pred!=='none';if(ok)hit++;return '・'+esc(q.aName+' × '+q.bName)+'　予想「'+esc(q.predText)+'」→ 結果 <b>'+res+'</b> '+(ok?'○':'△')}).join('<br>');
+ return '<div class="pzbox">'+rows+'</div><p>予想が合った組：<b>'+hit+' / '+P.length+'</b></p>'}
+const LEARN={
+ plan:[
+  {t:'本部の札　実験の計画の立て方',h:'<p>ここでは「<b>ちがう物どうしをこすると静電気が起こるのか</b>」を確かめる実験の計画を立てる。</p><div class="pzbox">① <b>ちがう物どうし</b>の組を試す（例：ストロー × ティッシュ）<br>② <b>比べるために、同じ物どうしの組</b>も入れる（例：ストロー × ストロー）。同じ物どうしで起こらなければ「ちがう物だから」と言える<br>③ 比べたいこと（こする相手）<b>以外の条件はそろえる</b>：こする<b>回数</b>と<b>強さ</b>を、どの組も同じにする</div><p>実験の進め方：<b>試す組と予想を決める → 決めた回数ずつこする → 近づけたときの動き・音・光を観察 → 予想と結果を比べる</b></p>',
+   q:{q:'風船×セーターと、風船×毛糸を比べる。2つの組で同じにしておくのは？',c:['風船の色','こする回数と強さ','どちらを先に試すか'],a:1,hint:'比べたいのは「こする相手」。それ以外で、結果を変えてしまう条件は？',ok:'こする回数と強さをそろえれば、ちがいは「相手」のせいだと言える'}}
+ ],
+ kotae:[
+  {t:'答え合わせ　封を開ける（実験の結果）',h:'<p>封印した予想を、ある班の実験の結果と比べよう。</p>'+'@RESULT@'+'<p><b>ちがう物どうし</b>をこすり合わせると静電気が起こり、こすった2つは<b>引き合う</b>。<b>同じ物どうし</b>では起こらない。どの組み合わせかで、起こりやすさ（大きなパチッ・小さなパチッ）も変わる。</p>',
+   q:{q:'ストローとストロー（同じ物どうし）をこすり合わせると？',c:['大きくパチッ','静電気は起こらない','磁石になる'],a:1,hint:'結果の「同じ物どうし」の行を見よう',ok:'同じ物どうしでは起こらない。だから「ちがう物どうし」がポイント'}},
+  {t:'答え合わせ　なぜ電気がたまる？',h:'<p>どんな物にも、<b>＋の電気</b>と<b>−の電気</b>が同じだけ入っている（だからふだんは電気を帯びていない）。</p>'+PZFIG_RUB+'<p>ちがう物どうしをこすると、<b>−の電気（の粒）</b>が片方からもう片方へ<b>移る</b>。−が多くなった物は<b>−の電気</b>を、−が減った物は<b>＋の電気</b>を帯びる。こうしてたまった電気が<b>静電気</b>。</p>',
+   q:{q:'ティッシュでこすったストローが、−の電気を帯びた。ストローに何が起こった？',c:['＋の電気が生まれた','−の電気の粒が移ってきた','重さが半分になった'],a:1,hint:'図の青い「−」が、どちらへ動いたか見よう',ok:'−の電気の粒がティッシュからストローへ移った。電気は新しく生まれたのではない'}},
+  {t:'答え合わせ　電気どうしの力',h:PZFIG_FORCE+'<div class="pzbox"><b>ちがう種類</b>の電気（＋と−）どうし → <b>引き合う（引力）</b><br><b>同じ種類</b>の電気（＋と＋、−と−）どうし → <b>しりぞけ合う（斥力）</b><br>この力は、<b>はなれていても</b>はたらく</div><p>こすり合わせた2つ（ストローとティッシュ）は、片方が＋、片方が− → <b>引き合う</b>。<br>同じ毛糸で同じようにこすった風船2つは、どちらも同じ種類の電気 → <b>しりぞけ合う</b>（つるした風船は遠ざかる）。</p>',
+   q:{q:'同じティッシュで同じようにこすった下じき2枚を近づけると？',c:['引き合ってくっつく','しりぞけ合って遠ざかる','何も起こらない'],a:1,hint:'2枚とも同じ物を同じ相手でこすった＝同じ種類の電気',ok:'同じ種類の電気どうしは、しりぞけ合う'}}
+ ]
+};
+function learnRun(cards,done){let i=0;
+ const go=()=>{if(i>=cards.length){done();return}const cd=cards[i],last=i+1>=cards.length,tt=cd.t.split('　');
+  panel('<h2>'+esc(tt.slice(1).join('　')||tt[0])+'<small>'+esc(tt[0])+'</small></h2>'+cd.h.replace('@RESULT@',pzResult())+'<div class="pzq"><p><b>やってみよう</b>　'+esc(cd.q.q)+'</p><div class="btns" id="pzqB"></div><p class="pzm" id="pzqM"></p></div><div class="btns" id="pzqN"></div>');
+  const bb=$('pzqB');
+  const ord=cd.q.c.map((_,k)=>k);for(let r=ord.length-1;r>0;r--){const j=Math.floor(Math.random()*(r+1));[ord[r],ord[j]]=[ord[j],ord[r]]}
+  ord.forEach(k=>{const ch=cd.q.c[k];const e=document.createElement('button');e.className='wa sm y';e.textContent=ch;
+   e.onclick=()=>{ac();if(k===cd.q.a){SFX.paper();e.className='wa sm b';[].forEach.call(bb.children,x=>{x.disabled=x!==e});$('pzqM').innerHTML='<b style="color:#2E5E4E">そのとおり！</b>　'+esc(cd.q.ok);
+     if(!$('pzqGo')){const nb=document.createElement('button');nb.id='pzqGo';nb.className='wa';nb.textContent=last?'わかった ▶':'つぎへ ▶';nb.onclick=()=>{i++;go()};$('pzqN').appendChild(nb);setTimeout(()=>{try{nb.scrollIntoView({block:'nearest'})}catch(x){}},60)}}
+    else{e.disabled=true;$('pzqM').innerHTML='<b style="color:#C8553D">おしい</b>　'+esc(cd.q.hint)}};
+   bb.appendChild(e)})};
+ go()}
+
 /* ================= セーブ ================= */
 function fresh(){return{v:1,name:'',unl:1,cleared:{},scenes:{},prizes:{},first:{},sealed:0,plan:null,t0:0,clearMs:0,hits:0,throws:0}}
 let SV=null;try{SV=JSON.parse(localStorage.getItem(SKEY))}catch(e){}
@@ -4025,7 +4062,8 @@ function comboStage(n){return n>=8?3:n>=5?2:n>=3?1:0}
 
 function stallRounds(si){const S=STALLS[si];if(S.use)return USE.map((u,i)=>({use:u,id:'u'+i}));if(S.plan)return[];
  const a=[];S.sc.forEach(k=>SC[k].rounds.forEach((r,j)=>a.push({sc:k,r,id:k+'r'+j,last:j===SC[k].rounds.length-1})));return a}
-function openStall(si,prac){if(!prac&&PRAC)endPractice();const S=STALLS[si];if(window.BGM)BGM.mood(S.plan?'calm':'normal');G={si,S,kind:S.plan?'plan':S.use?'use':'scene',rounds:stallRounds(si),ri:0,poles:[],fly:null,aim:null,combo:0,tries:0,fb:null,plan:[],sel:null,step:'aim',drag:null,swap:0,started:performance.now()};
+function openStall(si,prac){if(!prac&&!TEST&&STALLS[si].plan&&!(SV.learned||{}).plan){learnRun(LEARN.plan,()=>{SV.learned=SV.learned||{};SV.learned.plan=1;save();closePanel();openStall(si)});return}
+ if(!prac&&PRAC)endPractice();const S=STALLS[si];if(window.BGM)BGM.mood(S.plan?'calm':'normal');G={si,S,kind:S.plan?'plan':S.use?'use':'scene',rounds:stallRounds(si),ri:0,poles:[],fly:null,aim:null,combo:0,tries:0,fb:null,plan:[],sel:null,step:'aim',drag:null,swap:0,started:performance.now()};
  if(G.kind==='plan'){G.sel=MKEYS.find(k=>SV.prizes[k])||'keito';if(SV.plan&&!SV.sealed){}}
  scene='stall';showScr('scrStall');backBtn();helpVis();placeDom();setupRound();refreshPlan();SFX.paper()}
 function curRound(){return G.rounds[G.ri]}
@@ -4231,10 +4269,10 @@ $('bSeal').onclick=()=>{if(!G||G.kind!=='plan')return;const st=planStatus();if(!
  try{localStorage.setItem(SEAL,JSON.stringify(seal))}catch(e){}
  SV.plan=plan;SV.sealed=1;SV.cleared[7]=1;if(!SV.clearMs)SV.clearMs=Date.now()-(SV.t0||Date.now());save();SFX.seal();G.sealAt=T;$('bSeal').classList.add('hidden');
  const cx=W/2,cy=H*.4;earn(10,'control',cx,cy);if(plan.every(q=>q.reason!=='guess'))earn(10,'predict',cx,cy+30);
- setTimeout(()=>{SFX.fanfare();panel('<h2>朱の封をおした<small>計画と予想は封印された。答えは理科室の実験で確かめる。</small></h2>'+
+ setTimeout(()=>{SFX.fanfare();panel('<h2>朱の封をおした<small>計画と予想は封印された。答えは理科室の実験で確かめる。おみくじ（確認テスト）の前に、ある班の実験の結果で答え合わせをしよう。</small></h2>'+
   '<p>'+plan.map(q=>'・'+esc(q.aName+' × '+q.bName)+'　→ '+esc(q.predText)).join('<br>')+'</p><p>計画点 <b>'+st.pts+'</b>（ちがう物どうし '+st.diff+'組・比べる組 '+st.same+'組）</p>'+
-  '<div class="btns"><button class="wa b sm" id="pMap">縁日の通りへ</button><button class="wa" id="pTest">おみくじ（確認テスト）へ</button></div>');
-  $('pMap').onclick=()=>{closePanel();G=null;setScene('map')};$('pTest').onclick=()=>{closePanel();toTest()}},900)};
+  '<div class="btns"><button class="wa b sm" id="pMap">縁日の通りへ</button><button class="wa" id="pTest">'+((SV.learned||{}).kotae?'おみくじ（確認テスト）へ':'答え合わせへ（封を開ける）')+'</button></div>');
+  $('pMap').onclick=()=>{closePanel();G=null;setScene('map')};$('pTest').onclick=()=>{closePanel();G=null;if((SV.learned||{}).kotae)toTest();else kotaeRun()}},900)};
 
 /* ================= 縁日の通り（地図） ================= */
 let stallRects=[];
@@ -4270,7 +4308,7 @@ function showScr(...on){SCR.forEach(id=>$(id).classList.toggle('hidden',on.index
 const INHUB=!!window.COLLECTION_NAME||(()=>{try{return window.parent!==window}catch(e){return true}})();
 function backBtn(){const b=$('bBack'),on=scene!=='title'||INHUB;b.classList.toggle('hidden',!on);b.textContent=scene==='title'?'◀ 一覧へ':'◀ もどる';$('scrBack').classList.add('hidden')}
 function setScene(s){scene=s;backBtn();helpVis();if(s!=='stall'){$('plan').classList.add('hidden')}
- if(s==='title'){showScr('scrTitle');titleT0=T;for(const k in drawTitle)if(k[0]==='l')delete drawTitle[k]}else if(s==='map'){showScr('scrMap');$('mTest').disabled=!SV.sealed;if(!Zk())$('mBook').classList.add('hidden')}else if(s==='test')showScr('scrTest');else if(s==='end')showScr('scrEnd')}
+ if(s==='title'){showScr('scrTitle');titleT0=T;for(const k in drawTitle)if(k[0]==='l')delete drawTitle[k]}else if(s==='map'){showScr('scrMap');$('mTest').disabled=!SV.sealed;testBtns();if(!Zk())$('mBook').classList.add('hidden')}else if(s==='test')showScr('scrTest');else if(s==='end')showScr('scrEnd')}
 let backFrom=null;
 $('bBack').onclick=()=>{ac();if(scene==='title'){try{window.parent.postMessage({type:'rika-close-game'},'*')}catch(e){}return}
  if(PRAC){endPractice();G=null;closePanel();setScene('title');return}
@@ -4285,13 +4323,20 @@ $('bHowto').onclick=()=>{ac();SV.name=$('nameIn').value.trim()||SV.name;if(!SV.t
 $('bCont').onclick=()=>{ac();SV.name=$('nameIn').value.trim()||SV.name;save();setScene('map')};
 function openBook(){const z=Zk();if(z&&z.openBook)z.openBook()}
 $('bBook1').onclick=openBook;$('eBook').onclick=openBook;$('mBook').onclick=openBook;$('bGacha').onclick=()=>{const z=Zk();if(z&&z.openGacha)z.openGacha()};
-$('bToTest').onclick=()=>{if(SV.sealed)startTest()};$('mTest').onclick=()=>{if(SV.sealed)startTest()};
+/* 予想用：封印のあと、答え合わせ（封を開ける）を見るまでは「確認テスト」のボタンを出さず「答え合わせ」にする */
+function testBtns(){const k=(SV.learned||{}).kotae;$('bToTest').textContent=k?'確認テストへ':'答え合わせへ';$('mTest').textContent=k?'確認テスト':'答え合わせ'}
+function kotaeRun(){learnRun(LEARN.kotae,()=>{SV.learned=SV.learned||{};SV.learned.kotae=1;save();testBtns();
+  panel('<h2>答え合わせが済んだ<small>予想と結果、電気がたまるわけ、電気どうしの力が分かった。いよいよおみくじ（確認テスト）。</small></h2><div class="btns"><button class="wa b sm" id="pMap2">縁日の通りへ</button><button class="wa" id="pTest2">おみくじ（確認テスト）へ</button></div>');
+  $('pMap2').onclick=()=>{closePanel();setScene('map')};$('pTest2').onclick=()=>{closePanel();toTest()}})}
+function testOrKotae(){if(!SV.sealed)return;if(!TEST&&!(SV.learned||{}).kotae)kotaeRun();else startTest()}
+$('bToTest').onclick=testOrKotae;$('mTest').onclick=testOrKotae;
 if(!Zk())['bBook1','eBook','bGacha','mBook'].forEach(id=>$(id).classList.add('hidden'));
 function toTest(){const z=Zk();if(z&&z.mainClear&&!TEST){try{z.mainClear({onClose:startTest});return}catch(e){}}startTest()}
 
 /* ================= 確認テスト ================= */
 let TQ=[],TI=0,TA=[],TOK=[],CARD=null;
-function startTest(){scene='test';G=null;closePanel();showScr('scrTest');backBtn();helpVis();TQ=window.Quiz?Quiz.test():[];TI=0;TA=[];TOK=[];$('scrTest').scrollTop=0;showQ()}
+function startTest(){if(!TEST&&!(SV.learned||{}).kotae){learnRun(LEARN.kotae,()=>{SV.learned=SV.learned||{};SV.learned.kotae=1;save();closePanel();startTest()});return}
+ scene='test';G=null;closePanel();showScr('scrTest');backBtn();helpVis();TQ=window.Quiz?Quiz.test():[];TI=0;TA=[];TOK=[];$('scrTest').scrollTop=0;showQ()}
 function lamps(){$('tLamps').innerHTML=TQ.map((q,i)=>'<i class="'+(i<TOK.length?(TOK[i]?'ok':'ng'):i===TI?'cur':'')+'"></i>').join('')}
 function showQ(){if(TI>=TQ.length)return finishTest();const q=TQ[TI];$('tNo').textContent='第'+(TI+1)+'問 ／ '+TQ.length;lamps();
  $('tQ').textContent=q.q;const f=$('tFig');if(q.fig){f.innerHTML=q.fig;f.classList.remove('hidden')}else{f.innerHTML='';f.classList.add('hidden')}
@@ -4368,7 +4413,7 @@ addEventListener('resize',resize);
 /* ================= 遊び方案内（Guide）2026-09-28 ================= */
 let PRAC=false,PAUSED=false;
 const INTRO={title:'パチッと輪投げ',
-  learn:'静電気は **ちがう物どうしをこすり合わせる** と起こる。パチッとした所は電気の「出口」',
+  learn:'**静電気**＝物どうしがこすれ合ってたまった電気。**ちがう物どうしをこすり合わせる** と起こる。パチッとした所は、たまった電気が一気に流れ出た「出口」',
   how:'手もとの輪を **上へはじいて**、こすれ合った相手の棒へ投げ入れる。入ったら **左右にこすって パチッ！**',gesture:'swipe'};
 function endPractice(){if(!PRAC)return;PRAC=false;if(window.Guide)Guide.tutorialEnd()}
 function ansPole(){if(!G||G.kind!=='scene')return null;const rd=curRound();return rd?G.poles.find(p=>p.label===rd.r.ans):null}
@@ -4406,13 +4451,9 @@ window.Zukan&&Zukan.setup&&Zukan.setup({game:GID,koma:[KOMA]});refreshK();
 if(window.PLAYER_NAME){$('nameIn').value=window.PLAYER_NAME;$('nmRow').classList.add('hidden')}else if(SV.name)$('nameIn').value=SV.name;
 if(SV.unl<=1&&!SV.cleared[0])$('bCont').classList.add('hidden');
 if(SV.sealed){$('bToTest').classList.remove('hidden');if(Zk())$('bGacha').classList.remove('hidden')}
+testBtns();
 if(TEST)startTest();else setScene('title');
 requestAnimationFrame(frame);
-/* テスト用の窓口（自動操作の確かめに使う。遊びには影響しない） */
-window.__PZ={PRAC:()=>PRAC,PAUSED:()=>PAUSED,rubPos:()=>G&&G.rub?rubPos(G.rub.p):null,G:()=>G,scene:()=>scene,open:openStall,SV:()=>SV,L:()=>L,
- throwTo:label=>{const p=G.poles.find(p=>p.label===label);if(!p||!p.geo)return false;const g=p.geo;throwRing({dx:(g.x-L.hand.x)/2.1,dy:((g.top+g.tagY)/2-L.hand.y)/2.3});return true},
- ans:()=>G.kind==='scene'?curRound().r.ans:G.kind==='use'?curRound().use.ans:null,
- sel:k=>{G.sel=k},paint:k=>{if(G.cur){G.cur.pred=k;G.step='reason';refreshPlan()}},reason:k=>{if(G.cur){G.cur.reason=k;G.step='aim';G.cur=null;refreshPlan()}},prizes:()=>{MKEYS.forEach(k=>SV.prizes[k]=1)}};
 })();
 </script>
 <script>window.ZUKAN_COUNTER={"db": "https://rika-zukan-rank-default-rtdb.asia-southeast1.firebasedatabase.app", "id": "pachitto-zukan"};

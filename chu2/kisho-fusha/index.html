@@ -107,6 +107,12 @@ b{font-weight:700}
 /* 重ねる紙（村の風車・図鑑・確認） */
 #ov{background:rgba(35,55,47,.45);display:flex;align-items:center;justify-content:center;padding:16px;z-index:20}
 #ov .sheet{width:100%;max-width:500px;max-height:88vh;overflow:auto}
+.lfig{margin:6px 0;text-align:center;background:#FFFDF8;border:1px solid rgba(46,94,78,.25)}.lfig svg{width:100%;max-width:460px;height:auto;max-height:34vh}
+.lq{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px}.lq .fb{font-size:16px}.lq .fb.ok{--c:var(--main);--d:#1E4034;color:#fff}.lq .fb.ng{opacity:.45}
+.lres{min-height:22px;margin-top:6px;font-size:15px;scroll-margin-bottom:96px}
+.lbar{position:sticky;bottom:-18px;display:flex;gap:10px;justify-content:center;margin:10px -20px -18px;padding:10px 20px 14px;background:#FFFDF8;border-top:1px solid rgba(46,94,78,.18);z-index:2}.lbar .fb{flex:1 1 0;min-width:0}.lbar .fb.w{flex:0 0 auto}
+.lfig.tq svg{max-height:22vh}
+
 .land #ov .sheet{max-width:680px}
 .mill{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin:10px 0}
 .port .mill{grid-template-columns:repeat(3,1fr)}
@@ -184,7 +190,7 @@ b{font-weight:700}
 
   <div id="slip" class="hidden"></div>
   <div id="res" class="hidden pe"><div class="sheet" id="resBox"></div></div>
-  <div id="mapUI" class="scr hidden"><div class="pe" id="mapBtns" style="position:absolute;left:50%;transform:translateX(-50%);bottom:calc(14px + env(safe-area-inset-bottom));width:min(560px,94vw);display:flex;flex-direction:column;gap:10px"><button class="fb" id="bNext"><span>つぎの村へ ▶</span></button><div class="row"><button class="fb w s" id="bMill2"><span>風車の図鑑</span></button><button class="fb y s zk" id="bGacha"><span>ガチャ</span></button><button class="fb w s zk" id="bBook2"><span>📖 図鑑</span></button></div></div></div>
+  <div id="mapUI" class="scr hidden"><div class="pe" id="mapBtns" style="position:absolute;left:50%;transform:translateX(-50%);bottom:calc(14px + env(safe-area-inset-bottom));width:min(560px,94vw);display:flex;flex-direction:column;gap:10px"><button class="fb" id="bNext"><span>つぎの村へ ▶</span></button><div class="row"><button class="fb w s" id="bLearn"><span>📘 まなぶ帳</span></button><button class="fb w s" id="bMill2"><span>風車の図鑑</span></button><button class="fb y s zk" id="bGacha"><span>ガチャ</span></button><button class="fb w s zk" id="bBook2"><span>📖 図鑑</span></button></div></div></div>
   <div id="test" class="scr hidden"><div class="sheet" id="tbox"></div></div>
   <div id="ov" class="scr hidden pe"><div class="sheet" id="ovBox"></div></div>
   <div id="pops"></div>
@@ -3850,7 +3856,7 @@ const BRIEF=[
  '<span class="tagk l">低</span>が使える。<b>低気圧へは、まわりから風がふきこむ</b>。',
  '霧の峠。投げるまで風は見えない。<b>低気圧のうず</b>で山を回りこめ。',
  '<span class="tagk h">高</span>と<span class="tagk l">低</span>を両方置ける。風は<b>高→低</b>へ流れる。',
- '地図の折り目は<b>等圧線</b>。<b>高と低を近づける</b>と、間がせまくなって風が強くなる。',
+ '地図の折り目は<b>等圧線</b>（気圧が同じ所を結んだ線。天気図では4hPaごと）。<b>高と低を近づける</b>と、間がせまくなって風が強くなる。',
  '山場！ 3機いっしょに投げる。<b>3機とも大風車へ</b>集めるには？',
  '低気圧の中心には<b>雨雲</b>。中を通ると飛行機がぬれて落ちる。',
  '高2つ・低2つ。風の道をつないで、峠を越えろ。',
@@ -4058,7 +4064,8 @@ function isobars(pcs){if(!pcs.length)return[];const st=.25,nx=Math.round(MW/st)+
 function seedPt(p){p.u=Math.random()*MW;p.v=Math.random()*MH;p.l=1+Math.random()*2;p.pu=p.u;p.pv=p.v}
 for(let i=0;i<150;i++){const p={};seedPt(p);PTS.push(p)}
 
-function startFlight(vi,fi,tut){MODE='play';S.vi=vi;S.fi=fi;save();const V=VILLAGES[vi],fl=V.flights[fi];if(window.BGM)BGM.mood(V.boss&&!tut?'tense':'normal');
+function startFlight(vi,fi,tut){if(tut)return startFlight0(vi,fi,tut);lessonGate(vi,()=>startFlight0(vi,fi,tut))}
+function startFlight0(vi,fi,tut){MODE='play';S.vi=vi;S.fi=fi;save();const V=VILLAGES[vi],fl=V.flights[fi];if(window.BGM)BGM.mood(V.boss&&!tut?'tense':'normal');
  F={vi,fi,V,fl,tut:!!tut,pcs:[],tries:0,phase:'place',revealed:false,aim:{a:0,p:.85,on:false},res:null,ft:0,rt:0,maxT:0,fired:{},chain:[],drag:null,hitT:[],endFx:false,near:null,t0:performance.now()};
  const kept=!tut&&S.pcs&&S.pcs[vi+'-'+fi];if(Array.isArray(kept))F.pcs=kept.filter(p=>p&&(p.k==='H'||p.k==='L')).map(p=>({k:p.k,u:+p.u,v:+p.v})).slice(0,V.H+V.L);
  buildDeco(vi,fi);recalc();showUI();
@@ -4344,7 +4351,7 @@ function mainClear(){MODE='map';F=null;showUI();
 
 /* ===== 確認テスト ===== */
 let TS=null;function playerName(){return window.PLAYER_NAME||S.name||''}
-function startTest(){if(!window.Quiz)return;MODE='test';F=null;TS={qs:Quiz.test(),i:0,ans:[]};showUI();renderQ()}
+function startTest(){if(!window.Quiz)return;if(!TEST_ONLY){const L=lessonList(9,false);if(L.length){lessonShowF(L,()=>startTest());return}}MODE='test';F=null;TS={qs:Quiz.test(),i:0,ans:[]};showUI();renderQ()}
 function renderQ(){const q=TS.qs[TS.i],box=$('#tbox');
  box.innerHTML='<div class="tno">確認テスト　第'+(TS.i+1)+'問 / '+TS.qs.length+'</div><div class="prog">'+TS.qs.map((_,i)=>'<i class="'+(i<TS.i?'on':'')+'"></i>').join('')+'</div><div class="tq">'+q.q+'</div>'+(q.fig?'<div class="fig2">'+q.fig+'</div>':'')+'<div id="ta"></div>';
  const ta=$('#ta');
@@ -4380,6 +4387,41 @@ try{window.Zukan&&Zukan.setup&&Zukan.setup({game:GID,koma:[KOMA]})}catch(e){}
 setSnd();
 if(window.PLAYER_NAME){$('#nameIn').value=window.PLAYER_NAME;$('#nameRow').classList.add('hidden')}else if(S.name)$('#nameIn').value=S.name;
 
+/*@LESSON_FS*/
+/* ===== まなぶ（その村の前に、使う言葉と風の読み方を教える。地図・つづきから入っても、未読の札を先に出す） ===== */
+function svArrow(x,y,dx,dy,len,col){const l=Math.hypot(dx,dy)||1;dx/=l;dy/=l;const x2=x+dx*len,y2=y+dy*len,hx=-dy,hy=dx;
+ return '<line x1="'+x.toFixed(1)+'" y1="'+y.toFixed(1)+'" x2="'+x2.toFixed(1)+'" y2="'+y2.toFixed(1)+'" stroke="'+col+'" stroke-width="4" stroke-linecap="round"/><path d="M'+(x2+dx*8).toFixed(1)+' '+(y2+dy*8).toFixed(1)+' L'+(x2+hx*7).toFixed(1)+' '+(y2+hy*7).toFixed(1)+' L'+(x2-hx*7).toFixed(1)+' '+(y2-hy*7).toFixed(1)+' Z" fill="'+col+'"/>'}
+function svCenter(x,y,k){return '<circle cx="'+x+'" cy="'+y+'" r="16" fill="'+(k==='H'?'#2F5D8A':'#E4572E')+'"/><text x="'+x+'" y="'+(y+6)+'" text-anchor="middle" font-size="17" font-weight="900" fill="#fff">'+(k==='H'?'高':'低')+'</text>'}
+function svRings(x,y,labels,rs){return (rs||[32,62,92]).map((r,i)=>'<circle cx="'+x+'" cy="'+y+'" r="'+r+'" fill="none" stroke="#2E5E4E" stroke-opacity=".45" stroke-width="2"/>'+(labels?'<rect x="'+(x-17)+'" y="'+(y-r-8)+'" width="34" height="14" fill="#FFFDF8"/><text x="'+x+'" y="'+(y-r+3)+'" text-anchor="middle" font-size="11" fill="#2E5E4E">'+labels[i]+'</text>':'')).join('')}
+/* 高気圧＝外へ出ながら時計回り／低気圧＝内へ入りながら反時計回り（画面は下が南） */
+function svSpin(x,y,k){let s='';for(let i=0;i<6;i++){const t=i*Math.PI/3,px=x+Math.cos(t)*62,py=y+Math.sin(t)*62;let dx,dy;if(k==='H'){dx=-Math.sin(t)*.85+Math.cos(t)*.5;dy=Math.cos(t)*.85+Math.sin(t)*.5}else{dx=Math.sin(t)*.85-Math.cos(t)*.5;dy=-Math.cos(t)*.85-Math.sin(t)*.5}s+=svArrow(px-dx*14,py-dy*14,dx,dy,24,k==='H'?'#2F5D8A':'#E4572E')}return s}
+function svBox(inner,h){return '<svg viewBox="0 0 300 '+(h||200)+'" xmlns="http://www.w3.org/2000/svg" font-family="sans-serif" font-weight="bold"><rect width="300" height="'+(h||200)+'" fill="#F7F4EC"/><text x="8" y="18" font-size="13" fill="#23372F">北↑</text>'+inner+'</svg>'}
+function svPt(x,y,lab){return '<circle cx="'+x+'" cy="'+y+'" r="5" fill="#23372F"/><text x="'+(x+8)+'" y="'+(y-8)+'" font-size="14" fill="#23372F">'+lab+'</text>'}
+const LSF={
+ a:{t:'まなぶ ①',h:'気圧と、高気圧・低気圧',q:{ask:'中心が<b>1020hPa</b>、まわりは<b>1024hPa</b>。この中心は？',ch:['低気圧','高気圧','どちらでもない','前線'],ok:0,good:'正解！ 数字は大きくても、まわり（1024）より<b>低い</b>ので<b>低気圧</b>。',bad:'ちがう。数字の大きさではなく、<b>まわりとくらべて</b>決まる。中心の1020は、まわりの1024より高い？低い？'},b:()=>'<p><b>気圧</b>は、空気がまわりをおす力（大気圧）。単位は<b>hPa</b>（ヘクトパスカル）。場所によって少しずつちがう。</p><div class="lfig">'+svBox(svRings(88,100,null,[20,38,56])+svCenter(88,100,'H')+svRings(218,100,null,[20,38,56])+svCenter(218,100,'L')+'<text x="90" y="192" text-anchor="middle" font-size="12" fill="#2F5D8A">まわりより高い</text><text x="215" y="192" text-anchor="middle" font-size="12" fill="#E4572E">まわりより低い</text>')+'</div><p><b>高気圧</b>＝まわりより気圧が<b>高い</b>所。<b>低気圧</b>＝まわりより気圧が<b>低い</b>所。<b>数字の大きさでは決まらない</b>。たとえば中心が1000hPaでも、まわりが996hPaなら（まわりより高いので）高気圧。</p><p class="sm">輪の線は<b>等圧線</b>（気圧が同じ所を結んだ線）。</p>'},
+ b:{t:'まなぶ ②',h:'風の名前と、高気圧の風',q:{ask:'「<b>西の風</b>」は、どちらへ向かってふく風？',ch:['東へ向かってふく','西へ向かってふく','北へ向かってふく','南へ向かってふく'],ok:0,good:'正解！ 西から<b>ふいてくる</b>風なので、東へ向かう。',bad:'ちがう。風の名前は<b>ふいてくる方角</b>。「西の風」は西からふいてくる。'},b:()=>'<p>風は、気圧の<b>高い所から低い所へ</b>ふく。風の名前は<b>ふいてくる方角</b>で呼ぶ。<b>「北の風」＝北からふいてくる風</b>（北から南へ向かう）。</p><div class="lfig">'+svBox(svRings(150,105)+svSpin(150,105,'H')+svCenter(150,105,'H'))+'</div><p>北半球では、<b>高気圧</b>の中心から風が<b>時計回りにふき出す</b>。中心付近は空気が下りてくる<b>下降気流</b>なので、雲ができにくく<b>晴れやすい</b>。</p>'},
+ c:{t:'まなぶ ③',h:'ある地点の風向を読む（高気圧）',q:{ask:'高気圧の<b>南</b>の地点Bでは、何の風？',fig:()=>svBox(svRings(120,95)+svCenter(120,95,'H')+svPt(120,172,'B')),ch:['北東の風','南西の風','北西の風','南東の風'],ok:0,good:'正解！ 南の地点では、時計回り＝<b>西向き</b>、外へ＝<b>南向き</b>。南西へ向かう風は<b>北東からふいてくる</b>ので「北東の風」。',bad:'ちがう。①時計回りの向き（南の地点では西向き）②外へ出る向き（南向き）を合わせると南西へ向かう。風の名前は<b>ふいてくる方角</b>。'},
+  b:()=>'<p>風向は、<b>①中心のまわりを回る向き</b>（高気圧は時計回り）と<b>②中心から外へ出る向き</b>を合わせて読む。</p><div class="lfig">'+svBox(svRings(120,120)+svCenter(120,120,'H')+'<circle cx="120" cy="44" r="5" fill="#23372F"/><text x="98" y="50" font-size="14" fill="#23372F">A</text>'+svArrow(120,44,.7,-.7,26,'#E4572E')+'<text x="162" y="34" font-size="13" fill="#E4572E">北東へ向かう</text>',215)+'</div><p><b>例</b>：高気圧の<b>北</b>の地点A。時計回り＝<b>東向き</b>、外へ＝<b>北向き</b> → 北東へ向かう。北東へ向かう風は南西からふいてくるので<b>「南西の風」</b>。</p>'},
+ d:{t:'まなぶ ④',h:'低気圧の風と、地点の風向',q:{ask:'低気圧の<b>西</b>の地点Bでは、何の風？',fig:()=>svBox(svRings(170,100)+svCenter(170,100,'L')+svPt(90,100,'B')),ch:['北西の風','南東の風','北東の風','南西の風'],ok:0,good:'正解！ 西の地点では、反時計回り＝<b>南向き</b>、中心へ＝<b>東向き</b>。南東へ向かう風は北西からふいてくるので「北西の風」。',bad:'ちがう。①反時計回りの向き（西の地点では南向き）②中心へ入る向き（東向き）を合わせて、向かう方角を出し、ふいてくる方角で呼ぶ。'},
+  b:()=>'<p>北半球では、<b>低気圧</b>の中心へ、風が<b>反時計回りにふきこむ</b>。集まった空気は中心で上へのぼる（<b>上昇気流</b>）ので、雲ができやすく<b>くもりや雨</b>になりやすい。</p><div class="lfig">'+svBox(svRings(120,105)+svSpin(120,105,'L')+svCenter(120,105,'L')+svPt(250,105,'A')+svArrow(250,105,-.7,-.7,36,'#2F5D8A')+'<text x="196" y="190" font-size="13" fill="#2F5D8A">Aは北西へ向かう</text>')+'</div><p><b>例</b>：低気圧の<b>東</b>の地点A。反時計回り＝<b>北向き</b>、中心へ＝<b>西向き</b> → 北西へ向かう → <b>「南東の風」</b>。</p>'},
+ e:{t:'まなぶ ⑤',h:'高気圧と低気圧の間の風',q:{ask:'<b>東に高気圧・西に低気圧</b>。その間の地点Bでは、何の風？',fig:()=>svBox(svCenter(240,100,'H')+svCenter(60,100,'L')+svPt(150,100,'B')),ch:['南東の風','北西の風','北東の風','南西の風'],ok:0,good:'正解！ 高（東）→低（西）で<b>西へ</b>流れ、右へそれて<b>北西へ</b>向かう。北西へ向かう風は「南東の風」。',bad:'ちがう。①高→低の向き（西向き）②進む向きの<b>右</b>へそれる（北へ）。向かう方角の反対が風の名前。'},
+  b:()=>'<p>風は<b>高気圧から低気圧へ</b>流れる。北半球では、進む向きの<b>右へ少しそれる</b>（だから高気圧のまわりは時計回り、低気圧のまわりは反時計回りになる）。</p><div class="lfig">'+svBox(svCenter(150,45,'H')+svCenter(150,170,'L')+svPt(150,108,'A')+svArrow(150,108,-.6,.8,40,'#E4572E')+'<text x="186" y="112" font-size="13" fill="#E4572E">南西へ向かう</text>',210)+'</div><p><b>例</b>：<b>北に高気圧・南に低気圧</b>。間の地点Aでは、高→低で<b>南へ</b>流れ、右（西）へそれて<b>南西へ</b>向かう → <b>「北東の風」</b>。</p>'},
+ f:{t:'まなぶ ⑥',h:'等圧線の読み方',q:{ask:'高気圧の中心から外へ、等圧線が <b>1028・1024・？・1016</b> と並ぶ。？の線の気圧は？',ch:['1020hPa','1022hPa','1012hPa','1018hPa'],ok:0,good:'正解！ 等圧線は<b>4hPaごと</b>。1024の次は<b>1020</b>。',bad:'ちがう。等圧線は<b>4hPaごと</b>に引く。1024から4へらすと？'},
+  b:()=>'<p><b>等圧線</b>＝気圧が<b>同じ所</b>を結んだ線。天気図では<b>1000hPaを基準に4hPaごと</b>に引き、<b>20hPaごと</b>に太い線にする。線の上の地点の気圧は、その線の数字。数字が書いてない線は、となりの線から4ずつ数える。</p><div class="lfig">'+svBox(svRings(110,105,['1024','1020','1016'])+svCenter(110,105,'H')+svPt(202,105,'P')+'<text x="214" y="128" font-size="13" fill="#23372F">Pは1016hPa</text>')+'</div><p>等圧線の<b>間がせまい</b>所ほど、気圧の差が大きく<b>風が強い</b>。高気圧と低気圧を<b>近づける</b>と、間がせまくなって風が強くなる。</p>'}};
+const LSF_AT={0:['a','b'],1:['c'],2:['d'],4:['e'],5:['f']};
+function lessonList(vi,all){const r=[];Object.keys(LSF_AT).map(Number).sort((a,b)=>a-b).forEach(k=>{if(k<=vi)LSF_AT[k].forEach(id=>{if(all||!(S.ls&&S.ls[id]))r.push(id)})});return r}
+function lessonGate(vi,then){lessonShowF(lessonList(vi,false),then)}
+$('#bLearn').onclick=()=>{sfx.tap();const nx=nextVillage();lessonShowF(lessonList(nx<0?9:Math.max(0,nx),true),()=>{})};
+function lessonShowF(ids,done){if(!ids.length){ovClose();done&&done();return}const id=ids[0],L0=LSF[id],fin=ids.length===1?'わかった！':'つぎへ ▶';
+ const hd=sub=>'<h2><span class="sm" style="display:block;font-size:13px;color:#E4572E">'+L0.t+(sub||'')+'</span>'+L0.h+'</h2>';
+ const next=()=>{sfx.tap();S.ls=S.ls||{};S.ls[id]=1;save();lessonShowF(ids.slice(1),done)};
+ const page1=()=>{ovOpen(hd()+L0.b()+'<div class="lbar"><button class="fb g" id="lsOk"><span>'+(L0.q?'やってみよう ▶':fin)+'</span></button></div>');$('#ov').style.zIndex='40';$('#ovBox').scrollTop=0;
+  $('#lsOk').onclick=L0.q?()=>{sfx.tap();page2()}:next};
+ const page2=()=>{const q=L0.q;ovOpen(hd('　やってみよう')+(q.fig?'<div class="lfig tq">'+q.fig()+'</div>':'')+'<p><b>やってみよう：</b>'+q.ask+'</p><div class="lq" id="lqB"></div><div class="lres" id="lqR"></div><div class="lbar"><button class="fb w s" id="lsBk"><span>◀ もどる</span></button><button class="fb g" id="lsOk" disabled><span>'+fin+'</span></button></div>');$('#ov').style.zIndex='40';$('#ovBox').scrollTop=0;
+  const bx=$('#lqB');q.ch.map((c,j)=>[c,j]).sort(()=>Math.random()-.5).forEach(([c,j])=>{const b=document.createElement('button');b.className='fb w s';b.innerHTML='<span>'+c+'</span>';
+   b.onclick=()=>{const ok=j===q.ok;b.classList.add(ok?'ok':'ng');$('#lqR').innerHTML=ok?q.good:q.bad;if(ok){sfx.put();bx.querySelectorAll('button').forEach(x=>x.disabled=true);$('#lsOk').disabled=false}else{sfx.miss();b.disabled=true}$('#lqR').scrollIntoView({block:'nearest'})};bx.appendChild(b)});
+  $('#lsBk').onclick=()=>{sfx.tap();page1()};$('#lsOk').onclick=next};
+ page1()}
 /* ===== 遊び方案内（Guide・制作ルール13／仕上げ 2026-09-28 fs-finish-2026-09-28） ===== */
 var GD=window.Guide||null,HELP=null,PRACTICE=null,HP=false;const TSPOT=[2.5,8.25];
 function tutOn(){return MODE==='play'&&F&&F.tut}
@@ -4415,17 +4457,12 @@ if(GD&&!TEST_ONLY){
    '二の村からは、風は投げるまで見えない。外れたら風が見えるので、置き直してもう1回'],
   onOpen:()=>{HP=true},onClose:()=>{HP=false;last=performance.now()},
   replay:'tutorial',show:false,attention:true},LAND?{mount:$('#hudR'),size:48}:{corner:'br',offset:{y:58},size:46}));
- GD.tutorialButton('#bHow',()=>{ac();sfx.tap();const nm=$('#nameIn').value.trim();if(nm)S.name=nm;if(!S.started)S.started=true;save();PRACTICE.bandAt=LAND?'top':'bottom';GD.tutorial(PRACTICE)});
+ GD.tutorialButton('#bHow',()=>{ac();sfx.tap();const nm=$('#nameIn').value.trim();if(nm)S.name=nm;if(!S.started)S.started=true;save();lessonGate(0,()=>{PRACTICE.bandAt=LAND?'top':'bottom';GD.tutorial(PRACTICE)})});
 }else{$('#bHow').classList.add('hidden')}
 function startWithGuide(){$('#title').classList.add('hidden');$('#bBack').classList.add('hidden');
  GD.intro({title:'第18回　風車の村の紙飛行機',
   learn:'風は **高気圧からふき出し**、**低気圧へふきこむ**（北半球では 高＝**時計回り**・低＝**反時計回り**）',
-  how:'**高・低の駒をドラッグ** で置き、紙飛行機を **うしろへ引いて はなす**',gesture:'drag'}).then(()=>{PRACTICE.bandAt=LAND?'top':'bottom';GD.tutorial(PRACTICE)})}
-/* 試験用のつまみ（画面の確認用） */
-window.__game={S:()=>S,F:()=>F,startFlight,toMap,startTest,mode:()=>MODE,toS:(u,v)=>toS(u,v),trayRects:()=>trayRects(),launchS:i=>launchS(i),mapNodes:()=>mapNodes(),SC:()=>SC,
- place:(k,u,v)=>{F.pcs.push({k,u,v});pieceMoved()},clear:()=>{F.pcs=[];pieceMoved()},aim:(a,p)=>{F.aim.a=a;F.aim.p=p},throw:()=>doThrow(),
- solve:(n)=>{const V=F.V,kinds=[];for(let i=0;i<V.H;i++)kinds.push('H');for(let i=0;i<V.L;i++)kinds.push('L');for(let z=0;z<(n||4000);z++){const pcs=[];for(const k of kinds){for(let q=0;q<40;q++){const u=.5+Math.random()*15,v=.5+Math.random()*9;if(canPlace(F.fl,pcs,u,v)){pcs.push({k,u,v});break}}}for(let a=-30;a<=30;a+=10)for(const p of [1,.8]){if(throwAll(F.fl,pcs,a*PI/180,p).ok){F.pcs=pcs;pieceMoved();F.aim.a=a*PI/180;F.aim.p=p;return true}}}return false},
- villageClear,mainClear,step:dt=>update(dt)};
+  how:'**高・低の駒をドラッグ** で置き、紙飛行機を **うしろへ引いて はなす**',gesture:'drag'}).then(()=>lessonGate(0,()=>{PRACTICE.bandAt=LAND?'top':'bottom';GD.tutorial(PRACTICE)}))}
 if(TEST_ONLY)startTest();else toTitle();
 requestAnimationFrame(loop);
 </script>

@@ -155,6 +155,22 @@ button:disabled{opacity:.35}
 .stars i.on{color:var(--r);animation:mcStamp .4s cubic-bezier(.2,1.7,.4,1) both}
 @keyframes mcStamp{0%{transform:scale(2.6);opacity:0}55%{transform:scale(.88);opacity:1}100%{transform:scale(1)}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}.stars i.on{animation:none}}
+/* 試合前ブリーフィング（まなぶ札）2026-10-06 初心者向け */
+#scrLearn{z-index:28}
+#scrLearn .ov{display:block;padding:calc(70px + env(safe-area-inset-top)) 5vw 24px;background:#fff}
+#scrLearn .lin{max-width:760px;margin:0 auto}
+#scrLearn .lk{font-weight:900;font-size:13px;letter-spacing:.12em;color:var(--r)}
+#scrLearn h3{font-size:clamp(28px,4.6vw,52px);line-height:1.05;margin:6px 0 10px}
+#lFig svg{width:100%;max-width:520px;height:auto;display:block;margin:6px 0 4px;border:2px solid var(--k)}
+#lP p{font-size:16px;font-weight:700;line-height:1.75;margin:8px 0;border-left:6px solid var(--k);padding-left:12px}
+#lP p b{color:var(--r)}
+#scrLearn .ask{margin-top:14px;padding:10px 12px;background:var(--k);color:#fff;font-weight:900;font-size:17px;line-height:1.5}
+#scrLearn .opts{display:flex;flex-direction:column;gap:8px;margin-top:10px}#scrLearn .opts button{min-height:50px}
+#scrLearn .why{margin-top:10px;font-size:15px;font-weight:700;line-height:1.65;min-height:1em}
+#scrLearn .why b{color:var(--r)}#scrLearn .why b.ng{color:var(--k);text-decoration:underline}
+#scrLearn .lft{display:flex;align-items:center;gap:12px;margin-top:16px;border-top:2px solid var(--k);padding-top:12px}#scrLearn .lft span{flex:1;font-weight:900}
+/* 横長の画面（ノートPC・iPad横）：左＝図と説明、右＝やってみよう・つぎへ。問いとボタンが画面の高さに入るように */
+@media (min-width:900px){#scrLearn .ov{padding:calc(58px + env(safe-area-inset-top)) 4vw 16px}#scrLearn .lin{max-width:1120px;display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,.8fr);column-gap:32px;align-items:start}#scrLearn .lk,#scrLearn h3{grid-column:1/-1}#scrLearn h3{font-size:clamp(28px,3.2vw,40px)}#scrLearn .rcol{position:sticky;top:0}#scrLearn .rcol .ask{margin-top:6px}#lFig svg{max-height:250px;width:auto;max-width:100%}#lP p{font-size:15px;line-height:1.65;margin:6px 0}}
 </style>
 </head>
 <body>
@@ -172,7 +188,7 @@ button:disabled{opacity:.35}
 <div id="scrMap" class="scr hidden">
   <div><h2 class="mH">大会の表<small>8試合を勝ちぬいて決勝へ。負けても、その試合だけやり直せる。</small></h2><div id="rows"></div></div>
   <div><h2 class="mH">材質ストーン図鑑<small id="bkN"></small></h2><div class="book" id="book"></div>
-    <div class="mBtns"><button id="bBook2" class="ln">図鑑（中2理科）</button><button id="bGacha2" class="ln">図鑑ガチャ</button><button id="bToTest" class="bk" style="grid-column:1/3">確認テストへ →</button></div></div>
+    <div class="mBtns"><button id="bNote" class="ln" style="grid-column:1/3">作戦メモ（用語の読み返し）</button><button id="bBook2" class="ln">図鑑（中2理科）</button><button id="bGacha2" class="ln">図鑑ガチャ</button><button id="bToTest" class="bk" style="grid-column:1/3">確認テストへ →</button></div></div>
 </div>
 
 <div id="scrPlay" class="scr hidden"></div>
@@ -189,6 +205,8 @@ button:disabled{opacity:.35}
   <div><div id="tA" class="tA"></div><div id="tEx" class="hidden"></div><button id="tNext" class="bk hidden">つぎへ →</button></div></div></div>
 <div id="scrEnd" class="scr hidden"><div id="eScore"></div><div id="eName"></div><div id="eBtns"><button id="eCard" class="bk">提出カード →</button><button id="eBook" class="ln">図鑑</button><button id="eMap" class="ln">大会の表</button></div></div>
 
+<div id="scrLearn" class="scr hidden" data-gd-pass><div class="ov"><div class="lin"><div class="lk" id="lKick"></div><h3 id="lT"></h3><div class="lcol"><div id="lFig"></div><div id="lP"></div></div><div class="rcol"><div id="lQ"></div>
+  <div class="lft"><span id="lPg"></span><button id="lNext" class="bk">つぎへ →</button></div></div></div></div></div>
 <button id="bBack" class="bk hidden">← もどる</button>
 <button id="bMute" data-gd-pass aria-label="音">🔊</button>
 </div>
@@ -3841,8 +3859,8 @@ var MAT={
  w:{n:'タングステン',s:'W',rho:5.29,c:'#4E5561',tc:'#fff',ratio:'銅の約3倍',fact:'熱に強い金属。白熱電球のフィラメントに使われた。'},
  fe:{n:'鉄',s:'Fe',rho:10.0,c:'#767C8A',tc:'#fff',ratio:'銅の約6倍',fact:'同じ長さ・太さなら、銅の約6倍電流を通しにくい。'},
  nicr:{n:'ニクロム',s:'NiCr',rho:109,c:'#9A7B62',tc:'#fff',ratio:'銅の約65倍',fact:'金属の中では抵抗が大きい。電流を流すと熱を出しやすく、電熱線に使う。'},
- glass:{n:'ガラス',s:'ガラス',rho:1e20,c:'#BFE6E8',tc:'#0d3a3d',ratio:'けたちがいに大きい',fact:'電流をほとんど通さない絶縁体（不導体）。'},
- rubber:{n:'ゴム',s:'ゴム',rho:1e20,c:'#2B2B2B',tc:'#fff',ratio:'けたちがいに大きい',fact:'電流をほとんど通さない絶縁体。電気工事用の手袋などに使う。'}
+ glass:{n:'ガラス',s:'ガラス',rho:1e20,c:'#BFE6E8',tc:'#0d3a3d',ratio:'けたちがいに大きい（絶縁体）',fact:'電流をほとんど通さない絶縁体（不導体）。'},
+ rubber:{n:'ゴム',s:'ゴム',rho:1e20,c:'#2B2B2B',tc:'#fff',ratio:'けたちがいに大きい（絶縁体）',fact:'電流をほとんど通さない絶縁体。電気工事用の手袋などに使う。'}
 };
 var MORDER=['ag','cu','al','w','fe','nicr','glass','rubber'];
 function relI(k){var r=MAT[k].rho;return r>1e10?0:(12+1.59)/(12+r)}
@@ -3854,10 +3872,10 @@ var HANS={far:['ag','cu'],al:['al'],w:['w'],fe:['fe'],near:['nicr'],ins:['glass'
 /* ---------------- 大会（8試合） ---------------- */
 var MATCH=[
  {n:'予選 第1試合',mats:['cu','fe'],fixed:['far','fe','far','fe','far'],need:3,lead:'まずは銅と鉄。同じ長さ・太さの線でも、物質がちがうと電流の大きさがちがう。'},
- {n:'予選 第2試合',mats:['cu','fe','nicr'],pool:['far','fe','near'],k:5,need:3,shop:{m:'nicr',x:['cover','star']},lead:'ニクロム線が加わる。電熱線に使われる、抵抗の大きい金属。'},
+ {n:'予選 第2試合',mats:['cu','fe','nicr'],pool:['far','fe','near'],k:5,need:3,shop:{m:'nicr',x:['cover','star']},lead:'ニクロム線が加わる。電熱線に使われる、抵抗の大きい金属（電流を流すと熱を出しやすい）。'},
  {n:'予選 第3試合',mats:['cu','fe','nicr','al'],pool:['far','al','al','fe','near','far'],k:6,need:4,shop:{m:'al',x:['gold','cheer']},lead:'アルミニウムも金属。でも「金属ならどれも同じ」だろうか？'},
  {n:'決勝T 1回戦',mats:['cu','al','fe','nicr'],pool:['far','al','fe','near','far','fe'],k:6,need:4,guards:1,lead:'相手のガード（黒いストーン）が道をふさぐ。引く向きで左右をねらおう。'},
- {n:'準々決勝',mats:['cu','al','fe','nicr','glass','rubber'],pool:['ins','near','ins','far','fe','al'],k:6,need:4,guards:1,shop:{m:'glass',x:['star','cover']},lead:'ガラスとゴムの線が解禁。ハウスはスタートのすぐ前にも出る。'},
+ {n:'準々決勝',mats:['cu','al','fe','nicr','glass','rubber'],pool:['ins','near','ins','far','fe','al'],k:6,need:4,guards:1,shop:{m:'glass',x:['star','cover']},lead:'ガラスとゴムの線が解禁。どちらも電流をほとんど通さない絶縁体（不導体）。ハウスはスタートのすぐ前にも出る。'},
  {n:'準決勝',mats:['ag','cu','al','w','fe','nicr','glass','rubber'],pool:['w','w','far','al','fe','near'],k:6,need:4,guards:1,shop:{m:'w',x:['cheer','gold']},lead:'タングステンと銀が加わる。タングステンは銅の約3倍、電流を通しにくい。'},
  {n:'3ハウス戦',mats:['ag','cu','al','w','fe','nicr','glass','rubber'],pool:['far','fe','near','w','ins','al'],k:6,need:4,guards:1,multi:1,lead:'ハウスが3つ並ぶ。呼ばれたハウスに、材質だけで止める。'},
  {n:'決勝',boss:1,mats:['ag','cu','al','w','fe','nicr','glass','rubber'],pool:['far','near','w','fe','ins','al'],k:6,need:5,guards:1,multi:1,time:180,lead:'180秒で6エンド。5つ入れれば優勝。'}
@@ -3919,7 +3937,9 @@ function genEnds(mi,MX){var M=MX||MATCH[mi],list;
     return e});
   if(M.shop&&SV.bonus[mi]){ends.unshift({tk:M.shop.m==='nicr'?'near':M.shop.m==='al'?'al':M.shop.m==='glass'?'ins':'w',houses:[],guards:[],bonus:1});ends[0].houses=[ends[0].tk]}
   return ends}
-function startMatch(mi){var M=MATCH[mi];ac();G=null;
+function needLearn(mi,cont){if(LRN)return true;if(TEST||mi<0)return false;if(!SV.lrn)SV.lrn={};var need=[];if(!SV.lrn.base)need.push('base');var lk=LKEY[mi];if(lk&&!SV.lrn[lk])need.push(lk);if(!need.length)return false;teachKeys(need,cont);return true}
+function startMatch(mi){if(needLearn(mi,function(){startMatch(mi)}))return;return startMatch0(mi)}
+function startMatch0(mi){var M=MATCH[mi];ac();G=null;
   G={mi:mi,M:M,ends:genEnds(mi),ei:0,score:0,throws:0,combo:0,t:0,left:M.time||0,phase:'intro',mat:null,stone:null,guards:[],pull:null,res:null,fx:[],trail:[],newMat:null,paused:false};
   setScene('play');layout();beginEnd();if(window.BGM)BGM.mood('normal');
   $('mhT').textContent=M.n;$('mhL').textContent=M.lead;$('mhE').textContent=G.ends.length+(G.ends[0].bonus?'（ボーナス1）':'');$('mhN').textContent=M.need;$('mhM').textContent=M.mats.length+'種';showOv('ovMatch')}
@@ -3970,7 +3990,7 @@ $('rsNext').onclick=function(){var mi=G?G.mi:0;hideOv('ovResult');if(MATCH[mi].b
 $('rsRetry').onclick=function(){var mi=G.mi;hideOv('ovResult');startMatch(mi)};
 $('rsMap').onclick=function(){G=null;setScene('map')};
 $('mhGo').onclick=function(){hideOv('ovMatch');if(G){G.phase='aim';SFX.go()}};
-function goMatch(mi){var M=MATCH[mi];if(M.shop&&SV.shop[mi]==null&&!TEST){openShop(mi)}else startMatch(mi)}
+function goMatch(mi){if(needLearn(mi,function(){goMatch(mi)}))return;var M=MATCH[mi];if(M.shop&&SV.shop[mi]==null&&!TEST){openShop(mi)}else startMatch(mi)}
 
 /* ---------------- 作戦タイム（強化を1つ：効く／効かない） ---------------- */
 var shopMi=0,shopDone=false;
@@ -4180,13 +4200,13 @@ if(!Zk()){['bBook1','bBook2','bGacha1','bGacha2','eBook'].forEach(function(id){$
 function getName(){return(window.PLAYER_NAME||$('nameIn').value||SV.name||'').trim()}
 $('bStart').onclick=function(){ac();SV.name=$('nameIn').value.trim()||SV.name;save();
   if(!window.Guide){if(!SV.won[0])goMatch(0);else setScene('map');return}
-  Guide.intro(INTRO).then(function(){if(scene!=='title')return;if(!SV.won[0])Guide.tutorial(PRACTICE);else setScene('map')})};
+  Guide.intro(INTRO).then(function(){if(scene!=='title')return;if(!SV.won[0]){if(!SV.lrn||!SV.lrn.base)teachKeys(['base'],function(){Guide.tutorial(PRACTICE)});else Guide.tutorial(PRACTICE)}else setScene('map')})};
 $('bCont').onclick=function(){ac();SV.name=$('nameIn').value.trim()||SV.name;save();setScene('map')};
 
 /* ---------------- 確認テスト ---------------- */
 var TQ=[],TI=0,TA=[],TOK=[],CARD=null;
 function esc(s){return String(s).replace(/[&<>"]/g,function(ch){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch]})}
-function startTest(){G=null;stopRumble();setScene('test');TQ=window.Quiz?Quiz.test():[];TI=0;TA=[];TOK=[];showQ()}
+function startTest(){if(!TEST){var nd=['base','nicr','ins','table'].filter(function(k){return!(SV.lrn&&SV.lrn[k])});if(nd.length){if(!LRN)teachKeys(nd,startTest);return}}G=null;stopRumble();setScene('test');TQ=window.Quiz?Quiz.test():[];TI=0;TA=[];TOK=[];showQ()}
 function lamps(){$('tLamps').innerHTML=TQ.map(function(q,i){return'<i class="'+(i<TOK.length?(TOK[i]?'ok':'ng'):i===TI?'cur':'')+'"></i>'}).join('')}
 function showQ(){if(TI>=TQ.length)return finishTest();var q=TQ[TI];$('scrTest').scrollTop=0;$('tNo').innerHTML=('0'+(TI+1)).slice(-2)+'<small>確認テスト ／ '+TQ.length+'問</small>';lamps();
   $('tQ').textContent=q.q;var f=$('tFig');if(q.fig){f.innerHTML=q.fig;f.classList.remove('hidden')}else{f.innerHTML='';f.classList.add('hidden')}
@@ -4274,24 +4294,74 @@ function practiceWatch(){if(!PR.on||!G||!G.M.practice)return;
   if(PR.stage===3&&G.ei===1&&G.phase==='result'&&G.res&&G.res.t>1.1){PR.stage=4;Guide.cheer('鉄は 電流が小さい → 手前で止まる',{y:H*.3,size:.8,sound:false});setTimeout(function(){if(PR.on&&PR.stage===4)Guide.tutorialClear()},1500)}}
 function shopCoach(){if(!window.Guide)return;Guide.coach([{gesture:'drag',target:function(){var b=$('shopCards').children[1]||$('shopCards').children[0];return b||null},area:'#ovShopIn',to:'#shopStone',until:function(){return shopDone},dim:false,label:'えらぶ',
   text:'すべる距離を **本当に変える** 強化を1枚えらんで、**ストーンへ ドラッグ**（タップでも可）'}],{key:'material-curling-shop'})}
-var INTRO={title:'マテリアル・カーリング',learn:'同じ長さ・太さの線でも、**物質によって電流の大きさ（抵抗）がちがう**',how:'線を **ストーンへ ドラッグ** してつなぎ、ストーンを **引いて はなす**',gesture:'drag'};
+/* ================= 試合前ブリーフィング（まなぶ札）：用語を「試合の前」に教える（2026-10-06 初心者向け） ================= */
+var LRN=null,LKEY={1:'nicr',4:'ins',5:'table'};
+function fmtL(s){return esc(s).replace(/\*\*(.+?)\*\*/g,'<b>$1</b>')}
+function svgS(inner,w,h){return'<svg viewBox="0 0 '+w+' '+h+'" xmlns="http://www.w3.org/2000/svg" font-family="Zen Kaku Gothic New,Hiragino Sans,sans-serif" font-weight="700"><rect width="'+w+'" height="'+h+'" fill="#fff"/>'+inner+'</svg>'}
+function st(x,y,s,col,sz,anc){return'<text x="'+x+'" y="'+y+'" fill="'+(col||BLK)+'" font-size="'+(sz||13)+'" text-anchor="'+(anc||'start')+'">'+s+'</text>'}
+/* 抵抗の大小 → 電流の大小 → すべる距離（横棒） */
+function figBars(keys){var s='',y=14,max=0;keys.forEach(function(k){max=Math.max(max,dist(k))});
+  s+=st(8,y,'同じ長さ・太さ・電圧で、ストーンがすべる距離',BLK,11);y+=12;
+  keys.forEach(function(k){var M=MAT[k],w=Math.max(4,dist(k)/max*160);s+='<rect x="96" y="'+y+'" width="'+w+'" height="16" fill="'+(k===keys[0]?RED:BLK)+'"/>'+st(88,y+13,M.n,BLK,12,'end')+st(100+w,y+13,M.ratio,RED,10);y+=24});
+  return svgS(s,330,y+6)}
+/* 抵抗の表（長さ1m・断面積1mm²） */
+function figTable(){var rows=[['ag','0.016'],['cu','0.017'],['al','0.027'],['w','0.053'],['fe','0.10'],['nicr','1.1'],['glass','けたちがいに大きい']],s='',y=20;
+  s+='<rect x="0" y="0" width="330" height="26" fill="'+BLK+'"/>'+st(10,18,'物質',  '#fff',12)+st(150,18,'抵抗［Ω］（長さ1m・断面積1mm²）','#fff',11);y=44;
+  rows.forEach(function(r,i){s+='<line x1="0" y1="'+(y+6)+'" x2="330" y2="'+(y+6)+'" stroke="'+BLK+'" stroke-width="1"/>'+st(10,y,MAT[r[0]].n,BLK,13)+st(150,y,r[1],i<2?RED:BLK,13);y+=22});
+  s+=st(10,y+6,'↓ 下へいくほど抵抗が大きい＝電流が小さい',RED,11);return svgS(s,330,y+14)}
+/* コード：中の銅（導体）・外のビニル（絶縁体） */
+function figCord(){var s='';s+='<rect x="20" y="40" width="280" height="44" rx="22" fill="'+GRY+'" stroke="'+BLK+'" stroke-width="2"/><rect x="20" y="54" width="300" height="16" fill="#C8773C"/>';
+  s+=st(30,30,'外側：ビニル＝絶縁体（電流をほとんど通さない）',BLK,11)+st(30,108,'中：銅＝導体（電流を通しやすい）',RED,11);return svgS(s,330,120)}
+var LPG={
+ base:[
+  {t:'電流と、電気抵抗',fig:function(){return figBars(['cu','fe'])},p:'**電流**＝回路（電気の通り道）を流れる電気の流れ（単位 A）。**電圧**＝電流を流そうとするはたらき（単位 V）。\n**電気抵抗（抵抗）**＝電流の **通しにくさ**（単位 Ω）。抵抗が **大きい** 線ほど、同じ電圧でも電流は **小さい**。\nこの大会では、つないだ線の **電流が大きいほど、ストーンが遠くまですべる**。抵抗が大きい線ほど **手前で止まる**。\n同じ金属でも、**種類によって抵抗はちがう**。鉄は銅の約6倍、電流を通しにくい。',
+   q:{ask:'抵抗が大きい線をつなぐと、ストーンはどうなる？',c:['電流が小さいので、手前で止まる','電流が大きいので、遠くまですべる','金属ならどれも同じ所で止まる'],why:'抵抗が大きい＝電流を通しにくい＝電流が小さい。だから手前で止まる。',hint:'抵抗は「通しにくさ」。通しにくいと電流は大きい？小さい？'}},
+  {t:'くらべるときは、条件をそろえる',p:'くらべたいのは **線の物質** だけ。だから、それ以外の **長さ・太さ・加える電圧** は全部そろえる。\nそろえないと、距離がちがった理由が「物質のせい」なのか分からなくなる。\n線の **外側の色・柄・応援** は、電流と関係ない。電流を決めるのは、中の **物質・長さ・太さ・電圧**。',
+   q:{ask:'銅と鉄をくらべたい。銅は長さ1m、鉄は長さ2mの線を使った。よくない所は？',c:['長さがちがうので、電流のちがいが物質のせいか分からない','銅と鉄では色がちがう','線が2本しかない'],why:'くらべたい物質以外（長さ・太さ・電圧）は全部そろえる。長さがちがうと、ちがいが物質のせいと言えない。',hint:'くらべたいのは物質。それ「以外」はそろっている？'},last:'大会へ'}
+ ],
+ nicr:[
+  {t:'導体と、ニクロム',fig:function(){return figBars(['cu','fe','nicr'])},p:'金属のように、電流を **通しやすい** 物質を **導体** という。\n**銅** は抵抗が小さい導体 → 電気を運ぶ **導線**（コードの中の線）に使う。\n**ニクロム** は金属の中では抵抗が **大きい**（銅の約65倍）。電流を流すと **熱を出しやすい** ので、**電熱線**（ヒーター）に使う。',
+   q:{ask:'トースターの中の、赤く熱くなる線。銅ではなくニクロムを使うのはなぜ？',c:['ニクロムは抵抗が大きく、電流を流すと熱を出しやすい','ニクロムは抵抗が小さく、電流が流れやすい','ニクロムは電流をまったく通さない'],why:'ニクロムは金属の中では抵抗が大きく、熱を出しやすい。だからトースターやドライヤーの熱くなる線（電熱線）に使う。',hint:'ニクロムは銅の約65倍、電流を通しにくい。'},last:'この試合へ'}
+ ],
+ ins:[
+  {t:'絶縁体 ― 電流をほとんど通さない',fig:figCord,p:'この試合から **ガラス** と **ゴム** の線が出る。どちらも抵抗が **けたちがいに大きく**、電流を **ほとんど通さない**。\nこういう物質を **絶縁体（不導体）** という。ビニル・ガラス・ゴムなど。\n電気コードは、中の **銅（導体）** を **ビニル（絶縁体）** でおおっている。電流が外の人や物に **もれない** ようにするため。電気工事の手袋もゴム。',
+   q:{ask:'電気工事をする人が、ゴムの手袋をつけるのはなぜ？',c:['ゴムは絶縁体で、電流をほとんど通さないから','ゴムは導体で、電流を通しやすいから','ゴムは電流を強めるから'],why:'ゴムは絶縁体（不導体）。手に電流が流れないように守っている。コードのビニルも同じ理由。',hint:'ゴムはガラスやビニルのなかま。電流を通す？通さない？'},last:'この試合へ'}
+ ],
+ table:[
+  {t:'抵抗の表を読む',fig:figTable,p:'長さ1m・断面積（線の切り口の面積）1mm²にそろえた線の抵抗。\n**抵抗が小さい順＝同じ電圧で電流が大きい順**。銀・銅がいちばん電流を通しやすく、ニクロムは金属の中で通しにくい。ガラスやゴムはほとんど通さない。\n**タングステン** は熱に強い金属（白熱電球のフィラメントに使われた）。**銀** は銅とほぼ同じくらい通しやすい。',
+   q:{ask:'アルミニウム・鉄・タングステンに同じ電圧を加えた。電流がいちばん大きいのは？',c:['アルミニウム','鉄','タングステン'],why:'表で抵抗がいちばん小さいのはアルミニウム（0.027Ω）。抵抗が小さいほど電流は大きい。',hint:'表の数字が小さい＝抵抗が小さい＝電流が大きい。'},last:'この試合へ'}
+ ]
+};
+function teachKeys(keys,done){var pages=[];keys.forEach(function(k){pages=pages.concat(LPG[k])});
+  teach('BRIEFING ／ 試合前の作戦メモ',pages,function(){if(!SV.lrn)SV.lrn={};keys.forEach(function(k){SV.lrn[k]=1});save();if(done)done()})}
+function teach(kick,pages,done){LRN={k:kick,p:pages,i:0,done:done};if(HELP)HELP.hide();if(G&&!G.paused){G.paused=true;G.lp=1}$('scrLearn').classList.remove('hidden');showLearn()}
+function showLearn(){var L=LRN,pg=L.p[L.i];$('lKick').textContent=L.k;$('lT').textContent=pg.t;
+  $('lFig').innerHTML=pg.fig?pg.fig():'';
+  $('lP').innerHTML=pg.p.split('\n').map(function(x){return'<p>'+fmtL(x)+'</p>'}).join('');
+  var q=$('lQ'),nb=$('lNext');q.innerHTML='';nb.textContent=(L.i+1>=L.p.length?(L.free?'とじる':(pg.last||'わかった')):'つぎへ')+' →';$('lPg').textContent=L.p.length>1?(L.i+1)+' / '+L.p.length:'';
+  if(pg.q&&!L.free){var qq=pg.q;nb.classList.add('hidden');q.innerHTML='<div class="ask">やってみよう：'+fmtL(qq.ask)+'</div><div class="opts"></div><div class="why"></div>';var box=q.querySelector('.opts'),wy=q.querySelector('.why');
+    qq.c.map(function(t,i){return{t:t,ok:i===0,r:Math.random()}}).sort(function(a,b){return a.r-b.r}).forEach(function(o){var b=document.createElement('button');b.className='ln';b.textContent=o.t;
+      b.onclick=function(){ac();if(o.ok){SFX.inn(1);[].forEach.call(box.children,function(x){x.disabled=true});b.disabled=false;b.className='rd';wy.innerHTML='<b>正解。</b>'+fmtL(qq.why);nb.classList.remove('hidden');setTimeout(function(){try{nb.scrollIntoView({behavior:RM?'auto':'smooth',block:'nearest'})}catch(e){}},60)}
+        else{SFX.miss();b.disabled=true;wy.innerHTML='<b class="ng">ちがう。</b>'+fmtL(qq.hint)}};box.appendChild(b)})}
+  else nb.classList.remove('hidden');
+  var it=document.querySelector('#scrLearn .ov');if(it)it.scrollTop=0}
+$('lNext').onclick=function(){ac();var L=LRN;if(!L)return;L.i++;if(L.i>=L.p.length){$('scrLearn').classList.add('hidden');LRN=null;SFX.clip();if(G&&G.lp){G.lp=0;G.paused=false}if(HELP&&(scene==='play'||scene==='map'))HELP.show();if(L.done)L.done();return}SFX.tick();showLearn()};
+$('bNote').onclick=function(){ac();var pages=LPG.base.concat(LPG.nicr,LPG.ins,LPG.table);teach('BRIEFING ／ 読み返し',pages,null);LRN.free=1;showLearn()};
+
+var INTRO={title:'マテリアル・カーリング',learn:'**抵抗**＝電流の通しにくさ。同じ長さ・太さ・電圧の線でも、**物質によって抵抗がちがい**、抵抗が小さい線ほど **電流が大きい**。言葉は 試合の前の「作戦メモ」で教わる',how:'線を **ストーンへ ドラッグ** してつなぎ、ストーンを **引いて はなす**',gesture:'drag'};
 var HELP=null;
 if(window.Guide){
   Guide.setup({theme:{bg:'#FFFFFF',fg:BLK,accent:RED,accentText:'#fff',font:FF,bodyFont:FF,radius:0,texture:'grid',line:BLK,dim:'rgba(255,255,255,.74)',shadow:'10px 10px 0 '+RED,outline:'#fff',hand:'#fff',handLine:BLK},
     sfx:function(k){if(k==='step')SFX.clip();else if(k==='done')SFX.inn(2);else if(k==='clear')SFX.win();else if(k==='cheer')tone(1319,.14,'sine',.06);else SFX.tick()},
     muted:function(){return muted}});
   HELP=Guide.help({learn:INTRO.learn,how:INTRO.how,title:INTRO.title,gesture:'drag',show:false,attention:true,offset:{x:66},replay:'tutorial',
-    rules:['線はどれも **同じ長さ・同じ太さ・同じ電圧**。ちがうのは **物質だけ**','電流が大きい線ほど **遠くまで すべる**。止まった距離は記録ノートに残る','**赤いハウス** がねらい。中に止まれば ハウスイン（連続で ×3・×5）','ストーンを引く **向き** で左右をねらえる（強さは自動）','作戦タイムでは、すべる距離を **本当に変える** 強化を選ぼう'],
+    rules:['**抵抗**＝電流の通しにくさ。抵抗が小さい線ほど電流が大きい。**導体**＝電流を通しやすい（金属）、**絶縁体（不導体）**＝ほとんど通さない（ガラス・ゴム・ビニル）','線はどれも **同じ長さ・同じ太さ・同じ電圧**。ちがうのは **物質だけ**','電流が大きい線ほど **遠くまで すべる**。止まった距離は記録ノートに残る','**赤いハウス** がねらい。中に止まれば ハウスイン（連続で ×3・×5）','ストーンを引く **向き** で左右をねらえる（強さは自動）','作戦タイムでは、すべる距離を **本当に変える** 強化を選ぼう'],
     onOpen:function(){HELP._p=G?G.paused:true;if(G)G.paused=true;stopRumble()},onClose:function(){if(G&&!HELP._p)G.paused=false}});
-  Guide.tutorialButton('#bHow',function(){ac();Guide.tutorial(PRACTICE)});
+  Guide.tutorialButton('#bHow',function(){ac();if(!SV.lrn||!SV.lrn.base){teachKeys(['base'],function(){Guide.tutorial(PRACTICE)});return}Guide.tutorial(PRACTICE)});
 }else $('bHow').classList.add('hidden');
 
 if(TEST)startTest();else setScene('title');
 requestAnimationFrame(frame);
-/* 自動操作の確かめ用（遊びには影響しない） */
-window.__MC={pos:function(){return{cu:chipT('cu')(),fe:chipT('fe')(),stone:stoneT(),pull:pullT()}},PR:function(){return PR},G:function(){return G},start:startMatch,go:function(){hideOv('ovMatch');G.phase='aim'},SV:function(){return SV},scene:function(){return scene},
-  setMat:function(k){G.mat=k},throwAt:function(th){throwStone(th)},next:nextEnd,shop:openShop,apply:function(i){var b=$('shopCards').children[i];b.dispatchEvent(new PointerEvent('pointerdown',{clientX:0,clientY:0,pointerId:1}));b.dispatchEvent(new PointerEvent('pointerup',{clientX:0,clientY:0,pointerId:1}))},
-  answer:function(){var e=G.ends[G.ei];return HANS[e.tk].filter(function(k){return G.M.mats.indexOf(k)>=0})[0]},aim:function(){var e=G.ends[G.ei];if(!e.guards.length)return 0;var g=e.guards[0],side=g.x>0?-1:1;return Math.atan((g.x+side*1.0)/g.s)},dist:dist,HOUSE:HOUSE,MATCH:MATCH};
 })();
 </script>
 <script>window.ZUKAN_COUNTER={"db": "https://rika-zukan-rank-default-rtdb.asia-southeast1.firebasedatabase.app", "id": "material-curling"};

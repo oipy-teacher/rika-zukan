@@ -79,6 +79,18 @@ body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:40;bac
 @keyframes rowp{50%{background:#2e2410}}
 .mBtns{display:flex;flex-wrap:wrap;gap:12px;margin-top:16px;justify-content:center}
 /* 決め球ノート */
+#scrBrief{z-index:26;background:rgba(0,0,0,.82);overflow:auto;padding:max(56px,env(safe-area-inset-top)) 4vw 30px;display:flex;align-items:flex-start;justify-content:center}
+#scrBrief.hidden{display:none!important}
+#brT{font-size:clamp(17px,2.7vmin,24px);line-height:1.6;font-weight:900;color:var(--fg)}
+#brT b{color:var(--am)}
+#brFig{display:block;width:min(520px,90%);margin:10px auto 0}
+#brQ{margin-top:12px;font-size:clamp(16px,2.5vmin,21px);font-weight:900;color:var(--fg)}
+#brCh{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:10px}
+#brCh .vb{width:100%;font-size:clamp(15px,2.3vmin,19px);letter-spacing:.02em}
+#brCh .vb.ok{background:var(--am)}
+#brCh .vb.ng{background:#555;color:#bbb;text-decoration:line-through}
+#brMsg{min-height:1.5em;margin-top:10px;font-weight:900;font-size:16px;color:var(--am)}
+#brMsg.ng{color:#f88}
 #scrNote{z-index:25;background:rgba(0,0,0,.8);overflow:auto;padding:max(66px,env(safe-area-inset-top)) 4vw 30px}
 .notes{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px;width:min(1000px,100%);margin:0 auto}
 .tape{background:#111;border:2px solid var(--fg);padding:10px;display:grid;gap:6px;position:relative}
@@ -160,6 +172,14 @@ body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:40;bac
  </div>
 </div>
 
+<div id="scrBrief" class="scr hidden">
+ <div class="board" style="margin:0 auto 16px">
+  <div class="bHead rgb"><span id="brH">📋 コーチの作戦ボード</span><small id="brN"></small></div>
+  <div id="brT"></div><svg id="brFig" viewBox="0 0 520 170" aria-hidden="true"></svg>
+  <div id="brQ"></div><div id="brCh"></div><div id="brMsg"></div>
+  <div class="mBtns"><button class="vb pri" id="brGo">つぎへ</button></div>
+ </div>
+</div>
 <div id="scrNote" class="scr hidden">
  <div class="board" style="margin:0 auto 16px">
   <div class="bHead rgb"><span>📼 決め球ノート（切りかえの型）</span><small id="nSum"></small></div>
@@ -3977,7 +3997,8 @@ function band(x,y,w,h,edge){c.fillStyle='rgba(8,8,8,.84)';c.fillRect(x,y,w,h);if
 /* ================= 状態 ================= */
 var scene='title',M=null,T=0,SHK=0,FL=0,GL=0,PT=[],PU=[],TEL=null,TBAND=0;
 var HINT=null;
-function startMatch(si){var S=ST[si];if(window.BGM)BGM.mood(S&&S.boss?'tense':'normal');
+function startMatch(si){var S=ST[si];if(BRIEF[si]&&!TEST&&!(SV.brief||{})[si]){briefShow(BRIEF[si],function(){(SV.brief=SV.brief||{})[si]=1;save();startMatch(si)});return}
+ if(window.BGM)BGM.mood(S&&S.boss?'tense':'normal');
  M={si:si,S:S,pts:[0,0],rally:0,rNeed:S.R,combo:0,maxCombo:0,maxRally:0,lost:0,hits:0,score:0,
   cur:-1,mag:1,bat:0,comp:0,ph:'serve',t:0,b:null,marks:[],paused:false,tut:!!S.tut,tutI:0,time:0,
   magA:0,lev:0,bend:0,bv:0,farr:0,flow:0,rp:0,rpT:0,batA:0,ou:0,ouT:0,info:'',infoT:0,expl:'',explT:0,newTypes:[],matchPoint:false,coaching:false,ball4hint:false,lastSide:0,streak:0,winFlag:false,ret:null};
@@ -4321,7 +4342,36 @@ function showClear(won,st,prev,rec,isTut){show('scrClear');var S=M.S;var si=M.si
  $('cBtns').innerHTML=bt;[].slice.call($('cBtns').querySelectorAll('button')).forEach(function(b){b.onclick=function(){ac();var a=b.dataset.a;if(a==='map'){M=null;setScene('map')}else if(a==='again')startMatch(si);else if(a==='next')startMatch(Math.min(ST.length-1,si+1));else if(a==='test')toTest()}});
  if(won){SFX.fan();confetti(80);FL=.4}else SFX.miss();
  if(!isTut)st.forEach(function(v,i){setTimeout(function(){var e=$('st'+i);if(!e)return;e.classList.add(v?'on':'off');if(v){SFX.stamp();SHK=8;vib(30)}},700+i*520)})}
-function toTest(){var z=Zk();M=null;if(z&&z.mainClear&&!TEST){try{z.mainClear({onClose:startTest});return}catch(e){}}startTest()}
+function toTest(){if(!TEST&&!(SV.brief||{}).t){M=null;briefShow(BRIEF.t,function(){(SV.brief=SV.brief||{}).t=1;save();toTest()});return}var z=Zk();M=null;if(z&&z.mainClear&&!TEST){try{z.mainClear({onClose:startTest});return}catch(e){}}startTest()}
+/* コーチの作戦ボード … 全国大会1回戦（電池）・準決勝（方位磁針）の前と、確認テストの前に1回ずつ */
+function batFig(q){return '<g stroke="#E8E8E8" stroke-width="4" fill="none"><path d="M60 40 H230 M290 40 H460 V140 H60 V40"/></g>'+
+ '<path d="M240 18 V62" stroke="#E8E8E8" stroke-width="5"/><path d="M280 28 V52" stroke="#E8E8E8" stroke-width="9"/>'+
+ (q?'<text x="240" y="84" text-anchor="middle" font-size="20" font-weight="900" fill="#FFB000">ア</text><text x="280" y="84" text-anchor="middle" font-size="20" font-weight="900" fill="#FFB000">イ</text>':
+ '<text x="225" y="16" text-anchor="middle" font-size="18" font-weight="900" fill="#FFB000">＋</text><text x="298" y="22" text-anchor="middle" font-size="18" font-weight="900" fill="#FFB000">−</text>'+
+ '<g fill="#FFB000"><path d="M136 40 l14 -8 v16z"/><path d="M60 104 l-8 -14 h16z"/><path d="M274 140 l-14 -8 v16z"/><path d="M460 76 l-8 14 h16z"/></g>'+
+ '<text x="260" y="100" text-anchor="middle" font-size="16" font-weight="900" fill="#E8E8E8">＋極から出て、回路を回り、−極へ</text>')}
+function magFig(up){return '<rect x="200" y="10" width="120" height="34" fill="'+(up?'#555':'#555')+'" stroke="#E8E8E8" stroke-width="3"/><text x="260" y="34" text-anchor="middle" font-size="20" font-weight="900" fill="#E8E8E8">？</text>'+
+ '<rect x="200" y="126" width="120" height="34" fill="#555" stroke="#E8E8E8" stroke-width="3"/><text x="260" y="150" text-anchor="middle" font-size="20" font-weight="900" fill="#E8E8E8">？</text>'+
+ '<circle cx="260" cy="85" r="26" fill="#1A1A1A" stroke="#E8E8E8" stroke-width="3"/><path d="'+(up?'M260 62 L252 85 H268 Z':'M260 108 L252 85 H268 Z')+'" fill="#C9453A"/><path d="'+(up?'M260 108 L252 85 H268 Z':'M260 62 L252 85 H268 Z')+'" fill="#E8E8E8"/>'}
+var BRIEF={
+ 5:[{h:'電池の記号',t:'全国大会では、電流の向きを <b>電池の記号</b> から読む。<br>電池の記号は <b>長い線が＋極</b>、<b>短い線が−極</b>。電流は <b>＋極から出て回路を回り、−極へ</b> もどる。<br>電池の向きを逆につなぐと、電流も逆 → <b>力も逆</b>。',fig:'b0'},
+    {h:'やってみよう',t:'図の電池の記号を見よう。',q:'＋極はア・イのどっち？',ch:['ア','イ'],hint:'長い線が＋極、短い線が−極',ok:'長い線が＋極。電流はここから出る',fig:'b1'}],
+ 6:[{h:'方位磁針で磁界を読む',t:'準決勝では、ノイズで磁石の色が消える。そんなときは <b>方位磁針</b>。<br><b>方位磁針のN極（赤）がさす向き＝磁界の向き</b>。磁界は <b>N極からS極へ</b> 向かうので、<br>赤が <b>下</b> を向いたら、<b>上の極がN極</b>（下がS極）。',fig:'m0'},
+    {h:'やってみよう',t:'極のあいだの方位磁針の赤（N極）が <b>上</b> を向いた。',q:'上の極は何極？',ch:['S極','N極'],hint:'磁界はN極→S極。針の赤は磁界の向きをさす。赤が向かう先は？',ok:'赤が上＝磁界は上向き＝上がS極',fig:'m1'}],
+ t:[{h:'力の大きさ',t:'このゲームでは向きだけを切りかえたけど、<b>電流を大きくする</b>と、導線が受ける力も <b>大きく</b> なる（向きは同じ）。'},
+    {h:'やってみよう',t:'電流を流すと導線は <b>左</b> へ動いた。電流の向きはそのままで、<b>大きさだけ</b>を <b>小さく</b> した。',q:'導線はどうなる？',ch:['左へ、より小さく動く','右へ動く','左へ、より大きく動く','動かなくなる'],hint:'向きを変えていないので向きは同じ。電流が小さいと力は？',ok:'向きは同じで、力が小さくなる（電流を大きくすれば、力も大きくなる）'},
+    {h:'調べ方と、同じしくみの道具',t:'きまりを調べる実験では、<b>変える条件は1回に1つ</b>。まず電流だけを逆にして記録 → もとにもどして、磁石だけを逆にして記録 → 比べる。<br>磁界の中のコイルが電流から受ける力で <b>ぐるぐる回る</b> 道具が <b>モーター</b>。このテニスと同じしくみで、回転する力をつくり出している。',q:'「磁石の向きを変えると、力の向きはどうなるか」だけを調べたい。正しいやり方は？',ch:['磁石の向きだけを変え、電流はもとのままにする','磁石の向きと電流の向きを、同時に変える','磁石の向きと電流の大きさを、同時に変える','磁石を取りのぞいて調べる'],hint:'変える条件は <b>1回に1つ</b>。調べたいのはどの条件？',ok:'調べたい条件だけを変える。ほかはそろえておく。'}]
+};
+var BR=null,brI=0,brDone=null,brOK=false;
+function briefShow(pages,then){BR=pages;brI=0;brDone=then;if(M)M.paused=true;$('scrBrief').classList.remove('hidden');brPage()}
+function brPage(){var p=BR[brI];brOK=!p.q;$('brH').textContent='📋 コーチの作戦ボード ─ '+p.h;$('brN').textContent=(brI+1)+' / '+BR.length;$('brT').innerHTML=p.t;
+ var f=$('brFig');if(p.fig){f.innerHTML=p.fig==='b0'?batFig(0):p.fig==='b1'?batFig(1):magFig(p.fig==='m1');f.style.display=''}else{f.innerHTML='';f.style.display='none'}
+ $('brQ').textContent=p.q||'';$('brMsg').textContent='';$('brMsg').className='';var box=$('brCh');box.innerHTML='';
+ if(p.q){var order=p.ch.map(function(c,i){return i});for(var i=order.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1)),t=order[i];order[i]=order[j];order[j]=t}
+  order.forEach(function(i){var b=document.createElement('button');b.className='vb';b.textContent=p.ch[i];b.onclick=function(){if(brOK)return;ac();if(i===0){brOK=true;b.classList.add('ok');$('brMsg').textContent='NICE！ '+p.ok;SFX.sw();$('brGo').classList.remove('hidden')}
+   else{b.classList.add('ng');$('brMsg').className='ng';$('brMsg').textContent='おしい… ヒント：'+p.hint;SFX.miss()}};box.appendChild(b)})}
+ $('brGo').textContent=brI>=BR.length-1?'わかった！':'つぎへ';$('brGo').classList.toggle('hidden',!brOK);$('scrBrief').scrollTop=0}
+$('brGo').onclick=function(){if(!brOK)return;ac();if(brI<BR.length-1){brI++;brPage();return}$('scrBrief').classList.add('hidden');var t=brDone;brDone=null;BR=null;if(t)t()};
 
 /* もどる */
 var backFrom=null;
@@ -4335,9 +4385,9 @@ function openBook(){var z=Zk();if(z&&z.openBook)z.openBook()}
 $('bBook1').onclick=openBook;$('bBook2').onclick=openBook;$('eBook').onclick=openBook;$('bGacha').onclick=function(){var z=Zk();if(z&&z.openGacha)z.openGacha()};
 if(!Zk())['bBook1','bBook2','bGacha','eBook'].forEach(function(id){$(id).classList.add('hidden')});
 $('bNote').onclick=function(){renderNote();$('scrNote').classList.remove('hidden')};$('bNoteX').onclick=function(){$('scrNote').classList.add('hidden')};
-$('bToTest').onclick=function(){if(SV.done)startTest()};
+$('bToTest').onclick=function(){if(!SV.done)return;if(!(SV.brief||{}).t)briefShow(BRIEF.t,function(){(SV.brief=SV.brief||{}).t=1;save();startTest()});else startTest()};
 function getName(){return(window.PLAYER_NAME||$('nameIn').value||SV.name||'').trim()}
-var LEARN='電流の向きか磁界の向きの **どちらか1つ** を逆にすると、導線が受ける力の向きも逆になる（両方逆だと元のまま）';
+var LEARN='磁界（N極→S極の向き）の中の導線に電流を流すと、導線は力を受ける。\n電流の向きか磁界の向きの **どちらか1つ** を逆にすると、力の向きも逆になる（両方逆だと元のまま）';
 var HOW='球が来る側へ力が向くように、**レバーをスワイプ**（電流）か**磁石をタップ**（磁界）で切りかえる。バウンドでLOCK';
 function intro(then){var G=Gd();if(!G){then();return}G.intro({title:'磁界テニス ～力の向きのきりかえ～',learn:LEARN,how:HOW,gesture:'swipe',theme:THEME}).then(then)}
 var THEME={bg:'rgba(12,12,12,.95)',fg:FG,accent:AM,font:'"Noto Sans JP",sans-serif',radius:0,texture:'scan',line:FG};
@@ -4382,14 +4432,13 @@ addEventListener('resize',resize);resize();
 try{if(document.fonts&&document.fonts.ready)document.fonts.ready.then(function(){BGP=null;BGF=null})}catch(e){}
 window.Zukan&&Zukan.setup&&Zukan.setup({game:GID,koma:[KOMA]});
 var G0=Gd();if(G0){G0.setup({theme:THEME,learn:LEARN,how:HOW,title:'磁界テニス',muted:function(){return muted}});
- G0.help({learn:LEARN,how:HOW,theme:THEME,show:false,rules:['ラケットは **磁界の中の導線**。磁界は **N極→S極** の向き','電流の向きを逆にすると → 力も逆','磁石の向き（N極とS極）を逆にすると → 力も逆','**両方** 逆にすると → 力は **元の向きのまま**','球が **バウンド** すると LOCK。その瞬間に電流が流れて力が出る','テープで固定された側は切りかえられない。もう片方を使う','電池の記号は **長い線が＋極**。電流は＋極から出る','方位磁針の **N極（赤）がさす向き** ＝ 磁界の向き'],
+ G0.help({learn:LEARN,how:HOW,theme:THEME,show:false,rules:['ラケットは **磁界の中の導線**。磁界は **N極→S極** の向き','電流の向きを逆にすると → 力も逆','磁石の向き（N極とS極）を逆にすると → 力も逆','**両方** 逆にすると → 力は **元の向きのまま**','球が **バウンド** すると LOCK。その瞬間に電流が流れて力が出る','テープで固定された側は切りかえられない。もう片方を使う','電池の記号は **長い線が＋極**。電流は＋極から出て回路を回り、−極へ','方位磁針の **N極（赤）がさす向き** ＝ 磁界の向き（赤が下なら上がN極）','**電流を大きく** すると力も **大きく** なる（向きは同じ）。この力で回る道具が **モーター**'],
   onOpen:function(){if(M)M.paused=true},onClose:function(){if(M)M.paused=false}})}
 if(window.PLAYER_NAME){$('nameIn').value=window.PLAYER_NAME;$('nmRow').classList.add('hidden')}else if(SV.name)$('nameIn').value=SV.name;
 if(!SV.tut&&SV.unl<=1&&!Object.keys(SV.stars).length)$('bCont').classList.add('hidden');
 document.addEventListener('visibilitychange',function(){if(document.hidden&&M)M.paused=true;else if(M&&$('scrBackQ').classList.contains('hidden'))M.paused=false});
 if(TEST)startTest();else setScene('title');
 requestAnimationFrame(frame);
-window.__JT={scene:function(){return scene},M:function(){return M},start:startMatch,auto:auto,SV:function(){return SV},map:function(){setScene('map')}};
 })();
 </script>
 <script>window.ZUKAN_COUNTER={"db": "https://rika-zukan-rank-default-rtdb.asia-southeast1.firebasedatabase.app", "id": "jikai-tennis"};

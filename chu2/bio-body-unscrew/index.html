@@ -158,6 +158,7 @@ body.land .pg{max-width:620px}
 .pg .k{font-family:var(--m);font-size:12px;color:var(--co);letter-spacing:.18em}
 .pg p{font-size:15.5px;line-height:1.7;margin:.6em 0}
 .pg .rowb{display:flex;flex-direction:column;gap:8px;margin-top:14px}
+.pg .lcx{font-size:15px;line-height:1.65}.pg .lcx ul{margin:4px 0;padding-left:1.2em}.pg .lcx li{margin:5px 0}.pg .lcx b{color:var(--co)}.pg .lcok{border-left:4px solid var(--co);padding:6px 10px;margin:10px 0;font-size:15px;line-height:1.6}
 body.land .pg .rowb{flex-direction:row;flex-wrap:wrap}
 .stars{display:flex;gap:14px;justify-content:center;margin:12px 0}
 .stars i{width:54px;height:54px;display:block;opacity:.18;background:no-repeat center/contain}
@@ -193,6 +194,16 @@ body.land .ch{font-size:19px;min-height:66px}
 .qfb .mk{font-family:var(--m);font-weight:700;font-size:92px;line-height:1;animation:stamp .4s both}
 .qfb .ex{max-width:520px;font-size:16px;line-height:1.7;border-left:3px solid var(--co);padding:8px 14px;text-align:left}
 @media (prefers-reduced-motion: reduce){*{animation-duration:.01s!important;animation-iteration-count:1!important;transition:none!important}}
+</style>
+<style>/* たしかめ（2026-10-06 第2周） */
+.lcop{display:flex;flex-direction:column;gap:8px;margin:10px 0}
+.lcop button{text-align:left;white-space:normal;line-height:1.4}
+.lcop button.lcNg{opacity:.45;text-decoration:line-through}
+.lcop button.lcOk{outline:4px solid #2e8b57;outline-offset:2px}
+.lcfb{margin:6px 0 4px;padding:8px 12px;border-radius:8px;line-height:1.55;font-size:15px;text-align:left}
+.lcfb.ok{background:#e7f5ea;border:2px solid #2e8b57;color:#173d27}
+.lcfb.ng{background:#fdeceb;border:2px solid #c0392b;color:#5a1a14}
+#lcGo[disabled]{opacity:.35;cursor:not-allowed}
 </style>
 </head>
 <body>
@@ -3999,7 +4010,7 @@ BOXES.push({id:'squid',nm:'封印：イカ',sub:'解剖の前の予言',seal:'sq
  panels:[],organs:[]});
 
 /* ================= 保存 ================= */
-function freshSV(){return {v:1,name:'',box:0,stars:[],best:[],maxCombo:0,started:false,cleared:false,mute:false}}
+function freshSV(){return {v:1,name:'',box:0,stars:[],best:[],maxCombo:0,started:false,cleared:false,mute:false,lc:{}}}
 let SV=freshSV();try{const o=JSON.parse(localStorage.getItem(SKEY));if(o&&o.v===1)SV=Object.assign(freshSV(),o)}catch(e){}
 function save(){try{localStorage.setItem(SKEY,JSON.stringify(SV))}catch(e){}}
 function readSeal(){try{return JSON.parse(localStorage.getItem(SEALKEY))}catch(e){return null}}
@@ -4088,8 +4099,8 @@ function boxSVG(i,st){const c=st?'#FF7F50':'#E8EEF2';return '<svg viewBox="0 0 1
 function openMap(){leaveGuide();G=null;bgmOn=false;show('scMap');const st=SV.stars.reduce((a,b)=>a+(b||0),0);$('mapSt').textContent='★ '+st+' / 18　最大コンボ '+SV.maxCombo;
  $('boxes').innerHTML=BOXES.map((b,i)=>{const lock=i>SV.box,s=SV.stars[i]||0;return '<button class="bx'+(lock?' lock':'')+(i===SV.box&&!SV.cleared?' next':'')+'" data-i="'+i+'"'+(lock?' disabled':'')+'>'+boxSVG(i,i<SV.box)+'<span class="no">'+(b.boss?'BOSS':b.mid?'★山場':b.seal?'SEAL':'BOX')+'</span><span class="n">'+esc(b.nm)+'</span><span class="s">'+(b.seal?(i<SV.box?'封印ずみ':'　'):(i<SV.box?'★'.repeat(s)+'☆'.repeat(3-s):'　'))+'</span></button>'}).join('');
  $('boxes').querySelectorAll('.bx').forEach(el=>el.onclick=()=>{ac();SFX.click();startBox(+el.dataset.i)});
- $('btnTestM').hidden=!SV.cleared;$('btnSealM').hidden=!readSeal();$('btnBookM').hidden=!window.Zukan}
-$('btnTestM').onclick=()=>startTest();
+ $('btnTestM').hidden=!SV.cleared;$('btnTestM').textContent=(SV.lc&&SV.lc.kekka)?'確認テストへ':'答え合わせ → 確認テストへ';$('btnSealM').hidden=!readSeal();$('btnBookM').hidden=!window.Zukan}
+$('btnTestM').onclick=()=>lcRun(lcNeed(BOXES.length),startTest);
 $('btnBookM').onclick=()=>{window.Zukan&&Zukan.openBook()};
 $('btnSealM').onclick=()=>showSeal();
 function showSeal(){const s=readSeal();if(!s)return;const row=(k,nm)=>{const p=s.pins&&s.pins[k];return '<div class="tally">'+['dig','res','circ'].map(f=>'<div><span style="color:'+FN[f].col+'">'+FN[f].nm+'の器官</span><b>'+(p&&p[f]?esc(p[f].where):'―')+'</b></div>').join('')+'</div>'};
@@ -4099,7 +4110,39 @@ function showSeal(){const s=readSeal();if(!s)return;const row=(k,nm)=>{const p=s
 function comboLv(c){return c>=15?4:c>=10?3:c>=6?2:c>=3?1:0}
 function mult(c){return 1+comboLv(c)}
 const TH=[3,6,10,15];
-function startBox(i,opt){opt=opt||{};stopCoach();if(i===0&&!opt.practice&&!SV.tut&&!SV.box&&window.Guide){runPractice(false);return}
+/* ================= 組立説明書の札（教える札・2026-10-06 夜間改修・初心者向け） =================
+   at: その番号の箱の前に出す（8＝確認テスト）。まだ読んでいない札は、どこから入っても先に出る */
+const LC=[
+ {at:0,key:'words',html:`<div class="k">MANUAL 00</div><h3>3つの働き</h3><p>分解の前に、部品棚の3つの言葉を おぼえよう。</p><div class="lcx"><ul>
+  <li><b>消化</b>：食べ物を 細かく分解して、養分として <b>吸収</b>する働き（胃・腸など）。食べ物は <b>口→食道→胃→小腸→大腸→肛門</b>と、1本につながった管（<b>消化管</b>）を通る</li>
+  <li><b>呼吸</b>：<b>酸素</b>を取り入れて、<b>二酸化炭素</b>を出す働き（ヒトは 気管・肺）</li>
+  <li><b>循環</b>：<b>心臓</b>が血液を送り出し、<b>血管</b>を通して 酸素や養分を 体のすみずみまで運ぶ働き</li>
+  <li>脳・骨・筋肉などは この3つとは別の働き →「その他」の棚へ</li></ul></div>`,
+  quiz:{q:'魚の体にも 心臓がある。魚の心臓が 受け持つのは、3つの働きのうち どれ？',opts:[['循環（血液を 全身へ運ぶ）',1],['消化（食べ物を 分解する）',0],['呼吸（酸素を 取り入れる）',0]],
+   ok:'動物が変わっても、心臓は 血液を送り出すポンプ。血管とあわせて <b>循環</b>の器官。',ng:'心臓は 血液を送り出すポンプ。血液を 体じゅうに めぐらせる働きの名前は？'}},
+ {at:8,key:'kekka',html:`<div class="k">ANSWER</div><h3>答え合わせ</h3><p>理科室の解剖で わかる、魚（煮干し）とイカの器官。封印した予言と くらべてみよう。</p><div class="lcx"><ul>
+  <li><b>魚（煮干し）</b>：呼吸＝<b>えら</b>（頭の後ろ、えらぶたの内側）。循環＝<b>心臓</b>（えらのすぐ後ろの、おなかがわ）。消化＝<b>口から肛門まで続く管</b>（胃・腸）とまわりの肝臓（おなかの中）。消化の器官は この <b>管をたどる</b>と見つけやすい</li>
+  <li>魚の <b>うきぶくろ</b>は 空気の入った袋だが、呼吸の器官ではない（浮き沈みの調節に使う）。空気が入っていても 呼吸とは限らない。<b>働きで</b>見分ける</li>
+  <li><b>イカ</b>：胴の中に <b>えら</b>が左右に1対。えらの近くに <b>心臓</b>（イカの心臓は3つ。えらへ送る小さな心臓が2つ）。口はうでのつけ根のまん中にあり、食道→胃→腸と続く</li>
+  <li><b>えら</b>は、ひだに 水が通るとき、<b>水にとけている酸素</b>を取り入れ、二酸化炭素を出す</li>
+  <li>先に予言を封印したのは、<b>見た結果と比べて、自分の考えのどこが合っていたか確かめる</b>ため。ちがっていても、結果は <b>見たとおりに</b>書く</li></ul></div>`,
+  quiz:{q:'金魚の水そうに、エアポンプで 空気のあわを 送りこむのは なぜ？',opts:[['水に とける酸素をふやし、えらで 取り入れやすくするため',1],['金魚が あわを 食べるため',0],['水そのものを 酸素に 変えるため',0]],
+   ok:'あわの空気から 酸素が 水にとける。金魚は えらのひだに水を通して、<b>水にとけた酸素</b>を 取り入れる。',ng:'えらは 水の中の 何を 取り入れる？ 水そのものは 酸素に変わらない。'}}
+];
+function lcNeed(at){return LC.filter(c=>c.at<=at&&!(SV.lc&&SV.lc[c.key]))}
+function lcRun(list,then){if(!list.length){ovClose();then&&then();return}const c=list[0];
+ lcShow(c,()=>{SV.lc=SV.lc||{};SV.lc[c.key]=1;save();lcRun(list.slice(1),then)})}
+function lcShow(c,done){ovOpen(c.html+'<div class="rowb"><button class="bt pri" id="lcGo">'+(c.quiz?'たしかめる':'わかった')+'</button></div>');
+ $('lcGo').onclick=()=>{SFX.click();c.quiz?lcQuiz(c,done):done()}}
+function lcQuiz(c,done){const z=c.quiz;const ord=z.opts.map((o,k)=>k);for(let i=ord.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[ord[i],ord[j]]=[ord[j],ord[i]]}
+ /* 選択肢は出すたびに並べかえる。答えを押しても札は作り直さず、下の返しの欄だけ書きかえる（2026-10-06 第2周） */
+ ovOpen('<div class="k">CHECK</div>'+'<div class="lcx lcq">'+z.q+'</div><div class="lcop">'+ord.map(k=>'<button class="bt" data-k="'+k+'">'+z.opts[k][0]+'</button>').join('')+'</div><div class="lcfb" id="lcFb" aria-live="polite" hidden></div><div class="rowb"><button class="bt pri" id="lcGo" disabled>つぎへ</button></div>');
+ const fb=$('lcFb'),go=$('lcGo'),bs=[...document.querySelectorAll('#ovB [data-k]')];go.onclick=()=>{if(go.disabled)return;SFX.click();done()};
+ bs.forEach(b=>b.onclick=()=>{if(!go.disabled||b.disabled)return;const o=z.opts[+b.dataset.k];fb.hidden=false;
+  if(o[1]){SFX.hit(0);fb.className='lcfb ok';fb.innerHTML='<b>正解！</b> '+z.ok;b.classList.add('lcOk');bs.forEach(x=>{if(x!==b)x.disabled=true});go.disabled=false}
+  else{SFX.wrong();fb.className='lcfb ng';fb.innerHTML='<b>おしい。</b> '+z.ng+'<br><small>のこりの答えから えらびなおそう</small>';b.disabled=true;b.classList.add('lcNg')}
+  (o[1]?go:fb).scrollIntoView({block:'nearest'})})}
+function startBox(i,opt){opt=opt||{};if(!opt.practice&&!opt.noLc){const need=lcNeed(i);if(need.length){lcRun(need,()=>startBox(i,Object.assign({},opt,{noLc:1})));return}}stopCoach();if(i===0&&!opt.practice&&!SV.tut&&!SV.box&&window.Guide){runPractice(false);return}
  const bx=BOXES[i];ovClose();$('bigT').innerHTML='';
  G={i,bx,t:0,paused:false,panels:bx.panels.map(p=>({...p,st:'on',t:0,screws:p.sc.map(s=>({x:s[0],y:s[1],prog:0,out:false}))})),organs:bx.organs.map(o=>({...o,st:'hid',t:0,wrong:0,hx:0,hy:0})),
   step:0,phase:bx.seal?'seal':'pin',pin:null,found:{},seen:{},hits:0,misses:0,pinsUsed:0,sortErr:0,combo:0,maxC:0,pts:0,turn:null,drag:null,parts:[],fly:[],fl:[],shake:0,flash:0,flashC:'#FF7F50',firstOpened:false,
@@ -4246,8 +4289,8 @@ function doSeal(){const g=G;if(!g||g.sealed)return;g.sealed=true;$('btnSeal').di
  try{window.Zukan&&Zukan.earn(10,'predict',{x:W/2,y:H/2})}catch(e){}g.combo++;g.pts+=300;hud();
  big('封印！','開けるのは 解剖のあとで');
  setTimeout(()=>{if(G!==g)return;SV.stars[g.i]=3;if(SV.box<=g.i)SV.box=g.i+1;
-  if(g.i===BOXES.length-1){SV.cleared=true;save();ovOpen('<div class="k">ALL BOXES</div><h3>全部の箱を開けた！</h3><p>ヒト・ウサギ・ニワトリ・カエル・バッタ・エビ。<b>どの動物にも、消化・呼吸・循環の器官があった</b>。形と場所はちがっても、働きは同じ。</p><p>魚とイカの予言は封印した。理科室の解剖で開けよう。</p><div class="rowb"><button class="bt pri big" id="goT">確認テストへ</button></div>');
-   $('goT').onclick=()=>{ovClose();const go=()=>startTest();if(window.Zukan){try{Zukan.mainClear({onClose:go})}catch(e){go()}}else go()}}
+  if(g.i===BOXES.length-1){SV.cleared=true;save();ovOpen('<div class="k">ALL BOXES</div><h3>全部の箱を開けた！</h3><p>ヒト・ウサギ・ニワトリ・カエル・バッタ・エビ。<b>どの動物にも、消化・呼吸・循環の器官があった</b>。形と場所はちがっても、働きは同じ。</p><p>魚とイカの予言は封印した。次は <b>答え合わせ</b>（解剖でわかること）。</p><div class="rowb"><button class="bt pri big" id="goT">答え合わせ → 確認テストへ</button></div>');
+   $('goT').onclick=()=>{ovClose();const go=()=>lcRun(lcNeed(BOXES.length),startTest);if(window.Zukan){try{Zukan.mainClear({onClose:go})}catch(e){go()}}else go()}}
   else{save();startBox(g.i+1)}},RM?300:1800)}
 
 /* ---- 演出 ---- */
@@ -4341,7 +4384,7 @@ if(window.Guide){
   onOpen:()=>{wasP=!!(G&&G.paused);if(G)G.paused=true},onClose:()=>{if(G&&!wasP&&$('ov').hidden)G.paused=false},
   replay:()=>{runPractice(true);return null},labels:{replay:'れんしゅうをもう一度'}});
 }else $('btnHowto').hidden=true;
-function startTest(){if(!window.Quiz){alert('問題データがありません');return}G=null;bgmOn=false;ovClose();show('scTest');T={qs:Quiz.test(),i:0,ans:[]};renderQ()}
+function startTest(){if(window.GAME_MODE!=='test'){const n=lcNeed(SV.cleared?99:BOXES.length-1);if(n.length){lcRun(n,startTest);return}}/* テストの入口でも、まだ読んでいない札を先に出す（確認テストだけモードでは出さない） */if(!window.Quiz){alert('問題データがありません');return}G=null;bgmOn=false;ovClose();show('scTest');T={qs:Quiz.test(),i:0,ans:[]};renderQ()}
 function renderQ(){const q=T.qs[T.i];$('qNo').textContent=(T.i+1)+' / '+T.qs.length;$('qText').textContent=q.q;const f=$('qFig');if(q.fig){f.innerHTML=q.fig;f.hidden=false}else{f.innerHTML='';f.hidden=true}
  const A=$('qArea');A.innerHTML='';$('scTest').scrollTop=0;const mk=(c,lab)=>{const b=document.createElement('button');b.className='ch';b.innerHTML='<span class="L">'+lab+'</span><span></span>';b.lastChild.textContent=c;return b};
  if(q.t==='choice'){const box=document.createElement('div');box.className='qc';q.shown.forEach((c,k)=>{const b=mk(c,'ABCDE'[k]);b.onclick=()=>answer(c);box.appendChild(b)});A.appendChild(box)}
@@ -4369,7 +4412,6 @@ function frame(now){const dt=Math.min(.05,Math.max(0,(now-last)/1000));last=now;
  try{if(scene==='play'&&G){if(!G.paused)update(dt);render(dt)}else if(scene==='title')titleFrame(dt);else{drawGrid(now/1000,.7);drawFx(dt)}}catch(e){console.error(e)}
  requestAnimationFrame(frame)}
 /* ================= はじまり ================= */
-window.__bu={get G(){return G},BOXES,startBox,openMap,startTest,get SV(){return SV},screwOut,openPanel,dropTo,placePin,P,finishBox,doSeal};
 try{window.Zukan&&Zukan.setup({game:GAME_ID,koma:[KOMA]})}catch(e){}
 try{window.Zukan&&Zukan.onChange&&Zukan.onChange(()=>hud())}catch(e){}
 $('bMute').innerHTML='SOUND<br>'+(SV.mute?'OFF':'ON');

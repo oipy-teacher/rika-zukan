@@ -55,6 +55,10 @@ button{font-family:var(--jp);cursor:pointer;color:inherit}
 .pl.sm>span{font-size:15px;padding:8px 22px;min-height:44px}
 .pl:active{transform:translate(3px,3px);filter:drop-shadow(1px 1px 0 var(--ink))}
 .pl:disabled{opacity:.45;cursor:default}
+.tryCh{display:flex;flex-direction:column;gap:8px;margin:8px 0}
+.tryB{font:inherit;font-size:16px;font-weight:700;text-align:left;padding:9px 14px;border:3px solid var(--ink);border-radius:12px;background:#FFF8EC;color:var(--ink);cursor:pointer;box-shadow:3px 3px 0 var(--ink)}
+.tryB.ok{background:#CFE8D2;outline:3px solid var(--green)}.tryB.ng{opacity:.45;text-decoration:line-through}.tryB:disabled{cursor:default}
+.tryFb{min-height:3.2em;font-size:15px;line-height:1.6;margin:4px 0}.tryFb b.o{color:var(--green)}.tryFb b.x{color:#B5401F}
 /* タイトル */
 #scTitle .tt{position:absolute;left:0;right:0;display:flex;flex-direction:column;align-items:center;text-align:center;pointer-events:none}
 #scTitle .tt>*{pointer-events:auto}
@@ -188,6 +192,7 @@ button{font-family:var(--jp);cursor:pointer;color:inherit}
   <button class="pl m sm" id="btnNote"><span>📒 レシピ手帖</span></button>
   <button class="pl t sm" id="btnBookM"><span>📖 図鑑</span></button>
   <button class="pl g sm" id="btnSealM" hidden><span>🍲 予言の鍋</span></button>
+  <button class="pl g sm" id="btnAnsM" hidden><span>答え合わせ</span></button>
   <button class="pl sm" id="btnTestM" hidden><span>さいごの確認テストへ</span></button>
  </div>
 </section>
@@ -3854,7 +3859,7 @@ const C={cream:'#F4E9D8',paper:'#FBF3E4',green:'#3E7C59',greenD:'#2C5A40',greenL
  leaf:'#4E9A4B',leafD:'#2F6B33',pale:'#E9E3B8',iod:'#8A4B16',btbB:'#2E6BCF',btbG:'#3FA04F',btbY:'#E5C63A',eth:'#E8F0EA'};
 
 /* ================= セーブ ================= */
-function fresh(){return {v:1,name:'',cur:0,stars:[0,0,0,0,0,0,0,0,0],best:[0,0,0,0,0,0,0,0,0],served:0,maxCombo:0,elapsed:0,cards:{},recipes:{},traps:{},sealed:false,cleared:false,rules:{},mute:false,tut:{}}}
+function fresh(){return {v:1,name:'',cur:0,stars:[0,0,0,0,0,0,0,0,0],best:[0,0,0,0,0,0,0,0,0],served:0,maxCombo:0,elapsed:0,cards:{},recipes:{},traps:{},sealed:false,checked:false,introRead:false,cleared:false,rules:{},mute:false,tut:{}}}
 function load(){try{const s=JSON.parse(localStorage.getItem(SKEY)||'null');if(s&&s.v===1){const f=fresh();return Object.assign(f,s)}}catch(e){}return fresh()}
 let SV=load();
 function save(){try{localStorage.setItem(SKEY,JSON.stringify(SV))}catch(e){}}
@@ -3929,13 +3934,13 @@ const STORES=[
 const rep=(a,n)=>{const o=[];for(let i=0;i<n;i++)o.push(a[i%a.length]);return o};
 const ROUNDS=[
  {s:0,nm:'第1回　葉のデンプン検査',dur:150,max:1,gap:0,noFire:1,guide:'leaf',plan:rep(['lit'],6),stars:[2,3,4],
-  intro:'注文は<b>「光を当てた葉」</b>。<br>葉をとって、指示どおりに厨房を回そう。'},
+  intro:'注文は<b>「光を当てた葉」</b>。<br>光を当てた葉に <b>デンプン</b>（養分）ができたかを、<b>ヨウ素液</b>（デンプンがあると青紫色）で調べる下ごしらえ。<br>葉をとって、指示どおりに厨房を回そう。'},
  {s:0,nm:'第2回　急ぎの注文と 直火のわな',dur:150,max:2,gap:9,plan:rep(['lit'],9),stars:[3,4,5],
   intro:'注文が<b>2つ同時</b>に来る。<br>となりに<b>「直火」</b>のコンロが入った。速いらしいが……？'},
  {s:0,nm:'第3回　比べる用の葉',dur:165,max:3,gap:10,plan:['lit','unlit','lit','unlit','unlit','lit','lit','unlit','lit','unlit'],stars:[3,5,6],
-  intro:'新メニュー<b>「光を当てない葉（比べる用）」</b>。<br>光の<b>ほかの条件はそろえて</b>、光だけを変える。'},
+  intro:'新メニュー<b>「光を当てない葉（比べる用）」</b>。<br>光の<b>ほかの条件はそろえて</b>、光だけを変える。<br>調べたい条件を1つだけ変えて比べる実験を <b>対照実験</b>という。2つ以上変えると、どれのせいか分からない。'},
  {s:1,nm:'第4回　BTB液を黄色に',dur:125,max:1,gap:0,guide:'tube',plan:rep(['A'],8),stars:[3,4,5],
-  intro:'2号店は<b>BTB液</b>の試験管。<br>息をふきこむと色が変わる。見ていてね。'},
+  intro:'2号店は<b>BTB液</b>の試験管。<br><b>BTB液</b>＝色で液の性質が分かる薬。<b>青</b>（アルカリ性）→ <b>緑</b>（中性）→ <b>黄</b>（酸性）。<br>息の <b>二酸化炭素</b>が溶けると 黄色の側へ、二酸化炭素が減ると 青の側へもどる。<br>息をふきこむと色が変わる。見ていてね。'},
  {s:1,nm:'第5回　水草なしの管',dur:135,max:3,gap:7,plan:['A','B','A','B','B','A','A','B','A','B'],stars:[4,5,7],
   intro:'新メニュー<b>「管B 水草なし」</b>。<br>水草のほかは、Aと同じにそろえる。'},
  {s:1,nm:'第6回　暗い所の管',dur:145,max:3,gap:7,plan:['A','C','B','A','C','B','C','A','B','C','A'],stars:[4,6,8],
@@ -4401,8 +4406,9 @@ addEventListener('keydown',e=>{if(scene!=='play'||!G||G.paused)return;const vis=
 
 /* ================= 番組表（3店舗の地図） ================= */
 let mapHits=[];
-function openMap(){G=null;ovClose();show('map');const allClear=SV.cur>=ROUNDS.length;$('btnSealM').hidden=!allClear;$('btnTestM').hidden=!SV.sealed;$('btnBookM').hidden=!Z();
- if(allClear&&!SV.sealed)cueTemp('');}
+function openMap(){G=null;ovClose();show('map');const allClear=SV.cur>=ROUNDS.length;$('btnSealM').hidden=!allClear;$('btnTestM').hidden=!(SV.sealed&&SV.checked);$('btnAnsM').hidden=!SV.sealed;$('btnAnsM').querySelector('span').textContent=SV.checked?'答え合わせ':'鍋をあけて 答え合わせ';$('btnBookM').hidden=!Z();
+ if(allClear&&!SV.sealed)cueTemp('');
+ if(!SV.introRead&&window.Guide&&window.GAME_MODE!=='test'){SV.introRead=true;save();Guide.intro(INTRO)}}
 function drawMap(t){wallpaper(0,0,W,H,'#EFE4D0');
  // 空と道
  const gy=H*(PORT?.86:.8);ctx.fillStyle='#CFE3DC';ctx.fillRect(0,0,W,gy*.36);for(let i=0;i<5;i++){ctx.fillStyle='rgba(255,255,255,.7)';P();ctx.ellipse((i*W*.27+t*6)%(W+200)-100,gy*(.1+.05*(i%2)),60,14,0,0,TAU);ctx.fill()}
@@ -4449,7 +4455,7 @@ function openNote(){const ids=['shelf','dark','sun','hot','bath','sink','iodine'
 const JARS=[{id:'co2',nm:'二酸化炭素',f:'CO₂',col:'#9FB7C9'},{id:'water',nm:'水',f:'H₂O',col:'#8EC9E6'},{id:'light',nm:'光',f:'エネルギー',col:'#F2C94C'},{id:'o2',nm:'酸素',f:'O₂',col:'#E4572E'},{id:'soil',nm:'土の肥料',f:'養分？',col:'#9C7A54'},{id:'starch',nm:'デンプン',f:'養分',col:'#EDE6D6'}];
 let SEAL=null;
 function openSeal(){ovClose();G=null;show('seal');SEAL={pos:{},lid:0,shut:false};JARS.forEach(j=>SEAL.pos[j.id]='shelf');
- $('sealTxt').innerHTML=(SV.sealed?'<b>もう封印してある。</b>作り直すこともできる。<br>':'')+(PORT&&W<600?'葉の中（<b>葉緑体</b>）で何が起きる？ びんをタップして<b>鍋（使われる）</b>か<b>皿（できる）</b>へ。':'この番組で下ごしらえした実験で、葉の中（<b>葉緑体</b>）では何が起きると思う？<br>びんをタップ（ドラッグ）して、<b>鍋に入れる（使われる）</b>か <b>皿にのせる（できる）</b>かを決めよう。');
+ $('sealTxt').innerHTML=(SV.sealed?'<b>もう封印してある。</b>作り直すこともできる。<br>':'')+(PORT&&W<600?'葉の中（<b>葉緑体</b>）で何が起きる？ びんをタップして<b>鍋（使われる）</b>か<b>皿（できる）</b>へ。':'この番組で下ごしらえした実験で、葉の中（<b>葉緑体</b>＝細胞の中の 緑色の粒）では何が起きると思う？<br>びんをタップ（ドラッグ）して、<b>鍋に入れる（使われる）</b>か <b>皿にのせる（できる）</b>かを決めよう。');
  buildJars();sealLayout();updSeal()}
 function jarSVG(j,where){return '<svg viewBox="0 0 96 112"><rect x="18" y="8" width="60" height="16" rx="4" fill="'+(where==='pot'?'#3E7C59':where==='plate'?'#E76F51':'#B7794A')+'" stroke="#2B2A28" stroke-width="3"/><path d="M14 30 Q14 24 22 24 H74 Q82 24 82 30 V96 Q82 106 72 106 H24 Q14 106 14 96Z" fill="'+j.col+'" stroke="#2B2A28" stroke-width="3"/>'
  +'<rect x="20" y="46" width="56" height="40" fill="#FBF3E4" stroke="#2B2A28" stroke-width="2"/><text x="48" y="64" text-anchor="middle" font-size="'+(j.nm.length>4?9.5:j.nm.length>3?11.5:14)+'" font-family="Kosugi Maru,sans-serif" fill="#2B2A28">'+j.nm+'</text><text x="48" y="80" text-anchor="middle" font-size="11" font-family="Kosugi Maru,sans-serif" fill="#6b5a45">'+j.f+'</text>'
@@ -4497,8 +4503,62 @@ function doSeal(){const inPot=JARS.filter(j=>SEAL.pos[j.id]==='pot'),onPlate=JAR
   slots:{in:{id:inPot.map(j=>j.id).sort().join('+'),t:'鍋に入れる（使われる）：'+inPot.map(j=>j.nm).join('・')},out:{id:onPlate.map(j=>j.id).sort().join('+'),t:'できる：'+onPlate.map(j=>j.nm).join('・')}}};
  try{localStorage.setItem(SEAL_KEY,JSON.stringify(rec))}catch(e){}
  const first=!SV.sealed;SV.sealed=true;save();if(first)earnAt('predict',10,W/2,H*.3);
- setTimeout(()=>{ovOpen('<div class="mh"><small>Sealed!</small>予言を封印した</div><p class="mp" style="text-align:center"><b>'+esc(rec.pred)+'</b></p><p class="mp">答え合わせは<b>光合成の実験の日</b>。次の回（デンプン探知）で、この鍋を開けられる。</p><div class="mbtns"><button class="pl" id="sOk"><span>番組おわり</span></button></div>');
-  $('sOk').onclick=()=>{SFX.tap();ovClose();const fin=()=>{SV.cleared=true;save();openMap();cueTemp('')};if(!SV.cleared&&Z()){try{Z().mainClear({onClose:fin})}catch(e){fin()}}else fin()}},500)}
+ setTimeout(()=>{ovOpen('<div class="mh"><small>Sealed!</small>予言を封印した</div><p class="mp" style="text-align:center"><b>'+esc(rec.pred)+'</b></p><p class="mp">では、鍋のふたを開けて 答え合わせ。ふたの下に置いてきた 実験の結果も 見よう。</p><div class="mbtns"><button class="pl" id="sOk"><span>ふたを開けて 答え合わせ</span></button></div>');
+  $('sOk').onclick=()=>{SFX.tap();openAnswer(true)}},500)}
+function readSeal(){try{return JSON.parse(localStorage.getItem(SEAL_KEY)||'null')}catch(e){return null}}
+function openAnswer(toTest){const r=readSeal()||{};const pot=r.pot||[],dish=r.dish||[];
+ const okIn=pot.length===2&&pot.includes('co2')&&pot.includes('water'),okOut=dish.length===2&&dish.includes('starch')&&dish.includes('o2');
+ const box=(c,t)=>'<span style="display:inline-block;padding:4px 10px;margin:2px;border:3px solid #2B2A28;border-radius:10px;background:'+c+';font-weight:700">'+t+'</span>';
+ ovOpen('<div class="mh"><small>Answer 1 / 4</small>鍋の中身：光合成の答え</div>'+
+  '<p class="mp" style="text-align:center">あなたの予言：<b>'+esc(r.pred||'（まだ）')+'</b><br>'+(okIn&&okOut?'<b>ぴったり正解！</b>':'くらべてみよう'+missText(pot,dish))+'</p>'+
+  '<div style="text-align:center;font-size:17px;line-height:2.2;margin:8px 0">'+box('#9FB7C9','二酸化炭素')+' ＋ '+box('#8EC9E6','水')+' <b>→</b> '+box('#EDE6D6','デンプン')+' ＋ '+box('#F3A38C','酸素')+'<br><span style="font-size:14px">（光のエネルギーを使って、細胞の中の <b>葉緑体</b> で）</span></div>'+
+  '<p class="mp">・<b>使われる材料</b>は <b>二酸化炭素 と 水</b>。<b>できる</b>のは <b>デンプンなどの養分 と 酸素</b>。このはたらきを <b>光合成</b>という。<br>・<b>光</b>は材料（物質）ではなく、<b>エネルギーのもと</b>。光が無いと、材料がそろっていても デンプンは <b>できない</b>。<br>・<b>葉緑体</b>＝植物の細胞の中にある <b>緑色の粒</b>。光合成はここで行われる。<br>・<b>酸素</b>はできる物、<b>土の肥料</b>は光合成の材料ではない。だから 多くあたえても デンプンは増えない。</p>'+
+  '<div class="mbtns"><button class="pl" id="aN"><span>つぎへ（ヨウ素液の結果）</span></button></div>');
+ $('aN').onclick=()=>tryCard(TRY[0],()=>ansIodine(toTest))}
+function ansIodine(toTest){
+ const leaf=(c,t)=>'<div style="text-align:center"><svg viewBox="0 0 120 80" style="width:130px"><path d="M10 40 Q60 -10 110 40 Q60 90 10 40Z" fill="'+c+'" stroke="#2B2A28" stroke-width="3"/><path d="M14 40 H106" stroke="#2B2A28" stroke-width="2"/></svg><div style="font-size:14px">'+t+'</div></div>';
+ ovOpen('<div class="mh"><small>Answer 2 / 4</small>ふたの下：ヨウ素液の結果</div>'+
+  '<div style="display:flex;gap:16px;justify-content:center;flex-wrap:wrap">'+leaf('#5B4A8B','光を当てた葉<br><b>青紫色になった</b>')+leaf('#D9C8A0','光を当てない葉（比べる用）<br><b>色が変わらない</b>')+'</div>'+
+  '<p class="mp">→ 光を当てた葉にだけ <b>デンプンができた</b>。光合成には <b>光が必要</b>。<br>・<b>ヨウ素液</b>：デンプンがあると <b>青紫色</b>になる（石灰水やBTB液ではない）。<br>・手順のわけ：<b>熱湯</b>でやわらかく → <b>湯であたためたエタノール</b>で緑色をぬく（色の変化が見やすくなる。エタノールは火がつきやすいので 直火にかけない）→ <b>水で洗う</b> → <b>ヨウ素液</b>。<br>・光だけを変えて ほかはそろえたから、ちがいは光のせいだと言える（<b>対照実験</b>）。</p>'+
+  '<div class="mbtns"><button class="pl" id="aN"><span>つぎへ（BTB液と 気体の確かめ方）</span></button></div>');
+ $('aN').onclick=()=>tryCard(TRY[1],()=>ansGas(toTest))}
+function ansGas(toTest){
+ const tube=(c,t,foil)=>'<div style="text-align:center"><svg viewBox="0 0 40 110" style="width:40px;height:100px"><path d="M8 4 V90 Q8 104 20 104 Q32 104 32 90 V4" fill="'+c+'" stroke="#2B2A28" stroke-width="3"/>'+(foil?'<path d="M5 8 H35 V92 Q35 108 20 108 Q5 108 5 92Z" fill="#B9BCC2" stroke="#6B6F78" stroke-width="2"/>':'')+'</svg><div style="font-size:13px">'+t+'</div></div>';
+ ovOpen('<div class="mh"><small>Answer 3 / 4</small>BTB液の結果</div>'+
+  '<p class="mp" style="text-align:center">息をふきこんで <b>黄色</b>にしたBTB液を3本に入れ、光を当てた</p>'+
+  '<div style="display:flex;gap:18px;justify-content:center">'+tube('#3D7DCA','A 水草<br><b>青にもどった</b>')+tube('#E8C93A','B 水草を<br>アルミはくで おおう<br><b>黄のまま</b>',1)+tube('#E8C93A','C 何も入れない<br><b>黄のまま</b>')+'</div>'+
+  '<p class="mp">→ Aだけ、水草が光合成をして 液の中の <b>二酸化炭素が使われた</b>（二酸化炭素が減ると 青の側へ）。<br>・B（アルミはくで光が当たらない）と比べると <b>光が必要</b>。C（水草なし）と比べると <b>葉（水草）が必要</b>と分かる。</p>'+
+  '<div class="mbtns"><button class="pl" id="aN"><span>つぎへ（気体の確かめ方）</span></button></div>');
+ $('aN').onclick=()=>tryCard(TRY[2],()=>ansGas2(toTest))}
+function ansGas2(toTest){SFX.tap();
+ ovOpen('<div class="mh"><small>Answer 4 / 4</small>気体の確かめ方と 光の強さ</div>'+
+  '<p class="mp">・<b>二酸化炭素</b>の確かめ方：<b>石灰水</b>を入れてふると <b>白くにごる</b>。息を入れた試験管に葉を入れて光を当てると、葉が二酸化炭素を使うので、葉を入れない方より にごりが <b>少ない</b>。</p>'+
+  '<p class="mp">・<b>酸素</b>の確かめ方：<b>火のついた線香</b>を入れると <b>炎を上げて燃える</b>（酸素には ものを燃やす性質）。光を当てた水草から出る泡は 酸素。</p>'+
+  '<p class="mp">・光を <b>強く</b>すると、水草から出る泡（酸素）が <b>増える</b> → 光が強いほど 光合成が さかん（ある程度まで）。</p>'+
+  '<div class="mbtns"><button class="pl" id="aN"><span>つぎへ（やってみよう）</span></button></div>');
+ $('aN').onclick=()=>tryCard(TRY[3],()=>{SFX.tap();ovClose();if(!toTest){openMap();return}const fin=()=>{SV.cleared=true;save();startTest()};if(!SV.cleared&&Z()){try{Z().mainClear({onClose:fin})}catch(e){fin()}}else fin()},toTest?'さいごの確認テストへ':'とじる',()=>{SV.checked=true;save()})}
+function missText(pot,dish){const want={co2:'pot',water:'pot',starch:'dish',o2:'dish'};const where={pot:'鍋（使われる）',dish:'皿（できる）'};
+ const bad=JARS.filter(j=>{const at=pot.includes(j.id)?'pot':dish.includes(j.id)?'dish':'';return at!==(want[j.id]||'')}).map(j=>'<b>'+j.nm+'</b>（正しくは '+(want[j.id]?where[want[j.id]]:'どちらにも入らない')+'）');
+ return bad.length?'<br><span style="font-size:14px">外れた所：'+bad.join('・')+'</span>':''}
+/* やってみよう（答え合わせのあとに1問ずつ。テストとは別の場面。選択肢は出すたびにまぜる） */
+const TRY=[
+ {sub:'鍋の中身のおさらい',q:'植物に 光と水は十分にあたえたが、まわりの空気から <b>二酸化炭素だけ</b>を とりのぞいた（ほかは同じ）。デンプンは？',ok:'できない（材料の二酸化炭素が無い）',ng:['光があるので いつもと同じだけできる','酸素から かわりにつくる'],
+  why:'光合成の材料は 二酸化炭素と水の2つ。光があっても 材料が足りないと デンプンはできない。',whyNg:'材料は 二酸化炭素と水。光は 材料ではなく エネルギー。'},
+ {sub:'ヨウ素液の結果のおさらい',q:'1まいの葉の <b>半分をアルミはくでおおって</b> 光を当てた。そのあと緑色をぬいて ヨウ素液につけた。青紫色になるのは？',ok:'光が当たった部分',ng:['アルミはくで おおった部分','葉の全体'],
+  why:'光が当たった部分だけで光合成が行われ、デンプンができた。ヨウ素液は デンプンがあると 青紫色。',whyNg:'デンプンができるには 光が必要。光が当たらなかったのは どこ？'},
+ {sub:'BTB液の結果のおさらい',q:'息で黄色にしたBTB液に 水草を入れて 光を当てたら、しばらくして 緑（青に近い色）になった。液の中の 二酸化炭素は？',ok:'減った（水草が光合成で使った）',ng:['増えた','変わらない'],
+  why:'二酸化炭素が減ると BTB液は 黄 → 緑 → 青 の側へ。水草が光合成で 使ったから。',whyNg:'息（二酸化炭素）で黄色になった液が、青の側にもどった。二酸化炭素は どうなった？'},
+ {sub:'気体の確かめ方のおさらい',q:'ある気体を集めた試験管に <b>石灰水</b>を入れてふったら、<b>白くにごった</b>。この気体は？',ok:'二酸化炭素',ng:['酸素','水蒸気'],
+  why:'石灰水は 二酸化炭素で 白くにごる。酸素を確かめるなら 火のついた線香（炎を上げて燃える）。',whyNg:'酸素の確かめ方は 線香。石灰水で白くにごるのは どの気体だった？'}];
+function tryCard(o,next,btn,onOk){SFX.tap();
+ const op=[{t:o.ok,ok:1}].concat(o.ng.map(t=>({t,ok:0})));for(let i=op.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));const x=op[i];op[i]=op[j];op[j]=x}
+ ovOpen('<div class="mh"><small>Try it!</small>やってみよう</div><p class="mp" style="text-align:center;font-size:14px;margin:0">'+o.sub+'</p><p class="mp">'+o.q+'</p><div class="tryCh">'+op.map((c,k)=>'<button class="tryB" data-k="'+k+'">'+esc(c.t)+'</button>').join('')+'</div>'+
+  '<p class="tryFb" aria-live="polite"></p><div class="mbtns"><button class="pl" id="aN" disabled><span>'+(btn||'つぎへ')+'</span></button></div>');
+ const body=$('ovBody'),fb=body.querySelector('.tryFb');
+ body.querySelectorAll('.tryB').forEach(b=>b.onclick=()=>{const c=op[+b.dataset.k];
+  if(c.ok){try{SFX.done()}catch(e){}b.classList.add('ok');body.querySelectorAll('.tryB').forEach(x=>x.disabled=true);fb.innerHTML='<b class="o">○ そのとおり！</b> '+o.why;$('aN').disabled=false;if(onOk)onOk()}
+  else{try{SFX.fail()}catch(e){}b.classList.add('ng');b.disabled=true;fb.innerHTML='<b class="x">× ちがう。</b> '+o.whyNg+' もう一度 えらぼう。'}});
+ $('aN').onclick=()=>{if($('aN').disabled)return;next()}}
 
 /* ================= タイトル ================= */
 function layoutTitle(){const b=$('ttBox');if(!b)return;const tw=PORT?W*.84:Math.min(W*.5,620),th=tw*.62,ty=PORT?H*.09:H*.06;b.style.top=(ty+th*1.12+(PORT?10:2))+'px'}
@@ -4527,9 +4587,9 @@ function initTitle(){show('title');layoutTitle();if(window.PLAYER_NAME)$('nameIn
 let arm=false;
 $('btnStart').onclick=()=>{actx();SV.name=$('nameIn').value.trim();if(hasSave()&&SV.cur>0&&!arm){arm=true;$('btnStart').querySelector('span').textContent='本当に？（記録が消える）';setTimeout(()=>{arm=false;initTitle()},3500);return}
  if(arm){const nm=SV.name,mu=SV.mute;SV=fresh();SV.name=nm;SV.mute=mu;arm=false}save();SFX.fanfare();
- if(!window.Guide){startRound(0);return}if(busy)return;busy=true;Guide.intro(INTRO).then(()=>{busy=false;Guide.tutorial(PRACTICE)})};
+ if(!window.Guide){startRound(0);return}if(busy)return;busy=true;Guide.intro(INTRO).then(()=>{busy=false;SV.introRead=true;save();Guide.tutorial(PRACTICE)})};
 let busy=false;
-const INTRO={title:'第7回 葉っぱキッチン',learn:'光合成を調べる実験の **手順とそのわけ**（暗室・光・脱色・ヨウ素液／BTB液）',
+const INTRO={title:'第7回 葉っぱキッチン',learn:'**光合成** ＝ 植物が 光を使って、葉で **デンプン**（養分）などをつくるはたらき。\nこの番組では、それを確かめる実験の **手順とそのわけ** を覚える。何が使われ 何ができるかは、最後に予言して すぐ答え合わせ',
  how:'**器具をタップ** するとシェフが走ってこなす。✦が光ったら もう一度タップで取り出す',gesture:'tap'};
 const stR=id=>()=>{const st=G&&stById(id);if(!st||!st.r)return {x:innerWidth/2,y:innerHeight/2,r:40};const r=st.r;return {x:r.x+r.w/2,y:r.y+r.h/2,w:r.w-4,h:r.h-4,rx:12}};
 const hk=k=>()=>!!(G&&G.chef.hold&&G.chef.hold.hist.length>=k);
@@ -4540,7 +4600,7 @@ const PSTEPS=[
  {gesture:'tap',target:stR('hot'),until:hk(3),text:'**熱湯** にひたして やわらかくする'},
  {gesture:'tap',target:stR('bath'),until:hk(4),text:'**湯せん**：湯であたためたエタノールで 緑色をぬく（直火はだめ）'},
  {gesture:'tap',target:stR('sink'),until:hk(5),text:'**流し** で水洗い'},
- {gesture:'tap',target:stR('iodine'),until:()=>!!(G&&G.chef.hold&&G.chef.hold.done),text:'**ヨウ素液** をたらす。結果は ふたの下（実験の日まで ひみつ）'},
+ {gesture:'tap',target:stR('iodine'),until:()=>!!(G&&G.chef.hold&&G.chef.hold.done),text:'**ヨウ素液**（デンプンがあると **青紫色** になる液）をたらす。結果は ふたの下（最後の答え合わせで 見られる）'},
  {gesture:'tap',target:stR('pass'),until:()=>!!(G&&G.served>=1),praise:false,text:'できた！ **出し口** へ運んで 出す'}];
 const PRACTICE={label:'れんしゅう中',bandAt:'bottom',steps:PSTEPS,clearText:'れんしゅうクリア！',start:()=>{actx();startRound(-1)},
  onExit:res=>{if(res&&(res.stopped||res.replaced))return;G=null;if(SV.cur>0)openMap();else startRound(0)}};
@@ -4551,7 +4611,8 @@ $('btnBookM').onclick=()=>{try{Z().openBook()}catch(e){}};
 $('btnHub').onclick=()=>{try{window.parent.postMessage({type:'rika-close-game'},'*')}catch(e){}};
 $('btnNote').onclick=()=>{SFX.tap();openNote()};
 $('btnSealM').onclick=()=>{SFX.tap();openSeal()};
-$('btnTestM').onclick=()=>{SFX.tap();startTest()};
+$('btnTestM').onclick=()=>{SFX.tap();if(!SV.checked){openAnswer(true);return}startTest()};
+$('btnAnsM').onclick=()=>{SFX.tap();openAnswer(!SV.checked)};
 $('bMute').onclick=()=>{SV.mute=!SV.mute;save();$('bMute').classList.toggle('off',SV.mute);if(!SV.mute){actx();SFX.tap()}};
 $('bBack').onclick=()=>{SFX.tap();if(scene==='play'&&G&&G.R.prac){if(window.Guide)Guide.tutorialEnd();G=null;initTitle();return}
  if(scene==='play'&&G){G.paused=true;ovOpen('<div class="mh"><small>Commercial break</small>番組表にもどる？</div><p class="mp" style="text-align:center">クリアした回と★は保存されます。<br>この回の途中の皿は、やり直しになります。</p><div class="mbtns"><button class="pl" id="bkY"><span>もどる</span></button><button class="pl g sm" id="bkN"><span>つづける</span></button></div>');
@@ -4609,7 +4670,6 @@ if(window.Guide){
   onClose:()=>{if(G&&G.hp){G.hp=0;G.paused=false}}});
  placeHelp();addEventListener('resize',placeHelp);
 }
-window.__lk={get G(){return G},stById,get mapHits(){return mapHits},get SV(){return SV},startRound,openMap,openSeal,startTest,tapStation,endRound};
 resize();
 try{window.Zukan&&Zukan.setup({game:GAME_ID,koma:[KOMA]})}catch(e){}
 if(window.GAME_MODE==='test'){startTest()}else{initTitle()}

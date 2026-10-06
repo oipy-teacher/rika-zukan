@@ -174,6 +174,7 @@ button{font:inherit;color:inherit;cursor:pointer;touch-action:manipulation;borde
 .clip .cols{column-count:2;column-gap:18px;column-rule:1px solid rgba(17,17,17,.35)}
 @media (max-width:600px){.clip .cols{column-count:1}}
 .clip .go{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:14px}
+.clip .go.nwF{position:sticky;bottom:-20px;margin:10px -24px -20px;padding:10px 24px 12px;background:var(--paper);border-top:1px solid rgba(17,17,17,.25)}#nwR{scroll-margin-bottom:90px}.clip.nws p{margin:6px 0}
 .clip .res{width:100%;border-collapse:collapse;font-size:16px;margin:8px 0}
 .clip .res td,.clip .res th{border-bottom:1px solid var(--ink);padding:5px 6px;text-align:left}
 .clip .res th{font-size:13px;background:var(--ink);color:var(--paper)}
@@ -4044,7 +4045,7 @@ function earn(n,why,x,y){let got=0;try{if(Z())got=Zukan.earn(n,why,{koma:KOMA,x,
 function mkLane(spec){const n=spec.init.L;const lv=[];for(let i=0;i<n;i++){const c=spec.init.coat?1:0;lv.push({f:c,b:c,id:i})}
  if(spec.init.miss){const m=spec.init.miss;lv[m[0]][m[1]]=0}
  return{leaves:lv,thick:spec.init.thick!=null?spec.init.thick:1,oil:0,stem:0,tgt:spec.tgt,pred:null,got:0,stampT:0,ok:null,fall:[]}}
-function startHeat(i,TH){
+function startHeat(i,TH){if(!TEST_ONLY&&!SV.asked.nw1){newsIntro(()=>startHeat(i,TH));return}
  const H=TH||HEATS[i];if(window.BGM)BGM.mood(H.final?'calm':'normal');G={hi:i,H,lanes:H.lanes.map(mkLane),phase:'prep',tool:null,zoom:null,trace:null,fails:0,gateTries:0,box:null,raceT:0,parts:[],floats:[],shake:0,seen:{},tut:!!TH,tutStep:0};
  setScene('game');fillCard();setTool(null);updUI();layout();
  if(G.tut){tick('れんしゅう：道具の使い方を 1つずつ ためそう。');SFX.press();return}
@@ -4338,8 +4339,8 @@ function sealClip(fromClear,got){const r=SV.seal;if(!r)return;const names=['何�
   <table class="res"><tr><th>枝（葉5枚）</th><th>わたしの予想（2時間の水の減り）</th></tr>${['A','B','C','D'].map((k,i)=>`<tr><td><b>${k}</b> ${names[i]}</td><td><div class="pb" style="height:10px;width:${Math.min(100,(r.levels[k]||0)/6*100)}%"></div> −${(r.levels[k]||0).toFixed(1)} mL</td></tr>`).join('')}</table>
   <p>予想の着順 <b>${esc(r.order.join(' ＞ '))}</b></p><p class="note">この予想は封印した。学校の「吸水の実験」で、本当の着順を確かめよう。</p>
   ${got?'<p style="color:var(--red);font-weight:900">かけら +'+got+'（根拠つきの予想）</p>':''}
-  <div class="go">${fromClear?'<button class="tag red big" id="sT">確認テストへ</button>':'<button class="tag red" id="sX">とじる</button>'}<button class="tag line sm ${Z()?'':'hide'}" id="sB">📖 図鑑</button></div>`);
- if($('sT'))$('sT').onclick=()=>{closeClip();const go=()=>startTest();if(Z()&&Zukan.mainClear){try{Zukan.mainClear({onClose:go})}catch(e){go()}}else go()};
+  <div class="go">${fromClear?'<button class="tag red big" id="sT">'+(SV.asked.nw2?'確認テストへ':'決勝の結果を見る')+'</button>':'<button class="tag red" id="sX">とじる</button>'}<button class="tag line sm ${Z()?'':'hide'}" id="sB">📖 図鑑</button></div>`);
+ if($('sT'))$('sT').onclick=()=>{closeClip();const go=()=>newsAnswer(startTest);if(Z()&&Zukan.mainClear){try{Zukan.mainClear({onClose:go})}catch(e){go()}}else go()};
  if($('sX'))$('sX').onclick=()=>closeClip();$('sB').onclick=()=>{try{Zukan.openBook()}catch(e){}};
 }
 
@@ -4461,10 +4462,53 @@ function openSched(){tutStop();G=null;closeClip();setScene('sched');
   b.onclick=()=>{AU.init();SFX.press();intro(i)};P.appendChild(b)});
  const M=$('meikan');M.innerHTML='';SPEC.forEach((s,k)=>{const d=document.createElement('div');const own=SV.cards[k];d.className='mk'+(own?'':' no');d.innerHTML=own?`<canvas width="200" height="46"></canvas><b>${esc(s[0])}</b><span>${esc(s[1])}</span>`:'？';M.appendChild(d);
   if(own){const cn=d.querySelector('canvas');const g=cn.getContext('2d');const sv=NOW;drawLeaf(g,40,40,36,13,-1.2,null);drawLeaf(g,160,40,36,13,1.2,null);T(g,'No.'+(k+1),100,26,14,RED,'center','middle',900)}});
- $('mkN').textContent=Object.keys(SV.cards).length+' / '+SPEC.length;$('bTestS').classList.toggle('hide',!SV.cleared);$('bBookS').classList.toggle('hide',!Z());
+ $('mkN').textContent=Object.keys(SV.cards).length+' / '+SPEC.length;$('bTestS').classList.toggle('hide',!SV.cleared);$('bTestS').textContent=SV.asked.nw2?'確認テストへ':'決勝の結果 → 確認テスト';$('bBookS').classList.toggle('hide',!Z());
 }
-$('bTestS').onclick=()=>startTest();
-function intro(i){const H=HEATS[i];
+$('bTestS').onclick=()=>newsAnswer(startTest);
+/* ================= 号外の解説・決勝の結果（2026-10-06 夜間改修・初心者向け） ================= */
+function nwMix(n){const a=[...Array(n).keys()];for(let i=n-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function newsLesson(pages,then,i){i=i||0;const P=pages[i];if(!P){$('mc').classList.remove('nws');closeClip();then&&then();return}
+ const last=i===pages.length-1;
+ openClip('<div class="kick">'+P.ey+'　'+(i+1)+' / '+pages.length+'</div><h2 class="ink">'+P.h+'</h2>'+P.body+(P.quiz?'<p style="font-weight:900;border-top:2px solid #111;padding-top:8px">やってみよう：'+P.quiz.q+'</p><div class="go" id="nwB">'+nwMix(P.quiz.ch.length).map(k=>'<button class="tag line sm" data-k="'+k+'">'+P.quiz.ch[k]+'</button>').join('')+'</div><p id="nwR"></p>':'')+'<div class="go nwF"><button class="tag red big'+(P.quiz?' hide':'')+'" id="nwGo">'+(last?(P.endLab||'わかった'):'次へ')+'</button></div>');
+ $('mc').classList.add('nws');
+ const go=$('nwGo');go.onclick=()=>{SFX.tap();newsLesson(pages,then,i+1)};
+ if(P.quiz)$('nwB').querySelectorAll('button').forEach(b=>b.onclick=()=>{const k=+b.dataset.k;if(k===P.quiz.ok){SFX.coat();$('nwR').innerHTML='<b style="color:var(--red)">◎ そのとおり。</b>'+P.quiz.why;$('nwB').querySelectorAll('button').forEach(x=>x.disabled=true);go.classList.remove('hide');setTimeout(()=>$('nwR').scrollIntoView({block:'nearest'}),30)}else{SFX.bad();b.disabled=true;$('nwR').innerHTML='<b>✕ ちがう。</b>'+P.quiz.hint+'　もう一度えらぼう。';$('nwR').scrollIntoView({block:'nearest'})}})}
+const SVG_STOMA='<svg viewBox="0 0 320 124" style="width:100%;max-width:420px;display:block;margin:6px auto" font-family="sans-serif">'+
+ '<rect x="10" y="20" width="300" height="34" fill="#F3EFE4" stroke="#111" stroke-width="2"/><text x="16" y="14" font-size="12" font-weight="900">葉の表（気孔 少ない）</text>'+
+ '<rect x="10" y="66" width="300" height="34" fill="#F3EFE4" stroke="#111" stroke-width="2"/><text x="16" y="116" font-size="12" font-weight="900">葉の裏（気孔 多い）</text>'+
+ [60,200].map(x=>'<ellipse cx="'+x+'" cy="37" rx="11" ry="7" fill="none" stroke="#111" stroke-width="2"/><ellipse cx="'+x+'" cy="37" rx="3" ry="5" fill="#111"/>').join('')+
+ [40,85,130,175,220,265].map(x=>'<ellipse cx="'+x+'" cy="83" rx="11" ry="7" fill="none" stroke="#111" stroke-width="2"/><ellipse cx="'+x+'" cy="83" rx="3" ry="5" fill="#111"/>').join('')+
+ '<text x="308" y="116" font-size="11" text-anchor="end" fill="#D62828">まん中の黒い穴＝気孔のすき間</text></svg>';
+function newsIntro(then){
+ newsLesson([{ey:'号外　観戦ガイド',h:'気孔・蒸散・吸水',body:
+  '<p><b>気孔</b>：葉の表面にある小さなすき間。ここから水蒸気や酸素・二酸化炭素が出入りする。多くの植物では <b>葉の裏</b> に多い。</p>'+SVG_STOMA+
+  '<p><b>蒸散</b>：植物の体の水が、おもに気孔から <b>水蒸気</b> になって出ていくこと。<br><b>吸水</b>：根や茎から水を吸い上げること。<b>蒸散がさかんなほど、吸水も多い</b>（出ていったぶん吸い上げる）。</p>',
+  quiz:{q:'蒸散のとき、植物の体の水は どんなすがたで 出ていく？',ch:['水蒸気','水てき（しずく）','氷のつぶ'],ok:0,why:'蒸散は、水が気孔から水蒸気（目に見えない気体）になって出ていくこと。',hint:'気孔は小さなすき間。そこから出るのは、液体？気体？'}},
+ {ey:'号外　観戦ガイド',h:'レースの道具と ルール',body:
+  '<p><b>ワセリン</b>：ぬった所の <b>気孔をふさぐ</b>。そこからは蒸散できない。<br><b>油</b>：水面にうかべて、<b>水面からの蒸発を止める</b>。油がないと、水の減り＝吸い上げた量にならない。<br><b>水の減り（mL）</b>：2時間でへった水の量＝枝が吸い上げた量。</p>'+
+  '<p>比べたいこと以外（枝の太さ・葉の枚数や大きさ）は <b>そろえる</b>。1つの条件だけ変えて比べる実験を <b>対照実験</b> という。</p>',
+  quiz:{q:'葉の裏にワセリンをぬると、蒸散はどうなる？',ch:['大きくへる','ふえる','変わらない'],ok:0,why:'気孔の多い裏をふさぐので、蒸散も吸い上げも大きくへる。',hint:'ワセリンは気孔をふさぐ。気孔が多いのは表？裏？'},endLab:'レース会場へ'}],()=>{SV.asked.nw1=1;save();then&&then()})}
+function newsAnswer(then){
+ if(SV.asked.nw2){then&&then();return}
+ const r=SV.seal;
+ newsLesson([{ey:'号外　決勝の結果',h:'理科室の決勝、着順は',body:
+  '<table class="res"><tr><th>枝（葉5枚・油あり）</th><th>2時間の水の減り（例）</th></tr><tr><td><b>A</b> 何もしない</td><td>6.0 mL</td></tr><tr><td><b>B</b> 表にワセリン</td><td>4.8 mL</td></tr><tr><td><b>C</b> 裏にワセリン</td><td>1.6 mL</td></tr><tr><td><b>D</b> 葉をぜんぶとる</td><td>0.4 mL</td></tr></table>'+
+  '<p>着順 <b>A ＞ B ＞ C ＞ D</b>'+(r&&r.order?'　（あなたの予想：'+esc(r.order.join(' ＞ '))+'）':'')+'</p>'+
+  '<p class="note">気孔は裏に多い。表をふさいだBは裏から蒸散が続くので強い。裏をふさいだCは大きくへる。葉のないDも、茎から わずかに蒸散する。</p>',
+  quiz:{q:'葉が10枚で何もしない枝と、葉が10枚で <b>両面</b>にワセリンをぬった枝。水の減りが多いのは？',ch:['何もしない枝','両面にワセリンをぬった枝','どちらも同じ'],ok:0,why:'両面をふさぐと葉の気孔から蒸散できない。蒸散が少ないと吸い上げる水も少ない。',hint:'ワセリンは気孔をふさぐ。蒸散が少ないと、吸い上げる水は？'}},
+ {ey:'号外　決勝の結果',h:'引き算で「裏だけ」の量を出す',body:
+  '<p>どこから水蒸気が出ているかを、言葉の式にする。</p>'+
+  '<table class="res"><tr><td><b>A</b> 何もしない</td><td>表 ＋ 裏 ＋ 茎</td></tr><tr><td><b>B</b> 表にワセリン</td><td>裏 ＋ 茎</td></tr><tr><td><b>C</b> 裏にワセリン</td><td>表 ＋ 茎</td></tr><tr><td><b>D</b> 葉なし</td><td>茎</td></tr></table>'+
+  '<p><b>裏だけ</b> ＝ B − D ＝（裏＋茎）−（茎）＝ 4.8 − 0.4 ＝ <b style="color:var(--red)">4.4 mL</b></p>',
+  quiz:{q:'同じ結果で、葉の <b>表だけ</b> からの蒸散量は？（C − D）',ch:['1.2 mL','2.0 mL','1.6 mL'],ok:0,why:'表だけ ＝ C − D ＝ 1.6 − 0.4 ＝ 1.2 mL。裏（4.4 mL）の方がずっと多い＝気孔は裏に多い。',hint:'表＋茎（C）から、茎（D）をひく。1.6 − 0.4 は？'}},
+ {ey:'号外　決勝の結果',h:'1日のうち、いつ よく吸う？',body:
+  '<p>何もしない枝の、2時間ごとの水の減り（晴れた日の例）。</p>'+
+  '<svg viewBox="0 0 320 150" style="width:100%;max-width:420px;display:block;margin:6px auto" font-family="sans-serif"><line x1="20" y1="120" x2="310" y2="120" stroke="#111" stroke-width="2"/>'+
+  [['7〜9時',.6],['9〜11時',1.8],['11〜13時',2.6],['13〜15時',3.2],['15〜17時',1.2]].map((d,k)=>{const h=d[1]*26,x=30+k*56;return '<rect x="'+x+'" y="'+(120-h)+'" width="40" height="'+h+'" fill="#111"/><text x="'+(x+20)+'" y="'+(114-h)+'" font-size="12" text-anchor="middle">'+d[1].toFixed(1)+'</text><text x="'+(x+20)+'" y="136" font-size="11" text-anchor="middle">'+d[0]+'</text>'}).join('')+'</svg>'+
+  '<p>水の減り（＝吸水量）がいちばん多い時間帯が、<b>蒸散がいちばんさかん</b> な時間帯。光が強く気温が高い <b>昼ごろ〜昼すぎ</b> に、気孔がよく開いて蒸散がさかんになる。</p>',
+  quiz:{q:'上のグラフ（この日の例）で、蒸散がいちばんさかんなのは？',ch:['13〜15時','11〜13時','7〜9時'],ok:0,why:'水の減りがいちばん多い（3.2 mL）のが13〜15時。いちばん高い棒の時間帯を読む。',hint:'いちばん高い棒はどれ？　数字も見てみよう。'},endLab:'確認テストへ'}],()=>{SV.asked.nw2=1;save();then&&then()})}
+
+function intro(i){if(!SV.asked.nw1){newsIntro(()=>intro(i));return}const H=HEATS[i];
  openClip(`<div class="kick">${esc(H.st)}　対戦カード</div><h2 class="ink">${esc(H.t)}</h2>
   <p>${H.vs.map(v=>'<b style="background:#111;color:#F3EFE4;padding:0 6px">'+v[0]+'</b> '+esc(v[1])).join('　')}</p>
   <div class="cols"><p>${H.tasks.map((t,k)=>(k+1)+'. '+t).join('<br>')}</p>
@@ -4475,7 +4519,7 @@ function intro(i){const H=HEATS[i];
 
 /* ================= 確認テスト ================= */
 let TS=null;
-function startTest(){if(!window.Quiz){alert('問題データがありません');return}G=null;closeClip();setScene('test');TS={qs:Quiz.test(),i:0,ans:[]};renderQ()}
+function startTest(){if(!TEST_ONLY&&!SV.asked.nw2){newsAnswer(startTest);return}if(!window.Quiz){alert('問題データがありません');return}G=null;closeClip();setScene('test');TS={qs:Quiz.test(),i:0,ans:[]};renderQ()}
 function renderQ(){
  const q=TS.qs[TS.i];$('qNo').textContent='確認テスト　第'+(TS.i+1)+'問 ／ '+TS.qs.length;$('qText').textContent=q.q;
  const fg=$('qFig');if(q.fig){fg.innerHTML=q.fig;$('qFigW').classList.remove('hide');$('qBody').classList.remove('nofig')}else{fg.innerHTML='';$('qFigW').classList.add('hide');$('qBody').classList.add('nofig')}
@@ -4586,8 +4630,7 @@ if(GD){
 function startWithGuide(){
  GD.intro({title:'第12回　吸い上げグランプリ',
   learn:'葉から水が出ていく（**蒸散**）ほど、茎から水を **吸い上げる**（吸水）',
-  how:'ワセリン・油は輪郭を **はみ出さずになぞる**。予想の線を引いて **レース**',gesture:'draw'}).then(()=>GD.tutorial(PRACTICE))}
-window.__gp={leafC,cylC,traceC,tracePath,boxC,predA,predB,get scene(){return scene},get G(){return G},get SV(){return SV},startHeat,startTest,openSched,gate,race,finalSeal,openZoom,finishTrace,hitBox,laneGeom,leafPos,get BW(){return BW},get BH(){return BH}};
+  how:'ワセリン・油は輪郭を **はみ出さずになぞる**。予想の線を引いて **レース**',gesture:'draw'}).then(()=>new Promise(r=>{if(SV.asked.nw1)r();else newsIntro(r)})).then(()=>GD.tutorial(PRACTICE))}
 if(TEST_ONLY){startTest()}else{initTitle()}
 requestAnimationFrame(frame);
 })();

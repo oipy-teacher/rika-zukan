@@ -107,6 +107,8 @@ button{font-family:var(--fh);cursor:pointer;touch-action:manipulation}
 .card{position:relative;width:min(560px,100%);max-height:100%;overflow:auto;background:#0d0c0a;padding:26px 22px 22px;text-align:center;
  box-shadow:inset 0 0 0 2px var(--g),inset 0 0 0 7px #0d0c0a,inset 0 0 0 8px var(--g3);
  clip-path:polygon(18px 0,calc(100% - 18px) 0,100% 18px,100% calc(100% - 18px),calc(100% - 18px) 100%,18px 100%,0 calc(100% - 18px),0 18px)}
+#scrLearn .card{text-align:left}#scrLearn .card h2{font-size:26px;text-align:center}#scrLearn .card .en{text-align:center}.spbox{border-left:3px solid var(--g);background:rgba(212,175,55,.08);padding:8px 12px;margin:8px 0;font:400 15px/1.75 var(--fh);color:#f3e9d2}.spq{border:1px dashed var(--g);padding:8px 12px;margin:10px 0 0}.spq .btns{margin-top:6px}.spm{min-height:1.4em}.spfig{display:block;width:100%;max-width:420px;height:auto;margin:6px auto;background:#f3e9d2}
+@media (max-height:800px) and (min-width:700px){.spfig{max-width:250px;margin:4px auto}#scrLearn .card h2{font-size:22px;margin:2px 0 4px}#scrLearn .card p{line-height:1.55;margin:4px 0}.spbox{line-height:1.55;padding:5px 10px;margin:6px 0}.spq{margin-top:6px;padding:6px 10px}}
 .card h2{margin:4px 0 6px;font:400 34px var(--fh);letter-spacing:.12em;color:var(--g2)}
 .card .en{font:400 14px var(--fn);letter-spacing:.45em;color:var(--g)}
 .card p{font:400 15px/1.7 var(--fh);color:#e8dcbc;margin:8px 0}
@@ -195,6 +197,8 @@ button{font-family:var(--fh);cursor:pointer;touch-action:manipulation}
  <div class="rec2 hidden" id="cRec2"></div><div class="stars" id="cStars"></div><div class="recs" id="cRec"></div>
  <div class="btns"><button class="dk gold" id="cNext">上の階へ</button><button class="dk sm" id="cMap">エレベーター</button></div>
 </div></div></div>
+
+<div id="scrLearn" class="scr hidden"><div class="ov"><div class="card" id="lCard"></div></div></div>
 
 <div id="scrBackCf" class="scr hidden" data-gd-pass><div class="ov"><div class="card">
  <div class="en">RETURN</div><h2>もどりますか？</h2><p id="bkSub">進み具合は保存されます。</p>
@@ -3858,6 +3862,34 @@ function pad(n,w){n=String(n);while(n.length<w)n='0'+n;return n}
 function fmtT(ms){var s=Math.round(ms/1000);return Math.floor(s/60)+'分'+pad(s%60,2)+'秒'}
 
 /* ================= セーブ ================= */
+
+/* ================= ロビーの案内板（初めての人へ・2026-10-06 夜間改修） =================
+   2階に上がる前に「＋と−」、確認テストの前に「理科室の実験のしかた」。「やってみよう」は正解するまで次へ進めない */
+var SPFIG_CLIP='<svg class="spfig" viewBox="0 0 340 170"><rect width="340" height="170" fill="#f3e9d2"/><path d="M60 160V40" stroke="#5a4412" stroke-width="5"/><rect x="30" y="156" width="70" height="8" fill="#5a4412"/><path d="M60 40l0 -10" stroke="#555" stroke-width="3"/><path d="M52 40h16v10h-16z" fill="#888"/><rect x="10" y="44" width="100" height="8" rx="4" fill="#D4AF37" stroke="#5a4412"/><text x="60" y="76" font-size="12" font-weight="700" text-anchor="middle" fill="#140f02">ストローA</text><text x="60" y="92" font-size="11" text-anchor="middle" fill="#140f02">クリップにかぶせ</text><text x="60" y="106" font-size="11" text-anchor="middle" fill="#140f02">くるっと回る</text><path d="M20 30q40 -22 80 0" stroke="#C0392B" stroke-width="2" fill="none" stroke-dasharray="4 3"/><path d="M100 30l-8 -2M100 30l-4 -7" stroke="#C0392B" stroke-width="2"/><rect x="170" y="44" width="110" height="8" rx="4" fill="#D4AF37" stroke="#5a4412"/><path d="M280 48h40" stroke="#140f02" stroke-width="3"/><text x="226" y="76" font-size="12" font-weight="700" text-anchor="middle" fill="#140f02">ストローB を近づける</text><text x="226" y="96" font-size="11" text-anchor="middle" fill="#140f02">（同じティッシュでこすった）</text><path d="M160 48h-30M130 48l7 -5M130 48l7 5" stroke="#C0392B" stroke-width="2.5"/><text x="226" y="132" font-size="12" font-weight="700" text-anchor="middle" fill="#C0392B">Aが逃げるように回る</text><text x="226" y="150" font-size="12" font-weight="700" text-anchor="middle" fill="#C0392B">＝しりぞけ合う</text></svg>';
+var LEARN={
+ pm:[
+  {en:'LOBBY GUIDE',t:'2種類の電気 ＋と−',h:'<p>どんな物にも <b>＋の電気</b> と <b>−の電気</b> が同じだけ入っている。</p><div class="spbox">ちがう物どうしをこすり合わせると、<b>−の電気</b>が片方からもう片方へ移る。<br>→ 片方は <b>−の電気</b>、もう片方は <b>＋の電気</b> を帯びる。<br>例：ポリ袋をティッシュでこすって、ポリ袋が <b>−</b> なら、ティッシュは <b>＋</b>。</div><p>だから「こすった物とこすられた物」は<b>ちがう種類（＋と−）</b>＝引き合う。「同じ物を同じようにこすった物どうし」は<b>同じ種類（−と−、＋と＋）</b>＝しりぞけ合う。</p><p><b>同じ物どうし</b>（同じガラス棒2本など）をこすり合わせても、電気は移らず <b>静電気は生じない</b>。</p>',
+   q:{q:'ゴム風船を毛糸の布でこすったら、風船は−になった。毛糸の布は？',c:['＋の電気','−の電気','電気を帯びない'],a:0,hint:'こすり合わせた2つは、ちがう種類の電気を帯びる',ok:'風船が−なら、毛糸の布は＋'}},
+  {en:'LOBBY GUIDE',t:'＋か−かを当てる',h:'<div class="spbox"><b>しりぞけ合った</b> → 同じ種類 → 相手と<b>同じ</b>（−なら−）<br><b>引き合った</b> → ちがう種類 → 相手と<b>反対</b>（−なら＋）</div><p>上の階では、玉とドラムの面が「同じ物どうしか・こすった相手か」を見て、引き合う・しりぞけ合うを読もう。</p>',
+   q:{q:'＋の電気を帯びた物体Pに物体Zを近づけたら、しりぞけ合った。Zは？',c:['＋の電気','−の電気','電気を帯びていない'],a:0,hint:'しりぞけ合うのは同じ種類どうし',ok:'Pと同じ ＋の電気'}}
+ ],
+ exp:[
+  {en:'BEFORE THE TEST',t:'理科室の実験のしかた',h:SPFIG_CLIP+'<div class="spbox">① ストローAをティッシュでよくこする<br>② Aを<b>クリップにかぶせて、自由に回る</b>ようにする<br>③ ストローBを、<b>同じティッシュ</b>でよくこする<br>④ BをAに近づけて、Aの動きを見る</div><p>電気の力はとても<b>小さい</b>。だからAを<b>軽く回るように</b>しておくと、小さな力でも動くようすが見える。ふれる前に動き出す＝<b>はなれていても力がはたらく</b>。</p>',
+   q:{q:'電気の小さな力でもAが動くのを見たい。Aはどうしておくとよい？',c:['クリップにかぶせ、軽く回るように','机に置き、指でおさえる','水でぬらす'],a:0,hint:'電気の力は小さい。重かったり、おさえていたりすると動かない',ok:'軽く回るようにしておけば、小さな力でも動くようすが見える'}}
+ ]
+};
+function learnRun(cards,done){var i=0;show('scrLearn',true);
+ var go=function(){if(i>=cards.length){show('scrLearn',false);done();return}var cd=cards[i],last=i+1>=cards.length;
+  $('lCard').innerHTML='<div class="en">'+cd.en+'</div><h2>'+esc(cd.t)+'</h2>'+cd.h+'<div class="spq"><p><b>やってみよう</b>　'+esc(cd.q.q)+'</p><div class="btns" id="lqB"></div><p class="spm" id="lqM"></p></div><div class="btns" id="lqN"></div>';$('lCard').scrollTop=0;
+  var bb=$('lqB');
+  var ord=cd.q.c.map(function(_,k){return k});for(var r=ord.length-1;r>0;r--){var j=Math.floor(Math.random()*(r+1)),tm=ord[r];ord[r]=ord[j];ord[j]=tm}
+  ord.forEach(function(k){var ch=cd.q.c[k];var e=document.createElement('button');e.className='dk sm';e.textContent=ch;
+   e.onclick=function(){ac();if(k===cd.q.a){SFX.tap();e.className='dk sm gold';[].forEach.call(bb.children,function(x){x.disabled=x!==e});$('lqM').innerHTML='<b style="color:#F6E27A">そのとおり！</b>　'+esc(cd.q.ok);
+     if(!$('lqGo')){var nb=document.createElement('button');nb.id='lqGo';nb.className='dk gold';nb.textContent=last?'わかった ▶':'つぎへ ▶';nb.onclick=function(){i++;go()};$('lqN').appendChild(nb);setTimeout(function(){try{nb.scrollIntoView({block:'nearest'})}catch(x){}},60)}}
+    else{e.disabled=true;$('lqM').innerHTML='<b style="color:#ff9d90">おしい</b>　'+esc(cd.q.hint)}};
+   bb.appendChild(e)})};
+ go()}
+
 function fresh(){return{v:1,name:'',unl:0,stars:{},best:{},done:false,rules:{same:0,diff:0},coll:{},clearMs:0,playMs:0,maxCombo:0}}
 var SV=fresh();try{var o=JSON.parse(localStorage.getItem(SKEY));if(o&&o.v===1)SV=Object.assign(fresh(),o)}catch(e){}
 function save(){try{localStorage.setItem(SKEY,JSON.stringify(SV))}catch(e){}}
@@ -3998,7 +4030,8 @@ function cfgOK(g){if(g.D.multi){return g.drums.every(function(d){return d.face==
  var s=g.balls[0].side;return g.drums.every(function(d){return d.lit>=0?d.face!==s:d.face===s})}
 function rel(side,face){return side===face?1:-1}/* +1 しりぞけ合う／-1 引き合う */
 
-function startTable(ti,prac){if(window.BGM)BGM.mood(!prac&&TABLES[ti]&&TABLES[ti].boss?'tense':'normal');if(!prac&&PRAC)endPractice();G=newTable(ti);G.startAt=performance.now();statKey='';nextTarget();setScene('play');
+function startTable(ti,prac){if(!prac&&!TEST&&ti>=1&&!(SV.learned||{}).pm){learnRun(LEARN.pm,function(){SV.learned=SV.learned||{};SV.learned.pm=1;save();startTable(ti)});return}
+ if(window.BGM)BGM.mood(!prac&&TABLES[ti]&&TABLES[ti].boss?'tense':'normal');if(!prac&&PRAC)endPractice();G=newTable(ti);G.startAt=performance.now();statKey='';nextTarget();setScene('play');
  say('<b>'+(ti+1)+'階 '+esc(TABLES[ti].n)+'</b>　'+esc(TABLES[ti].lead),6);
  if(TABLES[ti].intro)G.hint=1}
 
@@ -4435,7 +4468,7 @@ function drawMap(x){var r=Math.min(W*.3,H*.26,190),cx=W/2,cy=Math.min(H*.42,r+90
  var st=0;for(var k in SV.stars)st+=SV.stars[k].filter(Boolean).length;jp(x,'★ '+st+' / '+(NT*3),cx,cy+80,15,'#F6E27A','center')}
 
 /* ================= 場面 ================= */
-var SCR=['scrTitle','scrMap','scrClear','scrBackCf','scrTest','scrEnd'];
+var SCR=['scrTitle','scrMap','scrClear','scrBackCf','scrTest','scrEnd','scrLearn'];
 function show(id,on){$(id).classList.toggle('hidden',!on)}
 var INHUB=!!window.COLLECTION_NAME||(function(){try{return window.parent!==window}catch(e){return true}})();
 function setScene(s){scene=s;statKey='';SCR.forEach(function(id){show(id,false)});helpVis();
@@ -4472,7 +4505,8 @@ document.addEventListener('visibilitychange',function(){if(document.hidden&&G&&s
 
 /* ================= 確認テスト ================= */
 var TQ=[],TI=0,TA=[],TOK=[],CARD=null,OKC='#F6E27A',NGC='#C0392B';
-function startTest(){G=null;setScene('test');TQ=window.Quiz?Quiz.test():[];TI=0;TA=[];TOK=[];$('scrTest').scrollTop=0;showQ()}
+function startTest(){if(!TEST&&!((SV.learned||{}).pm&&(SV.learned||{}).exp)){var cs=((SV.learned||{}).pm?[]:LEARN.pm).concat(LEARN.exp);learnRun(cs,function(){SV.learned=SV.learned||{};SV.learned.pm=1;SV.learned.exp=1;save();startTest()});return}
+ G=null;setScene('test');TQ=window.Quiz?Quiz.test():[];TI=0;TA=[];TOK=[];$('scrTest').scrollTop=0;showQ()}
 function lamps(){$('tLamps').innerHTML=TQ.map(function(q,i){return'<i class="'+(i<TOK.length?(TOK[i]?'ok':'ng'):i===TI?'cur':'')+'"></i>'}).join('')}
 function showQ(){if(TI>=TQ.length)return finishTest();var q=TQ[TI];$('tNo').textContent='第'+(TI+1)+'問 ／ '+TQ.length;lamps();
  $('tQ').innerHTML=q.q;var f=$('tFig');if(q.fig){f.innerHTML=q.fig;f.classList.remove('hidden')}else{f.innerHTML='';f.classList.add('hidden')}
@@ -4507,7 +4541,7 @@ $('eMap').onclick=function(){setScene(TEST?'title':'map')};
 /* ================= 遊び方案内（Guide）2026-09-28 ================= */
 var PRAC=false,PAUSED=false;
 var INTRO={title:'せいでんきピンボール',
-  learn:'**同じ物どうし** の電気は **しりぞけ合い**、**こすった物とこすられた物** は **引き合う**。ふれる前から力がはたらく',
+  learn:'こすって物にたまった電気（**静電気**）には **＋と−の2種類**。**同じ物どうし** の電気は **しりぞけ合い**、**こすった物とこすられた物** は **引き合う**。ふれる前から力がはたらく',
   how:'**ドラムをタップ** で面を切りかえ、右下を **長おし→はなす** で発射。画面の左右をタップでフリッパー',gesture:'tap'};
 function endPractice(){if(!PRAC)return;PRAC=false;if(window.Guide)Guide.tutorialEnd()}
 function tpt(x,y,r){var q=tsc(x,y);return {x:q[0],y:q[1],r:r}}
@@ -4546,11 +4580,6 @@ if(!(SV.unl>0||SV.stars[0]))$('bCont').classList.add('hidden');
 if(SV.done)$('bToTest').classList.remove('hidden');
 if(TEST)startTest();else setScene('title');
 requestAnimationFrame(frame);
-/* 自動操作の確かめ用の窓口（遊びには影響しない） */
-window.__SP={PRAC:function(){return PRAC},PAUSED:function(){return PAUSED},tsc:function(x,y){return tsc(x,y)},G:function(){return G},start:startTable,scene:function(){return scene},SV:function(){return SV},
- setRight:function(){if(!G)return;G.drums.forEach(function(d){d.face=wantFace(G,d)})},
- launch:function(p){if(!G)return;G.pull=p||.7;release()},flip:function(s,on){if(G)flipper(s,on)},toggle:function(i){if(G&&G.drums[i])toggleDrum(G.drums[i])},
- physics:function(dt){physics(dt)},update:function(dt){update(dt)},clear:tableClear,toTest:toTest};
 })();
 </script>
 <script>window.ZUKAN_COUNTER={"db": "https://rika-zukan-rank-default-rtdb.asia-southeast1.firebasedatabase.app", "id": "seiden-pinball"};

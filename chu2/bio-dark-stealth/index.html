@@ -126,6 +126,11 @@ body.land .tW{width:min(44vw,520px)}
 #gCv{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
 .rs{display:grid;gap:8px;margin:14px auto 0;max-width:640px}
 .rs button{text-align:left;padding:10px 12px;font:600 15px var(--bd);color:#efe3c4;background:#140f0b;box-shadow:inset 0 0 0 1px #6b5424;min-height:48px}
+.tryCh{display:grid;gap:8px;margin:10px auto 0;max-width:640px}
+.tryCh button{text-align:left;padding:10px 14px;font:600 16px var(--bd);color:#efe3c4;background:#140f0b;box-shadow:inset 0 0 0 1px #C9A043;min-height:48px}
+.tryCh button.ok{background:#3a2a0c;box-shadow:inset 0 0 0 2px #f0cf6e;color:#fff4d2}.tryCh button.ng{opacity:.45;text-decoration:line-through}
+.tryFb{min-height:3.2em;font:600 15px/1.6 var(--bd);text-align:left;max-width:640px;margin:8px auto 0}.tryFb b.o{color:#f0cf6e}.tryFb b.x{color:#e07a6a}
+.lq[disabled]{opacity:.4;pointer-events:none}
 .rs button.on{background:#3a2a0c;box-shadow:inset 0 0 0 2px #f0cf6e;color:#fff4d2}
 .rs .lb{font-family:var(--hd);color:var(--gd2);font-size:18px;text-align:center}
 #wax{position:fixed;z-index:35;left:50%;top:45%;width:170px;height:170px;margin:-85px 0 0 -85px;border-radius:50%;background:radial-gradient(circle at 38% 35%,#c23a3a,#8E1B1B 55%,#4a0b0b);
@@ -4203,7 +4208,7 @@ var INHUB=!!window.COLLECTION_NAME||(function(){try{return window.parent!==windo
 function show(ids){['scrTitle','scrMap','scrRes','scrPause','scrBackQ','scrSeal','scrTest','scrEnd','hud','ctrl'].forEach(function(id){$(id).classList.toggle('hidden',ids.indexOf(id)<0)})}
 function setScene(s){scene=s;
   if(s==='title'){show(['scrTitle']);var lg=$('logo');lg.classList.remove('in');void lg.offsetWidth;lg.classList.add('in');$('bCont').classList.toggle('hidden',!(SV.prac||SV.unl>1));var sl=loadSeal();$('bOpen').classList.toggle('hidden',!(sl&&!sl.opened))}
-  else if(s==='map'){show(['scrMap']);drawMap()}else if(s==='play')show(['hud','ctrl']);else if(s==='seal')show(['scrSeal']);else if(s==='test')show(['scrTest']);else if(s==='end')show(['scrEnd']);
+  else if(s==='map'){show(['scrMap']);drawMap();if(!SV.introRead&&window.Guide&&!TEST){SV.introRead=1;save();Guide.intro(INTRO)}}else if(s==='play')show(['hud','ctrl']);else if(s==='seal')show(['scrSeal']);else if(s==='test')show(['scrTest']);else if(s==='end')show(['scrEnd']);
   $('bBack').classList.remove('hidden');$('bBackT').textContent=s==='title'?'一覧へ':'もどる';$('bPause').classList.toggle('hidden',s!=='play');$('bMute').textContent=muted?'🔇':'🔊';
   if(HELP){if(s==='play'){HELP.show();HELP.update({rules:helpRules()})}else HELP.hide()}}
 function drawMap(){var el=$('rooms');el.innerHTML='';
@@ -4212,7 +4217,7 @@ function drawMap(){var el=$('rooms');el.innerHTML='';
     b.innerHTML='<span class="no">'+esc(r.k)+'</span><span class="nn">'+esc(r.n)+'</span><span class="ds">'+esc(r.note.split('。')[0])+'</span><span class="st">'+st.map(function(v){return'<i class="'+(v?'on':'')+'">★</i>'}).join('')+'</span>';
     if(!lock)b.onclick=function(){SFX.tap();start(i)};el.appendChild(b)});
   var tl=$('tools');tl.innerHTML='';TOOLS.forEach(function(t){var own=SV.tools.indexOf(t.id)>=0,d=document.createElement('div');d.className='tl'+(own?'':' no');d.innerHTML=toolSVG(t.id)+'<b>'+(own?esc(t.n):'？？？')+'</b><small>'+(own?esc(t.d):'文箱の中に')+'</small>';tl.appendChild(d)});
-  $('bToTest').classList.toggle('hidden',!SV.done||!loadSeal());$('bSealGo').classList.toggle('hidden',!SV.done||!!loadSeal())}
+  $('bToTest').classList.toggle('hidden',!SV.done||!loadSeal());$('bToTest').textContent=SV.ansSeen?'📋 確認テストへ':'📜 答え合わせへ';$('bSealGo').classList.toggle('hidden',!SV.done||!!loadSeal())}
 function showRes(stars,bossFirst){scene='res';show(['scrRes','hud','ctrl']);var g=G;
   $('rT').textContent=R.boss?'屋敷を抜けた！':'抜けた！';$('rS').textContent=R.k+'　'+R.n+(g.retry?'（見つかった回数 '+g.retry+'）':'（一度も見つからずに）');
   var L=['抜けた','文箱','影のまま'];$('rStars').innerHTML=stars.map(function(v,i){return'<div class="wait '+(v?'on':'')+'"><i>★</i>'+L[i]+'</div>'}).join('');
@@ -4241,11 +4246,11 @@ $('bBook1').onclick=openBook;$('bBook2').onclick=openBook;$('eBook').onclick=ope
 $('bGacha').onclick=function(){var z=Zk();if(z&&z.openGacha)z.openGacha()};
 if(!Zk()){['bBook1','bBook2','bGacha','eBook'].forEach(function(id){$(id).classList.add('hidden')})}
 $('bSealGo').onclick=function(){openSeal()};
-$('bToTest').onclick=function(){startTest()};
+$('bToTest').onclick=function(){var sl=loadSeal();if(!SV.ansSeen&&sl){ac();openAnswer(sl,function(){startTest()});return}startTest()};
 function getName(){return(window.PLAYER_NAME||$('nameIn').value||SV.name||'').trim()}
 $('bStart').onclick=function(){ac();SFX.hyoshi();SV.name=$('nameIn').value.trim()||SV.name;save();var first=!SV.prac;
   if(!window.Guide){if(first)start(0);else setScene('map');return}
-  Guide.intro(INTRO).then(function(){if(first){PRAC_RET='r1';Guide.tutorial(PRACTICE)}else setScene('map')})};
+  SV.introRead=1;save();Guide.intro(INTRO).then(function(){if(first){PRAC_RET='r1';Guide.tutorial(PRACTICE)}else setScene('map')})};
 $('bCont').onclick=function(){ac();SV.name=$('nameIn').value.trim()||SV.name;save();setScene('map')};
 
 /* ---------------- 予想の封印（グラフを指でかく） ---------------- */
@@ -4287,7 +4292,38 @@ $('gSeal').onclick=function(){if(GP.length<6||GP[GP.length-1][0]-GP[0][0]<.5){SF
   try{localStorage.setItem(SEALKEY,JSON.stringify(seal))}catch(e){}
   var z=Zk();if(z&&z.earn)z.earn(10,'predict',{x:W/2,y:H/2});
   var wx=$('wax');wx.classList.remove('hidden','go');void wx.offsetWidth;wx.classList.add('go');SFX.stamp();SFX.taiko();vib([30,40,30]);shake(10);
-  setTimeout(function(){wx.classList.add('hidden');var go=function(){startTest()};if(z&&z.mainClear&&!TEST&&!SV.mainShown){SV.mainShown=1;save();try{z.mainClear({onClose:go});return}catch(e){}}go()},1600)};
+  setTimeout(function(){wx.classList.add('hidden');var go=function(){startTest()};openAnswer(seal,function(){if(z&&z.mainClear&&!TEST&&!SV.mainShown){SV.mainShown=1;save();try{z.mainClear({onClose:go});return}catch(e){}}go()})},1600)};
+/* 2026-10-06 初心者向け: 封印のすぐあと・テストの前に「答え合わせ」3枚（予想と結果／目のつくり／調べ方） */
+function eyeSVG(pr,cap){return '<div style="text-align:center"><svg viewBox="0 0 120 80" style="width:130px"><path d="M6 40 Q60 -6 114 40 Q60 86 6 40Z" fill="#f3ead3" stroke="#2a1d0c" stroke-width="3"/><circle cx="60" cy="40" r="26" fill="#8a5a2b" stroke="#2a1d0c" stroke-width="2"/><circle cx="60" cy="40" r="'+pr+'" fill="#0d0a08"/></svg><div style="font-size:14px">'+cap+'</div></div>'}
+function openAnswer(sl,done){show([]);scene='open';$('bBack').classList.add('hidden');var ov=document.createElement('div');ov.id='scrAns';ov.className='scr';ov.style.cssText='overflow-y:auto;touch-action:pan-y;padding:30px 12px;background:radial-gradient(ellipse at 50% 20%,#1d150e,#0D0A08 70%)';var box=document.createElement('div');box.className='sl';ov.appendChild(box);document.body.appendChild(ov);
+  var pages=[
+   function(){box.innerHTML='<div class="h2">答え合わせ（1/3）</div><div class="q">あなたの予想：<b>'+esc(sl.pred.shapeT)+'</b></div><div id="gWrap3" style="position:relative;background:#f3ead3;margin:0 auto;width:min(100%,520px);height:min(34vh,290px);box-shadow:0 0 0 6px #0d0a08,0 0 0 7px #C9A043"><canvas id="gCv3" style="position:absolute;inset:0;width:100%;height:100%"></canvas></div>'+
+     '<div style="font:600 15px var(--bd);margin:10px 0 0"><span style="color:#e07a6a">━━ あなたの予想</span>　<span style="color:#7fb0ff">┅┅ 多くの人の体験</span></div>'+
+     '<div class="q" style="text-align:left">・暗い所に入ると、<b>はじめはほとんど見えない</b>が、<b>時間とともにだんだん見えるようになる</b>。<br>・<b>最初の数分で大きく</b>見えるようになり、あとは<b>ゆっくり</b>。十分に慣れるまで <b>30分ほど</b>かかる。</div>';
+     setTimeout(function(){var cv3=$('gCv3');if(!cv3)return;var r=$('gWrap3').getBoundingClientRect(),w=r.width,h=r.height,d=Math.min(3,devicePixelRatio||1);cv3.width=w*d;cv3.height=h*d;var x2=cv3.getContext('2d');x2.setTransform(d,0,0,d,0,0);
+       x2.fillStyle='#f3ead3';x2.fillRect(0,0,w,h);var X0=w*GM.l,X1=w*(1-GM.r),Y0=h*GM.t,Y1=h*(1-GM.b);x2.strokeStyle='#2a1d0c';x2.lineWidth=2;x2.beginPath();x2.moveTo(X0,Y0);x2.lineTo(X0,Y1);x2.lineTo(X1,Y1);x2.stroke();
+       x2.fillStyle='#2a1d0c';x2.font='600 13px "Zen Old Mincho",serif';x2.fillText('見え方',4,Y0+4);x2.fillText('時間 →',X1-50,Y1+16);x2.fillText('入った瞬間',X0,Y1+16);
+       x2.strokeStyle='#8E1B1B';x2.lineWidth=4;x2.beginPath();sl.pred.pts.forEach(function(p,i){var x=X0+(X1-X0)*p[0],y=Y1-(Y1-Y0)*p[1];i?x2.lineTo(x,y):x2.moveTo(x,y)});x2.stroke();
+       x2.strokeStyle='#1f5fbf';x2.lineWidth=4;x2.setLineDash([8,5]);x2.beginPath();for(var i=0;i<=40;i++){var t=i/40,v=.08+.84*(1-Math.exp(-t*5.5))*(.75+.25*t);var x=X0+(X1-X0)*t,y=Y1-(Y1-Y0)*v;i?x2.lineTo(x,y):x2.moveTo(x,y)}x2.stroke();x2.setLineDash([])},60)},
+   function(){box.innerHTML='<div class="h2">答え合わせ（2/3）</div><div class="q">目のどこが 調節している？</div>'+
+     '<div style="display:flex;gap:18px;justify-content:center;flex-wrap:wrap;color:#f3ead3">'+eyeSVG(7,'明るい所：ひとみが<b>小さい</b>')+eyeSVG(17,'暗い所：ひとみが<b>大きい</b>')+'</div>'+
+     '<div class="q" style="text-align:left">・暗い所から明るい所へ出ると、<b>はじめはまぶしい</b>が、しばらくすると慣れる。目は そのときの明るさ（<b>光の刺激の強さ</b>）に合わせて調節され、切りかわるのに時間がかかる。<br>・目の色のついた輪が <b>虹彩</b>。まん中の黒い穴が <b>ひとみ</b>（光の入り口）。<br>・虹彩がのび縮みして <b>ひとみの大きさ</b>を変え、<b>目に入る光の量</b>を調節する。<br>・<b>暗い所</b>では ひとみが<b>大きく</b>なって、少ない光を多く取りこむ。<b>明るい所</b>では 小さくなって、光を少なくする。<br>・ほかの部分：<b>網膜</b>＝光を受け取る膜／<b>水晶体</b>＝光を集めるレンズ／<b>視神経</b>＝網膜から脳へ伝える神経。</div>'},
+   function(){box.innerHTML='<div class="h2">答え合わせ（3/3）</div><div class="q">自分の目で 確かめる実験のしかた</div>'+
+     '<div class="q" style="text-align:left">① 明るい所で、目を慣らしておく<br>② 明かりを消した部屋に入り、時間を計りはじめる<br>③ 決めておいた物（文字や絵）が見えるかを、一定時間ごとに確かめる<br>④ 見えるようになった時間を記録して、グラフにする</div>'+
+     '<div class="q" style="text-align:left">・<b>そろえる条件</b>：暗い部屋に入る前に、<b>同じ明るさの所に同じ時間</b>いること（入る前の明るさがちがうと、慣れ方が変わる）。<br>・人の感覚を使う実験は、結果が<b>ばらつきやすい</b>。何回かはかって<b>平均</b>をとり、ばらつきも見る。</div>'}];
+  var tp=function(o,last){return function(){var op=[{t:o.ok,ok:1}].concat(o.ng.map(function(t){return{t:t,ok:0}}));for(var i=op.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1)),x=op[i];op[i]=op[j];op[j]=x}
+     box.innerHTML='<div class="h2">やってみよう</div><div class="q">'+o.sub+'</div><div class="q" style="text-align:left;max-width:640px;margin:6px auto 0">'+o.q+'</div><div class="tryCh">'+op.map(function(c,k){return'<button data-k="'+k+'">'+esc(c.t)+'</button>'}).join('')+'</div><div class="tryFb" aria-live="polite"></div>';
+     var fb=box.querySelector('.tryFb');[].slice.call(box.querySelectorAll('.tryCh button')).forEach(function(b){b.onclick=function(){var c=op[+b.dataset.k];
+       if(c.ok){try{SFX.clear()}catch(e){}b.classList.add('ok');[].slice.call(box.querySelectorAll('.tryCh button')).forEach(function(x){x.disabled=true});fb.innerHTML='<b class="o">○ そのとおり！</b> '+o.why;$('ansNext').disabled=false;if(last){SV.ansSeen=1;save()}}
+       else{try{SFX.tap()}catch(e){}b.classList.add('ng');b.disabled=true;fb.innerHTML='<b class="x">× ちがう。</b> '+o.whyNg+' もう一度 えらぼう。'}}});return true}};
+  pages=[pages[0],tp(TRY_D[0]),pages[1],tp(TRY_D[1]),pages[2],tp(TRY_D[2],1)];
+  var pi=0;function render(){var lock=pages[pi]();var rb=document.createElement('div');rb.className='rb';var b=document.createElement('button');b.className='lq';b.textContent=pi<pages.length-1?'つぎへ ▶':'さいごの確認テストへ ▶';b.id='ansNext';if(lock)b.disabled=true;b.onclick=function(){SFX.tap();if(pi<pages.length-1){pi++;render();ov.scrollTop=0}else{ov.remove();done()}};rb.appendChild(b);box.appendChild(rb)}
+  render()}
+/* やってみよう（答え合わせ1枚ごとに1問。テストとは別の場面。選択肢は出すたびにまぜる） */
+var TRY_D=[
+ {sub:'答え合わせ（1/3）のおさらい',q:'暗い部屋に入って <b>1分後</b> と <b>20分後</b>。部屋の中の物が よく見えるのは？',ok:'20分後',ng:['1分後','どちらも同じ'],why:'時間がたつほど 目が暗さに慣れて、よく見えるようになる。',whyNg:'グラフの点線は、時間とともに どうなっていた？'},
+ {sub:'答え合わせ（2/3）のおさらい',q:'晴れた昼の <b>明るい所</b>で ネコの目を見た。ひとみは どうなっている？',ok:'小さくなっている（入る光を少なくする）',ng:['大きくなっている（光を多く取りこむ）','いつも同じ大きさ'],why:'明るい所では 虹彩が ひとみを小さくして、入る光を少なくする。ヒトも同じ。',whyNg:'ひとみが大きくなるのは 暗い所。明るい所では？'},
+ {sub:'答え合わせ（3/3）のおさらい',q:'暗さに慣れる時間を くらべる。Aさんは <b>晴れた外</b>から、Bさんは <b>うす暗いろうか</b>から、同じ暗い部屋に入って はかった。この比べ方は？',ok:'よくない（入る前の明るさが ちがう）',ng:['よい（同じ部屋に入ったから）','よい（2人とも 時間をはかったから）'],why:'入る前の明るさがちがうと 慣れ方が変わる。同じ明るさの所に 同じ時間いてから入る。',whyNg:'そろえる条件は「入る前の明るさと時間」だった。'}];
 /* 封印をひらく（暗い部屋の体験のあと） */
 $('bOpen').onclick=function(){var sl=loadSeal();if(!sl)return;ac();show([]);scene='open';$('bBack').classList.add('hidden');var ov=document.createElement('div');ov.id='scrOpen';ov.className='scr';ov.style.cssText='overflow-y:auto;touch-action:pan-y;padding:30px 12px;background:radial-gradient(ellipse at 50% 20%,#1d150e,#0D0A08 70%)';var box=document.createElement('div');box.className='sl';ov.appendChild(box);document.body.appendChild(ov);
   box.innerHTML='<div class="h2">封印をひらく</div><div class="q">暗い部屋に入った体験のあとで開けよう。<br>あなたの予想：<b>'+esc(sl.pred.shapeT)+'</b><br>理由：'+esc(sl.reason.t)+'</div><div id="gWrap2" style="position:relative;background:#f3ead3;margin:0 auto;width:min(100%,640px);aspect-ratio:16/10;box-shadow:0 0 0 6px #0d0a08,0 0 0 7px #C9A043"><canvas id="gCv2" style="position:absolute;inset:0;width:100%;height:100%"></canvas></div>'+
@@ -4305,7 +4341,7 @@ $('bOpen').onclick=function(){var sl=loadSeal();if(!sl)return;ac();show([]);scen
 /* ---------------- 遊び方案内（Guide） ---------------- */
 var HELP=null,PRAC_RET=null;
 var INTRO={title:'第31回　暗がりの忍び足',
-  learn:'**明るい所ほど**（光の刺激が強いほど）見張りの目は遠くから気づく。最後に、暗い所での **自分の見え方** を予想して封印する',
+  learn:'**刺激**＝目や耳が受け取る、光・音などのはたらきかけ。\n**明るい所ほど**（光の刺激が強いほど）見張りの目は遠くから気づく。最後に、暗い所での **自分の見え方** を予想して封印し、すぐ答え合わせ',
   how:'行きたい所を **指でおさえて** 忍び歩き。赤い扇＝見張りの目。扇は **明るい所で長くのびる**',gesture:'drag'};
 function plT(){if(!G)return null;var p=toS(G.px,G.py);return{x:p.x,y:p.y,r:Math.max(26,V.s*.6)}}
 function wpT(x,y){return function(){var p=toS(x,y);return{x:p.x,y:p.y,r:Math.max(26,V.s*.6)}}}
@@ -4378,7 +4414,7 @@ window.Zukan&&Zukan.setup&&Zukan.setup({game:GID,koma:[KOMA]});
 if(window.PLAYER_NAME){$('nameIn').value=window.PLAYER_NAME;$('nmRow').classList.add('hidden')}else if(SV.name)$('nameIn').value=SV.name;
 if(TEST)startTest();else setScene('title');
 requestAnimationFrame(frame);
-window.__DS={G:function(){return G},start:start,scene:function(){return scene},SV:function(){return SV},sees:sees,light:lightAt,seal:openSeal,R:function(){return R}};
+
 })();
 </script>
 <script>window.ZUKAN_COUNTER={"db": "https://rika-zukan-rank-default-rtdb.asia-southeast1.firebasedatabase.app", "id": "bio-dark-stealth"};

@@ -135,6 +135,10 @@ body.land .logo h1{font-size:clamp(60px,min(6.4vw,12vh),112px)}
 .card .news{margin:12px auto 6px;max-width:470px;text-align:left;font-size:16px;line-height:1.65;padding:10px 14px;background:rgba(233,220,192,.1);box-shadow:inset 0 0 0 1px rgba(217,178,111,.5)}
 .card .news b{color:var(--gold);font-family:var(--hd);font-weight:400;font-size:1.1em}
 .card .btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:16px}
+.card .btns.lsStick{position:sticky;bottom:-20px;margin:12px -20px -20px;padding:10px 0 14px;background:var(--dark)}
+.card .lch{display:flex;flex-direction:column;gap:8px;margin:8px 0}
+.card .lch button{font:inherit;font-size:16px;text-align:left;padding:8px 12px;background:rgba(20,17,15,.85);color:#F3E9D2;border:2px solid var(--gold);cursor:pointer}
+.card .lch button.ng{opacity:.35}.card .lch button.ok{background:var(--gold);color:var(--dark)}.card .lch button[disabled]{cursor:default}
 .stars{display:flex;justify-content:center;gap:16px;margin:12px 0 6px}
 .stars i{width:60px;height:60px;display:grid;place-items:center;font-style:normal;font-size:32px;color:var(--dark);background-color:#4a3f35;background-image:var(--tess);background-size:7px 7px;border-radius:50%;box-shadow:0 0 0 3px #6d6252;opacity:.5}
 .stars i.on{background-color:var(--gold);box-shadow:0 0 0 3px var(--dark),0 0 0 5px var(--gold);opacity:1;animation:stampIn .45s cubic-bezier(.3,1.7,.5,1) both}
@@ -4054,13 +4058,14 @@ function litInfo(){const k=G?G.k:0,c=chains(),cp=caps(),hs=PL.has('house')?SV.ho
  if(G&&G.boss&&G.bossOn)lit=Math.max(0,Math.round(lit*clamp(G.light,0,1)));
  return {lit,why,hs}}
 
-function startStage(k,retry){if(window.BGM)BGM.mood('normal');closeOv();hideTip();const keepPL=retry?new Set(PL):null;B=linksUpTo(k);PL=placedUpTo(k);const st=ST[k];
+function startStage(k,retry){if(k>0&&!retry){const ul=unreadL(k);if(ul.length){if(G)G.paused=true;teach(ul,()=>startStage0(k,retry));return}}startStage0(k,retry)}
+function startStage0(k,retry){if(window.BGM)BGM.mood('normal');closeOv();hideTip();const keepPL=retry?new Set(PL):null;B=linksUpTo(k);PL=placedUpTo(k);const st=ST[k];
  G={k,st,phase:st.place.length?'place':'order',ordI:0,tok:null,mist:0,combo:0,maxCombo:0,links:0,paused:false,grace:k===2||k===6?8:0,boss:!!st.boss,bossI:0,light:1,broken:null,bossOn:false,drag:null,need:new Set(st.place)};
  if(keepPL){keepPL.forEach(id=>PL.add(id));st.place.forEach(id=>{if(PL.has(id))G.need.delete(id)});if(!G.need.size)G.phase='order';G.mist=retry.mist||0}
  scene='play';showScene('play');SLdirty=true;
  if(k===0||retry){beginPhase();return}
  G.paused=true;const pr=Math.min(8,k);
- openOv('<div class="card slab"><div class="ch">第'+k+'段階</div><h3>'+st.nm+'</h3><div class="cs">'+st.sub+'</div><div class="news">'+st.news+'</div><div class="btns"><button class="btn" id="siGo">はじめる</button></div></div>');SFX.bell(2);
+ openOv('<div class="card slab"><div class="ch">第'+k+'段階</div><h3>'+st.nm+'</h3><div class="cs">'+st.sub+'</div><div class="news">'+st.news+'</div>'+usedList(st)+'<div class="btns"><button class="btn" id="siGo">はじめる</button></div></div>');SFX.bell(2);
  $('siGo').onclick=()=>{closeOv();G.paused=false;SFX.click();beginPhase()}}
 function beginPhase(){if(!G)return;if(G.boss){startBoss(0);return}if(G.phase==='place'&&G.need.size===0)G.phase='order';if(G.phase==='order')startOrder();if(G.phase==='place')window.Tekitou&&Tekitou.shown();renderPanel()}
 function startOrder(){const o=G.st.orders[G.ordI];if(!o){stageClear();return}G.tok={node:o.path[0],i:0,sub:o.sub,mv:null};G.firstTry=true;G.ordNew=[];G.ordMist=0;window.Tekitou&&Tekitou.shown();renderPanel();autoStep()}
@@ -4331,8 +4336,58 @@ function openBook(fromEnd){closeOv();G=null;B=new Set(Object.keys(LK));PL=new Se
   b.innerHTML='<span class="no">'+(i?'第'+i+'段階':'れんしゅう')+'</span><span class="nm">'+st.nm+'</span><span class="st">'+(i?'★'.repeat(SV.stars[i]||0)+'☆'.repeat(3-(SV.stars[i]||0)):'')+'</span>';
   b.onclick=()=>{if(lock){SFX.bad();return}SFX.click();if(i===0)startPractice();else startStage(i)};gr.appendChild(b)});
  $('bkNext').hidden=SV.done;$('bkNext').onclick=()=>{SFX.click();if(SV.next===0)startPractice();else startStage(Math.min(SV.next,8))};
- $('bkTest').onclick=()=>{SFX.click();startTest()};$('bkZukan').hidden=!window.Zukan;$('bkZukan').onclick=()=>{try{Zukan.openBook()}catch(e){}};
- if(fromEnd)setTimeout(()=>{openOv('<div class="card slab"><div class="ch">本編クリア</div><h3>いのちの町 完成</h3><div class="news">取り入れる（<b>消化・呼吸</b>）→ 運ぶ（<b>循環</b>）→ 使う（<b>細胞の呼吸</b>）→ 出す（<b>排出</b>）。植物の <b>光合成</b> とも気体と養分でつながり、<b>感覚と神経</b> が町を見張る。どれか1つが切れても、明かりは消える。</div><div class="btns"><button class="btn" id="feT">確認テストへ</button></div></div>');$('feT').onclick=()=>{closeOv();startTest()}},300)}
+ $('bkTest').onclick=()=>{SFX.click();teach(unreadL(99),startTest)};$('bkZukan').hidden=!window.Zukan;$('bkZukan').onclick=()=>{try{Zukan.openBook()}catch(e){}};
+ if(fromEnd)setTimeout(()=>{openOv('<div class="card slab"><div class="ch">本編クリア</div><h3>いのちの町 完成</h3><div class="news">取り入れる（<b>消化・呼吸</b>）→ 運ぶ（<b>循環</b>）→ 使う（<b>細胞の呼吸</b>）→ 出す（<b>排出</b>）。植物の <b>光合成</b> とも気体と養分でつながり、<b>感覚と神経</b> が町を見張る。どれか1つが切れても、明かりは消える。</div><div class="btns"><button class="btn" id="feT">確認テストへ</button></div></div>');$('feT').onclick=()=>{closeOv();teach(unreadL(99),startTest)}},300)}
+
+
+/* ================= まなぶ札（2026-10-06 初心者向け改修） =================
+   段階の前に、まだ読んでいない札を先に出す（地図・次の段階・つづきから・確認テストのどこから入っても）。
+   段階のはじめの札には「この段階で使う施設と働き」を並べる（タップしなくても先に読める） */
+function usedList(st){const ids=[];(st.place||[]).forEach(id=>{if(ids.indexOf(id)<0)ids.push(id)});(st.orders||[]).forEach(o=>o.path.forEach(id=>{if(ids.indexOf(id)<0)ids.push(id)}));
+ const L=ids.filter(id=>N[id]&&N[id].desc);if(!L.length)return '';
+ return '<div class="news" style="font-size:14.5px"><b>この段階で使う施設</b>（町の上でタップしても見られる）<br>'+L.map(id=>'<b>'+N[id].nm+'</b>：'+N[id].desc).join('<br>')+'</div>'}
+const LESSONS=[
+ {k:'villi',tr:{q:'柔毛で吸収された<b>ブドウ糖</b>が、最初に入るのはどこ？',a:'毛細血管',w:['リンパ管','肺胞','道管'],ok:'ブドウ糖・アミノ酸は毛細血管へ（そこから肝臓へ）。脂肪になるものはリンパ管へ。',ng:'リンパ管へ行くのは、再び脂肪になるもの。ブドウ糖はどっち？'},before:1,h:'小腸の柔毛と、吸収の行き先',b:
+  '<p>小腸のかべには、<b>柔毛</b> という小さな突起がびっしり。表面積を大きくして、養分を吸収しやすくしている。<br>（肺の <b>肺胞</b>、根の <b>根毛</b> も、同じく<b>表面積を大きくするつくり</b>。）</p>'+
+  '<p>柔毛で吸収した物質の行き先：<br>・<b>ブドウ糖・アミノ酸</b> → <b>毛細血管</b> へ → 肝臓へ運ばれる<br>・<b>脂肪酸とモノグリセリド</b> → 柔毛の中で再び <b>脂肪</b> になって <b>リンパ管</b> へ</p>'},
+ {k:'blood',tr:[{q:'けがで血が出た。出血を止めるはたらきをするのは？',a:'血小板',w:['赤血球','白血球','リンパ管'],ok:'赤血球＝酸素を運ぶ、白血球＝体を守る、血小板＝出血を止める。',ng:'札の最後の（ ）の中を思い出そう。3つの役目がちがう。'},{q:'細胞で出た二酸化炭素は、心臓から何という血管を通って肺へ行く？',a:'肺動脈',w:['肺静脈','大動脈','リンパ管'],ok:'静脈 → 心臓 → 肺動脈 → 肺。',ng:'心臓から「出ていく」血管は動脈。肺へ向かう動脈は？'}],before:2,h:'酸素の運ばれ方と、赤血球',b:
+  '<p>肺の <b>肺胞</b> でとりこまれた酸素は、<b>肺静脈</b> → <b>心臓</b> → <b>大動脈</b>（心臓から全身へ出る太い血管）→ <b>毛細血管</b> → <b>細胞</b> へ運ばれる。</p>'+
+  '<p>酸素を運ぶのは血液の中の <b>赤血球</b>。赤血球の <b>ヘモグロビン</b> は、酸素の多い所（肺）で酸素と結びつき、少ない所（細胞のまわり）で酸素をはなす。<br>（白血球は細菌などから体を守る、血小板は出血を止める。）</p>'+
+  '<p>細胞で出た二酸化炭素は、<b>静脈</b> → 心臓 → <b>肺動脈</b> → 肺 → はく息で外へ。</p>'},
+ {k:'transp',before:3,calcFig:'<p style="font-size:14px">A＝表＋裏＋茎から／C（裏にワセリン）＝表＋茎から 水が出る</p>',h:'蒸散の量を、引き算で求める',
+  b:'<p>葉の気孔から水蒸気が出ていくことを <b>蒸散</b> という。気孔は葉の裏に多い。<b>ワセリン</b> をぬると、ぬった面の気孔がふさがって、そこからは水が出なくなる。</p>'+
+  '<table style="margin:6px auto;border-collapse:collapse;font-size:15px">'+[['枝','A 何もぬらない','B 表にワセリン','C 裏にワセリン'],['水が出る所','表＋裏＋茎','裏＋茎','表＋茎'],['減った水（例）','5.0 mL','4.0 mL','1.4 mL']].map((r,i)=>'<tr>'+r.map(c=>'<td style="border:1px solid rgba(217,178,111,.7);padding:4px 8px;'+(i===0?'color:#D9B26F':'')+'">'+c+'</td>').join('')+'</tr>').join('')+'</table>'+
+  '<p>「裏から出た水」は、A（表＋裏＋茎）から C（表＋茎）を引けば残る。<br>例：5.0 − 1.4 ＝ <b>3.6 mL</b>（「表から出た水」なら A − B）</p>',
+  calc:{q:'A（何もぬらない）が 7.0 mL、C（裏にワセリン）が 2.2 mL 減った。葉の裏から出ていった水は何mL？',a:4.8,unit:'mL',ok:'7.0 − 2.2 ＝ 4.8 mL',hint:'A（表＋裏＋茎）から C（表＋茎）を引くと、裏の分だけが残る。'}},
+ {k:'photo',tr:{q:'<b>昼</b>、光がよく当たっている植物について正しいものは？',a:'光合成も呼吸もしている',w:['光合成だけして、呼吸はしていない','呼吸だけして、光合成はしていない','光合成も呼吸もしていない'],ok:'呼吸は昼も夜もする。昼は光合成もいっしょにしている。',ng:'呼吸はいつ行う？ 光合成はいつ行う？ 2つを分けて考えよう。'},before:4,h:'光合成と呼吸、昼と夜',b:
+  '<p><b>光合成</b>：葉の <b>葉緑体</b> で、光のエネルギーを使い、<b>二酸化炭素と水</b> から <b>デンプンなどと酸素</b> をつくる。光が当たるときだけ行う。</p>'+
+  '<p><b>呼吸</b>：植物も動物も、<b>昼も夜も</b> 行う（酸素をとり入れ、二酸化炭素を出す）。<br>だから <b>夜</b>（光が当たらない）の植物は、光合成をせず呼吸だけ → <b>酸素をとり入れて二酸化炭素を出す</b>。</p>'+
+  '<p>「光合成に光が必要か」を調べるには、<b>光を当てる葉と当てない葉</b> を用意し、<b>光以外の条件（温度・水・時間など）はそろえて</b> 比べる（対照実験）。</p>'}
+];
+function unreadL(upTo){SV.learn=SV.learn||{};return LESSONS.filter(l=>l.before<=upTo&&!SV.learn[l.k])}
+function shuf(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function teach(list,next){if(!list.length){next();return}const l=list[0],c=l.calc,trs=l.tr?[].concat(l.tr):[],last=list.length===1;
+ const nxt=last?'わかった':'わかった ▶ 次の札へ';
+ const done=()=>{SV.learn[l.k]=1;save();SFX.click();closeOv();teach(list.slice(1),next)};
+ openOv('<div class="card slab"><div class="ch">まなぶ</div><h3 style="font-size:clamp(24px,5.5vw,32px)">'+l.h+'</h3><div class="news">'+l.b+'</div>'+
+  '<div class="btns lsStick"><button class="btn" id="lsOk">'+(c||trs.length?'わかった ▶ やってみよう':nxt)+'</button></div></div>');
+ $('ov').querySelector('.card').scrollTop=0;
+ $('lsOk').onclick=(c||trs.length)?()=>{SFX.click();tryCard(l,0,nxt,done)}:done}
+/* やってみよう（説明の札のつぎ）。選択肢は出すたびにまぜる。押しても札は作り直さず、返しの欄だけ書きかえる */
+function tryCard(l,n,nxt,done){const c=l.calc,trs=l.tr?[].concat(l.tr):[],head='<div class="card slab"><div class="ch">やってみよう'+(trs.length>1?' '+(n+1)+'/'+trs.length:'')+'</div><h3 style="font-size:clamp(20px,4vw,24px)">'+l.h+'</h3>';
+ if(c){openOv(head+'<div class="news">'+(l.calcFig||'')+'<p>'+c.q+'</p><p style="text-align:center"><input id="lsIn" inputmode="decimal" autocomplete="off" style="font:inherit;font-size:22px;width:7ch;text-align:center;padding:4px"> '+c.unit+'</p><p id="lsFb" style="text-align:center;min-height:1.6em"></p></div>'+
+   '<div class="btns lsStick"><button class="btn" id="lsOk">これで決める</button></div></div>');
+  $('lsOk').onclick=()=>{ac();const v=parseFloat(String($('lsIn').value).replace(/[０-９．]/g,ch=>ch==='．'?'.':String.fromCharCode(ch.charCodeAt(0)-0xFEE0)));
+   if(Math.abs(v-c.a)<1e-9){SFX.bell(5);$('lsFb').innerHTML='<b>〇 正解！ '+c.ok+'</b>';$('lsOk').textContent=nxt;$('lsOk').onclick=done}
+   else{SFX.bad();$('lsFb').textContent='もう一度。'+c.hint}
+   $('lsFb').scrollIntoView({block:'nearest'})};return}
+ const t=trs[n],ops=shuf([t.a].concat(t.w)),more=n<trs.length-1;
+ openOv(head+'<div class="news"><p>'+t.q+'</p><div class="lch" id="lsCh">'+ops.map((o,i)=>'<button data-i="'+i+'">'+o+'</button>').join('')+'</div><p id="lsFb" style="text-align:center;min-height:1.6em"></p></div>'+
+  '<div class="btns lsStick"><button class="btn" id="lsOk" disabled style="opacity:.35">'+(more?'つぎの問題 ▶':nxt)+'</button></div></div>');
+ $('lsCh').querySelectorAll('button').forEach(bt=>bt.onclick=()=>{ac();const o=ops[+bt.dataset.i],fb=$('lsFb');
+  if(o===t.a){SFX.bell(5);bt.classList.add('ok');fb.innerHTML='<b>〇 正解！</b> '+t.ok;$('lsCh').querySelectorAll('button').forEach(x=>x.disabled=true);const k=$('lsOk');k.disabled=false;k.style.opacity=1;k.onclick=more?()=>tryCard(l,n+1,nxt,done):done}
+  else{SFX.bad();bt.classList.add('ng');fb.textContent='ちがうよ。'+t.ng}
+  fb.scrollIntoView({block:'nearest'})})}
 
 /* ================= 確認テスト ================= */
 function startTest(){closeOv();G=null;showScene('test');if(!window.Quiz){$('qText').textContent='問題データがありません';return}T={qs:Quiz.test(),i:0,ans:[]};renderQ()}
@@ -4370,7 +4425,6 @@ try{if(window.Guide){Guide.setup({theme:{bg:'#2B2622',fg:'#E9DCC0',accent:'#D9B2
  Guide.tutorialButton('#btnHow',()=>{ac();startPractice()});
  HELP=Guide.help({rules:['施設は はたらきに合う区画へ **ドラッグして建てる**（取り入れる・運ぶ・使う・出す）','施設から施設へ **ドラッグ** すると道（管）ができる。**向き** が大事','つぶは いまいる施設から、次の施設へ 1本ずつ','家の明かり＝**細胞の呼吸**。**酸素と養分** がそろうとつき、二酸化炭素や尿素がたまると消える','施設を **タップ** すると はたらきが見られる','改築は **足りない物** に効くものを選ぶ'],
   onOpen:()=>{if(G)G.paused=true},onClose:()=>{if(G&&$('ov').hidden)G.paused=false},replay:'tutorial',offset:{x:60},attention:true});HELP.hide()}}catch(e){console.error(e)}
-window.__lf={get G(){return G},get SV(){return SV},get B(){return B},get PL(){return PL},startStage,startTest,tryLink,tryPlace,bossInvest,P,zoneRect,finale,openBook,stageClear};
 if(window.GAME_MODE==='test')startTest();else initTitle();
 requestAnimationFrame(frame);
 })();

@@ -6,7 +6,7 @@
 <title>毛糸の化学工房 ～元素記号・化学式・化学反応式～</title>
 <!-- 設計メモ
  生徒の希望: 「編み物などハンドメイドが出てくるゲームがやってみたいです」（アンケート1）
- 範囲: 教科書ワーク p.94〜95「化学変化と原子・分子」1〜6だけ
+ 範囲: 教科書の範囲「化学変化と原子・分子」1〜6だけ
  名簿の型: 05 箱庭の模型屋（やさしい・触った物から問いが始まる・物ごとに違う置く音・正解は現象で返す）を土台に、手芸の材料だけで組む
  世界とメタファー: 原子＝毛糸玉（元素ごとに色。金属はラメ糸の筋、気体の単体はモヘアのけば）
    1 刺しゅうワッペン＝元素記号と名前 ／ 2 あみぐるみ＝原子を編みつないだ物質（モデルと化学式）
@@ -174,9 +174,17 @@ sub{font-size:.62em;vertical-align:-.28em;line-height:0}
 #note .nb b{color:var(--basting)}
 #note .nb .sym{font-size:1.1em}
 #note .btns{display:flex;justify-content:flex-end;gap:12px;margin-top:16px;flex-wrap:wrap}
+/* 2026-10-06 仕上げ：長い札でも「つぎへ」を札の下に固定（1180×733） */
+#note>.btns{position:sticky;bottom:-22px;z-index:3;background:#f1e4c4;padding:8px 0 10px;margin-bottom:-10px}
 .book{display:grid;grid-template-columns:repeat(auto-fill,minmax(74px,1fr));gap:8px;margin-top:10px}
 .book div{background:var(--aida);text-align:center;padding:4px 2px 6px;font-size:11px;font-weight:800;box-shadow:2px 2px 0 rgba(0,0,0,.18)}
 .book div.no{opacity:.35}
+/* 2026-10-06 初心者向け：物質と化学式の見本帳・おさらい */
+.book.wide{grid-template-columns:repeat(auto-fill,minmax(130px,1fr))}
+.book.wide div{font-size:12px}
+.book.one{grid-template-columns:1fr}
+.book.one div{font-size:14px;text-align:left;padding:5px 10px}
+.bkh{margin-top:10px;font-weight:800;font-size:14px}
 .book div b{display:block;font-family:var(--f-sym);font-size:22px}
 
 /* 確認テスト */
@@ -2011,7 +2019,7 @@ window.GAME_FX={
 /*@SUBMIT_CARD_END*/</script>
 <script>
 'use strict';
-/* ======================= データ（教科書ワーク p.94〜95 の範囲だけ） ======================= */
+/* ======================= データ（教科書の範囲だけ） ======================= */
 const EL={
  H:{n:'水素',c:'#f2eee3',m:0,g:1,why:'英語 Hydrogen（ハイドロジェン）の頭文字'},
  Li:{n:'リチウム',c:'#c2475f',m:1,why:'英語 Lithium の L と i'},
@@ -2309,9 +2317,17 @@ if(T())T().setup({onPenalty:function(){addExtra()},penaltyLabel:'おまけ注文
 
 /* ======================= 進行 ======================= */
 function buildQueues(){
-  const a=shuffle(P1).slice(0,6).map(s=>({t:'s2n',s})),b=shuffle(P2.filter(s=>!a.some(o=>o.s===s))).slice(0,6).map(s=>({t:'n2s',s}));
+  /* 2026-10-06 初心者向け：最初の2問は 名前の頭文字と同じ記号（H・O・C・N・S）から出す。ラテン語などから来た記号は その後 */
+  const EASY=['H','O','C','N','S'];
+  let a0=shuffle(P1).slice(0,6);if(!a0.some(s=>EASY.includes(s)))a0[0]=shuffle(P1.filter(s=>EASY.includes(s)))[0];
+  const a=a0.map(s=>({t:'s2n',s}));const e0=a.findIndex(o=>EASY.includes(o.s));if(e0>0){const t=a[0];a[0]=a[e0];a[e0]=t}
+  let b0=shuffle(P2.filter(s=>!a.some(o=>o.s===s))).slice(0,6);if(!b0.some(s=>EASY.includes(s))){const c=shuffle(P2.filter(s=>EASY.includes(s)&&!a.some(o=>o.s===s)));if(c.length)b0[0]=c[0]}
+  const b=b0.map(s=>({t:'n2s',s}));const e1=b.findIndex(o=>EASY.includes(o.s));if(e1>0){const t=b[0];b[0]=b[e1];b[e1]=t}
   const q1=[];for(let i=0;i<6;i++){q1.push(a[i]);q1.push(b[i])}
+  /* 2026-10-06 仕上げ：最初のあみぐるみは やさしい物（記号がそのまま読める物）から。炭酸〇〇などは 2つ目以降 */
+  const EASY4=['O2','H2','H2O','CO2','Cl2','NaCl','CuO','MgO'];
   const m=shuffle(P3).slice(0,3).map(f=>({t:'m2n',f})),bb=shuffle(P4).slice(0,8).map(f=>({t:'build',f}));
+  {const k=bb.findIndex(o=>EASY4.includes(o.f));if(k>0){const t=bb[0];bb[0]=bb[k];bb[k]=t}else if(k<0)bb[0]={t:'build',f:shuffle(EASY4)[0]}}
   const q2=[bb[0],m[0],bb[1],bb[2],m[1],bb[3],bb[4],m[2],bb[5],bb[6],bb[7]];
   const q3=RX.map(r=>({t:'rx',r}));
   return[q1,q2,q3];
@@ -2326,9 +2342,9 @@ async function enterStage(i){
   S.stage=i;S.queue=QS[i]||[];S.qi=0;movePin();
   if(i===0){
     setSlip('注文票','ワッペンの刺しゅう','');
-    await note({title:'1　刺しゅうワッペン（元素記号と名前）',html:'この工房では、<b>毛糸玉 1つ ＝ 原子 1つ</b>。元素ごとに 糸の色がちがう。<br>まずは ワッペンの注文。<br>・枠に記号が刺しゅうしてあれば、<b>名前の札</b>をえらぶ<br>・名前の注文なら、<b>毛糸玉</b>をえらぶと その記号が刺しゅうされる<br>ラメの筋がある糸は <b>金属</b>、けばのある糸は 気体の元素。',btn:'つぎへ　はじめる'});
+    await note({title:'1　刺しゅうワッペン（元素記号と名前）',extra:symBook(),html:'すべての物は <b>原子</b> という とても小さな粒で できている。原子の種類を <b>元素</b> といい、アルファベット1〜2文字の <b>元素記号</b> で表す（1文字目は大文字、2文字目は小文字）。<br>多くは 英語の名前の頭文字（H＝水素 Hydrogen・O＝酸素 Oxygen・C＝炭素 Carbon）。でも <b>ラテン語などから来た記号</b> は 名前とちがう：<span class="sym">Na</span>＝ナトリウム、<span class="sym">K</span>＝カリウム、<span class="sym">Fe</span>＝鉄、<span class="sym">Cu</span>＝銅、<span class="sym">Ag</span>＝銀、<span class="sym">Au</span>＝金。下の 糸見本帳で 見ておこう。<br>この工房では、<b>毛糸玉 1つ ＝ 原子 1つ</b>。元素ごとに 糸の色がちがう。<br>まずは ワッペンの注文。<br>・枠に記号が刺しゅうしてあれば、<b>名前の札</b>をえらぶ<br>・名前の注文なら、<b>毛糸玉</b>をえらぶと その記号が刺しゅうされる<br>ラメの筋がある糸は <b>金属</b>、けばのある糸は 気体の元素。',btn:'つぎへ　はじめる'});
   }else if(i===1){
-    await note({title:'2　あみぐるみ（モデルと化学式）',html:'次は 毛糸玉（原子）を <b>編みつないで</b>、物質のあみぐるみを作る。<br>かごの毛糸玉をタップすると 台にのる。台の玉をタップすると ほどける。<br>化学式は「どの原子が いくつ」を表す。記号の右下の小さい数字が <b>個数</b>（1は書かない）。'});
+    await note({title:'2　あみぐるみ（モデルと化学式）',extra:subBook(),html:'次は 毛糸玉（原子）を <b>編みつないで</b>、物質のあみぐるみを作る。<br>かごの毛糸玉をタップすると 台にのる。台の玉をタップすると ほどける。<br>物質を 元素記号で表したものが <b>化学式</b>。「どの原子が いくつ」を表す。記号の右下の小さい数字が <b>個数</b>（1は書かない）。例：水 <span class="sym">H₂O</span>＝水素2つと酸素1つ。<br><b>単体</b>（1種類の原子だけ）：酸素 <span class="sym">O₂</span>・水素 <span class="sym">H₂</span>・塩素 <span class="sym">Cl₂</span>・窒素 <span class="sym">N₂</span> は 原子2つの分子。鉄 <span class="sym">Fe</span>・銅 <span class="sym">Cu</span> などの金属と 炭素 <span class="sym">C</span> は 記号1つ。<br><b>化合物</b>（2種類以上）は 名前から読める：「酸化〇〇」＝〇〇と酸素、「硫化〇〇」＝〇〇と硫黄、「塩化〇〇」＝〇〇と塩素、「<b>二</b>酸化炭素」の二は 酸素が2つ。「<b>炭酸</b>〇〇」＝〇〇と <span class="sym">CO₃</span>（炭素1・酸素3）、「<b>炭酸水素</b>〇〇」＝〇〇と <span class="sym">HCO₃</span>。<br>下の 見本帳を 見てから 編もう。こまったら「ヒント」で 化学式が見られる。'});
   }else if(i===2){
     await note({title:'3　編み図（化学反応式）',html:'最後は 編み図。左が 反応の前、右が 反応の後。<br><b>毛糸は 消えないし 増えない。</b>左で使った毛糸玉は、そっくり 右のモチーフに 編み込まれる。<br>だから どの色の玉も、左と右で <b>同じ数</b>になるように、モチーフを <b>何個編むか（係数）</b>を ボタンで決める。<br>モチーフの形（化学式）は 変えられない。O₂ を O にしたら、別の物になってしまう。係数は <b>いちばん小さい整数</b>。'});
   }
@@ -2354,7 +2370,7 @@ async function endStage(){
   }
   if(i===1){
     AU.big();if(window.BGM&&BGM.mood)BGM.mood('clear');
-    await note({title:'あみぐるみのおさらい',ok:true,html:'<b>単体</b>（1種類の原子だけ）：酸素 <span class="sym">O₂</span>・水素 <span class="sym">H₂</span>・塩素 <span class="sym">Cl₂</span>・窒素 <span class="sym">N₂</span> は 原子2つの分子。鉄 <span class="sym">Fe</span>・銅 <span class="sym">Cu</span>・銀 <span class="sym">Ag</span>・マグネシウム <span class="sym">Mg</span>・炭素 <span class="sym">C</span> は 分子をつくらず 記号1つ。<br><b>化合物</b>（2種類以上）：「酸化〇〇」＝〇〇と酸素、「硫化〇〇」＝〇〇と硫黄、「塩化〇〇」＝〇〇と塩素。'});
+    await note({title:'あみぐるみのおさらい',ok:true,html:'<b>単体</b>（1種類の原子だけ）：酸素 <span class="sym">O₂</span>・水素 <span class="sym">H₂</span>・塩素 <span class="sym">Cl₂</span>・窒素 <span class="sym">N₂</span> は 原子2つの分子。鉄 <span class="sym">Fe</span>・銅 <span class="sym">Cu</span>・銀 <span class="sym">Ag</span>・マグネシウム <span class="sym">Mg</span>・炭素 <span class="sym">C</span> は 分子をつくらず 記号1つ。<br><b>化合物</b>（2種類以上）：「酸化〇〇」＝〇〇と酸素、「硫化〇〇」＝〇〇と硫黄、「塩化〇〇」＝〇〇と塩素。「炭酸〇〇」＝〇〇と CO₃、「炭酸水素〇〇」＝〇〇と HCO₃。'});
     return enterStage(2);
   }
   if(i===2){
@@ -2440,8 +2456,9 @@ function renderAmi(r){
   S.cur=[];
   b.innerHTML=`<div class="boardwrap"><div class="board" id="board"><div class="atoms" id="atoms"></div><div class="empty" id="empty">ここに 毛糸玉を のせる<br>（台の玉をタップで ほどく）</div></div><div class="ftag">化学式<b id="live">　</b></div></div>
   <div><div class="basket"><div class="row">${kinds.map(e=>`<button class="ballbtn" data-e="${e}" aria-label="${e}">${yarn(e,78)}<small>${EL[e].n}</small></button>`).join('')}</div></div>
-  <div class="acts"><button class="act" id="close">編みとじる</button></div></div>`;
+  <div class="acts"><button class="act sub" id="amiHint">ヒント</button><button class="act" id="close">編みとじる</button></div></div>`;
   drawBoard([],null,true);T()&&T().shown();
+  $('amiHint').onclick=()=>{if(S.busy)return;$('slipSub').innerHTML=`ヒント：「${SUB[f]}」は <span class="sym">${fm(f)}</span>。${SUBX[f]}`;$('amiHint').remove()};
   b.querySelectorAll('.basket [data-e]').forEach(btn=>btn.onclick=()=>addAtom(btn.dataset.e,btn));
   $('close').onclick=()=>closeAmi(r);
 }
@@ -2460,7 +2477,7 @@ function drawBoard(list,f,edit,rollFrom){
   if(rollFrom&&!S.calm){
     const els=[...box.querySelectorAll('.atom')],idx=L.findIndex((a,i)=>i===L.length-1);const el=els[idx];
     if(el){const r1=el.getBoundingClientRect(),dx=rollFrom.left+rollFrom.width/2-(r1.left+r1.width/2),dy=rollFrom.top+rollFrom.height/2-(r1.top+r1.height/2);
-      el.animate([{transform:`translate(calc(-50% + ${dx}px),calc(-50% + ${dy}px)) rotate(-300deg)`},{transform:'translate(-50%,-50%) rotate(0) scale(.94)',offset:.85},{transform:'translate(-50%,-50%) scale(1)'}],{duration:560,easing:'cubic-bezier(.15,.7,.35,1)'})}
+      /* 2026-10-06 仕上げ：転がっている玉が かごの上を通る間、次のタップを横取りしないように */el.style.pointerEvents='none';const an=el.animate([{transform:`translate(calc(-50% + ${dx}px),calc(-50% + ${dy}px)) rotate(-300deg)`},{transform:'translate(-50%,-50%) rotate(0) scale(.94)',offset:.85},{transform:'translate(-50%,-50%) scale(1)'}],{duration:560,easing:'cubic-bezier(.15,.7,.35,1)'});an.onfinish=an.oncancel=()=>{el.style.pointerEvents=''}}
   }
 }
 function updLive(){const l=$('live');if(l)l.innerHTML=S.cur.length?fm(formulaOf(S.cur)):'　'}
@@ -2509,7 +2526,7 @@ function renderChart(r){
   const R=r.r,b=$('bench');b.className='one';
   const terms=[...R.L,...R.R],nL=R.L.length;
   S.k=terms.map(()=>1);S.blankDone=false;S.tries=0;
-  setSlip(r.extra?'おまけ注文':r.again?'ほどき直しの注文':'注文票',R.name,'まず <b>点線の □</b> に入るモチーフを えらぶ');
+  setSlip(r.extra?'おまけ注文':r.again?'ほどき直しの注文':'注文票',R.name,`<b>何が 何に なる？</b> ${R.L.map(SN).join(' と ')} → ${R.R.map(SN).join(' と ')}<br>まず <b>点線の □</b> に入るモチーフを えらぶ`);
   b.innerHTML=`<div class="chart" id="chart"><span class="pinA"></span><span class="pinB"></span><h3>編み図　${R.name}</h3><div class="eqrow" id="eqrow"></div><div class="liveeq" id="liveeq"></div><div id="below"></div></div>`;
   drawChart(R);
   const opts=shuffle(R.opt);
@@ -2637,12 +2654,17 @@ function makeTest(){
   return qs;
 }
 let TQ=[],TI=0,TA=[];
-function startTest(testOnly){
+async function startTest(testOnly){
   S.stage=3;S.qi=0;S.testOnly=!!testOnly;TQ=makeTest();TI=0;TA=[];PLAN[3]=TQ.length;drawTape();
   if(window.BGM&&BGM.mood)BGM.mood('calm');
+  /* 2026-10-06 初心者向け：テストの前に、テストに出る全部（元素記号・化学式・化学変化・係数のきまり）を1枚で見直す */
+  await note({title:'確認テストの前に おさらい',read:false,btn:'テストを はじめる',html:'確認テスト（12問）は ここから出る。ひと通り 見てから はじめよう。<br>化学反応式は ①左に反応の前・右に反応の後 ②左右で 原子の数が同じになるように <b>係数</b>（前の大きい数字）をつける。化学式の中の数字は 変えない ③係数は いちばん小さい整数、1は書かない。',
+    extra:symBook()+subBook()+`<div class="bkh">化学変化（何が 何に なる）</div><div class="book one">${RX.map(R=>`<div>${R.name}：${R.L.map(SN).join(' ＋ ')} → ${R.R.map(SN).join(' ＋ ')}</div>`).join('')}</div>`});
   T()&&T().startTest();
   showTQ();
 }
+function symBook(){return `<div class="bkh">糸見本帳（元素記号と 名前）</div><div class="book">${ELS.map(e=>`<div><b style="color:${shade(EL[e].c,lum(EL[e].c)>.75?-.45:-.1)}">${e}</b>${EL[e].n}</div>`).join('')}</div>`}
+function subBook(){const L=[...new Set([...P4,...P3])];return `<div class="bkh">あみぐるみ見本帳（物質と 化学式）</div><div class="book wide">${L.map(f=>`<div><b>${fm(f)}</b>${SUB[f]}</div>`).join('')}</div>`}
 function showTQ(){
   S.qi=TI;movePin();
   if(TI>=TQ.length)return finishTest();

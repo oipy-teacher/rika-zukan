@@ -4006,7 +4006,8 @@ function plant(prefer){var cur=G.cur,seq=seqFor(cur,ri(0,1),ri(0,1));
 function ensureSolvable(prefer){if(findPath())return;for(var i=0;i<25;i++){(prefer||[]).forEach(function(n){var m=randType();n.t=m.t;n.k=m.k});if(findPath())return}plant(prefer)}
 
 /* ================= 面をはじめる ================= */
-function start(si){var st=STG[si];ac();
+function start(si){if(si>0){var ul=unreadL(si);if(ul.length){teach(ul,function(){start0(si)});return}}start0(si)}
+function start0(si){var st=STG[si];ac();
  G={si:si,st:st,ti:0,cur:st.T[0],grid:null,chain:[],cs:0,tracing:false,combo:0,bestCombo:0,score:0,reacts:0,need:st.boss?st.T.length*st.per:st.N,snaps:0,longest:0,
   t:0,time:st.time||0,over:false,paused:false,fire:null,react:null,stim:{t:0,ph:'come'},msg:null,idle:0,lastPt:null,snapFx:null,sinceSnap:0,hintMsgT:0,prac:si===0,
   perDone:0,paths:[],lastRule:null};
@@ -4455,7 +4456,7 @@ function openBook(){var z=Zk();if(z&&z.openBook)z.openBook()}
 $('bBookT').onclick=openBook;$('bBook2').onclick=openBook;$('eBook').onclick=openBook;
 $('bGacha').onclick=function(){var z=Zk();if(z&&z.openGacha)z.openGacha()};
 if(!Zk()){['bBookT','bBook2','bGacha','eBook'].forEach(function(id){$(id).classList.add('hidden')})}
-$('bToTest').onclick=function(){startTest()};
+$('bToTest').onclick=function(){teach(unreadL(99),startTest)};
 $('bCards').onclick=function(){SFX.tap();var box=$('cards');box.innerHTML='';var n=0;
  CARDS.forEach(function(c){var own=!!SV.cards[c[0]];if(own)n++;var d=document.createElement('div');d.className='card'+(own?'':' no');var cc=document.createElement('canvas');d.appendChild(cc);
   d.insertAdjacentHTML('beforeend','<b>'+(own?esc(c[1]):'？？？')+'</b><span>'+(own?esc(c[2]):'道すじをつなぐと手に入る')+'</span>');box.appendChild(d);
@@ -4469,6 +4470,49 @@ $('bStart').onclick=function(){ac();SFX.big();SV.name=$('nameIn').value.trim()||
  if(!window.Guide){if(first)start(0);else setScene('map');return}
  Guide.intro(INTRO).then(function(){if(first){PRAC_RET='s1';runPractice()}else setScene('map')})};
 $('bCont').onclick=function(){ac();SFX.tap();SV.name=$('nameIn').value.trim()||SV.name;save();setScene('map')};
+
+
+/* ================= まなぶ札（2026-10-06 初心者向け改修） =================
+   場面の前に、まだ読んでいない札を先に出す（地図・次の場面・つづきから・確認テストのどこから入っても） */
+var NV_FIG='<svg viewBox="0 0 560 190" style="width:100%;height:auto;display:block;background:#141414;border-radius:8px;margin:8px 0">'+
+ '<g font-family="Zen Kaku Gothic New,sans-serif" font-size="15" font-weight="700" text-anchor="middle">'+
+ '<path d="M50 120 L140 120 L230 120 L320 120 L410 120 L500 120" stroke="#F2F2F2" stroke-width="2" stroke-dasharray="6 5"/>'+
+ [['目（感覚器官）',50,'#F2F2F2'],['感覚神経',140,'#63C3D8'],['脳',230,'#F2F2F2'],['脊髄',320,'#F2F2F2'],['運動神経',410,'#F0C75E'],['筋肉',500,'#E0685A']].map(function(a){return '<circle cx="'+a[1]+'" cy="120" r="17" fill="#1B1B1B" stroke="'+a[2]+'" stroke-width="4"/><text x="'+a[1]+'" y="162" fill="'+a[2]+'"'+(a[0].length>5?' font-size="12"':'')+'>'+a[0]+'</text>'}).join('')+
+ '<path d="M212 78 L212 70 L338 70 L338 78" fill="none" stroke="#FF7F11" stroke-width="3"/><text x="275" y="60" fill="#FF7F11">中枢神経（脳＋脊髄）</text>'+
+ '<path d="M122 96 L122 90 L158 90 L158 96 M392 96 L392 90 L428 90 L428 96" fill="none" stroke="#C9A45C" stroke-width="3"/><text x="140" y="30" fill="#C9A45C">末しょう神経</text><text x="410" y="30" fill="#C9A45C">末しょう神経</text>'+
+ '<path d="M140 36 L140 86 M410 36 L410 86" stroke="#C9A45C" stroke-width="1.5" stroke-dasharray="3 3"/>'+
+ '<text x="280" y="184" fill="#bbb" font-size="12">信号の向き → （感覚器官 → 中枢 → 筋肉）</text></g></svg>';
+var LESSONS=[
+ {k:'roles',tr:[{q:'<b>運動神経</b>のはたらきとして正しいものは？',a:'中枢からの命令の信号を、筋肉へ伝える',w:['感覚器官で受けとった信号を、中枢へ伝える','どう反応するかを決めて命令を出す','光や音などの刺激を直接受けとる'],ok:'運動神経は「命令を筋肉へ」。中枢へ伝えるのは感覚神経。',ng:'運動神経は、図のどこからどこへ信号を運んでいた？ 筋肉の側を見よう。'},{q:'<b>脊髄</b>は、どちらのなかま？',a:'中枢神経',w:['末しょう神経','感覚器官','筋肉'],ok:'脳と脊髄＝中枢神経。',ng:'中枢神経＝脳と〇〇。末しょう神経＝感覚神経と運動神経。'}],before:1,h:'糸の玉、それぞれの役目',b:NV_FIG+
+  '<p><b style="color:#63C3D8">感覚神経</b>：感覚器官（目・耳・鼻・舌・皮ふ）で受けとった刺激の信号を、<b>中枢へ伝える</b>。</p>'+
+  '<p><b>中枢（脳・脊髄）</b>：受けとった信号をもとに、<b>どう反応するかを決めて命令を出す</b>。脊髄は背骨の中を通り、脳と体の各部の神経をつなぐ。</p>'+
+  '<p><b style="color:#F0C75E">運動神経</b>：中枢からの命令の信号を、<b>筋肉へ伝える</b>。筋肉は縮んで体を動かす。</p>'+
+  '<p>まとめた呼び名：<b style="color:#FF7F11">脳と脊髄 ＝ 中枢神経</b>／<b style="color:#C9A45C">感覚神経と運動神経 ＝ 末しょう神経</b>（中枢から枝分かれした神経）。</p>'},
+ {k:'recap',tr:[{q:'舌で「にがい」と感じた。その信号はどこを通って脳へ伝わる？',a:'感覚神経を通り、脊髄を通らずに脳へ',w:['感覚神経を通り、脊髄を通ってから脳へ','運動神経を通って脳へ','神経を通らず、血液で脳へ運ばれる'],ok:'舌は頭にある感覚器官なので、脊髄を通らずに脳へ。',ng:'舌は頭にある？ 頭にある感覚器官は脊髄を通るかな？'},{q:'足のうらの皮ふをくすぐられた。その信号が脳に届くまでの道すじは？',a:'感覚神経 → 脊髄 → 脳',w:['感覚神経 → 脳（脊髄は通らない）','運動神経 → 脊髄 → 脳','運動神経 → 脳'],ok:'皮ふの信号は感覚神経から脊髄を通って脳へ。',ng:'皮ふは頭の外。信号を中枢へ運ぶのは感覚神経？運動神経？'}],before:99,h:'テストの前に：信号の道すじのきまり',b:NV_FIG+
+  '<p>信号は必ず <b>感覚器官 → 感覚神経 → 中枢 → 運動神経 → 筋肉</b> の向きに伝わる。中枢を通らない近道はない。</p>'+
+  '<p><b>目・耳・鼻・舌</b>（頭にある感覚器官）の信号は、<b>脊髄を通らずに脳へ</b>。命令は 脳 → 脊髄 → 運動神経 → 筋肉。</p>'+
+  '<p><b>皮ふ</b>の信号は、<b>感覚神経 → 脊髄 → 脳</b>（脳へ直接は行かない）。</p>'+
+  '<p>呼び名：<b style="color:#FF7F11">脳と脊髄 ＝ 中枢神経</b>／<b style="color:#C9A45C">感覚神経と運動神経 ＝ 末しょう神経</b>。</p>'}
+];
+function unreadL(upTo){SV.learn=SV.learn||{};return LESSONS.filter(function(l){return l.before<=upTo&&!SV.learn[l.k]})}
+function shuf(a){a=a.slice();for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1)),t=a[i];a[i]=a[j];a[j]=t}return a}
+function teach(list,next){if(!list.length){next();return}var l=list[0],last=list.length===1,trs=l.tr?[].concat(l.tr):[];
+ var o=document.getElementById('learnOv');if(!o){o=document.createElement('div');o.id='learnOv';document.body.appendChild(o)}
+ var nxt=last?'わかった':'わかった ▶ 次の札へ';
+ function done(){SV.learn[l.k]=1;save();SFX.tap();o.style.display='none';o.innerHTML='';teach(list.slice(1),next)}
+ o.innerHTML='<div class="lbox"><div class="lhd">まなぶ</div><h3>'+l.h+'</h3>'+l.b+'<div class="lbt"><button class="tag or" id="lsOk">'+(trs.length?'わかった ▶ やってみよう':nxt)+'</button></div></div>';o.style.display='flex';o.scrollTop=0;
+ document.getElementById('lsOk').onclick=trs.length?function(){SFX.tap();tryCard(o,l,trs,0,nxt,done)}:done}
+/* やってみよう（説明の札のつぎ）。選択肢は出すたびにまぜる。押しても札は作り直さず、返しの欄だけ書きかえる */
+function tryCard(o,l,trs,n,nxt,done){var t=trs[n],ops=shuf([t.a].concat(t.w)),more=n<trs.length-1;
+ o.innerHTML='<div class="lbox"><div class="lhd">やってみよう'+(trs.length>1?' '+(n+1)+'/'+trs.length:'')+'</div><h3 style="font-size:19px;color:#aaa">'+l.h+'</h3>'+(t.fig?l.b.split('<p>')[0]:'')+'<p>'+t.q+'</p><div class="lch" id="lsCh">'+ops.map(function(x,i){return'<button data-i="'+i+'">'+x+'</button>'}).join('')+'</div><p id="lsFb" style="min-height:1.6em;text-align:center"></p><div class="lbt"><button class="tag or" id="lsOk" disabled style="opacity:.35">'+(more?'つぎの問題 ▶':nxt)+'</button></div></div>';o.scrollTop=0;
+ [].forEach.call(document.querySelectorAll('#lsCh button'),function(bt){bt.onclick=function(){var x=ops[+bt.getAttribute('data-i')],fb=document.getElementById('lsFb');
+   if(x===t.a){SFX.tap();bt.classList.add('ok');fb.innerHTML='<b style="color:#FF7F11">◯ 正解！</b> '+t.ok;[].forEach.call(document.querySelectorAll('#lsCh button'),function(y){y.disabled=true});var k=document.getElementById('lsOk');k.disabled=false;k.style.opacity=1;k.onclick=more?function(){tryCard(o,l,trs,n+1,nxt,done)}:done}
+   else{bt.classList.add('ng');fb.textContent='ちがうよ。'+t.ng}
+   fb.scrollIntoView({block:'nearest'})}})}
+(function(){var st=document.createElement('style');st.textContent='#learnOv{position:fixed;inset:0;z-index:60;display:none;align-items:flex-start;justify-content:center;background:rgba(0,0,0,.66);padding:16px;overflow:auto}'+
+ '#learnOv .lbox{margin:auto;width:min(680px,96vw);background:#1B1B1B;background-image:repeating-linear-gradient(135deg,rgba(242,242,242,.04) 0 1px,transparent 1px 7px);color:#F2F2F2;outline:2px solid #F2F2F2;outline-offset:-8px;padding:22px 24px 18px;font-family:var(--bd);font-size:17px;line-height:1.7}'+
+ '#learnOv .lhd{display:inline-block;font-family:var(--hd);color:#FF7F11;font-size:18px;letter-spacing:.1em}#learnOv h3{font-family:var(--hd);font-weight:400;font-size:26px;margin:2px 0 4px}'+
+ '#learnOv p{margin:8px 0}#learnOv b{color:#fff}#learnOv .lbt{text-align:center;margin:12px -24px -18px;padding:10px 0 14px;position:sticky;bottom:-16px;background:#1B1B1B}#learnOv .lch{display:flex;flex-direction:column;gap:8px}#learnOv .lch button{font:inherit;font-size:17px;text-align:left;padding:8px 14px;background:#262626;color:#F2F2F2;border:2px solid #F2F2F2;cursor:pointer}#learnOv .lch button.ng{opacity:.35}#learnOv .lch button.ok{border-color:#FF7F11;color:#FF7F11}#learnOv .lch button[disabled]{cursor:default}';document.head.appendChild(st)})();
 
 /* ================= れんしゅう（Guide.tutorial） ================= */
 function pp(i){return function(){var n=G&&G.pracPath&&G.pracPath[i];return n?{x:n.x,y:n.y,r:G.geo.r*1.05,el:cv}:{x:W/2,y:H/2,r:30}}}
@@ -4559,7 +4603,6 @@ window.Zukan&&Zukan.setup&&Zukan.setup({game:GID,koma:[KOMA]});
 if(TEST)startTest();else setScene('title');
 try{if(document.fonts&&document.fonts.load)document.fonts.load('20px "Stick"')}catch(e){}
 requestAnimationFrame(frame);
-window.__NN={openCheck:openCheck,G:function(){return G},start:start,scene:function(){return scene},SV:function(){return SV},findPath:function(){return G&&findPath()},L:function(){return L}};
 })();
 </script>
 <script>window.ZUKAN_COUNTER={"db": "https://rika-zukan-rank-default-rtdb.asia-southeast1.firebasedatabase.app", "id": "bio-nerve-nazori"};

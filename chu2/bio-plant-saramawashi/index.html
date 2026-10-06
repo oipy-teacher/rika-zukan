@@ -142,6 +142,7 @@ body.land .pp{max-width:660px}
 .tally div span:last-child{font-family:var(--head);font-size:21px;color:var(--dk)}
 .lesson{margin:10px 0 4px;padding:8px 10px;font-size:14.5px;line-height:1.6;background:rgba(0,155,114,.12);border-left:6px solid var(--g)}
 .pbtn{display:flex;flex-direction:column;gap:10px;margin-top:14px}
+.lcx{font-size:15px;line-height:1.65;margin:6px 0}.lcx ul{margin:4px 0;padding-left:1.2em}.lcx li{margin:4px 0}.lcx b{background:rgba(255,92,138,.22);padding:0 2px}table.lct{border-collapse:collapse;margin:6px auto;font-size:15px}table.lct td,table.lct th{border:2px solid var(--b);padding:3px 10px;text-align:center}
 body.land .pbtn{flex-direction:row;justify-content:center;flex-wrap:wrap}
 .fgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:8px}
 .fc{position:relative;aspect-ratio:3/4;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding:4px;font-size:11.5px;text-align:center;border:2px solid rgba(50,85,164,.35);line-height:1.25}
@@ -192,6 +193,16 @@ body.land #diagBox .dq{font-size:17px}
 #btnStart{animation:srpulse 1.6s ease-in-out infinite}
 @keyframes srpulse{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
 @media (prefers-reduced-motion: reduce){.tel,.stars .on{animation-duration:.01s}#cv.shk,#btnStart{animation:none}}
+</style>
+<style>/* たしかめ（2026-10-06 第2周） */
+.lcop{display:flex;flex-direction:column;gap:8px;margin:10px 0}
+.lcop button{text-align:left;white-space:normal;line-height:1.4}
+.lcop button.lcNg{opacity:.45;text-decoration:line-through}
+.lcop button.lcOk{outline:4px solid #2e8b57;outline-offset:2px}
+.lcfb{margin:6px 0 4px;padding:8px 12px;border-radius:8px;line-height:1.55;font-size:15px;text-align:left}
+.lcfb.ok{background:#e7f5ea;border:2px solid #2e8b57;color:#173d27}
+.lcfb.ng{background:#fdeceb;border:2px solid #c0392b;color:#5a1a14}
+#lcGo[disabled]{opacity:.35;cursor:not-allowed}
 </style>
 </head>
 <body>
@@ -3889,7 +3900,7 @@ const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',
 const INK={g:'#009B72',p:'#FF5C8A',b:'#3255A4'},PAPER='#FFF3E0';
 
 /* ================= セーブ ================= */
-function fresh(){return {v:1,name:'',stage:0,stars:[0,0,0,0,0,0,0,0],flowers:{},read:0,tries:0,wilts:0,diagOk:0,dec:0,elapsed:0,rules:{},done:false,mute:false,tut:0}}
+function fresh(){return {v:1,name:'',stage:0,stars:[0,0,0,0,0,0,0,0],flowers:{},read:0,tries:0,wilts:0,diagOk:0,dec:0,elapsed:0,rules:{},done:false,mute:false,tut:0,lc:{}}}
 function load(){try{const s=JSON.parse(localStorage.getItem(SKEY)||'null');if(s&&s.v===1)return Object.assign(fresh(),s)}catch(e){}return fresh()}
 let SV=load();
 function save(){try{localStorage.setItem(SKEY,JSON.stringify(SV))}catch(e){}}
@@ -4002,9 +4013,43 @@ function placePlates(){const tb=POS[LAND?'L':'P'][G.S.plates.length];
  G.plantX=G.P.stem?G.P.stem.x:W*.5}
 addEventListener('resize',()=>{layout();if(scene==='title')fitTitle()});
 
+/* ================= 楽屋の札（教える札・2026-10-06 夜間改修・初心者向け） =================
+   その演目の前に、まだ読んでいない札を先に出す（続きから・演目表から入っても出る） */
+const LC=[
+ {at:0,key:'parts',html:`<h2>楽屋の口上　皿の役目</h2><div class="ps">回す前に 3まいの皿の役目を おぼえよう</div><div class="lcx"><ul>
+  <li><b>根</b>：根の先にある 細い毛のようなつくり＝<b>根毛</b>で、土の中の <b>水</b>と<b>肥料分</b>を吸う。根毛がたくさんあるので 土とふれる所が広く、吸いやすい</li>
+  <li><b>茎</b>：中に2種類の管がある。根で吸った水は <b>道管</b>を通って上（葉）へ。葉でできた養分は <b>師管</b>を通って 根やつぼみへ</li>
+  <li><b>葉</b>：<b>光</b>を使って 養分（デンプンなど）をつくる。これを <b>光合成</b>という。光が無いと 養分はつくれない</li>
+  <li><b>肥料は 養分そのものではない</b>。根が吸うのは水と肥料分だけ。育つのに使う養分は、葉の光合成でしかできない</li></ul></div>`,
+  quiz:{q:'鉢の土に 赤い色水を しみこませた。半日たって 茎を横に切ると、赤く染まっているのは？',opts:[['道管（根で吸った水が 上へ通る管）',1],['師管（葉でできた養分が 通る管）',0],['茎は どこも 染まらない',0]],
+   ok:'色水は <b>根毛</b>から吸われ、<b>道管</b>を通って 葉へ上がる。だから 道管が赤く染まる。師管を通るのは 葉でできた <b>養分</b>。',ng:'根で吸った <b>水</b>は、茎の どちらの管を通って 上へ行く？'}},
+ {at:6,key:'transp',html:`<h2>楽屋の口上　蒸散</h2><div class="ps">葉がふえると、なぜ 根と茎が いそがしくなる？</div><div class="lcx"><ul>
+  <li>根から来た水の多くは、葉の表面の小さなすきま（<b>気孔</b>）から <b>水蒸気</b>になって 出ていく。これを <b>蒸散</b>という</li>
+  <li>葉から水が出ていくと、そのぶん 根から水が <b>吸い上げられる</b>。蒸散が 水を吸い上げる力になる</li>
+  <li>だから <b>葉を全部取ると</b> 蒸散がほとんど無くなり、<b>根の吸水もへる</b>。葉がふえると 吸水もふえる</li></ul>
+  <div>確かめ方：同じくらいの枝を2本。<b>A＝葉をつけたまま</b>、<b>B＝葉を全部取る</b>。置き場所・時間など ほかの条件は<b>そろえて</b>、水のへった量を比べる（変える条件は「葉があるか」の1つだけ）</div>
+  <table class="lct"><tr><th></th><th>水のへった量（例）</th></tr><tr><th>A 葉あり</th><td>6.0 mL</td></tr><tr><th>B 葉なし</th><td>1.5 mL</td></tr></table>
+  <div>AとBのちがいは 葉だけ。だから <b>A − B ＝ 6.0 − 1.5 ＝ 4.5 mL</b> が、葉からの蒸散で 吸い上げられた水。</div></div>`,
+  quiz:{q:'別の枝で 調べた結果。A 葉あり 4.5 mL、B 葉なし 0.5 mL。葉からの蒸散で 吸い上げられた水は？',opts:[['4.0 mL',1],['5.0 mL',0],['0.5 mL',0]],
+   ok:'A − B ＝ 4.5 − 0.5 ＝ <b>4.0 mL</b>。Bの0.5 mLは 葉が無くても へった分（茎からの蒸散など）。',ng:'AとBのちがいは「葉があるか」だけ。葉の分は <b>A − B</b>（たし算ではない）。'}}
+];
+function lcNeed(si){return LC.filter(c=>c.at<=si&&!(SV.lc&&SV.lc[c.key]))}
+function lcRun(list,then){if(!list.length){ovClose();then&&then();return}const c=list[0];
+ lcShow(c,()=>{SV.lc=SV.lc||{};SV.lc[c.key]=1;save();lcRun(list.slice(1),then)})}
+function lcShow(c,done){ovOpen(c.html+'<div class="pbtn"><button class="tk" id="lcGo">'+(c.quiz?'たしかめる':'わかった')+'</button></div>');
+ $('lcGo').onclick=()=>{SFX.click();c.quiz?lcQuiz(c,done):done()}}
+function lcQuiz(c,done){const z=c.quiz;const ord=z.opts.map((o,k)=>k);for(let i=ord.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[ord[i],ord[j]]=[ord[j],ord[i]]}
+ /* 選択肢は出すたびに並べかえる。答えを押しても札は作り直さず、下の返しの欄だけ書きかえる（2026-10-06 第2周） */
+ ovOpen('<h2>たしかめ</h2>'+'<div class="lcx lcq">'+z.q+'</div><div class="lcop">'+ord.map(k=>'<button class="tk ln sm" data-k="'+k+'">'+z.opts[k][0]+'</button>').join('')+'</div><div class="lcfb" id="lcFb" aria-live="polite" hidden></div><div class="pbtn"><button class="tk" id="lcGo" disabled>つぎへ</button></div>');
+ const fb=$('lcFb'),go=$('lcGo'),bs=[...document.querySelectorAll('#ovBody [data-k]')];go.onclick=()=>{if(go.disabled)return;SFX.click();done()};
+ bs.forEach(b=>b.onclick=()=>{if(!go.disabled||b.disabled)return;const o=z.opts[+b.dataset.k];fb.hidden=false;
+  if(o[1]){SFX.ok();fb.className='lcfb ok';fb.innerHTML='<b>正解！</b> '+z.ok;b.classList.add('lcOk');bs.forEach(x=>{if(x!==b)x.disabled=true});go.disabled=false}
+  else{SFX.ng();fb.className='lcfb ng';fb.innerHTML='<b>おしい。</b> '+z.ng+'<br><small>のこりの答えから えらびなおそう</small>';b.disabled=true;b.classList.add('lcNg')}
+  (o[1]?go:fb).scrollIntoView({block:'nearest'})})}
 /* ================= 本編の状態 ================= */
 let G=null,scene='title';
-function startStage(si){
+function startStage(si,noLc){
+ const need=noLc?[]:lcNeed(si);if(need.length){lcRun(need,()=>startStage(si,true));return}
  const S=STAGES[si];if(window.BGM)BGM.mood(S.boss?'tense':'normal');
  G={si,S,day:0,t:0,P:{},hands:MAXH,handT:0,grow:0,bloom:0,need:S.days.length*DAYLEN*.64,wilt:0,wea:'sun',evk:-1,state:'intro',introT:0,
   stat:{read:0,tries:0,wilts:0,diag:0},miss:0,wseen:{},days:shuf(S.days.map(d=>Math.random()<.5?[d[1],d[0]]:[d[0],d[1]])),parts:[],drops:[],diag:null,audJump:0,flash:0,trapShown:false,lastWarn:0,dayGrow:0,omenK:null,timeSpent:0,readSeen:{}};
@@ -4205,7 +4250,7 @@ function lessonOf(si){return ['根が吸った水は葉へ、葉がつくった�
  '日かげ・曇りの日は光が弱く、<b>葉の光合成</b>がへる。雲の予兆で先に葉を回す。',
  'つぼみや実が育つときは、葉の養分を<b>茎（師管）が運ぶ</b>仕事がふえる。',
  '葉がしおれても、原因は<b>根の吸水</b>のことがある。葉だけ強めても水は来ない。',
- '葉がふえると蒸散もふえ、<b>根と茎</b>がもっと水を運ばないと葉がしおれる。',
+ '葉がふえると蒸散もふえ、<b>根と茎</b>がもっと水を運ばないと葉がしおれる。反対に 葉を取ると 蒸散がへり、<b>根の吸水もへる</b>。',
  '葉・茎・根は<b>1本の道</b>でつながっている。どれか1つが止まると、植物全体が生きられない。'][si]}
 
 /* ================= チュートリアル（最初の1分） ================= */
@@ -4505,7 +4550,7 @@ function openMap(){tutStop();G=null;showScene('map');
 $('btnFlowers').onclick=()=>{SFX.click();ovOpen('<h2>咲いた花の図鑑</h2><div class="ps">演目を終えるたびに1輪。★が多いほど大きく咲く。</div><div class="fgrid">'+FL.map((f,i)=>'<div class="fc '+(SV.flowers[i]?'':'no')+'"><canvas data-i="'+i+'" width="120" height="120"></canvas><b>'+(SV.flowers[i]?esc(f.n):'？？？')+'</b>'+(SV.flowers[i]?'★'.repeat(SV.flowers[i]):stName(i))+'</div>').join('')+'</div><div class="pbtn"><button class="tk" id="fgClose">とじる</button></div>');
  document.querySelectorAll('.fc canvas').forEach(c=>{const i=+c.dataset.i;if(SV.flowers[i])drawFlowerCard(c,i,false)});$('fgClose').onclick=ovClose};
 $('btnBookM').onclick=()=>{try{Z().openBook()}catch(e){}};
-$('btnTestM').onclick=()=>{startTest()};
+$('btnTestM').onclick=()=>{lcRun(lcNeed(99),startTest)};
 function drawFlowerCard(c,i,big){const g=c.getContext('2d');const w=c.width,h=c.height;
  // 一時的にこのカード用の canvas へ描く
  cx=g;try{cx.setTransform(1,0,0,1,0,0);cx.clearRect(0,0,w,h);
@@ -4530,7 +4575,7 @@ $('btnBookT').onclick=()=>{try{Z().openBook()}catch(e){}};
 
 /* ================= さいごの確認テスト ================= */
 let T=null;
-function startTest(){if(!window.Quiz){alert('問題データがありません');return}G=null;ovClose();showScene('test');T={qs:Quiz.test(),i:0,ans:[]};renderQ()}
+function startTest(){if(window.GAME_MODE!=='test'){const n=lcNeed(99);if(n.length){lcRun(n,startTest);return}}/* テストの入口でも、まだ読んでいない札を先に出す（確認テストだけモードでは出さない） */if(!window.Quiz){alert('問題データがありません');return}G=null;ovClose();showScene('test');T={qs:Quiz.test(),i:0,ans:[]};renderQ()}
 function renderQ(){const q=T.qs[T.i];$('qNo').textContent=(T.i+1)+' / '+T.qs.length;$('qText').textContent=q.q;const f=$('qFig');if(q.fig){f.innerHTML=q.fig;f.hidden=false}else{f.innerHTML='';f.hidden=true}
  const A=$('qArea');A.innerHTML='';$('scTest').scrollTop=0;const L='イロハニホヘ';
  const mk=(c,k)=>{const b=document.createElement('button');b.innerHTML='<i>'+L[k]+'</i><span></span>';b.lastChild.textContent=c;return b};
@@ -4587,7 +4632,7 @@ if(GD){
   muted:()=>SV.mute});
  const on=()=>scene==='play'&&G&&G.gtut;
  PRACTICE={label:'れんしゅう中',clearText:'れんしゅうクリア！',clearOn:'manual',bandAt:'bottom',
-  start:()=>{ovClose();startStage(0);G.gtut=1;G.state='tut';G.pushes=0;G.swiped=0;capOff();for(const k in G.P)G.P[k].spin=.5},
+  start:()=>{ovClose();startStage(0,true);G.gtut=1;G.state='tut';G.pushes=0;G.swiped=0;capOff();for(const k in G.P)G.P[k].spin=.5},
   steps:[
    {gesture:'tap',label:'はじく',target:()=>plC('root'),until:()=>on()&&G.pushes>=1,text:'**根の皿をタップ** ではじく。皿の回転＝働きの強さ（根＝**水を吸う**）',praise:'回った！'},
    {gesture:'tap',label:'はじく',target:()=>plC('leaf'),until:()=>on()&&G.pushes>=2&&G.P.leaf.spin>.6,text:'**葉の皿** も。綱の **青い粒＝水**（根→葉）、**ピンクの粒＝養分**（葉→根）',praise:'つながった！'},
@@ -4614,8 +4659,7 @@ function hOff(){return innerWidth>innerHeight*1.05?{x:128}:{x:0,y:62}}
 function startWithGuide(){
  GD.intro({title:'第15回　みどりの皿回し',
   learn:'葉・茎・根の働きは **つながっている**。どれか1つだけ強めても、植物全体は生きられない',
-  how:'根・茎・葉の皿を **タップ** ではじいて、どれも落とさずに回し続ける',gesture:'tap'}).then(()=>GD.tutorial(PRACTICE))}
-window.__sara={plC,get scene(){return scene},step:dt=>update(dt),push:k=>{if(G&&G.state==='diag'){diagAnswer(k);return}if(G&&(G.state==='run'||G.state==='tut'||G.state==='intro'))pushPlate(k,0,0)},get G(){return G},get SV(){return SV},startStage,startTest,openMap,diagAnswer,diagResume,fall:k=>{if(G&&G.P[k])plateFall(k)},get R(){return R}};
+  how:'根・茎・葉の皿を **タップ** ではじいて、どれも落とさずに回し続ける',gesture:'tap'}).then(()=>new Promise(r=>lcRun(lcNeed(0),r))).then(()=>GD.tutorial(PRACTICE))}
 if(window.GAME_MODE==='test'){startTest()}else{showScene('title');initTitle()}
 if(document.fonts&&document.fonts.load){document.fonts.load('30px "Train One"').catch(()=>{})}
 requestAnimationFrame(frame);

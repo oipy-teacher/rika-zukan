@@ -80,6 +80,7 @@ button{font:inherit;color:inherit;cursor:pointer;touch-action:manipulation;borde
 .sheet h2 small{display:block;font-size:.55em;color:var(--ind);margin-top:2px}
 .sheet p{margin:8px 0;font-size:clamp(15px,.6vw + 12px,19px);line-height:1.7;font-weight:800}
 .sheet .btns{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:14px}
+.sheet .lcx{font-size:15.5px;line-height:1.65}.sheet .lcx ul{margin:4px 0;padding-left:1.2em}.sheet .lcx li{margin:5px 0}.sheet .lcx b{color:var(--red)}.sheet .lcok{border-left:5px solid var(--red);background:rgba(255,255,255,.6);padding:6px 10px;margin:10px 0;font-size:15.5px;line-height:1.6}.sheet .lcfig{display:block;margin:4px auto;max-width:100%}
 .sheet .newel{display:flex;gap:12px;align-items:center;background:rgba(43,65,98,.08);border-radius:10px;padding:10px 12px;margin:10px 0}
 .sheet .newel canvas{flex:none}
 .goal{display:flex;gap:8px;justify-content:center;margin:8px 0;font-size:15px;flex-wrap:wrap}
@@ -113,6 +114,16 @@ button{font:inherit;color:inherit;cursor:pointer;touch-action:manipulation;borde
 .qfb .sheet{text-align:center}
 .qfb .mk{font-size:84px;line-height:1;font-weight:900}
 @media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;animation-iteration-count:1!important;transition:none!important}}
+</style>
+<style>/* たしかめ（2026-10-06 第2周） */
+.lcop{display:flex;flex-direction:column;gap:8px;margin:10px 0}
+.lcop button{text-align:left;white-space:normal;line-height:1.4}
+.lcop button.lcNg{opacity:.45;text-decoration:line-through}
+.lcop button.lcOk{outline:4px solid #2e8b57;outline-offset:2px}
+.lcfb{margin:6px 0 4px;padding:8px 12px;border-radius:8px;line-height:1.55;font-size:15px;text-align:left}
+.lcfb.ok{background:#e7f5ea;border:2px solid #2e8b57;color:#173d27}
+.lcfb.ng{background:#fdeceb;border:2px solid #c0392b;color:#5a1a14}
+#lcGo[disabled]{opacity:.35;cursor:not-allowed}
 </style>
 </head>
 <body>
@@ -3806,7 +3817,7 @@ const vib=ms=>{try{navigator.vibrate&&navigator.vibrate(ms)}catch(e){}};
 
 /* =================== 1. 保存 =================== */
 const NST=9;
-function freshSave(){return {v:1,name:'',stars:Array(NST).fill(0),best:Array(NST).fill(0),coins:0,badges:{},tot:{o2:0,co2:0,n2:0,art:0},maxCombo:0,tut:{},mute:false,allClear:false}}
+function freshSave(){return {v:1,name:'',stars:Array(NST).fill(0),best:Array(NST).fill(0),coins:0,badges:{},tot:{o2:0,co2:0,n2:0,art:0},maxCombo:0,tut:{},mute:false,allClear:false,lc:{}}}
 function load(){try{const s=JSON.parse(localStorage.getItem(SKEY)||'null');if(s&&s.v===1){const f=freshSave();return Object.assign(f,s,{tot:Object.assign(f.tot,s.tot||{}),stars:(s.stars||[]).concat(f.stars).slice(0,NST),best:(s.best||[]).concat(f.best).slice(0,NST)})}}catch(e){}return freshSave()}
 let SV=load();
 function save(){try{localStorage.setItem(SKEY,JSON.stringify(SV))}catch(e){}}
@@ -3980,7 +3991,7 @@ function buildBG(){const W=cv.width,H=cv.height,c=mk(W,H),g=c.getContext('2d');c
  for(let k=0;k<arrowN;k++){const a=land?70+k*140:LY.hudH+70+k*140;const [x,y]=A2P(a,LY.c0);g.save();g.translate(x,y);if(!land)g.rotate(Math.PI/2);g.beginPath();g.moveTo(10,0);g.lineTo(-6,-7);g.lineTo(-6,7);g.fill();g.restore()}
  /* 札：全身から／全身へ */
  const fs=clamp(Math.min(pw,ph)*.028,11,16);
- if(land){tagC(g,'全身から（静脈血）',pw*.02+6,LY.c0+bw+8,fs,'l',PAL.ven);tagC(g,'全身へ（動脈血）',pw*.98-6,LY.c0+bw+8,fs,'r',PAL.art);
+ if(land){tagC(g,'全身から（静脈血＝CO₂が多い）',pw*.02+6,LY.c0+bw+8,fs,'l',PAL.ven);tagC(g,'全身へ（動脈血）',pw*.98-6,LY.c0+bw+8,fs,'r',PAL.art);
   tagC(g,'気管',LY.trach[0]+S*2.4,LY.trach[1]+14,fs*.9,'l',PAL.brown);tagC(g,'毛細血管',pw*.5,LY.c0+bw+8,fs*.9,'c',PAL.red)}
  else{tagC(g,'全身から',LY.c0,LY.hudH+2,fs*.92,'c',PAL.ven);tagC(g,'全身へ',LY.c0,ph-LY.botH-fs*2.1,fs*.92,'c',PAL.art)}
  g.restore();BGC=c}
@@ -4347,10 +4358,44 @@ function mapTap(x,y){if(!MP)return;const sz=MP.sz||100;MP.pts.forEach((p,i)=>{if
 $('btnLedger').onclick=()=>{ac();SFX.click();openLedger()};
 $('btnBookM').onclick=()=>{ac();try{Z().openBook()}catch(e){}};
 $('btnGachaM').onclick=()=>{ac();try{Z().openGacha()}catch(e){}};
-$('btnTestM').onclick=()=>{ac();SFX.click();startTest()};
+$('btnTestM').onclick=()=>{ac();SFX.click();lcRun(lcNeed(NST),startTest)};
 
 /* =================== 15. 通りのはじめ・おわり =================== */
-function openIntro(i){tutStop();newGame(i);G.paused=true;show('intro');BGC=null;const st=STAGES[i];const need=THR.map(t=>Math.ceil(t*st.cnt));
+/* =================== 市の手引き（教える札・2026-10-06 夜間改修・初心者向け） ===================
+   at: その番号の通りの前に出す（9＝確認テスト）。まだ読んでいない札は、どこから入っても先に出る */
+const LC=[
+ {at:0,key:'haihou',html:`<h2>市の手引き　肺胞ってどこ？<small>市をひらく前に</small></h2>FIG<div class="lcx"><ul>
+  <li>鼻や口から吸った空気は <b>気管</b>を通り、肺の中で 枝分かれした <b>気管支</b>へ。その先に ぶどうの房のように ついている 小さな袋が <b>肺胞</b></li>
+  <li>肺胞のまわりを <b>毛細血管</b>（とても細い血管）が あみの目のように とりまく。ここで 酸素は 空気→血液、二酸化炭素は 血液→空気へ 移る（<b>ガス交換</b>）。<b>窒素</b>は ほとんど出入りしない</li>
+  <li>全身から もどってきた血液は <b>二酸化炭素が多い</b>＝<b>静脈血</b>。肺胞を通ると <b>酸素が多い</b>＝<b>動脈血</b>になって 全身へ。酸素は 血液で <b>体じゅうの細胞</b>まで 運ばれて 使われる</li>
+  <li>このゲームの かご＝血液。赤い玉＝酸素、黒い玉＝二酸化炭素、青い玉＝窒素</li></ul></div>`.replace('FIG',`<svg class="lcfig" viewBox="0 0 360 150" width="360" height="150" font-family="sans-serif" font-size="13"><path d="M40 10 V52 M40 52 Q40 70 70 80 M40 52 Q40 70 10 84" stroke="#2B4162" stroke-width="7" fill="none" stroke-linecap="round"/><g fill="#F8F2E4" stroke="#8C2F39" stroke-width="2.5"><circle cx="78" cy="88" r="9"/><circle cx="92" cy="80" r="9"/><circle cx="90" cy="98" r="9"/><circle cx="104" cy="92" r="9"/></g><path d="M10 84 l-6 10" stroke="#2B4162" stroke-width="7" stroke-linecap="round"/><text x="52" y="22" fill="#2B4162" font-weight="700">気管</text><text x="2" y="122" fill="#2B4162" font-weight="700">気管支</text><text x="72" y="126" fill="#8C2F39" font-weight="700">肺胞（ぶどうの房）</text><path d="M128 80 H160" stroke="#3B2A22" stroke-width="2" marker-end="url(#ar)"/><defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10Z" fill="#3B2A22"/></marker></defs><circle cx="250" cy="70" r="44" fill="#F8F2E4" stroke="#8C2F39" stroke-width="3"/><text x="250" y="66" text-anchor="middle" fill="#8C2F39" font-weight="700">肺胞</text><text x="250" y="84" text-anchor="middle" fill="#3B2A22" font-size="11">（中は空気）</text><path d="M180 128 Q205 116 215 104 Q250 126 285 104 Q296 116 330 128" stroke="#5E1F2D" stroke-width="5" fill="none"/><path d="M215 104 Q250 126 285 104" stroke="#D7263D" stroke-width="5" fill="none"/><text x="148" y="146" fill="#5E1F2D" font-size="11">静脈血（全身から）</text><text x="358" y="146" text-anchor="end" fill="#D7263D" font-size="11">動脈血（全身へ）</text><text x="214" y="20" fill="#3B2A22" font-size="11">まわりを 毛細血管が とりまく</text></svg>`),
+  quiz:{q:'走っているとき、足の筋肉の細胞で使われる酸素は、どこから来た？',opts:[['肺胞で 血液に入り、血液で 運ばれてきた',1],['足の皮ふから 直接 入ってきた',0],['筋肉の中で 窒素から つくられた',0]],
+   ok:'酸素は 肺胞で 血液に入り（<b>動脈血</b>になる）、血液に運ばれて <b>体じゅうの細胞</b>へ。使ったあとの二酸化炭素は 血液で肺へもどる。',ng:'酸素が 体に入るのは どこ？ そこから 何に乗って 運ばれる？'}},
+ {at:9,key:'iki',html:`<h2>市の手引き　吸う息と はく息<small>市を閉じたあとの 帳じめ</small></h2>
+  <table class="ledg"><tr><td>気体（体積の割合）</td><td>吸う息（空気）</td><td>はく息</td></tr>
+  <tr><td>窒素</td><td>約78%</td><td>約78%（ほぼ同じ）</td></tr><tr><td>酸素</td><td>約21%</td><td>約17%（へる）</td></tr><tr><td>二酸化炭素</td><td>約0.04%</td><td>約4%（ふえる）</td></tr></table>
+  <div class="lcx"><ul>
+  <li>肺胞で 酸素の<b>一部</b>が血液に入るので、はく息の酸素は へるが <b>まだ約17%</b>ある</li>
+  <li>窒素は 出入りしないので <b>ほとんど変わらない</b>。はく息でも いちばん多いのは窒素</li>
+  <li>二酸化炭素は 血液から出てくるので ふえる。何倍かは <b>わり算</b>：例　0.4% は 0.04% の 0.4 ÷ 0.04 ＝ <b>10倍</b></li>
+  <li><b>石灰水</b>は 二酸化炭素が多いほど 白くにごる液。吸う息と はく息を 同じ量ふきこむと、<b>はく息の方が</b> 白くにごる</li></ul></div>`,
+  quiz:{q:'ある袋の空気の二酸化炭素は 0.2%。ふつうの空気（0.04%）の 何倍？',opts:[['5倍',1],['50倍',0],['0.16倍',0]],
+   ok:'0.2 ÷ 0.04 ＝ <b>5倍</b>。何倍かは「くらべる数 ÷ もとの数」。',ng:'何倍かは わり算。0.2 ÷ 0.04 ＝ ？（両方を100倍して 20 ÷ 4 と考えると楽）'}}
+];
+function lcNeed(at){return LC.filter(c=>c.at<=at&&!(SV.lc&&SV.lc[c.key]))}
+function lcRun(list,then){if(!list.length){ovClose();then&&then();return}const c=list[0];
+ lcShow(c,()=>{SV.lc=SV.lc||{};SV.lc[c.key]=1;save();lcRun(list.slice(1),then)})}
+function lcShow(c,done){ov(c.html+'<div class="btns"><button class="fab red" id="lcGo">'+(c.quiz?'たしかめる':'わかった')+'</button></div>');
+ $('lcGo').onclick=()=>{ac();SFX.click();c.quiz?lcQuiz(c,done):done()}}
+function lcQuiz(c,done){const z=c.quiz;const ord=z.opts.map((o,k)=>k);for(let i=ord.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[ord[i],ord[j]]=[ord[j],ord[i]]}
+ /* 選択肢は出すたびに並べかえる。答えを押しても札は作り直さず、下の返しの欄だけ書きかえる（2026-10-06 第2周） */
+ ov('<h2>たしかめ</h2>'+'<div class="lcx lcq">'+z.q+'</div><div class="lcop">'+ord.map(k=>'<button class="fab" data-k="'+k+'">'+z.opts[k][0]+'</button>').join('')+'</div><div class="lcfb" id="lcFb" aria-live="polite" hidden></div><div class="btns"><button class="fab red" id="lcGo" disabled>つぎへ</button></div>');
+ const fb=$('lcFb'),go=$('lcGo'),bs=[...document.querySelectorAll('#ov [data-k]')];go.onclick=()=>{if(go.disabled)return;(ac(),SFX.click());done()};
+ bs.forEach(b=>b.onclick=()=>{if(!go.disabled||b.disabled)return;const o=z.opts[+b.dataset.k];fb.hidden=false;
+  if(o[1]){SFX.coin();fb.className='lcfb ok';fb.innerHTML='<b>正解！</b> '+z.ok;b.classList.add('lcOk');bs.forEach(x=>{if(x!==b)x.disabled=true});go.disabled=false}
+  else{SFX.bounce();fb.className='lcfb ng';fb.innerHTML='<b>おしい。</b> '+z.ng+'<br><small>のこりの答えから えらびなおそう</small>';b.disabled=true;b.classList.add('lcNg')}
+  (o[1]?go:fb).scrollIntoView({block:'nearest'})})}
+function openIntro(i,noLc){if(noLc!==true){const need=lcNeed(i);if(need.length){lcRun(need,()=>openIntro(i,true));return}}tutStop();newGame(i);G.paused=true;show('intro');BGC=null;const st=STAGES[i];const need=THR.map(t=>Math.ceil(t*st.cnt));
  ov('<h2>第'+(i+1)+'の通り　'+esc(st.name)+'<small>新しいこと：'+esc(st.nw)+'</small></h2><div class="newel"><canvas id="nwC" width="10" height="10"></canvas><p style="margin:0">'+esc(st.tip)+'</p></div>'+
  '<div class="goal"><span>かご '+st.cnt+'</span><span>★1 動脈血 '+need[0]+'</span><span>★2 '+need[1]+'</span><span>★3 '+need[2]+'</span>'+(SV.best[i]?'<span>最高 '+SV.best[i]+'</span>':'')+'</div>'+
  '<div class="btns"><button class="fab red big" id="goSt">市をひらく</button></div>');
@@ -4379,11 +4424,11 @@ function showResult(stars,prev,rec,firstAll){scene='result';backBtn();const i=G.
  const nx=$('rNext');if(nx)nx.onclick=()=>{ovClose();openIntro(i+1)};
  $('rAgain').onclick=()=>{ovClose();openIntro(i)};$('rMap').onclick=()=>{ovClose();openMap()};
  const rc=$('rClear');if(rc)rc.onclick=()=>{ovClose();goClear()}}
-function goClear(){const z=Z();if(z&&z.mainClear){try{z.mainClear({onClose:startTest})}catch(e){startTest()}}else startTest()}
+function goClear(){lcRun(lcNeed(NST),()=>{const z=Z();if(z&&z.mainClear){try{z.mainClear({onClose:startTest})}catch(e){startTest()}}else startTest()})}
 
 /* =================== 16. 確認テスト =================== */
 let T=null;
-function startTest(){if(!window.Quiz){alert('問題データがありません');return}G=null;ovClose();show('test');T={qs:Quiz.test(),i:0,ans:[]};renderQ()}
+function startTest(){if(window.GAME_MODE!=='test'){const n=lcNeed(99);if(n.length){lcRun(n,startTest);return}}/* テストの入口でも、まだ読んでいない札を先に出す（確認テストだけモードでは出さない） */if(!window.Quiz){alert('問題データがありません');return}G=null;ovClose();show('test');T={qs:Quiz.test(),i:0,ans:[]};renderQ()}
 function renderQ(){const q=T.qs[T.i];$('qNo').textContent=(T.i+1)+' / '+T.qs.length;$('qText').textContent=q.q;const f=$('qFig');if(q.fig){f.innerHTML=q.fig;f.hidden=false;$('qGrid').classList.add('hasfig')}else{f.innerHTML='';f.hidden=true;$('qGrid').classList.remove('hasfig')}
  const A=$('qArea');A.innerHTML='';$('scTest').scrollTop=0;
  const mkB=(c,lab)=>{const b=document.createElement('button');b.className='fab';b.innerHTML='<span class="L">'+lab+'</span><span></span>';b.lastChild.textContent=c;return b};
@@ -4461,8 +4506,7 @@ if(GD&&window.GAME_MODE!=='test'){
 function startWithGuide(){$('bBack').hidden=true;
  GD.intro({title:'第22回　肺胞マーケット',
   learn:'肺胞では **酸素** が空気→血液へ、**二酸化炭素** が血液→空気へ移る（**ガス交換**）',
-  how:'赤い玉（酸素）を **タップ** でかごへ投げ、黒い玉（二酸化炭素）は **タップ** で受け取る',gesture:'tap'}).then(()=>{if(hasProg())openMap();else GD.tutorial(PRACTICE)})}
-window.__am={get LY(){return LY},A2P,get BR(){return BR},get AR(){return AR},get G(){return G},get SV(){return SV},openIntro,startTest,tapThrow,catchBubble,openMap,get scene(){return scene},go(){const b=$('goSt');b&&b.click()}};
+  how:'赤い玉（酸素）を **タップ** でかごへ投げ、黒い玉（二酸化炭素）は **タップ** で受け取る',gesture:'tap'}).then(()=>new Promise(r=>lcRun(lcNeed(0),r))).then(()=>{if(hasProg())openMap();else GD.tutorial(PRACTICE)})}
 if(window.GAME_MODE==='test'){startTest()}else{openTitle()}
 requestAnimationFrame(frame);
 </script>

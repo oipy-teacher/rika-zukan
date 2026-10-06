@@ -107,6 +107,7 @@ body.port .dial.fix .ctl{display:none}
 body.port .dial .ctl button[data-d="-10"]{grid-column:1;grid-row:1}body.port .dial .ctl button[data-d="-1"]{grid-column:1;grid-row:2}
 body.port .dial .ctl button[data-d="10"]{grid-column:3;grid-row:1}body.port .dial .ctl button[data-d="1"]{grid-column:3;grid-row:2}
 #tele{position:relative;background:linear-gradient(180deg,#f3e3c3,#e3cc9f);color:#2a1606;border:2px solid #2b1707;border-radius:4px;padding:8px 12px 8px;box-shadow:inset 0 0 0 3px #f7ecd6,inset 0 0 0 4px #9b7040;min-height:84px}
+body:not(.port) #tele{padding-left:62px} /* 左下の音楽ボタン（共通部品）と文字が重ならないように */
 #tele .hd{display:flex;justify-content:space-between;font-size:13px;color:#6b3f18;letter-spacing:.08em;border-bottom:1px dashed #9b7040;padding-bottom:2px}
 #tele .od{font-size:clamp(16px,2vw,20px);line-height:1.45;margin-top:4px}
 #tele .od b{color:#a43d12;font-weight:400}
@@ -158,6 +159,11 @@ body.port #tele .fb{font-size:13px;line-height:1.4}
 .sheet p{margin:.5em 0;font-size:16px;line-height:1.75}
 .sheet p b{color:#a43d12;font-weight:400}
 .sheet .row{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:14px}
+#intro .sheet{padding-bottom:0}#intro .sheet .row{position:sticky;bottom:0;margin:10px -22px 0;padding:10px 22px 16px;background:linear-gradient(rgba(234,214,170,0),#ead6aa 35%)}
+#iQ .ask{margin-top:10px;padding:7px 12px;border:1.5px solid #8d5424;border-radius:4px;background:rgba(164,61,18,.1);text-align:left;font-size:16px}
+#iQ .opts{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:10px}#iQ .opts .bb.ok{outline:3px solid #2f7a3a}
+#iQ .whyq{margin-top:8px;text-align:left;font-size:15px;line-height:1.6}#iQ .whyq b{color:#2f7a3a;font-weight:400;margin-right:.4em}#iQ .whyq b.ng{color:#a43d12}
+#iGo:disabled{opacity:.5;animation:none}
 .gears{display:flex;gap:12px;justify-content:center;min-height:70px;margin:8px 0}
 .gear{width:66px;height:66px;opacity:0;transform:scale(2.2) rotate(-90deg)}
 .gear.on{animation:gOn .45s cubic-bezier(.2,1.6,.4,1) forwards}
@@ -166,6 +172,11 @@ body.port #tele .fb{font-size:13px;line-height:1.4}
 @keyframes gOff{to{opacity:.25;transform:scale(1) rotate(0)}}
 .rec{display:grid;grid-template-columns:auto auto;gap:4px 18px;justify-content:center;font-size:15px;margin:8px 0;text-align:left}
 .rec b{font-weight:400;text-align:right;color:#a43d12;font-variant-numeric:tabular-nums}
+.calc{display:block;margin:10px auto 4px;padding:8px 12px;max-width:600px;border:1.5px dashed #8d5424;border-radius:4px;background:rgba(255,248,230,.55);text-align:left;font-size:15.5px;line-height:1.75}
+.calc b{color:#a43d12;font-weight:400}
+#tele .od small{display:block;font-size:.8em;color:#6b3f18;margin-top:2px}
+.guide{animation:guideGlow 1.1s ease-in-out infinite;border-radius:10px}
+@keyframes guideGlow{0%,100%{box-shadow:0 0 0 3px #ffd27a,0 0 14px 4px rgba(255,190,90,.7)}50%{box-shadow:0 0 0 6px #ffd27a,0 0 26px 10px rgba(255,190,90,.95)}}
 .rule{margin:10px 0;padding:10px;border-top:1.5px solid #8d5424;border-bottom:1.5px solid #8d5424;line-height:1.75}
 .rule em{font-style:normal;color:#a43d12}
 /* 見積もりの根拠 */
@@ -256,6 +267,7 @@ body.port #labBody{gap:8px}
     <button id="btnStart" class="bb pulse">はじめる</button>
     <div class="row">
       <button id="btnCont" class="bb sm hidden">つづきから</button>
+      <button id="btnHow" class="bb sm">遊び方</button>
       <button id="btnBookT" class="bb sm">記録帳</button>
       <button id="btnZukan" class="bb sm">📖 図鑑</button>
       <button id="btnSndT" class="bb sm">音 あり</button>
@@ -292,8 +304,12 @@ body.port #labBody{gap:8px}
 <div id="toast"></div>
 
 <div id="intro" class="ov hidden"><div class="sheet">
-  <div class="kick" id="iNo">第1期</div><h2 id="iName">銅の焙焼炉</h2><p id="iText"></p>
+  <div class="kick" id="iNo">第1期</div><h2 id="iName">銅の焙焼炉</h2><p id="iText"></p><div id="iQ"></div>
   <div class="row"><button id="iGo" class="bb pulse">操業をはじめる</button></div></div></div>
+
+<div id="tut" class="ov hidden"><div class="sheet">
+  <div class="kick" id="tuK">遊び方</div><h2 id="tuH"></h2><p id="tuT" style="text-align:left"></p>
+  <div class="row"><button id="tuGo" class="bb pulse">つぎへ</button></div></div></div>
 
 <div id="why" class="ov hidden"><div class="sheet">
   <div class="kick">見積もり書</div><h2>見積もりの根拠は？</h2>
@@ -4018,22 +4034,22 @@ function runCalc(t,a,b){var R=RX[t],bn=a*R.rb/R.ra,res={t:t,a:a,b:b};
 /* ================= 9つの期 ================= */
 /* 注文: set='B'（Bを決める）/'A'（Aを決める）/'AB'（製品の量から両方）。trap=番頭の思いこみ */
 var PER=[
- {nm:'銅の焙焼炉',intro:'銅の粉をベルトで炉へ。送風管の<b>酸素</b>と結び付けて酸化銅にする。<br>銅：酸素＝<b>4：1</b>（質量の比）。酸素のダイヤルを合わせて、レバーで操業！',
+ {nm:'銅の焙焼炉',q:{ask:'銅 1.00 g と過不足なく結び付く酸素は？',c:['0.25 g','0.40 g','4.00 g'],why:'酸素＝銅÷4＝1.00÷4＝0.25 g。',hint:'式は 酸素＝銅÷4'},intro:'銅の粉をベルトで炉へ。送風管の<b>酸素</b>と結び付けて酸化銅にする（物質が酸素と結び付く化学変化を<b>酸化</b>という）。<br>銅：酸素＝<b>4：1</b>（質量の比）。酸素のダイヤルを合わせて、レバーで操業！<span class="calc">4：1 は「銅 4 g に 酸素 1 g がちょうど」。<br>式：<b>酸素 ＝ 銅 ÷ 4</b><br>例：銅 0.80 g → 0.80 ÷ 4 ＝ <b>0.20 g</b></span>',
   od:[{t:'cuox',set:'B',a:.80},{t:'cuox',set:'B',a:1.20},{t:'cuox',set:'B',a:2.00},{t:'cuox',set:'B',a:1.60}]},
- {nm:'マグネシウム炉',intro:'2棟目はマグネシウム。マグネシウム：酸素＝<b>3：2</b>。銅とは比がちがう。',
+ {nm:'マグネシウム炉',q:{ask:'マグネシウム 0.45 g と過不足なく結び付く酸素は？',c:['0.30 g','0.15 g','0.68 g'],why:'酸素＝マグネシウム÷3×2＝0.45÷3×2＝0.30 g。',hint:'3つに分けて（÷3）、そのうち2つ分（×2）'},intro:'2棟目はマグネシウム。マグネシウム：酸素＝<b>3：2</b>。銅とは比がちがう。<span class="calc">3：2 は「マグネシウム 3 g に 酸素 2 g」。<br>式：<b>酸素 ＝ マグネシウム ÷ 3 × 2</b>（3つに分けて、そのうち2つ分）<br>例：マグネシウム 0.30 g → 0.30 ÷ 3 × 2 ＝ <b>0.20 g</b></span>',
   od:[{t:'mgox',set:'B',a:.60},{t:'mgox',set:'B',a:.90},{t:'mgox',set:'B',a:1.50},{t:'mgox',set:'B',a:1.20}]},
- {nm:'送風機が弱い日',intro:'送れる<b>酸素の量が決まっている</b>。今度は金属のベルトを合わせよ（逆算）。',
+ {nm:'送風機が弱い日',q:{ask:'送れる酸素が 0.10 g。ちょうどの銅は何g？',c:['0.40 g','0.025 g','0.50 g'],why:'銅＝酸素×4＝0.10×4＝0.40 g。',hint:'銅は酸素の4倍'},intro:'送れる<b>酸素の量が決まっている</b>。今度は金属のベルトを合わせよ（逆算）。<span class="calc">比を逆に使う。<br>式：<b>銅 ＝ 酸素 × 4</b>　／　<b>マグネシウム ＝ 酸素 ÷ 2 × 3</b><br>例：酸素 0.20 g → 銅は 0.20 × 4 ＝ <b>0.80 g</b>、マグネシウムは 0.20 ÷ 2 × 3 ＝ <b>0.30 g</b></span>',
   od:[{t:'cuox',set:'A',b:.30},{t:'mgox',set:'A',b:.50},{t:'cuox',set:'A',b:.45},{t:'mgox',set:'A',b:.80}]},
- {nm:'還元炉の見積もり',seal:1,intro:'3棟目は<b>還元炉</b>。酸化銅と炭素を炉で熱すると、炭素が酸化銅から酸素をうばい、<b>銅</b>が取り出せる（'+RX.red.eq+'）。<br>でも、酸化銅と炭素の<b>割合はまだ誰も知らない</b>。まず見積もりを立てて<b>封印</b>し、実験で確かめる。'},
- {nm:'還元炉の操業',intro:'見つけた割合で、還元炉を本格的に動かす。酸化銅の量が注文ごとに変わる。',
+ {nm:'還元炉の見積もり',q:{ask:'酸化銅と炭素を熱すると、炭素は酸化銅から何をうばう？',c:['酸素','銅','二酸化炭素'],why:'炭素が酸素をうばって二酸化炭素になり、酸素をうばわれた酸化銅は銅になる（これが還元）。',hint:'粒の図：Cu‑O の O が、C のほうへ移っている'},seal:1,intro:'3棟目は<b>還元炉</b>。酸化銅と炭素を炉で熱すると、炭素が酸化銅から酸素をうばい、<b>銅</b>が取り出せる（'+RX.red.eq+'）。<br>でも、酸化銅と炭素の<b>割合はまだ誰も知らない</b>。まず見積もりを立てて<b>封印</b>し、実験で確かめる。<span class="calc"><b>還元</b>＝酸化物から酸素を取り除く化学変化（酸素と結び付く<b>酸化</b>の逆）。<br>粒で見ると：（Cu‑O）（Cu‑O）＋ C → Cu Cu ＋（O‑C‑O）。炭素が酸化銅から酸素をうばい、銅と二酸化炭素ができる。原子の数は前後で変わらない。<br>探究の進め方：①割合を見積もる（根拠つきの予想）→ ②炭素の量だけを変えて加熱する実験 → ③結果をグラフにして折れ目を読む → ④見つけた割合で計画を直す。<br>実験の注意：加熱をやめる前にガラス管を石灰水から抜く。火を消したらピンチコックでゴム管を閉じる（空気が入って、できた銅がまた酸化されるのを防ぐ）。</span>'},
+ {nm:'還元炉の操業',q:{ask:'酸化銅 0.80 g と過不足なく反応する炭素は？',c:['0.06 g','0.60 g','0.08 g'],why:'炭素＝酸化銅÷40×3＝0.80÷40×3＝0.06 g。',hint:'まず÷40、それから×3'},intro:'見つけた割合で、還元炉を本格的に動かす。酸化銅の量が注文ごとに変わる。<span class="calc">式：<b>炭素 ＝ 酸化銅 ÷ 40 × 3</b><br>例：酸化銅 1.60 g → 1.60 ÷ 40 × 3 ＝ <b>0.12 g</b><br>炭素が多すぎる → 炭素が余る（残るのは銅と炭素）。少なすぎる → 酸化銅が残る（残るのは銅と酸化銅）。グラフで折れ目より炭素が多いと固体が重くなるのは、余った炭素がそのまま残るから。<br>できる銅：<b>銅 ＝ 酸化銅 ÷ 5 × 4</b>（銅：酸素＝4：1 なので、酸化銅5つ分のうち4つ分が銅）。<br>出ていく二酸化炭素：<b>（酸化銅＋炭素）− 銅</b>（質量保存）。<br>例：酸化銅 1.60 g と炭素 0.12 g → 銅は 1.60 ÷ 5 × 4 ＝ 1.28 g、二酸化炭素は 1.60 ＋ 0.12 − 1.28 ＝ 0.44 g</span>',
   od:[{t:'red',set:'B',a:4.00},{t:'red',set:'B',a:2.40},{t:'red',set:'B',a:6.00},{t:'red',set:'B',a:1.20},{t:'red',set:'B',a:8.00}]},
- {nm:'炭素が品薄',intro:'炭素の仕入れが少ない。<b>炭素に合わせて酸化銅</b>のベルトを決めよ。番頭さんの言うことも、うのみにしない。',
+ {nm:'炭素が品薄',q:{ask:'炭素が 0.06 g しかない。ちょうどの酸化銅は？',c:['0.80 g','0.08 g','2.40 g'],why:'酸化銅＝炭素÷3×40＝0.06÷3×40＝0.80 g。',hint:'まず÷3、それから×40'},intro:'炭素の仕入れが少ない。<b>炭素に合わせて酸化銅</b>のベルトを決めよ。番頭さんの言うことも、うのみにしない。<span class="calc">式：<b>酸化銅 ＝ 炭素 ÷ 3 × 40</b><br>例：炭素 0.45 g → 0.45 ÷ 3 × 40 ＝ <b>6.00 g</b><br>炭素を増やしても、取れる銅の量は<b>酸化銅の量</b>で決まる。多すぎた炭素は残るだけ。</span>',
   od:[{t:'red',set:'A',b:.24},{t:'red',set:'A',b:.15},{t:'red',set:'B',a:4.00,trap:1},{t:'red',set:'A',b:.36}]},
- {nm:'注文生産',intro:'「銅を○g」の注文。<b>ほしい製品の量から</b>、両方のベルトを決めよ。',
+ {nm:'注文生産',q:{ask:'酸化銅 2.50 g を全部還元すると、銅は何g？',c:['2.00 g','0.50 g','3.13 g'],why:'銅＝酸化銅÷5×4＝2.50÷5×4＝2.00 g。',hint:'酸化銅5つ分のうち4つ分が銅'},intro:'「銅を○g」の注文。<b>ほしい製品の量から</b>、両方のベルトを決めよ。<span class="calc">比をつなぐ。<br>還元炉：ほしい銅 → <b>酸化銅 ＝ 銅 ÷ 4 × 5</b> → <b>炭素 ＝ 酸化銅 ÷ 40 × 3</b><br>例：銅 8.00 g → 酸化銅 8.00 ÷ 4 × 5 ＝ 10.00 g → 炭素 10.00 ÷ 40 × 3 ＝ <b>0.75 g</b><br>焙焼炉：ほしい酸化銅 → <b>銅 ＝ 酸化銅 ÷ 5 × 4</b>、<b>酸素 ＝ 酸化銅 ÷ 5</b><br>例：酸化銅 1.00 g → 銅 0.80 g・酸素 0.20 g</span>',
   od:[{t:'red',set:'AB',p:3.20},{t:'red',set:'AB',p:4.80},{t:'cuox',set:'AB',p:2.00},{t:'red',set:'AB',p:1.60}]},
- {nm:'三つの炉の町',intro:'焙焼炉・マグネシウム炉・還元炉が次々に動く。<b>炉ごとに比がちがう</b>ことに気をつけて。',
+ {nm:'三つの炉の町',intro:'焙焼炉・マグネシウム炉・還元炉が次々に動く。<b>炉ごとに比がちがう</b>ことに気をつけて。<span class="calc">銅：酸素 ＝ <b>4：1</b>　／　マグネシウム：酸素 ＝ <b>3：2</b>　／　酸化銅：炭素 ＝ <b>40：3</b><br>注文の板の下に、その注文で使う式が出ている。</span>',
   od:[{t:'cuox',set:'B',a:2.40},{t:'red',set:'B',a:3.20},{t:'mgox',set:'B',a:1.80},{t:'red',set:'A',b:.30},{t:'mgox',set:'A',b:.40},{t:'red',set:'AB',p:6.40}]},
- {nm:'決算',timed:150,intro:'最後の決算。<b>150秒</b>のうちに、<b>3回連続で黒字</b>（材料の残りなし）を出せ。赤字を出すと連続は0から。'}
+ {nm:'決算',timed:150,intro:'最後の決算。<b>150秒</b>のうちに、<b>3回連続で黒字</b>（材料の残りなし）を出せ。赤字を出すと連続は0から。<span class="calc">銅：酸素 ＝ <b>4：1</b>　／　マグネシウム：酸素 ＝ <b>3：2</b>　／　酸化銅：炭素 ＝ <b>40：3</b></span>'}
 ];
 var NP=PER.length;
 var POOL=[{t:'red',set:'B',a:5.20},{t:'mgox',set:'B',a:2.10},{t:'cuox',set:'A',b:.35},{t:'red',set:'A',b:.27},{t:'cuox',set:'B',a:2.80},{t:'mgox',set:'A',b:.70},{t:'red',set:'B',a:2.80},{t:'red',set:'AB',p:2.40}];
@@ -4114,7 +4130,8 @@ var scene='title',ORD=null,RUN=null,now=0,shake=0,flash=0,FX=[],TXT=[],P=[],heap
 var dial={A:{v:0,step:.01,max:10},B:{v:0,step:.01,max:3}};
 function per(){return PER[S.pi]}
 function curRx(){return ORD?ORD.t:(S.pi>=3?'red':S.pi===1?'mgox':'cuox')}
-function setDial(k,v,snd){var d=dial[k];v=clamp(Math.round(v*100)/100,0,d.max);if(v!==d.v&&snd)SFX.click();d.v=v;renderDials()}
+function setDial(k,v,snd){var d=dial[k];v=clamp(Math.round(v*100)/100,0,d.max);if(v!==d.v&&snd)SFX.click();d.v=v;renderDials();
+  if(ORD&&S.pi===0&&S.oi===0&&k==='B'){var hit=Math.abs(d.v-.2)<.004;$('dB').classList.toggle('guide',!hit);$('lever').classList.toggle('guide',hit)}}
 function renderDials(){['A','B'].forEach(function(k){var el=$('d'+k);el.querySelector('.drum span').textContent=g2(dial[k].v)})}
 function setupDials(){var R=RX[ORD.t],set=ORD.set;
   [['A',R.A==='O2'?'O':R.A,R.an],['B',R.B==='O2'?'O':R.B,R.bn]].forEach(function(x){var el=$('d'+x[0]);el.querySelector('.nm').textContent=x[2]+(x[0]==='B'&&R.gasB?'（送風管）':'（ベルト）');
@@ -4126,7 +4143,11 @@ function setupDials(){var R=RX[ORD.t],set=ORD.set;
   if(ORD.set==='B'){dial.A.v=ORD.a;dial.B.v=0}else if(ORD.set==='A'){dial.B.v=ORD.b;dial.A.v=0}else{dial.A.v=0;dial.B.v=0}
   if(ORD.seal){dial.A.v=2;dial.B.v=0}
   renderDials()}
-function orderText(){var R=RX[ORD.t];
+/* その注文で使う式（答えの数は出さない。計算のしかたを毎回見えるところに） */
+function formulaOf(o){var k=o.t+':'+o.set;return {'cuox:B':'酸素 ＝ 銅 ÷ 4','cuox:A':'銅 ＝ 酸素 × 4','mgox:B':'酸素 ＝ マグネシウム ÷ 3 × 2','mgox:A':'マグネシウム ＝ 酸素 ÷ 2 × 3',
+  'red:B':'炭素 ＝ 酸化銅 ÷ 40 × 3','red:A':'酸化銅 ＝ 炭素 ÷ 3 × 40','red:AB':'酸化銅 ＝ 銅 ÷ 4 × 5 → 炭素 ＝ 酸化銅 ÷ 40 × 3','cuox:AB':'銅 ＝ 酸化銅 ÷ 5 × 4、酸素 ＝ 酸化銅 ÷ 5'}[k]||''}
+function orderText(){var t=orderText0();if(ORD&&!ORD.seal){var f=formulaOf(ORD);if(f)t+='<small>📐 式：'+f+'</small>'}return t}
+function orderText0(){var R=RX[ORD.t];
   if(ORD.seal)return '酸化銅 <b>2.00 g/分</b> を全部 銅にしたい。炭素を何 g/分 送る？<br><small>割合はまだ分からない。見積もりを立てて封印する</small>';
   if(ORD.trial)return '試運転：酸化銅 <b>2.00 g/分</b>。試験所で見つけた割合で、炭素を合わせよ';
   if(ORD.set==='B')return R.nm+'：'+R.an+' <b>'+g2(ORD.a)+' g/分</b> が流れてくる。<b>'+R.bn+'</b>をちょうどに合わせよ';
@@ -4140,6 +4161,8 @@ function loadOrder(){var p=per();
   $('tlPer').textContent='第'+(S.pi+1)+'期 '+p.nm;$('tlNo').textContent=p.timed?'連続黒字 '+(RUN&&RUN.streak||0)+'/3':p.seal?(ORD.seal?'見積もり':'試運転'):'注文 '+(S.oi+1)+'/'+p.od.length;
   $('tlOd').innerHTML=orderText();$('tlFb').className='fb';
   $('tlFb').innerHTML=ORD.trap?'番頭さん「<b>炭素を倍の0.60 gにすれば、銅も倍とれるはず！</b>」':'';
+  var prac=S.pi===0&&S.oi===0;$('dB').classList.toggle('guide',prac);$('lever').classList.toggle('guide',false);
+  if(prac)$('tlFb').innerHTML='🔰 れんしゅう：0.80 ÷ 4 ＝ 0.20。光る<b>酸素</b>の「+.1」を2回 → <b>0.20</b> → <b>レバー</b>！';
   $('lvLab').textContent=ORD.seal?'封印する':'操業！';$('lever').disabled=false;$('lever').classList.remove('down');
   scene='plant';updHud();if(!ORD.seal)window.Tekitou&&Tekitou.shown()}
 
@@ -4153,7 +4176,7 @@ function pullLever(){if(scene!=='plant'||RUN&&RUN.on||$('lever').disabled)return
   // 注文生産は量もそろっているか
   if(ORD.set==='AB'){res.short=r2(ORD.p-res.p)}
   RUN={on:true,t:0,res:res,spawnA:0,spawnB:0,qa:0,qb:0,dur:RM?1.6:3.2-S.belt*.4,drain:false,streak:RUN&&RUN.streak||0};
-  heapA=[];heapB=[];P=[];$('lever').disabled=true;SFX.roar(RUN.dur+1.2);SFX.steam()}
+  heapA=[];heapB=[];P=[];$('lever').disabled=true;$('dB').classList.remove('guide');$('lever').classList.remove('guide');SFX.roar(RUN.dur+1.2);SFX.steam()}
 function unitsPerSec(){var R=RX[ORD.t],a=RUN.res.a/R.uA,b=RUN.res.b/R.uB,mx=Math.max(a,b*2);var k=(RM?5:9)/Math.max(.0001,mx);return {a:a*k,b:b*k}}
 function stepRun(dt){if(!RUN||!RUN.on)return;RUN.t+=dt;var R=RX[ORD.t],u=unitsPerSec();
   if(RUN.t<RUN.dur){RUN.spawnA+=u.a*dt;RUN.spawnB+=u.b*dt;
@@ -4210,6 +4233,13 @@ function startPeriod(){var p=per();hideAll();scene='intro';showPlant();
   $('iNo').textContent='第'+(S.pi+1)+'期';$('iName').textContent=p.nm;$('iText').innerHTML=p.intro;
   if(p.seal&&S.seal&&!S.opened){$('iText').innerHTML='封印した見積もり書がある。試験所で実験の結果を入れて、開封しよう。';$('iGo').textContent='試験所へ'}
   else $('iGo').textContent='操業をはじめる';
+  var iq=$('iQ'),go=$('iGo');iq.innerHTML='';go.disabled=false;
+  if(p.q&&!(p.seal&&S.seal&&!S.opened)&&!(S.iq&&S.iq[S.pi])){var qq=p.q,pi=S.pi;go.disabled=true;go.dataset.t=go.textContent;go.textContent='↑ やってみように答えると進める';
+    iq.innerHTML='<div class="ask">やってみよう：'+qq.ask+'</div><div class="opts"></div><div class="whyq"></div>';var box=iq.querySelector('.opts'),wy=iq.querySelector('.whyq'),sh=$('intro').querySelector('.sheet');
+    var end=function(){setTimeout(function(){try{sh.scrollTo({top:sh.scrollHeight,behavior:'smooth'})}catch(e){sh.scrollTop=sh.scrollHeight}},60)};
+    qq.c.map(function(t,i){return{t:t,ok:i===0}}).sort(function(){return Math.random()-.5}).forEach(function(o){var b=document.createElement('button');b.className='bb sm';b.textContent=o.t;
+      b.onclick=function(){ac();if(o.ok){SFX.click();[].forEach.call(box.children,function(x){x.disabled=true});b.disabled=false;b.classList.add('ok');wy.innerHTML='<b>そのとおり。</b>'+qq.why;S.iq=S.iq||{};S.iq[pi]=1;save();go.disabled=false;go.textContent=go.dataset.t;end()}
+        else{b.disabled=true;wy.innerHTML='<b class="ng">ちがう。</b>'+qq.hint;end()}};box.appendChild(b)})}
   $('intro').classList.remove('hidden');SFX.steam();layout()}
 $('iGo').onclick=function(){ac();$('intro').classList.add('hidden');var p=per();OWNBGM.on=true;if(window.BGM)BGM.mood(p.timed?'tense':'normal');if(AU.c)OWNBGM.next=AU.c.currentTime+.1;
   if(p.seal&&S.seal&&!S.opened){openLab();return}
@@ -4336,23 +4366,34 @@ function finishTest(){var qs=TQ,review=Quiz.review(qs,TA),marks=review.map(funct
   SubmitCard.show({gameId:GID,grade:'chu2',koma:[KOMA],unit:UNIT,game:GTITLE+(TEST?'（確認テストのみ）':''),
     name:nm,score:score,total:qs.length,marks:marks,records:recs,review:review},function(){if(TEST)startTest();else toTitle()})}
 
+/* ================= 遊び方（はじめての人向け・2026-10-06 夜間改修） ================= */
+var TUT=[
+ ['遊び方 1／3','精錬所のしごと','銅山の精錬所をまかされた。炉に2つの材料を送り、結び付けて製品にする。<br>・上の<b>注文の板</b>に、今の注文が出る<br>・下の<b>ダイヤル</b>で材料の量を合わせる（大きいボタンは大きく、小さいボタンは少しずつ動く。注文で決まっている方は動かせない）<br>・右の<b>レバー</b>を引くと操業<br>2つの材料が<b>ちょうど過不足なく</b>結び付けば<b>黒字</b>。どちらかが多すぎると、余った分が<b>余りの山</b>になって赤字。'],
+ ['遊び方 2／3','「比」の使い方','銅は、酸素と結び付いて酸化銅になる。結び付く質量には、いつも同じ割合がある。<br><b>銅：酸素 ＝ 4：1</b> … 銅 4 g には 酸素 1 g がちょうど。銅が2倍なら、酸素も2倍。'+'<span class="calc">式：<b>酸素 ＝ 銅 ÷ 4</b><br>例：銅 0.80 g → 0.80 ÷ 4 ＝ <b>0.20 g</b><br>（0.80：0.20 ＝ 4：1 になっている）</span>'],
+ ['遊び方 3／3','れんしゅう','最初の注文は、いまの例と同じ「銅 0.80 g」。<br>光っている<b>酸素のダイヤル</b>を <b>0.20</b> に合わせて、<b>レバー</b>を引いてみよう。<br>注文の板の下には、その注文で使う<b>式</b>がいつも出ている。期が変わるたびに、新しい計算のしかたを例つきで教える。']
+];
+function showTut(done){var i=0;hideAll();function pg(){var t=TUT[i];$('tuK').textContent=t[0];$('tuH').textContent=t[1];$('tuT').innerHTML=t[2];$('tuGo').textContent=i<TUT.length-1?'つぎへ':'わかった！';}
+  $('tuGo').onclick=function(){ac();SFX.click();i++;if(i>=TUT.length){$('tut').classList.add('hidden');done();return}pg()};
+  pg();$('tut').classList.remove('hidden')}
+
 /* ================= 記録帳 ================= */
 var BOOK=[['cuox','銅の焙焼','銅：酸素＝4：1。銅0.80 gに酸素0.20 g、できる酸化銅は1.00 g。'],['mgox','マグネシウムの燃焼','マグネシウム：酸素＝3：2。0.60 gに酸素0.40 g、酸化マグネシウム1.00 g。'],
-  ['inverse','逆算','酸素の量が決まっていれば、比から金属の量も決まる。酸素0.30 gなら銅1.20 g。'],['lab','試験所のグラフ','炭素を増やすと固体は軽くなり、ある量で折れ曲がって重くなる。折れ目が「過不足なく反応する量」。'],
-  ['red','酸化銅の還元','酸化銅：炭素＝40：3。炭素が酸化銅から酸素をうばい、銅と二酸化炭素ができる（2CuO＋C→2Cu＋CO₂）。'],['co2','二酸化炭素のゆくえ','煙突から出る二酸化炭素＝酸化銅の中の酸素（1/5）＋炭素。4.00 gと0.30 gなら1.10 g。'],
+  ['inverse','逆算','酸素の量が決まっていれば、比から金属の量も決まる。酸素0.25 gなら銅1.00 g。'],['lab','試験所のグラフ','炭素を増やすと固体は軽くなり、ある量で折れ曲がって重くなる。折れ目が「過不足なく反応する量」。'],
+  ['red','酸化銅の還元','酸化銅：炭素＝40：3。炭素が酸化銅から酸素をうばい、銅と二酸化炭素ができる（2CuO＋C→2Cu＋CO₂）。'],['co2','二酸化炭素のゆくえ','煙突から出る二酸化炭素＝酸化銅の中の酸素（1/5）＋炭素。1.60 gと0.12 gなら0.44 g。'],
   ['excess','余りの山','多すぎた方は反応せずに残る。足りない方を使い切ったところで反応は止まる。'],['trap','番頭の思いこみ','炭素を増やしても銅は増えない。銅の量は酸化銅の量で決まる（銅は酸化銅の4/5）。'],
-  ['order','注文生産','銅3.20 gがほしい → 酸化銅4.00 g（×5/4）→ 炭素0.30 g（×3/40）。'],['booster','増量装置のむだ','ちょうどの量より多い炭素は、全部むだになる。']];
+  ['order','注文生産','銅9.60 gがほしい → 酸化銅12.00 g（×5/4）→ 炭素0.90 g（×3/40）。'],['booster','増量装置のむだ','ちょうどの量より多い炭素は、全部むだになる。']];
 function unlock(k){if(S.book[k])return;S.book[k]=1;save();var b=BOOK.find(function(x){return x[0]===k});if(b&&scene==='plant'){setTimeout(function(){pushTxt(W*.5,L.sc.y+L.sc.h*.62,'記録帳に「'+b[1]+'」','#8fe0d8',22,'',1.8);SFX.till(6);var hb=$('hBook');hb.style.transform='scale(1.3)';setTimeout(function(){hb.style.transform=''},220)},900)}}
 function openBook(){var h='';BOOK.forEach(function(b){var on=S.book[b[0]];h+='<div class="pg'+(on?'':' no')+'"><h3>'+(on?b[1]:'？？？')+'</h3><p>'+(on?b[2]:'精錬所で見つけると記録される')+'</p></div>'});$('bPages').innerHTML=h;$('book').classList.remove('hidden');SFX.clank()}
 $('bClose').onclick=function(){$('book').classList.add('hidden')};
 
 /* ================= 画面の切りかえ ================= */
-function hideAll(){['title','hud','con','intro','why','sealed','lab','open','shop','clear','book','conf','test','back'].forEach(function(id){$(id).classList.add('hidden')});$('toast').classList.remove('on')}
+function hideAll(){['title','hud','con','intro','tut','why','sealed','lab','open','shop','clear','book','conf','test','back'].forEach(function(id){$(id).classList.add('hidden')});$('toast').classList.remove('on')}
 function toTitle(){scene='title';OWNBGM.on=false;tmr=null;hideAll();$('title').classList.remove('hidden');$('btnCont').classList.toggle('hidden',!S.started);$('btnZukan').classList.toggle('hidden',!window.Zukan);
   if(INHUB){$('back').classList.remove('hidden');$('back').querySelector('span').textContent='一覧へ'}
   if(window.PLAYER_NAME)$('nameBox').classList.add('hidden');else $('nameIn').value=S.name||'';layout()}
 $('btnStart').onclick=function(){ac();var nm=$('nameIn').value.trim()||S.name,bk=S.book;S=fresh();S.name=nm;S.book=bk;S.started=true;
-  var sd=loadSeal();if(sd&&!sd.opened){S.seal=1}save();if(window.__DS)window.__DS.S=S;startPeriod()};
+  var sd=loadSeal();if(sd&&!sd.opened){S.seal=1}save();showTut(startPeriod)};
+$('btnHow').onclick=function(){ac();showTut(toTitle)};
 $('btnCont').onclick=function(){ac();S.name=$('nameIn').value.trim()||S.name;save();if(S.pi>=NP){showClear();return}startPeriod()};
 $('btnBookT').onclick=openBook;$('hBook').onclick=openBook;$('btnZukan').onclick=function(){window.Zukan&&Zukan.openBook()};
 $('btnSndT').onclick=function(){ac();setMute(!AU.mute)};$('snd').onclick=function(){ac();setMute(!AU.mute)};
@@ -4562,7 +4603,7 @@ window.addEventListener('resize',function(){layout()});
 setMute(AU.mute);layout();
 if(TEST)startTest();else toTitle();
 requestAnimationFrame(frame);
-window.__DS={S:S,get ORD(){return ORD},get RUN(){return RUN},dial:dial,setDial:setDial,needB:needB,needA:needA,get scene(){return scene},L:L,startPeriod:startPeriod,pull:pullLever,openLab:openLab};
+
 })();
 </script>
 <script>window.ZUKAN_COUNTER={"db": "https://rika-zukan-rank-default-rtdb.asia-southeast1.firebasedatabase.app", "id": "dozan-seiren"};

@@ -132,6 +132,7 @@ body.land .mk h2{font-size:34px}
 .mk .btns{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px}
 .mk .btns .kb{flex:1;min-width:150px}
 .arrSvg{display:block;width:100%;height:auto;max-height:44vh;margin:6px 0}
+.mk.lsn .arrSvg{max-height:27vh}#lqR{scroll-margin-bottom:90px}.mk.lsn p{margin:6px 0}.mk.lsn .lsF{position:sticky;bottom:-20px;margin:8px -20px -20px;padding:8px 20px 12px;background:var(--paper)}
 body.land .arrWrap{display:grid;grid-template-columns:1.1fr 1fr;gap:18px;align-items:center}
 .flip{display:flex;flex-direction:column;gap:10px;margin-top:8px}
 .flip button{display:flex;align-items:center;gap:12px;min-height:58px;padding:6px 14px;background:var(--sh);color:var(--paper);font-size:17px;text-align:left;clip-path:polygon(0 4%,100% 0,98% 100%,2% 96%)}
@@ -3893,7 +3894,7 @@ const KAN=['一','二','三','四','五'];
 
 /* ================= 道のり（昼4回・夜4回） ================= */
 const PH=[
- {day:1,k:'day',len:85,L:1,sky:'晴れ',msg:'晴れの昼。気孔が光った葉に、空の気体をわたそう'},
+ {day:1,k:'day',len:85,L:1,sky:'晴れ',msg:'晴れの昼。気孔（葉の表面の小さなすき間＝気体の出入り口）が光った葉に、空の気体をわたそう'},
  {day:1,k:'night',len:45,msg:'はじめての夜'},
  {day:2,k:'day',len:90,L:1,sky:'晴れ',grow:1,omen:'cloud',msg:'葉を広げられるようになった（養分を使う）'},
  {day:2,k:'night',len:50},
@@ -3992,7 +3993,7 @@ function leafPath(c,k,L,W){c.beginPath();
 /* ================= 本編 ================= */
 let G=null;
 function newLeaf(i){return {shape:SV.shapes[i]!=null?SV.shapes[i]:i%8,req:null,bub:null,cd:rnd(.8,3),droop:0,glow:0,born:1}}
-function startPhase(ph){const P=PH[ph];if(window.BGM)BGM.mood(P.boss?'tense':'normal');ovClose();const s=(P.k==='night'&&SV.snapNight)?SV.snapNight:SV.snap;
+function startPhase(ph){if(!SV.k1){kihonCard(()=>startPhase(ph));return}const P=PH[ph];if(window.BGM)BGM.mood(P.boss?'tense':'normal');ovClose();const s=(P.k==='night'&&SV.snapNight)?SV.snapNight:SV.snap;
  G=G&&G.ph===ph-1&&G.keep?G:null;
  const N=G?G.N:s.N,n=G?G.leaves.length:s.n,wilt=G?G.wilt:s.wilt,mols=G?G.mols:null;
  G={ph,P,t:0,len:P.len,N,wilt,leaves:[],mols:mols||[],fx:[],grains:[],combo:0,grab:null,paused:false,over:false,stat:{fed:0,wrong:0,miss:0},arrowOk:false,omenShown:false,msgT:0,grew:1,dimShown:false};
@@ -4110,11 +4111,68 @@ function clearAll(){G.over=true;const nOk=SV.arrows.filter(Boolean).length;const
   '<table><tr><td>越えた夜</td><td>4 / 4</td></tr><tr><td>幕間の矢印が正しかった</td><td>'+nOk+' / 8</td></tr><tr><td>葉の枚数</td><td>'+G.leaves.length+'枚</td></tr><tr><td>しおれて やり直した回数</td><td>'+SV.fails+'</td></tr></table>'+
   '<div class="cc">昼は 光合成と呼吸の両方。光合成の方がさかんなので、葉全体では <b>二酸化炭素を取り入れ 酸素を出す</b>。夜は <b>呼吸だけ</b>で、酸素を取り入れ 二酸化炭素を出す。2つのはたらきの気体の出入りは <b>逆向き</b>。</div>'+
   '<div class="btns"><button class="kb" id="cT">確認テストへ</button><button class="kb sm light" id="cC">こよみ</button></div></div>');
- $('cT').onclick=()=>{SFX.click();G=null;goClear()};$('cC').onclick=()=>{SFX.click();G=null;openCal()};SFX.flute();donStars(st.reduce((a,b)=>a+b,0))}
+ $('cT').onclick=()=>{SFX.click();G=null;kotaeCard(goClear)};$('cC').onclick=()=>{SFX.click();G=null;openCal()};SFX.flute();donStars(st.reduce((a,b)=>a+b,0))}
 function goClear(){ovClose();const z=Z();if(z&&z.mainClear){try{z.mainClear({onClose:startTest})}catch(e){startTest()}}else startTest()}
+
+/* ================= 葉の札・答え合わせ帳（2026-10-06 夜間改修・初心者向け） ================= */
+function mixIdx(n){const a=[...Array(n).keys()];for(let i=n-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function lesson(pages,then,i){i=i||0;const P=pages[i];if(!P){ovClose();then&&then();return}
+ const last=i===pages.length-1;
+ ovOpen('<div class="mk lsn"><div class="ey">'+P.ey+'　'+(i+1)+' / '+pages.length+'</div><h2>'+P.h+'</h2>'+P.body+(P.quiz?'<div class="cc" id="lqQ">やってみよう：'+P.quiz.q+'</div><div class="btns" id="lqB">'+mixIdx(P.quiz.ch.length).map(k=>'<button class="kb sm light" data-k="'+k+'">'+P.quiz.ch[k]+'</button>').join('')+'</div><p id="lqR"></p>':'')+'<div class="btns lsF"><button class="kb" id="lsGo"'+(P.quiz?' hidden':'')+'>'+(last?(P.endLab||'わかった'):'次へ')+'</button></div></div>');
+ const go=$('lsGo'),seeR=()=>{const r=$('lqR');r&&r.scrollIntoView&&r.scrollIntoView({block:'nearest'})};go.onclick=()=>{SFX.click();lesson(pages,then,i+1)};
+ if(P.quiz)$('lqB').querySelectorAll('button').forEach(b=>b.onclick=()=>{const k=+b.dataset.k;if(k===P.quiz.ok){SFX.grow();$('lqR').innerHTML='<b>○ そのとおり。</b>'+P.quiz.why;$('lqB').querySelectorAll('button').forEach(x=>x.disabled=true);go.hidden=false;setTimeout(seeR,30)}else{SFX.wrong();b.disabled=true;$('lqR').innerHTML='<b>× ちがう。</b>'+P.quiz.hint+'　もう一度えらぼう。';seeR()}})}
+const SVG_TWO='<svg class="arrSvg" viewBox="0 0 300 150"><rect width="300" height="150" fill="#F3E3C0"/>'+
+ '<text x="150" y="16" text-anchor="middle" font-size="13" fill="#8a3d05">左の矢印＝葉に入る　右の矢印＝葉から出る</text>'+
+ '<path d="M150 140 Q118 92 150 30 Q182 92 150 140Z" fill="#111118"/>'+
+ '<text x="150" y="58" text-anchor="middle" font-size="12" fill="#F6AE2D">光合成</text><text x="150" y="112" text-anchor="middle" font-size="12" fill="#E8927C">呼吸</text>'+
+ '<g stroke-width="6"><path d="M14 54 H112" stroke="#3a3d46"/><path d="M188 54 H278" stroke="#E4572E"/><path d="M14 108 H112" stroke="#E4572E"/><path d="M188 108 H278" stroke="#3a3d46"/></g>'+
+ '<path d="M110 44 L128 54 L110 64Z M276 44 L294 54 L276 64Z" fill="#3a3d46"/><path d="M276 44 L294 54 L276 64Z" fill="#E4572E"/><path d="M110 98 L128 108 L110 118Z" fill="#E4572E"/><path d="M276 98 L294 108 L276 118Z" fill="#3a3d46"/>'+
+ '<g font-size="13" fill="#111118"><text x="16" y="46">二酸化炭素</text><text x="196" y="46">酸素</text><text x="16" y="100">酸素</text><text x="196" y="100">二酸化炭素</text></g>'+
+ '<text x="16" y="74" font-size="11" fill="#8a3d05">光があるときだけ</text><text x="16" y="130" font-size="11" fill="#8a3d05">昼も夜も、1日中</text></svg>';
+function kihonCard(then){
+ lesson([{ey:'葉の札 ── はじめに',h:'葉の中の 2つのはたらき',body:
+  '<p><b>光合成</b>：葉が <b>光</b> を使って、二酸化炭素と水から <b>養分</b>（デンプンなど）をつくる。このとき <b>酸素を出す</b>。光があるときだけ。</p>'+
+  '<p><b>呼吸</b>：生きるために <b>養分を使う</b>はたらき。<b>酸素を取り入れ、二酸化炭素を出す</b>。人も植物も、<b>昼も夜も1日中</b>している。</p>'+SVG_TWO+
+  '<div class="cc">2つのはたらきの気体の出入りは <b>逆向き</b>。</div>',
+  quiz:{q:'光合成で、葉から <b>出る</b> 気体は？',ch:['酸素','二酸化炭素','水蒸気だけ'],ok:0,why:'光合成は 二酸化炭素を取り入れて 酸素を出す。図の上の段（右の矢印）が 酸素。',hint:'図の上の段が光合成。右の矢印＝葉から出る。何と書いてある？'}},
+ {ey:'葉の札 ── はじめに',h:'昼と夜で、葉全体ではどうなる？',body:
+  '<p><b>気孔</b>：葉の表面にある小さなすき間。気体はここから出入りする。このゲームでは <b>光っている所</b>。</p>'+
+  '<p><b>昼</b>：光合成と呼吸の両方をしている。でも <b>光合成の方がずっとさかん</b>なので、葉全体で見ると <b>二酸化炭素が入り、酸素が出る</b>。</p>'+
+  '<p><b>夜</b>：光がないので光合成はできない。<b>呼吸だけ</b>なので、<b>酸素が入り、二酸化炭素が出る</b>。昼にためた養分を使う。</p>'+
+  '<p><b>夕方・夜明けの弱い光</b>：光合成と呼吸がつり合って、葉全体の出入りは <b>ほとんどない</b>。</p>',
+  quiz:{q:'真夜中、葉全体で 外へ <b>出す</b> 気体は？',ch:['二酸化炭素','酸素','どちらも出入りしない'],ok:0,why:'夜は呼吸だけ。酸素を取り入れ、二酸化炭素を出す。',hint:'夜は光がない。光合成はできず、呼吸だけ。呼吸で出すのは？'},endLab:'一株を育てに行く'}],()=>{SV.k1=1;save();then&&then()})}
+const SVG_GH='<svg class="arrSvg" viewBox="0 0 300 160"><rect width="300" height="160" fill="#F3E3C0"/><rect x="40" y="10" width="60" height="110" fill="#2F4858" opacity=".35"/><rect x="220" y="10" width="60" height="110" fill="#2F4858" opacity=".35"/>'+
+ '<path d="M40 120 H280 M40 10 V120" stroke="#111118" fill="none"/><polyline points="40,72 100,40 220,108 280,72" fill="none" stroke="#B8570C" stroke-width="3"/>'+
+ '<circle cx="100" cy="40" r="5" fill="#B8570C"/><circle cx="220" cy="108" r="5" fill="#B8570C"/><text x="104" y="34" font-size="12" fill="#111118">いちばん多い（日の出ごろ）</text><text x="150" y="102" font-size="12" fill="#111118" text-anchor="end">いちばん少ない（日の入りごろ）</text>'+
+ '<g font-size="10" fill="#111118" text-anchor="middle"><text x="40" y="134">0時</text><text x="100" y="134">6時</text><text x="160" y="134">12時</text><text x="220" y="134">18時</text><text x="280" y="134">24時</text></g>'+
+ '<text x="44" y="152" font-size="10" fill="#111118">こい色＝暗い時間　線＝温室の中の二酸化炭素の割合</text></svg>';
+function tube(x,col,lab,foil){return '<path d="M'+x+' 20 V96 Q'+(x+16)+' 112 '+(x+32)+' 96 V20" fill="'+col+'" stroke="#111118" stroke-width="2"/>'+(lab.plant?'<path d="M'+(x+16)+' 98 V32" stroke="#2f6f25" stroke-width="3"/><path d="M'+(x+16)+' 50 l-8 -6 M'+(x+16)+' 50 l8 -6 M'+(x+16)+' 66 l-8 -6 M'+(x+16)+' 66 l8 -6 M'+(x+16)+' 82 l-8 -6 M'+(x+16)+' 82 l8 -6" stroke="#2f6f25" stroke-width="2"/>':'')+(foil?'<rect x="'+(x-3)+'" y="18" width="38" height="86" fill="#b8bcc4" opacity=".55" stroke="#777"/>':'')+'<text x="'+(x+16)+'" y="128" text-anchor="middle" font-size="12" fill="#111118">'+lab.t+'</text><text x="'+(x+16)+'" y="144" text-anchor="middle" font-size="12" fill="#8a3d05">→ '+lab.c+'</text>'}
+const SVG_BTB='<svg class="arrSvg" viewBox="0 0 300 150"><rect width="300" height="150" fill="#F3E3C0"/>'+tube(40,'#5b8fd6',{t:'A 光あり',c:'青',plant:1})+tube(134,'#e3c93a',{t:'B アルミはく',c:'黄',plant:1},1)+tube(228,'#6fb36f',{t:'C 植物なし',c:'緑のまま'})+'</svg>';
+function kotaeCard(then){
+ if(SV.k2){then&&then();return}
+ lesson([{ey:'答え合わせ帳',h:'数で見る（目盛りの模型）',body:
+  '<p>気体の量を「目盛り」で数えてみる。晴れた昼、1時間に <b>光合成で二酸化炭素を7目盛り使い</b>、<b>呼吸で3目盛り出す</b>とする。</p>'+
+  '<div class="cc">葉全体で取り入れる二酸化炭素 ＝ 使う量 − 出す量 ＝ 7 − 3 ＝ <b>4目盛り</b></div>'+
+  '<p>夜は <b>呼吸だけ</b>。1時間に3目盛り出すなら、10時間の夜では 3 × 10 ＝ <b>30目盛り</b> 出す。夜が長いほど、たくさんの養分を使う（冬の夜が苦しかったわけ）。</p>',
+  quiz:{q:'光合成で二酸化炭素を9目盛り使い、呼吸で4目盛り出す。葉全体で取り入れるのは何目盛り？',ch:['5目盛り','13目盛り','4目盛り'],ok:0,why:'9 − 4 ＝ 5。光合成の方が多いので、全体では取り入れる。',hint:'使う量から 出す量を ひく。9 − 4 は？'}},
+ {ey:'答え合わせ帳',h:'夜は 呼吸だけ',body:'<p>夜は光合成ができないので、出る二酸化炭素は <b>呼吸の分だけ</b>。1時間に出る量 × 夜の時間 で、ひと晩の量が出る。</p><div class="cc">1時間に3目盛り × 10時間 ＝ <b>30目盛り</b></div>',
+  quiz:{q:'夜、1時間に4目盛りの二酸化炭素を呼吸で出す。8時間の夜では 何目盛り？',ch:['32目盛り','12目盛り','4目盛り'],ok:0,why:'4 × 8 ＝ 32。夜は呼吸だけなので、時間の分だけ ふえていく。',hint:'1時間の量 × 時間。4 × 8 は？'}},
+ {ey:'答え合わせ帳',h:'閉じた温室の 1日',body:
+  '<p>植物を入れて閉じた温室の、二酸化炭素の割合の1日の変化。</p>'+SVG_GH+
+  '<p><b>夜</b>は呼吸だけ → 二酸化炭素は <b>ふえ続ける</b> → 夜が明けるころ（日の出ごろ）に <b>いちばん多い</b>。</p>'+
+  '<p><b>昼</b>は光合成で使う量が、呼吸で出す量より多い → 二酸化炭素は <b>へっていく</b> → 日の入りごろに いちばん少ない。</p>',
+  quiz:{q:'温室の二酸化炭素が いちばん <b>少なく</b> なるのは？',ch:['日の入りのころ','正午のころ','日の出のころ'],ok:0,why:'昼のあいだ光合成で使われて へり続け、光合成が止まる日の入りごろが いちばん少ない。',hint:'昼のあいだ、二酸化炭素はふえる？へる？　へり続けた最後はいつ？'}},
+ {ey:'答え合わせ帳',h:'BTB液で 確かめる',body:
+  '<p><b>BTB液</b>：とけている二酸化炭素の量で 色が変わる液。<b>二酸化炭素がふえると黄色</b>、<b>へると青色</b>、そのままなら緑色。</p>'+
+  '<p>緑色のBTB液に、水草（オオカナダモ）を入れて光を当てる。</p>'+SVG_BTB+
+  '<p><b>A</b>：光合成で二酸化炭素が使われて へる → <b>青</b>。　<b>B</b>：アルミはくで光が当たらない → 呼吸だけで二酸化炭素がふえる → <b>黄</b>。</p>'+
+  '<p><b>C</b>（植物なし）は色が変わらない。だから「AとBの色が変わったのは <b>植物のはたらき</b>のせい」と言える。このように、1つの条件だけを変えて比べる実験を <b>対照実験</b> という。</p>'+
+  '<p>うすぐもりの <b>弱い光</b>では、光合成と呼吸がつり合って、色は ほとんど変わらない。</p>',
+  quiz:{q:'緑色のBTB液に水草を入れ、<b>暗い箱の中</b>に ひと晩置いた。色は？',ch:['黄色','青色','緑色のまま'],ok:0,why:'暗いと光合成はできず、呼吸だけ。二酸化炭素がふえて黄色になる。',hint:'光が当たらないと、光合成はできる？　呼吸だけだと二酸化炭素はふえる？へる？'},endLab:'確認テストへ'}],()=>{SV.k2=1;save();then&&then()})}
 
 /* ================= 幕間（次の時間帯の矢印を置く） ================= */
 function interlude(ph){const P=PH[ph];if(!P){openCal();return}
+ if(!SV.k1){kihonCard(()=>interlude(ph));return}
  if(G&&G.over&&P.k==='day'&&PH[ph-1]&&PH[ph-1].k==='night'){G=null}
  const isDay=P.k==='day';let dir={co2:Math.random()<.5?'in':'out',o2:Math.random()<.5?'in':'out'};if(dir.co2===(isDay?'in':'out')&&dir.o2===(isDay?'out':'in'))dir.o2=dir.o2==='in'?'out':'in';
  const title=KAN[P.day-1]+'日目の'+(isDay?'昼（'+P.sky+'）':(P.boss?'夜（長い冬の夜）':P.long?'夜（長い夜）':'夜'));
@@ -4281,7 +4339,7 @@ let arm=false;
 $('btnStart').onclick=()=>{ac();SV.name=$('nameIn').value.trim();
  if(hasSave()&&SV.ph>0&&!arm){arm=true;$('btnStart').textContent='本当に はじめから？（記録が消える）';setTimeout(()=>{arm=false;initTitle()},3500);return}
  if(arm){const nm=SV.name,mu=SV.mute;SV=freshSave();SV.name=nm;SV.mute=mu;arm=false}save();SFX.hyoshi();
- if(!window.Guide){demo();return}if(busy)return;busy=true;Guide.intro(INTRO).then(()=>{busy=false;Guide.tutorial(PRACTICE)})};
+ if(!window.Guide){demo();return}if(busy)return;busy=true;Guide.intro(INTRO).then(()=>new Promise(r=>kihonCard(r))).then(()=>{busy=false;Guide.tutorial(PRACTICE)})};
 let busy=false;
 const INTRO={title:'第10回 夜を越える一株',learn:'昼は光合成で **二酸化炭素を入れ 酸素を出す**。夜は呼吸だけで **逆向き**（酸素を入れ 二酸化炭素を出す）',
  how:'空の気体を **つまんで** 光った葉へ → 葉から出た泡を **はじいて** 外へ',gesture:'drag'};
@@ -4318,7 +4376,7 @@ function openCal(){G=null;ovClose();show('scCal');const svg=$('calSvg'),r=svg.ge
  $('btnGo').textContent=SV.done?'1日目から もう一度':SV.ph===0?'1日目の朝へ':'つづける（'+KAN[PH[SV.ph].day-1]+'日目の'+(PH[SV.ph].k==='day'?'昼':'夜')+'）';$('btnTestC').hidden=!SV.done;$('btnBookC').hidden=!Z()}
 $('btnGo').onclick=()=>{ac();SFX.hyoshi();if(SV.done){SV.ph=0;SV.snap={N:START_N,n:2,wilt:0};SV.snaps={0:SV.snap};SV.fails=0;save()}
  G=null;interlude(SV.ph)};
-$('btnTestC').onclick=()=>{ac();SFX.click();startTest()};
+$('btnTestC').onclick=()=>{ac();SFX.click();kotaeCard(startTest)};
 $('btnAlb').onclick=()=>{SFX.click();const have=new Set(SV.shapes);
  ovOpen('<div class="mk"><div class="ey">葉の影絵帳</div><h2>育った葉 '+have.size+' / 8</h2><p>夜を越えるたび、葉を広げるたびに、新しい形の葉がひらく。</p><div class="alb">'+LEAF_NAMES.map((nm,k)=>have.has(k)?'<div>'+leafSVG(k)+esc(nm)+'</div>':'<div class="no">'+leafSVG(-1)+'？？？</div>').join('')+'</div><div class="btns"><button class="kb" id="aC">とじる</button></div></div>');$('aC').onclick=()=>{SFX.click();ovClose()}};
 function leafSVG(k){if(k<0)return '<svg viewBox="0 0 100 70"><path d="M20 35 Q50 10 84 35 Q50 60 20 35Z" fill="none" stroke="#666" stroke-dasharray="4 4"/></svg>';
@@ -4330,7 +4388,7 @@ function ovClose(){$('ov').hidden=true;$('ov').innerHTML=''}
 
 /* ================= 確認テスト ================= */
 let T=null;
-function startTest(){ovClose();G=null;show('scTest');if(!window.Quiz){$('qText').textContent='問題データがありません';return}T={qs:Quiz.test(),i:0,ans:[]};renderQ()}
+function startTest(){if(window.GAME_MODE!=='test'&&!SV.k2){kotaeCard(startTest);return}ovClose();G=null;show('scTest');if(!window.Quiz){$('qText').textContent='問題データがありません';return}T={qs:Quiz.test(),i:0,ans:[]};renderQ()}
 function renderQ(){const q=T.qs[T.i];$('qNo').textContent=(T.i+1)+' / '+T.qs.length;$('qText').textContent=q.q;const f=$('qFig');if(q.fig){f.innerHTML=q.fig;f.hidden=false}else{f.innerHTML='';f.hidden=true}
  const A=$('qArea');A.innerHTML='';$('scTest').scrollTop=0;const mk=(c,lab)=>{const b=document.createElement('button');b.className='kb';b.innerHTML='<span class="L">'+lab+'</span><span></span>';b.lastChild.textContent=c;return b};
  if(q.t==='choice'){const box=document.createElement('div');box.className='qch';q.shown.forEach((c,k)=>{const b=mk(c,'壱弐参四伍'[k]);b.onclick=()=>answer(c);box.appendChild(b)});A.appendChild(box)}
@@ -4358,7 +4416,7 @@ let last=performance.now();
 function frame(now){const dt=Math.min(.05,Math.max(0,(now-last)/1000))*(window.__SPEED||1);last=now;
  try{if(scene==='play'&&G){if(G.demo&&!G.over)demoUpdate(dt);else if(!G.paused&&!G.over)update(dt);else if(G.over&&!G.demo){G.geo=plantGeo()}if(G)render()}else if(scene==='title')titleFrame(dt)}catch(e){console.error(e)}
  requestAnimationFrame(frame)}
-let rzT=0;window.addEventListener('resize',()=>{clearTimeout(rzT);rzT=setTimeout(()=>{orient();if(scene==='play')layoutPlay();if(scene==='title')titleResize();if(scene==='cal')openCal()},80)});
+let rzT=0;window.addEventListener('resize',()=>{clearTimeout(rzT);rzT=setTimeout(()=>{orient();if(scene==='play')layoutPlay();if(scene==='title')titleResize();if(scene==='cal'&&$('ov').hidden)openCal()},80)});
 /* ================= はじまり ================= */
 var HELP=null;
 function placeHelp(){if(!HELP)return;orient();HELP.update(LAND?{mount:document.querySelector('#hud .hR')}:{mount:null,corner:'tl',offset:{x:0,y:56}})}
@@ -4379,8 +4437,6 @@ if(window.Guide){
 }
 window.GAME_ID=GAME_ID;
 try{window.Zukan&&Zukan.setup({game:GAME_ID,koma:[KOMA]})}catch(e){}
-window.__dn={get G(){return G},molPt,leafPt,bubPt,bubTo};
-window.__db={get G(){return G},get SV(){return SV},startPhase,interlude,startTest,openCal,mode,lightNow,plantGeo,feed(i,k){const geo=plantGeo();const o={k,x:0,y:0};G.mols.push(o);feed(geo.L[i],o)},release(i){const lf=G.leaves[i];if(lf.bub)releaseBub(lf,i,plantGeo(),false,0,-30)}};
 if(window.GAME_MODE==='test'){startTest()}else{show('scTitle');initTitle()}
 requestAnimationFrame(frame);
 })();

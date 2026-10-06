@@ -185,6 +185,23 @@ button{cursor:pointer;touch-action:manipulation}
 .envbox input{width:120px;min-height:46px;border:0;background:#EFE4CB;color:#1d120a;font:800 22px var(--fm);padding:0 10px;box-shadow:inset 0 0 0 2px #8A5A2E}
 @media (prefers-reduced-motion: reduce){*{scroll-behavior:auto!important}}
 
+/* まなぶ札（巻物）・答え合わせ */
+#scrLearn{z-index:9}
+#scrLearn .cen{background:rgba(20,10,4,.8)}
+#scrLearn .ita{width:min(680px,95vw);padding:24px 22px 0}
+#scrLearn .btns{position:sticky;bottom:0;margin:8px -22px 0;padding:10px 22px 14px;background:linear-gradient(rgba(67,38,26,0),#43261a 30%)}
+.lkick{font:700 13px var(--fm);letter-spacing:.2em;color:var(--wd);margin-bottom:4px}
+#lFig{background:#EFE4CB;padding:8px;box-shadow:inset 0 0 0 2px #8A5A2E,0 4px 0 #24150C;margin:10px 0}
+#lFig svg{display:block;width:100%;height:auto;max-height:24vh}
+#lP p{font:500 16px/1.65 var(--fb);margin:5px 0}
+#lP b{color:#F3D9A4}
+#lQ .ask{margin-top:10px;font:800 16px/1.5 var(--fm);color:#1d120a;background:var(--wd);padding:8px 14px;box-shadow:inset 0 0 0 2px #5A2E1A}
+#lQ .opts{display:flex;flex-wrap:wrap;gap:10px;margin-top:10px}
+#lQ .opts .fuda{white-space:normal;line-height:1.35;text-align:left}
+#lQ .why{margin-top:8px;font:700 15px/1.65 var(--fb)}
+#lQ .why b{color:#D8B24C;margin-right:.4em}#lQ .why b.ng{color:#ff9b7a}
+#lPg{margin-right:auto;align-self:center;font:700 14px var(--fm);color:var(--wd)}
+
 /* 共通部品 Guide の「ひとこと」の1文字（class=ch）が、確認テストの選択肢 .ch の見た目を拾わないように */
 .gd-cheer span.ch{display:inline-block;border:0;background:none;box-shadow:none;padding:0;margin:0;min-height:0;width:auto;height:auto;gap:0;font:inherit;color:inherit;text-align:inherit;filter:none;border-radius:0}
 </style>
@@ -200,7 +217,7 @@ button{cursor:pointer;touch-action:manipulation}
     <div class="tsub">～豆電球の前と後～</div>
     <div class="nmrow pe" id="nmRow"><label for="nameIn">名札</label><input id="nameIn" maxlength="16" placeholder="なまえ（なくてもOK）" autocomplete="off"></div>
     <div class="brow"><button class="fuda g" id="bStart">屋敷に入る</button><button class="fuda" id="bCont">つづきから</button></div>
-    <div class="brow"><button class="fuda sm" id="bHow">✋ あそびかた</button><button class="fuda d sm" id="bBook1">📖 図鑑</button><button class="fuda d sm hidden" id="bEnv1">✉ 封を開ける（実験のあと）</button></div>
+    <div class="brow"><button class="fuda sm" id="bHow">✋ あそびかた</button><button class="fuda d sm" id="bBook1">📖 図鑑</button><button class="fuda d sm hidden" id="bEnv1">✉ 封を開ける（自分の実験の値とくらべる）</button></div>
   </div>
 </div>
 
@@ -229,7 +246,7 @@ button{cursor:pointer;touch-action:manipulation}
 </div></div></div>
 
 <div id="scrEnv" class="scr hidden"><div class="cen pe"><div class="ita">
-  <h2>封を開ける<small>実験のあとに開けよう。予想と結果をくらべる。</small></h2>
+  <h2>封を開ける<small>自分の班で実験した値を入れて、予想とくらべる。</small></h2>
   <div id="envBody"></div>
   <div class="btns"><button class="fuda d sm" id="envClose">とじる</button></div>
 </div></div></div>
@@ -253,6 +270,15 @@ button{cursor:pointer;touch-action:manipulation}
   <h2>検め、終わり<small id="eName"></small></h2>
   <div class="big" id="eScore"></div>
   <div class="btns"><button class="fuda d sm" id="eBook">📖 図鑑</button><button class="fuda d sm" id="eMap">見取り図へ</button><button class="fuda g" id="eCard">📝 提出カード</button></div>
+</div></div></div>
+
+<div id="scrLearn" class="scr hidden"><div class="cen pe"><div class="ita">
+  <div class="lkick" id="lKick"></div>
+  <h2 id="lT"></h2>
+  <div id="lFig" class="hidden"></div>
+  <div id="lP"></div>
+  <div id="lQ"></div>
+  <div class="btns"><span id="lPg"></span><button class="fuda g" id="lNext">次へ</button></div>
 </div></div></div>
 
 <div id="hudCap" class="hidden" aria-live="polite"><b></b><span></span></div>
@@ -4120,8 +4146,8 @@ function predGeo(){var cx=W/2,top=SR.y+SR.h*(LAND?.12:.1),bot=SR.y+SR.h*(LAND?.7
   return{cx:cx,top:top,bot:bot,tw:tw,tubes:[{x:cx-gap-tw/2,y:top,w:tw,h:bot-top},{x:cx+gap-tw/2,y:top,w:tw,h:bot-top}],ly:(top+bot)/2}}
 function predText(){var el=PR.kind==='motor'?'モーター':'豆電球',t;
   if(!PR.lv[0]||!PR.lv[1])t='予想しよう。'+el+'に「流れこむ」粒と「流れ出る」粒。それぞれの管を指でなぞって、1秒間に流れる粒の量を注ごう';
-  else if(!PR.reason)t='そう考えた理由の札を1枚えらぼう（答えは実験で確かめる。ここでは出ない）';
-  else t='よければ封蝋で封じよう。封は実験のあとに開ける';
+  else if(!PR.reason)t='そう考えた理由の札を1枚えらぼう（答えは、屋敷の最後の部屋のあとで開ける）';
+  else t='よければ封蝋で封じよう。封は、屋敷の最後の部屋のあとで開ける';
   $('predMsg').textContent=t}
 function predCat(){var a=PR.lv[0],b=PR.lv[1];return a>b?'減る':a<b?'増える':'同じ'}
 function predRefresh(){var cat=predCat();if(PR.lv[0]&&PR.lv[1]&&cat!==PR.cat){PR.cat=cat;PR.reason=null;var box=$('reasons');box.innerHTML='';
@@ -4134,7 +4160,7 @@ function predPointer(x,y,down){if(!PR||PR.sealed)return;var g=predGeo();if(down)
   if(PR.drag<0)return;var tb=g.tubes[PR.drag],lv=Math.max(1,Math.min(10,Math.round((tb.y+tb.h-y)/(tb.h/10))));if(lv!==PR.lv[PR.drag]){PR.lv[PR.drag]=lv;SFX.pour();predRefresh()}}
 function sealPred(){if(!PR||!PR.reason||PR.sealed)return;PR.sealed=1;PR.t=0;SFX.seal();var rec={before:PR.lv[0],after:PR.lv[1],cat:predCat(),reason:PR.reason,at:Date.now()};
   if(PR.kind==='motor'){var f2=!SV.pred2;SV.pred2=rec;if(f2)earnK(10,'predict',W/2,H*.4)}else{var f=!SV.pred;SV.pred=rec;if(f)earnK(10,'predict',W/2,H*.4)}save();writeSeal();
-  $('bSeal').classList.add('hidden');$('reasons').innerHTML='';$('predMsg').textContent='封じた。答えは実験で。封はタイトルの「封を開ける」から、実験のあとに開けよう';
+  $('bSeal').classList.add('hidden');$('reasons').innerHTML='';$('predMsg').textContent='封じた。答えは、屋敷の最後の部屋のあとで開ける（実験した人は、表紙の「封を開ける」で自分の値とも比べられる）';
   setTimeout(function(){if(scene!=='pred')return;if(PR.kind==='motor')startRoom(5,true);else startRoom(0)},RM?900:2400)}
 function drawPred(dt){PR.t+=dt;drawBackdrop();var g=predGeo(),el=PR.kind==='motor'?'モーター':'豆電球';
   /* 台と棚 */
@@ -4302,7 +4328,9 @@ function setScene(s){scene=s;hideFail();$('predUI').classList.toggle('hidden',s!
   var b=$('bBack');b.classList.toggle('hidden',!(s==='room'||s==='pred'||s==='map'||s==='test'||(s==='title'&&INHUB)));b.textContent=s==='title'?'◀ 一覧へ':'◀ もどる';
   $('bMute').classList.toggle('hidden',s==='test'||s==='end');$('bMute').textContent=muted?'🔇':'🔊';placePredUI();
   if(HELP){if(s==='room'||s==='pred'){HELP.show();HELP.update({rules:helpRules(),offset:{x:70+(s==='room'?$('bReset').offsetWidth+8:0)}})}else HELP.hide()}}
-function startRoom(ri,skipPred){if(ri===5&&!SV.pred2&&!skipPred){startPred('motor');return}if(!SV.pred){startPred('lamp');return}loadRoom(ri,roomVariant(ri));setScene('room')}
+function startRoom(ri,skipPred){if(ri===5&&!SV.pred2&&!skipPred){startPred('motor');return}if(!SV.pred){beginLampPred();return}
+  if(T_ROOM[ri]&&!(SV.tr&&SV.tr[ri])){R=null;setScene('map');teach('屋敷の巻物 ─ この部屋の前に',T_ROOM[ri],function(){SV.tr=SV.tr||{};SV.tr[ri]=1;save();startRoom(ri,skipPred)});return}
+  loadRoom(ri,roomVariant(ri));setScene('room')}
 $('bBack').onclick=function(){ac();if(scene==='title'){try{window.parent.postMessage({type:'rika-close-game'},'*')}catch(e){}return}if(scene==='map'){setScene('title');return}
   $('bkSub').textContent=scene==='test'?'確認テストは、次はさいしょから。屋敷の進み具合は保存されています。':'進み具合は保存されます（開いた扉はそのまま。この部屋は次はじめから）。';$('scrBackQ').classList.remove('hidden')};
 $('bkNo').onclick=function(){$('scrBackQ').classList.add('hidden')};
@@ -4320,28 +4348,28 @@ function buildMap(){var g=$('mGrid');g.innerHTML='';var nd=Object.keys(SV.rooms)
   var sh=$('mShelf');sh.innerHTML='<b>寄木の文様</b>';PATS.forEach(function(p,i){var own=SV.pats[i],b=document.createElement('button');b.className='pat pe'+(own&&own.gold?' gold':'');b.title=own?p[1]:'？';if(own)b.appendChild(patCanvasNew(p[0],own.gold,46));else b.textContent='';sh.appendChild(b)});
   $('bToTest').classList.toggle('hidden',!SV.done)}
 function showClear(){var D=R.D,r=SV.rooms[R.ri];showScr('scrClear');$('cTitle').firstChild.nodeValue=D.final?'ランプの間の扉が開いた':'扉が開いた';
-  $('cSub').textContent=D.final?'閉じた回路・前と後の電流計・＋端子の向き。すべてそろった計画で、大仕掛けが動いた。針の答えは、実験で。':'「'+D.n+'」─ 閉じた回路と、前と後の電流計がそろった';
+  $('cSub').textContent=D.final?'閉じた回路・前と後の電流計・＋端子の向き。すべてそろった計画で、大仕掛けが動いた。このあと、封を開けて答え合わせ。':'「'+D.n+'」─ 閉じた回路と、前と後の電流計がそろった';
   $('cRec').innerHTML='<span>抜いた数 <b>'+R.pulls+'</b></span><span>やり直し <b>'+R.fails+'</b></span><span>文様 <b>'+PATS[R.ri][1]+'</b></span>';
   [].slice.call($('cRec').children).forEach(function(sp,i){sp.classList.add('wait');setTimeout(function(){sp.classList.remove('wait');sp.classList.add('don');SFX.goton();koto(659*Math.pow(1.19,i),0,.07);vib(15)},RM?0:300+i*380)});
   $('cPat').innerHTML='';var cn=patCanvasNew(PATS[R.ri][0],SV.pats[R.ri]&&SV.pats[R.ri].gold,90);cn.style.cssText='width:90px;height:90px;display:block;margin:10px 0;box-shadow:0 5px 0 #24150C';$('cPat').appendChild(cn);
   $('cNext').textContent=D.final?'確認テストへ':'次の部屋へ'}
-$('cNext').onclick=function(){ac();$('scrClear').classList.add('hidden');if(R&&R.D.final){toTest();return}var n=R.ri+1;startRoom(n)};
+$('cNext').onclick=function(){ac();$('scrClear').classList.add('hidden');if(R&&R.D.final){ansCheck(toTest);return}var n=R.ri+1;startRoom(n)};
 $('cMap').onclick=function(){R=null;setScene('map')};
 function toTest(){var z=Zk();if(z&&z.mainClear&&!TEST){try{z.mainClear({onClose:startTest});return}catch(e){}}startTest()}
-$('bToTest').onclick=function(){if(SV.done)startTest()};
+$('bToTest').onclick=function(){if(!SV.done)return;if(!SV.ans)ansCheck(startTest);else startTest()};
 function openBook(){var z=Zk();if(z&&z.openBook)z.openBook()}
 $('bBook1').onclick=openBook;$('bBook2').onclick=openBook;$('eBook').onclick=openBook;
 $('bGacha').onclick=function(){var z=Zk();if(z&&z.openGacha)z.openGacha()};
 if(!Zk()){['bBook1','bBook2','bGacha','eBook'].forEach(function(id){$(id).classList.add('hidden')})}
 function getName(){return(window.PLAYER_NAME||$('nameIn').value||SV.name||'').trim()}
 $('bStart').onclick=function(){ac();SV.name=$('nameIn').value.trim()||SV.name;save();var first=!SV.pred;
-  if(!window.Guide){if(first)startPred('lamp');else setScene('map');return}
+  if(!window.Guide){if(first)beginLampPred();else setScene('map');return}
   Guide.intro(INTRO).then(function(){if(first){PRAC_RET='pred';Guide.tutorial(PRACTICE)}else setScene('map')})};
 
 /* ================= 遊び方案内（Guide）：intro・れんしゅう・？ ================= */
 var HELP=null,PRAC_RET=null,PAUSED=false;
 var INTRO={title:'第2回　ランプの間のピン抜き',
-  learn:'豆電球の **前と後** に電流計をつなぐと、流れこむ電流と流れ出る電流を **比べられる**',
+  learn:'回路を流れる電気の流れを **電流**（単位 **A**）という。豆電球の **前と後** に **電流計**（電流をはかる道具）をつなぐと、流れこむ電流と流れ出る電流を **比べられる**',
   how:'ピンを **タップ** で抜いて、電流計を豆電球の前と後の切れ目へ落とす',gesture:'tap'};
 var PRAC_ROOM={n:'れんしゅうの間',hint:'',bat:'L',prac:1,cols:[{t:'s',sh:['A','|']},{t:'L'},{t:'s',sh:['A','|'],d:{to:'bin'}}]};
 function pinOf(id){if(!R)return null;var f=null;R.cols.forEach(function(col){col.stack.forEach(function(tk){if(tk.pin&&tk.id===id)f=tk})});return f}
@@ -4356,7 +4384,7 @@ var PRACTICE={label:'れんしゅう中',block:true,
     {gesture:'tap',target:function(){return R&&rectT(LY.lever.hitR)},until:function(){return R&&R.pracDone},text:'回路が閉じた！ 右の **スイッチ** を **タップ** して倒そう'}
   ],
   clearText:'れんしゅうクリア！',
-  onExit:function(){var r=PRAC_RET;PRAC_RET=null;if(!r)return;R=null;if(r==='pred'){startPred('lamp');predCoach()}else setScene(r)}};
+  onExit:function(){var r=PRAC_RET;PRAC_RET=null;if(!r)return;R=null;if(r==='pred'){beginLampPred()}else setScene(r)}};
 function tubeT(i){return function(){if(!PR)return null;var g=predGeo(),tb=g.tubes[i];return{x:tb.x+tb.w/2,y:tb.y+tb.h*.9,r:Math.max(26,tb.w*.55),el:cv}}}
 function predCoach(){if(!window.Guide||!PR)return;var g=predGeo();
   Guide.coach([
@@ -4365,10 +4393,10 @@ function predCoach(){if(!window.Guide||!PR)return;var g=predGeo();
     {gesture:'swipe',dir:'up',dist:g.tubes[1].h*.8,target:tubeT(1),area:function(){var tb=predGeo().tubes[1];return{x:tb.x+tb.w/2,y:tb.y+tb.h/2,w:tb.w+24,h:tb.h+24,el:cv}},until:function(){return PR&&PR.lv[1]>0},label:'なぞる',
      text:'**流れ出る粒**（後）の管にも。前より多い？ 同じ？ 少ない？ **自分の予想** の高さまで'},
     {gesture:'tap',target:function(){return $('reasons').firstElementChild},area:'#reasons',until:function(){return PR&&PR.reason},text:'そう考えた **理由の札** を、どれか1枚 **タップ**'},
-    {gesture:'tap',target:'#bSeal',until:function(){return PR&&PR.sealed},text:'**封蝋で封じる** をタップ。答えは実験のあとで'}
+    {gesture:'tap',target:'#bSeal',until:function(){return PR&&PR.sealed},text:'**封蝋で封じる** をタップ。答えは屋敷の最後の部屋のあとで'}
   ],{key:GID+'-pred',praise:false})}
-function helpRules(){if(scene==='pred')return['2本の管を指で **なぞって**、豆電球の **前と後** に流れる粒の量を予想する','理由の札を1枚えらんで **封蝋で封じる**','答えはゲームの中では出ない。実験のあと、表紙の「封を開ける」でくらべる'];
-  var r=['緑のつまみの **ピン** をタップで抜くと、上の部品が **ごとん** と落ちる（下の物から先に）','**すべり板** もタップで外せる。外すかどうかで落ちる先が変わる','電流計を豆電球の **前と後** の切れ目にそろえて、右の **スイッチ** をタップ','木栓・電圧計を切れ目に入れない。電流計の＋端子は電池の＋極側へ'];
+function helpRules(){if(scene==='pred')return['2本の管を指で **なぞって**、豆電球の **前と後** に流れる粒の量を予想する','理由の札を1枚えらんで **封蝋で封じる**','答えは、屋敷の最後の部屋のあとで開ける（実験した人は、表紙の「封を開ける」で自分の値とも比べられる）'];
+  var r=['緑のつまみの **ピン** をタップで抜くと、上の部品が **ごとん** と落ちる（下の物から先に）','**すべり板** もタップで外せる。外すかどうかで落ちる先が変わる','電流計を豆電球の **前と後** の切れ目にそろえて、右の **スイッチ** をタップ','木栓・電圧計を切れ目に入れない。電流計の＋端子は電池の＋極側へ','電流＝回路を流れる電気の流れ（単位A・1A＝1000mA）。電流計は切れ目に入れる（**直列**）。電圧計は両はしをまたぐ（**並列**）'];
   if(R&&!R.prac&&R.D.hint)r.push('この部屋：'+R.D.hint);return r}
 if(window.Guide){
   Guide.setup({theme:{bg:'#2a170b',fg:'#F3D9A4',accent:'#D8B24C',accentText:'#24150C',font:FM,bodyFont:FM,radius:2,
@@ -4399,6 +4427,109 @@ $('bEnv1').onclick=function(){var s=readSeal(),p=SV.pred;if(!p){return}
     $('eRes').innerHTML='<p>結果：前 '+b+'・後 '+a+' → <b>「'+res+'」</b>（少しの差は、電流計や読み方の誤差の範囲と考えてよい）<br>予想「'+esc(p.cat)+'」と'+(res===p.cat?'<b>同じだった</b>':'<b>ちがった</b>。どうしてちがったのかを考えよう')+'</p>'};
   $('eCmp').onclick=cmp;$('eSample').onclick=function(){$('eB').value='0.18';$('eA').value='0.18';cmp()}};
 $('envClose').onclick=function(){$('scrEnv').classList.add('hidden')};
+
+
+/* ================= まなぶ札（巻物）：用語・答え合わせを「その前」に教える（2026-10-06 初心者向け） ================= */
+var LRN=null;
+function fmtL(s){return esc(s).replace(/\*\*(.+?)\*\*/g,'<b>$1</b>')}
+function teach(kick,pages,done){LRN={k:kick,p:pages,i:0,done:done};if(HELP)HELP.hide();showLearn()}
+function lEnd(){var it=document.querySelector('#scrLearn .ita');if(it)try{it.scrollTo({top:it.scrollHeight,behavior:RM?'auto':'smooth'})}catch(e){it.scrollTop=it.scrollHeight}}
+function showLearn(){var L=LRN,pg=L.p[L.i];$('scrLearn').classList.remove('hidden');$('lKick').textContent=L.k;$('lT').textContent=pg.t;
+  var f=$('lFig');if(pg.fig){f.innerHTML=pg.fig;f.classList.remove('hidden')}else{f.innerHTML='';f.classList.add('hidden')}
+  $('lP').innerHTML=pg.p.split('\n').map(function(x){return '<p>'+fmtL(x)+'</p>'}).join('');
+  var q=$('lQ'),nb=$('lNext');q.innerHTML='';nb.textContent=L.i+1>=L.p.length?(pg.last||'わかった'):'次へ';$('lPg').textContent=L.p.length>1?(L.i+1)+' / '+L.p.length:'';
+  if(pg.q){var qq=pg.q;nb.classList.add('hidden');q.innerHTML='<div class="ask">やってみよう：'+fmtL(qq.ask)+'</div><div class="opts"></div><div class="why"></div>';var box=q.querySelector('.opts'),wy=q.querySelector('.why');
+    qq.c.map(function(t,i){return{t:t,ok:i===0}}).sort(function(){return Math.random()-.5}).forEach(function(o){var b=document.createElement('button');b.className='fuda d sm';b.textContent=o.t;
+      b.onclick=function(){ac();if(o.ok){SFX.lamp();[].forEach.call(box.children,function(x){x.disabled=true});b.disabled=false;b.className='fuda g sm';wy.innerHTML='<b>そのとおり。</b>'+fmtL(qq.why);nb.classList.remove('hidden');setTimeout(lEnd,60)}
+        else{SFX.bad();b.disabled=true;wy.innerHTML='<b class="ng">ちがう。</b>'+fmtL(qq.hint||'もう一度、上の説明を読んでみよう');setTimeout(lEnd,60)}};box.appendChild(b)})}
+  else nb.classList.remove('hidden');
+  var it=document.querySelector('#scrLearn .ita');if(it)it.scrollTop=0}
+$('lNext').onclick=function(){ac();var L=LRN;if(!L)return;L.i++;if(L.i>=L.p.length){$('scrLearn').classList.add('hidden');LRN=null;SFX.kachi();if(HELP&&(scene==='room'||scene==='pred'))HELP.show();if(L.done)L.done();return}SFX.goton();showLearn()};
+
+/* ---- 図（回路図）を描く ---- */
+function loopIn(o){o=o||{};var L=50,Rr=262,T=34,B=160,M=97,s='',i;
+  s+='<rect x="'+L+'" y="'+T+'" width="'+(Rr-L)+'" height="'+(B-T)+'" fill="none" stroke="#222" stroke-width="2.5"/>';
+  if(o.par){var px=Rr+42;s+='<polyline points="'+Rr+','+(M-36)+' '+px+','+(M-36)+' '+px+','+(M+36)+' '+Rr+','+(M+36)+'" fill="none" stroke="'+(o.par.bad?'#9C2A1A':'#222')+'" stroke-width="2.5"'+(o.par.bad?' stroke-dasharray="6 4"':'')+'/><circle cx="'+Rr+'" cy="'+(M-36)+'" r="4" fill="#222"/><circle cx="'+Rr+'" cy="'+(M+36)+'" r="4" fill="#222"/>'+
+    '<circle cx="'+px+'" cy="'+M+'" r="15" fill="#fff" stroke="#222" stroke-width="2.5"/><text x="'+px+'" y="'+(M+6)+'" font-size="17" font-weight="700" text-anchor="middle" fill="#222">'+o.par.k+'</text>'}
+  /* 電池：長い線が＋極 */
+  s+='<rect x="'+(L-16)+'" y="'+(M-13)+'" width="32" height="26" fill="#EFE4CB"/><line x1="'+(L-15)+'" y1="'+(M-6)+'" x2="'+(L+15)+'" y2="'+(M-6)+'" stroke="#222" stroke-width="2.5"/><line x1="'+(L-7)+'" y1="'+(M+6)+'" x2="'+(L+7)+'" y2="'+(M+6)+'" stroke="#222" stroke-width="6"/>'+
+    '<text x="'+(L-24)+'" y="'+(M-1)+'" font-size="16" font-weight="700" fill="#9C2A1A" text-anchor="middle">＋</text><text x="'+(L-24)+'" y="'+(M+14)+'" font-size="16" font-weight="700" fill="#222" text-anchor="middle">−</text>';
+  if(o.batLab)s+='<text x="'+(L+20)+'" y="'+(M-2)+'" font-size="12" font-weight="700" fill="#9C2A1A">＋極（長い線）</text><text x="'+(L+20)+'" y="'+(M+14)+'" font-size="12" font-weight="700" fill="#222">−極（短い線）</text>';
+  /* 豆電球（またはモーター） */
+  if(o.lit)s+='<circle cx="'+Rr+'" cy="'+M+'" r="26" fill="#FFD66E" opacity=".55"/>';
+  s+='<circle cx="'+Rr+'" cy="'+M+'" r="14" fill="'+(o.lit?'#FFE9A8':'#fff')+'" stroke="#222" stroke-width="2.5"/>'+(o.motor?'<text x="'+Rr+'" y="'+(M+6)+'" font-size="16" font-weight="700" text-anchor="middle">M</text>':'<path d="M'+(Rr-9)+' '+(M-9)+'L'+(Rr+9)+' '+(M+9)+'M'+(Rr+9)+' '+(M-9)+'L'+(Rr-9)+' '+(M+9)+'" stroke="#222" stroke-width="2.5"/>');
+  s+='<text x="'+(Rr-22)+'" y="'+(M+5)+'" font-size="13" font-weight="700" text-anchor="end" fill="#222">'+(o.motor?'モーター':'豆電球')+'</text>';
+  /* 計器 */
+  (o.m||[]).forEach(function(m){var y=m.w==='bot'?B:T,x=m.x;s+='<circle cx="'+x+'" cy="'+y+'" r="15" fill="#fff" stroke="#222" stroke-width="2.5"/><text x="'+x+'" y="'+(y+6)+'" font-size="17" font-weight="700" text-anchor="middle" fill="#222">'+(m.k||'A')+'</text>';
+    if(o.term){var pl=m.w==='bot'?1:-1;s+='<text x="'+(x+pl*24)+'" y="'+(y-6)+'" font-size="15" font-weight="700" text-anchor="middle" fill="#9C2A1A">＋</text><text x="'+(x-pl*24)+'" y="'+(y-6)+'" font-size="15" font-weight="700" text-anchor="middle" fill="#222">−</text>'}
+    if(m.v)s+='<text x="'+x+'" y="'+(m.w==='bot'?y+34:y-21)+'" font-size="15" font-weight="700" text-anchor="middle" fill="#2E6B41">'+m.v+'</text>';
+    if(m.lab)s+='<text x="'+x+'" y="'+(m.w==='bot'?y-23:y+36)+'" font-size="13" font-weight="700" text-anchor="middle" fill="#5A2E1A">'+m.lab+'</text>'});
+  /* 電流の向きの矢印 */
+  if(o.arr){var ac2='#9C2A1A',mx=(L+Rr)/2-40;s+='<path d="M'+(mx-8)+' '+(T-7)+'L'+(mx+8)+' '+T+'L'+(mx-8)+' '+(T+7)+'Z" fill="'+ac2+'"/><path d="M'+(mx+8)+' '+(B-7)+'L'+(mx-8)+' '+B+'L'+(mx+8)+' '+(B+7)+'Z" fill="'+ac2+'"/>'+
+    '<path d="M'+(Rr-7)+' '+(B-30)+'L'+Rr+' '+(B-14)+'L'+(Rr+7)+' '+(B-30)+'Z" fill="'+ac2+'"/><path d="M'+(L-7)+' '+(T+30)+'L'+L+' '+(T+14)+'L'+(L+7)+' '+(T+30)+'Z" fill="'+ac2+'"/>';
+    if(o.arrLab!==false)s+='<text x="'+mx+'" y="'+(T-12)+'" font-size="12" font-weight="700" text-anchor="middle" fill="'+ac2+'">電流の向き</text>'}
+  /* 流れる粒 */
+  if(o.flow){var pth='M'+L+' '+(M-14)+'L'+L+' '+T+'L'+Rr+' '+T+'L'+Rr+' '+B+'L'+L+' '+B+'Z';for(i=0;i<10;i++){var px2=L+((Rr-L)*i/10);
+    s+='<circle r="4.5" fill="#D8B24C" stroke="#5A2E1A" stroke-width="1"'+(RM?' cx="'+px2+'" cy="'+T+'"':'')+'>'+(RM?'':'<animateMotion dur="7s" repeatCount="indefinite" begin="-'+(i*.7).toFixed(1)+'s" path="'+pth+'"/>')+'</circle>'}}
+  (o.n||[]).forEach(function(n){s+='<text x="'+n[0]+'" y="'+n[1]+'" font-size="'+(n[4]||13)+'" font-weight="700" text-anchor="'+(n[3]||'middle')+'" fill="'+(n[5]||'#222')+'">'+n[2]+'</text>'});
+  return s}
+function loopSVG(o){return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 330 200" font-family="sans-serif">'+loopIn(o)+'</svg>'}
+function meterSVG(v,term){var s='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 184" font-family="sans-serif"><rect x="4" y="4" width="292" height="176" fill="#fbf8ef" stroke="#8A5A2E" stroke-width="2"/>',cx=150,cy=150,r=110,i;
+  function pt(a,rr){var t=(a-90)*Math.PI/180;return[(cx+Math.cos(t)*rr).toFixed(1),(cy+Math.sin(t)*rr).toFixed(1)]}
+  var a0=pt(-50,r),a1=pt(50,r);s+='<path d="M'+a0[0]+' '+a0[1]+'A'+r+' '+r+' 0 0 1 '+a1[0]+' '+a1[1]+'" stroke="#222" stroke-width="2" fill="none"/>';
+  for(i=0;i<=50;i++){var a=-50+i*2,big=i%10===0,p1=pt(a,r),p2=pt(a,r-(big?14:i%5===0?9:5));s+='<line x1="'+p1[0]+'" y1="'+p1[1]+'" x2="'+p2[0]+'" y2="'+p2[1]+'" stroke="#222" stroke-width="'+(big?2:1)+'"/>';
+    if(big){var p3=pt(a,r-30);s+='<text x="'+p3[0]+'" y="'+(+p3[1]+5)+'" font-size="15" text-anchor="middle" font-weight="700">'+(i/10)+'</text>'}}
+  var pn=pt(-50+v*20,r-4);s+='<line x1="'+cx+'" y1="'+cy+'" x2="'+pn[0]+'" y2="'+pn[1]+'" stroke="#c0322f" stroke-width="3"/><circle cx="'+cx+'" cy="'+cy+'" r="6" fill="#222"/>';
+  s+='<text x="262" y="160" font-size="26" text-anchor="middle" font-weight="700" fill="#c0322f">A</text><text x="16" y="172" font-size="14" font-weight="700">つないだ−端子：'+term+'</text></svg>';return s}
+function spSVG(){/* 直列と並列を左右にならべる */
+  return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 660 210" font-family="sans-serif"><g>'+loopIn({m:[{w:'top',x:150}],n:[[156,196,'直列：切れ目に入れる',,15,'#2E6B41']]})+'</g><g transform="translate(330,0)">'+loopIn({par:{k:'A',bad:1},n:[[156,196,'並列：両はしをまたぐ',,15,'#9C2A1A']]})+'</g></svg>'}
+
+/* ---- 予想の前に：電流・電流計 ---- */
+var T_PRE=[
+ {t:'電流ってなに？',fig:loopSVG({arr:1,flow:1,lit:1,batLab:1}),
+  p:'電池と豆電球を導線で **輪のように** つなぐと、豆電球が光る。この電気の通り道を **回路** という。\n回路を流れる電気の流れを **電流** という。電流は、電池の **＋極**（記号の長い線）から出て、豆電球を通り、**−極**（短い線）へもどる向き、と決められている。\n輪のどこかが切れていると、電流は流れない。',
+  q:{ask:'電池の記号で、電流が出ていくのはどちらの線？',c:['長い線（＋極）','短い線（−極）'],why:'電流は＋極（長い線）から出て、−極（短い線）へもどる。',hint:'図の矢印は、どちらの線から出ている？'}},
+ {t:'電流計 ─ 電流の大きさをはかる道具',fig:loopSVG({arr:1,arrLab:false,term:1,m:[{w:'top',x:180,lab:'電流計'}],n:[[120,186,'切れ目に入れる（電流が全部ここを通る）',,13,'#2E6B41']]}),
+  p:'電流の大きさは **電流計**（Ⓐ）ではかる。単位は **A（アンペア）**。小さい電流は **mA（ミリアンペア）** でも表す。**1A＝1000mA**。たとえば 0.18A＝180mA。\n電流計は、はかりたい所の **回路の切れ目に入れる**（電流が全部、電流計の中を通るように）。\n電流計の **＋端子（赤）** は電池の＋極側に、**−端子（黒）** は−極側につなぐ。',
+  q:{ask:'0.25A は何mA？',c:['250mA','25mA','2.5mA'],why:'1A＝1000mA なので、0.25A＝0.25×1000＝250mA。',hint:'1A＝1000mA。0.18A が 180mA だったのと同じように、0.25 に1000をかけよう'}},
+ {t:'この屋敷で たしかめること',fig:loopSVG({arr:1,arrLab:false,m:[{w:'top',x:200,v:'？',lab:'前（流れこむ側）'},{w:'bot',x:200,v:'？',lab:'後（流れ出る側）'}]}),
+  p:'豆電球の **前**（流れこむ側）と **後**（流れ出る側）に電流計を1つずつ入れると、豆電球を通る前と後の電流を **比べられる**。\n豆電球を通ると、電流は **減る？ 同じ？ 増える？** まず **自分の予想** を立てて、封蝋で封じよう。\n答えは、屋敷の最後の部屋のあとで開ける。',last:'予想を立てる'}];
+function beginLampPred(){if(SV.t0){startPred('lamp');predCoach();return}
+  teach('屋敷の巻物 ─ まなぶ',T_PRE,function(){SV.t0=1;save();startPred('lamp');predCoach()})}
+
+/* ---- 部屋に入る前に：その部屋で初めて出る言葉 ---- */
+var T_ROOM={
+ 3:[{t:'直列と並列 ─ 2つのつなぎ方',fig:spSVG(),
+  p:'**直列**＝1本道の **切れ目に入れる** つなぎ方。電流は全部その中を通る。\n**並列**＝豆電球の **両はしをまたいで** つなぐ つなぎ方。道が2つに分かれる。\n電流計は電流をとても通しやすい。豆電球と **並列** にすると、電流が豆電球をよけて電流計へどっと流れる（これを **ショート** という）。豆電球はつかず、電流計がこわれることもある。だから電流計は **直列** に入れる。\nこの部屋では、豆電球の真上の筒から落ちた部品は、豆電球をまたぐ受け（並列）に入る。',
+  q:{ask:'電流計は、豆電球とどうつなぐ？',c:['直列（切れ目に入れる）','並列（両はしをまたぐ）'],why:'電流計は直列。並列にするとショートする。',hint:'並列にすると、電流が豆電球をよけて電流計へ流れてしまう'}}],
+ 4:[{t:'電圧計 ─ もう1つの計器',fig:loopSVG({m:[{w:'top',x:150,k:'A',lab:'電流計（直列）'}],par:{k:'V'},n:[[326,156,'電圧計（並列）','end',13,'#2E6B41']]}),
+  p:'**電圧** は、電流を流そうとする はたらきの大きさ。単位は **V（ボルト）**。電圧は **電圧計**（Ⓥ）ではかる。\n電圧計は電流を **ほとんど通さない**。だから豆電球の両はしをまたいで **並列** につなぐ。\n切れ目（直列）に入れると、回路に電流がほとんど流れず、豆電球がつかない。\n**電流計（Ⓐ）は直列、電圧計（Ⓥ）は並列。**',
+  q:{ask:'電圧計を切れ目（直列）に入れると？',c:['電流がほとんど流れず、豆電球がつかない','豆電球が明るくなる','何も変わらない'],why:'電圧計は電流をほとんど通さないので、切れ目に入れると回路が止まったのと同じになる。',hint:'電圧計は電流を「ほとんど通さない」計器だった'}}],
+ 6:[{t:'電池の向きと＋端子',fig:loopSVG({arr:1,arrLab:true,term:1,batLab:1,m:[{w:'top',x:190},{w:'bot',x:190}]}),
+  p:'電池の記号は、**長い線が＋極**、**短い線が−極**。電流は＋極から出て−極へもどる。\n電流計の **＋端子（赤）** は、**電池の＋極側**（電流が入ってくる側）へつなぐ。上の図で、前の電流計と後の電流計で＋端子の側が逆になっているのは、電流の向きが逆だから。\n逆につなぐと、針が左（0より下）にふれて、はかれない。\nこの部屋は電池が **逆向き**。電流の向きも逆になるので、＋端子の向きに気をつけよう。',
+  q:{ask:'電流計の＋端子は、どちらにつなぐ？',c:['電池の＋極側','電池の−極側'],why:'＋端子は＋極側。電流が＋端子から入り、−端子から出ていくようにつなぐ。',hint:'電流が入ってくる側が＋端子'}}],
+ 9:[{t:'最後の部屋 ─ 電源装置',
+  p:'最後の部屋の電源は **電源装置**。電池と同じように **＋極と−極** があり、電流は＋極から出て−極へもどる。\nここまでの学びを全部使おう：\n・回路は輪のように閉じる（木栓は電流を通さない）\n・電流計は豆電球の **前と後** に、**直列** で\n・電圧計は並列（切れ目に入れない）\n・電流計の **＋端子は電池の＋極側**',last:'部屋に入る'}]};
+
+/* ---- 封を開ける：テストの前の答え合わせ ---- */
+function ansPages(){var p=SV.pred,cat=p?p.cat:null,hit=cat==='同じ';
+  return[
+ {t:'封を開ける ─ 実験の結果',fig:loopSVG({lit:1,arr:1,arrLab:false,m:[{w:'top',x:200,v:'0.18A',lab:'前'},{w:'bot',x:200,v:'0.18A',lab:'後'}]}),
+  p:'ある班が、豆電球の前と後に電流計を入れて実験した。\n結果は **前 0.18A・後 0.18A**。豆電球を通っても、電流の大きさは **同じ** だった。\n'+(cat?'あなたの予想は「'+cat+'」。'+(hit?'**予想どおり！**':'結果とは **ちがっていた**。どうしてか、次で考えよう。'):'（予想は封じていない）')+'\n自分の班で実験した人は、表紙の「封を開ける」で自分の値も入れて比べられる。',
+  q:{ask:'別の班は、豆電球の前 0.22A・後 0.22A だった。ここから言えることは？',c:['豆電球を通っても、電流の大きさは変わらない','豆電球で電流が使われて減る','豆電球を通ると電流が増える'],why:'前と後が同じ値。豆電球で電流は減りも増えもしない。',hint:'前と後の数字を比べよう。同じ？ちがう？'}},
+ {t:'なぜ、前と後で同じなのか',fig:loopSVG({lit:1,flow:1,arr:1,arrLab:false}),
+  p:'豆電球に流れこんだ電気の粒は、そのまま全部流れ出る。途中でたまったり、消えたりしない。\nだから **分かれ道のない1本道の回路では、電流はどこでも同じ大きさ**。豆電球のかわりに **モーター** をつないでも、前と後の電流は等しい。\nでは、なぜ豆電球は光る？ 電流が豆電球を通るとき、**電気のはたらき（エネルギー）が光や熱に変わる** から。水車を回しても、流れる水の量が減らないのと同じ。',
+  q:{ask:'1本道の回路で、豆電球の前の電流計が 0.40A を示した。豆電球の後は？',c:['0.40A','0.40A より小さい','0.40A より大きい'],why:'1本道の回路では、豆電球の前でも後でも電流は同じ。0.40A。',hint:'粒は豆電球でたまらず、消えもしない'}},
+ {t:'はかった値の見かた',
+  p:'ある班の記録が「前 0.26A、後 0.25A」だったら？ 電流計1台ずつのくせや、目盛りの読み方で、少しの差は出る。これを **誤差** という。少しの差は誤差の範囲と考えて **ほぼ等しい** と見る。ほかの班の結果とも合わせて考えよう。\n電流計が **1台しかない** ときは、前で測ったあと、**電池や豆電球など ほかの条件を変えずに** 後へつなぎかえて測る。\n「豆電球で電流が減るか」を確かめたいときは、**前と後の両方を測って比べる**。',
+  q:{ask:'記録が「前 0.31A、後 0.30A」。どう考える？',c:['誤差の範囲で、ほぼ等しい','豆電球で 0.01A 使われた','後の電流計がこわれている'],why:'少しの差は誤差。ほぼ等しいと考える。',hint:'少しの差は、電流計のくせや読み方でも出る'}},
+ {t:'電流計の目盛りの読み方',fig:meterSVG(2.6,'500mA'),
+  p:'電流計の **−端子** は3つ（**5A・500mA・50mA**）。どれだけ電流が流れるか分からないので、**はじめは一番大きい5Aにつなぐ**（針がふりきれて、こわれないように）。針のふれが小さすぎたら、500mA → 50mA とつなぎかえる。\n目盛りは0〜5。**つないだ−端子の大きさが、目盛りの5にあたる**。\n例：500mA端子で、針が **2.6** → 5が500mAなので、1は100mA。2.6は **260mA**。',
+  q:{ask:'500mA端子につないで、針が 3.2 を指した。電流は？',c:['320mA','32mA','3.2mA'],why:'500mA端子なので、目盛りの1が100mA。3.2は320mA。',hint:'500mA端子では、目盛りの5が500mA、1が100mA'}},
+ {t:'実験の進め方と 単位',
+  p:'実験は、この順で進める。\n① 予想と、そう考えた理由を書く\n② 電流計を入れる場所を決めて、回路図にかく\n③ **スイッチを切ったまま** 回路を組む（−端子は5Aから）\n④ 豆電球の前と後の値を読んで、記録する\n⑤ 予想と結果を比べて考える（**考察**）\n単位のまとめ：電流は **A（アンペア）**、電圧は **V（ボルト）**。W（ワット）は「電力」の単位で、あとの回で学ぶ。',
+  q:{ask:'回路を組むとき、スイッチはどうしておく？',c:['切ったまま組む','入れたまま組む','どちらでもよい'],why:'安全のため、スイッチは切ったまま組む。組み終わってから入れて、値を読む。',hint:'③を見よう。組んでいる途中に電流が流れると危ない'},last:'確認テストへ'}]}
+function ansCheck(next){R=null;PR=null;setScene('map');teach('封を開ける ─ 答え合わせ',ansPages(),function(){SV.ans=1;save();next()})}
 
 /* ================= 確認テスト（検め帳） ================= */
 var TQ=[],TI=0,TA=[],TOK=[],CARD=null,KAN=['一','二','三','四','五','六','七','八','九','十','十一','十二'];
@@ -4466,10 +4597,6 @@ if(window.PLAYER_NAME){$('nameIn').value=window.PLAYER_NAME;$('nmRow').classList
 if(TEST)startTest();else setScene('title');
 if(document.fonts&&document.fonts.ready)document.fonts.ready.then(function(){TEX={}});
 requestAnimationFrame(frame);
-/* 自動操作の確かめ用の窓口（遊びには影響しない） */
-window.__LP={R:function(){return R},scene:function(){return scene},SV:function(){return SV},room:function(i){loadRoom(i);setScene('room')},mroom:function(i){loadRoom(i,mirrorD(ROOMS[i]));setScene('room')},pull:pull,lever:pullLever,
-  step:function(){if(!R||R.state!=='play'||R.busy>0)return false;R.solI=R.solI||0;var a=R.D.sol[R.solI];if(!a)return false;R.solI++;if(a==='lever')pullLever();else pull(a);return true},
-  box:function(){openBox()},pred:function(a,b){if(!PR)startPred('lamp');PR.lv=[a,b];predRefresh();PR.reason=REASONS[predCat()][0];$('bSeal').classList.remove('hidden')},seal:sealPred,startPred:startPred};
 })();
 </script>
 <script>window.ZUKAN_COUNTER={"db": "https://rika-zukan-rank-default-rtdb.asia-southeast1.firebasedatabase.app", "id": "lamp-pin-nuki"};

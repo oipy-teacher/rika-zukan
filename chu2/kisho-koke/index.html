@@ -105,6 +105,10 @@ body:not(.wide) #tools .fd.s{min-height:44px;font-size:15px;padding:4px 10px}
 .jiku .sm{font-size:13.5px;color:var(--gray)}
 .jiku .row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:12px}
 .jiku .row .fd{flex:1 1 auto}
+/*@LEARN2*/.lfig{text-align:center;margin:4px 0}.lfig svg{width:100%;height:auto;max-height:30vh}.lfig.sm2 svg{max-height:22vh}
+.lch{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}.lch .fd{font-size:16px;min-height:48px;padding:8px 10px;line-height:1.3}.lch .fd.ng{opacity:.4}.lch .fd.ok{outline:3px solid var(--moss);outline-offset:2px}
+.lfb{min-height:24px;margin:8px 0 0;font-size:15.5px;line-height:1.55}.lfb.bad{color:#b4462e;font-weight:700}.lfb.good{color:#2f5a26}
+.lfoot{position:sticky;bottom:-20px;margin:10px -22px -20px;padding:10px 22px 14px;background:var(--paper);border-top:1px solid rgba(30,42,34,.18);display:flex;gap:10px;z-index:2}.lfoot .fd{flex:1 1 auto}.lfoot .fd[disabled]{opacity:.35;pointer-events:none}.lfoot .fd.back{flex:0 0 auto;font-size:16px}
 .seal{display:inline-flex;align-items:center;justify-content:center;width:74px;height:74px;background:var(--ink);color:var(--paper);font-family:var(--fh);font-size:46px;border-radius:6px 9px 5px 8px;transform:rotate(-4deg);box-shadow:inset 0 0 0 4px var(--ink),inset 0 0 0 6px rgba(242,244,238,.7);float:right;margin:0 0 6px 10px;animation:seal .45s cubic-bezier(.2,1.6,.4,1)}
 .seal.g{background:var(--moss);box-shadow:inset 0 0 0 4px var(--moss),inset 0 0 0 6px rgba(242,244,238,.7)}
 @keyframes seal{from{transform:scale(2.4) rotate(-14deg);opacity:0}}
@@ -4084,7 +4088,7 @@ function rebuild(){if(MODE==='day'&&DY){buildRoom(DY.d.r)}else if(MODE==='title'
 /* ===== 状態 ===== */
 let MODE='title',DY=null,fogCur=0,fogDirty=true,tt=0,PAUSED=false,PFIRST=false;const PT=[];
 function roomOf(i){return DAYS[i].r}
-function startDay(i,pr){ac();if(i>=DAYS.length){toMap();return}const d=DAYS[i],r=ROOMS[d.r];if(pr!=='replay'&&S.roomSeen!==d.r){S.roomSeen=d.r;S.mistLeft=3;save()}
+function startDay(i,pr){if(i<DAYS.length&&learnGate(pr?0:i,()=>startDay(i,pr)))return;ac();if(i>=DAYS.length){toMap();return}const d=DAYS[i],r=ROOMS[d.r];if(pr!=='replay'&&S.roomSeen!==d.r){S.roomSeen=d.r;S.mistLeft=3;save()}
  DY={i,d,r,T:d.T0,Tset:d.T0,v:d.v,plan:{mist:0,vent:0},phase:'set',tries:0,mistToday:0,ventToday:0,first:true,anim:null,dt:0,dur:20,started:false,
   samples:[],guide:[],dabs:0,stray:0,inb:0,tot:0,off:0,strokes:[],curS:null,drips:[],dripT:0,res:null,setT:0,rule1:false,hStart:hum(d.v,d.T0),vShow:false,varP:0,wiping:{},practice:pr||null,covN:0,mile:0,lastNote:0};
  MODE='day';if(window.BGM)BGM.mood('calm');document.body.classList.toggle('prac',!!pr);if(pr!=='replay'){S.day=i;S.started=true;save()}fogCur=fogF(DY.hStart);show('day');builtRoom=-1;buildRoom(d.r);WC.getContext('2d').clearRect(0,0,WC.width,WC.height);
@@ -4222,14 +4226,14 @@ const PRACTICE={get label(){return wide?'れんしゅう中 ─ 小窓の間':'�
    until:()=>!!(DY&&DY.phase==='draw'&&covRate()>=.7),wait:200,text:'くもった窓の **下絵を指でなぞって** 拭きとる。外の苔の庭がのぞく'},
   {gesture:'tap',label:'筆をおく',target:'#tDone',until:()=>!!(DY&&(DY.phase==='done')),praise:false,text:'描けたら **筆をおく**'}
  ]};
-function beginFirst(){if(!window.Guide){startDay(0);return}Guide.intro(INTRO).then(()=>{PFIRST=true;Guide.tutorial(PRACTICE)})}
+function beginFirst(){if(!window.Guide){startDay(0);return}Guide.intro(INTRO).then(()=>{PFIRST=true;if(!learnGate(0,()=>Guide.tutorial(PRACTICE)))Guide.tutorial(PRACTICE)})}
 if(window.Guide){
  Guide.setup({theme:GTHEME,title:INTRO.title,learn:INTRO.learn,how:INTRO.how,
   sfx:k=>{ac();if(k==='step')sfx.ok();else if(k==='done')sfx.kon();else if(k==='clear')sfx.fan();else if(k==='open'||k==='close'||k==='nudge')sfx.tap();else if(k==='cheer')koto(7,0,.16)},
   muted:()=>!S.snd});
  HELPC=Guide.help({rules:['**室温の円相** を回す（−／＋でも）→ 湿度が **注文の帯（緑）** に入ったら「決める」','室温を **下げる** と飽和水蒸気量が小さくなり、**湿度が上がる**（水を足さなくても）','くもった窓の **下絵をなぞって** 拭きとる → 線香が燃えつきる前に「筆をおく」','**霧吹き**＝水蒸気 +2.0g／**換気**＝中と外の水蒸気のまん中に','湿度 **95%以上** は水滴が流れて、絵がくずれる'],
   onOpen:()=>{PAUSED=true},onClose:()=>{PAUSED=false},replay:'tutorial',mount:$('#hudR'),size:46,attention:true,show:false});
- Guide.tutorialButton('#bHow',()=>{ac();sfx.tap();PFIRST=false;Guide.tutorial(PRACTICE)});
+ Guide.tutorialButton('#bHow',()=>{ac();sfx.tap();PFIRST=false;if(!learnGate(0,()=>Guide.tutorial(PRACTICE)))Guide.tutorial(PRACTICE)});
 }else $('#bHow').classList.add('hidden');
 document.addEventListener('pointerdown',e=>{if(e.target&&e.target.closest&&e.target.closest('.fd'))vib(8)},true);
 
@@ -4362,7 +4366,7 @@ function drawMap(){if(!BG)return;cx.drawImage(BG,0,0,W,H);const N=mapNodes(),R=R
 /* ===== 確認テスト ===== */
 let TS=null;function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
 function playerName(){return window.PLAYER_NAME||S.name||''}
-function startTest(){if(!window.Quiz)return;ovClose();MODE='test';DY=null;show('test');buildMap();TS={qs:Quiz.test(),i:0,ans:[]};renderQ()}
+function startTest(){if(!window.Quiz)return;if(learnGate('test',startTest))return;ovClose();MODE='test';DY=null;show('test');buildMap();TS={qs:Quiz.test(),i:0,ans:[]};renderQ()}
 function renderQ(){const q=TS.qs[TS.i],box=$('#tbox');box.innerHTML='<div class="tno">確認テスト　第'+(TS.i+1)+'問 / '+TS.qs.length+'</div><div class="prog">'+TS.qs.map((_,i)=>'<i class="'+(i<TS.i?'on':'')+'"></i>').join('')+'</div><div class="tq">'+q.q+'</div>'+(q.fig?'<div class="fig2">'+q.fig+'</div>':'')+'<div id="ta"></div>';const ta=$('#ta');
  if(q.t==='choice'){const d=document.createElement('div');d.className='ch';q.shown.forEach(c=>{const b=document.createElement('button');b.className='fd';b.innerHTML=c;b.onclick=()=>ans(c);d.appendChild(b)});ta.appendChild(d)}
  else if(q.t==='num'){ta.innerHTML='<div class="numrow"><input id="numIn" inputmode="decimal" autocomplete="off" placeholder="数を入力"><b>'+esc(q.unit||'')+'</b><button class="fd sumi" id="numOk">決定</button></div>';$('#numOk').onclick=()=>{const v=$('#numIn').value.trim();if(v==='')return;ans(v)}}
@@ -4384,11 +4388,54 @@ addEventListener('resize',()=>{clearTimeout(window.__rz);window.__rz=setTimeout(
 try{window.Zukan&&Zukan.setup&&Zukan.setup({game:GID,koma:[KOMA]})}catch(e){}
 setSnd();if(window.PLAYER_NAME){$('#nameIn').value=window.PLAYER_NAME;$('#nameRow').classList.add('hidden')}else if(S.name)$('#nameIn').value=S.name;
 resize();
+/* ===== まなぶ（夜間改修 2026-10-06：初心者向け。湿度の式は「式→数を入れた例→やらせる」。逆向き・露点・水滴も使う前に教える） ===== */
+const LBOX=(cap,v,lab,pct)=>{const h=90,fill=Math.min(1,v/cap);return '<g><rect x="0" y="0" width="80" height="'+h+'" fill="#F2F4EE" stroke="#1E2A22" stroke-width="2.5"/><rect x="0" y="'+(h*(1-fill))+'" width="80" height="'+(h*fill)+'" fill="#7FA36A"/><text x="40" y="'+(h*(1-fill)+18)+'" text-anchor="middle" fill="#1E2A22" font-weight="700">水蒸気'+v+'g</text><text x="40" y="-6" text-anchor="middle" fill="#1E2A22">'+lab+'</text><text x="40" y="'+(h+18)+'" text-anchor="middle" fill="#4F7942" font-weight="700">'+pct+'</text></g>'};
+const LSVG={
+ shiki:'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 140" font-size="12" font-family="Zen Maru Gothic,sans-serif"><g transform="translate(30 22)">'+LBOX(12.8,6.4,'15℃ 満杯は12.8g','6.4÷12.8×100＝50％')+'</g>'
+  +'<g transform="translate(200 22)"><rect x="0" y="0" width="80" height="90" fill="#F2F4EE" stroke="#1E2A22" stroke-width="2.5"/><rect x="0" y="0" width="80" height="90" fill="#7FA36A"/><text x="40" y="50" text-anchor="middle" fill="#1E2A22" font-weight="700">満杯</text><text x="40" y="-6" text-anchor="middle" fill="#1E2A22">満杯（飽和水蒸気量）</text><text x="40" y="108" text-anchor="middle" fill="#4F7942" font-weight="700">＝湿度100％</text></g></svg>',
+ cool:'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 150" font-size="12" font-family="Zen Maru Gothic,sans-serif"><g transform="translate(20 26)"><rect x="0" y="0" width="110" height="94" fill="#F2F4EE" stroke="#1E2A22" stroke-width="2.5"/><text x="55" y="-8" text-anchor="middle" fill="#1E2A22">15℃（満杯12.8g）</text><rect x="0" y="0" width="110" height="94" fill="#7FA36A"/><text x="55" y="52" text-anchor="middle" fill="#1E2A22" font-weight="700">水蒸気12.8g</text></g>'
+  +'<text x="160" y="76" text-anchor="middle" fill="#1E2A22" font-size="20">→</text><text x="160" y="96" text-anchor="middle" fill="#1E2A22">冷やす</text>'
+  +'<g transform="translate(200 26)"><text x="50" y="-8" text-anchor="middle" fill="#1E2A22">5℃（満杯6.8g）</text><rect x="0" y="44" width="100" height="50" fill="#7FA36A" stroke="#1E2A22" stroke-width="2.5"/><text x="50" y="74" text-anchor="middle" fill="#1E2A22" font-weight="700">6.8g</text>'
+  +[[14,26],[34,18],[54,30],[74,20],[24,6],[64,8]].map(p=>'<path d="M'+p[0]+' '+p[1]+' q4 -9 8 0 a4 4 0 0 1 -8 0z" fill="#3a6fa0"/>').join('')+'<text x="50" y="112" text-anchor="middle" fill="#3a6fa0" font-weight="700">水滴 12.8−6.8＝6.0g</text></g></svg>',
+ graph:'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 160" font-size="11" font-family="Zen Maru Gothic,sans-serif"><path d="M40 10 V132 H306" fill="none" stroke="#1E2A22" stroke-width="2"/>'
+  +'<polyline fill="none" stroke="#4F7942" stroke-width="3" points="'+[0,5,10,15,20,25,30].map(t=>{const v=[4.8,6.8,9.4,12.8,17.3,23.1,30.4][t/5];return (40+t*8.6).toFixed(1)+','+(132-v*3.7).toFixed(1)}).join(' ')+'"/>'
+  +[0,10,20,30].map(t=>'<text x="'+(40+t*8.6)+'" y="146" text-anchor="middle" fill="#1E2A22">'+t+'℃</text>').join('')+'<text x="44" y="16" fill="#1E2A22">水蒸気 g/m³</text>'
+  +'<circle cx="'+(40+30*8.6)+'" cy="'+(132-15.2*3.7)+'" r="5" fill="#1E2A22"/><text x="306" y="'+(132-15.2*3.7+20)+'" text-anchor="end" fill="#1E2A22">A 30℃</text><text x="306" y="'+(132-15.2*3.7+34)+'" text-anchor="end" fill="#1E2A22">水蒸気15.2g</text>'
+  +'<circle cx="'+(40+5*8.6)+'" cy="'+(132-6.1*3.7)+'" r="5" fill="#b4462e"/><text x="'+(40+5*8.6+6)+'" y="126" fill="#b4462e">B 5℃・水蒸気6.1g</text>'
+  +'<text x="'+(40+27*8.6)+'" y="'+(132-30.4*3.7+14)+'" text-anchor="end" fill="#4F7942" font-weight="700">飽和水蒸気量（満杯）</text></svg>'
+};
+const LEARN={
+ shiki:{cards:[
+  {h:'湿度の式（やって見せる）',fig:LSVG.shiki,b:'<p><b>飽和水蒸気量</b>＝空気1m³がふくむことのできる水蒸気の<b>いちばん多い量</b>（満杯の量）。<b>気温が高いほど大きい</b>（右上の「表」で見られる）。</p><p><b>湿度</b>＝空気のしめりぐあい。満杯の何％入っているか。</p><p class="why"><b>湿度（％）＝ 水蒸気の量 ÷ 飽和水蒸気量 × 100</b></p><p>例：15℃の空気1m³に水蒸気 6.4g。15℃の飽和水蒸気量は 12.8g。<br>6.4 ÷ 12.8 ＝ 0.5 → ×100 → <b>湿度50％</b></p><p class="sm">手順：①気温をはかる ②その気温の飽和水蒸気量を表で読む ③水蒸気の量を飽和水蒸気量でわる ④100をかけて％にする</p>',
+   q:{q:'こんどは自分で。30℃の空気1m³に水蒸気 22.8g。30℃の飽和水蒸気量は 30.4g。湿度は？',ch:['75％','25％','133％','52％'],a:0,hint:'水蒸気の量 ÷ 飽和水蒸気量。30.4 を4つに分けると 7.6。22.8 は その3つ分 → 0.75 → ×100。',ok:'22.8÷30.4＝0.75 → 75％。'}},
+  {h:'冷やすと湿度が上がる',b:'<p>式の<b>分母</b>は飽和水蒸気量（満杯の量）。気温を<b>下げる</b>と満杯の量が小さくなるので、水を足さなくても<b>湿度は上がる</b>。気温を<b>上げる</b>と湿度は下がる（暖房した冬の部屋が乾燥する／晴れた日の昼に湿度が下がるのはこのため）。</p><p>水蒸気を<b>増やす</b>（霧吹き）と分子が大きくなって湿度は上がる。乾いた外の空気と入れかえる（<b>換気</b>）と分子が小さくなって湿度は下がる。</p>',
+   q:{q:'夜、暖房を消して部屋の気温が下がった。水蒸気の量は変わらない。湿度はどうなる？',ch:['上がる','下がる','変わらない'],a:0,hint:'気温が下がると、分母（満杯の量）が小さくなる。同じ水蒸気でも、満杯に近づくのは…',ok:'満杯の量が小さくなるので、湿度は上がる。'}}]},
+ gyaku:{cards:[
+  {h:'逆向き：湿度から水蒸気の量を出す',b:'<p>湿度が分かっていれば、水蒸気の量も出せる。</p><p class="why"><b>水蒸気の量 ＝ 飽和水蒸気量 × 湿度（％を小数に）</b></p><p>例：20℃・湿度50％の空気1m³。<br>17.3 × 0.50 ＝ <b>8.65g</b></p><p><b>部屋全体</b>の水蒸気は、1m³あたりの量 × 部屋の体積（m³）。例：8.65g × 10m³ ＝ 86.5g。</p><p class="sm">朝と昼で水蒸気の量をくらべるときも、それぞれ「飽和水蒸気量×湿度」を出してくらべる。</p>',
+   q:{q:'こんどは自分で。10℃・湿度50％の空気1m³。10℃の飽和水蒸気量は 9.4g。水蒸気は何g？',ch:['4.7g','18.8g','9.4g','50g'],a:0,hint:'9.4 × 0.50。50％は半分。',ok:'9.4×0.50＝4.7g。'}}]},
+ roten:{cards:[
+  {h:'満杯をこえて冷やすと…（露点と水滴）',fig:LSVG.cool,b:'<p>水蒸気の量を変えずに冷やしていくと、やがて満杯（湿度100％）になる。水蒸気が水滴に変わり始めるこの温度が<b>露点</b>。</p><p>さらに冷やしても湿度は100％をこえない。入りきらない分が<b>水滴</b>になる（窓のくもり・結露）。</p><p class="why">水滴の量 ＝ もとの水蒸気の量 − 冷やした温度の飽和水蒸気量</p><p>例：水蒸気12.8gの15℃の空気を5℃（満杯6.8g）まで冷やす → 12.8−6.8＝<b>6.0g</b>の水滴。</p>',
+   q:{q:'水蒸気 9.4g をふくむ10℃の空気（満杯）を、5℃（満杯 6.8g）まで冷やした。水滴は何g できる？',ch:['2.6g','6.8g','9.4g','16.2g'],a:0,hint:'水滴＝もとの水蒸気の量 − 冷やした温度の満杯の量。9.4 − 6.8 は？',ok:'9.4−6.8＝2.6g が水滴になる。空気は満杯のまま（湿度100％）。'}},
+  {h:'グラフで湿度を見くらべる',fig:LSVG.graph,b:'<p>曲線＝気温ごとの飽和水蒸気量（満杯の量）。点＝その空気の気温と水蒸気の量。</p><p>点が<b>曲線に近いほど</b>、満杯に近い＝<b>湿度が高い</b>。水蒸気の量が多くても、気温が高い（満杯の量が大きい）と湿度は低いことがある。</p>',
+   q:{q:'図のAとB、湿度が高いのは？',ch:['A（水蒸気が多い）','B（曲線に近い）'],a:1,fig:1,hint:'くらべるのは水蒸気の量ではなく「満杯にどれだけ近いか」。Aは30℃の満杯30.4gの半分、Bは5℃の満杯6.8gのほとんど。',ok:'Bは曲線に近い＝満杯に近い（6.1÷6.8＝約90％）。Aは15.2÷30.4＝50％。'}}]}
+};
+function learned(k){return !!(S.learn&&S.learn[k])}
+function learnNeed(x){const n=[];if(!learned('shiki'))n.push('shiki');if((x==='test'||x>=3)&&!learned('gyaku'))n.push('gyaku');if((x==='test'||x>=6)&&!learned('roten'))n.push('roten');return n}
+function learnGate(x,then){if(TEST_ONLY)return false;const n=learnNeed(x);if(!n.length)return false;learnRun(n,then);return true}
+function learnRun(keys,then){const pages=[];keys.forEach(k=>LEARN[k].cards.forEach(c=>{const o=Object.assign({},c);pages.push({c:o,try:0});if(o.q)pages.push({c:o,try:1})}));let pi=0;
+ const mix=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const r=Math.floor(Math.random()*(i+1));[a[i],a[r]]=[a[r],a[i]]}return a};
+ const step=()=>{const P0=pages[pi],c=P0.c,last=pi===pages.length-1,nx=last?'わかった！ 先へ':(pages[pi+1].try?'やってみよう ▶':'つぎへ ▶');
+  let h='<p class="sm">まなぶ　'+(pi+1)+' / '+pages.length+'</p>';
+  if(!P0.try){h+='<h2>'+c.h+'</h2>'+(c.fig?'<div class="lfig">'+c.fig+'</div>':'')+c.b+'<div class="lfoot">'+(pi>0?'<button class="fd back" id="lBk">◀ もどる</button>':'')+'<button class="fd sumi big" id="lNx">'+nx+'</button></div>';ovOpen(h)}
+  else{h+='<h2>やってみよう</h2>'+(c.q.fig&&c.fig?'<div class="lfig sm2">'+c.fig+'</div>':'')+'<p class="why">'+c.q.q+'</p><div class="lch" id="lCh">'+mix(c.q.ch.map((t,j)=>[t,j])).map(x=>'<button class="fd" data-j="'+x[1]+'">'+x[0]+'</button>').join('')+'</div><p class="lfb" id="lFb"></p><div class="lfoot"><button class="fd back" id="lBk">◀ 説明</button><button class="fd sumi big" id="lNx" disabled>'+nx+'</button></div>';ovOpen(h);
+   const fb=$('#lFb'),bn=$('#lNx');
+   document.querySelectorAll('#lCh .fd').forEach(b=>b.onclick=()=>{ac();if(c.done)return;if(+b.dataset.j===c.q.a){c.done=1;b.classList.add('ok');fb.className='lfb good';fb.innerHTML='<b>正解！</b> '+c.q.ok;bn.disabled=false;sfx.ok()}else{b.classList.add('ng');fb.className='lfb bad';fb.innerHTML='ちがうよ。'+c.q.hint;sfx.tap();vib([10,40,10])}fb.scrollIntoView({block:'nearest'})});
+   if(c.done){fb.className='lfb good';fb.innerHTML='<b>正解！</b> '+c.q.ok;bn.disabled=false}}
+  const bk=$('#lBk');if(bk)bk.onclick=()=>{ac();sfx.tap();pi--;step()};
+  $('#lNx').onclick=()=>{ac();sfx.tap();pi++;if(pi<pages.length){step();return}S.learn=S.learn||{};keys.forEach(k=>S.learn[k]=1);save();ovClose();then&&then()}};
+ step()}
 if(TEST_ONLY)startTest();else toTitle();
 if(document.fonts&&document.fonts.load){Promise.all([document.fonts.load('40px "Yuji Syuku"'),document.fonts.load('16px "Klee One"')]).then(()=>{if(MODE==='title'&&TT)drawTitleMask();if(MODE==='day'){ENSO_M=ENSO_M}}).catch(()=>{})}
-window.__game={L:()=>L,dialPt,guidePath,covRate,S:()=>S,DY:()=>DY,DAYS,SAT,ROOMS,startDay,commit,setT:v=>{if(DY){DY.Tset=v}},plan:(m,v)=>{if(DY){DY.plan={mist:m,vent:v}}},mistLive:()=>$('#tMist').click(),
- autoDraw:(frac)=>{if(!DY||DY.phase!=='draw')return;frac=frac==null?1:frac;DY.started=true;DY.guide.forEach(st=>{let px=null,py=null;const n=Math.floor(st.length*frac);for(let i=0;i<n;i++){const x=L.G.x+st[i][0],y=L.G.y+st[i][1];wipeAt(x,y,px,py);px=x;py=y}DY.curS=null})},
- finish:finishDraw,next:()=>{const b=$('#rNext');if(b)b.click()},mode:()=>MODE,phase:()=>DY&&DY.phase,toMap,startTest,step:dt=>update(dt)};
 requestAnimationFrame(loop);
 })();
 </script>

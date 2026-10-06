@@ -4003,7 +4003,8 @@ function flash(a,col){if(RM)a*=.3;FLASH=Math.max(FLASH,a);FLC=col||'#fff'}
 var scene='title',G=null;
 function newG(si){var S=ST[si];return{si:si,S:S,t:0,next:.9,balls:[],saves:0,shots:0,pass:0,miss:0,combo:0,maxC:0,uk:0,ukT:0,glove:'eye',state:'intro',intro:1.6,paused:false,
   prac:!!S.prac,pracSaved:0,pracDone:false,byK:{eye:0,ear:0,nose:0,tongue:0,skin:0},pk:null,pend:[],endT:0,lastK:null,tw:0,swapT:0,firstSave:false}}
-function startStage(si){ac();G=newG(si);setScene('play');buildCards();selGlove(G.prac?'eye':'eye',true);G.uk=G.ukT=G.prac?-.5:0;
+function startStage(si){ac();if(si>0){var ul=unreadL(si);if(ul.length){teach(ul,function(){startStage0(si)});return}}startStage0(si)}
+function startStage0(si){ac();G=newG(si);setScene('play');buildCards();selGlove(G.prac?'eye':'eye',true);G.uk=G.ukT=G.prac?-.5:0;
   if(G.S.m==='pk')G.pk=pkQueue();
   if(window.BGM)BGM.mood(G.S.boss||G.S.m==='pk'?'tense':'normal');
   var S=G.S;$('hRdS').textContent=S.g;$('hRd').textContent=S.n;updHud();
@@ -4339,9 +4340,10 @@ $('bBack').onclick=function(){ac();SFX.tap();
   $('bkGo').textContent=scene==='map'||scene==='end'?'タイトルへ':'トーナメント表へ';$('scrBackQ').classList.remove('hidden')};
 $('bkNo').onclick=function(){$('scrBackQ').classList.add('hidden');if(G&&(backFrom==='play'))G.paused=false};
 $('bkGo').onclick=function(){$('scrBackQ').classList.add('hidden');if(window.Guide&&Guide.active()){PRAC_RET=null;Guide.skip()}if(backFrom==='map'||backFrom==='end')setScene('title');else{G=null;setScene('map')}};
-function toTest(){var z=Zk();if(z&&z.mainClear&&!TEST){try{z.mainClear({onClose:startTest});return}catch(e){}}startTest()}
-$('bToTest').onclick=function(){if(SV.done)startTest()};
-$('bTest0').onclick=function(){ac();startTest()};
+function toTest(){teach(unreadL(99),toTest0)}
+function toTest0(){var z=Zk();if(z&&z.mainClear&&!TEST){try{z.mainClear({onClose:startTest});return}catch(e){}}startTest()}
+$('bToTest').onclick=function(){if(SV.done)teach(unreadL(99),startTest)};
+$('bTest0').onclick=function(){ac();teach(unreadL(99),startTest)};
 function openBook(){var z=Zk();if(z&&z.openBook)z.openBook()}
 $('bBook1').onclick=openBook;$('bBook2').onclick=openBook;$('eBook').onclick=openBook;
 $('bGacha').onclick=function(){var z=Zk();if(z&&z.openGacha)z.openGacha()};
@@ -4386,6 +4388,42 @@ if(window.Guide){
     onOpen:function(){if(G)G.paused=true},onClose:function(){if(G&&$('scrPause').classList.contains('hidden')&&$('scrBackQ').classList.contains('hidden'))G.paused=false}});
   Guide.tutorialButton('#bHow',function(){ac();PRAC_RET='title';Guide.tutorial(PRACTICE)});
 }else $('bHow').classList.add('hidden');
+
+
+/* ---------------- まなぶ札（2026-10-06 初心者向け改修） ----------------
+   試合の前に、まだ読んでいない札を先に出す（トーナメント表・次の試合・つづきから・確認テストのどこから入っても） */
+var FIG_EYE="<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 320 200\" font-family=\"sans-serif\" font-size=\"15\"><rect width=\"320\" height=\"200\" fill=\"#fff\"/><circle cx=\"150\" cy=\"100\" r=\"70\" fill=\"#f4f6fb\" stroke=\"#333\" stroke-width=\"3\"/><path d=\"M150 30 A70 70 0 0 1 150 170\" fill=\"none\" stroke=\"#d04040\" stroke-width=\"7\"/><ellipse cx=\"96\" cy=\"100\" rx=\"11\" ry=\"30\" fill=\"#bfe3f5\" stroke=\"#333\" stroke-width=\"2\"/><path d=\"M84 62 L84 84 M84 116 L84 138\" stroke=\"#6b4a2a\" stroke-width=\"7\"/><path d=\"M80 58 Q70 100 80 142\" fill=\"none\" stroke=\"#333\" stroke-width=\"2\"/><path d=\"M215 105 L300 120\" stroke=\"#333\" stroke-width=\"9\"/><g fill=\"#111\"><path d=\"M84 62 L40 30\"/></g><path d=\"M84 70 L40 34\" stroke=\"#555\" stroke-width=\"1.5\"/><text x=\"4\" y=\"26\" font-size=\"13\">虹彩（ひとみの大きさを変える）</text><path d=\"M96 124 L60 176\" stroke=\"#555\" stroke-width=\"1.5\"/><text x=\"20\" y=\"194\" font-size=\"13\">水晶体（レンズ）</text><path d=\"M214 70 L262 40\" stroke=\"#555\" stroke-width=\"1.5\"/><text x=\"226\" y=\"34\" font-size=\"13\" fill=\"#c02020\">網膜（ここで受け取る）</text><path d=\"M268 116 L282 160\" stroke=\"#555\" stroke-width=\"1.5\"/><text x=\"236\" y=\"192\" font-size=\"13\">神経（脳へ）</text><text x=\"2\" y=\"104\" font-size=\"12\">光→</text><text x=\"40\" y=\"104\" font-size=\"11\">ひとみ</text></svg>",FIG_EAR="<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 320 200\" font-family=\"sans-serif\" font-size=\"15\"><rect width=\"320\" height=\"200\" fill=\"#fff\"/><path d=\"M10 80 L120 80 L120 120 L10 120\" fill=\"#f4f6fb\" stroke=\"#333\" stroke-width=\"2.5\"/><path d=\"M120 70 L128 130\" stroke=\"#333\" stroke-width=\"5\"/><path d=\"M130 96 L150 90 L166 100 L182 96\" fill=\"none\" stroke=\"#7a5a3a\" stroke-width=\"6\" stroke-linecap=\"round\"/><path d=\"M200 100 m0 0 a14 14 0 1 1 14 14 a22 22 0 1 1 -22 -24 a30 30 0 1 1 30 34\" fill=\"none\" stroke=\"#333\" stroke-width=\"5\"/><path d=\"M240 124 L300 150\" stroke=\"#333\" stroke-width=\"7\"/><path d=\"M124 72 L100 30\" stroke=\"#555\" stroke-width=\"1.5\"/><text x=\"62\" y=\"24\" font-size=\"13\">鼓膜</text><path d=\"M156 92 L156 40\" stroke=\"#555\" stroke-width=\"1.5\"/><text x=\"136\" y=\"32\" font-size=\"13\">耳小骨</text><path d=\"M226 80 L250 40\" stroke=\"#555\" stroke-width=\"1.5\"/><text x=\"196\" y=\"26\" font-size=\"13\" fill=\"#c02020\">うずまき管（ここで受け取る）</text><path d=\"M290 146 L296 180\" stroke=\"#555\" stroke-width=\"1.5\"/><text x=\"214\" y=\"196\" font-size=\"13\">神経（脳へ）</text><text x=\"14\" y=\"104\" font-size=\"11\">音（空気のふるえ）</text><text x=\"14\" y=\"140\" font-size=\"12\">左から音が入る →</text></svg>";
+var LESSONS=[
+  {k:'nose',tr:{q:'においのもとの物質は、どうやって鼻に届く？',a:'空気中にただよって届く',w:['だ液にとけて届く','光になって届く','皮膚を通って届く'],ok:'においは空気中の物質。だから口に入れる前から分かる。',ng:'カレーは口に入れる前でも分かった。物質は何の中をただよってきた？'},before:2,h:'鼻は「におい」を受け取る',b:'<p>においのもとは、<b>空気中にただよう物質</b>。鼻のおくの細胞がそれを受け取る。</p><p>だから、カレーを<b>口に入れる前から</b>「カレーだ」と分かるのは<b>鼻</b>のはたらき。</p>'},
+  {k:'tongue',tr:{q:'ジュースを飲んで「あまい」と分かった。受け取った器官と刺激は？',a:'舌 ― 味',w:['鼻 ― におい','舌 ― におい','皮膚 ― 味'],ok:'水にとけた物質が舌にふれて、味として受け取られる。',ng:'「あまい」は におい？味？ それを受け取るのはどの器官？'},before:3,h:'舌は「味」を受け取る',b:'<p>味のもとの物質は、<b>だ液などの水にとけて</b>、舌の表面にふれたときに受け取られる。</p><p>においは鼻（空気中の物質）、味は舌（水にとけた物質）。</p>'},
+  {k:'skin',tr:{q:'後ろから肩をポンとたたかれた。最初に受け取った器官と刺激は？',a:'皮膚 ― 圧力',w:['耳 ― 音','目 ― 光','皮膚 ― 温度'],ok:'押される力（圧力）は皮膚が受け取る。',ng:'たたかれた「押される力」を受け取るのはどこ？ 見ても聞いてもいないよ。'},before:4,h:'皮膚は「温度・圧力・痛み」を受け取る',b:'<p>皮膚が受け取るのは、<b>あたたかさ・冷たさ（温度）</b>、<b>押される力（圧力）</b>、<b>痛み</b>。</p><p><b>光の色は受け取れない</b>（光は目）。熱いおわんを持って「熱い！」と感じるのは皮膚。</p><p>これで5つ：目＝光／耳＝音／鼻＝におい／舌＝味／皮膚＝温度・圧力・痛み。<b>それぞれの感覚器官は、決まった種類の刺激だけを受け取るつくり</b>になっている。</p>'},
+  {k:'parts',tr:{q:'目の<b>虹彩</b>のはたらきは？',a:'ひとみの大きさを変えて、入る光の量を調節する',w:['光の刺激を受け取る','光を曲げて網膜に集める','受け取った刺激を脳へ伝える'],ok:'受け取るのは網膜、光を曲げるのは水晶体、虹彩は光の量の調節。',ng:'図の虹彩の説明を思い出そう。受け取るのは網膜だったね。'},before:7,h:'目のつくり',b:'<p>全国大会では「網膜に届く光」のように、<b>つくりの名前</b>でボールが飛んでくる。まず目の中をのぞいておこう。</p>'+
+    '<div class="lfig">'+FIG_EYE+'</div><p><b>光</b>：<b>ひとみ</b>から入る → <b>水晶体（レンズ）</b>で曲がる → <b>網膜</b>で受け取る → 神経を通って脳へ。<br>ひとみのまわりの<b>虹彩</b>は、ひとみの大きさを変えて入る光の量を調節する（受け取るのは網膜）。</p>'},
+  {k:'ear',tr:{q:'耳の<b>耳小骨</b>のはたらきは？',a:'鼓膜のふるえを、うずまき管へ伝える',w:['音の刺激を受け取る細胞がある','空気のふるえを最初に受けてふるえる','受け取った刺激を脳へ伝える'],ok:'鼓膜がふるえる → 耳小骨が伝える → うずまき管で受け取る。',ng:'順番は 鼓膜 → 耳小骨 → うずまき管。耳小骨はまん中の役目。'},before:7,h:'耳のつくり',b:'<p>つぎは耳の中。</p>'+
+    '<div class="lfig">'+FIG_EAR+'</div><p><b>音</b>（空気のふるえ）：<b>鼓膜</b>がふるえる → <b>耳小骨</b>がふるえを伝える → <b>うずまき管</b>で受け取る → 神経を通って脳へ。<br>鼓膜はふるえるだけ。受け取る細胞はうずまき管にある。</p>'},
+  {k:'check',tr:{q:'目を閉じて、耳だけが使える状態にした。そこで雷が光って、ゴロゴロ鳴った。分かるのはどれ？',a:'音だけ分かる（光は分からない）',w:['光だけ分かる（音は分からない）','光も音も分かる','どちらも分からない'],ok:'耳が受け取れるのは音だけ。光は目でしか受け取れない。',ng:'耳が受け取る刺激は何だった？ 目は閉じているよ。'},before:99,h:'「決まった刺激だけ」を確かめるには？',b:'<p>器官ごとに受け取る刺激が決まっていることは、<b>1つの器官だけを使える状態</b>を作って比べると確かめられる。</p><p>例：<b>目を閉じて耳だけ</b>にしたときと、<b>耳をふさいで目だけ</b>にしたときで、同じ音と光を受けて、何が分かるかを比べる。耳だけなら音は分かるが光は分からない。目だけなら光は分かるが音は分からない。</p>'}
+];
+function unreadL(upTo){SV.learn=SV.learn||{};return LESSONS.filter(function(l){return l.before<=upTo&&!SV.learn[l.k]})}
+function shuf(a){a=a.slice();for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1)),t=a[i];a[i]=a[j];a[j]=t}return a}
+function teach(list,next){if(!list.length){next();return}var l=list[0],last=list.length===1,trs=l.tr?[].concat(l.tr):[];
+  var o=document.getElementById('learnOv');if(!o){o=document.createElement('div');o.id='learnOv';document.body.appendChild(o)}
+  var nxt=last?'わかった ▶':'わかった ▶ 次の札へ';
+  function done(){SV.learn[l.k]=1;save();SFX.ok();o.style.display='none';o.innerHTML='';teach(list.slice(1),next)}
+  o.innerHTML='<div class="lbox"><div class="lhd">まなぶ</div><h3>'+l.h+'</h3>'+l.b+'<div class="lbt"><button class="hb gold" id="lsOk">'+(trs.length?'わかった ▶ やってみよう':nxt)+'</button></div></div>';o.style.display='flex';o.scrollTop=0;
+  document.getElementById('lsOk').onclick=trs.length?function(){SFX.ok();tryCard(o,l,trs,0,nxt,done)}:done}
+/* やってみよう（説明の札のつぎ）。選択肢は出すたびにまぜる。押しても札は作り直さず、返しの欄だけ書きかえる */
+function tryCard(o,l,trs,n,nxt,done){var t=trs[n],ops=shuf([t.a].concat(t.w)),more=n<trs.length-1;
+  o.innerHTML='<div class="lbox"><div class="lhd">やってみよう'+(trs.length>1?' '+(n+1)+'/'+trs.length:'')+'</div><h3 style="font-size:17px;color:#9fb0d8">'+l.h+'</h3><p>'+t.q+'</p><div class="lch" id="lsCh">'+ops.map(function(x,i){return'<button class="hb" data-i="'+i+'">'+x+'</button>'}).join('')+'</div><p id="lsFb" style="min-height:1.6em;text-align:center"></p><div class="lbt"><button class="hb gold" id="lsOk" disabled style="opacity:.35">'+(more?'つぎの問題 ▶':nxt)+'</button></div></div>';o.scrollTop=0;
+  [].forEach.call(document.querySelectorAll('#lsCh button'),function(bt){bt.onclick=function(){var x=ops[+bt.getAttribute('data-i')],fb=document.getElementById('lsFb');
+    if(x===t.a){SFX.ok();bt.classList.add('ok');fb.innerHTML='<b>◯ 正解！ '+t.ok+'</b>';[].forEach.call(document.querySelectorAll('#lsCh button'),function(y){y.disabled=true});var k=document.getElementById('lsOk');k.disabled=false;k.style.opacity=1;k.onclick=more?function(){tryCard(o,l,trs,n+1,nxt,done)}:done}
+    else{bt.classList.add('ng');fb.textContent='ちがうよ。'+t.ng}
+    fb.scrollIntoView({block:'nearest'})}})}
+(function(){var st=document.createElement('style');st.textContent='#learnOv{position:fixed;inset:0;z-index:60;display:none;align-items:flex-start;justify-content:center;background:rgba(6,9,24,.72);padding:16px;overflow:auto}'+
+ '#learnOv .lbox{margin:auto;width:min(640px,96vw);background:#1b2348;color:#EEF2F8;border-radius:14px;box-shadow:0 0 0 3px #141A33,0 0 0 6px #D8DEE9,0 16px 34px rgba(0,0,0,.55);padding:18px 20px 16px;font-family:"M PLUS 1p",sans-serif;font-size:17px;line-height:1.7}'+
+ '#learnOv .lhd{display:inline-block;background:#FFB703;color:#141A33;font-family:"Mochiy Pop One",sans-serif;padding:2px 14px;border-radius:8px;font-size:15px}'+
+ '#learnOv h3{font-family:"Mochiy Pop One",sans-serif;font-weight:400;font-size:22px;margin:8px 0 4px;color:#FFD166}#learnOv p{margin:8px 0}#learnOv b{color:#FFD166}'+
+ '#learnOv .lfig{background:#fff;border-radius:10px;padding:4px;margin:8px 0}#learnOv .lfig svg{display:block;width:100%;height:auto;max-height:34vh}#learnOv .lbt{text-align:center;margin:10px -20px -16px;padding:10px 0 14px;position:sticky;bottom:-16px;background:#1b2348;border-radius:0 0 14px 14px}#learnOv .lch{display:flex;flex-direction:column;gap:8px}#learnOv .lch .hb{font-size:17px;text-align:left;padding:8px 14px}#learnOv .lch .hb.ng{opacity:.35}#learnOv .lch .hb.ok{outline:3px solid #FFD166}#learnOv .lbt .hb{font-size:19px;padding:10px 26px}';
+ document.head.appendChild(st)})();
 
 /* ---------------- 確認テスト（公式ルール検定） ---------------- */
 var TQ=[],TI=0,TA=[],TOK=[],CARD=null;
@@ -4439,7 +4477,6 @@ if(window.PLAYER_NAME){$('nameIn').value=window.PLAYER_NAME;$('nmRow').classList
 if(TEST)startTest();else setScene('title');
 requestAnimationFrame(frame);
 /* 自動操作の確かめ用（遊びには影響しない） */
-window.__SK={G:function(){return G},start:startStage,scene:function(){return scene},SV:function(){return SV},sel:selGlove,end:function(){if(G)endMatch()}};
 })();
 </script>
 <script>window.ZUKAN_COUNTER={"db": "https://rika-zukan-rank-default-rtdb.asia-southeast1.firebasedatabase.app", "id": "bio-sense-keeper"};

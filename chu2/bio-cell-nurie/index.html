@@ -150,6 +150,8 @@ body.land .pan{font-size:21px;min-height:72px}
 #dlg .box::before{content:'';position:absolute;inset:0;z-index:-1;background:var(--paper);border:3px solid var(--ink);border-radius:8px 14px 6px 12px;filter:url(#fR);box-shadow:4px 5px 0 rgba(61,90,128,.3)}
 #dlg .box b{font-family:var(--hand);font-weight:400;font-size:24px;color:var(--blue)}
 #dlg .row{display:flex;gap:12px;justify-content:center;margin-top:16px;flex-wrap:wrap}
+#dlg .lc{text-align:left;font-size:16px;line-height:1.55}#dlg .lc b{display:block;text-align:center;margin-bottom:4px}#dlg .lc ul,#dlg .lc ol{margin:8px 0 0;padding-left:1.3em}#dlg .lc li{margin:5px 0}#dlg .lc p{margin:8px 0 0}#dlg .lc em{font-style:normal;font-weight:700;color:var(--red,#EE6C4D)}#dlg .lcfig{display:block;width:100%;max-width:360px;margin:4px auto 0}#dlg .box:has(.lc){max-width:520px;max-height:92vh;overflow:auto}
+#dlg .lcq{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:10px}#dlg .lcq .cb{font-size:17px}#dlg .lcq .cb.ok{outline:4px solid #4E9F6E}#dlg .lcq .cb.ng{opacity:.55}#dlg .lcfb{margin-top:10px;min-height:2.6em;padding:6px 10px;border-radius:8px;background:rgba(61,90,128,.08);font-size:15px}#dlg .lcfb.ng{background:#FFD9CF}#dlg .lcfb.ok{background:#E3F2D9}#dlg .box:has(.lc) .row{position:sticky;bottom:-18px;margin-top:10px;padding:8px 0 4px;background:linear-gradient(rgba(255,249,236,0),var(--paper) 35%)}#dlg .row .cb[disabled]{opacity:.45}
 @media (prefers-reduced-motion: reduce){*{animation-duration:.01s!important;animation-iteration-count:1!important;transition:none!important}}
 </style>
 </head>
@@ -3901,7 +3903,7 @@ function inPath(P,x,y,rule){return HC.isPointInPath(P,x,y,rule||'nonzero')}
 const SPECS={
  cork:{name:'コルク',grp:0,obj:'cork',seed:53,fact:'1665年、フックは コルクを 顕微鏡で のぞき、小さな部屋を cell（小部屋）と名づけた。',
   done:'コルクも 小さな部屋の集まり！ この部屋が「細胞（cell）」。'},
- kanada:{name:'オオカナダモの葉',grp:0,obj:'kanada',seed:89,stain:true,fact:'水草の葉。緑のつぶは 葉緑体。染色液を 1滴たらすと……？',
+ kanada:{name:'オオカナダモの葉',grp:0,obj:'kanada',seed:89,stain:true,fact:'染色液＝核などを 赤く染めて 見やすくする液。1滴 たらすと……？',
   done:'染めると どの部屋にも 核が1つ。気泡には 核がない。'},
  tsuyu:{name:'ツユクサの葉のうら',grp:0,obj:'leaf',seed:71,fact:'葉のうらの うすい皮（表皮）。部屋の形は ジグソーパズル。',
   done:'気孔は すきま。そのまわりの 2つは 部屋（細胞）。'},
@@ -4191,7 +4193,9 @@ function bakeLayer(){if(!G||!G.pg)return;const S=Math.round(L.v.S*DPR);if(layer.
 function showScene(s){scene=s;if(HELP){if(s==='play'||s==='toc')HELP.show();else HELP.hide()}$('scTitle').hidden=s!=='title';$('scToc').hidden=s!=='toc';$('scTest').hidden=s!=='test';$('btnBack').hidden=(s==='title');$('acts').hidden=true;$('tools').hidden=true;updKK();bakeBG()}
 function setActs(list){const a=$('acts');a.innerHTML='';if(!list||!list.length){a.hidden=true;return}list.forEach(b=>{const e=document.createElement('button');e.className='cb '+(b.cls||'');e.textContent=b.t;e.onclick=()=>{ac();SFX.click();b.f()};a.appendChild(e)});a.hidden=false}
 
-function startPage(i,o){ac();o=o||{};const P=PAGES[i];showScene('play');if(window.BGM)BGM.mood(P.seal?'calm':P.boss?'tense':'normal');
+function startPage(i,o){ac();o=o||{};const P=PAGES[i];
+ if(window.GAME_MODE!=='test'){if(i>=1&&!lcRead('scope')){scopeCard(()=>startPage(i,o));return}if(P.seal&&!lcRead('cheek')){cheekCard(()=>startPage(i,o),'ふういんのページへ ▶');return}}
+ showScene('play');if(window.BGM)BGM.mood(P.seal?'calm':P.boss?'tense':'normal');
  G={i,P,prac:!!o.prac,sub:0,phase:'intro',t:0,pt:0,combo:0,best:0,miss:0,time:P.time||0,tmax:P.time||0,parts:[],floats:[],flyers:[],spills:[],marks:[],banner:null,shake:0,flash:0,flashCol:'#fff',note:null,idle:0,retry:o.retry||0,stars:0,cap:null,cards:[],stainT:-1,ct:0,cascade:[],ruleMsg:null,newSlot:null};
  bakeBG();if(P.seal){G.phase='seal';initSeal();say();return}
  loadSub(0);if(o.capsule){G.phase='capsule';G.cap={t:0,open:-1};SFX.pop()}else startIntro()}
@@ -4265,7 +4269,7 @@ function update(dt){G.t+=dt;G.pt+=dt;const pg=G.pg;
  let rb=false;if(pg)pg.regs.forEach(r=>{if(r.col&&r.fillT<1){r.fillT=Math.min(1,r.fillT+dt/(RM?.08:.4));if(r.fillT>=1&&!r.mov)rb=true}});if(rb)bakeLayer();
  if(G.phase==='intro'&&G.pt>(G.P.boss&&G.sub>0?1.1:2.1))finishIntro();
  if(G.phase==='ready'&&G.pt>1.0){G.phase='go';G.pt=0;window.Tekitou&&Tekitou.shown()}
- if(G.phase==='staining'){if(G.pt>1.5){const c=layer;layer=layer2;layer2=c;G.phase='stained';G.pt=0;SFX.pop();G.note={t:0,title:'どの部屋にも 核が1つ！',txt:'染色液で 赤く染まった丸いもの＝核。気泡には 核がない。'};G.flash=.3;G.flashCol='#F7C6CF'}}
+ if(G.phase==='staining'){if(G.pt>1.5){const c=layer;layer=layer2;layer2=c;G.phase='stained';G.pt=0;SFX.pop();G.note={t:0,title:'どの部屋にも 核が1つ！',txt:'染色液（酢酸オルセイン）で 赤く染まった丸いもの＝核。どの部屋にも1つ。気泡には 核がない。'};G.flash=.3;G.flashCol='#F7C6CF'}}
  if(G.phase==='stained'&&G.pt>1.4)ready();
  if(G.phase==='go'&&!PAUSE&&!G.prac){G.time-=dt;G.idle+=dt;if(G.time<=0){G.time=0;timeUp()}else if(G.time<10&&Math.floor(G.time+dt)!==Math.floor(G.time))SFX.tick()}
  if(G.phase==='subclear'&&G.pt>1.6){loadSub(G.sub+1);startIntro()}
@@ -4332,7 +4336,8 @@ function comboLine(g,x,y,w,h,port){const c=G.combo;if(c<2){ptext(g,port?'れん�
  const col=comboCol(c);const s=Math.round(h*(c>=10?.95:.8)*(1+.08*Math.sin(NOW*10)));if(c>=10){g.save();g.globalAlpha=.25;g.fillStyle=pat(col);g.fillRect(x-4,y,w+8,h);g.restore()}ctext(g,'れんぞく ×'+c,x+(port?4:0),y+h/2,s,col,'left',(Math.sin(NOW*6)*.03))}
 function noteBox(g,x,y,w,h){const n=G.note&&G.note.t<7?G.note:null;g.save();g.translate(x+w/2,y+h/2);g.rotate(-.01);g.fillStyle=pat(n&&n.bad?'#FFD9CF':'#FFF0A6');g.globalAlpha=.9;g.fillRect(-w/2,-h/2,w,h);g.restore();cline(g,[[x,y],[x+w,y],[x+w,y+h],[x,y+h]],INK,2.5,true,14,.5);
  let title,txt;if(n){title=n.title;txt=n.txt}else if(G.phase==='go'||G.phase==='ready'){title='部屋（細胞）を ぜんぶ ぬろう';txt=G.spec?G.spec.fact:''}else{title=G.spec?G.spec.name:'';txt=G.spec?G.spec.fact:''}
- const fs=Math.round(clamp(h*.22,13,18));ptext(g,title,x+10,y+fs*1.05,fs+2,n&&n.bad?'#B23A20':RED,'left',FH);const lines=wrapLines(g,txt,w-20,fs);lines.slice(0,Math.max(1,Math.floor((h-fs*2.2)/(fs*1.35))+1)).forEach((l,i)=>ptext(g,l,x+10,y+fs*2.45+i*fs*1.35,fs,INK))}
+ let fs=Math.round(clamp(h*.22,13,18)),lines=[],mx=1;for(;;fs--){lines=wrapLines(g,txt,w-20,fs);mx=Math.max(1,Math.floor((h-fs*2.45-2)/(fs*1.35))+1);if(lines.length<=mx||fs<=11)break}
+ ptext(g,title,x+10,y+fs*1.05,fs+2,n&&n.bad?'#B23A20':RED,'left',FH);const sh=lines.slice(0,mx);if(lines.length>mx)sh[mx-1]=sh[mx-1].replace(/.$/,'…');sh.forEach((l,i)=>ptext(g,l,x+10,y+fs*2.45+i*fs*1.35,fs,INK))}
 let ICON={};
 function boardDraw(g,x,y,w,h){if(h<40)return;const n=BOARD.filter(id=>SV.got[id]).length;ptext(g,'あつめた標本 '+n+' / 10',x,y+10,15,BLUE,'left',FH);
  const cols=L.land||h>110?5:10,rows=cols===5?2:1;const gap=6;let s=Math.floor(Math.min((w-(cols-1)*gap)/cols,(h-26-(rows-1)*gap-14)/rows));if(s<18)return;
@@ -4388,7 +4393,7 @@ function drawCard(g){const V=L.v,t0=G.cards[0];const C=TRAPCARD[t0];if(!C)return
  const fs=Math.round(clamp(w*.06,16,30));ctext(g,C.t,0,-h/2+fs*1.1,fs,'#C23B4A');iconTrap(g,t0,-w*.3,0,h*.16);cline(g,[[-w*.3-h*.2,-h*.2],[-w*.3+h*.2,h*.2]],'#C23B4A',8,false,5);cline(g,[[-w*.3+h*.2,-h*.2],[-w*.3-h*.2,h*.2]],'#C23B4A',8,false,6);
  const bs=Math.round(fs*.62);const lines=[];C.d.split('\n').forEach(l=>wrapLines(g,l,w*.52,bs).forEach(q=>lines.push(q)));lines.forEach((l,i)=>ptext(g,l,-w*.1,-h*.12+i*bs*1.45,bs,INK));g.restore()}
 function drawDropper(g){const V=L.v,b=Math.abs(Math.sin(NOW*4))*12;const x=V.cx,y=V.cy-V.R*.35-b;g.save();g.translate(x,y);const s=V.R/300;g.scale(s,s);g.fillStyle=pat('#F29CB4');g.fillRect(-26,-170,52,70);g.fillStyle=pat('#E6F2F8');g.fillRect(-18,-100,36,120);g.beginPath();g.moveTo(-18,20);g.lineTo(0,70);g.lineTo(18,20);g.fill();cline(g,[[-18,-100],[-18,20],[0,70],[18,20],[18,-100]],INK,5,false,3);g.fillStyle=pat('#C23B4A');g.fillRect(-14,-40,28,60);g.restore();
- const fs=Math.round(clamp(V.R*.1,18,34));ctext(g,'タップで 染色液を 1滴！',V.cx,V.cy+V.R*.25,fs,RED);ctext(g,'（部屋の中に 何が見える？）',V.cx,V.cy+V.R*.25+fs*1.3,Math.round(fs*.7),BLUE)}
+ const fs=Math.round(clamp(V.R*.1,18,34));ctext(g,'タップで 染色液を 1滴！',V.cx,V.cy+V.R*.25,fs,RED);ctext(g,'（部屋の中に 何が見える？）',V.cx,V.cy+V.R*.25+fs*1.3,Math.round(fs*.7),BLUE);ctext(g,'染色液＝核などを 赤く染めて 見やすくする液',V.cx,V.cy+V.R*.25+fs*2.3,Math.round(fs*.62),INK)}
 function drawRule(g){const V=L.v,t=G.pt;g.save();g.fillStyle='rgba(255,249,236,.82)';g.fillRect(0,0,W,H);if(!RM){for(let i=0;i<16;i++){const a=i/16*TAU+t*.3;g.globalAlpha=.25;g.strokeStyle=pat(CRAY[i%8][1]);g.lineWidth=40;g.beginPath();g.moveTo(W/2,H*.42);g.lineTo(W/2+Math.cos(a)*W,H*.42+Math.sin(a)*W);g.stroke()}}g.restore();
  const fs=Math.round(clamp(Math.min(W,H)*.06,22,54));const k=easeB(clamp(t/.5,0,1));g.save();g.translate(W/2,H*.3);g.scale(k,k);ctext(g,'きまりを 見つけた！',0,0,fs,RED);g.restore();
  const k2=clamp((t-.5)/.4,0,1);if(k2>0){g.save();g.globalAlpha=k2;ctext(g,G.ruleMsg.a,W/2,H*.3+fs*1.3,Math.round(fs*.6),BLUE);const lines=wrapLines(g,G.ruleMsg.b,Math.min(W*.86,900),Math.round(fs*.72),FH);lines.forEach((l,i)=>ctext(g,l,W/2,H*.3+fs*2.3+i*fs*.95,Math.round(fs*.72),INK));g.restore()}
@@ -4490,7 +4495,7 @@ function dialog(html,btns){const d=$('dlg');d.hidden=false;d.innerHTML='<div cla
 
 /* ================= 確認テスト ================= */
 let T=null;const PANC=['#F2C14E','#78B7DB','#9CC95A','#F29CB4','#F4A259'];
-function startTest(){setActs(null);if(!window.Quiz){dialog('問題データがありません',[['とじる']]);return}G=null;showScene('test');T={qs:Quiz.test(),i:0,ans:[]};renderQ()}
+function startTest(){if(window.GAME_MODE!=='test'){if(!lcRead('scope')){scopeCard(startTest,'確認テストへ ▶');return}if(!lcRead('cheek')){cheekCard(startTest,'確認テストへ ▶');return}}setActs(null);if(!window.Quiz){dialog('問題データがありません',[['とじる']]);return}G=null;showScene('test');T={qs:Quiz.test(),i:0,ans:[]};renderQ()}
 function renderQ(){const q=T.qs[T.i];$('qNo').textContent=(T.i+1)+' / '+T.qs.length;$('qText').textContent=q.q;const f=$('qFig');if(q.fig){f.innerHTML=q.fig;f.hidden=false}else{f.innerHTML='';f.hidden=true}
  const A=$('qArea');A.innerHTML='';$('scTest').scrollTop=0;
  const mkPan=(c,k,lab)=>{const b=document.createElement('button');b.className='pan';b.style.setProperty('--c',PANC[k%5]);b.innerHTML='<span class="L">'+lab+'</span><span></span>';b.lastChild.textContent=c;return b};
@@ -4530,17 +4535,55 @@ if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>{layout();
 function roomPt(r){if(r.mov){const m=r.mov;const c=Math.cos(m.a),s=Math.sin(m.a);const q=r.nuc?[r.nuc[0]+20,r.nuc[1]]:[0,0];return toS(m.x+q[0]*c-q[1]*s,m.y+q[0]*s+q[1]*c)}
  if(r.soma)return toS(r.soma[0],r.soma[1]+12);if(r._pt)return toS(r._pt[0],r._pt[1]);const inR=(x,y)=>inPath(r.path,x,y,r.rule)&&!G.pg.bubbles.some(b=>Math.hypot(x-b.bx,y-b.by)<b.rad+12)&&!G.pg.slits.some(q=>inPath(q.path,x,y));
  for(let k=0;k<120;k++){const x=lerp(r.bb[0],r.bb[2],Math.random()),y=lerp(r.bb[1],r.bb[3],Math.random());if(Math.hypot(x-500,y-500)>458||!inR(x,y))continue;let ok=true;for(let j=0;j<6;j++){const a=j/6*TAU;if(!inR(x+Math.cos(a)*16,y+Math.sin(a)*16)){ok=false;break}}if(ok){r._pt=[x,y];return toS(x,y)}}return null}
-window.__nurie={get G(){return G},get SV(){return SV},startPage,startTest,openToc,toS,
- target(){if(!G||!G.pg)return null;const r=G.pg.regs.find(q=>q.type==='room'&&!q.edge&&!q.col&&!q._bad);if(!r)return null;const pt=roomPt(r);if(!pt)r._bad=1;return pt},
- trap(){if(!G||!G.pg)return null;const pg=G.pg;if(pg.bubbles.length){const b=pg.bubbles[0];return toS(b.bx,b.by)}if(pg.slits.length){const c=cen(pg.slits[0].poly);return toS(c[0],c[1])}
-  for(let k=0;k<400;k++){const x=150+Math.random()*700,y=150+Math.random()*700;const h=hitAt(pg,x,y);if(h.t!=='room'&&h.t!=='out'&&h.t!=='none')return toS(x,y)}return null},
- center(){return[L.v.cx,L.v.cy]},hit:(ux,uy)=>G&&G.pg?hitAt(G.pg,ux,uy):null,tap:(x,y)=>tapPlay(x,y),pause(v){PAUSE=!!v},get PAUSE(){return PAUSE},get scene(){return scene}};
+
+
+/* ================= まなぶカード（2026-10-06 夜間改修・初心者向け） ================= */
+function learnBox(html,btns){setActs(null);dialog('<div class="lc">'+html+'</div>',btns);$('dlg').onclick=null}
+const SCOPE_SVG='<svg viewBox="0 0 360 160" class="lcfig" aria-hidden="true"><defs><clipPath id="lcC1"><circle cx="215" cy="66" r="44"/></clipPath><clipPath id="lcC2"><circle cx="315" cy="66" r="40"/></clipPath></defs><g fill="none" stroke="#2E3A4F" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">'+
+ '<rect x="40" y="14" width="18" height="22" rx="3" fill="#F2C14E"/><path d="M44 36 L44 70 L54 70 L54 36"/><rect x="37" y="70" width="24" height="12" rx="3"/><rect x="43" y="82" width="12" height="16" rx="2" fill="#EE6C4D"/>'+
+ '<path d="M14 104 L84 104"/><path d="M24 100 L74 100" stroke="#78B7DB" stroke-width="5"/><path d="M61 76 Q100 76 100 104 L100 132 M76 140 L120 140"/></g>'+
+ '<g font-size="13" fill="#2E3A4F"><text x="64" y="22">接眼レンズ</text><text x="64" y="36" font-size="11">（目をつける方）</text><text x="104" y="96" fill="#EE6C4D">対物レンズ</text><text x="6" y="124">プレパラート</text></g>'+
+ '<g stroke="#3D5A80" stroke-width="3" fill="#FFF9EC"><circle cx="215" cy="66" r="44"/><circle cx="315" cy="66" r="40"/></g>'+
+ '<g fill="none" stroke="#4E9F6E" stroke-width="1.6" clip-path="url(#lcC1)">'+(()=>{let o='';for(let y=20;y<=110;y+=15)for(let x=169;x<=260;x+=18)o+='<rect x="'+x+'" y="'+y+'" width="18" height="15"/>';return o})()+'</g>'+
+ '<g fill="none" stroke="#4E9F6E" stroke-width="2.4" clip-path="url(#lcC2)"><rect x="275" y="22" width="40" height="44"/><rect x="315" y="22" width="40" height="44"/><rect x="275" y="66" width="40" height="44"/><rect x="315" y="66" width="40" height="44"/></g>'+
+ '<g font-size="13" fill="#EE6C4D" text-anchor="middle"><text x="215" y="130">100倍</text><text x="215" y="146">たくさん・小さく</text><text x="315" y="130">400倍</text><text x="315" y="146">少し・大きく</text></g></svg>';
+function lcRead(k){return !!(SV.lc&&SV.lc[k])}
+function lcMark(k){SV.lc=SV.lc||{};SV.lc[k]=1;save()}
+function shuf(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=(Math.random()*(i+1))|0;[a[i],a[j]]=[a[j],a[i]]}return a}
+/* やってみよう: 答えを押しても札は作り直さず、返しの欄だけ書きかえる。正解の位置は毎回まぜる */
+function lcQuiz(html,opts,nextLabel,then,okMsg){setActs(null);const d=$('dlg');d.hidden=false;d.onclick=null;
+ d.innerHTML='<div class="box"><div class="lc">'+html+'<div class="lcq"></div><div class="lcfb" aria-live="polite">答えを えらぼう</div></div><div class="row"><button class="cb red" disabled>'+nextLabel+'</button></div></div>';
+ const q=d.querySelector('.lcq'),fb=d.querySelector('.lcfb'),nx=d.querySelector('.row .cb');
+ shuf(opts).forEach(o=>{const b=document.createElement('button');b.className='cb sm pale';b.innerHTML=o.t;b.onclick=()=>{if(nx.disabled===false)return;
+  if(o.ok){SFX.fan();b.classList.add('ok');fb.className='lcfb ok';fb.innerHTML='<em>正解！</em> '+okMsg;nx.disabled=false;nx.classList.add('pulse')}
+  else{SFX.boing&&SFX.boing();b.classList.add('ng');fb.className='lcfb ng';fb.innerHTML='<em>おしい！</em> '+o.why}};q.appendChild(b)});
+ nx.onclick=()=>{d.hidden=true;SFX.click();then()}}
+function scopeCard(then,lab){
+ learnBox('<b>顕微鏡の きほん</b>'+SCOPE_SVG+
+  '<ul><li><em>プレパラート</em>＝見たいものを スライドガラスにのせ、うすい カバーガラスを かぶせたもの</li>'+
+  '<li><em>倍率＝接眼レンズの倍率 × 対物レンズの倍率</em><br>例：10倍 × 10倍 ＝ <em>100倍</em></li>'+
+  '<li>倍率を上げると、1つ1つは <em>大きく</em> 見えるが、見える範囲は <em>せまく</em> なる → 見える部屋の数は <em>へる</em></li>'+
+  '<li>だから、ちがう倍率で <em>同じ大きさ</em> に見えたら、<em>低い倍率</em> で見たものほど 実物は大きい</li></ul>',
+  [['やってみる ▶',()=>scopeQuiz(then,lab),'red']])}
+function scopeQuiz(then,lab){
+ lcQuiz('<b>やってみよう</b><p>接眼レンズ <em>15倍</em>、対物レンズ <em>10倍</em>。<br>顕微鏡の倍率は 何倍？</p>',
+  [{t:'150倍',ok:true},{t:'25倍',why:'15＋10 ではなく、<em>かけ算</em>。倍率＝接眼 × 対物。'},{t:'1.5倍',why:'15 ÷ 10 ではなく、<em>かけ算</em>。倍率＝接眼 × 対物。'}],
+  lab||'つぎの標本へ ▶',()=>{lcMark('scope');then()},'15 × 10 ＝ <em>150倍</em>。')}
+function cheekCard(then,lab){
+ learnBox('<b>ほおの内側の 観察のしかた</b>'+
+  '<ol><li>綿棒で ほおの内側を 軽く こすりとる</li><li>スライドガラスに こすりつける</li><li>染色液を 1滴 落として 数分 待つ（核が赤く染まる）</li><li>カバーガラスを 片方から そっと下ろす（<em>気泡</em>が 入らないように）</li><li><em>低い倍率</em>で 見てから、倍率を 上げる（広く見て さがしてから 大きくする）</li></ol>'+
+  '<p>タマネギの表皮も、うすい皮を はがして スライドガラスにのせ、染色液 → カバーガラス の順。<br>このページでは、どう見えるかを <em>予想</em>して 描こう。</p>',
+  [['やってみる ▶',()=>cheekQuiz(then,lab),'red']])}
+function cheekQuiz(then,lab){
+ lcQuiz('<b>やってみよう</b><p>カバーガラスを <em>片方から そっと</em> 下ろすのは なぜ？</p>',
+  [{t:'気泡（空気のあわ）を 入れないため',ok:true},{t:'細胞を 大きく見せるため',why:'大きく見せるのは レンズの倍率。カバーガラスは 関係ない。'},{t:'染色液を すぐ かわかすため',why:'かわかすためでは ない。いっきに下ろすと 何が入りこむ？'}],
+  lab||'ふういんのページへ ▶',()=>{lcMark('cheek');then()},'いっきに下ろすと 空気が とじこめられて <em>気泡</em> になり、細胞と まちがえやすい。')}
 /* ================= 遊び方案内（Guide）仕上げ 2026-09-27 ================= */
 function tgtRoom(){if(!G||G.phase!=='go'||!G.pg)return null;const rs=G.pg.regs.filter(q=>q.type==='room'&&!q.edge&&!q.col&&!q._bad&&!q.mov).sort((a,b)=>Math.hypot(a.cx-470,a.cy-470)-Math.hypot(b.cx-470,b.cy-470));
  for(const r of rs){const p=roomPt(r);if(p)return{x:p[0],y:p[1],r:Math.max(26,Math.min(48,L.v.R*.1))};r._bad=1}return null}
 function painted(){return G&&G.pg?G.pg.need-G.left:0}
 function waitGo(){return new Promise(res=>{const t=setInterval(()=>{if(!G||G.phase==='go'||scene!=='play'){clearInterval(t);res()}},80)})}
-const INTRO={title:'細胞ぬりえ図鑑',learn:'生きものの体は、どこを拡大しても **区切られた小さな部屋（細胞）** の集まり',
+const INTRO={title:'細胞ぬりえ図鑑',learn:'生きものの体は、どこを拡大しても **区切られた小さな部屋（細胞）** の集まり。\n**顕微鏡**（小さなものを 大きくして見る道具）で のぞいて 確かめよう',
  how:'拡大した視野の **部屋をタップ** してクレヨンでぬる。**気泡・すきま** は ぬらない',gesture:'tap'};
 function beginFirst(){if(!GD){startPage(0);return}GD.intro(INTRO).then(()=>GD.tutorial(PRACTICE))}
 if(GD){

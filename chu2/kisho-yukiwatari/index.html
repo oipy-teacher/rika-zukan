@@ -82,7 +82,7 @@ body.port #top{font-size:12px;white-space:normal;left:132px;right:66px;transform
 .ovw h2{font-family:var(--pop);font-weight:400;margin:0 0 8px;font-size:clamp(23px,3vw,30px);color:var(--navy)}
 .ovw .no{font-family:var(--pop);font-size:14px;color:var(--red)}
 .ovw p{font-size:17px;line-height:1.7;margin:8px 0}
-.ovw .btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.ovw .btns>*{flex:1 1 150px}
+.ovw .btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.ovw .btns:not(:empty){position:sticky;bottom:0;padding:6px 0;background:rgba(244,246,249,.94);z-index:2}.ovw .btns>*{flex:1 1 150px}
 .rule{padding:6px 10px;border-left:5px solid var(--red);background:rgba(228,87,46,.08);font-weight:600}
 .ovw svg{display:block;margin:6px auto;max-width:100%;height:auto}
 .opt{display:block;width:100%;text-align:left;font-family:var(--hand);font-size:16px;font-weight:600;margin:6px 0;padding:10px 14px}
@@ -3834,7 +3834,7 @@ const TOOLS=[
  {id:'spike',n:'スパイク',k:'せばめる',d:'靴の裏の小さなとげが氷にささり、すべらない。'}];
 
 /* ===== 保存 ===== */
-function fresh(){return {v:1,name:'',started:false,next:0,done:[],tools:[],paid:{},steps:0,first:0,tries:0,pairs:{face:[],force:[]},seal:null,mc:false,sound:true,t:0,best:{}}}
+function fresh(){return {v:1,name:'',started:false,next:0,done:[],tools:[],paid:{},steps:0,first:0,tries:0,pairs:{face:[],force:[]},seal:null,seen:{},mc:false,sound:true,t:0,best:{}}}
 let S=fresh();
 try{const o=JSON.parse(localStorage.getItem(SKEY)||'null');if(o&&o.v===1)S=Object.assign(fresh(),o)}catch(e){}
 function save(){try{localStorage.setItem(SKEY,JSON.stringify(S))}catch(e){}}
@@ -4015,7 +4015,7 @@ function ratioWord(r){const m=[[.25,'1/4'],[1/3,'1/3'],[.5,'半分'],[2/3,'2/3']
 $('bGo').onclick=()=>{ac();sfx.tap();if(!P)return;$('bGo').classList.add('hidden');$('bPlace').classList.remove('hidden');
  if(P.phase==='good'){P.step++;P.missed=false;if(P.step>=P.sd.steps){pageClear();return}P.q=makeStep(P.sd,P.step);P.prevRatio=ratio(P.q.tf,P.q.tn);if(!P.sd.tut)window.Tekitou&&Tekitou.shown()}
  P.phase='ready';P.drop=0;P.sink=0;$('msg').classList.add('hidden');renderHUD()};
-function pageFail(){P.phase='fail';ovOpen('<div class="no">ぬくもりが なくなった</div><h2>たき火で温まろう</h2><p>このページを はじめから。<br>見本の足あとと「めやす」をくらべて、何倍・何分の1かを考えてから置こう。</p><p class="rule">へこみ ∝ 力 ÷ 面積（力が2倍→2倍深い、面積が2倍→半分）</p>',[['このページをもう一度','o',()=>startStage(P.i)],['地図へ','',()=>toMap()]])}
+function pageFail(){P.phase='fail';ovOpen('<div class="no">ぬくもりが なくなった</div><h2>たき火で温まろう</h2><p>このページを はじめから。<br>見本の足あとと「めやす」をくらべて、何倍・何分の1かを考えてから置こう。</p><p class="rule">へこみは 力 ÷ 面積（1 cm² あたりの力＝圧力）に比例する（力が2倍→2倍深い、面積が2倍→半分）</p>',[['このページをもう一度','o',()=>startStage(P.i)],['地図へ','',()=>toMap()]])}
 function pageClear(){const i=P.i,sd=P.sd;MODE='res';if(!S.done.includes(i))S.done.push(i);S.next=Math.max(S.next,i+1);
  const b=S.best[i];if(!b||P.firstN>b.first)S.best[i]={first:P.firstN,steps:sd.steps};save();
  const st=[true,P.cups>=3,P.firstN>=sd.steps];if(!GD)sfx.clear();else if(sd.tut)GD.tutorialClear();else GD.celebrate('「'+sd.name+'」わたった！');
@@ -4088,14 +4088,57 @@ const BRIEF={
  4:'ひと晩で雪がかわった。<b>1歩ごとに見本</b>がかわるので、毎回見本とくらべよう。',
  5:'重い荷物（小石3個以上）は下ろせない。<b>重いのに浅く</b>するには？ 重いほど沈む…とは限らない！',
  6:'こんどは「<b>重さだけ</b>を変える組」。面はそろえる。',
- 7:'かたい氷。足型が<b>十分深くささらない</b>とすべる。せまい面の出番。',
+ 7:'かたい氷。足型が<b>十分深くささらない</b>とすべる。せまい面の出番。画びょう・くぎの先がとがっているのと同じで、<b>面積をせまくすると圧力が大きくなり、ささる</b>。',
  8:'ふかふかの新雪。<b>沈みすぎ</b>ないように。',
  9:'吹雪の峠。<b>日が暮れるまで（150秒）</b>に6歩。雪は1歩ごとにやわらかくなる。',
  10:'村の理科室。本物のれんがをスポンジに置く実験の<b>予想</b>を、粘土に指で押しこんで作り、封印する。'};
-function openBrief(i){MODE='brief';P=null;show('none');const sd=SEQ[i];{const bb=$('bBack');bb.classList.remove('hidden');bb.textContent='◀ もどる'}
+function openBrief(i){teach(i,()=>openBrief0(i))}
+function openBrief0(i){MODE='brief';P=null;show('none');const sd=SEQ[i];{const bb=$('bBack');bb.classList.remove('hidden');bb.textContent='◀ もどる'}
  let extra='';if(i===5)extra='<svg viewBox="0 0 320 120" width="320" height="120"><g filter="url(#crayon)"><rect x="10" y="60" width="140" height="50" fill="#dfe9f3" stroke="#2B4C7E" stroke-width="3"/><rect x="170" y="60" width="140" height="50" fill="#dfe9f3" stroke="#2B4C7E" stroke-width="3"/><rect x="30" y="36" width="100" height="30" fill="#c46a4a" stroke="#2B4C7E" stroke-width="3"/><circle cx="60" cy="28" r="9" fill="#999" stroke="#2B4C7E" stroke-width="2"/><circle cx="80" cy="28" r="9" fill="#999" stroke="#2B4C7E" stroke-width="2"/><circle cx="100" cy="28" r="9" fill="#999" stroke="#2B4C7E" stroke-width="2"/><rect x="230" y="12" width="20" height="70" fill="#c46a4a" stroke="#2B4C7E" stroke-width="3"/></g><text x="80" y="104" text-anchor="middle" font-size="13" fill="#2B4C7E">重い 50 N・広い面</text><text x="240" y="104" text-anchor="middle" font-size="13" fill="#2B4C7E">軽い 20 N・せまい面</text><text x="160" y="20" text-anchor="middle" font-size="22" fill="#E4572E">？</text></svg><p style="text-align:center">どちらが深く沈む？ 置いて確かめよう</p>';
  ovOpen('<div class="no">'+(sd.t==='page'?'ページ'+pageNo(i):sd.t==='hut'?'小屋':'さいご')+'</div><h2>'+sd.name+'</h2><p style="color:#E4572E;font-weight:600">'+sd.sub+'</p><p>'+BRIEF[i]+'</p>'+extra+(sd.t==='page'?'<p style="font-size:14px">ぬくもり☕3つ。浅すぎ・深すぎで1つ減る。</p>':''),[['はじめる','o',()=>startStage(i)],['地図へ','',()=>toMap()]])}
 
+
+/* ===== まなぶ札（2026-10-06 夜間改修・初心者向け）: そのページに入る前に、まだ読んでいない札を先に出す（つづきから・地図から入っても） ===== */
+const SVGW='<svg viewBox="0 0 340 130" width="340" height="130"><g filter="url(#crayon)" stroke="#2B4C7E" stroke-width="3">';
+const LESSON=[
+ {k:'force',at:0,no:'まなぶ 1',h:'力の大きさは「N（ニュートン）」',
+  body:SVGW+'<rect x="0" y="96" width="340" height="30" fill="#dfe9f3"/><rect x="30" y="60" width="90" height="36" fill="#c46a4a"/><rect x="215" y="16" width="30" height="80" fill="#c46a4a"/><path d="M75 66 v40 M66 96 l9 12 l9 -12 M230 26 v80 M221 96 l9 12 l9 -12" stroke="#E4572E" stroke-width="4" fill="none"/></g><text x="75" y="52" text-anchor="middle" font-size="15" fill="#2B4C7E">重力 20 N</text><text x="290" y="56" text-anchor="middle" font-size="15" fill="#2B4C7E">重力 20 N</text><text x="290" y="76" text-anchor="middle" font-size="13" fill="#E4572E">（同じ！）</text></svg>'+
+  '<p>物をおしたり引いたりするはたらきを<b>力</b>という。力の大きさは <b>N（ニュートン）</b> という単位ではかる。</p>'+
+  '<p>地球は、すべての物を下へ引っぱっている。この力を<b>重力</b>という。<b>重さ約1 kgの物には、約10 Nの重力</b>がはたらく。</p>'+
+  '<p class="rule">旅人のれんが（約2 kg）＝ 20 N。小石1個（約1 kg）＝ 10 N。<br>れんがに小石を2個のせると 20＋10＋10＝40 N で雪をおす。</p>'+
+  '<p>れんがをころがして下の面を変えても、<b>重力は 20 N のまま</b>（重さは変わらない）。変わるのは、雪にふれる<b>面積</b>だけ。</p>',
+  quiz:{q:'れんが（20 N）に小石（1個 10 N）を1個だけのせた。雪をおす力は何 N？',opts:[['30 N',1],['20 N',0],['10 N',0],['40 N',0]],ok:'正解！ 20＋10＝30 N。面をどう変えても 30 N のまま。',ng:'れんがの 20 N に、小石1個ぶんの 10 N をたそう。'}},
+ {k:'press',at:0,no:'まなぶ 2',h:'1 cm² あたりの力＝圧力',
+  body:'<p>雪がどれだけへこむかは、<b>おす力を、ふれる面積でわった値</b>（1 cm² あたりにかかる力）で決まる。これを<b>圧力</b>という（数で計算するのは次の回）。</p>'+
+  '<p class="rule">1 cm² あたりの力 ＝ 力（N）÷ 面積（cm²）</p>'+
+  '<p><b>やって見せる：</b>れんが 20 N を<br>・いちばん広い面 200 cm² で置く → 20 ÷ 200 ＝ 0.1 N<br>・いちばんせまい面 50 cm² で置く → 20 ÷ 50 ＝ 0.4 N<br>0.4 は 0.1 の 4倍 → <b>せまい面の方が4倍深くへこむ</b>。</p>'+
+  '<p>きまり：力が2倍 → へこみ2倍。面積が2倍 → へこみ半分。<b>力も面積も2倍 → 1 cm² あたりは同じ → へこみも同じ</b>。</p>'+
+  '<p>かんじき・スキー板は<b>面積を広げて</b>圧力を小さく（沈まない）。画びょう・くぎは<b>先をせまくして</b>圧力を大きく（ささる）。</p>',
+  quiz:{q:'A は 24 N を 12 cm² で、B は 30 N を 10 cm² で雪にのせる。深くへこむのはどっち？',opts:[['A',0],['B',1],['同じ',0]],ok:'正解！ 1 cm² あたり A は 24÷12＝2 N、B は 30÷10＝3 N。B の方が深い。',ng:'1 cm² あたりの力をくらべよう。A は 24÷12、B は 30÷10。大きい方が深い。'}},
+ {k:'bottleA',at:3,no:'まなぶ 3',h:'理科室の実験：面積だけを変える',
+  body:'<svg viewBox="0 0 340 150" width="340" height="150"><g transform="translate(0,22)" filter="url(#crayon)" stroke="#2B4C7E" stroke-width="3"><rect x="10" y="100" width="140" height="24" fill="#f2d36b"/><rect x="190" y="100" width="140" height="24" fill="#f2d36b"/><path d="M55 100 v-60 q0 -10 10 -14 v-14 h30 v14 q10 4 10 14 v60z" fill="#cfe3f5"/><path d="M245 100 h30 v-14 q10 -4 10 -14 v-60 h-50 v60 q0 10 10 14z" fill="#cfe3f5"/></g><text x="80" y="16" text-anchor="middle" font-size="13" fill="#2B4C7E">底を下（広い面）</text><text x="260" y="16" text-anchor="middle" font-size="13" fill="#2B4C7E">キャップを下（せまい面）</text></svg>'+
+  '<p>理科室では、れんがのかわりに<b>水を入れたペットボトル</b>をスポンジに置くことが多い。</p>'+
+  '<p class="rule">力は同じ・面積だけ変える ＝ <b>同じ1本</b>を「底を下」と「キャップを下」で置きくらべる。</p>'+
+  '<p>手順：① 底を下にしてスポンジに置く → ② へこんだ深さを定規で測る → ③ 同じボトルをキャップを下にして置く → ④ 深さを測り、2つをくらべる。</p>'+
+  '<p>この小屋では、れんがで同じ「組」を作る。<b>変える条件は1つだけ</b>（両方変えると、どちらのせいか分からない）。</p>',
+  quiz:{q:'れんがで「力は同じ・面積だけ変える」組になっているのはどれ？',opts:[['小石なしのれんがを、広い面と せまい面で置きくらべる',1],['広い面で小石なし と、せまい面で小石2個 をくらべる',0],['どちらも広い面で、小石なし と 小石2個 をくらべる',0]],ok:'正解！ 同じれんが・同じ小石なら力は同じ。変えたのは面だけ。',ng:'小石の数がちがうと、力も変わってしまう。小石はそろえて、面だけ変えよう。'}},
+ {k:'bottleB',at:6,no:'まなぶ 4',h:'理科室の実験：力だけを変える',
+  body:'<p class="rule">面積は同じ・力だけ変える ＝ <b>底を下にしたまま</b>、ペットボトル<b>1本</b>と<b>2本重ね</b>をくらべる。</p>'+
+  '<p>× だめな例：「1本でキャップを下」と「2本重ねて底を下」…面積も力も変わってしまう。</p>'+
+  '<p>この小屋では、れんがの<b>下の面はそろえて、小石（重さ）だけ</b>を変えた組を作ろう。</p>',
+  quiz:{q:'れんがで「面積は同じ・力だけ変える」組になっているのはどれ？',opts:[['どちらも まん中の面で、小石1個 と 小石3個 をくらべる',1],['まん中の面で小石1個 と、せまい面で小石3個 をくらべる',0],['小石なしで、まん中の面 と せまい面 をくらべる',0]],ok:'正解！ 面はそろえたまま、小石（重さ）だけ変えた。',ng:'面がちがうと面積も変わってしまう。面はそろえて、小石の数だけ変えよう。'}}];
+function shuf(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function teach(i,then){const q=LESSON.filter(l=>l.at<=i&&!(S.seen&&S.seen[l.k]));let j=0;
+ const nx=()=>{if(j>=q.length){then();return}const l=q[j++];MODE='brief';P=null;show('none');{const bb=$('bBack');bb.classList.remove('hidden');bb.textContent='◀ もどる'}
+  const mark=()=>{S.seen=S.seen||{};S.seen[l.k]=1;save();nx()};
+  if(!l.quiz){ovOpen('<div class="no">'+l.no+'</div><h2>'+l.h+'</h2>'+l.body,[['わかった','o',mark]]);return}
+  /* 札は2枚：読む札 → やってみよう（答えを押しても札は作り直さず、返しの欄だけ書き換える） */
+  ovOpen('<div class="no">'+l.no+'</div><h2>'+l.h+'</h2>'+l.body,[['やってみよう ▶','o',()=>{
+   const ops=shuf(l.quiz.opts);
+   ovOpen('<div class="no">'+l.no+'　やってみよう</div><p><b>'+l.quiz.q+'</b></p><div id="lq">'+ops.map((o,k)=>'<button class="cb opt" data-k="'+k+'">'+o[0]+'</button>').join('')+'</div><p id="lqr" aria-live="polite"></p>',[]);
+   document.querySelectorAll('#lq .opt').forEach(b=>b.onclick=()=>{const ok=ops[+b.dataset.k][1];$('lqr').innerHTML=ok?'<span style="color:#2B4C7E">'+l.quiz.ok+'</span>':'<span style="color:#E4572E">'+l.quiz.ng+'</span>';
+    if(ok){sfx.good(1);document.querySelectorAll('#lq .opt').forEach(x=>x.disabled=true);const bs=document.querySelector('#ov .btns');if(!bs.children.length){const e=document.createElement('button');e.className='cb o';e.textContent='わかった';e.onclick=()=>{sfx.tap();mark()};bs.appendChild(e)}}else{sfx.faint();b.disabled=true}})}]])};
+ nx()}
 /* ===== 地図（雪原の道） ===== */
 function mapNodes(){const n=SEQ.length;const pts=[];for(let i=0;i<n;i++){const t=i/(n-1);if(L.land)pts.push([W*(.07+.86*t),H*(.74-.42*t)+Math.sin(i*1.7)*H*.08]);else pts.push([W*(i===n-1?.7:(i%2?.7:.3)),H*(.82-.6*t)])}return pts}
 function drawMap(t){cx.drawImage(PAPER,0,0,W,H);const N=mapNodes();
@@ -4269,7 +4312,7 @@ function zkButtons(){const has=!!(window.Zukan&&Zukan.openBook);document.querySe
 function openBook(){try{window.Zukan&&Zukan.openBook&&Zukan.openBook({unit:'kisho'})}catch(e){}}
 function openGacha(){try{window.Zukan&&Zukan.openGacha&&Zukan.openGacha({box:'kisho'})}catch(e){}}
 $('bBook1').onclick=openBook;$('bBook2').onclick=openBook;$('bGacha').onclick=openGacha;
-$('bStart').onclick=()=>{ac();sfx.tap();const nm=$('nameIn').value.trim()||S.name,keep={sound:S.sound,tools:S.tools,paid:S.paid,best:S.best,mc:S.mc,seal:S.seal};S=fresh();Object.assign(S,keep);S.name=nm;S.started=true;save();if(GD)startWithGuide();else openBrief(0)};
+$('bStart').onclick=()=>{ac();sfx.tap();const nm=$('nameIn').value.trim()||S.name,keep={sound:S.sound,tools:S.tools,paid:S.paid,best:S.best,mc:S.mc,seal:S.seal,seen:S.seen};S=fresh();Object.assign(S,keep);S.name=nm;S.started=true;save();if(GD)startWithGuide();else openBrief(0)};
 $('bCont').onclick=()=>{ac();sfx.tap();const v=$('nameIn').value.trim();if(v)S.name=v;save();toMap()};
 function earn(n,why,key,x,y){if(key){if(S.paid[key])return 0;S.paid[key]=1;save()}let got=0;try{got=window.Zukan&&Zukan.earn?Zukan.earn(n,why,{x:x==null?W/2:x,y:y==null?H*.3:y}):0}catch(e){}return got}
 function flashPop(t,x,y,cls){const d=document.createElement('div');d.className='pop '+(cls||'');d.textContent=t;d.style.left=Math.max(90,Math.min(W-90,x))+'px';d.style.top=Math.max(40,Math.min(H-40,y))+'px';$('pops').appendChild(d);setTimeout(()=>d.remove(),1500)}
@@ -4277,7 +4320,7 @@ function flashPop(t,x,y,cls){const d=document.createElement('div');d.className='
 /* ===== 確認テスト ===== */
 let TS=null;function playerName(){return window.PLAYER_NAME||S.name||''}
 function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
-function startTest(){if(!window.Quiz)return;ovClose();MODE='test';P=null;TS={qs:Quiz.test(),i:0,ans:[]};show('test');renderQ()}
+function startTest(){if(!window.Quiz)return;if(!TEST_ONLY&&LESSON.some(l=>!(S.seen&&S.seen[l.k]))){teach(SEQ.length-1,startTest);return}ovClose();MODE='test';P=null;TS={qs:Quiz.test(),i:0,ans:[]};show('test');renderQ()}
 function renderQ(){const q=TS.qs[TS.i],box=$('tbox');
  box.innerHTML='<div class="tno">確認テスト　第'+(TS.i+1)+'問 / '+TS.qs.length+'</div><div class="prog">'+TS.qs.map((_,i)=>'<i class="'+(i<TS.i?'on':'')+'"></i>').join('')+'</div><div class="tq">'+q.q+'</div>'+(q.fig?'<div class="fig2">'+q.fig+'</div>':'')+'<div id="ta"></div>';
  const ta=$('ta');
@@ -4360,19 +4403,17 @@ if(GD){
   rules:['れんがを **ころがす**（ボタン・左右スワイプ）で、下にする面を選ぶ',
    'かごの **小石（1個 10 N）** をれんがへ **ドラッグ**。もどすときは、かごへドラッグ',
    '**そっと置く**（下へスワイプでも）。足型の深さを **黄色の帯** に入れる',
-   'へこみは **力 ÷ 面積** で決まる。力2倍→2倍深い、面積2倍→半分',
+   '**N（ニュートン）** は力の大きさの単位。約1 kgの物には約10 Nの **重力**（地球が引く力）',
+   'へこみは **力 ÷ 面積**（1 cm² あたりの力＝**圧力**）で決まる。力2倍→2倍深い、面積2倍→半分',
    '見本の足あととくらべて「**何倍？**」を先に考えると一発で入る'],
   onOpen:()=>{if(P&&P.phase==='ready'){P.phase='pause';HPAUSE=true}},onClose:()=>{if(HPAUSE){HPAUSE=false;if(P&&P.phase==='pause')P.phase='ready'}},
   replay:'tutorial',offset:L.land?{x:60}:{x:0,y:58},show:false,attention:true});
- GD.tutorialButton('#bHow',()=>{ac();sfx.tap();if(!S.started){S.name=$('nameIn').value.trim()||S.name;S.started=true;save()}MODE='brief';P=null;show('none');GD.tutorial(PRACTICE)});
+ GD.tutorialButton('#bHow',()=>{ac();sfx.tap();if(!S.started){S.name=$('nameIn').value.trim()||S.name;S.started=true;save()}MODE='brief';P=null;show('none');teach(0,()=>{MODE='brief';P=null;show('none');GD.tutorial(PRACTICE)})});
 }else{$('bHow').classList.add('hidden')}
 function startWithGuide(){MODE='brief';P=null;show('none');
  GD.intro({title:'第2回　雪原わたりの足型',
-  learn:'へこみは **力 ÷ 面積** で決まる。同じ重さでも **面積がせまいほど深く** 沈む',
-  how:'れんがを **ころがして** 面を選び、**小石** で重さを決めて **そっと置く**',gesture:'swipe'}).then(()=>GD.tutorial(PRACTICE))}
-window.__game={L:()=>L,brickC,stoneC,basketC,clays:()=>clays(),S:()=>S,P:()=>P,mode:()=>MODE,startStage,openBrief,toMap,startTest,tumble,addStone,removeStone,place,
- setBrick:(f,n)=>{const b=curBrick();b.f=f;b.n=n},answer:()=>P&&P.q&&{f:P.q.tf,n:P.q.tn},go:()=>$('bGo').click(),sel:s=>{P.sel=s},compare,
- press:(i,v)=>{P.pred[i]=v},reason:r=>{P.reason=r},seal:()=>sealIt()};
+  learn:'へこみは **力 ÷ 面積**（1 cm² あたりの力＝**圧力**）で決まる。同じ重さでも **面積がせまいほど深く** 沈む',
+  how:'れんがを **ころがして** 面を選び、**小石** で重さを決めて **そっと置く**',gesture:'swipe'}).then(()=>teach(0,()=>{MODE='brief';P=null;show('none');GD.tutorial(PRACTICE)}))}
 if(TEST_ONLY){startTest()}else toTitle();
 requestAnimationFrame(loop);
 </script>

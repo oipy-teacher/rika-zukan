@@ -3934,7 +3934,7 @@ const DIVES=[
 const PDIVE={nm:'れんしゅう飛行',sub:'ぜったい失敗しない',H:1400,P0:NORMAL,v:30,alt:1,rings:[[1200,'rec',.68],[700,'pre',.34]],smoke:[500],cap:null};
 
 /* ===== 保存 ===== */
-function fresh(){return{v:1,name:'',started:false,clr:{},stars:{},paid:{},note:[],caps:{},ghost:{},tries:{},sealed:false,seal:null,mc:false,sound:true,hits:0,shots:0,preHit:0,preN:0,boss:null,les:{}}}
+function fresh(){return{v:1,name:'',started:false,clr:{},stars:{},paid:{},note:[],caps:{},ghost:{},tries:{},sealed:false,seal:null,mc:false,sound:true,hits:0,shots:0,preHit:0,preN:0,boss:null,les:{},seen:{}}}
 let S;try{S=Object.assign(fresh(),JSON.parse(localStorage.getItem(SKEY))||{})}catch(e){S=fresh()}
 function save(){try{localStorage.setItem(SKEY,JSON.stringify(S))}catch(e){}}
 
@@ -4245,7 +4245,7 @@ function toMap(){tutStop();if(HELP)HELP.show();MODE='map';G=null;windOff();show(
  $('#posters').innerHTML=DIVES.map((d,i)=>{const lock=i>0&&!S.clr[i-1];const st=S.stars[i]||[0,0,0];return '<button class="pst'+(S.clr[i]?' done':'')+(lock?' lock':'')+(i===nx&&!S.clr[i]?' next':'')+'" data-i="'+i+'" '+(lock?'disabled':'')+'><span class="n">第'+(i+1)+'便</span><span class="st">'+st.map(v=>v?'★':'☆').join('')+'</span><span class="t">'+esc(d.nm)+'<small>'+esc(d.sub)+(d.boss?'':'・'+(d.H)+'mから')+'</small></span></button>'}).join('');
  document.querySelectorAll('.pst').forEach(b=>b.onclick=()=>{sfx.tap();startDive(+b.dataset.i,0)});
  const nst=Object.values(S.stars).reduce((a,s)=>a+s.filter(Boolean).length,0);$('#mapInfo').textContent='★'+nst+' / 24';$('#mapJar').textContent='予想カプセル '+capCount()+' / 7';
- const all=S.clr[7];$('#bSeal').classList.toggle('hidden',!all||S.sealed);$('#bTest').classList.toggle('hidden',!S.sealed);$('#bNext').classList.toggle('hidden',!!all);
+ const all=S.clr[7];$('#bSeal').classList.toggle('hidden',!all||S.sealed);$('#bTest').classList.toggle('hidden',!S.sealed);$('#bTest').textContent=TEST_ONLY||ansSeen()?'確認テスト':'答え合わせ';$('#bNext').classList.toggle('hidden',!!all);
  $('#bNext').textContent='つぎの便へ（第'+(nx+1)+'便）';zkButtons()}
 $('#bNext').onclick=()=>{sfx.tap();startDive(nextDive(),0)};
 $('#bSeal').onclick=()=>{sfx.tap();sealScreen()};
@@ -4257,6 +4257,40 @@ $('#bNote').onclick=()=>{ac();sfx.tap();openNote()};
 $('#bStart').onclick=()=>{ac();S.name=$('#nameIn').value.trim();S.started=true;save();sfx.tap();if(GD){startWithGuide();return}if(!S.clr[0])startDive(0,0);else toMap()};
 $('#bCont').onclick=()=>{ac();S.name=$('#nameIn').value.trim()||S.name;save();sfx.tap();toMap()};
 
+
+/* ===== まなぶ札（2026-10-06 夜間改修・初心者向け）: 便に入る前／確認テストの前に、まだ読んでいない札を先に出す（地図・つづきから入っても） ===== */
+const LESSON=[
+ {k:'hpa',at:0,no:'まなぶ 1',h:'気圧計は「気圧」をはかる',
+  body:'<p>空気にも重さがある。その重さで、まわりの空気から押される圧力を<b>大気圧</b>、または<b>気圧</b>という。</p>'+
+  '<p>気圧の単位は <b>hPa（ヘクトパスカル）</b>。<b>1 hPa ＝ 100 Pa</b>（1 Pa ＝ 1 m² あたり 1 N の力）。海面に近い地上では、ふつう約 <b>1013 hPa</b>。</p>'+
+  '<p class="small"><b>気圧計</b>＝今いる場所の気圧を hPa で表示する道具。<b>高度計</b>＝今の高さを m で表示する道具（気圧の値から高さを計算している）。</p>'+
+  '<p>このゲームでは、気球から飛びおりて落ちながら、高さによって<b>気圧計の値がどう変わるか</b>を自分の目で記録していく。</p>',
+  quiz:{q:'「今いる場所の気圧を hPa で表示する道具」はどれ？',opts:[['気圧計',1],['高度計',0],['温度計',0]],ok:'正解！ 気圧計は気圧（hPa）を表示する。高度計は、その気圧から計算した高さ（m）を表示する。',ng:'表示する単位に注目。hPa を表示するのはどれかな。'}},
+ {k:'wx',at:4,no:'まなぶ 2',h:'低気圧・高気圧ってなに？',
+  body:'<p>同じ場所でも、<b>天気（大気のようす）によって、地上の気圧は日ごと・時刻ごとに変わる</b>。</p>'+
+  '<p><b>低気圧</b>＝まわりより気圧が低いところ（近づくと天気がくずれやすい）。<b>高気圧</b>＝まわりより気圧が高いところ。くわしくは、あとの回（風と気圧）で学ぶ。</p>'+
+  '<p class="small">ふつうの日は地上 1013 hPa。この便の日は地上の気圧がちがう。ノートの値をそのまま使っていいか、考えながら飛ぼう。</p>',
+  quiz:{q:'同じ公園で、朝は 1015 hPa、夕方は 1008 hPa だった。公園の高さは変わっていない。気圧が変わったわけは？',opts:[['天気（大気のようす）が変わったから',1],['公園が高くなったから',0],['気圧計は、夕方になると必ず小さく出るから',0]],ok:'正解！ 同じ場所でも、天気によって気圧は変わる。',ng:'高さは変わっていない。同じ場所なのに気圧が変わるのは、何が変わったとき？'}},
+ {k:'matome',at:99,no:'テストの前に',h:'答え合わせ：高さと気圧',
+  body:'<p>高いところほど、その上にある空気が少ない。だから<b>気圧は小さい</b>（エレベーターで上がっても小さくなる）。</p>'+
+  '<p class="small">高さと気圧のめやす（ふつうの日）：0 m 約1013 hPa ／ 1500 m 約850 hPa ／ 3000 m 約700 hPa ／ 富士山頂 3776 m 約640 hPa ／ 5500 m 約500 hPa（地上の約半分）</p>'+
+  '<p><b>地上の近くでは、10 m 上がるごとに約 1 hPa 小さくなる。</b><br>やって見せる：地上 1013 hPa で、高さ 30 m → 30÷10＝3 → 1013−3＝<b>1010 hPa</b>。</p>'+
+  '<p>体や袋は、<b>中からも外と同じくらいの力で押し返している</b>（大気圧はあらゆる向きからはたらく）。だから体はつぶれない。外の気圧が小さい山頂では袋が<b>ふくらみ</b>、山頂で閉めたボトルを気圧の大きいふもとへ持っていくと<b>へこむ</b>。</p>'+
+  '<p class="small">高度計は「気圧が小さいほど高い」と表示する。天気が変わって気圧が下がると、同じ場所でも高く表示される。</p>',
+  quiz:{q:'地上が 1005 hPa のとき、高さ 200 m では約何 hPa？',opts:[['約 985 hPa',1],['約 1025 hPa',0],['約 805 hPa',0]],ok:'正解！ 200÷10＝20 → 1005−20＝985 hPa。',ng:'10 m で約 1 hPa 小さくなる。200 m なら何 hPa 小さい？ 高いほど「小さく」なるのも忘れずに。'}}];
+function shuf(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function ansSeen(){return !!(S.seen&&S.seen.matome)}
+function teach(i,then){const q=LESSON.filter(l=>(i===99?l.at===99:l.at<=i)&&!(S.seen&&S.seen[l.k]));let j=0;
+ const nx=()=>{if(j>=q.length){backBtn();then();return}const l=q[j++];$('#bBack').classList.add('hidden');if(HELP)HELP.hide();
+  const mark=()=>{S.seen=S.seen||{};S.seen[l.k]=1;save();ovClose();nx()};
+  /* 札は2枚：読む札 → やってみよう（答えを押しても札は作り直さず、返しの欄だけ書き換える） */
+  ovOpen('<div class="no">'+l.no+'</div><h2>'+l.h+'</h2>'+l.body+'<div class="row"><button class="tk" id="lGo">'+(l.quiz?'やってみよう ▶':'わかった')+'</button></div>');
+  $('#lGo').onclick=()=>{ac();sfx.tap();if(!l.quiz){mark();return}
+   const ops=shuf(l.quiz.opts);
+   ovOpen('<div class="no">'+l.no+'　やってみよう</div><p><b>'+l.quiz.q+'</b></p><div id="lq" style="display:flex;flex-direction:column;gap:10px">'+ops.map((o,k)=>'<button class="tk c s" data-k="'+k+'">'+o[0]+'</button>').join('')+'</div><p id="lqr" style="font-weight:700;min-height:1.5em" aria-live="polite"></p><div class="row"><button class="tk" id="lGo2" disabled style="opacity:.35">わかった</button></div>');
+   $('#lGo2').onclick=()=>{if($('#lGo2').disabled)return;ac();sfx.tap();mark()};
+   document.querySelectorAll('#lq .tk').forEach(b=>b.onclick=()=>{ac();sfx.tap();const ok=ops[+b.dataset.k][1];$('#lqr').innerHTML=ok?l.quiz.ok:'<span style="color:var(--rust,#B9583F)">'+l.quiz.ng+'</span>';if(ok){$('#lGo2').disabled=false;$('#lGo2').style.opacity='';document.querySelectorAll('#lq .tk').forEach(x=>x.disabled=true)}else{b.disabled=true;b.style.opacity='.4'}})}};
+ nx()}
 /* ===== 観測ノート ===== */
 function addNote(h,p,p0){const i=S.note.findIndex(n=>n.h===h&&n.p0===p0);const rec={h,p:Math.round(p*10)/10,p0};if(i>=0)S.note[i]=rec;else S.note.push(rec);save()}
 function noteVal(h){const n=S.note.find(n=>n.h===h&&n.p0===NORMAL);return n?Math.round(n.p):null}
@@ -4281,7 +4315,8 @@ function openNote(){const wasPaused=paused;if(MODE==='dive'){paused=true;windSet
 
 /* ===== 降下 ===== */
 let BR=null;// タイムアタックの記録
-function startDive(i,leg){ac();const tut=i===-1;const d=tut?PDIVE:DIVES[i];if(window.BGM)BGM.mood(d&&d.boss?'tense':'normal');if(!leg&&d.boss)BR={t:0,legs:[]};document.body.classList.toggle('tut',tut);
+function startDive(i,leg){if(i<0||leg){startDive0(i,leg);return}teach(i,()=>startDive0(i,leg))}
+function startDive0(i,leg){ac();const tut=i===-1;const d=tut?PDIVE:DIVES[i];if(window.BGM)BGM.mood(d&&d.boss?'tense':'normal');if(!leg&&d.boss)BR={t:0,legs:[]};document.body.classList.toggle('tut',tut);
  const L=d.boss?d.legs[leg]:d;
  G={i,leg:leg||0,d,H:L.H,P0:L.P0,h:L.H,x:.5,tx:.5,t:0,v:d.v,alt:!!d.alt,phase:'jump',
   rings:(d.boss?[]:d.rings).map(r=>({h:r[0],k:r[1],x:r[2],st:'wait'})),
@@ -4431,13 +4466,14 @@ function sealScreen(){MODE='map';show(['map']);backBtn();
   const predText=hs.map(h=>h+'m:'+S.caps[h].val).join('・')+'hPa';
   const rec={v:1,koma:KOMA,game:GID,at:Date.now(),name:S.name||window.PLAYER_NAME||'',slots,predText,plan:hs.map(h=>S.caps[h].tag),reason:{id:'up',t:'高いところほど上にある空気が少なく、気圧は小さい'}};
   try{localStorage.setItem(SEAL_KEY,JSON.stringify(rec))}catch(e){}S.sealed=true;S.seal=rec;save();sfx.cap();burst(W/2,H*.4,36,[C.ochre,C.cream,C.coral]);earn(10,'predict','seal',W/2,H*.4);
-  ovOpen('<div class="no">封印しました</div><h2>カプセルは、校外学習のあとに開けよう</h2><p>'+esc(predText)+'</p><p>最後に<b>確認テスト（10問）</b>。</p><div class="row"><button class="tk" id="sTest">確認テストへ</button></div>');
+  ovOpen('<div class="no">封印しました</div><h2>カプセルは、校外学習のあとに開けよう</h2><p>'+esc(predText)+'</p><p>'+(ansSeen()?'最後に<b>確認テスト（10問）</b>。':'まず<b>答え合わせ（高さと気圧）</b>。そのあと<b>確認テスト（10問）</b>。')+'</p><div class="row"><button class="tk" id="sTest">'+(ansSeen()?'確認テストへ':'答え合わせへ')+'</button></div>');
   $('#sTest').onclick=()=>{ovClose();finalClear()}}}
 function finalClear(){const go=()=>startTest();if(!S.mc&&window.Zukan&&Zukan.mainClear){S.mc=true;save();try{Zukan.mainClear({onClose:go})}catch(e){go()}}else go()}
 
 /* ===== 確認テスト ===== */
 let TS=null;function playerName(){return window.PLAYER_NAME||S.name||''}
-function startTest(){if(!window.Quiz)return;tutStop();if(HELP)HELP.hide();MODE='test';G=null;windOff();TS={qs:Quiz.test(),i:0,ans:[]};show(['test']);backBtn();hideSlip();ovClose();renderQ()}
+function startTest(){if(!TEST_ONLY&&LESSON.some(l=>l.at===99&&!(S.seen&&S.seen[l.k]))){teach(99,startTest);return}startTest0()}
+function startTest0(){if(!window.Quiz)return;tutStop();if(HELP)HELP.hide();MODE='test';G=null;windOff();TS={qs:Quiz.test(),i:0,ans:[]};show(['test']);backBtn();hideSlip();ovClose();renderQ()}
 function renderQ(){const q=TS.qs[TS.i],box=$('#tbox');
  box.innerHTML='<span class="tno">確認テスト　'+(TS.i+1)+' / '+TS.qs.length+'</span><div class="prog">'+TS.qs.map((_,i)=>'<i class="'+(i<TS.i?'on':'')+'"></i>').join('')+'</div><div class="tq">'+q.q+'</div>'+(q.fig?'<div class="fig2">'+q.fig+'</div>':'')+'<div id="ta"></div>';
  const ta=$('#ta');
@@ -4569,21 +4605,18 @@ if(GD){
   rules:['指で **左右にドラッグ**（←→キー）して輪をくぐる。白い輪＝その高さの値をノートに記録',
    '赤い輪の手前で気圧計に **ふた**。**＋−** でその高さの値を予想してからくぐる（±10hPaで的中）',
    '**けむり**：気圧計がノートの「目標の高さの値」になったら押す。**▼急降下** は長おし',
+   '**気圧**＝まわりの空気に押される圧力（大気圧）。単位 **hPa（ヘクトパスカル）**＝100 Pa。地上はふつう約1013 hPa',
    '**高いところほど気圧は小さい**。低気圧・高気圧の日は、地上の気圧のずれの分だけ読みかえる',
    '黄土色の輪は **予想カプセル**。正しい「計画の札」を取ってからくぐる'],
   onOpen:()=>{if(MODE==='dive'&&!paused){paused=true;HPAUSE=true;windSet(0)}},onClose:()=>{if(HPAUSE){HPAUSE=false;paused=false}},
   replay:'tutorial',offset:{x:hOff()},show:false,attention:true});
  addEventListener('resize',()=>{if(HELP)HELP.update({offset:{x:hOff()}})});
- GD.tutorialButton('#bHow',()=>{ac();sfx.tap();S.name=$('#nameIn').value.trim()||S.name;S.started=true;save();GD.tutorial(PRACTICE)});
+ GD.tutorialButton('#bHow',()=>{ac();sfx.tap();S.name=$('#nameIn').value.trim()||S.name;S.started=true;save();teach(0,()=>GD.tutorial(PRACTICE))});
 }else{$('#bHow').classList.add('hidden')}
 function startWithGuide(){
  GD.intro({title:'第6回　気圧計スカイダイブ',
   learn:'**高いところほど気圧は小さい**（上にのっている空気が少ないから）',
-  how:'指で **左右にドラッグ** して輪をくぐり、気圧計の値を読んで予想する',gesture:'drag'}).then(()=>{if(!S.clr[0])GD.tutorial(PRACTICE);else toMap()})}
-window.__game={pos:()=>G?{dx:wx(G.x),dy:DY,h:G.h,pred:G.pred,lid:!!G.lid,rings:G.rings.map(r=>({x:wx(r.x),y:wy(r.h),st:r.st,k:r.k,h:r.h})),tg:G.targets.map(t=>t.st),tut:!!G.tut}:null,G:()=>G,S:()=>S,mode:()=>MODE,startDive,toMap,toTitle,startTest,sealScreen,openNote,smoke:doSmoke,setPred,
- step:(dt,n)=>{for(let i=0;i<(n||1);i++)update(dt||1/60)},bot:v=>{BOT=v},
- run:(i,leg)=>{BOT=true;startDive(i,leg||0);let n=0;while(MODE==='dive'&&n<200000){update(1/30);n++}BOT=false;return{mode:MODE,clr:!!S.clr[i],stars:S.stars[i],t:n/30}},
- fill:()=>{S.note=[];[4000,3776,3500,3000,2500,2250,2000,1600,1500,1250,1000,750,500,0].forEach(h=>addNote(h,PR(h,NORMAL),NORMAL));save()}};
+  how:'指で **左右にドラッグ** して輪をくぐり、気圧計の値を読んで予想する',gesture:'drag'}).then(()=>{if(!S.clr[0])teach(0,()=>GD.tutorial(PRACTICE));else toMap()})}
 if(TEST_ONLY)startTest();else toTitle();
 requestAnimationFrame(loop);
 })();

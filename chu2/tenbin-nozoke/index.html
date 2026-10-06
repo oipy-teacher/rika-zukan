@@ -4394,7 +4394,35 @@ function totalAtoms(){let n=0;G.cols.forEach(c=>n+=c.pre+c.post);return n}
 function colTable(){return'<div style="display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin:6px 0">'+G.cols.map(c=>'<span style="display:inline-block;padding:4px 10px;border-radius:8px;background:#FBF8F1;box-shadow:inset 0 0 0 2px #2E4057;font-weight:900">'+c.el+'　前 '+c.pre+' ＝ 後 '+c.post+'</span>').join('')+'</div>'}
 function bossWin(){const st=STAGES[STI];S.cleared[st.id]=1;S.started=true;S.done=true;const used=st.time-G.timeLeft;if(S.bossBest==null||used<S.bossBest)S.bossBest=used;S.stars[st.id]=Math.max(S.stars[st.id]||0,G.miss===0?3:G.miss<3?2:1);
  earn(100,'boss',{id:GID+'-taisaku'});save();confetti();setTimeout(confetti,500);
- setTimeout(()=>{const fin=()=>showClear();if(window.Zukan&&Zukan.mainClear)Zukan.mainClear({onClose:fin});else fin()},RM?500:1800)}
+ setTimeout(()=>{const fin=()=>showClear();weightLesson(()=>{if(window.Zukan&&Zukan.mainClear)Zukan.mainClear({onClose:fin});else fin()})},RM?500:1800)}
+/* ---------- 先に学ぶ札（2026-10-06 初心者向けに追加）：式 → 数を入れた例 → やってみよう（正解するまで次へ進めない） ---------- */
+function lessonDeck(pages,done,i){i=i||0;const pg=pages[i];if(!pg){done&&done();return}
+ const last=i===pages.length-1,ch=shuffle(pg.q.c.map((c,k)=>({t:c[0],ok:k===0,why:c[1]||''})));
+ dlg('<div class="nh">'+pg.h+'<small>'+pg.sm+'（'+(i+1)+' / '+pages.length+'）</small></div><div class="bd">'+pg.b+
+  '<div style="margin-top:10px;padding:8px 10px;border-top:2px dashed currentColor"><p style="margin:0 0 6px"><b>やってみよう</b>　'+pg.q.a+'</p><div class="row" id="lkCh" style="flex-wrap:wrap">'+ch.map((c,k)=>'<button class="patch ln sm" data-k="'+k+'">'+c.t+'</button>').join('')+'</div><p id="lkMsg" style="text-align:center;min-height:1.5em;margin:4px 0 0"></p></div></div>'+
+  '<div class="row"><button class="patch rd" id="lkOk" style="visibility:hidden">'+(last?(pg.end||'すすむ ▶'):'つぎの札 ▶')+'</button></div>');
+ [].forEach.call($('lkCh').querySelectorAll('button'),b=>b.onclick=()=>{const c=ch[+b.dataset.k];
+  if(c.ok){try{SFX.pair()}catch(e){}$('lkMsg').innerHTML='<b>正解！</b> '+(pg.q.ok||'');$('lkOk').style.visibility='visible';[].forEach.call($('lkCh').querySelectorAll('button'),x=>x.disabled=true)}
+  else{try{SFX.bad()}catch(e){}$('lkMsg').innerHTML=c.why||'もう一度、上の例と同じやり方で。'}});
+ $('lkOk').onclick=()=>{try{SFX.tap()}catch(e){}if(last){closeDlg();done&&done()}else lessonDeck(pages,done,i+1)}}
+
+const TAG_ROW=(a)=>'<div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:6px 0">'+a.map(e=>'<span style="display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:8px;background:#FBF8F1;box-shadow:inset 0 0 0 2px #2E4057;font-weight:900"><i style="display:inline-block;width:1.1em;height:1.1em;border-radius:50%;background:'+EL[e].c+'"></i>'+e+'（'+EL[e].nm+'）＝'+EL[e].w+'</span>').join('')+'</div>';
+const WEIGHT_PAGES=[
+ {h:'重さの札',sm:'原子1個ずつの重さ',
+  b:'<p>原子は種類ごとに、1個の重さが決まっている。水素原子1個を 1 としたときの重さを「<b>重さの札</b>」とよぶ。</p>'+TAG_ROW(['H','C','O','Mg','S','Fe','Cu'])+
+   '<p style="text-align:center"><b>分子の重さ ＝ 中の原子の札を ぜんぶ足す</b><br>例：CO₂（C 1個・O 2個）＝ 12 ＋ 16 ＋ 16 ＝ <b>44</b></p>',
+  q:{a:'メタン CH₄（C 1個・H 4個）の札の合計は？',c:[['16'],['13','H は4個。1 を4回足そう。'],['60','C は1個だけ。12 を4回足していない？']],ok:'12 ＋ 1 ＋ 1 ＋ 1 ＋ 1 ＝ 16'}},
+ {h:'反応式で札を数える',sm:'前の合計 ＝ 後の合計',
+  b:'<p>反応式の前の大きい数字（<b>係数</b>）は、その分子の<b>個数</b>。2Cu ＋ O₂ → 2CuO は「銅原子 <b>2個</b> に 酸素分子 <b>1個</b>」。</p>'+
+   '<p style="text-align:center">例：C ＋ O₂ → CO₂<br>前 12 ＋（16＋16）＝ 44 ／ 後 CO₂ ＝ 44 → <b>同じ</b>（質量保存）</p>'+
+   '<p><b>外へ出ていく気体があるときは、その札を引く。</b><br>例：ふたのない試験管で 4CuO ＋ 2C → 4Cu ＋ 2CO₂<br>前（64＋16）×4 ＋ 12×2 ＝ 344。CO₂ 2個（44×2＝88）が外へ出る → 試験管に残るのは 344 − 88 ＝ <b>256</b>（銅4個＝64×4）</p>',
+  q:{a:'2C ＋ 2O₂ → 2CO₂。反応後の CO₂ 2個の札の合計は？',c:[['88'],['44','CO₂ は 2個。44 を2つ分。'],['56','O₂ は O が2個。12×2 ＋ 16×2×2 で数えよう。']],ok:'前 12×2 ＋ 32×2 ＝ 88。後も 44×2 ＝ 88'}},
+ {h:'質量の比と原子1個',sm:'1個ずつ結び付くとき',
+  b:'<p>CuO は銅原子 <b>1個</b> と酸素原子 <b>1個</b> の組。だから「結び付く質量の比」は、そのまま「<b>原子1個どうしの重さの比</b>」になる。</p>'+
+   '<p style="text-align:center">比 A：B のとき、A は B の <b>A ÷ B 倍</b><br>例：銅と酸素は 4：1 で結び付く → 銅原子1個は酸素原子1個の 4 ÷ 1 ＝ <b>4倍</b>（札でも 64 ÷ 16 ＝ 4）</p>',
+  q:{a:'鉄と硫黄は質量の比 7：4 で結び付き、FeS（鉄原子1個・硫黄原子1個）ができる。鉄原子1個は硫黄原子1個の何倍？',c:[['1.75倍'],['7倍','比 7：4 は「7 ÷ 4」。7 だけでは倍にならない。'],['0.57倍','逆に割っている。鉄（7）÷ 硫黄（4）。']],ok:'7 ÷ 4 ＝ 1.75 倍（札でも 56 ÷ 32 ＝ 1.75）'}}
+];
+function weightLesson(done,endLabel){const pages=WEIGHT_PAGES.slice();if(endLabel)pages[pages.length-1]=Object.assign({},pages[pages.length-1],{end:endLabel});lessonDeck(pages,()=>{S.wtSeen=true;save();done&&done()})}
 function bossFail(){G.phase='over';SFX.bad();dlg('<div class="nh rd">時間切れ<small>見本布の大作</small></div><div class="bd" style="text-align:center"><p>あと少し！ 糸だまりの<b>いちばん上がそろっている</b>ときは、まとめて運べる。</p></div><div class="row"><button class="patch rd" id="bRe">もう一度</button><button class="patch sm" id="bMap">見本布</button></div>');
  $('bRe').onclick=()=>{closeDlg();startStage(STI)};$('bMap').onclick=()=>{closeDlg();toMap()}}
 function earn(n,why,opt){try{if(window.Zukan&&Zukan.earn)Zukan.earn(n,why,Object.assign({x:W/2,y:H*.4},opt||{}))}catch(e){}refreshKK()}
@@ -4471,7 +4499,7 @@ $('btnBook').onclick=()=>{window.Zukan&&Zukan.openBook()};$('clBook').onclick=()
 function showClear(){scene='clear';G=null;bgKey='';setUI();confetti();SFX.fan();
  $('clRec').innerHTML='クリアタイム <b>'+fmtT(S.t)+'</b>　／　積み分けた原子 <b>'+S.sorted+'個</b>　／　最大連続 <b>'+S.maxCombo+'</b>'+(S.bossBest!=null?'　／　大作 <b>'+Math.round(S.bossBest)+'秒</b>':'');
  $('clBook').classList.toggle('hidden',!window.Zukan)}
-$('toTest').onclick=()=>{AU.init();SFX.tap();startTest()};
+$('toTest').onclick=()=>{AU.init();SFX.tap();if(!TEST&&!S.wtSeen){$('clear').classList.add('hidden');weightLesson(()=>startTest(),'確認テストへ ▶');return}startTest()};
 
 /* ================= 確認テスト ================= */
 let TQ=[],TA=[],TI=0;
@@ -4526,7 +4554,9 @@ if(window.Guide){
       '糸だまりの **いちばん上** の原子を、同じ種類の **柱へドラッグ**（同じ原子が続けば まとめて運べる）',
       '反応前と反応後の柱が **種類ごとに同じ高さ** になると、天秤がつりあう',
       '反応後の枠が空の図案は、**図案から縫い足す**。空へ出ていった気体・入ってきた空気は **枠へドラッグ** で数に入れる',
-      '続けて正しく積むと **連続**。まちがえた柱に置くと連続が切れる'],
+      '続けて正しく積むと **連続**。まちがえた柱に置くと連続が切れる',
+      '**重さの札**：H＝1・C＝12・O＝16・Mg＝24・S＝32・Fe＝56・Cu＝64。分子の重さは札の足し算（CO₂＝12＋16＋16＝44）',
+      '1個ずつ結び付く物質（CuO・MgO・FeS）では、結び付く質量の比＝原子1個どうしの重さの比。A：B なら A÷B 倍'],
     onOpen:()=>{PAUSED=true},onClose:()=>{PAUSED=false;last=performance.now()}});
   HELP.hide();
 }
@@ -4540,17 +4570,6 @@ window.Zukan&&Zukan.setup&&Zukan.setup({game:GID,koma:[KOMA]});
 window.Zukan&&Zukan.onChange&&Zukan.onChange(refreshKK);
 if(TEST){startTest()}else toTitle();
 requestAnimationFrame(loop);
-
-/* 自動テスト用の窓口（画面には出ない） */
-window.__tn={prac:()=>PRAC,paused:()=>PAUSED,mapNodes:()=>mapNodes,get G(){return G},get S(){return S},get scene(){return scene},geo:()=>geo(),colX:i=>colX(geo(),i),pileSlot:(s,k)=>pileSlot(geo(),s,k),molPos:(s,m)=>molPos(geo(),s,m),skyPos:m=>skyPos(m),
- start:i=>{S.started=true;startStage(i)},go:()=>{const b=$('goB');b&&b.click()},map:()=>toMap(),stitch:k=>stitchPat(k),
- // 1手ずつ正しく進める（自動テスト用）
- step:()=>{if(!G||G.phase==='intro'||G.phase==='balanced'||G.phase==='over'||flyers.length)return'wait';const o=geo();
-  for(const side of ['pre','post']){const pl=G.piles[side];if(pl.length&&pl[pl.length-1].arr){const run=takeRun(side);const ci=G.cols.findIndex(c=>c.el===run[0].el);drag={kind:'run',side,run,x:0,y:0};const x=colX(o,ci),y=LAND?o.base-20:o.mid;dropRun(x,y);drag=null;checkState();return'sort'}}
-  for(const side of ['pre','post']){const m=G.hoops[side].mols.find(q=>!q.leaving);if(m&&G.piles[side].length+MOL[m.k].a.length<=10){unstitch(side,m);return'unstitch'}}
-  const st=STAGES[STI];if(st.pat&&G.allOut){const need=elemsOf(G.def.pre),have={};G.cols.forEach(c=>have[c.el]=c.post);for(const k of st.pat){const ok=MOL[k].a.every(a=>(have[a[0]]||0)+MOL[k].a.filter(b=>b[0]===a[0]).length<=(need[a[0]]||0));if(ok){stitchPat(k);return'pat'}}}
-  if(G.phase==='near'&&G.sky.length){const m=G.sky.find(q=>q.esc||q.k==='O2');if(m){drag={kind:'sky',m,x:0,y:0};const h=o.hoop[st.escape?'post':'pre'];dropSky(h[0],h[1]);drag=null;return'sky'}}
-  return'idle'}};
 })();
 </script>
 <script>window.ZUKAN_COUNTER={"db": "https://rika-zukan-rank-default-rtdb.asia-southeast1.firebasedatabase.app", "id": "tenbin-nozoke"};

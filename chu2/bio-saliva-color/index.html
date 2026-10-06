@@ -130,6 +130,7 @@ body.land .pp{max-width:640px}
 @keyframes sIn{0%{transform:scale(2.6) rotate(-40deg);opacity:0}100%{transform:none;opacity:1}}
 .tally div{display:flex;justify-content:space-between;align-items:baseline;padding:5px 2px;border-bottom:3px dotted rgba(11,57,84,.3);font-size:15px}
 .tally div span:last-child{font-family:var(--head);font-size:20px}
+.lcx{font-size:15px;line-height:1.65;margin:6px 0;text-align:left}.lcx ul{margin:4px 0;padding-left:1.2em}.lcx li{margin:4px 0}.lcx b{background:var(--yl);padding:0 2px}table.lct{border-collapse:collapse;margin:6px auto;font-size:14px;background:#fff}table.lct td,table.lct th{border:2.5px solid var(--nv);padding:3px 8px;text-align:center}
 .note{margin:10px 0 4px;padding:8px 10px;font-size:14.5px;line-height:1.6;background:var(--yl);border:3px solid var(--nv)}
 .pbtn{display:flex;flex-direction:column;gap:10px;margin-top:14px}
 body.land .pbtn{flex-direction:row;justify-content:center;flex-wrap:wrap}
@@ -190,6 +191,16 @@ body.land .cgrid{grid-template-columns:repeat(5,1fr)}
 .pow.combo{color:var(--sk)}.pow.combo.t2{color:var(--yl);font-size:min(58px,13vw)}.pow.combo.t3{color:#fff;font-size:min(66px,15vw);text-shadow:4px 4px 0 var(--rd),8px 8px 0 var(--nv)}
 .pow.near{font-size:min(34px,8vw);color:#fff}
 @media (prefers-reduced-motion: reduce){.pow,.card,.stars .on{animation-duration:.01s}}
+</style>
+<style>/* たしかめ（2026-10-06 第2周） */
+.lcop{display:flex;flex-direction:column;gap:8px;margin:10px 0}
+.lcop button{text-align:left;white-space:normal;line-height:1.4}
+.lcop button.lcNg{opacity:.45;text-decoration:line-through}
+.lcop button.lcOk{outline:4px solid #2e8b57;outline-offset:2px}
+.lcfb{margin:6px 0 4px;padding:8px 12px;border-radius:8px;line-height:1.55;font-size:15px;text-align:left}
+.lcfb.ok{background:#e7f5ea;border:2px solid #2e8b57;color:#173d27}
+.lcfb.ng{background:#fdeceb;border:2px solid #c0392b;color:#5a1a14}
+#lcGo[disabled]{opacity:.35;cursor:not-allowed}
 </style>
 </head>
 <body>
@@ -3889,7 +3900,7 @@ const Z=()=>window.Zukan||null;
 const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
 
 /* ================= セーブ ================= */
-function fresh(){return {v:1,name:'',round:0,stars:[],cards:{},rejects:0,pours:0,combo:0,sealed:false,elapsed:0,dec:0,mute:false,cleared:false,ta:null}}
+function fresh(){return {v:1,name:'',round:0,stars:[],cards:{},rejects:0,pours:0,combo:0,sealed:false,elapsed:0,dec:0,mute:false,cleared:false,ta:null,lc:{}}}
 function load(){try{const s=JSON.parse(localStorage.getItem(KEY)||'null');if(s&&s.v===1)return Object.assign(fresh(),s)}catch(e){}return fresh()}
 let SV=load();
 function save(){try{localStorage.setItem(KEY,JSON.stringify(SV))}catch(e){}}
@@ -4027,9 +4038,48 @@ function place(){
   row(S,y1);row(T,y2);G.benchY=y2+th+10;G.benchY1=y1+th+6}
 }
 
+/* ================= 実験ノートの札（教える札・2026-10-06 夜間改修・初心者向け） =================
+   at: その番号のコマの前に出す（10＝予言の封印、11＝確認テスト）。まだ読んでいない札は、どこから入っても先に出る */
+const LC=[
+ {at:3,key:'kensa',html:`<h2>検査薬の見方</h2><div class="ps">このコマから、あとで調べる「検査薬」の話が出てくる</div><div class="lcx"><ul>
+  <li><b>ヨウ素液</b>：もとは <b>茶色</b>。<b>デンプンがあると 青紫色</b>になる。デンプンが無ければ 茶色のまま（変化なし）</li>
+  <li><b>ベネジクト液</b>：もとは <b>青色</b>。<b>糖</b>（麦芽糖など）があると、<b>加熱したとき 赤褐色</b>の沈殿ができる（少ないと黄色）。<b>加熱しないと 変わらない</b>。加熱のときは <b>沸騰石</b>を入れる</li>
+  <li>デンプンも糖も 両方ある液なら、<b>どちらの検査薬も 色が変わる</b></li>
+  <li>だ液には、<b>消化酵素</b>（食べ物を分解するもの）の <b>アミラーゼ</b> がふくまれている</li>
+  <li>検査薬は、湯せんで<b>だ液をはたらかせたあと</b>に、液を半分ずつに分けて加える。今の管には まだ入れない</li></ul></div>`,
+  quiz:{q:'ある液を調べた。ヨウ素液は 茶色のまま。ベネジクト液は 加熱すると 赤褐色。この液には？',opts:[['デンプンは無く、糖がある',1],['デンプンがあり、糖は無い',0],['デンプンも糖も 無い',0]],
+   ok:'ヨウ素液が茶色のまま → デンプンは<b>無い</b>。ベネジクト液が赤褐色 → 糖が<b>ある</b>。',ng:'ヨウ素液は <b>デンプン</b>、ベネジクト液は <b>糖</b> を調べる薬。それぞれ 色は変わった？'}},
+ {at:11,key:'kekka',html:`<h2>答え合わせ　実験室の結果</h2><div class="ps">封印した予言と くらべてみよう（どれも10分おいてから検査）</div>
+  <table class="lct"><tr><th>管</th><th>中身・温度</th><th>ヨウ素液</th><th>ベネジクト液（加熱）</th></tr>
+  <tr><th>A</th><td>デンプン液＋だ液・40℃</td><td>変化なし（茶色）</td><td><b>赤褐色</b></td></tr>
+  <tr><th>B</th><td>デンプン液＋水・40℃</td><td><b>青紫色</b></td><td>変化なし（青）</td></tr>
+  <tr><th>C</th><td>デンプン液＋だ液・氷水</td><td><b>青紫色</b></td><td>変化なし（青）</td></tr>
+  <tr><th>D</th><td>だ液＋水・40℃</td><td>変化なし</td><td>変化なし</td></tr></table>
+  <div class="lcx"><ul>
+  <li><b>AとB</b>（ちがいは だ液か水か だけ）：Aだけ デンプンが無くなり 糖ができた → <b>だ液には デンプンを糖に変える働き</b>がある</li>
+  <li><b>AとC</b>（ちがいは 温度だけ）：氷水では変わらない → だ液は <b>体温に近い温度</b>でよく働く</li>
+  <li><b>D</b>：だ液だけでは 糖は出ない → 糖は だ液に<b>もとから入っていたのではない</b></li>
+  <li>このように 調べたい条件だけを変え、ほかをそろえて比べる実験を <b>対照実験</b>という。比べる管の水は、だ液と <b>同じ量</b>にする</li>
+  <li>手順：①デンプン液に だ液（または水）を入れる → ②約40℃で10分 → ③半分ずつ 別の管に分ける → ④ヨウ素液／ベネジクト液（加熱）</li></ul></div>`,
+  quiz:{q:'Aで「デンプンが無くなった」と分かるのは、どの結果から？',opts:[['ヨウ素液が 茶色のまま（青紫色にならない）',1],['ベネジクト液が 赤褐色になった',0],['湯せんを 40℃にした',0]],
+   ok:'ヨウ素液は デンプンがあると青紫色。<b>変わらなかった</b>から、デンプンは無くなった。ベネジクト液の赤褐色は「糖ができた」の証拠。',ng:'デンプンを調べるのは どちらの検査薬？ その色は どうだった？'}}
+];
+function lcNeed(at){return LC.filter(c=>c.at<=at&&!(SV.lc&&SV.lc[c.key]))}
+function lcRun(list,then){if(!list.length){ovClose();then&&then();return}const c=list[0];
+ lcShow(c,()=>{SV.lc=SV.lc||{};SV.lc[c.key]=1;save();lcRun(list.slice(1),then)})}
+function lcShow(c,done){ovOpen(c.html+'<div class="pbtn"><button class="pb rd" id="lcGo">'+(c.quiz?'たしかめる':'わかった')+'</button></div>');
+ $('lcGo').onclick=()=>{SFX.click();c.quiz?lcQuiz(c,done):done()}}
+function lcQuiz(c,done){const z=c.quiz;const ord=z.opts.map((o,k)=>k);for(let i=ord.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[ord[i],ord[j]]=[ord[j],ord[i]]}
+ /* 選択肢は出すたびに並べかえる。答えを押しても札は作り直さず、下の返しの欄だけ書きかえる（2026-10-06 第2周） */
+ ovOpen('<h2>たしかめ</h2>'+'<div class="lcx lcq">'+z.q+'</div><div class="lcop">'+ord.map(k=>'<button class="pb wh sm" data-k="'+k+'">'+z.opts[k][0]+'</button>').join('')+'</div><div class="lcfb" id="lcFb" aria-live="polite" hidden></div><div class="pbtn"><button class="pb rd" id="lcGo" disabled>つぎへ</button></div>');
+ const fb=$('lcFb'),go=$('lcGo'),bs=[...document.querySelectorAll('#ovBody [data-k]')];go.onclick=()=>{if(go.disabled)return;SFX.click();done()};
+ bs.forEach(b=>b.onclick=()=>{if(!go.disabled||b.disabled)return;const o=z.opts[+b.dataset.k];fb.hidden=false;
+  if(o[1]){SFX.lit();fb.className='lcfb ok';fb.innerHTML='<b>正解！</b> '+z.ok;b.classList.add('lcOk');bs.forEach(x=>{if(x!==b)x.disabled=true});go.disabled=false}
+  else{SFX.rej();fb.className='lcfb ng';fb.innerHTML='<b>おしい。</b> '+z.ng+'<br><small>のこりの答えから えらびなおそう</small>';b.disabled=true;b.classList.add('lcNg')}
+  (o[1]?go:fb).scrollIntoView({block:'nearest'})})}
 /* ================= 状態・操作 ================= */
 let G=null,scene='title',PRED=null;
-function startRound(ri,opt){opt=opt||{};stopCoach();if(ri===0&&!opt.practice&&!SV.tut&&!SV.round&&window.Guide){runPractice(false);return}
+function startRound(ri,opt){opt=opt||{};if(!opt.practice&&!opt.noLc){const need=lcNeed(ri);if(need.length){lcRun(need,()=>startRound(ri,Object.assign({},opt,{noLc:1})));return}}stopCoach();if(ri===0&&!opt.practice&&!SV.tut&&!SV.round&&window.Guide){runPractice(false);return}
  ovClose();G=buildRound(ri);if(opt.practice){G.practice=true;G.R=Object.assign({},G.R,{bath:20});G.temp=20}place();showScene('play');
  $('hRound').textContent='コマ'+(ri+1)+'「'+G.R.name+'」';$('hSub').textContent=G.R.ta?'制限 '+G.R.ta+'秒':'';
  legend();tools();updHud();if(window.BGM)BGM.mood('normal');
@@ -4173,10 +4223,10 @@ function cardHtml(ri,foil,isNew){const c=CARDS[ri];return `<div class="card ${fo
 
 /* ================= 予言の封印 ================= */
 const SEAL_T=[{lab:'A',tag:'I',mix:'SV'},{lab:'B',tag:'I',mix:'SW'},{lab:'A',tag:'K',mix:'SV'},{lab:'B',tag:'K',mix:'SW'}];
-function startSeal(){ovClose();if(window.BGM)BGM.mood('calm');G={ri:-1,phase:'seal',tubes:[],parts:[],fx:[],shake:0,sel:-1,combo:0};PRED=[null,null,null,null];showScene('play');
+function startSeal(noLc){if(noLc!==true){const need=lcNeed(ROUNDS.length);if(need.length){lcRun(need,()=>startSeal(true));return}}ovClose();if(window.BGM)BGM.mood('calm');G={ri:-1,phase:'seal',tubes:[],parts:[],fx:[],shake:0,sel:-1,combo:0};PRED=[null,null,null,null];showScene('play');
  $('hRound').textContent='予言の封印';$('hSub').textContent='色の結果は 実験室で確かめる';tools();$('sealUi').hidden=false;$('hCombo').hidden=true;
  sealMsg();pow('予言の封印','4本の色を 予想して塗ろう',false);if(HELP)HELP.show();
- if(window.Guide&&!SV.sealTut){const chip=()=>{const r=sealLayout()[0],c=sealChips(0,r)[1];return {x:c.x+c.s/2,y:c.y+c.s/2,r:c.s*.8}};
+ if(window.Guide&&!SV.sealTut){const chip=()=>{const r=sealLayout()[0],cs=sealChips(0,r),a=cs[0],b=cs[cs.length-1];/* 1つの色を指さすと答えの誘導になるので、その管の見本の列全体を指す */return {x:(a.x+b.x+b.s)/2,y:(a.y+b.y+b.s)/2+6,r:Math.max(b.x+b.s-a.x,b.y+b.s-a.y)/2+8}};
   COACH=Guide.coach([
    {gesture:'tap',label:'色をぬる',target:chip,until:()=>!!PRED&&PRED.filter(Boolean).length>=1,text:'この管は どんな色になる？ 予想の **色の見本** を タップ'},
    {gesture:'tap',label:'4本とも',target:null,dim:false,until:()=>!!PRED&&PRED.filter(Boolean).length>=4,text:'のこりの管も **予想の色** を タップ（あとから 変えてもいい）'},
@@ -4208,16 +4258,16 @@ function doSeal(){
  const g=first?earn(10,'predict',W/2,H/2):0;$('sealUi').hidden=true;capOff();
  setTimeout(()=>{ovOpen(`<h2>封印した!</h2><div class="ps">わたしの予言カード（次の「ふたごの試験管」でも使う）</div>
   <div class="note">A（デンプン液＋だ液）：ヨウ素液 <b>${PI[P[0]].n}</b>／ベネジクト液 <b>${PB[P[2]].n}</b><br>B（デンプン液＋水）：ヨウ素液 <b>${PI[P[1]].n}</b>／ベネジクト液 <b>${PB[P[3]].n}</b><br><small>考え：${esc(reason)}</small></div>
-  ${g?'<p class="ps">🔮 予想を封印 かけら +'+g+'</p>':''}<p class="ps">答え合わせは 実験室で。予想が当たっても外れても、<b>なぜそうなったか</b>を考えるのが実験。</p>
-  <div class="pbtn"><button class="pb rd" id="sgNext">さいごの確認テストへ</button><button class="pb wh sm" id="sgMap">ラウンド表へ</button></div>`);
+  ${g?'<p class="ps">🔮 予想を封印 かけら +'+g+'</p>':''}<p class="ps">次は <b>答え合わせ</b>（実験室の結果）。予想が当たっても外れても、<b>なぜそうなったか</b>を考えるのが実験。</p>
+  <div class="pbtn"><button class="pb rd" id="sgNext">答え合わせ → 確認テストへ</button><button class="pb wh sm" id="sgMap">ラウンド表へ</button></div>`);
   const fin=()=>{const z=Z();if(z&&first){try{z.mainClear({onClose:()=>startTest()})}catch(e){startTest()}}else startTest()};
-  $('sgNext').onclick=()=>{ovClose();fin()};$('sgMap').onclick=()=>{ovClose();openMap()}},RM?200:1200)}
+  $('sgNext').onclick=()=>{ovClose();lcRun(lcNeed(ROUNDS.length+1),fin)};$('sgMap').onclick=()=>{ovClose();openMap()}},RM?200:1200)}
 
 /* ================= 入力 ================= */
 let drag=null;
 function tubeAt(x,y){if(!G||!G.tubes)return -1;for(const t of G.tubes){if(x>t.x-t.w*.25&&x<t.x+t.w*1.25&&y>t.y-50&&y<t.y+t.h+14)return t.i}return -1}
 cv.addEventListener('pointerdown',e=>{actx();if(scene!=='play'||!G)return;const x=e.clientX,y=e.clientY;
- if(G.phase==='seal'&&!G.sealed){const rs=sealLayout();rs.forEach((r,i)=>{sealChips(i,r).forEach(c=>{if(x>c.x-8&&x<c.x+c.s+8&&y>c.y-8&&y<c.y+c.s+8){PRED[i]=c.k;SFX.bub();G.paint=G.paint||{};G.paint[i]=0;sealMsg()}})});return}
+ if(G.phase==='seal'&&!G.sealed){/* 色の見本は、下の色の名前を押しても入る。重なったら中心に近い方（2026-10-06 第2周） */const rs=sealLayout();let best=null,bd=1e9;rs.forEach((r,i)=>{sealChips(i,r).forEach(c=>{if(x>c.x-10&&x<c.x+c.s+10&&y>c.y-10&&y<c.y+c.s+30){const d=Math.hypot(x-(c.x+c.s/2),y-(c.y+c.s/2+8));if(d<bd){bd=d;best=[i,c]}}})});if(best){PRED[best[0]]=best[1].k;SFX.bub();G.paint=G.paint||{};G.paint[best[0]]=0;sealMsg()}return}
  if(G.phase==='bath'){const b=G.bath;if(b&&x>b.tx-40&&x<b.tx+60){drag={bath:1};bathSet(y);SFX.click()}return}
  const i=tubeAt(x,y);if(i<0){if(G.sel>=0){G.sel=-1;tools()}return}
  drag={i,x,y,moved:false,wasSel:G.sel};
@@ -4418,11 +4468,11 @@ function openMap(){leaveGuide();G=null;showScene('map');const nx=Math.min(SV.rou
  if(allDone)$('pnSeal').onclick=()=>{SFX.click();startSeal()};
  $('btnGo').textContent=allDone?(SV.sealed?'もう一度 封印しなおす':'予言の封印へ'):'コマ'+(nx+1)+'へ';
  $('btnGo').onclick=()=>{SFX.pow();if(allDone)startSeal();else startRound(nx)};
- $('btnTestM').hidden=!SV.sealed;$('btnBookM').hidden=!Z()}
+ $('btnTestM').hidden=!SV.sealed;$('btnTestM').textContent=(SV.lc&&SV.lc.kekka)?'さいごの確認テスト':'答え合わせ → 確認テスト';$('btnBookM').hidden=!Z()}
 $('btnCards').onclick=()=>{SFX.click();ovOpen('<h2>試薬の図鑑</h2><div class="ps">コマをクリアすると ボックスから1枚。ノーミスならキラ。</div><div class="cgrid">'+CARDS.map((c,i)=>SV.cards[i]?'<div class="cg '+(SV.cards[i]===2?'foil':'')+'" data-i="'+i+'">'+cardSvg(c.svg)+'<b>'+esc(c.n)+'</b></div>':'<div class="cg no">？？？<br>コマ'+(i+1)+'</div>').join('')+'</div><div id="cgOne"></div><div class="pbtn"><button class="pb rd" id="cgClose">とじる</button></div>');
  document.querySelectorAll('.cg[data-i]').forEach(d=>d.onclick=()=>{const i=+d.dataset.i;$('cgOne').innerHTML=cardHtml(i,SV.cards[i]===2,false);SFX.bub()});$('cgClose').onclick=ovClose};
 $('btnBookM').onclick=()=>{try{Z().openBook()}catch(e){}};
-$('btnTestM').onclick=()=>startTest();
+$('btnTestM').onclick=()=>lcRun(lcNeed(ROUNDS.length+1),startTest);
 
 /* ================= 表紙 ================= */
 function initTitle(){if(window.PLAYER_NAME)$('nameIn').value=window.PLAYER_NAME;else if(SV.name)$('nameIn').value=SV.name;
@@ -4474,7 +4524,7 @@ if(window.Guide){
 }else $('btnHowto').hidden=true;
 /* ================= さいごの確認テスト ================= */
 let T=null;
-function startTest(){if(!window.Quiz){alert('問題データがありません');return}G=null;ovClose();showScene('test');T={qs:Quiz.test(),i:0,ans:[]};renderQ()}
+function startTest(){if(window.GAME_MODE!=='test'){const n=lcNeed(SV.sealed?99:ROUNDS.length);if(n.length){lcRun(n,startTest);return}}/* テストの入口でも、まだ読んでいない札を先に出す（確認テストだけモードでは出さない） */if(!window.Quiz){alert('問題データがありません');return}G=null;ovClose();showScene('test');T={qs:Quiz.test(),i:0,ans:[]};renderQ()}
 function renderQ(){const q=T.qs[T.i];$('qNo').textContent=(T.i+1)+' / '+T.qs.length;$('qText').textContent=q.q;const f=$('qFig');if(q.fig){f.innerHTML=q.fig;f.hidden=false}else{f.innerHTML='';f.hidden=true}
  const A=$('qArea');A.innerHTML='';$('scTest').scrollTop=0;const L='ABCDEF';
  const mk=(c,k)=>{const b=document.createElement('button');b.innerHTML='<i>'+L[k]+'</i><span></span>';b.lastChild.textContent=c;return b};
@@ -4509,7 +4559,6 @@ function frame(now){const dt=Math.min(.05,Math.max(0,(now-last)/1000));last=now;
 window.GAME_ID=GAME;
 layout();
 try{window.Zukan&&Zukan.setup({game:GAME,koma:[KOMA]})}catch(e){}
-window.__sal={need:(i,k)=>needOf(G,G.tubes[i],k),wrongPre:i=>isWrongPre(G,G.tubes[i]),get G(){return G},get SV(){return SV},startRound,startSeal,startTest,openMap,tapTube,bathGo,dump,setTemp:v=>{if(G)G.temp=v},pred:(i,k)=>{PRED[i]=k;sealMsg()},doSeal,sealChipPos:()=>sealLayout().map((r,i)=>sealChips(i,r))};
 if(window.GAME_MODE==='test'){startTest()}else{showScene('title');initTitle()}
 requestAnimationFrame(frame);
 })();

@@ -221,6 +221,31 @@ h1.tt .t2{font:400 clamp(46px,13.4vw,112px) var(--fh);color:var(--or);text-shado
 .tag,.burst,#bBack,#bMute{transition:transform .08s}
 #bMute:active{transform:translate(2px,2px) scale(.94)}
 @media (prefers-reduced-motion:reduce){.tag:active,.burst:active{transform:none}#toast{transition:none}.pdcf{display:none}#resStars span.st{opacity:1;transform:skewX(-11deg)}}
+
+/* ドライバーズ・ノート（まなぶページ）2026-10-06 初心者向け */
+#scrLearn{display:flex;align-items:center;justify-content:center;padding:calc(14px + env(safe-area-inset-top)) 16px calc(14px + env(safe-area-inset-bottom));background:rgba(31,77,74,.45);pointer-events:auto;z-index:35}
+#lBox{position:relative;width:min(680px,94vw);max-height:calc(100% - 20px);overflow-y:auto;padding:18px 22px 18px;inset:auto}
+#lT{margin:2px 0 8px}
+#lFig{background:var(--cr);border-radius:18px 4px 18px 4px;padding:6px;margin:8px 0;box-shadow:4px 4px 0 var(--or)}
+#lFig svg{display:block;width:100%;height:auto;max-height:30vh}
+#lP p{margin:6px 0;font-size:16px;line-height:1.75}
+#lP b{color:var(--mu);font-weight:400}
+#lQ .ask{margin-top:12px;padding:9px 12px;font-size:16px;line-height:1.5;background:var(--cr);color:var(--ch);border-radius:14px 3px 14px 3px}
+#lQ .ask b{color:var(--or);font-weight:400}
+#lQ .opts{display:flex;flex-wrap:wrap;gap:14px;margin-top:14px}
+#lQ .opts .tag>span{white-space:normal}
+#lQ .why{margin-top:10px;font-size:15px;line-height:1.65}
+#lQ .why b{color:var(--mu);font-weight:400}#lQ .why b.ng{color:var(--sal)}
+.lfoot{display:flex;align-items:center;gap:12px;margin-top:16px}
+
+/* 2026-10-06 仕上げ：横長の画面（1180×733・1024×768）では図を左・文と問いを右に並べ、札を画面の高さに収める */
+@media (min-width:900px) and (orientation:landscape){
+ #lBox.hasFig{width:min(1060px,96vw)!important;display:grid;grid-template-columns:minmax(0,42%) minmax(0,1fr);grid-template-areas:"k k" "t t" "f p" "f q" "f ft";grid-template-rows:auto auto auto auto 1fr;column-gap:22px;align-content:start}
+ #lBox.hasFig #lKick{grid-area:k;justify-self:start}#lBox.hasFig #lT{grid-area:t}#lBox.hasFig #lFig{grid-area:f;align-self:start;margin:4px 0 0}#lBox.hasFig #lP{grid-area:p}#lBox.hasFig #lQ{grid-area:q}#lBox.hasFig .lfoot{grid-area:ft;align-self:end}
+ #lBox.hasFig #lFig svg{max-height:60vh}
+}
+@media (max-height:820px){#lP p{font-size:15px;line-height:1.6;margin:4px 0}#lQ .ask{margin-top:8px}#lQ .opts{margin-top:8px}#lQ .why{margin-top:6px}.lfoot{margin-top:10px}}
+#lPg{margin-right:auto;font:400 15px var(--fl)}
 </style>
 </head>
 <body>
@@ -249,6 +274,7 @@ h1.tt .t2{font:400 clamp(46px,13.4vw,112px) var(--fh);color:var(--or);text-shado
     <button class="tag sm" id="bAlbum"><span>📐 配線図アルバム</span></button>
     <button class="tag mu sm" id="bBook2"><span>📖 図鑑</span></button>
     <button class="tag cr sm" id="bGacha"><span>🎁 ガチャ</span></button>
+    <button class="tag sm" id="bLearn"><span>📘 ドライバーズ・ノート</span></button>
     <button class="tag ch sm" id="bToTest"><span>📋 ピット審査へ</span></button>
   </div>
 </div>
@@ -315,6 +341,17 @@ h1.tt .t2{font:400 clamp(46px,13.4vw,112px) var(--fh);color:var(--or);text-shado
 <div id="scrBack" class="scr hidden">
   <div class="pnl"><div class="no">PIT IN</div><h2 id="bkT">もどりますか？</h2><p id="bkSub">進み具合は保存されます。</p>
     <div class="btns"><button class="tag cr sm" id="bkNo"><span>つづける</span></button><button class="tag or" id="bkGo"><span>もどる</span></button></div></div>
+</div>
+
+<div id="scrLearn" class="scr hidden">
+  <div class="pnl" id="lBox">
+    <div class="no" id="lKick"></div>
+    <h2 id="lT"></h2>
+    <div id="lFig" class="hidden"></div>
+    <div id="lP"></div>
+    <div id="lQ"></div>
+    <div class="lfoot"><span id="lPg"></span><button class="tag or" id="lNext">次へ</button></div>
+  </div>
 </div>
 
 <div id="toast"><span></span></div>
@@ -4197,7 +4234,7 @@ function diagram(g,rc){var cfg=g.cfgEff,E=g.E,m=10,x0=rc.x+m+Math.min(46,rc.w*.1
   if(rc.h>200){var fy=rc.y+rc.h-20,va=carV(g,0),vb=carV(g,1),hd=g.hide,a1=hd?'A':'A '+vs(va)+'V',b1=hd?'B':'B '+vs(vb)+'V',e1=hd?'電源':'電源 '+vs(E)+'V';
     txt(cfg==='P'?'並列：'+a1+' ＝ '+b1+' ＝ '+e1:'直列：'+a1+' ＋ '+b1+' ＝ '+e1,rc.x+rc.w/2,fy,Math.min(17,rc.w*.045),K.mu,'center')}
 }
-function drawMeter(x,y,w,h,val,disp,lab,sub,needleOnly,hot){var foot=Math.max(24,Math.min(34,h*.2)),gh=h-foot-16,r=Math.min(w*.46,gh-6),cx=x+w/2,cy=y+16+(gh-(r+6))/2+r;
+function drawMeter(x,y,w,h,val,disp,lab,sub,needleOnly,hot){var foot=Math.max(24,Math.min(34,h*.2)),gh=h-foot-16,r=Math.max(4,Math.min(w*.46,gh-6)),cx=x+w/2,cy=y+16+(gh-(r+6))/2+r;
   c.fillStyle=K.cr;rr(x,y,w,h,[Math.min(24,w*.2),6,Math.min(24,w*.2),6]);c.fill();
   c.fillStyle='rgba(217,164,65,.28)';c.beginPath();c.moveTo(cx,cy);c.arc(cx,cy,r*.95,-Math.PI*.85,-Math.PI*.15);c.closePath();c.fill();
   var a0=-Math.PI*.85,a1=-Math.PI*.15,mx=15;
@@ -4479,7 +4516,7 @@ $('bkNo').onclick=function(){$('scrBack').classList.add('hidden');if(backFrom===
 $('bkGo').onclick=function(){$('scrBack').classList.add('hidden');if(backFrom==='map'||TEST&&(backFrom==='end'||backFrom==='test'))setScene('title');else{G=null;setScene('map')}};
 $('bMute').onclick=function(){muted=!muted;try{localStorage.setItem(SKEY+':mute',muted?'1':'0')}catch(e){}$('bMute').textContent=muted?'🔇':'🔊';if(muted)engSet(0)};
 
-function startStage(si){ac();if(window.BGM)BGM.mood(ST[si].boss?'tense':'normal');if(ST[si].garage&&!SV.gSeen){SV.gSeen=1;save();PEND=si;setScene('garage');return}
+function startStage(si){ac();if(!TEST&&!lrnSeen('pre')){mnScene();teach('はじめてのドライバーズ・ノート',MNB.pre,function(){lrnMark('pre');startStage(si)});return}if(!TEST&&MNB[si]&&!lrnSeen(si)){mnScene();teach('CIRCUIT '+(si+1)+' の前のノート',MNB[si],function(){lrnMark(si);startStage(si)});return}if(window.BGM)BGM.mood(ST[si].boss?'tense':'normal');if(ST[si].garage&&!SV.gSeen){SV.gSeen=1;save();PEND=si;setScene('garage');return}
   G=newRace(si,false);G.target=Math.round((ideal(si)*(ST[si].boss?1.1:1.13)+1.5)*10)/10;scene='race';setScene('race');
   var S=ST[si];$('pitNo').textContent=(S.boss?'FINAL':'CIRCUIT '+(si+1))+'　／　'+S.laps+'周';$('pitT').textContent=S.n;$('pitTip').innerHTML=S.tip;
   var ch=['電源 '+(S.hide?'？':vs(G.E))+'V'+(SV.upS&&!S.hide?'（ブースター＋'+vs(1.5*SV.upS)+'V込み）':''),S.mot==='diff'?'A車＝重いモーター／B車＝軽いモーター':'同じモーター2台',S.lamp?'ライトの枝あり':'',S.boss?'優勝タイム '+fmtJ(G.target):'★の目標 '+fmtJ(G.target)];
@@ -4516,7 +4553,7 @@ function showResult(g){showScr('scrRes');var S=g.S,st=[1,g.ng===0,g.resT<=g.targ
   var last=g.si>=ST.length-1;$('resNext').firstChild.textContent=S.boss?(g.win?'📋 ピット審査へ':'もう一回'):ST[g.si+1].garage&&!SV.gSeen?'ガレージへ':'つぎのサーキット';
   placePanels();refreshK();
   if(g.bossFirst){var z=Zk();if(z&&z.mainClear){try{z.mainClear({onClose:function(){}})}catch(e){}}}}
-$('resNext').onclick=function(){var g=G;if(!g)return;if(g.S.boss){if(g.win)startTest();else startStage(g.si);return}startStage(g.si+1)};
+$('resNext').onclick=function(){var g=G;if(!g)return;if(g.S.boss){if(g.win)prepTest(startTest);else startStage(g.si);return}startStage(g.si+1)};
 $('resRe').onclick=function(){if(G)startStage(G.si)};
 $('resMap').onclick=function(){G=null;setScene('map')};
 
@@ -4529,7 +4566,7 @@ function buildMap(){var box=$('mGrid');box.innerHTML='';var tot=0;
   $('bGarage').disabled=SV.unl<3&&!SV.gSeen}
 $('bGarage').onclick=function(){PEND=null;setScene('garage')};
 $('bAlbum').onclick=function(){setScene('album')};
-$('bToTest').onclick=function(){if(SV.done)startTest()};
+$('bToTest').onclick=function(){if(SV.done)prepTest(startTest)};
 function openBook(){var z=Zk();if(z&&z.openBook)z.openBook()}
 $('bBook1').onclick=openBook;$('bBook2').onclick=openBook;$('eBook').onclick=openBook;
 $('bGacha').onclick=function(){var z=Zk();if(z&&z.openGacha)z.openGacha()};
@@ -4611,7 +4648,7 @@ document.addEventListener('keydown',function(e){if(scene!=='race'||!G||G.paused|
 /* ---------------- 確認テスト ---------------- */
 var TQ=[],TI=0,TA=[],TOK=[],CARD=null;
 function getName(){return(window.PLAYER_NAME||$('nameIn').value||SV.name||'').trim()}
-function startTest(){G=null;setScene('test');TQ=window.Quiz?Quiz.test():[];TI=0;TA=[];TOK=[];$('scrTest').scrollTop=0;showQ()}
+function startTest(){if(!TEST&&!lrnSeen('test')){prepTest(startTest);return}G=null;setScene('test');TQ=window.Quiz?Quiz.test():[];TI=0;TA=[];TOK=[];$('scrTest').scrollTop=0;showQ()}
 function lamps(){$('tLamps').innerHTML=TQ.map(function(q,i){return'<i class="'+(i<TOK.length?(TOK[i]?'ok':'ng'):i===TI?'cur':'')+'"></i>'}).join('')}
 function showQ(){if(TI>=TQ.length)return finishTest();var q=TQ[TI];$('tNo').textContent='第'+(TI+1)+'問 ／ '+TQ.length;lamps();
   $('tQ').innerHTML=q.q;var f=$('tFig');if(q.fig){f.innerHTML=q.fig;f.classList.remove('hidden')}else{f.innerHTML='';f.classList.add('hidden')}
@@ -4641,12 +4678,93 @@ function finishTest(){var qs=TQ,answers=TA,review=window.Quiz?Quiz.review(qs,ans
 $('eCard').onclick=function(){if(CARD&&window.SubmitCard)SubmitCard.reopen(CARD)};
 $('eMap').onclick=function(){setScene(TEST?'title':'map')};
 
+/* ================= まなぶページ：用語・式を「その前」に教える（2026-10-06 初心者向け） ================= */
+var LRN=null;
+function fmtL(s){return esc(s).replace(/\*\*(.+?)\*\*/g,'<b>$1</b>')}
+function mnShuf(a){for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1)),t=a[i];a[i]=a[j];a[j]=t}return a}
+function teach(kick,pages,done){LRN={k:kick,p:pages,i:0,done:done};if(HELP&&HELP.hide)HELP.hide();showLearn()}
+function showLearn(){var L=LRN,pg=L.p[L.i];$('scrLearn').classList.remove('hidden');$('lKick').textContent=L.k;$('lT').textContent=pg.t;
+  var f=$('lFig');$('lBox').classList.toggle('hasFig',!!pg.fig);if(pg.fig){f.innerHTML=pg.fig;f.classList.remove('hidden')}else{f.innerHTML='';f.classList.add('hidden')}
+  $('lP').innerHTML=pg.p.split('\n').map(function(x){return '<p>'+fmtL(x)+'</p>'}).join('');
+  var q=$('lQ'),nb=$('lNext');q.innerHTML='';nb.textContent=L.i+1>=L.p.length?(pg.last||'わかった！'):'次へ';$('lPg').textContent=L.p.length>1?(L.i+1)+' / '+L.p.length:'';
+  if(pg.q){var qq=pg.q;nb.classList.add('hidden');q.innerHTML='<div class="ask">やってみよう：'+fmtL(qq.ask)+'</div><div class="opts"></div><div class="why"></div>';var box=q.querySelector('.opts'),wy=q.querySelector('.why');
+    mnShuf(qq.c.map(function(t,i){return{t:t,ok:i===0}})).forEach(function(o){var b=document.createElement('button');b.className=MNBT.opt;b.textContent=o.t;
+      b.onclick=function(){if(MNBT.click)MNBT.click();if(o.ok){if(MNBT.ok)MNBT.ok();[].forEach.call(box.children,function(x){x.disabled=true});b.disabled=false;b.className=MNBT.optOk;wy.innerHTML='<b>そのとおり！</b>'+fmtL(qq.why);nb.classList.remove('hidden');setTimeout(function(){try{nb.scrollIntoView({behavior:'smooth',block:'nearest'})}catch(e){}},60)}
+        else{if(MNBT.ng)MNBT.ng();b.disabled=true;wy.innerHTML='<b class="ng">ちがう。</b>'+fmtL(qq.hint||'もう一度、上の説明を読んでみよう')}};box.appendChild(b)})}
+  else nb.classList.remove('hidden');
+  var it=$('lBox');if(it)it.scrollTop=0}
+$('lNext').onclick=function(){if(MNBT.click)MNBT.click();var L=LRN;if(!L)return;L.i++;if(L.i>=L.p.length){$('scrLearn').classList.add('hidden');LRN=null;if(MNBT.done)MNBT.done();if(L.done)L.done();return}if(MNBT.page)MNBT.page();showLearn()};
+/* 回路図（電気用図記号：電池＝長い線が＋極、豆電球＝○に×、抵抗器＝長方形、電流計＝○にA、電圧計＝○にV） */
+function svgC(o){var P=MNP,k=P.ink,s='<svg viewBox="0 0 '+(o.w||320)+' '+(o.h||200)+'" xmlns="http://www.w3.org/2000/svg" font-family="Hiragino Sans,Yu Gothic,sans-serif" font-weight="700"><rect width="100%" height="100%" fill="'+P.bg+'"/>';
+  (o.paths||[]).forEach(function(d){s+='<path d="'+d+'" fill="none" stroke="'+k+'" stroke-width="3" stroke-linejoin="round"/>'});
+  (o.br||[]).forEach(function(b){s+='<path d="M'+b[0]+' '+b[1]+'V'+b[3]+'H'+b[2]+'V'+b[1]+'" fill="none" stroke="'+(b[4]?P.acc:k)+'" stroke-width="3"'+(b[4]?' stroke-dasharray="7 5"':'')+'/><circle cx="'+b[0]+'" cy="'+b[1]+'" r="4.5" fill="'+k+'"/><circle cx="'+b[2]+'" cy="'+b[1]+'" r="4.5" fill="'+k+'"/>'});
+  (o.dots||[]).forEach(function(p){s+='<circle cx="'+p[0]+'" cy="'+p[1]+'" r="4.5" fill="'+k+'"/>'});
+  if(o.bat){var x=o.bat[0],y=o.bat[1];s+='<rect x="'+(x-17)+'" y="'+(y-12)+'" width="34" height="24" fill="'+P.bg+'"/><line x1="'+(x-16)+'" y1="'+(y-6)+'" x2="'+(x+16)+'" y2="'+(y-6)+'" stroke="'+k+'" stroke-width="3"/><line x1="'+(x-7)+'" y1="'+(y+6)+'" x2="'+(x+7)+'" y2="'+(y+6)+'" stroke="'+k+'" stroke-width="7"/><text x="'+(x-27)+'" y="'+(y-1)+'" font-size="16" fill="'+P.acc+'" text-anchor="middle">＋</text><text x="'+(x-27)+'" y="'+(y+16)+'" font-size="16" fill="'+k+'" text-anchor="middle">−</text>'}
+  (o.it||[]).forEach(function(t){var x=t.x,y=t.y;
+    if(t.k==='lamp'){if(t.on)s+='<circle cx="'+x+'" cy="'+y+'" r="25" fill="'+P.lit+'" opacity=".5"/>';s+='<circle cx="'+x+'" cy="'+y+'" r="14" fill="'+(t.on?P.lit:P.bg)+'" stroke="'+k+'" stroke-width="3"/><path d="M'+(x-9)+' '+(y-9)+'L'+(x+9)+' '+(y+9)+'M'+(x+9)+' '+(y-9)+'L'+(x-9)+' '+(y+9)+'" stroke="'+k+'" stroke-width="2.5"/>'}
+    else if(t.k==='res'){var v=t.v;s+='<rect x="'+(x-(v?9:19))+'" y="'+(y-(v?19:9))+'" width="'+(v?18:38)+'" height="'+(v?38:18)+'" fill="'+(t.fill||P.bg)+'" stroke="'+k+'" stroke-width="3"/>'}
+    else if(t.k==='A'||t.k==='V'){s+='<circle cx="'+x+'" cy="'+y+'" r="15" fill="'+(t.k==='A'?P.a:P.v)+'" stroke="'+k+'" stroke-width="3"/><text x="'+x+'" y="'+(y+6)+'" font-size="17" fill="#fff" text-anchor="middle">'+t.k+'</text>'}
+    else if(t.k==='gap'){s+='<rect x="'+(x-15)+'" y="'+(y-(t.v?15:8))+'" width="'+(t.v?16:30)+'" height="'+(t.v?30:16)+'" fill="'+P.bg+'" transform="translate('+(t.v?7:0)+',0)"/>'+(t.v?'<circle cx="'+x+'" cy="'+(y-12)+'" r="3.5" fill="'+k+'"/><circle cx="'+x+'" cy="'+(y+12)+'" r="3.5" fill="'+k+'"/>':'<circle cx="'+(x-12)+'" cy="'+y+'" r="3.5" fill="'+k+'"/><circle cx="'+(x+12)+'" cy="'+y+'" r="3.5" fill="'+k+'"/>')}
+    else if(t.k==='x'){s+='<path d="M'+(x-11)+' '+(y-11)+'L'+(x+11)+' '+(y+11)+'M'+(x+11)+' '+(y-11)+'L'+(x-11)+' '+(y+11)+'" stroke="'+P.acc+'" stroke-width="5"/>'}});
+  (o.arr||[]).forEach(function(a){var x=a[0],y=a[1],q={r:'M'+(x-8)+' '+(y-7)+'L'+(x+8)+' '+y+'L'+(x-8)+' '+(y+7)+'Z',l:'M'+(x+8)+' '+(y-7)+'L'+(x-8)+' '+y+'L'+(x+8)+' '+(y+7)+'Z',d:'M'+(x-7)+' '+(y-8)+'L'+x+' '+(y+8)+'L'+(x+7)+' '+(y-8)+'Z',u:'M'+(x-7)+' '+(y+8)+'L'+x+' '+(y-8)+'L'+(x+7)+' '+(y+8)+'Z'}[a[2]];s+='<path d="'+q+'" fill="'+(a[3]||P.acc)+'"/>'});
+  (o.lb||[]).forEach(function(l){var sz=typeof l[3]==='number'?l[3]:(typeof l[4]==='number'?l[4]:13),col=typeof l[3]==='string'?l[3]:(typeof l[4]==='string'?l[4]:k);s+='<text x="'+l[0]+'" y="'+l[1]+'" font-size="'+sz+'" fill="'+col+'" text-anchor="'+(l[5]||'middle')+'">'+esc(l[2])+'</text>'});
+  return s+'</svg>'}
+/* 計器の目盛り（0〜5の目盛り。o.v＝針の位置 0〜5、o.unit・o.term＝見出し） */
+function svgDial(o){var P=MNP,k=P.ink,cx=160,cy=176,R=128,s='<svg viewBox="0 0 320 200" xmlns="http://www.w3.org/2000/svg" font-family="Hiragino Sans,Yu Gothic,sans-serif" font-weight="700"><rect width="100%" height="100%" fill="'+P.bg+'"/>',max=o.max||5,n=o.minor||10;
+  function pt(f,r){var a=(-60+120*f)*Math.PI/180;return[cx+Math.sin(a)*r,cy-Math.cos(a)*r]}
+  var a0=pt(0,R),a1=pt(1,R);s+='<path d="M'+a0[0]+' '+a0[1]+'A'+R+' '+R+' 0 0 1 '+a1[0]+' '+a1[1]+'" fill="none" stroke="'+k+'" stroke-width="2.5"/>';
+  for(var i=0;i<=max*n;i++){var f=i/(max*n),maj=i%n===0,p=pt(f,R),q=pt(f,R-(maj?16:(i%(n/2)===0&&n%2===0?11:7)));s+='<line x1="'+p[0]+'" y1="'+p[1]+'" x2="'+q[0]+'" y2="'+q[1]+'" stroke="'+k+'" stroke-width="'+(maj?2.5:1)+'"/>';
+    if(maj){var t=pt(f,R-30);s+='<text x="'+t[0]+'" y="'+(t[1]+5)+'" font-size="15" fill="'+k+'" text-anchor="middle">'+(o.nums?o.nums[i/n]:i/n)+'</text>'}}
+  if(o.nums2)for(var j=0;j<=max;j++){var t2=pt(j/max,R+12);s+='<text x="'+t2[0]+'" y="'+(t2[1])+'" font-size="11" fill="'+P.acc+'" text-anchor="middle">'+o.nums2[j]+'</text>'}
+  if(o.v!=null){var e=pt(o.v/max,R+4);s+='<line x1="'+cx+'" y1="'+cy+'" x2="'+e[0]+'" y2="'+e[1]+'" stroke="'+P.acc+'" stroke-width="3.5" stroke-linecap="round"/>'}
+  s+='<circle cx="'+cx+'" cy="'+cy+'" r="7" fill="'+k+'"/>';
+  if(o.unit)s+='<text x="'+cx+'" y="'+(cy-58)+'" font-size="18" fill="'+k+'" text-anchor="middle">'+esc(o.unit)+'</text>';
+  if(o.term)s+='<text x="10" y="22" font-size="14" fill="'+P.acc+'">'+esc(o.term)+'</text>';
+  return s+'</svg>'}
+var MNP={ink:'#2B2A28',bg:'#FBF4E6',acc:'#E86A33',a:'#2F6F6B',v:'#2F6F6B',lit:'#D9A441'};
+var MNBT={opt:'tag cr sm',optOk:'tag or sm',click:function(){ac();SFX.sw()},ok:function(){SFX.ok(4)},ng:function(){SFX.nope()},page:function(){SFX.relay()},done:function(){SFX.gate(3)}};
+function mnParV(E,va,vb){return svgC({paths:['M50 112V40H280V170H50V112','M170 40V170'],bat:[50,112],dots:[[170,40],[170,170]],br:[],it:[{k:'res',x:170,y:110,v:1,fill:'#E9A38A'},{k:'res',x:280,y:110,v:1,fill:'#E9A38A'}],
+  lb:[[158,104,'A車',13,'#2B2A28','end'],[268,104,'B車',13,'#2B2A28','end'],[158,126,va,15,'#E86A33','end'],[268,126,vb,15,'#E86A33','end'],[110,196,'電源 '+E,14,'#E86A33'],[225,24,'枝分かれ＝並列回路',12,'#2F6F6B']]})}
+var MNB={
+ pre:[{t:'電圧ってなに？',p:'**電圧**＝電流を流そうとする はたらき。単位は **V（ボルト）**。\nこのゲームでは、**車にかかる電圧が大きいほど速く走る**（電圧＝車を走らせる力）。\n（**電流**＝回路を流れる電気の流れ・単位A。**抵抗**＝電流の流れにくさ。モーターが重い＝抵抗が大きい）',
+   q:{ask:'電圧の単位はどれ？',c:['V（ボルト）','A（アンペア）','W（ワット）'],why:'電圧はV。電流はA。',hint:'電圧計の記号は「○の中にV」'}},
+  {t:'並列回路 ─ どの車にも電源と同じ電圧',fig:mnParV('3.0V','3.0V','3.0V'),
+   p:'途中で **枝分かれ** があり、電流の通り道が2本以上ある回路を **並列回路** という。\n並列では、**どの枝の部品にも電源と同じ電圧** がかかる：**電源の電圧＝Aの電圧＝Bの電圧**。\nモーターの重さ（抵抗）が **ちがっても同じ**。だから並列にすると、2台とも全速。',
+   q:{ask:'電源 **9.0V** の並列回路。B車にかかる電圧は？',c:['9.0V','4.5V','18V'],why:'並列では、どの枝にも電源と同じ電圧。',hint:'並列は「分け合う」？「同じ」？'}},
+  {t:'直列回路 ─ 2台で分け合う',fig:svgC({paths:['M50 112V60H270V160H50V112'],bat:[50,112],it:[{k:'res',x:130,y:60,fill:'#E9A38A'},{k:'res',x:220,y:60,fill:'#E9A38A'}],lb:[[130,40,'A車 1.5V',14,'#E86A33'],[220,40,'B車 1.5V',14,'#E86A33'],[160,188,'電源 3.0V（通り道が1本＝直列回路）',13,'#2F6F6B']]}),
+   p:'通り道が **1本** の回路を **直列回路** という。\n直列では、**電源の電圧を2台で分け合う**（同じ車なら半分ずつ）。電源3.0Vなら1.5Vずつ → ゆっくり。\nだから同じ電源なら、1台にかかる電圧は **並列の方が大きい**（豆電球なら並列の方が明るい）。',
+   q:{ask:'同じ豆電球2個を **4.0V** に **直列**。1個にかかる電圧は？',c:['2.0V','4.0V','8.0V'],why:'直列は分け合う。4.0÷2＝2.0V（並列なら4.0Vずつ）。',hint:'直列は「分け合う」。同じ豆電球なら半分ずつ'}},
+  {t:'電圧計のつなぎ方',fig:svgC({paths:['M50 112V40H280V170H50V112','M170 40V170'],bat:[50,112],dots:[[170,40],[170,170]],br:[],it:[{k:'res',x:170,y:110,v:1,fill:'#E9A38A'},{k:'res',x:280,y:110,v:1,fill:'#E9A38A'},{k:'V',x:120,y:110},{k:'V',x:230,y:110}],
+     lb:[[101,116,'V₁',14,'#2F6F6B','end'],[211,116,'V₂',14,'#2F6F6B','end']]}).replace('</svg>','<path d="M120 95V80H170M120 125V140H170" fill="none" stroke="#2B2A28" stroke-width="3"/><path d="M230 95V80H280M230 125V140H280" fill="none" stroke="#2B2A28" stroke-width="3"/></svg>'),
+   p:'**電圧計**（○の中にV）は、はかりたい部品の **両はしをまたいで並列** につなぐ。\n並列回路では、どの枝も電源と同じ電圧なので、**V₁ と V₂ は同じ値** を示す。',
+   q:{ask:'並列回路で V₁ が **1.5V**。V₂ は？',c:['1.5V','0.75V','3.0V'],why:'並列の枝の電圧は等しい。',hint:'並列は、どの枝も電源と同じ電圧'},last:'れんしゅうへ！'}],
+ 4:[{t:'ライトの枝を足すと',fig:svgC({paths:['M50 112V40H280V170H50V112','M170 40V170','M225 40V170'],bat:[50,112],dots:[[170,40],[170,170],[225,40],[225,170]],it:[{k:'res',x:170,y:110,v:1,fill:'#E9A38A'},{k:'lamp',x:225,y:110,on:1},{k:'res',x:280,y:110,v:1,fill:'#E9A38A'},{k:'A',x:110,y:40}],arr:[[80,40,'r'],[140,40,'r']],lb:[[110,22,'電源から流れ出る電流',12],[225,150,'ライト（枝）',12,'#2F6F6B']]}),
+   p:'ライトは、電源に **並列** につないだ **別の枝**。\n枝を足しても、**ほかの枝の電圧は変わらない**（電源と同じまま）。だから車の速さも、豆電球の明るさも **そのまま**。\nでも **電流は枝に分かれて流れる**。枝が1本ふえると、その枝の分だけ、**電源から流れ出る電流は大きくなる**。',
+   q:{ask:'モーターAに、モーターBを **並列** に足した。電源から流れ出る電流は？',c:['大きくなる','小さくなる','変わらない'],why:'Aの電流はそのまま、Bの分が加わるので大きくなる。Aにかかる電圧も変わらないので、Aの速さもそのまま。',hint:'枝が1本ふえると、その枝の分だけ電流がふえる'}},
+  {t:'家のコンセントも並列',p:'家のコンセントや **テーブルタップの差しこみ口** は、**並列** につながっている。\nだから、いくつ器具をつないでも **どの器具にも同じ100V** がかかる（器具の数で分け合わない）。',
+   q:{ask:'テーブルタップで **ドライヤーとテレビ** を同時に使う。それぞれの電圧は？',c:['どちらにも100V','100Vを2つで分け合う','タップに近い方が大きい'],why:'差しこみ口は並列。どの器具にも同じ100V。'},last:'レースへ！'}],
+ 5:[{t:'はがれたラベル',p:'並列回路では、**どの枝の電圧も電源の電圧と同じ**。\nだから電源のラベルがはがれていても、**枝の両はしの電圧計** を読めば、電源の電圧が分かる。',
+   q:{ask:'並列の抵抗器Bの電圧計が **7.5V**。電源の電圧は？',c:['7.5V','15V','3.75V'],why:'並列では、枝の電圧＝電源の電圧。'},last:'レースへ！'}],
+ 6:[{t:'針だけの電圧計（15V端子）',fig:svgDial({max:3,minor:10,nums:['0','5','10','15'],nums2:['0','1','2','3'],v:1.7,unit:'V',term:'−端子 15V：下の大きい数字で読む'}),
+   p:'電圧計の **−端子** が **15V** なら、目盛りの **下の大きい数字（0〜15）** で読む。1目盛りは **0.5V**。\n図の針は「10」から目盛り3つ左 → **8.5V**。\n（3V端子なら上の小さい数字・1目盛り0.1V。見当がつかないときは、いちばん大きい300V端子から）',
+   q:{ask:'15V端子で、針が「5」から目盛り **2つ** 右。何V？',c:['6.0V','5.2V','7.0V'],why:'1目盛り0.5V。5＋0.5×2＝6.0V。',hint:'15V端子の1目盛りは0.5V'},last:'レースへ！'}],
+ test:[{t:'実験のしかた',p:'並列回路の電圧の関係は、こう調べる。\n① 抵抗器2つを **並列** につないで回路をつくる\n② 電圧計を抵抗器Aの両はしにつなぐ\n③ スイッチを入れて電圧計の値を読む\n④ 抵抗器Bの両はし・電源の両はしでも同じようにはかる\n⑤ 3つの値を比べる（並列なら **全部等しい**）\n1つだけそろわない値があったら、それが **はかりまちがい**。',
+   q:{ask:'並列回路で 電源3.0V・A2.4V・B3.0V。はかりまちがえたのは？',c:['Aの値','Bの値','電源の値'],why:'並列では電源・A・Bがすべて等しいはず。そろわないAがおかしい。',hint:'並列なら、3つの値は全部等しいはず'}},
+  {t:'ピット審査の前のまとめ',p:'**並列回路**（枝分かれあり）：各部品の **電圧は等しく、電源と同じ**。**電流は枝に分かれて流れる**。枝を足すと、電源から出る電流は大きくなる。\n**直列回路**（通り道1本）：電源の電圧を **分け合う**。電流はどこも等しい。\n電圧計は **並列**。15V端子は下の数字・1目盛り0.5V。家のコンセントも並列。',q:{ask:'電流が **枝に分かれて** 流れるのは？',c:['並列回路','直列回路','どちらも同じ'],why:'並列回路は枝分かれがあるので、電流は枝に分かれて流れる。電圧はどの枝も電源と同じ。',hint:'枝分かれがあるのは、どちらの回路？'},last:'ピット審査へ！'}]
+};
+function lrnSeen(k){SV.lrn=SV.lrn||{};return !!SV.lrn[k]}
+function lrnMark(k){SV.lrn=SV.lrn||{};SV.lrn[k]=1;save()}
+function mnScene(){setScene('learn');showScr();$('bBack').classList.add('hidden');if(HELP)HELP.hide()}
+function prepTest(go){if(TEST||lrnSeen('test')){go();return}mnScene();teach('ピット審査の前のノート',MNB.test,function(){lrnMark('test');go()})}
+function allLearn(){var a=[];['pre',4,5,6,'test'].forEach(function(k){a=a.concat(MNB[k].map(function(p){var q={};for(var x in p)q[x]=p[x];delete q.last;return q}))});return a}
+$('bLearn').onclick=function(){ac();teach('ドライバーズ・ノート（読み返し）',allLearn(),function(){setScene('map')})};
+
 /* ---------------- タイトル ---------------- */
-var INTRO={title:'第6回 パラレル・スロットカー',learn:'**並列** につなぐと、どの車にも **電源と同じ電圧** がかかる（直列は分け合う）',
+var INTRO={title:'第6回 パラレル・スロットカー',learn:'**電圧**＝電流を流そうとするはたらき（単位V）。ここでは車を走らせる力。\n**並列**（枝分かれした回路）につなぐと、どの車にも **電源と同じ電圧** がかかる。**直列**（1本道の回路）は電源の電圧を分け合う',
   how:'配線盤のレバーを **左右にドラッグ**。看板の電圧に合わせて 直列⇄並列',gesture:'swipe'};
 var busy=false;
 $('bStart').onclick=function(){if(busy)return;ac();SV.name=$('nameIn').value.trim()||SV.name;save();var first=!(SV.stars[0]&&SV.stars[0][0]);
-  var go=function(){busy=false;if(first&&window.Guide)Guide.tutorial(PRACTICE);else startStage(first?0:Math.min(SV.unl-1,ST.length-1))};
+  var go=function(){busy=false;if(first&&window.Guide){if(!lrnSeen('pre')){mnScene();teach('はじめてのドライバーズ・ノート',MNB.pre,function(){lrnMark('pre');Guide.tutorial(PRACTICE)})}else Guide.tutorial(PRACTICE)}else startStage(first?0:Math.min(SV.unl-1,ST.length-1))};
   if(window.Guide){busy=true;Guide.intro(INTRO).then(go)}else go()};
 if(window.Guide)Guide.tutorialButton('#bHow',function(){ac();Guide.tutorial(PRACTICE)});else $('bHow').classList.add('hidden');
 $('bCont').onclick=function(){ac();SV.name=$('nameIn').value.trim()||SV.name;save();setScene('map')};
@@ -4673,7 +4791,7 @@ if(window.Guide){
     sfx:function(k){if(k==='step')SFX.ok(3);else if(k==='done')SFX.gate(5);else if(k==='clear')SFX.fan();else if(k==='open'||k==='close')SFX.sw();else if(k==='cheer')SFX.flag();else if(k==='nudge')SFX.relay()},
     muted:function(){return muted}});
   HELP=Guide.help({title:INTRO.title,learn:INTRO.learn,how:INTRO.how,size:44,show:false,attention:true,replay:'tutorial',
-    rules:['レバー右＝**並列**：どの車にも **電源と同じ電圧**（全速）','レバー左＝**直列**：電源の電圧を **2台で分け合う**（ゆっくり）',
+    rules:['**電圧**（V）＝電流を流そうとするはたらき。**並列**＝枝分かれした回路、**直列**＝1本道の回路','レバー右＝**並列**：どの車にも **電源と同じ電圧**（全速）','レバー左＝**直列**：電源の電圧を **2台で分け合う**（ゆっくり）',
       '「◯V**以上**」の看板（ゲート・ジャンプ台）と「◯V**まで**」の看板（ヘアピン・水たまり）を読んで、**手前で** 切りかえる（0.3秒おくれて効く）',
       'トンネルは **ライト** のスイッチ。ライトは並列の別の枝なので、車の電圧は変わらない'],
     onOpen:function(){if(scene==='race'&&G&&!G.paused){G.paused=true;G.hp=1;engSet(0)}},
@@ -4688,8 +4806,6 @@ if(window.PLAYER_NAME){$('nameIn').value=window.PLAYER_NAME;$('nmRow').classList
 if(!(SV.unl>1||SV.stars[0]))$('bCont').classList.add('hidden');
 if(TEST)startTest();else setScene('title');
 requestAnimationFrame(frame);
-/* テスト用の窓口（自動操作の確かめに使う。遊びには影響しない） */
-window.__PD={G:function(){return G},lay:function(){return R},start:startStage,go:function(){$('bGo').onclick()},auto:function(v){AUTO=!!v},speed:function(n){SPD=n|0||1},scene:function(){return scene},SV:function(){return SV},lever:function(v){G&&setLever(G,v)},ideal:ideal,sim:function(si,pol){var g=newRace(si,true);g.state='run';var n=0;while(g.state!=='done'&&n<40000){if(pol==='P')g.cfg=g.cfgEff='P';step(g,1/30);n++}return{t:g.t,ok:g.ok,ng:g.ng,slow:g.slow,z:g.zones.length}}};
 })();
 </script>
 <script>window.ZUKAN_COUNTER={"db": "https://rika-zukan-rank-default-rtdb.asia-southeast1.firebasedatabase.app", "id": "parallel-defense"};

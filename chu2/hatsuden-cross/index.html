@@ -50,7 +50,31 @@ button{font-family:inherit;cursor:pointer;touch-action:manipulation;color:inheri
 .btn.red{background:var(--red);color:#fff;border-color:var(--ink)}
 .btn.ink{background:var(--ink);color:var(--paper)}
 .btn.sm{min-height:46px;font-size:15px;padding:0 14px}
+/* ---- 解説欄（まなぶ）：用語と決まりを「その前」に教える（2026-10-06 初心者向け） ---- */
+#scrLearn{display:flex;align-items:flex-start;justify-content:center;overflow:auto;background:rgba(26,26,26,.45);pointer-events:auto;z-index:44;padding:calc(64px + env(safe-area-inset-top)) 12px 40px}
+#scrLearn .sheet{width:min(700px,96vw);max-height:none;margin:auto}
+#scrLearn .sheet h2{font-size:clamp(26px,4.8vw,40px);letter-spacing:.04em;color:var(--ink)}
+#lKick{font:700 14px var(--fm);color:var(--red);letter-spacing:.2em;margin-bottom:4px}
+#lFig{margin:10px 0 2px;background:#fff;border:2px solid var(--ink);padding:6px}
+#lFig svg{display:block;width:100%;height:auto;max-height:30vh}
+#lP p{margin:8px 0 0;font:500 16.5px/1.8 var(--fm)}
+#lP p b,.lAsk b,.lWhy b{color:var(--red)}
+.lAsk{margin-top:12px;padding-top:10px;border-top:2px solid var(--ink);font:900 17px/1.6 var(--fm)}
+.lOpts{display:grid;gap:8px;margin-top:8px}
+.lOpts .btn{text-align:left;line-height:1.4;padding:8px 14px;font-size:16px;letter-spacing:.02em}
+.lWhy{margin-top:8px;font:500 16px/1.6 var(--fm);min-height:1em}
+.lFoot{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:14px}
+#lPg{font:700 15px var(--fm)}
 .btn:disabled{opacity:.45;cursor:default}
+/* 第2周：札を画面の高さ（733・768）に収める。横長では「図と説明」と「やってみよう」を2列に */
+@media (orientation:landscape) and (min-width:900px){#scrLearn{padding:12px 2vw}
+ #scrLearn .sheet{width:min(1120px,96vw);display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);column-gap:24px;align-content:start;align-items:start}
+ #scrLearn .sheet>*{grid-column:1/-1}
+ #scrLearn .sheet.wf.wq>#lFig{grid-column:1;grid-row:3}#scrLearn .sheet.wf.wq>#lP{grid-column:1;grid-row:4}#scrLearn .sheet.wf.wq>#lQ{grid-column:2;grid-row:3/span 2}
+ #scrLearn .sheet.wf:not(.wq)>#lFig{grid-column:1;grid-row:3}#scrLearn .sheet.wf:not(.wq)>#lP{grid-column:2;grid-row:3}
+ #scrLearn .sheet.wq:not(.wf)>#lP{grid-column:1;grid-row:3}#scrLearn .sheet.wq:not(.wf)>#lQ{grid-column:2;grid-row:3}
+ #lFig svg{max-height:42vh}#scrLearn .sheet.wq .lAsk{border-top:0;margin-top:0;padding-top:0} #scrLearn .sheet>.lFoot{margin-top:8px}}
+@media (max-height:820px){#lP p{font-size:15px;line-height:1.6;margin-top:5px}#scrLearn .sheet{padding:14px 20px 14px}#scrLearn .sheet h2{font-size:clamp(22px,3.6vw,32px)}.lOpts .btn{min-height:42px;padding:6px 14px}}
 .pulse{animation:pulse 1.3s ease-in-out infinite}
 @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
 /* ---- もどる（いつも左上の同じ場所・墨ベタの札） ---- */
@@ -247,6 +271,13 @@ button{font-family:inherit;cursor:pointer;touch-action:manipulation;color:inheri
   <h2 style="color:var(--ink)">号外</h2><div class="csub" id="eName"></div>
   <div id="eScore"></div>
   <div class="row" style="margin-top:12px"><button class="btn red" id="eCard">提出カードを見る</button><button class="btn" id="eMap">紙面へ</button><button class="btn" id="eBook">📖 図鑑</button></div>
+</div></div>
+
+<!-- 解説欄（まなぶ） -->
+<div class="scr hidden" id="scrLearn"><div class="sheet">
+  <div id="lKick"></div><h2 id="lT"></h2>
+  <div id="lFig" class="hidden"></div><div id="lP"></div><div id="lQ"></div>
+  <div class="lFoot"><span id="lPg"></span><button class="btn red" id="lNext">次へ</button></div>
 </div></div>
 
 <!-- もどるの確認 -->
@@ -4134,7 +4165,7 @@ function drawMeter(t,x,y,r,o){o=o||{};c.save();c.translate(x,y);
 /* ================= ゲームの状態 ================= */
 var scene='title',G=null,T=0,SH=0,FL=0,FLC='#fff',PARTS=[],POPS=[],COMBO_POP=0;
 var CURSI=0;
-function startStage(si){CURSI=si;var S=STAGES[si];if(window.BGM)BGM.mood(S.timed&&!S.prac?'tense':'normal');
+function startStage(si){if(!STAGES[si].prac&&!TEST&&!(SV.lrn&&SV.lrn.base)){teachBase(function(){startStage(si)});return}CURSI=si;var S=STAGES[si];if(window.BGM)BGM.mood(S.timed&&!S.prac?'tense':'normal');
   G={si:si,S:S,rounds:roundsOf(si).slice(),ri:0,t:0,wrong:0,first:0,judge:0,combo:0,maxCombo:0,prac:!!S.prac,left:S.timed||0,done:false,printed:false,busuGain:0};
   setupRound();setScene('play');
   if(!G.prac&&si===4&&!SV.seen4)hint('新しいピース：**止めたまま** の装置。磁石がコイルに入っていても……？',5200);
@@ -4550,17 +4581,55 @@ function buildMap(){var gb=$('gbar'),n=STAGES.length-1,h='<i class="hd" title="�
   var er=$('envRow');er.innerHTML='';['s','m','n'].forEach(function(k){var d=document.createElement('div');d.className='env '+(SV.sealed[k]?'on':'off');d.textContent=CS[k];er.appendChild(d)});
   $('bToTest').disabled=!SV.done;$('bToTest').textContent=SV.done?'📋 確認テストへ':'📋 確認テスト（第九段のあと）'}
 function getName(){return(window.PLAYER_NAME||$('nameIn').value||SV.name||'').trim()}
-function toTest(){if(HELP)HELP.hide();var z=Zk();if(z&&z.mainClear&&!TEST){try{z.mainClear({onClose:startTest});return}catch(e){}}startTest()}
-$('bToTest').onclick=function(){if(SV.done)startTest()};
+function toTest(){if(HELP)HELP.hide();teachBase(toTest1)}
+function toTest1(){var z=Zk();if(z&&z.mainClear&&!TEST){try{z.mainClear({onClose:startTest});return}catch(e){}}startTest()}
+$('bToTest').onclick=function(){if(SV.done)teachBase(startTest)};
 function openBook(){var z=Zk();if(z&&z.openBook)z.openBook()}
 $('bBook1').onclick=openBook;$('bBook2').onclick=openBook;$('eBook').onclick=openBook;
 $('bGacha').onclick=function(){var z=Zk();if(z&&z.openGacha)z.openGacha()};
 if(!Zk()){['bBook1','bBook2','bGacha','eBook'].forEach(function(id){$(id).classList.add('hidden')})}
 
+
+/* ================= 解説欄（まなぶ）：用語と決まりを「その前」に教える（2026-10-06 初心者向け） ================= */
+var LRN=null;
+function svgN(inner,vb){return '<svg viewBox="'+(vb||'0 0 420 170')+'" xmlns="http://www.w3.org/2000/svg" font-family="Zen Old Mincho,serif" font-weight="700" fill="none" stroke="#1A1A1A" stroke-width="2">'+inner+'</svg>'}
+function tN(t,x,y,col,sz,anc){return '<text x="'+x+'" y="'+y+'" fill="'+(col||'#1A1A1A')+'" stroke="none" font-size="'+(sz||15)+'" text-anchor="'+(anc||'middle')+'">'+t+'</text>'}
+function coilN(x,y){var s='';for(var i=0;i<6;i++)s+='<ellipse cx="'+x+'" cy="'+(y+i*11)+'" rx="30" ry="6"/>';return s}
+function gN(x,y,deg,lab){var a=(-90+deg)*Math.PI/180,r=30;return '<path d="M'+(x-r)+' '+y+' A'+r+' '+r+' 0 0 1 '+(x+r)+' '+y+'"/>'+tN('0',x,y-r-4,'#1A1A1A',11)+'<path d="M'+x+' '+y+' L'+(x+Math.cos(a)*(r-3)).toFixed(1)+' '+(y+Math.sin(a)*(r-3)).toFixed(1)+'" stroke="#B22222" stroke-width="3"/>'+(lab?tN(lab,x,y+20,'#1A1A1A',13):'')}
+function rowN(y,cells,red,head){var x=[110,210,300,390],h='';cells.forEach(function(c,i){var r=red===i;h+=(r?'<rect x="'+(x[i]-48)+'" y="'+(y-19)+'" width="96" height="27" fill="#B22222" stroke="none"/>':'')+tN(c,x[i],y,r?'#fff':'#1A1A1A',i===0?14:15)});return h}
+function shuf(a){for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1)),t=a[i];a[i]=a[j];a[j]=t}return a}
+var LC={base:{k:'解説欄 ── はじめての読者へ',p:[
+  {t:'電磁誘導と誘導電流',fig:svgN('<rect x="56" y="14" width="22" height="58" fill="#1A1A1A"/>'+tN('N',67,64,'#F2EFE6',14)+'<path d="M67 76 v14 M60 84 l7 8 l7 -8" stroke="#B22222" stroke-width="3"/>'+coilN(67,98)+tN('動かしている間',67,181,'#B22222',13)+gN(160,110,35,'振れる')+'<rect x="268" y="56" width="22" height="58" fill="#1A1A1A"/>'+tN('N',279,76,'#F2EFE6',14)+coilN(279,98)+tN('入れたまま止める',279,181,'#1A1A1A',13)+gN(370,110,0,'0'),'0 0 420 186'),
+   p:'磁石をコイルに出し入れすると、コイルの中の磁界（磁石の力がはたらく空間）が変わり、コイルに電流が流れる。これを **電磁誘導**、流れる電流を **誘導電流** という。\n流れるのは **動かしている間だけ**（コイルに磁石を近づけている間・遠ざけている間）。磁石を **入れたまま止める** と磁界が変わらないので、針は **0**。',
+   q:{ask:'コイルに入れておいた磁石を、**引き出している間**。誘導電流は？',c:['流れる','流れない','引き出し終わっても、ずっと流れる'],why:'引き出している間はコイルの中の磁界が変わるので流れる。引き出し終わって止まれば0。',hint:'流れるのは「動かしている間」だけ。引き出すのは動かしている？'}},
+  {t:'大きさは「検流計の針の振れ」で測る',fig:svgN(gN(90,110,18,'小さく振れる')+gN(210,110,55,'大きく振れる')+tN('振れが大きいほど',330,80,'#1A1A1A',14)+tN('誘導電流が大きい',330,104,'#B22222',15)),
+   p:'**検流計** は小さな電流をはかる針の計器（0が真ん中）。誘導電流の **大きさ** は、針が **どれだけ振れたか** で比べる（温度計やばねばかりでは測れない）。\n誘導電流の大きさに関係しそうな条件は3つ ── **磁石を動かす速さ**・**磁石の強さ**・**コイルの巻数**。この新聞では、どの条件が関係するかを調べる **計画** を組む。',
+   q:{ask:'装置Aは針が **10目盛り**、装置Bは **4目盛り** 振れた。誘導電流が大きいのは？',c:['装置A','装置B','同じ'],why:'針の振れが大きいほど、誘導電流が大きい。10目盛りのAの方が大きい。',hint:'大きさは「針がどれだけ振れたか」で比べるんだったね。'}},
+  {t:'変える条件は1つだけ',fig:svgN(rowN(26,['','速さ','磁石','巻数'])+'<path d="M20 36 H410"/>'+rowN(64,['基準','ゆっくり','ふつう','100回'])+rowN(100,['比べる','速く','ふつう','100回'],1)+rowN(140,['×まずい','速く','強い','100回'],-1)+'<rect x="162" y="121" width="96" height="27" stroke="#B22222" stroke-width="3" stroke-dasharray="5 4"/><rect x="252" y="121" width="96" height="27" stroke="#B22222" stroke-width="3" stroke-dasharray="5 4"/>'),
+   p:'調べたい条件 **だけ** を変え、ほかの条件は **基準と同じ** にそろえる。\n例：「速さ」を調べるなら、基準「ゆっくり・ふつうの磁石・100回巻き」に対して「**速く**・ふつうの磁石・100回巻き」。\n速さと磁石の強さを **同時に** 変えると、針の振れが変わっても **どちらのせいか分からない**（うっかり速く動かしてしまった実験も同じ）。',
+   q:{ask:'「磁石の強さ」を調べたい。基準「ゆっくり・ふつう・100回」と比べる装置は？',c:['ゆっくり・強い・100回','速く・強い・100回','ゆっくり・強い・200回'],why:'変えるのは磁石の強さだけ。速さと巻数は基準と同じにそろえる。',hint:'基準とちがう所が「磁石」の1つだけになっているものは？'}},
+  {t:'計画の進め方',p:'① 調べたい条件を **1つ決める** → ② ほかの条件を **そろえた** 2つの装置を用意する → ③ 同じように磁石を動かして、検流計の振れを **記録する** → ④ 結果を **比べて**、条件との関係を考える。\n手で動かす実験は毎回少しずつちがうので、同じ条件で **何回か測って、ばらつきを確かめる**。\n3つの条件（速さ・磁石の強さ・巻数）を1つずつ調べるなら、**基準1台** のほかに、1つの条件だけを変えた装置が **1台ずつ＝3台** いる（この新聞の「十字」の形）。',
+   q:{ask:'「速さ」と「巻数」の **2つ** の条件だけを、1つずつ調べる。基準の装置のほかに、比べる装置は少なくとも何台？',c:['2台','1台','4台'],why:'条件1つにつき、その条件だけを変えた装置が1台ずつ。2つで2台。',hint:'1つの条件につき、比べる装置は何台いる？'},last:'組版台へ ▶'}
+]}};
+function teachBase(done){if(!SV.lrn)SV.lrn={};if(TEST||SV.lrn.base){done();return}var pages=LC.base.p.map(function(pg){return{pg:pg,k:LC.base.k}});
+  LRN={p:pages,i:0,done:function(){SV.lrn.base=1;save();done()}};if(HELP)HELP.hide();showLearn()}
+function showLearn(){var L0=LRN,it=L0.p[L0.i],pg=it.pg;showOv('scrLearn',true);$('lKick').textContent=it.k;$('lT').textContent=pg.t;
+  var cd0=document.querySelector('#scrLearn .sheet');cd0.classList.toggle('wf',!!pg.fig);cd0.classList.toggle('wq',!!pg.q);
+  var f=$('lFig');if(pg.fig){f.innerHTML=pg.fig;f.classList.remove('hidden')}else{f.innerHTML='';f.classList.add('hidden')}
+  $('lP').innerHTML=pg.p.split('\n').map(function(x){return '<p>'+mdb(x)+'</p>'}).join('');
+  var q=$('lQ'),nb=$('lNext');q.innerHTML='';nb.textContent=L0.i+1>=L0.p.length?(pg.last||'わかった'):'次へ';$('lPg').textContent=L0.p.length>1?(L0.i+1)+' / '+L0.p.length:'';
+  if(pg.q){var qq=pg.q;nb.classList.add('hidden');q.innerHTML='<div class="lAsk">やってみよう：'+mdb(qq.ask)+'</div><div class="lOpts"></div><div class="lWhy"></div>';var box=q.querySelector('.lOpts'),wy=q.querySelector('.lWhy');
+    shuf(qq.c.map(function(t,i){return{t:t,ok:i===0}})).forEach(function(o){var b=document.createElement('button');b.className='btn sm';b.textContent=o.t;
+      b.onclick=function(){ac();if(o.ok){SFX.ok();[].forEach.call(box.children,function(x){x.disabled=true});b.disabled=false;b.className='btn red sm';wy.innerHTML='<b>そのとおり。</b>'+mdb(qq.why);nb.classList.remove('hidden');setTimeout(function(){try{nb.scrollIntoView({behavior:RM?'auto':'smooth',block:'nearest'})}catch(e){}},60)}
+        else{SFX.bad();b.disabled=true;wy.innerHTML='<b>ちがう。</b>'+mdb(qq.hint||'もう一度、上の説明を読んでみよう');try{wy.scrollIntoView({block:'nearest'})}catch(e){}}};box.appendChild(b)})}
+  else nb.classList.remove('hidden');
+  $('scrLearn').scrollTop=0}
+$('lNext').onclick=function(){ac();var L0=LRN;if(!L0)return;L0.i++;if(L0.i>=L0.p.length){showOv('scrLearn',false);LRN=null;SFX.stamp();if(L0.done)L0.done();return}SFX.type();showLearn()};
+
 /* ================= 遊び方案内（Guide） ================= */
 var PRAC_RET=null;
 var INTRO={title:'第32回　はつでん計画ジグソー',
-  learn:'誘導電流の大きさを調べる計画は **変える条件を1つだけ** にして、ほかは **同じ** にする',
+  learn:'磁石をコイルに出し入れすると、動かしている間だけコイルに電流が流れる（**電磁誘導**・その電流＝**誘導電流**）。その大きさを調べる計画は **変える条件を1つだけ** にして、ほかは **同じ** にする',
   how:'装置のピースを **ドラッグ** して、辺の歯がかみ合う枠にはめる。組めたら **長おし** で刷る',gesture:'drag'};
 function itemPos(kind){if(!G)return null;var it=G.items.filter(function(i){return!i.gone&&i.kind===kind})[0];if(!it)return null;return{x:it.x,y:it.y,r:Math.max(30,G.ds*.5),el:cv}}
 function slotPos(k){var q=L.slot[k];return{x:q.x,y:q.y,r:L.B*.55,el:cv}}
@@ -4581,8 +4650,8 @@ var PRACTICE={label:'れんしゅう中（見本刷り）',bandAt:'bottom',
   clearText:'れんしゅうクリア！',
   onClear:function(){SV.pracDone=true;save()},
   onExit:function(){var r=PRAC_RET;PRAC_RET=null;showOv('scrSeal',false);if(!r){return}G=null;if(r==='stage1')startStage(1);else setScene(r)}};
-function startPractice(ret){PRAC_RET=ret;if(window.Guide){Guide.tutorial(PRACTICE)}else{startStage(0)}}
-function helpRules(){var r=['ピースの辺の **3つの歯**＝左から 速さ・磁石の強さ・巻数（上下の辺も同じ並び）',
+function startPractice(ret){teachBase(function(){PRAC_RET=ret;if(window.Guide){Guide.tutorial(PRACTICE)}else{startStage(0)}})}
+function helpRules(){var r=['**誘導電流**＝磁石やコイルを動かして、コイルの中の磁界が変わる間だけ流れる電流（**電磁誘導**）。大きさは **検流計の針の振れ** で比べる','ピースの辺の **3つの歯**＝左から 速さ・磁石の強さ・巻数（上下の辺も同じ並び）','同じ条件で **何回か測る** と、ばらつきを確かめられる',
   '枠の **赤い窓** の条件だけがちがい、ほかの歯が **ぴたりと同じ** ピースがはまる',
   '2つ以上ちがう・何もちがわない・**止めたまま**（誘導電流が流れない）のピースははまらない',
   '組めたら **刷る** を長おし。第一〜三段は刷ったあと予想を封印する（答えは実験で）'];
@@ -4593,7 +4662,7 @@ if(window.Guide){
     muted:function(){return muted},title:INTRO.title,learn:INTRO.learn,how:INTRO.how});
   HELP=Guide.help({rules:[],offset:{x:62},size:48,show:false,attention:true,replay:function(){PRAC_RET='map';G=null;Guide.tutorial(PRACTICE);return null},
     onOpen:function(){if(G)G.paused=true},onClose:function(){if(G)G.paused=false}});
-  Guide.tutorialButton('#bHow',function(){ac();PRAC_RET='title';Guide.tutorial(PRACTICE)});
+  Guide.tutorialButton('#bHow',function(){ac();startPractice('title')});
 }else $('bHow').classList.add('hidden');
 $('bStart').onclick=function(){ac();SFX.stamp();SV.name=$('nameIn').value.trim()||SV.name;save();
   var first=!SV.pracDone&&SV.unl<=1&&!SV.stars[1];
@@ -4603,7 +4672,7 @@ $('bCont').onclick=function(){ac();SV.name=$('nameIn').value.trim()||SV.name;sav
 
 /* ================= 確認テスト ================= */
 var TQ=[],TI=0,TA=[],TOK=[],CARD=null;
-function startTest(){G=null;setScene('test');TQ=window.Quiz?Quiz.test():[];TI=0;TA=[];TOK=[];$('scrTest').scrollTop=0;showQ()}
+function startTest(){if(!TEST&&!(SV.lrn&&SV.lrn.base)){teachBase(startTest);return}G=null;setScene('test');TQ=window.Quiz?Quiz.test():[];TI=0;TA=[];TOK=[];$('scrTest').scrollTop=0;showQ()}
 function lamps(){$('tLamps').innerHTML=TQ.map(function(q,i){return'<i class="'+(i<TOK.length?(TOK[i]?'ok':'ng'):i===TI?'cur':'')+'"></i>'}).join('')}
 function showQ(){if(TI>=TQ.length)return finishTest();var q=TQ[TI];$('tNo').textContent='第'+(TI+1)+'問 ／ '+TQ.length;lamps();
   $('tQ').textContent=q.q;var f=$('tFig');if(q.fig){f.innerHTML=q.fig;f.classList.remove('hidden')}else{f.innerHTML='';f.classList.add('hidden')}
@@ -4645,8 +4714,6 @@ if(!(SV.pracDone||SV.unl>1))$('bCont').classList.add('hidden');
 if(document.fonts&&document.fonts.load){try{document.fonts.load('900 20px "Zen Old Mincho"')}catch(e){}}
 if(TEST)startTest();else setScene('title');
 requestAnimationFrame(frame);
-/* 自動操作の確かめ用（遊びには影響しない） */
-window.__HX={G:function(){return G},L:function(){return L},SV:function(){return SV},scene:function(){return scene},start:startStage,evalArm:evalArm,drop:function(it,x,y,from,k){G.drag={it:it,from:from||'drawer',k:k};it.x=x;it.y=y;dropAt(G.drag);G.drag=null},SEAL:function(){return SEAL}};
 })();
 </script>
 <script>window.ZUKAN_COUNTER={"db": "https://rika-zukan-rank-default-rtdb.asia-southeast1.firebasedatabase.app", "id": "hatsuden-cross"};

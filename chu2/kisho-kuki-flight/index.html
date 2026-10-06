@@ -113,6 +113,10 @@ b{font-weight:700}
 /* 重ねる札（一時停止・アルバム・封印・クリア） */
 #ov{background:rgba(28,26,23,.5);display:flex;align-items:center;justify-content:center;padding:16px}
 #ov .sheetW{width:100%;max-width:480px}
+/*@LEARN2*/.lfig svg{max-height:28vh;width:auto!important;max-width:100%;margin:4px auto!important}.lfig.sm2 svg{max-height:22vh}
+.lch{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}.lch.one{grid-template-columns:1fr}.lch .tag{font-family:var(--fb,inherit);font-size:15.5px;letter-spacing:0;line-height:1.35;min-height:48px;padding:6px 10px}.lch .tag.ng{opacity:.35}.lch .tag.ok{box-shadow:0 0 0 3px var(--shu)}
+.lfb{min-height:24px;margin:8px 0 0!important;font-size:15.5px!important;line-height:1.55!important;font-weight:700}.lfb.bad{color:#c8402c}.lfb.good{color:#1f3f6b}
+.lfoot{position:sticky;bottom:-18px;margin:12px -20px -18px;padding:10px 20px 14px;background:var(--washi);border-top:1.5px solid var(--ink);display:flex;gap:10px;z-index:2}.lfoot .tag{flex:1 1 auto}.lfoot .tag.lbk{flex:0 0 auto;font-size:16px;min-height:48px;padding:6px 12px}.lfoot .tag[disabled]{opacity:.3;pointer-events:none}
 .wide #ov .sheetW,.mid #ov .sheetW{max-width:660px}
 #ov .sheet{max-height:86vh;overflow:auto}
 .album{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px}
@@ -4058,7 +4062,7 @@ function albumGet(id,x,y){if(S.album[id])return;S.album[id]=Date.now();save();co
 const stampQ=[];function nextStamp(){const a=stampQ[0];if(!a)return;const d=$('#stampT');d.innerHTML=cloudSVG(a[0])+'<div><small>雲のアルバムに追加</small><b>'+esc(a[1])+'</b></div>';d.classList.remove('hidden');d.style.animation='none';void d.offsetWidth;d.style.animation='';sfx.stamp();setTimeout(()=>{d.classList.add('hidden');stampQ.shift();setTimeout(nextStamp,200)},2300)}
 
 /* ===== 作戦メモ（飛ぶ前） ===== */
-function openBrief(i,pr){MODE='brief';popClear();newFlight(i);F.practice=pr||null;const f=F.f;show(['brief','fly']);$('#bPause').classList.add('hidden');place();
+function openBrief(i,pr){if(learnGate(pr?0:i,()=>openBrief(i,pr)))return;MODE='brief';popClear();newFlight(i);F.practice=pr||null;const f=F.f;show(['brief','fly']);$('#bPause').classList.add('hidden');place();
  renderBrief()}
 function briefGoals(f){const g=['<span class="chip">☁ 雲をつくる</span>'];if(f.tower)g.push('<span class="chip y">⛰ 雲を'+f.tower+'mまで</span>');(f.tg||[]).forEach(t=>g.push('<span class="chip g">💧 '+esc(t.nm)+'に雨</span>'));if(f.flag)g.push('<span class="chip r">🚩 旗の予言</span>');return g.join('')}
 function airInfo(f){if(f.boss)return f.trio.map(q=>'<span class="chip" style="border-left:5px solid '+q.col+'">'+q.nm+'：地上 '+f.T0+'℃・'+(f.vap?'水蒸気 '+f1(sat(q.Td))+'g':'露点 '+q.Td+'℃')+'</span>').join('');
@@ -4545,7 +4549,8 @@ function mapTap(x,y){for(let i=0;i<NF;i++){const[nx,ny]=nodeXY(i);if(Math.hypot(
 function toMap(fromRes){MODE='map';popClear();F=null;hold=false;setLoop(0,0);show(['map']);kk();
  const n=Object.keys(S.done).length;$('#mapInfo').innerHTML='ふらせた雨 <b>'+f1(S.rain)+'</b> しずく ／ 雲アルバム <b>'+Object.keys(S.album).length+'</b>/'+ALB.length;
  const b=$('#bNext');
- if(S.cleared){b.textContent='確認テストへ';b.onclick=()=>{sfx.tap();startTest()}}
+ if(S.cleared&&S.seal&&!learned('kotae')){b.textContent='答え合わせ（実験の結果）';b.onclick=()=>{sfx.tap();toClearScr()}}
+ else if(S.cleared){b.textContent='確認テストへ';b.onclick=()=>{sfx.tap();startTest()}}
  else if(S.cur>=NF){b.textContent='実験の予想を封印する';b.onclick=()=>{sfx.tap();sealPanel()}}
  else{b.textContent='フライト'+KAN[S.cur]+'「'+FL[S.cur].nm+'」';b.onclick=()=>{sfx.tap();openBrief(S.cur)}}
  zkButtons();
@@ -4633,7 +4638,7 @@ function doSeal(sel){const pt='ピストンを引くと'+sel.a[0]+'・温度は'
  if(sel.r.length)earn(10,'predict','predict');sfx.stamp();
  ovOpen('<div class="tape"></div><h2>封印しました</h2><div style="text-align:center;margin:12px"><span class="stamp">封印</span></div><p>予想：<b>'+esc(pt)+'</b>'+(rec.reasons.length?'<br><span class="small">根拠：'+rec.reasons.map(esc).join('／')+'</span>':'')+'</p><p class="small">実験のあとで、この予想と結果をくらべよう。</p><div class="row"><button class="tag" id="bFin">全フライト完了！</button></div>');
  $('#bFin').onclick=()=>{sfx.tap();ovClose();S.cleared=true;save();toClearScr()}}
-function toClearScr(){toMap();sfx.fanfare();for(let i=0;i<(RM?10:80);i++)PT.push({w:0,x:rnd(0,W_),y:-10,vx:rnd(-40,40),vy:rnd(60,220),g:30,r:rnd(3,7),vr:0,life:1,dec:.3,c:['#d9a441','#c8402c','#7f9a4f','#fff','#5f88ad'][i%5],paper:1});
+function toClearScr(){if(learnGate('kotae',toClearScr))return;toMap();sfx.fanfare();for(let i=0;i<(RM?10:80);i++)PT.push({w:0,x:rnd(0,W_),y:-10,vx:rnd(-40,40),vy:rnd(60,220),g:30,r:rnd(3,7),vr:0,life:1,dec:.3,c:['#d9a441','#c8402c','#7f9a4f','#fff','#5f88ad'][i%5],paper:1});
  const r=S.boss||[200,800,1400];
  const body='<div class="tape"></div><h2>🌈 空の国に雨がもどった！</h2><div class="recs"><div>クリアタイム<b>'+fmtT(S.t)+'</b></div><div>旗の予言 的中<b>'+(S.hits||0)+'回</b></div><div>雲ができた高さ A/B/C<b style="font-size:15px">'+r.join(' / ')+'m</b></div><div>ふらせた雨<b>'+f1(S.rain)+'</b></div></div>'+
   (S.seal?'<p class="small"><span class="stamp" style="font-size:14px;border-width:2px;padding:1px 6px">封印</span> '+esc(S.seal.predText)+'</p>':'')+
@@ -4644,7 +4649,7 @@ function fmtT(t){t=Math.round(t);return Math.floor(t/60)+'分'+String(t%60).padS
 
 /* ===== 確認テスト ===== */
 let TS=null;function playerName(){return window.PLAYER_NAME||S.name||''}
-function startTest(){if(!window.Quiz)return;MODE='test';F=null;setLoop(0,0);TS={qs:Quiz.test(),i:0,ans:[]};show(['test']);renderQ()}
+function startTest(){if(!window.Quiz)return;if(learnGate('test',startTest))return;MODE='test';F=null;setLoop(0,0);TS={qs:Quiz.test(),i:0,ans:[]};show(['test']);renderQ()}
 function renderQ(){const q=TS.qs[TS.i],box=$('#tbox');
  box.innerHTML='<div class="tape"></div><div class="tno">📝 確認テスト　第'+(TS.i+1)+'問 / '+TS.qs.length+'</div><div class="prog">'+TS.qs.map((_,i)=>'<i class="'+(i<TS.i?'on':'')+'"></i>').join('')+'</div><div class="tq">'+q.q+'</div>'+(q.fig?'<div class="fig2">'+q.fig+'</div>':'')+'<div id="ta"></div>';torn(box);
  const ta=$('#ta');
@@ -4687,7 +4692,7 @@ const PRACTICE={get label(){return WIDE||MID?'れんしゅう中 ─ はじめ�
   {gesture:'tap',label:'はなす',target:()=>parcelPt(),area:()=>flyArea(),dim:false,praise:false,until:()=>!!(F&&(F.evapSeen||F.x>3700)),
    text:'雲ができた！　こんどは **はなす** と下がる。下りると雲は…？'}
  ]};
-function beginFirst(){if(!window.Guide){openBrief(0);return}Guide.intro(INTRO).then(()=>{PFIRST=true;Guide.tutorial(PRACTICE)})}
+function beginFirst(){if(!window.Guide){openBrief(0);return}Guide.intro(INTRO).then(()=>{PFIRST=true;if(!learnGate(0,()=>Guide.tutorial(PRACTICE)))Guide.tutorial(PRACTICE)})}
 function vib(p){try{navigator.vibrate&&navigator.vibrate(p)}catch(e){}}
 if(window.Guide){
  Guide.setup({theme:GTHEME,title:INTRO.title,learn:INTRO.learn,how:INTRO.how,
@@ -4696,7 +4701,7 @@ if(window.Guide){
  HELPC=Guide.help({rules:['画面を **長おし** ＝上昇気流に乗って昇る／**はなす** ＝下がる','昇ると気圧が下がって **ふくらみ**、**冷える**（雲ができるまで100mで1℃）','**露点** の高さを越えると **雲** ができる。下りると消える','雲をたもったまま目的地の上へ運ぶと **雨** がふる','飛ぶ前に、左のものさしの **旗** を「雲ができはじめる高さ」へ（予言）'],
   onOpen:()=>{if(MODE==='fly'){PREV_MODE='fly';MODE='pause';hold=false;setLoop(0,0)}},onClose:()=>{if(PREV_MODE==='fly'&&MODE==='pause')MODE='fly';PREV_MODE=null},
   replay:'tutorial',get offset(){return {x:WIDE?68:62}},size:46,attention:true,show:false});
- Guide.tutorialButton('#bHow',()=>{ac();loops();sfx.tap();PFIRST=false;Guide.tutorial(PRACTICE)});
+ Guide.tutorialButton('#bHow',()=>{ac();loops();sfx.tap();PFIRST=false;if(!learnGate(0,()=>Guide.tutorial(PRACTICE)))Guide.tutorial(PRACTICE)});
 }else $('#bHow').classList.add('hidden');
 document.addEventListener('pointerdown',e=>{if(e.target&&e.target.closest&&e.target.closest('.tag,.pbtn'))vib(8)},true);
 $('#bCont').onclick=()=>{ac();loops();sfx.tap();const v=$('#nameIn').value.trim();if(v)S.name=v;save();toMap()};
@@ -4710,7 +4715,52 @@ resize();
 try{window.Zukan&&Zukan.setup&&Zukan.setup({game:GID,koma:[KOMA]})}catch(e){}
 setSnd();
 if(window.PLAYER_NAME){$('#nameIn').value=window.PLAYER_NAME;$('#nameRow').classList.add('hidden')}else if(S.name)$('#nameIn').value=S.name;
-window.__game={S:()=>S,F:()=>F,FL,hold:b=>{hold=b;if(b)$('#holdHint').classList.add('hidden')},openBrief,takeoff,toMap,setFlag:(k,h)=>{F.flags[k].h=h;F.flags[k].set=true;renderBrief()},choosePad:i=>choosePad(F.f.pads[i]),mode:()=>MODE,endFlight,startTest,step:dt=>update(dt)};
+/* ===== まなぶ（夜間改修 2026-10-06：初心者向け。気圧・露点・雲の高さの計算・実験の答え合わせを、使う前に教える） ===== */
+const LSVG={
+ mt:'<svg viewBox="0 0 300 162" style="width:100%;height:auto;display:block;margin:4px 0" font-size="11" font-family="Zen Maru Gothic,sans-serif"><rect width="300" height="162" fill="#e9dfc6"/>'
+  +'<path d="M20 140 L150 30 L280 140Z" fill="#c47c4c" stroke="#1c1a17" stroke-width="2"/>'
+  +'<rect x="30" y="112" width="26" height="20" rx="3" fill="#f1e6cc" stroke="#1c1a17" stroke-width="1.6"/><text x="43" y="156" text-anchor="middle" fill="#1c1a17">ふもと</text>'
+  +'<path d="M134 22 q16 -14 32 0 q4 10 -4 16 h-24 q-8 -6 -4 -16z" fill="#f1e6cc" stroke="#1c1a17" stroke-width="1.6"/><text x="196" y="22" fill="#1c1a17">山頂：ぱんぱん</text>'
+  +'<text x="200" y="64" fill="#1f3f6b" font-weight="700">上の空気が少ない</text><text x="200" y="78" fill="#1f3f6b" font-weight="700">＝気圧が低い</text>'
+  +'<text x="8" y="70" fill="#1f3f6b" font-weight="700">ふもと＝</text><text x="8" y="84" fill="#1f3f6b" font-weight="700">気圧が高い</text>'
+  +[[32,118],[46,118],[60,118]].map(p=>'<path d="M'+p[0]+' '+(p[1]-24)+' v14" stroke="#1f3f6b" stroke-width="2" marker-end="url(#la)"/>').join('')
+  +'<defs><marker id="la" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto"><path d="M0 0 L6 3 L0 6z" fill="#1f3f6b"/></marker></defs></svg>',
+ flask:'<svg viewBox="0 0 300 130" style="width:100%;height:auto;display:block;margin:4px 0" font-size="11" font-family="Zen Maru Gothic,sans-serif"><rect width="300" height="130" fill="#e9dfc6"/><circle cx="90" cy="76" r="36" fill="#dfe6ea" stroke="#1c1a17" stroke-width="2"/><rect x="80" y="20" width="20" height="24" fill="#dfe6ea" stroke="#1c1a17" stroke-width="2"/>'
+  +[[76,70],[96,62],[104,84],[82,90],[92,76],[70,84]].map(p=>'<circle cx="'+p[0]+'" cy="'+p[1]+'" r="5" fill="#fbf6ea" opacity=".9"/>').join('')
+  +'<path d="M100 30 H150" stroke="#1c1a17" stroke-width="3"/><rect x="150" y="20" width="76" height="20" fill="#f1e6cc" stroke="#1c1a17" stroke-width="2"/><rect x="214" y="16" width="34" height="28" fill="#c9a66b" stroke="#1c1a17"/><text x="268" y="34" font-size="16" fill="#c8402c">→</text><text x="232" y="58" text-anchor="middle" fill="#1c1a17" font-weight="700">ピストンを引く</text>'
+  +'<text x="140" y="80" fill="#1c1a17">ふくらむ → 温度が下がる</text><text x="140" y="96" fill="#1c1a17">→ 露点 → 白くくもる</text><text x="140" y="114" fill="#1f3f6b">けむり＝水滴の芯</text><text x="140" y="127" fill="#1f3f6b">内側をぬらす＝湿度を高く</text></svg>'
+};
+const LEARN={
+ kiatsu:{cards:[
+  {h:'気圧と露点',fig:LSVG.mt,b:'<p><b>気圧</b>＝空気が上からおす力。高い所ほど上にある空気が少ないので、<b>気圧は低い</b>。だから、ふもとで買ったお菓子の袋は、山頂ではまわりからおす力が弱まって<b>ぱんぱんにふくらむ</b>。</p><p>空気はふくらむと<b>温度が下がる</b>（縮むと温度が上がる）。</p><p>空気の中には目に見えない<b>水蒸気</b>（水が気体になったもの）がある。冷えていって水蒸気が<b>水滴に変わり始める温度</b>が<b>露点</b>。<b>雲</b>は、こうしてできた<b>小さな水滴や氷の粒</b>の集まり（水蒸気そのものではない）。</p>',
+   q:{q:'山頂で空のペットボトルにふたをして、ふもとまで持って帰った。ボトルはどうなる？',ch:['へこむ','ふくらむ','変わらない'],a:0,hint:'ふもとは山頂より気圧が高い。まわりからおす力が強くなると…',ok:'ふもとは気圧が高いので、まわりからおされてへこむ。'}}]},
+ takasa:{cards:[
+  {h:'雲ができる高さの計算',b:'<p>雲ができるまでは、空気のかたまりは<b>100m昇るごとに1℃下がる</b>（フライト一で見た規則）。地上の気温から露点まで下がった高さで雲ができる。</p><p style="font-size:17px;font-weight:900;border-left:5px solid #c8402c;padding-left:8px">雲ができはじめる高さ ＝（地上の気温 − 露点）× 100m</p><p>例：地上20℃・露点14℃。20−14＝<b>6℃</b>下がればよい → 6×100＝<b>600m</b>。</p><p>逆に、高さから温度も出せる。例：標高100mのふもとから標高700mで雲ができ、そのとき9℃ → 700−100＝600m上がって6℃下がった → ふもとは 9＋6＝<b>15℃</b>。</p>',
+   q:{q:'こんどは自分で。地上22℃・露点17℃の空気。雲ができはじめる高さは？',ch:['500m','1700m','2200m','3900m'],a:0,hint:'まず 22−17＝何℃下がればよいか。それに100mをかける。',ok:'22−17＝5℃ → 5×100＝500m。'}}]},
+ suijoki:{cards:[
+  {h:'水蒸気の量から露点を出す',b:'<p>水蒸気の量が分かれば、<b>飽和水蒸気量の表</b>（その気温で空気1m³がふくめるいちばん多い水蒸気の量）から露点が読める。表で、水蒸気の量と同じ値になる気温が露点（そこで満杯＝湿度100％になる）。</p><p>例：地上30℃・湿度40％。30℃の飽和水蒸気量は30.4g → 水蒸気は 30.4×0.40＝約12.1g → 表で12.1gになるのは<b>14℃</b>＝露点 → 30−14＝16℃ → <b>1600m</b>で雲。</p><p><b>乾いた空気</b>（水蒸気が少ない）は露点が低いので、たくさん冷えないと雲にならない＝<b>雲ができる高さが高い</b>。気温と露点の差が<b>小さい</b>空気ほど、低い所で雲ができる。</p>',
+   q:{q:'地上30℃で、水蒸気を17.3gふくむ空気（表で17.3gは20℃）。雲ができはじめる高さは？',ch:['2000m','1000m','300m'],a:1,hint:'露点は表で17.3gになる温度＝20℃。30−20＝10℃。',ok:'露点20℃、30−20＝10℃ → 1000m。'}}]},
+ kotae:{cards:[
+  {h:'答え合わせ（フラスコの実験）',fig:LSVG.flask,dyn:1,b:'<p><b>結果</b>：ピストンを引くと、フラスコの中の空気が<b>ふくらんで温度が下がり</b>、露点に達して<b>白くくもる</b>（雲ができる）。ピストンを押しもどすと、空気が<b>縮んで温度が上がり、くもりが消える</b>。山をのぼる空気・下りる空気と同じ。</p><p><b>線香のけむり</b>を少し入れるのは、けむりの小さな粒が<b>水滴の芯</b>になって、水蒸気が水滴になりやすくするため。<b>内側を少しの水でぬらす</b>のは、中の空気の<b>湿度を高く</b>して、露点に達しやすくするため。</p>',
+   q:{q:'線香のけむりを入れず、よく乾いたフラスコでピストンを引いた。どうなりやすい？',ch:['くもりにくい','すぐ真っ白にくもる','フラスコが温まる'],a:0,hint:'水滴の芯（けむり）も、水蒸気も少ない。少し冷えただけで露点に届く？',ok:'芯も水蒸気も少ないので、くもりにくい。だから、けむりを入れて内側をぬらす。'}}]}
+};
+function kotaeHead(){if(!S.seal||!S.seal.pred)return '';const p=S.seal.pred,ok=p.cloud==='白くくもる'&&p.temp==='下がる'&&p.push==='くもりが消える';return '<p>きみの予想：<b>'+esc(S.seal.predText||'')+'</b>'+(ok?' → <b>ぜんぶ正解！</b>':' → 結果とくらべよう')+'</p>'}
+function learned(k){return !!(S.learn&&S.learn[k])}
+function learnNeed(x){if(x==='kotae')return S.seal&&!learned('kotae')?['kotae']:[];const n=[];if(!learned('kiatsu'))n.push('kiatsu');if((x==='test'||x>=1)&&!learned('takasa'))n.push('takasa');if((x==='test'||x>=6)&&!learned('suijoki'))n.push('suijoki');if(x==='test'&&S.seal&&!learned('kotae'))n.push('kotae');return n}
+function learnGate(x,then){if(TEST_ONLY)return false;const n=learnNeed(x);if(!n.length)return false;learnRun(n,then);return true}
+function learnRun(keys,then){const pages=[];keys.forEach(k=>LEARN[k].cards.forEach(c=>{const o=Object.assign({},c);pages.push({c:o,try:0});if(o.q)pages.push({c:o,try:1})}));let pi=0;
+ const mix=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const r=Math.floor(Math.random()*(i+1));[a[i],a[r]]=[a[r],a[i]]}return a};
+ const step=()=>{const P0=pages[pi],c=P0.c,last=pi===pages.length-1,nx=last?'わかった！ 先へ':(pages[pi+1].try?'やってみよう ▶':'つぎへ ▶');
+  let h='<div class="tape"></div><div class="tno">まなぶ　'+(pi+1)+' / '+pages.length+'</div>';
+  if(!P0.try)h+='<h2>'+c.h+'</h2>'+(c.fig?'<div class="lfig">'+c.fig+'</div>':'')+(c.dyn?kotaeHead():'')+c.b+'<div class="lfoot">'+(pi>0?'<button class="tag w lbk" id="lBk">◀ もどる</button>':'')+'<button class="tag" id="lNx">'+nx+'</button></div>';
+  else{const long=c.q.ch.some(t=>t.length>12);h+='<h2>やってみよう</h2>'+(c.q.fig&&c.fig?'<div class="lfig sm2">'+c.fig+'</div>':'')+'<p style="font-weight:900;color:#c8402c">'+c.q.q+'</p><div class="lch'+(long?' one':'')+'" id="lCh">'+mix(c.q.ch.map((t,j)=>[t,j])).map(x=>'<button class="tag w" data-j="'+x[1]+'">'+x[0]+'</button>').join('')+'</div><p class="lfb" id="lFb"></p><div class="lfoot"><button class="tag w lbk" id="lBk">◀ 説明</button><button class="tag" id="lNx" disabled>'+nx+'</button></div>'}
+  ovOpen(h);$('#ovBox').scrollTop=0;
+  if(P0.try){const fb=$('#lFb'),bn=$('#lNx');
+   $('#ovBox').querySelectorAll('#lCh [data-j]').forEach(b=>b.onclick=()=>{if(c.done)return;if(+b.dataset.j===c.q.a){c.done=1;b.classList.add('ok');fb.className='lfb good';fb.innerHTML='正解！ '+c.q.ok;bn.disabled=false;sfx.tap()}else{b.classList.add('ng');fb.className='lfb bad';fb.innerHTML='ちがうよ。'+c.q.hint;sfx.tap();vib([10,40,10])}fb.scrollIntoView({block:'nearest'})});
+   if(c.done){fb.className='lfb good';fb.innerHTML='正解！ '+c.q.ok;bn.disabled=false}}
+  const bk=$('#lBk');if(bk)bk.onclick=()=>{sfx.tap();pi--;step()};
+  $('#lNx').onclick=()=>{sfx.tap();pi++;if(pi<pages.length){step();return}S.learn=S.learn||{};keys.forEach(k=>S.learn[k]=1);save();ovClose();then&&then()}};
+ step()}
 if(TEST_ONLY){startTest()}else toTitle();
 requestAnimationFrame(loop);
 </script>

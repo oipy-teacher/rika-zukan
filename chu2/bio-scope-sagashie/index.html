@@ -161,6 +161,8 @@ body.land .pan{font-size:21px;min-height:72px}
 #dlg .box{max-width:440px;width:100%;padding:24px 22px 18px;text-align:center;font-size:18px;line-height:1.6;background:var(--bg);box-shadow:inset 0 0 0 4px var(--ink),6px 6px 0 rgba(231,111,81,.5);animation:pop .25s both}
 #dlg .box b{font-family:var(--head);font-weight:900;font-size:23px}
 #dlg .row{display:flex;gap:12px;justify-content:center;margin-top:16px;flex-wrap:wrap}
+#dlg .lc{text-align:left;font-size:15.5px;line-height:1.55}#dlg .lc b{display:block;text-align:center;margin-bottom:4px}#dlg .lc ul,#dlg .lc ol{margin:8px 0 0;padding-left:1.3em}#dlg .lc li{margin:5px 0}#dlg .lc p{margin:8px 0 0}#dlg .lc em{font-style:normal;font-weight:700;color:var(--red)}#dlg .lcfig{display:block;width:100%;max-width:380px;margin:4px auto 0}#dlg .box:has(.lc){max-width:540px;max-height:92vh;overflow:auto}
+#dlg .lcq{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:10px}#dlg .lcq .db.ok{outline:4px solid #2A9D8F}#dlg .lcq .db.ng{opacity:.5}#dlg .lcfb{margin-top:10px;min-height:2.6em;padding:6px 10px;border-radius:6px;background:rgba(38,70,83,.08);font-size:14.5px}#dlg .lcfb.ng{background:#FBE1D8}#dlg .lcfb.ok{background:#DDF0EC}#dlg .box:has(.lc) .row{position:sticky;bottom:-18px;margin-top:10px;padding:8px 0 4px;background:var(--bg)}#dlg .row .db[disabled]{opacity:.45}
 /* 仕上げ 2026-09-27：押すと沈む・★のドン・ドン・ドン・？ボタン */
 .rv{transition:transform .1s}.rv:active{transform:translateY(2px) scale(.93)}.rv.on:active{transform:translateY(-1px) scale(.95)}
 .topr .gd-hbtn{flex:none}
@@ -3987,7 +3989,8 @@ function bakeBG(){bgC.width=cv.width;bgC.height=cv.height;const g=bgC.getContext
 
 /* ================= あそぶ ================= */
 let G=null;let HELP=null,PRACTICE=null,CB=0,PAUSE=false;const GD=window.Guide||null;
-function startStage(i,o){if(window.BGM)BGM.mood('normal');ac();o=o||{};const S=STAGES[i];scene='play';showScene('play');$('stars').hidden=true;CB=0;
+function startStage(i,o){o=o||{};if(!o.prac){const c=lcNext(i);if(c){c(()=>startStage(i,o));return}}
+ if(window.BGM)BGM.mood('normal');ac();const S=STAGES[i];scene='play';showScene('play');$('stars').hidden=true;CB=0;
  G={i,S,prac:!!o.prac,flash:0,st:null,mi:0,disp:DIA[0],anim:null,vx:0,vy:0,tgt:0,found:[],proc:{},misses:0,ops:0,properN:0,focus:.5,fT:.5,t:0,fx:[],parts:[],msgT:0,done:false,hold:0,seenLow:{},lostShown:0,idle:0};
  if(!G.prac)window.Tekitou&&Tekitou.shown();
  if(S.seal){initSeal();return}
@@ -4181,7 +4184,7 @@ function dialog(html,btns){const d=$('dlg');d.hidden=false;d.innerHTML='<div cla
 
 /* ================= 確認テスト ================= */
 let T=null;const PANC=['#E76F51','#2A9D8F','#E9C46A','#264653','#F4A261'];
-function startTest(){if(!window.Quiz){dialog('問題データがありません',[['とじる']]);return}G=null;showScene('test');T={qs:Quiz.test(),i:0,ans:[]};renderQ()}
+function startTest(){{const c=lcNext(99);if(c){c(startTest,'確認テストへ ▶');return}}if(!window.Quiz){dialog('問題データがありません',[['とじる']]);return}G=null;showScene('test');T={qs:Quiz.test(),i:0,ans:[]};renderQ()}
 function renderQ(){const q=T.qs[T.i];$('qNo').textContent=(T.i+1)+' / '+T.qs.length;$('qText').textContent=q.q;const f=$('qFig');if(q.fig){f.innerHTML=q.fig;f.hidden=false}else{f.innerHTML='';f.hidden=true}const A=$('qArea');A.innerHTML='';$('scTest').scrollTop=0;
  const mkPan=(c,k,lab)=>{const b=document.createElement('button');b.className='pan';b.style.setProperty('--pc',PANC[k%5]);b.innerHTML='<span class="L">'+lab+'</span><span></span>';b.lastChild.textContent=c;return b};
  if(q.t==='choice'){const box=document.createElement('div');box.className='qch';q.shown.forEach((c,k)=>{const b=mkPan(c,k,'アイウエオ'[k]);b.onclick=()=>answer(c);box.appendChild(b)});A.appendChild(box)}
@@ -4210,9 +4213,51 @@ window.GAME_ID=GAME_ID;
 try{window.Zukan&&Zukan.setup({game:GAME_ID,koma:[KOMA]})}catch(e){}
 muteIcon();layout();addEventListener('resize',()=>{layout();if(scene==='map')renderMap()});
 if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>{for(const k in GLYPH)delete GLYPH[k];for(const k in SPR)delete SPR[k];layout();if(G&&G.i!=null)updOdai()});
-window.__scope={get G(){return G},get PAUSE(){return PAUSE},curT:()=>G&&G.st?curT():null,get SV(){return SV},startStage,startTest,openMap,setMag,L:()=>L,toScr,tapField,
- center(){const t=curT();G.vx=t.x+(Math.random()-.5)*.05;G.vy=t.y+(Math.random()-.5)*.05},focusOK(){G.focus=G.fT},
- solveOne(){if(!G||G.done||!G.st)return false;const t=curT();if(!t)return false;G.vx=t.x+.02;G.vy=t.y+.02;const req=TY[t.type].req;if(G.mi<req){setMag(G.mi+1);return true}if(G.anim)return true;G.focus=G.fT;const [sx,sy]=toScr(t.x,t.y);tapField(sx,sy);return true}};
+
+
+/* ================= まなぶカード（2026-10-06 夜間改修・初心者向け） ================= */
+/* 札は「区画の入口」と「確認テストの入口」で、読んだ印（SV.lc）が無ければ出す。確認テストだけモードでは出さない */
+function lcRead(k){return !!(SV.lc&&SV.lc[k])}
+function lcMark(k){SV.lc=SV.lc||{};SV.lc[k]=1;save()}
+function lcNext(i){if(window.GAME_MODE==='test')return null;const L2=[[0,'parts',partsCard],[2,'rule',ruleCard],[3,'focus',focusCard]];for(const c of L2)if(c[0]<=i&&!lcRead(c[1]))return c[2];return null}
+function learnBox(html,btns){dialog('<div class="lc">'+html+'</div>',btns);$('dlg').onclick=null}
+function shuf(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=(Math.random()*(i+1))|0;[a[i],a[j]]=[a[j],a[i]]}return a}
+/* やってみよう: 答えを押しても札は作り直さず、返しの欄だけ書きかえる。正解の位置は毎回まぜる */
+function lcQuiz(html,opts,nextLabel,then,okMsg){const d=$('dlg');d.hidden=false;d.onclick=null;
+ d.innerHTML='<div class="box"><div class="lc"><b>やってみよう</b>'+html+'<div class="lcq"></div><div class="lcfb" aria-live="polite">答えを えらぼう</div></div><div class="row"><button class="db sm red" disabled>'+nextLabel+'</button></div></div>';
+ const q=d.querySelector('.lcq'),fb=d.querySelector('.lcfb'),nx=d.querySelector('.row .db');
+ shuf(opts).forEach(o=>{const b=document.createElement('button');b.className='db sm';b.innerHTML=o.t;b.onclick=()=>{if(!nx.disabled)return;
+  if(o.ok){SFX.find&&SFX.find(3);b.classList.add('ok');fb.className='lcfb ok';fb.innerHTML='<em>正解！</em> '+okMsg;nx.disabled=false}
+  else{SFX.tick&&SFX.tick();b.classList.add('ng');fb.className='lcfb ng';fb.innerHTML='<em>おしい！</em> '+o.why}};q.appendChild(b)});
+ nx.onclick=()=>{d.hidden=true;SFX.pip();then()}}
+const PARTS_SVG='<svg viewBox="0 0 380 180" class="lcfig" aria-hidden="true"><g transform="translate(34,0)" fill="none" stroke="#264653" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">'+
+ '<rect x="96" y="10" width="20" height="24" rx="3" fill="#E9C46A"/><path d="M100 34 L100 66 L112 66 L112 34"/>'+
+ '<path d="M88 66 L124 66 L120 78 L92 78 Z" fill="#FBF7EF"/>'+
+ '<rect x="94" y="78" width="9" height="20" rx="2" fill="#E76F51"/><rect x="108" y="78" width="9" height="13" rx="2" fill="#E76F51"/>'+
+ '<path d="M62 112 L150 112"/><path d="M78 108 L128 108" stroke="#2A9D8F" stroke-width="5"/>'+
+ '<path d="M118 50 Q170 56 170 112 L170 160"/><circle cx="170" cy="100" r="9" fill="#E9C46A"/>'+
+ '<path d="M90 130 L120 130"/><path d="M96 146 L114 146 L105 154 Z"/><path d="M60 172 L200 172"/></g>'+
+ '<g font-size="13" fill="#264653"><text x="156" y="22">接眼レンズ（目でのぞく）</text><text x="2" y="74">レボルバー</text>'+
+ '<text x="2" y="96" fill="#E76F51">対物レンズ</text><text x="220" y="104">調節ねじ（ピント）</text>'+
+ '<text x="2" y="118">プレパラート</text><text x="2" y="146">しぼり・</text><text x="2" y="162">反射鏡</text></g></svg>';
+function partsCard(then,lab){
+ learnBox('<b>顕微鏡の つくり</b>'+PARTS_SVG+
+  '<ul><li><em>プレパラート</em>＝見たいものを スライドガラスにのせ、カバーガラスを かけたもの。これを 動かして 探す</li>'+
+  '<li><em>倍率 ＝ 接眼レンズの倍率 × 対物レンズの倍率</em><br>このゲームの接眼レンズは 10倍。対物レンズを 4倍にすると 10×4＝<em>×40</em>、10倍で <em>×100</em></li>'+
+  '<li>倍率は <em>レボルバー</em> を回して 対物レンズを 付けかえて 変える（画面の ×40・×100・×400 ボタン）</li><li><em>調節ねじ</em> で ピントを合わせる。<em>しぼり・反射鏡</em> で 明るさを 調節する</li></ul>',
+  [['やってみる ▶',()=>lcQuiz('<p>接眼レンズ <em>15倍</em>、対物レンズ <em>10倍</em>。<br>倍率は 何倍？</p>',[{t:'150倍',ok:true},{t:'25倍',why:'15＋10 ではなく <em>かけ算</em>。倍率＝接眼 × 対物。'},{t:'1.5倍',why:'15 ÷ 10 ではなく <em>かけ算</em>。倍率＝接眼 × 対物。'}],lab||'つぎへ ▶',()=>{lcMark('parts');then()},'15 × 10 ＝ <em>150倍</em>。'),'red']])}
+function ruleCard(then,lab){
+ learnBox('<b>倍率を上げると、数は どう変わる？</b>'+
+  '<p>倍率が <em>□倍</em> になると……</p><ul><li>像（見える姿）の長さ → <em>□倍</em>（大きく見える）</li><li>見える範囲の直径 → <em>□分の1</em>（せまくなる）</li><li>視野の明るさ → <em>暗く</em> なる（しぼり・反射鏡で 明るくする）</li><li>生きもの <em>そのものの大きさ</em> は 変わらない（変わるのは 見え方だけ）</li></ul>'+
+  '<p>例：×100 で 見える範囲の直径 1.8mm → ×400（4倍）にすると 1.8 ÷ 4 ＝ <em>0.45mm</em>。<br>だから はしにいるものは 外れる。<em>中央に入れてから</em> 上げよう。</p>',
+  [['やってみる ▶',()=>lcQuiz('<p>×100 で 像の長さが <em>10mm</em> だった。<br>×400 にすると 像の長さは？</p>',[{t:'40mm',ok:true},{t:'2.5mm',why:'4分の1 になるのは <em>見える範囲の直径</em>。像の長さは 4倍。'},{t:'10mm',why:'×100 → ×400 は <em>4倍</em>。像の長さも 4倍になる。'}],lab||'つぎへ ▶',()=>{lcMark('rule');then()},'×100→×400 は 4倍。10 × 4 ＝ <em>40mm</em>。（見える範囲の直径は 4分の1）'),'red']])}
+function focusCard(then,lab){
+ learnBox('<b>ピントの 合わせ方</b>'+
+  '<ol><li><em>横から見ながら</em> 調節ねじを回し、対物レンズと プレパラートを できるだけ <em>近づける</em></li>'+
+  '<li>接眼レンズを <em>のぞきながら</em>、こんどは <em>遠ざける</em> 向きに回して ピントを合わせる</li></ol>'+
+  '<p>のぞきながら 近づけると、レンズと プレパラートが <em>ぶつかって</em> 割れることがある。遠ざけながらなら 安全。</p>'+
+  '<ul><li>高い倍率の対物レンズほど 長い。ピントが合ったとき プレパラートとの距離は <em>近い</em></li><li>倍率を変えたら ピントが ずれる → 合わせ直す</li></ul>',
+  [['やってみる ▶',()=>lcQuiz('<p>対物レンズを <em>4倍</em> から <em>10倍</em> に かえて ピントを合わせた。<br>対物レンズと プレパラートの 距離は？</p>',[{t:'近くなる',ok:true},{t:'遠くなる',why:'高い倍率の対物レンズほど <em>長い</em>。先が プレパラートに 近づく。'},{t:'変わらない',why:'対物レンズの長さが 変わるので、距離も 変わる。'}],lab||'つぎへ ▶',()=>{lcMark('focus');then()},'高い倍率の対物レンズほど 長いので、距離は <em>近く</em> なる。だから <em>遠ざけながら</em> 合わせると ぶつからない。'),'red']])}
 /* ================= 遊び方案内（Guide）仕上げ 2026-09-27 ================= */
 function tgtOf(type){return G&&G.st?G.st.objs.find(o=>o.target&&o.type===type):null}
 function scrOf(type,r){const t=tgtOf(type);if(!t||!L)return null;const q=toScr(t.x,t.y);return{x:q[0],y:q[1],r:r||Math.max(30,t.sz*pxmm()*.7)}}
@@ -4221,7 +4266,7 @@ function dragTo(type){const t=tgtOf(type);if(!t)return null;const f=L.field;cons
 function fieldArea(){const f=L.field;return{x:f.cx,y:f.cy,r:f.D/2}}
 const INTRO={title:'プレパラート探し絵',learn:'倍率を上げると **大きく見えるが、見える範囲はせまく** なる。だから **低い倍率で探して中央へ → 倍率を上げる**',
  how:'視野を **ドラッグ** で動かし、**×40→×100** に切りかえて、お題を **タップ**',gesture:'drag'};
-function beginFirst(){if(!GD){startStage(0);return}GD.intro(INTRO).then(()=>GD.tutorial(PRACTICE))}
+function beginFirst(){if(!GD){partsCard(()=>startStage(0));return}GD.intro(INTRO).then(()=>new Promise(r=>partsCard(r))).then(()=>GD.tutorial(PRACTICE))}
 if(GD){
  GD.setup({theme:{bg:'#FBF7EF',fg:INK,accent:RED,accentText:'#fff',font:'"M PLUS 2",sans-serif',bodyFont:'"Zen Kaku Gothic Antique",sans-serif',
    radius:3,texture:'dots',line:INK,dim:'rgba(38,70,83,.5)',shadow:'6px 6px 0 rgba(231,111,81,.45)',outline:'#FBF7EF',hand:'#FBF7EF',handLine:INK},

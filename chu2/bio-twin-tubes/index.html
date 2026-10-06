@@ -93,6 +93,7 @@ button{font-family:var(--hd);cursor:pointer;touch-action:manipulation;-webkit-us
 @keyframes stamp{0%{transform:scale(3.4) rotate(-28deg);opacity:0}55%{opacity:1}100%{transform:none;opacity:1}}
 .ob.red:not([disabled]){animation:none}
 .mb table{border-collapse:collapse;width:100%;font-size:14px;margin:8px 0}
+.mb .lcx{font-size:15px;line-height:1.65;text-align:left}.mb .lcx ul{margin:4px 0;padding-left:1.2em}.mb .lcx li{margin:4px 0}.mb .lcx b{color:var(--red)}
 .mb td,.mb th{border:2px solid var(--ink);padding:5px 7px;text-align:left;vertical-align:top}
 .mb th{background:var(--ink);color:var(--bg);font-family:var(--hd);font-weight:400}
 .mb td.df{color:var(--red);font-weight:700}
@@ -129,6 +130,17 @@ button{font-family:var(--hd);cursor:pointer;touch-action:manipulation;-webkit-us
 #scrBack{position:absolute;inset:0;z-index:2147482990;display:flex;align-items:center;justify-content:center;background:rgba(17,17,17,.55);padding:16px}
 @media (max-width:560px){#plate{left:10px;right:10px;transform:none;max-width:none;top:calc(60px + env(safe-area-inset-top));padding:2px 8px 3px}#plate b{font-size:15px}#plate span{font-size:10px}.hbox{min-width:48px;padding:2px 6px}.hbox b{font-size:17px}#bBack{font-size:16px;padding:2px 12px 2px 10px}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+<style>/* たしかめ（2026-10-06 第2周） */
+.lcop{display:flex;flex-direction:column;gap:8px;margin:10px 0}
+.lcop button{text-align:left;white-space:normal;line-height:1.4}
+.lcop button.lcNg{opacity:.45;text-decoration:line-through}
+.lcop button.lcOk{outline:4px solid #2e8b57;outline-offset:2px}
+.lcfb{margin:6px 0 4px;padding:8px 12px;border-radius:8px;line-height:1.55;font-size:15px;text-align:left}
+.lcfb.ok{background:#e7f5ea;border:2px solid #2e8b57;color:#173d27}
+.lcfb.ng{background:#fdeceb;border:2px solid #c0392b;color:#5a1a14}
+#lcGo[disabled]{opacity:.35;cursor:not-allowed}
+.lct th{font-family:inherit;font-weight:700;letter-spacing:0}
 </style>
 </head>
 <body>
@@ -3805,7 +3817,7 @@ const r2=v=>Math.round(v*2)/2;
 const eq=(a,b)=>Math.abs(a-b)<.26;
 
 /* ================= セーブ ================= */
-function fresh(){return{v:1,name:'',open:0,stars:[],files:{},fixed:{},ft:{},ruleGot:{},elapsed:0,best:0,cracks:0,seal:null,sealed:false,cleared:false,mute:false}}
+function fresh(){return{v:1,name:'',open:0,stars:[],files:{},fixed:{},ft:{},ruleGot:{},elapsed:0,best:0,cracks:0,seal:null,sealed:false,cleared:false,mute:false,lc:{}}}
 let SV=fresh();
 try{const s=JSON.parse(localStorage.getItem(KEY));if(s&&s.v===1)SV=Object.assign(fresh(),s)}catch(e){}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(SV))}catch(e){}}
@@ -4095,7 +4107,7 @@ function drawBottle(k,x,y,w,h,tilt,ghost){ctx.save();ctx.translate(x,y);if(tilt)
  ctx.restore()}
 
 /* ================= 場面：実験台 ================= */
-function startRoom(ri,opt){opt=opt||{};stopCoach();if(ri===0&&!opt.practice&&!SV.tut&&!SV.open&&window.Guide){runPractice(false);return}
+function startRoom(ri,opt){opt=opt||{};if(!opt.practice&&!opt.noLc){const need=lcNeed(ri);if(need.length){lcRun(need,()=>startRoom(ri,Object.assign({},opt,{noLc:1})));return}}stopCoach();if(ri===0&&!opt.practice&&!SV.tut&&!SV.open&&window.Guide){runPractice(false);return}
  G={practice:!!opt.practice,ri,S:newBench(ri),undo:[],cracks:0,phase:'intro',hl:[],hlT:0,drag:null,vol:null,combo:0,wave:1,lastFail:null,seal:false,t0:performance.now(),fx:[]};
  if(!G.practice)window.Tekitou&&Tekitou.shown();
  const r=ROOMS[ri];if(r.dist)G.dist=Object.assign({},r.dist);else G.dist={};
@@ -4186,7 +4198,7 @@ function planTable(f){const n=Math.max(f.A.length,f.B.length);let h='<table><tr>
  for(let i=0;i<n;i++){const a=f.A[i]||'',b=f.B[i]||'';h+=`<tr><td class="${a!==b?'df':''}">${esc(a)}</td><td class="${a!==b?'df':''}">${esc(b)}</td>${f.C?'<td>'+esc(f.C[i]||'')+'</td>':''}</tr>`}
  return h+'</table>'}
 function winModal(stars,got,first){const r=ROOMS[G.ri],f=SV.files[G.ri];const last=G.ri===NR-1;
- openOv(`<div class="kk">第${G.ri+1}の間　${esc(r.nm)}</div><h2>計画 <em>成立！</em></h2>${starsH(stars)}<p>反論を <b>${G.combo}本</b> はね返した。ちがいは <b style="color:#E63946">${r.q==='tp'?'温度（約40℃か 氷水か）':'唾液か 水か'}</b> の1つだけ。</p>${planTable(f)}${got?'<p style="font-size:14px">かけら <b>+'+got+'</b></p>':''}<p style="font-size:13px">計画書ファイルに 見本 No.${G.ri+1} が とじられた。</p><div class="btns"><button class="ob red" id="oNext">${last?'封印の間へ':'次の間へ'}</button><button class="ob wh sm" id="oMap">回廊へ</button>${Z()?'<button class="ob wh sm" id="oGa">図鑑ガチャ</button>':''}</div>`);
+ openOv(`<div class="kk">第${G.ri+1}の間　${esc(r.nm)}</div><h2>計画 <em>成立！</em></h2>${starsH(stars)}<p>反論を <b>${G.combo}本</b> はね返した。ちがいは <b style="color:#E63946">${r.q==='tp'?'温度（約40℃か 氷水か）':'唾液か 水か'}</b> の1つだけ。<br><span style="font-size:14px">このように 1つだけ変えて、ほかをそろえて比べる実験を <b>対照実験</b> という。</span></p>${planTable(f)}${got?'<p style="font-size:14px">かけら <b>+'+got+'</b></p>':''}<p style="font-size:13px">計画書ファイルに 見本 No.${G.ri+1} が とじられた。</p><div class="btns"><button class="ob red" id="oNext">${last?'封印の間へ':'次の間へ'}</button><button class="ob wh sm" id="oMap">回廊へ</button>${Z()?'<button class="ob wh sm" id="oGa">図鑑ガチャ</button>':''}</div>`);
  stampS(stars);$('oNext').onclick=()=>{closeOv();if(last)startSeal();else startRoom(G.ri+1)};$('oMap').onclick=()=>{closeOv();openMap()};
  const ga=$('oGa');if(ga)ga.onclick=()=>{try{Z().openGacha()}catch(e){}}}
 function earn(n,why,x,y){const z=Z();if(!z||!z.earn)return 0;let g=0;try{g=z.earn(n,why,{x,y})||0}catch(e){}updHud();return g}
@@ -4394,11 +4406,52 @@ function drawMap(){// 放射の縞（回廊の奥へ）
  txt('鏡の回廊',W/2,LAND?40:36,LAND?30:22,INK,HD)}
 function mapDown(x,y){const ds=mapLayout();for(const d of ds)if(hitR(d,x,y)){if(d.i>SV.open){SFX.bu();return}SFX.tap();if(d.i===NR)startSeal();else startRoom(d.i);return}}
 
+/* ================= 鏡の間の札（教える札・2026-10-06 夜間改修・初心者向け） =================
+   at: その番号の間の前に出す（10＝封印の間、11＝確認テスト）。まだ読んでいない札は、どこから入っても先に出る */
+const LC=[
+ {at:4,key:'yoso',html:`<div class="kk">新しい道具の前に</div><h2>何で <em>確かめる？</em></h2><div class="lcx"><ul>
+  <li><b>ヨウ素液</b>：<b>デンプンがあるか</b>を調べる薬品。もとは茶色で、<b>デンプンがあると 青紫色</b>になる。デンプンが無ければ 茶色のまま（変化なし）</li>
+  <li><b>石灰水</b>：<b>二酸化炭素</b>を調べる薬品（白くにごる）。デンプンは調べられない</li>
+  <li>薬品は、唾液を<b>働かせたあと</b>（約40℃で10分 置いたあと）に入れる</li></ul></div>`,
+  quiz:{q:'ある液に ヨウ素液を入れたら、茶色のまま 変わらなかった。分かるのは？',opts:[['デンプンは 入っていない（無くなった）',1],['デンプンが たくさん入っている',0],['二酸化炭素が 入っている',0]],
+   ok:'ヨウ素液は デンプンがあると <b>青紫色</b>。茶色のまま → デンプンは <b>無い</b>。',ng:'ヨウ素液は デンプンがあると 何色になる？ 二酸化炭素を調べるのは 石灰水。'}},
+ {at:5,key:'bene',html:`<div class="kk">新しい道具の前に</div><h2>糖は <em>どう調べる？</em></h2><div class="lcx"><ul>
+  <li>ヨウ素液で分かるのは <b>デンプンが残っているか・無くなったか</b>だけ。「糖ができた」とは言えない</li>
+  <li><b>ベネジクト液</b>：<b>糖</b>（麦芽糖など）を調べる薬品。もとは青色で、糖があると <b>加熱したとき 赤褐色</b>になる（少ないと黄色）。<b>加熱しないと変わらない</b>。加熱するときは <b>沸騰石</b>を入れる</li>
+  <li>だから 管の液を <b>半分ずつ 2本に分けて</b>、一方にヨウ素液、もう一方にベネジクト液（加熱）を使う</li></ul></div>`,
+  quiz:{q:'ある班は ベネジクト液だけで調べ、加熱すると 赤褐色になった。この結果だけで 言えるのは？',opts:[['糖がある（デンプンが残っているかは 分からない）',1],['デンプンが 全部 無くなった',0],['デンプンも 糖も 無い',0]],
+   ok:'ベネジクト液は <b>糖</b>の薬。デンプンが残っているかは <b>ヨウ素液</b>で調べないと分からない。だから 液を半分ずつ2本に分けて 両方使う。',ng:'ベネジクト液が調べるのは 何だった？ デンプンを調べるのは 別の薬品。'}},
+ {at:11,key:'kekka',html:`<div class="kk">答え合わせ</div><h2>実験室の <em>結果</em></h2><p style="font-size:14px">封印した予想と くらべてみよう（どれも約40℃・10分）</p>
+  <table class="lct"><tr><th>管</th><th>中身</th><th>ヨウ素液</th><th>ベネジクト液（加熱）</th></tr>
+  <tr><td>A</td><td>デンプン液＋唾液</td><td>変化なし（茶色）</td><td class="df">赤褐色</td></tr>
+  <tr><td>B</td><td>デンプン液＋水</td><td class="df">青紫色</td><td>変化なし（青）</td></tr>
+  <tr><td>C</td><td>唾液＋水（デンプンなし）</td><td>―</td><td>変化なし（青）</td></tr></table>
+  <div class="lcx"><ul>
+  <li>Aだけ デンプンが無くなり 糖ができた。Cで 唾液に もとから糖は無いと分かる → <b>唾液が デンプンを 糖に変えた</b></li>
+  <li>このように、調べたい条件（唾液）<b>だけを変え、ほかをそろえて</b>比べる実験を <b>対照実験</b>という</li>
+  <li>実験の流れ：<b>予想</b>する → 変える条件・そろえる条件を決めて <b>計画</b> → <b>実験</b>して記録 → 結果を比べて <b>考察</b></li>
+  <li>もし 水の管Bまで 茶色のまま（デンプンが無い）なら、水がデンプンを変えたとは考えず、まず <b>入れ忘れなど 操作のまちがい</b>を疑う</li></ul></div>`,
+  quiz:{q:'Bが「青紫色」になったことから 分かるのは？',opts:[['水だけでは デンプンは 無くならない',1],['水にも デンプンを変える働きがある',0],['唾液には 糖が入っている',0]],
+   ok:'Bでは デンプンが <b>残った</b>。だから Aでデンプンが無くなったのは <b>唾液</b>のおかげ、と言える。',ng:'ヨウ素液が青紫色 → デンプンは あった？ 無かった？'}}
+];
+function lcNeed(at){return LC.filter(c=>c.at<=at&&!(SV.lc&&SV.lc[c.key]))}
+function lcRun(list,then){if(!list.length){closeOv();then&&then();return}const c=list[0];
+ lcShow(c,()=>{SV.lc=SV.lc||{};SV.lc[c.key]=1;save();lcRun(list.slice(1),then)})}
+function lcShow(c,done){openOv(c.html+'<div class="btns"><button class="ob red" id="lcGo">'+(c.quiz?'たしかめる':'わかった')+'</button></div>');
+ $('lcGo').onclick=()=>{SFX.tap();c.quiz?lcQuiz(c,done):done()}}
+function lcQuiz(c,done){const z=c.quiz;const ord=z.opts.map((o,k)=>k);for(let i=ord.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[ord[i],ord[j]]=[ord[j],ord[i]]}
+ /* 選択肢は出すたびに並べかえる。答えを押しても札は作り直さず、下の返しの欄だけ書きかえる（2026-10-06 第2周） */
+ openOv('<div class="kk">たしかめ</div>'+'<div class="lcx lcq">'+z.q+'</div><div class="lcop">'+ord.map(k=>'<button class="ob wh sm" data-k="'+k+'">'+z.opts[k][0]+'</button>').join('')+'</div><div class="lcfb" id="lcFb" aria-live="polite" hidden></div><div class="btns"><button class="ob red" id="lcGo" disabled>つぎへ</button></div>');
+ const fb=$('lcFb'),go=$('lcGo'),bs=[...document.querySelectorAll('#ovB [data-k]')];go.onclick=()=>{if(go.disabled)return;SFX.tap();done()};
+ bs.forEach(b=>b.onclick=()=>{if(!go.disabled||b.disabled)return;const o=z.opts[+b.dataset.k];fb.hidden=false;
+  if(o[1]){SFX.ok();fb.className='lcfb ok';fb.innerHTML='<b>正解！</b> '+z.ok;b.classList.add('lcOk');bs.forEach(x=>{if(x!==b)x.disabled=true});go.disabled=false}
+  else{(SFX.bu?SFX.bu():SFX.tap());fb.className='lcfb ng';fb.innerHTML='<b>おしい。</b> '+z.ng+'<br><small>のこりの答えから えらびなおそう</small>';b.disabled=true;b.classList.add('lcNg')}
+  (o[1]?go:fb).scrollIntoView({block:'nearest'})})}
 /* ================= 封印の間（予想の色を塗る） ================= */
 const PI={B:{n:'茶色のまま',c:'#9A5B2E'},P:{n:'青紫色',c:'#3B2C86'}};
 const PB={N:{n:'青のまま',c:'#2F6BFF'},Y:{n:'黄色',c:'#E1B42A'},R:{n:'赤褐色',c:'#A8452A'}};
 const PREDS=['唾液は デンプンを 糖に変える（と思う）','唾液は デンプンを 変えない（と思う）','まだ 分からない'];
-function startSeal(){const prev=readPrev();G={seal:true,ri:NR,P:[null,null,null,null],hold:0,done:false,prev};
+function startSeal(noLc){if(noLc!==true){const need=lcNeed(NR);if(need.length){lcRun(need,()=>startSeal(true));return}}const prev=readPrev();G={seal:true,ri:NR,P:[null,null,null,null],hold:0,done:false,prev};
  if(prev){const a=String(prev.slots.A.id||''),b=String(prev.slots.B.id||'');if(PI[a[0]])G.P[0]=a[0];if(PB[a[1]])G.P[2]=a[1];if(PI[b[0]])G.P[1]=b[0];if(PB[b[1]])G.P[3]=b[1]}
  LY=null;setScene('seal');if(window.BGM){BGM.mood('calm');BGM.level(1)}
  openOv(`<div class="kk">さいごの間</div><h2>予想の<em>封印</em></h2><p>計画はできた。この計画で実験したら、<b>何色</b>になると思う？ 管をタップして 色を選ぼう。<br>白黒の鏡の間で、色は <b>予想の中にだけ</b>ある。答え合わせは 実験室で。</p>${prev?'<div class="rl"><small>前回（試験管ウォーターソート）で封じた予言</small>'+esc(prev.slots.A.t)+'<br>'+esc(prev.slots.B.t)+'<br><span style="font-size:13px;font-weight:400">この予言を 最初に塗ってある。変えてもよい。</span></div>':''}<div class="btns"><button class="ob red" id="oGo">塗る</button></div>`);
@@ -4448,8 +4501,8 @@ function doSeal(){G.done=true;G.holding=false;const P=G.P;const pi=reasonOf(P);
  try{localStorage.setItem(SEAL_KEY,JSON.stringify(rec))}catch(e){}
  const first=!SV.sealed;SV.sealed=true;SV.seal=rec;SV.cleared=true;SV.open=NR;save();SFX.seal();burst(W/2,H/2,RM?10:90,true);confetti(140);rays=2.2;shake=RM?0:10;buzz([30,40,80]);
  const g=first?earn(10,'predict',W/2,H/2):0;
- setTimeout(()=>{openOv(`<h2>予想を <em>封印した</em></h2><p>わたしの予想カード（実験の日に 開けて確かめる）</p><div class="rl"><small>予想</small>${esc(rec.slots.A.t)}<br>${esc(rec.slots.B.t)}<br><span style="font-size:13px;font-weight:400">考え：${esc(reason)}</span></div>${g?'<p>🔮 予想を封印 かけら +'+g+'</p>':''}<p style="font-size:14px">当たっても外れても、<b>なぜそうなったか</b>を考えるのが実験。そのために、ちがいを1つだけにした計画を作った。</p><div class="btns"><button class="ob red" id="oT">さいごの確認テストへ</button><button class="ob wh sm" id="oM">回廊へ</button></div>`);
-  $('oT').onclick=()=>{closeOv();const z=Z();if(z&&z.mainClear&&first){try{z.mainClear({onClose:startTest})}catch(e){startTest()}}else startTest()};$('oM').onclick=()=>{closeOv();openMap()}},RM?200:1400)}
+ setTimeout(()=>{openOv(`<h2>予想を <em>封印した</em></h2><p>わたしの予想カード（実験の日に 開けて確かめる）</p><div class="rl"><small>予想</small>${esc(rec.slots.A.t)}<br>${esc(rec.slots.B.t)}<br><span style="font-size:13px;font-weight:400">考え：${esc(reason)}</span></div>${g?'<p>🔮 予想を封印 かけら +'+g+'</p>':''}<p style="font-size:14px">当たっても外れても、<b>なぜそうなったか</b>を考えるのが実験。そのために、ちがいを1つだけにした計画を作った。</p><div class="btns"><button class="ob red" id="oT">答え合わせ → 確認テストへ</button><button class="ob wh sm" id="oM">回廊へ</button></div>`);
+  $('oT').onclick=()=>{closeOv();lcRun(lcNeed(NR+1),()=>{const z=Z();if(z&&z.mainClear&&first){try{z.mainClear({onClose:startTest})}catch(e){startTest()}}else startTest()})};$('oM').onclick=()=>{closeOv();openMap()}},RM?200:1400)}
 
 /* ================= 画面切りかえ ================= */
 const INHUB=!!window.COLLECTION_NAME||(function(){try{return window.parent!==window}catch(e){return true}})();
@@ -4464,12 +4517,12 @@ $('bMute').onclick=()=>{SV.mute=!SV.mute;save();updHud();if(!SV.mute)SFX.tap()};
 function openOv(h){$('ovB').innerHTML=h;$('ov').hidden=false}
 function closeOv(){$('ov').hidden=true}
 function openMap(){leaveGuide();G=null;setScene('map');const nx=Math.min(SV.open,NR);$('btnGo').textContent=SV.sealed?'封印の間（塗りなおす）':(nx===NR?'封印の間へ':'第'+(nx+1)+'の間へ');
- $('btnTestM').hidden=!SV.sealed;$('btnBookM').hidden=!Z();$('btnGachaM').hidden=!Z()}
+ $('btnTestM').hidden=!SV.sealed;$('btnTestM').textContent=(SV.lc&&SV.lc.kekka)?'さいごの確認テストへ':'答え合わせ → 確認テストへ';$('btnBookM').hidden=!Z();$('btnGachaM').hidden=!Z()}
 $('btnGo').onclick=()=>{actx();const nx=Math.min(SV.open,NR);if(nx===NR)startSeal();else startRoom(nx)};
 $('btnFiles').onclick=()=>{const bt=ROOMS.map((r,i)=>`<button data-f="${i}" ${SV.files[i]?'':'disabled'}>No.${i+1}<small>${esc(r.nm)}${SV.files[i]?' ★'+(SV.stars[i]||0):''}</small></button>`).join('');
  openOv(`<h2>計画書<em>ファイル</em></h2><p style="font-size:14px">はね返した計画の見本（${Object.keys(SV.files).length} / ${NR}）。赤い行が「変えた1つ」。</p><div class="files">${bt}</div><div id="fView"></div><div class="btns"><button class="ob wh" id="oC">とじる</button></div>`);
  document.querySelectorAll('[data-f]').forEach(b=>b.onclick=()=>{const i=+b.dataset.f;$('fView').innerHTML='<h2 style="font-size:20px">No.'+(i+1)+' '+esc(ROOMS[i].nm)+'</h2>'+planTable(SV.files[i]);SFX.tap()});$('oC').onclick=closeOv};
-$('btnBookM').onclick=()=>{try{Z().openBook()}catch(e){}};$('btnGachaM').onclick=()=>{try{Z().openGacha()}catch(e){}};$('btnTestM').onclick=()=>startTest();
+$('btnBookM').onclick=()=>{try{Z().openBook()}catch(e){}};$('btnGachaM').onclick=()=>{try{Z().openGacha()}catch(e){}};$('btnTestM').onclick=()=>lcRun(lcNeed(NR+1),startTest);
 $('bBack').onclick=()=>{actx();if(scene==='title'){try{window.parent.postMessage({type:'rika-close-game'},'*')}catch(e){}return}
  $('bkSub').textContent=scene==='test'?'確認テストは 次はさいしょから。回廊の進み具合は保存されています。':scene==='map'?'進み具合は保存されます。タイトルにもどります。':'進み具合は保存されます（はね返した間と★はそのまま。この間は次にはじめから）。';
  $('bkGo').textContent=scene==='map'?'タイトルへ':'回廊へ';$('scrBack').hidden=false};
@@ -4523,7 +4576,7 @@ if(window.Guide){
 }else $('btnHowto').hidden=true;
 /* ================= さいごの確認テスト ================= */
 let T=null;
-function startTest(){if(!window.Quiz){openOv('<h2>問題データがありません</h2><div class="btns"><button class="ob" id="oC">とじる</button></div>');$('oC').onclick=closeOv;return}G=null;closeOv();setScene('test');T={qs:Quiz.test(),i:0,ans:[]};renderQ()}
+function startTest(){if(window.GAME_MODE!=='test'){const n=lcNeed(SV.sealed?99:NR);if(n.length){lcRun(n,startTest);return}}/* テストの入口でも、まだ読んでいない札を先に出す（確認テストだけモードでは出さない） */if(!window.Quiz){openOv('<h2>問題データがありません</h2><div class="btns"><button class="ob" id="oC">とじる</button></div>');$('oC').onclick=closeOv;return}G=null;closeOv();setScene('test');T={qs:Quiz.test(),i:0,ans:[]};renderQ()}
 function renderQ(){const q=T.qs[T.i];$('qNo').textContent=(T.i+1)+' / '+T.qs.length;$('qText').textContent=q.q;const f=$('qFig');if(q.fig){f.innerHTML=q.fig;f.hidden=false}else{f.innerHTML='';f.hidden=true}
  const A=$('qArea');A.innerHTML='';$('scTest').scrollTop=0;const LBL='ABCDEF';
  const mk=(c,l)=>{const b=document.createElement('button');b.dataset.l=l;b.textContent=c;return b};
@@ -4558,8 +4611,6 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden){save();SFX
 /* ================= はじまり ================= */
 resize();
 try{window.Zukan&&Zukan.setup({game:GAME,koma:[KOMA]})}catch(e){}
-window.__tt={get G(){return G},get SV(){return SV},get L(){return Lget()},startRoom,startSeal,startTest,openMap,submit,pourCommit,dropReag,setBath,setTime:(s,v)=>{setTime(s,v);afterOp()},toggleLink,toggleHeat,check,rulesOf,
- heatC(){G.S.C.ht=1;afterOp()},pred(k,v){G.P[k]=v},doSeal};
 if(window.GAME_MODE==='test'){startTest()}else{setScene('title');initTitle()}
 requestAnimationFrame(frame);
 })();

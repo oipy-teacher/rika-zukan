@@ -145,6 +145,7 @@ body.port #inkN{font-size:19px}
 .op{font-size:16px;line-height:1.7;margin:6px 0}
 .op b{color:var(--red);font-weight:400}
 .oBtns{display:flex;flex-wrap:wrap;gap:14px;margin-top:16px}
+#ovIn.pls .oBtns.plF{position:sticky;bottom:-20px;margin:10px -22px -20px;padding:10px 22px 12px;background:var(--paper2);border-top:1px solid rgba(62,74,61,.3)}#plR{scroll-margin-bottom:80px}#ovIn.pls .op{margin:4px 0;line-height:1.6}#ovIn.pls canvas{max-height:26vh;width:auto!important;max-width:100%}
 .stars{font-size:28px;letter-spacing:.2em;color:var(--red)}
 .stars s{text-decoration:none;color:rgba(62,74,61,.25)}
 .oStats{display:grid;grid-template-columns:auto auto;gap:2px 18px;font-size:15px;margin:8px 0}
@@ -4220,9 +4221,51 @@ $('btnStart').onclick=()=>{actx();SFX.page();SV.name=$('nameIn').value.trim();
  const any=hasSave()&&(SV.clr.some(x=>x)||SV.stage>0);
  if(any&&!startArm){startArm=true;$('btnStart').textContent='本当に はじめから？（記録が消える）';setTimeout(()=>{startArm=false;if(scene==='title')initTitle()},3500);return}
  if(startArm){const nm=SV.name,mu=SV.mute;SV=fresh();SV.name=nm;SV.mute=mu;startArm=false}
- save();buzz(10);if(GD)startWithGuide();else startStage(0)};
+ save();buzz(10);if(GD)startWithGuide();else if(!SV.firsts.pl1)plIntro(()=>startStage(0));else startStage(0)};
 $('btnCont').onclick=()=>{actx();SFX.page();SV.name=$('nameIn').value.trim()||SV.name;save();openMap()};
 $('btnBookT').onclick=()=>{try{Z().openBook()}catch(e){}};
+
+/* ================= 図譜の凡例・図譜のあとがき（2026-10-06 夜間改修・初心者向け） ================= */
+function plMix(n){const a=[...Array(n).keys()];for(let i=n-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function plLesson(pages,then,i){i=i||0;const P=pages[i];if(!P){$('ovIn').classList.remove('pls');ovClose();then&&then();return}
+ const last=i===pages.length-1;
+ ovOpen('<h3 class="oh">'+P.h+'</h3><p class="op" style="font-size:13px;color:var(--ink2);margin-top:-4px">'+P.ey+'　'+(i+1)+' / '+pages.length+'</p>'+P.body+(P.quiz?'<p class="op" style="border-top:1px solid var(--ink);padding-top:8px"><b>やってみよう：'+P.quiz.q+'</b></p><div class="oBtns" id="plB">'+plMix(P.quiz.ch.length).map(k=>'<button class="lab sm" data-k="'+k+'">'+P.quiz.ch[k]+'</button>').join('')+'</div><p class="op" id="plR"></p>':'')+'<div class="oBtns plF"><button class="lab red" id="plGo"'+(P.quiz?' hidden':'')+'>'+(last?(P.endLab||'わかった'):'次へ')+'</button></div>');
+ $('ovIn').classList.add('pls');
+ if(P.draw)try{P.draw()}catch(e){}
+ const go=$('plGo');go.onclick=()=>{SFX.page();plLesson(pages,then,i+1)};
+ if(P.quiz)$('plB').querySelectorAll('button').forEach(b=>b.onclick=()=>{const k=+b.dataset.k;if(k===P.quiz.ok){SFX.pinpon();$('plR').innerHTML='<b style="color:var(--red)">○ そのとおり。</b>'+P.quiz.why;$('plB').querySelectorAll('button').forEach(x=>x.disabled=true);go.hidden=false;setTimeout(()=>$('plR').scrollIntoView({block:'nearest'}),30)}else{SFX.bubu();b.disabled=true;$('plR').innerHTML='<b>× ちがう。</b>'+P.quiz.hint+'　もう一度えらぼう。';$('plR').scrollIntoView({block:'nearest'})}})}
+function plCanvas(id,w,h,fn){const c=$(id);if(!c)return;const d=Math.min(2,window.devicePixelRatio||1);c.width=w*d;c.height=h*d;c.style.width='min('+w+'px,100%)';const g=c.getContext('2d');g.setTransform(d,0,0,d,0,0);fn(g)}
+function plLab(g,t,x,y,al){g.font='14px '+FONT;g.fillStyle=COL.ink;g.textAlign=al||'left';g.fillText(t,x,y)}
+function bundleFig(g){/* 1つの維管束を大きく：左が茎の中心側 */const cx=200,cy=100,a=78,b=48;
+ g.strokeStyle=COL.ink;g.lineWidth=1.5;
+ g.beginPath();g.ellipse(cx,cy,a,b,0,Math.PI/2,Math.PI*1.5);g.closePath();g.fillStyle=COL.xy;g.fill();
+ g.beginPath();g.ellipse(cx,cy,a,b,0,-Math.PI/2,Math.PI/2);g.closePath();g.fillStyle=COL.ph;g.fill();
+ g.beginPath();g.ellipse(cx,cy,a,b,0,0,Math.PI*2);g.stroke();g.beginPath();g.moveTo(cx,cy-b);g.lineTo(cx,cy+b);g.stroke();
+ [[-40,0,12],[-55,-18,8],[-55,18,8],[-25,-22,7],[-25,22,7]].forEach(p=>{g.beginPath();g.arc(cx+p[0],cy+p[1],p[2],0,Math.PI*2);g.stroke()});
+ plLab(g,'道管（水・肥料分）',cx-8,cy-b-10,'right');plLab(g,'師管（葉でできた養分）',cx+8,cy-b-10,'left');
+ plLab(g,'← 茎の中心側',10,cy+b+26,'left');plLab(g,'外側（表皮のほう）→',390,cy+b+26,'right');
+ plLab(g,'道管と師管の束 ＝ 維管束',cx,cy+b+48,'center')}
+function plIntro(then){
+ plLesson([{ey:'図譜の凡例',h:'水の入り口と 2本の管',body:
+  '<p class="op"><b>根毛</b>：根の先の近くにある細い毛。土の粒のすき間に入りこみ、根が土とふれる面（表面積）を大きくするので、<b>水を吸いやすい</b>。</p>'+
+  '<p class="op"><b>道管</b>：根から吸った <b>水と、水にとけた肥料分</b> の通り道。<br><b>師管</b>：<b>葉でつくられた養分</b> の通り道。水はここを上がらない。</p>'+
+  '<canvas id="plC1" style="display:block;margin:4px auto"></canvas>'+
+  '<p class="op">道管と師管は、いっしょに束になっている。この束を <b>維管束</b> という。葉では、維管束が <b>葉脈</b> になっている。</p>',
+  draw:()=>plCanvas('plC1',400,200,bundleFig),
+  quiz:{q:'根毛があると、根が土とふれる面（表面積）は どうなる？',ch:['大きくなる','小さくなる','変わらない'],ok:0,why:'細い毛がたくさん出るので、土とふれる面が大きくなり、水を吸いやすい。',hint:'細い毛が たくさん生えると、土にさわる所は ふえる？へる？'}},
+ {ey:'図譜の凡例',h:'断面で見ると',body:
+  '<canvas id="plC2" style="display:block;margin:4px auto"></canvas>'+
+  '<p class="op"><b>ホウセンカ（双子葉類）</b>の茎：維管束が <b>輪の形</b> に並ぶ。<b>トウモロコシ（単子葉類）</b>の茎：維管束が <b>全体に散らばる</b>。<br>どちらも維管束の中では <b>中心側が道管、外側が師管</b>。茎の中心から外へ：<b>茎の中心の細胞 → 道管 → 師管 → 表皮</b>。</p>'+
+  '<p class="op">葉脈では <b>表側が道管、裏側が師管</b>。根では、道管は <b>中心</b> に集まっている。<br>調べるときは、赤インクなどで色をつけた水を吸わせてから うすく切る。<b>道管だけが赤く</b>染まる。</p>',
+  draw:()=>plCanvas('plC2',420,190,g=>{drawSec(g,'ring',105,85,72,{tint:1,seed:3});drawSec(g,'scatter',315,85,72,{tint:1,seed:4});plLab(g,'ホウセンカ（輪）',105,180,'center');plLab(g,'トウモロコシ（散らばる）',315,180,'center')}),
+  quiz:{q:'ヒマワリは ホウセンカと同じ双子葉類。ヒマワリの茎の断面で、維管束の並び方は？',ch:['輪の形に並ぶ','全体に散らばる','茎の中心に1つだけ'],ok:0,why:'双子葉類の茎は、維管束が輪の形に並ぶ。散らばるのはトウモロコシなどの単子葉類。',hint:'ホウセンカ（双子葉類）の図は、輪？散らばる？'},endLab:'図版をひらく'}],()=>{SV.firsts.pl1=1;save();then&&then()})}
+function plAfter(then){
+ if(SV.firsts.pl2){then&&then();return}
+ plLesson([{ey:'図譜のあとがき',h:'水を引き上げるのは 葉',body:
+  '<p class="op">葉のついた枝と、葉をぜんぶ取った枝を、同じ色水に同じ時間さすと、<b>葉のついた枝</b> の方が茎がよく染まる。</p>'+
+  '<p class="op">葉の気孔から水が水蒸気として出ていく（<b>蒸散</b>）と、そのぶん道管の水が引き上げられて、根から水が吸い上げられるから。</p>'+
+  '<p class="op">水の道すじ：<b>根毛 → 根の道管 → 茎の道管 → 葉脈の道管 → 気孔</b>（水蒸気になって出ていく）</p>',
+  quiz:{q:'葉が10枚の枝と、葉が2枚の枝（ほかは同じ）を、同じ色水に同じ時間さした。茎がよく染まるのは？',ch:['葉が10枚の枝','葉が2枚の枝','どちらも同じ'],ok:0,why:'葉が多いほど蒸散が多く、そのぶん水がたくさん引き上げられる。',hint:'水を引き上げる力のもとは、葉から水が出ていくこと（蒸散）。葉が多いと？'},endLab:'さいごの確認テストへ'}],()=>{SV.firsts.pl2=1;save();then&&then()})}
 
 /* ================= 目次 ================= */
 function paperURL(){orient();const key=W+'x'+H;if(paperURL.k===key)return;paperURL.k=key;const d=DPR;DPR=1;const c=mkCanvas(W,H);paperRaw(c.getContext('2d'),W,H,21);DPR=d;const u='url('+c.toDataURL('image/jpeg',.85)+')';['scMap','scTest'].forEach(k=>{$(k).style.backgroundImage=u;$(k).style.backgroundSize='100% 100%';$(k).style.backgroundAttachment='local'})}
@@ -4233,7 +4276,7 @@ function openMap(){tutStop();show('scMap');G=null;paperURL();
   const st=SV.stars[i]||0;
   b.innerHTML='<canvas width="168" height="168"></canvas><div><div class="pn">第'+KAN[i]+'図</div><div class="pt">'+esc(lock?'？？？':s.name)+'</div><div class="ps">'+esc(lock?'まだ採集していない':s.kind+'　葉 '+LEAVES_PER[i]+'枚')+'</div><div class="st">'+(SV.clr[i]?'★'.repeat(st)+'<span style="opacity:.25">'+'★'.repeat(3-st)+'</span>':'')+'</div></div>';
   const cc=b.querySelector('canvas').getContext('2d');thumb(cc,i,lock);
-  if(!lock)b.onclick=()=>{actx();SFX.page();startStage(i)};box.appendChild(b)});
+  if(!lock)b.onclick=()=>{actx();SFX.page();if(!SV.firsts.pl1)plIntro(()=>startStage(i));else startStage(i)};box.appendChild(b)});
  $('btnTestM').hidden=!SV.done;$('btnBookM').hidden=!Z();$('btnGachaM').hidden=!Z();
  let ka='';const z=Z();if(z&&z.state){try{ka='図鑑のかけら　'+z.state().kakera}catch(e){}}$('kaMap').textContent=ka;
 }
@@ -4244,7 +4287,7 @@ function thumb(c,i,lock){c.fillStyle=COL.paper;c.fillRect(0,0,168,168);c.strokeS
 $('btnSect').onclick=()=>{SFX.page();openSectBook()};
 $('btnBookM').onclick=()=>{try{Z().openBook()}catch(e){}};
 $('btnGachaM').onclick=()=>{try{Z().openGacha()}catch(e){}};
-$('btnTestM').onclick=()=>{actx();startTest()};
+$('btnTestM').onclick=()=>{actx();plAfter(startTest)};
 function openSectBook(){
  let h='<h3 class="oh">断面図鑑</h3><p class="op">色水を吸わせてから切ると、<b>道管だけが赤く</b>染まる。</p><div class="cards">';
  STG.forEach((s,i)=>{if(!s.sect)return;const got=SV.sect[i];h+='<div class="card'+(got?'':' no')+'"><canvas width="320" height="220" data-i="'+i+'"></canvas><div class="ct">'+(got?esc(s.name)+'：'+SECTINFO[s.sect].title:'第'+KAN[i]+'図で 手に入る')+'</div>'+(got?'<div class="cn">'+SECTINFO[s.sect].res.replace(/<[^>]+>/g,'')+'</div>':'')+'</div>'});
@@ -4255,7 +4298,7 @@ function openSectBook(){
 
 /* ================= 本編 ================= */
 let G=null;
-function startStage(i,tut){
+function startStage(i,tut){if(!tut&&window.GAME_MODE!=='test'&&!SV.firsts.pl1){plIntro(()=>startStage(i,tut));return}
  const s=STG[i];show('scPlay');ovClose();if(window.BGM)BGM.mood('normal');
  const specs=s.multi?s.multi.map(m=>Object.assign({wilt:s.wilt,inkMul:s.inkMul},m)):[s];
  const plants=specs.map((sp,k)=>build(sp,i*10+k+1));
@@ -4505,7 +4548,7 @@ function resultCard(){const g=G,r=g.res,i=g.i;const s=g.sect;const ok=s?s.marks.
  G.paused=true}
 function finalClear(){SV.done=true;save();const g=G;g.paused=true;
  ovOpen('<h3 class="oh">図譜　完成</h3><p class="op">三株とも、最後の葉まで色水が届いた。<br><b>最後の葉に水が届くまで終われません</b> ―― '+Math.min(40,totalLeaves())+' / 40枚。</p><p class="op">水の通り道：<b>根毛 → 根の道管 → 茎の道管（維管束の中心側）→ 葉脈の道管（表側）→ 気孔</b></p><div class="oBtns"><button class="lab red" id="fcT">さいごの確認テストへ</button><button class="lab sm" id="fcM">目次へ</button></div>');
- $('fcT').onclick=()=>{ovClose();goClear()};$('fcM').onclick=()=>{ovClose();openMap()}}
+ $('fcT').onclick=()=>{ovClose();plAfter(goClear)};$('fcM').onclick=()=>{ovClose();openMap()}}
 function goClear(){const z=Z();if(z&&z.mainClear){try{z.mainClear({onClose:startTest})}catch(e){startTest()}}else startTest()}
 function earn(n,why,opt){const z=Z();if(!z||!z.earn)return;try{z.earn(n,why,Object.assign({x:W/2,y:H*.35},opt||{}))}catch(e){}setTimeout(updHud,300)}
 
@@ -4568,7 +4611,7 @@ function renderSect(c){const s=G.sect;const {cx,cy,R}=sectGeo();c.fillStyle='rgb
 
 /* ================= さいごの確認テスト ================= */
 let T=null;
-function startTest(){if(!window.Quiz){alert('問題データがありません');return}G=null;ovClose();show('scTest');paperURL();T={qs:Quiz.test(),i:0,ans:[]};renderQ()}
+function startTest(){if(window.GAME_MODE!=='test'&&!SV.firsts.pl2){plAfter(startTest);return}if(!window.Quiz){alert('問題データがありません');return}G=null;ovClose();show('scTest');paperURL();T={qs:Quiz.test(),i:0,ans:[]};renderQ()}
 function renderQ(){const q=T.qs[T.i];$('qNo').textContent=(T.i+1)+' / '+T.qs.length;$('qText').textContent=q.q;const f=$('qFig');if(q.fig){f.innerHTML=q.fig;f.hidden=false}else{f.innerHTML='';f.hidden=true}
  const A=$('qArea');A.innerHTML='';$('scTest').scrollTop=0;
  const mk=(c)=>{const b=document.createElement('button');b.className='lab';b.textContent=c;return b};
@@ -4663,11 +4706,7 @@ function hOff(){return innerWidth>innerHeight*1.05?{x:86}:{x:0,y:56}}
 function startWithGuide(){
  GD.intro({title:'第13回　道管パイプライン',
   learn:'水は **根毛** から入り、根・茎・葉の **道管** だけを通って葉まで上がる',
-  how:'指で **なぞって掘り**、赤い色水を葉まで届ける',gesture:'draw'}).then(()=>GD.tutorial(PRACTICE))}
-window.__xp={segPts,segHead,segWet,sectZone,get scene(){return scene},get G(){return G},get SV(){return SV},startStage,startTest,openMap,steiner,remain,
- cellXY(u,v,k){const pl=G.plants[k==null?G.cur:k];return toScr(pl,v+.5,u+.5)},
- path(k){const pl=G.plants[k==null?G.cur:k];return pl.opt.paths.map(p=>p.map(i=>[(i/pl.NV)|0,i%pl.NV]))},
- solve(){G.plants.forEach(pl=>{pl.opt.paths.flat().forEach(i=>{pl.dug[i]=1})})}};
+  how:'指で **なぞって掘り**、赤い色水を葉まで届ける',gesture:'draw'}).then(()=>new Promise(r=>{if(SV.firsts.pl1)r();else plIntro(r)})).then(()=>GD.tutorial(PRACTICE))}
 if(window.GAME_MODE==='test'){startTest()}else{show('scTitle');initTitle()}
 requestAnimationFrame(frame);
 })();

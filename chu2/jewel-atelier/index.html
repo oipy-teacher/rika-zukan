@@ -297,6 +297,11 @@ h1.logo{font-family:var(--disp);font-weight:700;font-size:clamp(40px,8vw,74px);m
 .modal{position:fixed;inset:0;z-index:70;background:rgba(10,12,30,.72);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;padding:18px;overflow:auto}
 .modal .box{width:min(100%,760px);max-height:92vh;overflow:auto;padding:22px 24px}
 .modal h2{font-family:var(--disp);margin:0 0 6px;font-size:28px}
+.modal .actions.stick{position:sticky;bottom:-22px;margin:10px -24px -22px;padding:10px 24px 14px;background:linear-gradient(rgba(20,27,58,0),#141B3A 35%)}
+.lq .ask{margin-top:12px;padding:8px 12px;border-radius:10px;background:rgba(232,196,122,.18);border:1px solid rgba(232,196,122,.6);font-weight:800}
+.lq .opts{display:flex;flex-wrap:wrap;gap:10px;margin-top:10px}.lq .opts button.ok{background:#2a7a55;color:#fff}
+.lq .why{margin-top:8px;font-size:15px;line-height:1.6}.lq .why b{color:var(--gold);margin-right:.4em}.lq .why b.ng{color:#ff9b9b}
+#lessonGo:disabled{opacity:.45;cursor:default}
 .gacha-stage{position:relative;height:280px;display:flex;align-items:center;justify-content:center}
 .circle{position:absolute;width:260px;height:260px;border-radius:50%;border:2px solid rgba(232,196,122,.55);
   background:repeating-conic-gradient(from 0deg,rgba(232,196,122,.25) 0 2deg,transparent 2deg 15deg);
@@ -411,7 +416,8 @@ h1.logo{font-family:var(--disp);font-weight:700;font-size:clamp(40px,8vw,74px);m
       <div class="glass" style="padding:14px 18px;font-size:14px;line-height:1.7;opacity:.9">
         <b>🏮 ランタン</b>：依頼のヒントを照らす（ボタンで使う）<br>
         <b>🧿 お守り</b>：まちがえても体力が減らない（自動で使う）<br>
-        体力 ♥ が0になると、その区間の最初からやり直し。
+        体力 ♥ が0になると、その区間の最初からやり直し。<br>
+        <b>🔰 見習い</b>：区間1はずっと、ほかの区間も最初の3つの依頼は、まちがえても ♥ が減らない。
       </div>
     </div>
   </div>
@@ -4457,7 +4463,7 @@ function openMap(climbFrom){
  gl.innerHTML=`<div class="tl">⚗ 寄り道：新元素の研究所 ${S.labClear?'<span style="color:var(--mint)">✓ クリア</span>':''}</div><div class="ds">${!labOpen?'周期表の洞窟をこえると行ける（やってもやらなくてもOK）':S.labClear?'もう一度挑戦できる（ごほうびは1回目だけ）':`加速器で新元素をつくる発展ステージ。クリアすると<b>限定ジュエル「ニホニウム」</b>＋🏮×${LAB_REWARD.lantern} 🧿×${LAB_REWARD.charm}＋${LAB_REWARD.shards}💠`}${S.runs.lab?'　<b>（つづきから）</b>':''}</div>`;
  gl.onclick=()=>{if(labOpen)startStage('lab')};
  const nb=Object.keys(S.book).length;
- $('#goBook').innerHTML=`<div class="tl">📜 学びの書 <span style="font-size:14px;opacity:.8">${nb} ページ</span></div><div class="ds">${nb?'通ってきた区間のまとめ。いつでも読み返して、もう一度挑戦できる（山の上のキャンプをタップしても開ける）':'区間をクリアすると、ここにページが増えていく'}</div>`;
+ $('#goBook').innerHTML=`<div class="tl">📜 学びの書 <span style="font-size:14px;opacity:.8">${nb} ページ</span></div><div class="ds">${nb?'通ってきた区間のまとめ。いつでも読み返して、もう一度挑戦できる（山の上のキャンプをタップしても開ける）':'いま挑戦中の区間のページは、先に読める。クリアするとページが増えていく'}</div>`;
  $('#goBook').onclick=()=>openBook();
  $('#mtnSvg').onclick=e=>{const c=e.target.closest('[data-camp]');if(c)openBook(c.dataset.camp==='lab'?'lab':+c.dataset.camp)};
  $('#goGacha').onclick=openGacha;$('#goZukan').onclick=openZukan;$('#goEx').onclick=openExchange;
@@ -4473,19 +4479,26 @@ const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',
 let R=null; // S.run の参照
 const isCleared=k=>k==='lab'?!!S.labClear:k<S.cleared;
 function startStage(k){
- if(!S.runs[k]){const q=stageOf(k).gen();S.runs[k]={k,queue:q,total:q.length,done:0,hp:5,combo:0,replay:isCleared(k)}}
+ const isNew=!S.runs[k];
+ if(isNew){const q=stageOf(k).gen();S.runs[k]={k,queue:q,total:q.length,done:0,hp:5,combo:0,replay:isCleared(k)}}
  R=S.runs[k];R.bag=R.bag||0;R.first=R.first||0;save();show('work');renderHud();renderOrder();
+ if(!R.replay&&!(S.lr&&S.lr[k]))openLesson(k,()=>{});
 }
+/* 見習い期間：区間1はずっと、ほかの区間は最初の3つの依頼まで、まちがえても体力が減らない */
+const apprentice=()=>!!R&&!R.replay&&(R.k===0||R.done<3);
 function renderHud(){
  const st=stageOf(R.k);
  $('#hudWork').innerHTML=hudHTML(`<button class="ghost" id="backMap">← 山へ</button><span class="pill" style="font-family:var(--disp)">${R.replay?'📜 '+st.name:(st.opt?'寄り道':'区間'+(R.k+1))+'　'+st.name}</span>
   <span class="pill hearts">${[0,1,2,3,4].map(i=>`<span class="${i<R.hp?'':'off'}">♥</span>`).join('')}</span>
   <span class="pill bagpill">🎒 <b>${R.bag}</b></span>
   <span class="combo" id="comboEl">${R.combo>1?R.combo+' COMBO':''}</span>
+  <button class="item-btn" id="openLesson">📜 心得</button>
+  ${apprentice()?'<span class="pill">🔰 見習い（♥は減らない）</span>':''}
   <button class="item-btn" id="useLantern" ${S.items.lantern?'':'disabled'}>🏮 ヒント ×${S.items.lantern}</button>
   <span class="pill">🧿×${S.items.charm}</span>`);
  $('#backMap').onclick=()=>{closePanel();openMap()};
  $('#useLantern').onclick=useLantern;
+ $('#openLesson').onclick=()=>openLesson(R.k);
  $('#prog').innerHTML=Array.from({length:R.total},(_,i)=>`<i class="${i<R.done?'on':''}"></i>`).join('')+
   `<div class="rule-note" style="flex-basis:100%">🎒 袋のかけらは<b>区間をクリアしたとき</b>に持ち帰れる。<b>一発正解</b>だけがかけらになり、まちがえると袋から5こ落ちる。<br>持ち帰りの倍率：一発正解率 90%以上 ×1.5 ／ 70%以上 ×1 ／ 50%以上 ×0.5 ／ 50%未満 ×0　・体力が0になると袋ごと落とす</div>`;
 }
@@ -4609,13 +4622,13 @@ function judge(ok,el,mark,ngMsg,stay){
  }else{
   R.combo=0;S.stats.ng++;o.missed=true;sfx.ng();
   const lost=Math.min(5,R.bag);R.bag-=lost;if(lost)floatText(x,y-30,`−${lost} 🎒`,'#ff9db4');el&&(el.classList.remove('shake'),void el.offsetWidth,el.classList.add('shake'));
-  let charmUsed=false;
-  if(S.items.charm>0){S.items.charm--;charmUsed=true}else R.hp--;
-  const msg=(charmUsed?'🧿 お守りが守ってくれた！（体力はそのまま）<br>':'')+(ngMsg||o.ex||'');
+  let charmUsed=false;const appr=apprentice();
+  if(appr){}else if(S.items.charm>0){S.items.charm--;charmUsed=true}else R.hp--;
+  const msg=(appr?'🔰 見習い期間なので、体力はそのまま。解説を読んで、次に生かそう。<br>':charmUsed?'🧿 お守りが守ってくれた！（体力はそのまま）<br>':'')+(ngMsg||o.ex||'');
   if(!stay){R.queue.shift();let nx=null;try{nx=o._rg&&o._rg()}catch(e){nx=null}if(nx){nx.missed=true;R.queue.push(nx)}else R.queue.push(o)}
   save();renderHud();
   if(R.hp<=0){showPanel('ng','体力がつきた…',msg+`<br><br>袋のかけら <b>${R.bag}こ</b> を落としてしまった…。キャンプで休んで、この区間を最初から登りなおそう。（持ち帰ったかけら・ジュエルはそのまま）`,'区間の最初から',()=>{delete S.runs[R.k];save();startStage(R.k)},3);window.Tekitou&&Tekitou.gate($('#pBtn'),{text:msg,ok:false});return}
-  showPanel('ng',charmUsed?'おしい…！':'おしい… ♥−1',msg,stay?'もう一度':'つぎへ ▶',stay?(o.t==='num'?renderOrder:()=>{closePanel();locked=false}):renderOrder,3);
+  showPanel('ng',(charmUsed||appr)?'おしい…！':'おしい… ♥−1',msg,stay?'もう一度':'つぎへ ▶',stay?(o.t==='num'?renderOrder:()=>{closePanel();locked=false}):renderOrder,3);
   window.Tekitou&&Tekitou.gate($('#pBtn'),{text:msg,ok:false});
  }
 }
@@ -4664,16 +4677,23 @@ function replayClear(){
    学びの書（通った区間のまとめ・いつでもやり直し）
    ========================================================= */
 const BOOK={
- 0:['<b>元素</b>＝物質をつくっている原子の<b>種類</b>。水は H と O の2種類の元素、原子は3個。',
+ 0:['<b>原子</b>＝物質をつくっている、とても小さな粒。化学変化では、それ以上分けられない。',
+    '<b>化学変化</b>＝物質が、別の物質に変わること（例：水に電流を流すと、水素と酸素になる）。',
+    '<b>元素</b>＝物質をつくっている原子の<b>種類</b>。水は H と O の2種類の元素、原子は3個。',
     '元素記号は<b>世界共通</b>。1文字なら<b>大文字</b>、2文字なら<b>大文字＋小文字</b>（Ca・Cl・Mg・Zn）。',
     'ギリシャ語・ラテン語などの頭文字から：H＝hydro（水）、Fe＝ferrum、Cu＝Cyprus（キプロス島）、Ag＝argentum（明るい）、Na＝natron。',
-    'まちがえやすい：ナトリウムは So ではなく <b>Na</b>、鉄は Ir ではなく <b>Fe</b>、銀は Si ではなく <b>Ag</b>。'],
- 1:['周期表は元素を<b>原子番号の順</b>に並べた表。',
+    'まちがえやすい：ナトリウムは So ではなく <b>Na</b>、鉄は Ir ではなく <b>Fe</b>、銀は Si ではなく <b>Ag</b>。',
+    ()=>elemTable()],
+ 1:['<b>原子番号</b>＝原子のつくり（原子核の中の陽子の数）にもとづいてつけた番号。1番が水素 H、2番がヘリウム He、6番が炭素 C、8番が酸素 O…。',
+    '周期表は元素を<b>原子番号の順</b>に並べた表。',
     '横の行＝<b>周期</b>（第1〜第7周期）、縦の列＝<b>族</b>（1〜18族）。同じ族は<b>化学的な性質がよく似ている</b>。',
     '1869年、ロシアの<b>メンデレーエフ</b>が約60種類の元素を並べて考案。現在は約<b>120種類</b>。',
     '人体は<b>酸素 O</b>が約65%、空気は<b>窒素 N</b>が約75.5%、地球全体は<b>鉄 Fe</b>が約34.6%（質量比）。',
-    'タイヤのゴム＝S、新幹線の車体＝Al、航空機の炭素繊維＝C、集積回路＝Si、肥料＝N・P・K、食塩＝Na・Cl。'],
- 2:['化学式のきまり：①原子を元素記号で表す ②結びついた数は<b>右下に小さく</b> ③1個のときの「1」は書かない。',
+    'タイヤのゴム＝S、新幹線の車体＝Al、航空機の炭素繊維＝C、集積回路＝Si、肥料＝N・P・K、食塩＝Na・Cl。',
+    '単体が<b>金属</b>になる元素：鉄 Fe・銅 Cu・銀 Ag・アルミニウム Al・マグネシウム Mg など。<b>非金属</b>：酸素 O・窒素 N・硫黄 S・水素 H など。'],
+ 2:['<b>分子</b>＝いくつかの原子が結びついた粒。たとえば水分子は、水素原子2個と酸素原子1個が結びついたもの。',
+    '<b>化学式</b>＝物質を、元素記号と数字で表したもの（世界共通）。',
+    '化学式のきまり：①原子を元素記号で表す ②結びついた数は<b>右下に小さく</b> ③1個のときの「1」は書かない。',
     '<b>H<sub>2</sub></b>＝水素原子2個が結びついた分子1個。<b>2H</b>＝水素原子2個。<b>3H<sub>2</sub></b>＝水素分子3個。',
     ()=>['H2','O2','N2','H2O','CO2','NH3'].map(f=>`${molHTML(f,22)} ${fh(f)}`).join('　'),
     '分子の形（発展）：水は<b>くの字</b>、二酸化炭素は<b>一直線</b>、アンモニアは<b>三角すい</b>。'],
@@ -4681,27 +4701,75 @@ const BOOK={
     '塩化ナトリウムは Na と Cl が <b>1：1</b> → <b>NaCl</b>。<b>金属の元素記号を先に</b>書く（×ClNa、×Nacl）。',
     '<b>混合物</b>＝いくつかの物質が混ざったもの（食塩水・空気・海水）／<b>純物質</b>は<b>単体</b>（1種類の元素）と<b>化合物</b>（2種類以上）に分かれる。',
     '化合物は分解できるが、<b>単体はそれ以上分解できない</b>。',
-    '<b>同素体</b>：ダイヤモンドと黒鉛（どちらも C）、酸素 O<sub>2</sub> とオゾン O<sub>3</sub>。'],
- 4:['化学反応式の作り方：①「反応前 → 反応後」を書く ②それぞれを化学式にする ③<b>左右の原子の種類と数</b>をそろえる。',
+    '<b>同素体</b>：同じ元素だけでできているが、性質がちがう単体。ダイヤモンドと黒鉛（どちらも C）、酸素 O<sub>2</sub> とオゾン O<sub>3</sub>。',
+    '<b>黒鉛</b>＝黒色・やわらかい・<b>電気をよく通す</b>。<b>ダイヤモンド</b>＝無色透明・とてもかたい・電気を通さない。',
+    '塩化銅は Cu 1個に Cl 2個 → <b>CuCl<sub>2</sub></b>（金属の Cu が先・2文字目は小文字・数は右下）。'],
+ 4:['<b>化学反応式</b>＝化学変化を、化学式を使って表したもの。',
+    '化学反応式の作り方：①「反応前 → 反応後」を書く ②それぞれを化学式にする ③<b>左右の原子の種類と数</b>をそろえる。',
     '数をそろえるときは、化学式の<b>前</b>に数（係数）をつける。<b>化学式そのものは変えない</b>。',
     'まちがい例：×H<sub>2</sub>O→2H＋O（分子になっていない）、×H<sub>2</sub>O＋O→…（反応していない物質を足す）、×H<sub>2</sub>O<sub>2</sub>→…（化学式を変えた）。',
     '2H<sub>2</sub>O → 2H<sub>2</sub> ＋ O<sub>2</sub>　／　2Ag<sub>2</sub>O → 4Ag ＋ O<sub>2</sub>　／　2NaHCO<sub>3</sub> → Na<sub>2</sub>CO<sub>3</sub> ＋ CO<sub>2</sub> ＋ H<sub>2</sub>O',
-    '係数から<b>反応する物質・できる物質の数の関係</b>がわかる。'],
+    '係数から<b>反応する物質・できる物質の数の関係</b>がわかる。',
+    '<b>計算のしかた</b>：係数の比を使う。2NaHCO<sub>3</sub> → Na<sub>2</sub>CO<sub>3</sub> ＋ … なら NaHCO<sub>3</sub>：Na<sub>2</sub>CO<sub>3</sub> ＝ 2：1。<br>式：NaHCO<sub>3</sub>の数 ＝ つくりたい Na<sub>2</sub>CO<sub>3</sub>の数 × 2<br>例：Na<sub>2</sub>CO<sub>3</sub>を2個つくる → 2 × 2 ＝ <b>4個</b>'],
  lab:['自然界に存在する元素は<b>92種類</b>（1番の水素〜92番のウラン）。それより重い元素は<b>加速器</b>で人工的につくる。',
     '<b>ニホニウム Nh（113番）</b>：理化学研究所の森田浩介博士らが、亜鉛（30番）をビスマス（83番）に衝突させて合成。30＋83＝113。',
     '光速の10分の1まで加速し、1個得るのに約<b>100兆回</b>の衝突が必要だった。2016年に名前が認められた。',
-    '原子は<b>原子核</b>と電子、原子核は<b>陽子</b>と中性子からできている。'],
+    '原子は<b>原子核</b>と電子、原子核は<b>陽子</b>と中性子からできている。',
+    '加速器でぶつけて合体すると、原子番号どうしが<b>足し算</b>になる（30＋83＝113）。'],
 };
+/* 各区間の「やり方」：はじめての人が最初の依頼の前に読む（2026-10-06 夜間改修・初心者向け） */
+const HOWTO={
+ 0:['依頼は4択。<b>下の心得と記号の表</b>に答えが全部ある。迷ったら 📜心得 ボタンでいつでも見返せる。',
+    '<b>区間1は見習い期間</b>：まちがえても体力 ♥ は減らない。解説を読んで、次に生かそう。'],
+ 1:['<b>周期表のマス</b>の依頼：表の中の「？」のマスに入る元素をえらぶ。<br>やり方：選択肢のうち、<b>表のほかのマスにまだ出ていない記号</b>をさがす。横の行（周期）と縦の列（族）の番号も手がかり。',
+    '最初の3つの依頼は見習い：まちがえても体力は減らない。'],
+ 2:['<b>錬成の依頼</b>：下の原子をタップしてフラスコに入れ、「✨ 錬成する」。<br>やって見せると──水分子 H<sub>2</sub>O なら、水素を<b>2回</b>・酸素を<b>1回</b>タップ → 錬成。入れすぎたら、フラスコの中の原子をタップで取り出せる。',
+    'ラベルの依頼は、化学式のきまり（右下に小さく・1は書かない）で見分ける。',
+    '最初の3つの依頼は見習い：まちがえても体力は減らない。'],
+ 3:['<b>仕分けの依頼</b>：物質を3つのびんに分ける。<br>まず「1種類の物質だけ？ 混ざっている？」→ 混ざっていれば<b>混合物</b>。<br>1種類の物質なら、元素が1種類 → <b>単体</b>、2種類以上 → <b>化合物</b>。<br>例：水 H<sub>2</sub>O は H と O の2種類 → 化合物。',
+    '最初の3つの依頼は見習い：まちがえても体力は減らない。'],
+ 4:['<b>反応式の依頼</b>：▲▼で係数（化学式の前の数）を変えて、左と右の原子の数をそろえる。<br>やって見せると──水の電気分解<br>① H<sub>2</sub>O → H<sub>2</sub> ＋ O<sub>2</sub>：酸素が 左1・右2 でそろわない<br>② 左を <b>2</b>H<sub>2</sub>O にする：酸素は 左2・右2。でも水素が 左4・右2<br>③ 右を <b>2</b>H<sub>2</sub> にする：水素 左4・右4、酸素 左2・右2 → <b>2H<sub>2</sub>O → 2H<sub>2</sub> ＋ O<sub>2</sub></b> できあがり',
+    '最初の3つの依頼は見習い：まちがえても体力は減らない。'],
+ lab:['<b>加速器の依頼</b>：①飛ばす原子 と ②ねらう原子 を1つずつえらぶ。合体すると原子番号が<b>足し算</b>になる。<br>例：亜鉛30 ＋ ビスマス83 ＝ 113（ニホニウム）。']
+};
+function elemTable(){
+ return '<div style="font-weight:700;margin:4px 0">記号の表（区間1の答えはここ）</div><table style="border-collapse:collapse;font-size:13.5px;line-height:1.4;width:100%">'+
+  TABLE4.map(k=>`<tr><td style="padding:3px 6px;border-bottom:1px solid rgba(255,255,255,.15);font-size:18px;font-weight:900;color:var(--gold);white-space:nowrap">${k}</td><td style="padding:3px 6px;border-bottom:1px solid rgba(255,255,255,.15);white-space:nowrap">${EL[k].ja}</td><td style="padding:3px 6px;border-bottom:1px solid rgba(255,255,255,.15);opacity:.85">${EL[k].o}</td></tr>`).join('')+'</table>';
+}
+/* 今日の工房の心得：区間に入ったら、依頼の前に必ず出す（学びの書の同じページ＋やり方）。HUDの📜心得でいつでも開ける */
+/* 心得の「やってみよう」（テストとは別の問い。はじめて読むときは正解してから依頼へ） */
+const LQ={
+ 0:{ask:'二酸化炭素 CO<sub>2</sub> をつくっている元素は何種類？',c:['2種類','3種類','1種類'],why:'C と O の2種類。原子は3個（C 1個・O 2個）だが、<b>種類</b>は2つ。',hint:'元素は原子の「種類」。記号が何種類あるか数えよう'},
+ 1:{ask:'周期表の<b>縦の列</b>を何という？',c:['族','周期','番号'],why:'縦の列が<b>族</b>、横の行が<b>周期</b>。',hint:'横の行は「周期」だった。縦は…'},
+ 2:{ask:'オゾン O<sub>3</sub> の分子1個には、酸素原子が何個？',c:['3個','1個','2個'],why:'右下の小さな数が、結びついた原子の数。O<sub>3</sub> は酸素原子3個。',hint:'右下の小さな数を見よう'},
+ 3:{ask:'二酸化炭素 CO<sub>2</sub> は、単体・化合物・混合物のどれ？',c:['化合物','単体','混合物'],why:'1種類の物質で、元素は C と O の2種類 → <b>化合物</b>。',hint:'まず「混ざっている？」→ 次に「元素は何種類？」'},
+ 4:{ask:'2CO ＋ O<sub>2</sub> → □CO<sub>2</sub>　□に入る係数は？',c:['2','1','4'],why:'左は C 2個・O 4個（2＋2）。右も 2CO<sub>2</sub> なら C 2個・O 4個でそろう。',hint:'左の C と O の数を数えて、右と同じにしよう'},
+ lab:{ask:'原子番号26の鉄に、原子番号2のヘリウムを合体させると、原子番号は？',c:['28','24','52'],why:'合体すると原子番号は足し算。26＋2＝28。',hint:'原子番号どうしを足し算'}
+};
+function openLesson(k,onGo){
+ const st=stageOf(k);const items=[...(HOWTO[k]||[]),...BOOK[k]];const lq=onGo&&LQ[k];
+ const m=modal(`<span class="eyebrow">今日の工房の心得　${k==='lab'?'寄り道':'区間'+(k+1)}</span><h2>${st.name}</h2>
+  <div class="small-note">依頼の答えは、ここに書いてある。読んでから錬金をはじめよう。</div>
+  <div class="page" style="margin-top:10px"><ul>${items.map(x=>`<li>${typeof x==='function'?x():x}</li>`).join('')}</ul></div>
+  ${lq?'<div class="lq"><div class="ask">やってみよう：'+lq.ask+'</div><div class="opts"></div><div class="why"></div></div>':''}
+  <div class="actions stick"><button class="cta ${st.col==='sapph'?'blue':''}" id="lessonGo" ${lq?'disabled':''}>${lq?'↓ 下の「やってみよう」に答えると進める':onGo?'読んだ！ 依頼をはじめる':'とじる'}</button></div>`);
+ m.querySelector('#lessonGo').onclick=()=>{m.remove();if(onGo){S.lr=S.lr||{};S.lr[k]=1;save();onGo()}};
+ if(onGo)m.dataset.lock='1';
+ if(lq){const box=m.querySelector('.lq .opts'),wy=m.querySelector('.lq .why'),go=m.querySelector('#lessonGo'),bx=m.querySelector('.box');
+  const end=()=>setTimeout(()=>{try{bx.scrollTo({top:bx.scrollHeight,behavior:RM?'auto':'smooth'})}catch(e){bx.scrollTop=bx.scrollHeight}},60);
+  lq.c.map((t,i)=>({t,ok:i===0})).sort(()=>Math.random()-.5).forEach(o=>{const b=document.createElement('button');b.className='ghost';b.innerHTML=o.t;
+   b.onclick=()=>{if(o.ok){[...box.children].forEach(x=>x.disabled=true);b.disabled=false;b.classList.add('ok');wy.innerHTML='<b>そのとおり。</b>'+lq.why;go.disabled=false;go.textContent='読んだ！ 依頼をはじめる';end()}else{b.disabled=true;wy.innerHTML='<b class="ng">ちがう。</b>'+lq.hint;end()}};box.appendChild(b)})}
+}
 function openBook(focus){
  const keys=[...STAGES.map((_,i)=>i),'lab'];
  const pages=keys.map(k=>{
-  const st=stageOf(k),b=S.book[k],open=isCleared(k);
+  const st=stageOf(k),b=S.book[k],open=isCleared(k)||k===S.cleared||(k==='lab'&&S.cleared>=2);
   if(!open)return `<div class="page lock"><div class="ph2"><b>？？？</b><small>${k==='lab'?'寄り道':'区間'+(k+1)}</small></div><div style="font-size:14px">${k==='lab'?'寄り道の研究所をクリアするとページが開く':'まだたどりついていない'}</div></div>`;
   return `<div class="page ${focus===k?'focus':''}" id="page-${k}">
    <div class="ph2"><b>${st.name}</b><small>${k==='lab'?'寄り道（発展）':'区間'+(k+1)}</small></div>
-   <div class="badges"><span>✓ クリア</span>${b?`<span>挑戦 ${b.plays}回</span><span>ベスト ♥${b.best}</span>${b.best===5?'<span class="pf">🏅 ノーミス</span>':''}`:''}${S.runs[k]?'<span>とちゅう</span>':''}</div>
+   <div class="badges">${isCleared(k)?'<span>✓ クリア</span>':'<span>いま挑戦中</span>'}${b?`<span>挑戦 ${b.plays}回</span><span>ベスト ♥${b.best}</span>${b.best===5?'<span class="pf">🏅 ノーミス</span>':''}`:''}${S.runs[k]?'<span>とちゅう</span>':''}</div>
    <ul>${BOOK[k].map(x=>`<li>${typeof x==='function'?x():x}</li>`).join('')}</ul>
-   <div class="actions"><button class="cta ${k==='lab'?'gold':'blue'}" data-replay="${k}" style="font-size:17px;padding:10px 22px">${S.runs[k]?'⚗ つづきから':'⚗ もう一度挑戦'}</button></div>
+   <div class="actions"><button class="cta ${k==='lab'?'gold':'blue'}" data-replay="${k}" style="font-size:17px;padding:10px 22px">${S.runs[k]?'⚗ つづきから':isCleared(k)?'⚗ もう一度挑戦':'⚗ 挑戦する'}</button></div>
   </div>`}).join('');
  const testPage=S.test?`<div class="page"><div class="ph2"><b>山頂の試練</b><small>確認テスト</small></div><div class="badges"><span>最新 ${S.test.score} / ${S.test.total}</span></div><ul><li>20問。何度でも解き直せる。</li></ul><div class="actions"><button class="cta gold" id="bookTest" style="font-size:17px;padding:10px 22px">📝 もう一度解く</button></div></div>`:'';
  const m=modal(`<h2>📜 学びの書</h2><div class="small-note">通ってきた区間のまとめ。読み返して、何度でも挑戦できる。復習でも かけら💠 がもらえる。</div>
@@ -4724,7 +4792,7 @@ function showPanel(kind,title,body,btn,fn,waitSec){
 function closePanel(){$('#panelRoot').innerHTML=''}
 function modal(html,onClose){
  const m=document.createElement('div');m.className='modal';m.innerHTML=`<div class="box glass">${html}</div>`;$('#modalRoot').appendChild(m);
- m.addEventListener('click',e=>{if(e.target===m||e.target.closest('[data-close]')){m.remove();onClose&&onClose()}});return m}
+ m.addEventListener('click',e=>{if((e.target===m&&!m.dataset.lock)||e.target.closest('[data-close]')){m.remove();onClose&&onClose()}});return m}
 function confirmBox(msg,ok,fn){const m=modal(`<p style="font-size:18px;line-height:1.7">${msg}</p><div class="actions"><button class="ghost" data-close>やめる</button><button class="cta" id="cfOk">${ok}</button></div>`);m.querySelector('#cfOk').onclick=()=>{m.remove();fn()}}
 
 /* =========================================================

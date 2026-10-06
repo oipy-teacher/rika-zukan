@@ -80,6 +80,7 @@ input{font:inherit}
 #bRoll{flex:1.6!important;font-size:25px}
 #mapBtns{position:absolute;z-index:4;display:flex;gap:10px;flex-wrap:wrap}
 #mapBtns>*{flex:1 1 120px}
+#mapBtns .pb{white-space:nowrap;padding-left:8px;padding-right:8px}
 
 /* テープで貼ったノートの切れはし */
 .ov{display:flex;align-items:center;justify-content:center;background:rgba(58,58,58,.22);padding:16px;z-index:6}
@@ -161,6 +162,17 @@ input{font:inherit}
 @keyframes gacf{to{transform:translate(var(--dx),108vh) rotate(var(--r))}}
 #bBack:active,#bMute:active{transform:translate(2px,3px)}
 @media (prefers-reduced-motion:reduce){.pb:active{transform:none}.gacf{display:none}.stars div.st{opacity:1;transform:none}.stamp.pop{animation:none}}
+/* 先生の赤ペンメモ（まなぶ札）2026-10-06 初心者向け */
+#scrLearn{z-index:20}
+#scrLearn .sh{width:min(680px,95vw)}
+#scrLearn .sh p{font-size:17px;line-height:1.7}
+#lFig svg{width:100%;height:auto;max-height:220px;display:block;margin:8px auto 4px;border:1.5px solid rgba(58,58,58,.4)}
+#scrLearn .ask{margin-top:12px;padding:8px 12px;border:2px dashed var(--red);border-radius:4px 14px 6px 12px;color:#9e2f26;font-size:18px;line-height:1.6}
+#scrLearn .opts{display:flex;flex-wrap:wrap;gap:10px;margin-top:10px}#scrLearn .opts .pb{flex:1 1 30%;font-size:16px;line-height:1.35}
+#scrLearn .why{margin-top:10px;font-size:16px;line-height:1.65;min-height:1em}
+#scrLearn .why b{color:var(--blue);font-weight:400}#scrLearn .why b.ng{color:var(--red)}
+#scrLearn .lft{display:flex;align-items:center;gap:12px;margin-top:14px}#scrLearn .lft span{flex:1;color:rgba(58,58,58,.6)}
+@media (max-height:800px){#scrLearn .sh{max-height:96vh;padding-top:30px;padding-bottom:16px}#lFig svg{max-height:160px}#scrLearn .sh p{line-height:1.55;margin:5px 0}#scrLearn .ask{margin-top:8px}#scrLearn .lft{margin-top:10px}}
 </style>
 </head>
 <body>
@@ -183,6 +195,7 @@ input{font:inherit}
 
 <div id="scrMap" class="scr hidden" style="pointer-events:none">
   <div id="mapBtns" style="pointer-events:auto">
+    <button class="pb sm" id="bNote">✎ 赤ペンメモ</button>
     <button class="pb sm" id="bBook2">📖 図鑑</button>
     <button class="pb sm" id="bGacha">🎰 ガチャ</button>
     <button class="pb b sm hidden" id="bToTest">📝 確認テスト</button>
@@ -240,6 +253,10 @@ input{font:inherit}
     <div class="btns"><button class="pb sm" id="bkNo">つづける</button><button class="pb r sm" id="bkGo">もどる</button></div></div>
 </div>
 
+<div id="scrLearn" class="scr ov hidden">
+  <div class="sh"><div class="tape"></div><div class="fl" id="lKick"></div><h2 id="lT"></h2><div id="lFig"></div><div id="lP"></div><div id="lQ"></div>
+    <div class="lft"><span id="lPg"></span><button class="pb b" id="lNext">つぎへ</button></div></div>
+</div>
 <button id="bBack" class="hidden" aria-label="もどる">◀ もどる</button>
 <button id="bMute" aria-label="音のオン・オフ">おと ○</button>
 </div>
@@ -3897,7 +3914,7 @@ function save(){try{localStorage.setItem(SKEY,JSON.stringify(SV))}catch(e){}}
    cup: 線をのばして読む「的」の電圧  out: 測り間違いの点を1つ混ぜる  rm: 測り直し券の枚数 */
 var PGS=[
  {tag:'p.1',n:'はじめの一本',tr:3,Vs:[1,2,3,4,5],vmax:6,ks:[.1,.08,.12],amp:.035,pat:'rand',m:.034,
-  intro:'点は電熱線の<b>電圧と電流の測定値</b>。<br><b>原点から</b>、点のまん中を通る<b>1本の線</b>を指で引いて「ころがす」。玉が<b>全部の点のそば</b>を通れば合格（ころがすまで、合格の輪は見えない）。',
+  intro:'点は電熱線の<b>電圧と電流の測定値</b>（横軸＝電圧、縦軸＝電流）。<br><b>原点から</b>、点のまん中を通る<b>1本の線</b>を指で引いて「ころがす」。玉が<b>全部の点のそば</b>を通れば合格（ころがすまで、合格の輪は見えない）。',
   lesson:'測定値には誤差があるので、点はぴったり並ばない。ばらついた点は、原点を通る1本の直線で表す。'},
  {tag:'p.2',n:'折れ線のワナ',tr:3,Vs:[1,2,3,4,5],vmax:6,ks:[.1,.07,.13],amp:.075,pat:'zig',m:.024,
   intro:'点が上下にジグザグ。<b>点を全部つなぎたくなる</b>けど…？',
@@ -3915,13 +3932,13 @@ var PGS=[
   intro:'1つだけ<b>大きく外れた点</b>がまざっている。あやしい点を<b>タップすると測り直せる</b>（測り直し券 2枚）。',
   lesson:'1点だけ大きく外れた点は測り間違いかも。線をその点に合わせず、同じ電圧でもう一度測って確かめる。'},
  {tag:'p.7',n:'2本の電熱線',tr:3,two:true,Vs:[1,2,3,4,5],vmax:6,ks:[[.05,.15],[.2,.08],[.04,.12]],amp:.03,pat:'rand',m:.022,
-  intro:'●と□は<b>ちがう電熱線</b>。どちらにも原点から1本ずつ、<b>2本の線</b>を引こう。',
+  intro:'●と□は<b>ちがう電熱線</b>。電熱線がちがうと<b>傾き</b>（かたむき）がちがう。どちらにも原点から1本ずつ、<b>2本の線</b>を引こう。',
   lesson:'電熱線がちがうと、直線の傾きがちがう。どちらも原点を通る直線＝電圧と電流は比例。'},
  {tag:'p.8',n:'中1のばね',tr:3,spring:true,Vs:[.2,.4,.6,.8,1],vmax:1.4,ks:[10,8,12],amp:.04,pat:'rand',m:.022,cup:[1.2,1.2,1.2],
   intro:'このページは中1の実験。<b>ばねを引く力[N]とのび[cm]</b>。線の引き方は同じ？',
   lesson:'ばねを引く力とのびも、原点を通る直線（比例）。中1の実験と同じ線の引き方。'},
  {tag:'p.9',n:'mAの目盛り',tr:3,mA:true,Vs:[.5,1,1.5,2,2.5],vmax:3.5,ks:[.2,.16,.24],amp:.035,pat:'rand',m:.02,cup:[3,3,3],out:[0,0,1],rm:2,
-  intro:'0.5Vずつ測って、電流はmA。全国学力調査（令和7年度）では<b>37.3%</b>が「電圧を上げても電流は2倍にはならない」と考えた。<br>線をのばして<b>3.0Vの的</b>に当てて確かめよう。',
+  intro:'0.5Vずつ測って、電流はmA（1A＝1000mA）。全国学力・学習状況調査（令和7年度・中学校理科）では<b>37.3%</b>が「電圧を大きくすると電流も大きくなるが、2倍・3倍にはならない」と予想した（国立教育政策研究所の報告書）。<br>線をのばして<b>3.0Vの的</b>に当てて確かめよう。',
   lesson:'単位がmAでも同じ。電圧が2倍・3倍になると、電流も2倍・3倍（原点を通る直線）。'},
  {tag:'p.10',n:'班のデータ',tr:1,team:true,m:.024,
   intro:'',lesson:'自分の班の測定値も、原点を通る1本の直線で表すと、電圧と電流の関係が読める。'},
@@ -4101,7 +4118,8 @@ function buildStatic(){stL.width=Math.ceil(W*DPR);stL.height=Math.ceil(H*DPR);va
   c=keep}
 
 /* ---------------- ゲームの状態 ---------------- */
-function startPage(pi){var S=pi<0?PR:PGS[pi];if(window.BGM)BGM.mood(S&&S.boss?'tense':'normal');ac();
+function startPage(pi){if(LRN)return;if(pi>=0&&!TEST){if(!SV.lrn)SV.lrn={};var need=[];if(!SV.lrn.base)need.push('base');var lk=LKEY[pi];if(lk&&!SV.lrn[lk])need.push(lk);if(need.length){teachKeys(need,function(){startPage0(pi)});return}}return startPage0(pi)}
+function startPage0(pi){var S=pi<0?PR:PGS[pi];if(window.BGM)BGM.mood(S&&S.boss?'tense':'normal');ac();
   G={pi:pi,S:S,ti:0,first:0,even:0,combo:0,maxc:0,rolls:0,time:0,left:S.limit||0,tickets:S.rm||0,paused:true,trialsOK:[],fx:[],ftx:[],stamps:[],salt:S.prac?0:1+Math.floor(Math.random()*997)};
   scene='run';hideAll();backBtn();
   if(S.team){G.D=null;showTeam();return}
@@ -4375,7 +4393,7 @@ var ROWS=[];
 function thumb(x,y,w,h,rec,seed){penLine(x+6,y+h-6,x+w-4,y+h-6,INK,1.1,seed,.7,0);penLine(x+6,y+h-6,x+6,y+4,INK,1.1,seed+1,.7,0);if(!rec)return;var gx=function(v){return x+6+(w-12)*v/rec.vmax},gy=function(i){return y+h-6-(h-12)*i/rec.imax};
   rec.w.forEach(function(wv,wi){wv.p.forEach(function(p){c.fillStyle=INK;c.beginPath();c.arc(gx(p[0]),gy(p[1]),Math.max(1.6,w/60),0,6.283);c.fill()});var ve=Math.min(rec.vmax,rec.imax/Math.max(1e-6,wv.k));penLine(gx(0),gy(0),gx(ve),gy(wv.k*ve),BLUE,1.8,seed+5+wi,1,0)})}
 function drawMap(){c.drawImage(bgL,0,0,W,H);ROWS=[];var lx,lw,top,bot;
-  if(LAND){lx=W*.05;lw=W*.4;top=138;bot=H-30}else{lx=16;lw=W-32;top=112;bot=H-84}
+  if(LAND){lx=W*.05;lw=W*.4;top=138;bot=H-30}else{lx=16;lw=W-32;top=112;bot=H-MBH-26-SAFE}
   tx('もくじ',lx+(LAND?0:lw/2),top-38,(LAND?34:28)*U,INK,LAND?'left':'center');var mt=LAND?lx+tw('もくじ',34*U)+16:0;if(LAND)tx('一本線ローラーの実験ノート',mt,top-34,15*U,INK,'left',false,'middle',.7);
   var rh=(bot-top)/PGS.length,fs=Math.min(rh*.42,(LAND?20:16)*U),thw=Math.min(rh*1.35,LAND?0:74*U);
   for(var i=0;i<PGS.length;i++){var S=PGS[i],y=top+i*rh,open=i<=SV.unl,st=SV.stars[i],cy=y+rh/2,cur=i===SV.unl&&!st;ROWS.push({x:lx,y:y,w:lw,h:rh,i:i,open:open});
@@ -4385,12 +4403,13 @@ function drawMap(){c.drawImage(bgL,0,0,W,H);ROWS=[];var lx,lw,top,bot;
     if(thw>0){var rec=SV.lines[i];if(rec){penRect(lx+lw-thw,y+4,thw,rh-8,INK,1,i+60,.5);thumb(lx+lw-thw,y+4,thw,rh-8,rec,i*7)}else{c.save();c.setLineDash([3,4]);penRect(lx+lw-thw,y+4,thw,rh-8,FAINT,1,i+60,.8);c.restore()}}
     if(cur){penCirc(lx+fs*1.1,cy,fs*1.05,BLUE,2.2,i+80,.9);var bb=RM?0:Math.abs(Math.sin(T*3))*rh*.18;var keepBR=LY.BR;LY.BR=Math.min(8*U,rh*.2);drawBall(nx+tw(S.n,fs)+16,cy-bb,T*3);LY.BR=keepBR}
     penLine(lx,y+rh,lx+lw,y+rh,'rgba(44,123,229,.35)',1,i+100,1,0)}
-  if(LAND){var gx0=W*.54,gw=W*.42,gy0=104,gh=H-104-110,cols=3,rws=4,cw=gw/cols,ch=gh/rws;tx('自分で引いた線',gx0,gy0-38,24*U,INK,'left');tx('合格した線がここに貼られていく',gx0+tw('自分で引いた線',24*U)+14,gy0-36,13*U,INK,'left',false,'middle',.7);
+  if(LAND){var gx0=W*.54,gw=W*.42,gy0=104,gh=H-104-MBH-36-SAFE,cols=3,rws=4,cw=gw/cols,ch=gh/rws;tx('自分で引いた線',gx0,gy0-38,24*U,INK,'left');tx('合格した線がここに貼られていく',gx0+tw('自分で引いた線',24*U)+14,gy0-36,13*U,INK,'left',false,'middle',.7);
     for(i=0;i<PGS.length;i++){var tx0=gx0+(i%cols)*cw+6,ty0=gy0+Math.floor(i/cols)*ch+6,rec2=SV.lines[i];c.save();c.translate(tx0+cw/2,ty0+ch/2);c.rotate((hsh(i)-.5)*.05);c.translate(-(tx0+cw/2),-(ty0+ch/2));
       if(rec2){c.fillStyle='rgba(252,251,246,.95)';c.fillRect(tx0,ty0,cw-12,ch-12);penRect(tx0,ty0,cw-12,ch-12,INK,1.2,i+120,.6);thumb(tx0+4,ty0+16,cw-20,ch-30,rec2,i*11);tx(PGS[i].tag+' '+PGS[i].n,tx0+6,ty0+10,11*U,INK,'left',true,'middle',.8);c.fillStyle='rgba(44,123,229,.22)';c.fillRect(tx0+(cw-12)/2-22,ty0-6,44,12)}
       else{c.save();c.setLineDash([3,5]);penRect(tx0,ty0,cw-12,ch-12,FAINT,1,i+120,.8);c.restore();tx('？',tx0+(cw-12)/2,ty0+(ch-12)/2,18*U,FAINT,'center')}c.restore()}}}
 function mapTap(x,y){for(var i=0;i<ROWS.length;i++){var r=ROWS[i];if(x>=r.x&&x<=r.x+r.w&&y>=r.y&&y<=r.y+r.h){if(r.open){SFX.ok();startPage(r.i)}else SFX.bad();return}}}
-function posMapBtns(){var mb=$('mapBtns');if(LAND){mb.style.left=(W*.54)+'px';mb.style.width=(W*.42)+'px';mb.style.top=(H-86)+'px'}else{mb.style.left='16px';mb.style.width=(W-32)+'px';mb.style.top=(H-70-SAFE)+'px'}}
+var MBH=60;
+function posMapBtns(){var mb=$('mapBtns');mb.style.top='auto';mb.style.bottom=(12+SAFE)+'px';if(LAND){mb.style.left=(W*.54)+'px';mb.style.width=(W*.42)+'px'}else{mb.style.left='72px';mb.style.width=(W-88)+'px'}MBH=mb.offsetHeight||MBH}
 
 /* ---------------- タイトルの1枚絵（線を引く→玉が輪をくぐる） ---------------- */
 var TD={t:0,pts:[[1,.11],[2,.19],[3,.31],[4,.40],[5,.52]]};
@@ -4444,13 +4463,69 @@ var PRACTICE={start:function(){ac();startPage(-1)},label:'れんしゅう中',cl
     {gesture:'tap',target:'#bRoll',until:function(){return !!(G&&G.S.prac&&G.result&&G.result.ok)},praise:'合格！',text:'**ころがす** をタップ。玉が 輪を全部くぐれば 合格！'}
   ],
   onExit:function(res){if(res&&(res.stopped||res.replaced))return;PDONE=true;if(SV.unl===0&&!SV.stars[0])startPage(0);else setScene('map')}};
-var INTRO={title:'第9回 一本線ローラー',learn:'測定値には **誤差** がある。ばらついた点は **原点を通る1本の直線** で表す',
+var INTRO={title:'第9回 一本線ローラー',learn:'電熱線の **電圧**（V）と **電流**（A）は **比例** する。測定値には **誤差** があるので、ばらついた点は **原点を通る1本の直線** で表す。言葉は はじめに「赤ペンメモ」で教わる',
   how:'原点から点のまん中に **指で線を引いて**「ころがす」。玉が全部の点のそば（輪）を通れば合格',gesture:'draw'};
+/* ================= 先生の赤ペンメモ（まなぶ札）：用語・決まりを「線を引く前」に教える（2026-10-06 初心者向け） ================= */
+var LRN=null,LKEY={8:'mA'};
+function fmtL(s){return String(s).replace(/[&<>"]/g,function(ch){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch]}).replace(/\*\*(.+?)\*\*/g,'<b>$1</b>')}
+function svgP(inner,w,h){var g='';for(var x=10;x<w;x+=14)g+='<line x1="'+x+'" y1="0" x2="'+x+'" y2="'+h+'" stroke="rgba(44,123,229,.12)"/>';for(var y=10;y<h;y+=14)g+='<line x1="0" y1="'+y+'" x2="'+w+'" y2="'+y+'" stroke="rgba(44,123,229,.12)"/>';
+  return'<svg viewBox="0 0 '+w+' '+h+'" xmlns="http://www.w3.org/2000/svg" font-family="Yomogi,Zen Kaku Gothic New,sans-serif"><rect width="'+w+'" height="'+h+'" fill="#FBFAF4"/>'+g+inner+'</svg>'}
+function pl(pts,col,wd,dash){return'<polyline points="'+pts.map(function(p){return p[0]+','+p[1]}).join(' ')+'" fill="none" stroke="'+col+'" stroke-width="'+(wd||2)+'" stroke-linecap="round" stroke-linejoin="round"'+(dash?' stroke-dasharray="'+dash+'"':'')+'/>'}
+function tt(x,y,s,col,sz,anc){return'<text x="'+x+'" y="'+y+'" fill="'+(col||INK)+'" font-size="'+(sz||13)+'" text-anchor="'+(anc||'middle')+'">'+s+'</text>'}
+function pd(x,y){return'<circle cx="'+x+'" cy="'+y+'" r="4" fill="'+INK+'"/>'}
+function ax(x0,y0,w,h,xl,yl){return pl([[x0,y0-h],[x0,y0],[x0+w,y0]],INK,2)+tt(x0+w,y0+17,xl,INK,12,'end')+tt(x0+4,y0-h-4,yl,INK,12,'start')+tt(x0-8,y0+14,'0',RED,13)}
+/* 軸と1つの点の意味 */
+function figAxis(){var s='',x0=46,y0=140,k=50,q=420;s+=ax(x0,y0,250,120,'横軸：電圧 [V]','縦軸：電流 [A]');
+  [1,2,3].forEach(function(v){s+=tt(x0+v*k,y0+15,v,INK,11)});
+  s+=pl([[x0+2*k,y0],[x0+2*k,y0-.2*q],[x0,y0-.2*q]],BLUE,1.4,'4 4')+pd(x0+2*k,y0-.2*q)+tt(x0-6,y0-.2*q+4,'0.20',INK,11,'end');
+  s+=tt(x0+2*k+10,y0-.2*q-8,'2Vを加えたら 0.20A 流れた',BLUE,13,'start');return svgP(s,320,165)}
+/* 比例：原点を通る直線 */
+function figProp(){var s='',x0=46,y0=140,k=50,q=420;s+=ax(x0,y0,250,120,'電圧 [V]','電流 [A]');
+  s+=pl([[x0,y0],[x0+4.8*k,y0-.24*q]],BLUE,2.4);[[1,.05],[2,.1],[3,.15],[4,.2]].forEach(function(p){s+=pd(x0+p[0]*k,y0-p[1]*q)});
+  s+=tt(x0+8,y0+15,'← 原点',RED,12,'start')+tt(x0+2*k,y0-.1*q-12,'2V→0.10A',INK,11)+tt(x0+4*k,y0-.2*q-12,'4V→0.20A（2倍）',INK,11);return svgP(s,320,160)}
+/* 誤差とかき方 */
+function figErr(){var s='',x0=46,y0=140,k=48,q=220;s+=ax(x0,y0,250,120,'電圧 [V]','電流 [A]');
+  var P=[[1,.13],[2,.17],[3,.33],[4,.37],[5,.53]];
+  s+=pl([[x0,y0]].concat(P.map(function(p){return[x0+p[0]*k,y0-p[1]*q]})),RED,1.4,'3 4');
+  s+=pl([[x0,y0],[x0+5.3*k,y0-.53*q]],BLUE,2.4);P.forEach(function(p){s+=pd(x0+p[0]*k,y0-p[1]*q)});
+  s+=tt(150,114,'○ 点の近くを通る直線（青）',BLUE,12,'start')+tt(150,130,'× 点を順につなぐ折れ線（赤）',RED,12,'start');return svgP(s,320,160)}
+var LPG={
+ base:[
+  {t:'電流・電圧と、グラフの見方',fig:figAxis,p:'**電流**＝回路（電気の通り道）を流れる電気の流れ。単位は **A（アンペア）**。小さいときは **mA**：**1A＝1000mA**。\n**電圧**＝電源が電流を流そうとするはたらき。単位は **V（ボルト）**。\n**電熱線**＝電流を流すと熱くなる金属の線。この実験ノートは、電熱線に電圧を加えて、流れた電流を測った記録。\nグラフは **横軸が電圧、縦軸が電流**。点1つが **1回の測定**。',
+   q:{ask:'図の点は、何を表している？',c:['2Vを加えたら 0.20A 流れた','0.20Vを加えたら 2A 流れた','2Aを加えたら 0.20V になった'],why:'横軸（電圧）が2V、縦軸（電流）が0.20A。2Vを加えたら0.20A流れた、という1回の測定。',hint:'横軸は電圧、縦軸は電流。点から下と左を見てみよう。'}},
+  {t:'比例と原点',fig:figProp,p:'**比例**＝一方を **2倍・3倍** にすると、もう一方も **2倍・3倍** になる関係。グラフは **原点（0の点）を通る直線**。\n電熱線の **電圧と電流は比例** する。電圧が **0V なら電流も 0A**。だから線は **原点から** 引く。\n直線の **傾き**（かたむき）が大きいほど、同じ電圧で電流が大きい。\n（中1の「ばねを引く力とのび」も比例。グラフのかき方も同じ）',
+   q:{ask:'1.0Vで0.15A 流れた電熱線。3.0Vにすると？',c:['0.45A','0.30A','0.15A'],why:'3.0V は 1.0V の 3倍。比例だから 電流も 3倍の 0.45A。',hint:'3.0V は 1.0V の何倍？ 電流も同じ倍。'}},
+  {t:'誤差と、針の読み方',p:'測った値が本当の値から **わずかにずれる** こと＝**誤差**。だから点は1本の線にぴったり並ばない。\n誤差を小さくする読み方：電流計・電圧計の針は **正面から見て**（斜めから見ると針の位置がずれて見える）、**最小目盛りの10分の1まで** 目分量で読む。',
+   q:{ask:'最小目盛りが 0.1A の電流計。どこまで読む？',c:['0.01A の位まで（目分量で）','0.1A の位まで','1A の位まで'],why:'最小目盛り 0.1A の 10分の1＝0.01A まで、目盛りのあいだを目分量で読む。針は正面から見る。',hint:'最小目盛りの 10分の1 は？'}},
+  {t:'グラフのかき方',fig:figErr,p:'①**横軸に電圧、縦軸に電流** をとり、量と単位を書く　②測定値がおさまるように **目盛りの数値** を書く　③測定値を **点** で打つ　④点が線の **上下に同じくらい** 散らばるように、**原点を通る直線** を引く。\n点を順につなぐ **折れ線にしない**（ずれは誤差だから）。1点だけ **大きく外れた点** は、測り間違いかも → **同じ電圧で測り直す**。',
+   q:{ask:'1.0V〜5.0Vで測った点が、直線のまわりに並んだ。線はどこから引く？',c:['原点（0V・0A）から','1.0Vの点から','5.0Vの点から'],why:'電圧が 0V なら電流も 0A。だから線は原点を通る。点の上下に同じくらい散らばるように引く。',hint:'電圧を加えないとき（0V）、電流はいくつ？'},last:'ノートをひらく'}
+ ],
+ mA:[
+  {t:'mA（ミリアンペア）のページ',p:'このページの電流は **mA**。**1A＝1000mA** だから、100mA＝0.1A。\n単位が変わっても、電熱線の電圧と電流は **比例**。電圧を2倍・3倍にすると、電流も2倍・3倍。',
+   q:{ask:'0.4Vで80mA。1.2Vでは何mA？',c:['240mA','160mA','120mA'],why:'1.2V は 0.4V の 3倍。電流も 3倍で 240mA。',hint:'1.2V は 0.4V の何倍？'},last:'このページへ'}
+ ]
+};
+function teachKeys(keys,done,lastLbl){var pages=[];keys.forEach(function(k){pages=pages.concat(LPG[k])});
+  teach('先生の赤ペンメモ',pages,function(){if(!SV.lrn)SV.lrn={};keys.forEach(function(k){SV.lrn[k]=1});save();if(done)done()});if(lastLbl){LRN.lastLbl=lastLbl;showLearn()}}
+function teach(kick,pages,done){LRN={k:kick,p:pages,i:0,done:done};if(HELP)HELP.hide();if(G&&!G.paused){G.paused=true;G.lp=1}$('scrLearn').classList.remove('hidden');showLearn()}
+function showLearn(){var L=LRN,pg=L.p[L.i];$('lKick').textContent=L.k;$('lT').textContent=pg.t;
+  $('lFig').innerHTML=pg.fig?pg.fig():'';
+  $('lP').innerHTML=pg.p.split('\n').map(function(x){return'<p>'+fmtL(x)+'</p>'}).join('');
+  var q=$('lQ'),nb=$('lNext');q.innerHTML='';nb.textContent=L.i+1>=L.p.length?(L.free?'とじる':(L.lastLbl||pg.last||'わかった')):'つぎへ';$('lPg').textContent=L.p.length>1?(L.i+1)+' / '+L.p.length:'';
+  if(pg.q&&!L.free){var qq=pg.q;nb.classList.add('hidden');q.innerHTML='<div class="ask">やってみよう：'+fmtL(qq.ask)+'</div><div class="opts"></div><div class="why"></div>';var box=q.querySelector('.opts'),wy=q.querySelector('.why');
+    qq.c.map(function(t,i){return{t:t,ok:i===0,r:Math.random()}}).sort(function(a,b){return a.r-b.r}).forEach(function(o){var b=document.createElement('button');b.className='pb sm';b.textContent=o.t;
+      b.onclick=function(){ac();if(o.ok){SFX.ok();[].forEach.call(box.children,function(x){x.disabled=true});b.disabled=false;b.className='pb b sm';wy.innerHTML='<b>そのとおり！</b>'+fmtL(qq.why);nb.classList.remove('hidden');setTimeout(function(){try{nb.scrollIntoView({behavior:RM?'auto':'smooth',block:'nearest'})}catch(e){}},60)}
+        else{SFX.bad();b.disabled=true;wy.innerHTML='<b class="ng">ちがう。</b>'+fmtL(qq.hint)}};box.appendChild(b)})}
+  else nb.classList.remove('hidden');
+  var it=document.querySelector('#scrLearn .sh');if(it)it.scrollTop=0}
+$('lNext').onclick=function(){ac();var L=LRN;if(!L)return;L.i++;if(L.i>=L.p.length){$('scrLearn').classList.add('hidden');LRN=null;SFX.flip();if(G&&G.lp){G.lp=0;G.paused=false}if(HELP&&(scene==='run'||scene==='map'))HELP.show();if(L.done)L.done();return}SFX.flip();showLearn()};
+$('bNote').onclick=function(){ac();var pages=LPG.base.concat(LPG.mA);teach('先生の赤ペンメモ（読み返し）',pages,null);LRN.free=1;showLearn()};
+
 var busy=false;
 $('bStart').onclick=function(){if(busy)return;ac();SFX.ok();SV.name=$('nameIn').value.trim()||SV.name;save();var first=SV.unl===0&&!SV.stars[0];
-  var go=function(){busy=false;if(!first)setScene('map');else if(window.Guide)Guide.tutorial(PRACTICE);else startPage(0)};
+  var go=function(){busy=false;if(!first)setScene('map');else if(window.Guide){if(!SV.lrn||!SV.lrn.base)teachKeys(['base'],function(){Guide.tutorial(PRACTICE)});else Guide.tutorial(PRACTICE)}else startPage(0)};
   if(window.Guide){busy=true;Guide.intro(INTRO).then(go)}else go()};
-if(window.Guide)Guide.tutorialButton('#bHow',function(){ac();SFX.ok();Guide.tutorial(PRACTICE)});else $('bHow').classList.add('hidden');
+if(window.Guide)Guide.tutorialButton('#bHow',function(){ac();SFX.ok();if(!SV.lrn||!SV.lrn.base){teachKeys(['base'],function(){Guide.tutorial(PRACTICE)});return}Guide.tutorial(PRACTICE)});else $('bHow').classList.add('hidden');
 $('bCont').onclick=function(){ac();SFX.ok();SV.name=$('nameIn').value.trim()||SV.name;save();setScene('map')};
 function toTest(){var z=Zk();if(z&&z.mainClear&&!TEST){try{z.mainClear({onClose:startTest});return}catch(e){}}startTest()}
 
@@ -4472,7 +4547,7 @@ document.addEventListener('keydown',function(e){if(scene!=='run'||!G)return;if(e
 /* ---------------- 確認テスト（ノートの小テスト） ---------------- */
 var TQ=[],TI=0,TA=[],TOK=[],CARD=null;
 function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(m){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]})}
-function startTest(){G=null;setScene('test');TQ=window.Quiz?Quiz.test():[];TI=0;TA=[];TOK=[];$('scrTest').scrollTop=0;showQ()}
+function startTest(){if(!TEST){var nd=['base','mA'].filter(function(k){return!(SV.lrn&&SV.lrn[k])});if(nd.length){if(!LRN)teachKeys(nd,startTest,'確認テストへ');return}}G=null;setScene('test');TQ=window.Quiz?Quiz.test():[];TI=0;TA=[];TOK=[];$('scrTest').scrollTop=0;showQ()}
 function marks(){$('tMarks').innerHTML=TQ.map(function(q,i){var ok=i<TOK.length?TOK[i]:null;return'<i class="'+(ok===true?'ok':ok===false?'ng':i===TI?'cur':'')+'">'+(ok===true?'○':ok===false?'×':i===TI?'✎':'・')+'</i>'}).join('')}
 function showQ(){if(TI>=TQ.length)return finishTest();var q=TQ[TI];$('tNo').textContent='確認テスト　第'+(TI+1)+'問 ／ '+TQ.length;marks();
   $('tQ').textContent=q.q;var f=$('tFig');if(q.fig){f.innerHTML=q.fig;f.classList.remove('hidden')}else{f.innerHTML='';f.classList.add('hidden')}
@@ -4522,7 +4597,7 @@ if(window.Guide){
     sfx:function(k){ac();if(k==='step')SFX.ring(3);else if(k==='done')SFX.even();else if(k==='clear')SFX.even();else if(k==='open'||k==='close')SFX.flip();else if(k==='cheer')SFX.ok();else if(k==='nudge')SFX.tick()},
     muted:function(){return muted}});
   HELP=Guide.help({title:INTRO.title,learn:INTRO.learn,how:INTRO.how,size:44,offset:{x:72,y:0},show:false,attention:true,replay:'tutorial',
-    rules:['線は **原点**（左下の発射台）から。0Vなら0A','点を順につながない。**折れ線** は角で脱線する','1つの点に合わせず、点が線の **上と下に同じくらい** 散らばるように',
+    rules:['**電流**＝回路を流れる電気の流れ（A・1A＝1000mA）。**電圧**＝電流を流そうとするはたらき（V）。**比例**＝2倍・3倍→2倍・3倍','線は **原点**（左下の発射台）から。0Vなら0A','点を順につながない。**折れ線** は角で脱線する','1つの点に合わせず、点が線の **上と下に同じくらい** 散らばるように',
       '線の先の **青い○** で向きを直せる。「消す」で引き直し','大きく外れた点は **タップして測り直し**（券があるページだけ）'],
     onOpen:function(){if(scene==='run'&&G&&!G.paused){G.paused=true;G.hp=1;SFX.scrStop()}},
     onClose:function(){if(G&&G.hp){G.hp=0;G.paused=false}}});
@@ -4536,16 +4611,7 @@ refreshK();
 if(window.PLAYER_NAME){$('nameIn').value=window.PLAYER_NAME;$('nmRow').classList.add('hidden')}else if(SV.name)$('nameIn').value=SV.name;
 if(TEST)startTest();else setScene('title');
 requestAnimationFrame(frame);
-/* 自動操作の確かめ用の窓口（遊びには影響しない） */
-window.__GA={G:function(){return G},lay:function(){return LY},page:startPage,trial:function(t){startTrial(t,false)},scene:function(){return scene},SV:function(){return SV},gen:gen,PGS:PGS,
-  go:function(){$('iGo').click()},
-  /* 答えの線：原点から、均等の傾き（輪の中心）で右端まで */
-  best:function(off){if(!G||!G.D)return;off=off||0;G.lines=G.D.wires.map(function(wv){var k=wv.k*(1+off),ve=G.D.cup?Math.max(G.D.cup.v*1.02,G.D.vmax*.98):G.D.vmax*.98;ve=Math.min(G.D.vmax,ve,G.D.imax*.99/k);return{pts:[[0,0],[r3(ve),r3(k*ve)]],org:true,seed:3,straight:true}});G.state='draw';G.runners=null;G.near=[];G.result=null;G.stamps=[];G.bal=null},
-  poly:function(){var wv=G.D.wires[0];G.lines[0]={pts:[[0,0]].concat(wv.pts.map(function(p){return[p.v,p.i]})),org:true,seed:4};G.state='draw';G.runners=null},
-  offset:function(){var wv=G.D.wires[0],p=wv.pts[0];G.lines[0]={pts:[[p.v,p.i],[G.D.vmax*.98,p.i+wv.k*(G.D.vmax*.98-p.v)]],org:false,seed:5};G.state='draw';G.runners=null},
-  fixOut:function(){var ok=false;G.D.wires[0].pts.forEach(function(p){if(p.out){tapAt(px(p.v),py(p.i));ok=true}});return ok},
-  stroke:function(pts){finishStroke(pts.map(function(q){return[px(q[0]),py(q[1])]}))},
-  roll:roll,next:nextTrial,xy:function(v,i){return[px(v),py(i)]},state:function(){return G&&{st:G.state,ok:G.result&&G.result.ok,msg:G.msg,ti:G.ti,rm:!!G.rmA}},team:useTeam,test:startTest};
+
 })();
 </script>
 <script>window.ZUKAN_COUNTER={"db": "https://rika-zukan-rank-default-rtdb.asia-southeast1.firebasedatabase.app", "id": "graph-audition"};

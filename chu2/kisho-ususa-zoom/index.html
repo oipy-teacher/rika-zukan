@@ -156,6 +156,23 @@ h2{margin:.1em 0 .3em;font-weight:400;font-size:24px;letter-spacing:.06em}
 #tBtns .row .tag{padding:6px 6px 6px 22px;font-size:14px;letter-spacing:0}
 #tBtns .row .tag::before{left:7px}
 body.prac #plateNo{visibility:hidden}
+/* まなぶ（初めての人へ・2026-10-06 夜間改修） */
+#learn{z-index:22}
+#learn .sheet{width:min(96vw,640px);max-height:calc(100vh - 88px)}
+.lfig svg{display:block;width:100%;height:auto;margin:6px 0 4px;background:#FDFAF2;border:1px solid rgba(59,75,58,.35)}
+ul.lrn{margin:6px 0;padding-left:1.1em;font-size:16px;line-height:1.65}
+ul.lrn li{margin:2px 0}
+ul.lrn b,.ltry b{font-weight:400;color:var(--shu);border-bottom:1.2px solid var(--shu)}
+.ltry{margin-top:10px;padding:10px 12px;border:1.4px dashed var(--ink);background:#FDFAF2}
+.ltry .lq{font-size:17px;line-height:1.55}
+.ltry .lch{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.ltry .lch .tag{font-size:16px}
+.ltry .lch .tag.ok{background:#e4ecd7;border-color:#4d6b3a}.ltry .lch .tag.ng{background:#f3d6cf;border-color:#C0392B}
+.ltry .lfb{margin-top:8px;font-size:15.5px;line-height:1.6;min-height:1.6em}
+.ltry .lfb.ng{color:var(--shu)}
+.btns.lstk{position:sticky;bottom:-18px;margin:10px -22px -18px;padding:10px 22px 14px;background:#FBF7EC;border-top:1px solid rgba(59,75,58,.35);z-index:3}
+#learn h2.lsm{font-size:18px;margin:2px 0 4px}
+#lNext.pulse{animation:beat 1.6s ease-in-out infinite}
 @media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;animation-iteration-count:1!important;transition:none!important}}
 </style>
 </head>
@@ -191,6 +208,7 @@ body.prac #plateNo{visibility:hidden}
 <button class="tag red hidden" id="bGo">この薄さで皮をむく ▶</button>
 
 <div id="plate" class="ov hidden"><div class="sheet pop" id="plateIn"></div></div>
+<div id="learn" class="ov hidden"><div class="sheet pop" id="learnIn"></div></div>
 <div id="albumOv" class="ov hidden"><div class="sheet" style="width:min(96vw,760px)"><div class="cap">Index of Plates</div><h2>縮尺図鑑</h2><div style="font-size:14px">地球をいろいろな大きさに縮めた標本。天気の層は、どれも<b style="color:var(--shu);font-weight:400">半径の約1/640</b>。</div><div class="album" id="albumG"></div><div class="btns"><button class="tag red" id="bAlbumX">とじる</button></div></div></div>
 <div id="clear" class="ov hidden"><div class="sheet pop" style="width:min(94vw,600px)"><div class="cap" style="text-align:center">Finis — all plates engraved</div><div class="big">図版帳　完成</div><ul class="facts" id="clRec"></ul><div class="btns"><button class="tag red" id="bToTest">確認テストへ ▶</button><button class="tag sm" id="bAlbum2">縮尺図鑑</button><button class="tag sm zk" id="bBook2">📖 図鑑</button></div></div></div>
 <div id="test" class="hidden"><div class="sheet"><div style="display:flex;justify-content:space-between;align-items:baseline"><span class="cap">Examination</span><span id="tNo"></span></div><div id="tQ"></div><div id="tFig"></div><div id="tA"></div><div id="tFb"></div></div></div>
@@ -3896,7 +3914,7 @@ var ITEMS={
 };
 
 /* ================= セーブ ================= */
-function fresh(){return {v:1,name:'',next:0,plates:{},score:0,hits:0,pitari:0,streak:0,longest:0,sortOK:0,sortN:0,time:0,done:false,rules:0,boss:0,started:false}}
+function fresh(){return {v:1,name:'',next:0,plates:{},score:0,hits:0,pitari:0,streak:0,longest:0,sortOK:0,sortN:0,time:0,done:false,rules:0,boss:0,started:false,learn:{}}}
 var G=fresh();
 function load(){try{var s=JSON.parse(localStorage.getItem(SAVE)||'null');if(s&&s.v===1)return s}catch(e){}return null}
 function save(){if(SANDBOX)return;try{localStorage.setItem(SAVE,JSON.stringify(G))}catch(e){}}
@@ -4222,7 +4240,7 @@ function plateDone(){if(!S||S.phase!=='sort')return;S.phase='plate';AU.peelOff()
   updHud()}
 function nextStage(){if(SANDBOX){leaveSandbox();return}
   if(S&&S.practice&&TUTORING){TUTORING=false;Guide_&&Guide_.tutorialClear&&Guide_.tutorialClear()}
-  var n=S?S.i+1:G.next;if(n>=STAGES.length){finishMain();return}startStage(n)}
+  var n=S?S.i+1:G.next;if(n>=STAGES.length){finishMain();return}S=null;learnGate(n,function(){startStage(n)})}
 
 /* ================= 最後：縮尺の早見表（5連続） ================= */
 function startBoss(){state='play';if(window.BGM)BGM.mood('tense');showHud(true);hideBtns();S.boss={i:0,res:[],combo:0,t:0};bossNext()}
@@ -4302,7 +4320,7 @@ function draw(dt){
   ctx.save();ctx.translate(sx,sy);
   if(state==='title'||state==='clear'||state==='clearing')drawTitleArt();
   else if(state==='play'&&S)drawPlay();
-  else if(state==='test')drawTestBg();
+  else if(state==='test'||state==='learn')drawTestBg();
   /* 粒 */
   PT.forEach(function(p){var k=1-p.t/p.life;ctx.globalAlpha=clamp(k,0,1);ctx.fillStyle=p.col;
     if(p.k==='ink'){ctx.beginPath();ctx.arc(p.x,p.y,p.sz*k+.5,0,7);ctx.fill()}
@@ -4548,7 +4566,7 @@ function goList(){try{if(window.parent!==window){window.parent.postMessage({type
 function placeTitle(){var lg=$('logo'),tb=$('tBtns');
   if(PORT){lg.style.left='50%';lg.style.top='64px';lg.style.transform='translateX(-50%)';lg.style.width='92vw';tb.style.left='50%';tb.style.transform='translateX(-50%)';tb.style.bottom='18px';tb.style.top='';tb.style.width='min(86vw,380px)'}
   else{lg.style.left='56%';lg.style.top=Math.max(40,H*.1)+'px';lg.style.transform='';lg.style.width='40vw';tb.style.left='60%';tb.style.transform='';tb.style.top='';tb.style.bottom=Math.max(24,H*.08)+'px';tb.style.width='min(32vw,380px)'}}
-function toTitle(){state='title';S=null;SANDBOX=null;AU.peelOff();hideBtns();tip('');showHud(false);['plate','albumOv','clear','test','conf'].forEach(function(id){$(id).classList.add('hidden')});
+function toTitle(){state='title';S=null;SANDBOX=null;AU.peelOff();hideBtns();tip('');showHud(false);['plate','albumOv','clear','test','conf','learn'].forEach(function(id){$(id).classList.add('hidden')});
   $('title').classList.remove('hidden');var sv=load();$('bCont').classList.toggle('hidden',!(sv&&sv.started&&sv.next>0));$('bStart').textContent=sv&&sv.started?'はじめから':'はじめる';$('bStart').classList.add('pulse');
   $('bList').classList.toggle('hidden',!inHub());if(NAME){$('nameIn').value=NAME}if(window.PLAYER_NAME)$('nameBox').classList.add('hidden');zkVis();placeTitle();
   var lg=$('logo');lg.classList.remove('logoIn');void lg.offsetWidth;lg.classList.add('logoIn');TT=0;
@@ -4560,8 +4578,8 @@ function startGame(cont){AU.init();SFX.pen();NAME=($('nameIn').value||'').trim()
   if(!G.name)G.name=NAME;
   $('title').classList.add('hidden');
   if(cont&&G.done){showClear();return}
-  if(cont){startStage(Math.min(G.next,STAGES.length-1));return}
-  var go=function(){if(Guide_)runPractice();else startStage(0)};
+  if(cont){var ci=Math.min(G.next,STAGES.length-1);learnGate(ci,function(){startStage(ci)});return}
+  var go=function(){learnGate(0,function(){if(Guide_)runPractice();else startStage(0)})};
   if(Guide_)Guide_.intro(INTRO).then(go);else go()}
 var armed=false;
 $('bStart').onclick=function(){var sv=load();if(sv&&sv.started&&sv.next>0&&!armed){armed=true;$('bStart').textContent='もう一度おすと最初から';return}armed=false;startGame(false)};
@@ -4569,7 +4587,7 @@ $('bCont').onclick=function(){startGame(true)};
 $('bBook').onclick=function(){window.Zukan&&Zukan.openBook()};$('bBook2').onclick=function(){window.Zukan&&Zukan.openBook()};
 $('bAlbum').onclick=openAlbum;$('bAlbum2').onclick=openAlbum;
 $('bList').onclick=goList;
-$('bToTest').onclick=function(){$('clear').classList.add('hidden');startTest()};
+$('bToTest').onclick=function(){$('clear').classList.add('hidden');learnGate(99,startTest)};
 function sndUI(){['bSnd','bSndT'].forEach(function(id){$(id).classList.toggle('off',AU.mute)})}
 function togSnd(){AU.init();AU.mute=!AU.mute;if(AU.mute)AU.peelOff();sndUI();try{localStorage.setItem(MUTE,AU.mute?'1':'')}catch(e){}}
 $('bSnd').onclick=togSnd;$('bSndT').onclick=togSnd;
@@ -4602,6 +4620,67 @@ function finishTest(){var qs=TQ,review=Quiz.review(qs,TA),marks=review.map(funct
   SubmitCard.show({gameId:GID,grade:'chu2',koma:[KOMA],unit:'中2理科　気象とその変化　第30回',game:'地球りんごの皮むき ～大気の厚さ～'+(TEST?'（確認テストのみ）':''),
     name:nm,score:score,total:qs.length,marks:marks,records:recs,review:review},function(){if(TEST)startTest();else toTitle()})}
 
+
+/* ================= まなぶ（初めての人へ・2026-10-06 夜間改修） =================
+   使う前に教える札。at＝この番号の図版に入る前に出す（読んだ札は G.learn に記録） */
+var FIG_SOU='<svg viewBox="0 0 520 210" xmlns="http://www.w3.org/2000/svg" font-family="serif"><circle cx="100" cy="112" r="72" fill="#dfe9ee" stroke="#3B4B3A" stroke-width="1.4"/><circle cx="100" cy="112" r="73.3" fill="none" stroke="#7FA7C4" stroke-width="1.3"/><circle cx="100" cy="112" r="2.5" fill="#3B4B3A"/><line x1="100" y1="112" x2="172" y2="112" stroke="#C0392B" stroke-width="1.6"/><text x="136" y="104" font-size="12" fill="#C0392B" text-anchor="middle">半径 約6400km</text><text x="100" y="204" font-size="11.5" fill="#3B4B3A" text-anchor="middle">青い線の太さ＝天気の層</text>'+
+ '<line x1="250" y1="190" x2="505" y2="190" stroke="#3B4B3A" stroke-width="1.6"/><rect x="250" y="150" width="255" height="40" fill="#7FA7C4" opacity=".28"/><text x="258" y="166" font-size="12.5" fill="#2f5f86">天気の層（地上〜約10km）</text><text x="258" y="182" font-size="11" fill="#2f5f86">雲・雨・雪・かみなり・台風</text>'+
+ '<path d="M440 190 L462 168 L484 190 Z" fill="#C9A45C" stroke="#3B4B3A"/><text x="462" y="164" font-size="10.5" text-anchor="middle" fill="#3B4B3A">富士山 3776m</text><line x1="250" y1="150" x2="505" y2="150" stroke="#3B4B3A" stroke-dasharray="3 3"/><text x="505" y="146" font-size="11" text-anchor="end" fill="#3B4B3A">旅客機 約10km</text>'+
+ '<line x1="250" y1="96" x2="505" y2="96" stroke="#3B4B3A" stroke-dasharray="1 4"/><text x="258" y="91" font-size="12" fill="#3B4B3A">オーロラ・流れ星 約100km</text><line x1="250" y1="40" x2="505" y2="40" stroke="#3B4B3A" stroke-dasharray="1 4"/><text x="258" y="35" font-size="12" fill="#3B4B3A">宇宙ステーション 約400km</text><text x="505" y="208" font-size="10" text-anchor="end" fill="#5b6a58">（高さの目盛りはちぢめてかいた）</text></svg>';
+var FIG_KEISAN='<svg viewBox="0 0 520 190" xmlns="http://www.w3.org/2000/svg" font-family="serif"><circle cx="95" cy="88" r="62" fill="#E9B9A8" stroke="#3B4B3A" stroke-width="1.4"/><path d="M95 26 q4 -14 14 -18" fill="none" stroke="#3B4B3A" stroke-width="2"/><circle cx="95" cy="88" r="2.5" fill="#3B4B3A"/><line x1="95" y1="88" x2="157" y2="88" stroke="#C0392B" stroke-width="1.8"/><text x="126" y="80" font-size="12.5" fill="#C0392B" text-anchor="middle">半径 4cm</text><text x="126" y="104" font-size="12" fill="#C0392B" text-anchor="middle">＝40mm</text><line x1="33" y1="168" x2="157" y2="168" stroke="#3B4B3A"/><line x1="33" y1="162" x2="33" y2="174" stroke="#3B4B3A"/><line x1="157" y1="162" x2="157" y2="174" stroke="#3B4B3A"/><text x="95" y="185" font-size="12" text-anchor="middle" fill="#3B4B3A">直径 8cm（÷2 で半径）</text>'+
+ '<text x="200" y="40" font-size="14" fill="#3B4B3A">天気の層 ＝ 半径 × 10 ÷ 6400</text><text x="200" y="62" font-size="12" fill="#5b6a58">（地球の 10km と 6400km の割合をそのまま使う）</text><text x="200" y="100" font-size="17" fill="#3B4B3A">40mm × 10 ÷ 6400</text><text x="200" y="130" font-size="19" fill="#C0392B">＝ 0.0625mm</text><text x="200" y="156" font-size="12" fill="#5b6a58">髪の毛（約0.08mm）より細い。</text><text x="200" y="174" font-size="12" fill="#5b6a58">りんごの皮（約1mm）の十数分の1</text></svg>';
+var FIG_OOKII='<svg viewBox="0 0 520 180" xmlns="http://www.w3.org/2000/svg" font-family="serif"><circle cx="70" cy="95" r="36" fill="#dfe9ee" stroke="#7FA7C4" stroke-width="2"/><line x1="70" y1="95" x2="106" y2="95" stroke="#C0392B"/><text x="70" y="148" font-size="12" text-anchor="middle" fill="#3B4B3A">半径10cm</text><text x="70" y="166" font-size="12" text-anchor="middle" fill="#2f5f86">層 約0.16mm</text>'+
+ '<circle cx="200" cy="95" r="72" fill="#dfe9ee" stroke="#7FA7C4" stroke-width="4"/><line x1="200" y1="95" x2="272" y2="95" stroke="#C0392B"/><text x="200" y="88" font-size="12" text-anchor="middle" fill="#3B4B3A">半径20cm</text><text x="200" y="112" font-size="12" text-anchor="middle" fill="#2f5f86">層 約0.31mm</text><text x="135" y="20" font-size="13" fill="#C0392B" text-anchor="middle">半径2倍 → 層も2倍</text>'+
+ '<text x="300" y="44" font-size="13.5" fill="#3B4B3A">大きな標本は、単位をそろえる</text><text x="300" y="68" font-size="12.5" fill="#3B4B3A">1m ＝ 100cm</text><text x="300" y="96" font-size="12.5" fill="#3B4B3A">直径128m → 半径64m ＝ 6400cm</text><text x="300" y="122" font-size="14" fill="#3B4B3A">6400cm × 10 ÷ 6400</text><text x="300" y="148" font-size="16" fill="#C0392B">＝ 10cm</text><text x="300" y="170" font-size="11" fill="#5b6a58">（青い層は見えるよう太くかいた）</text></svg>';
+var LEARN=[
+ {id:'sou',at:0,cap:'Lectio I — まなぶ',t:'天気が起こるのは、地上から約10kmまで',fig:FIG_SOU,
+  lines:['地球の<b>半径</b>＝中心から表面までの長さ。約<b>6400km</b>（端から端までの<b>直径</b>は、その2倍の約12800km）',
+   '雲・雨・雪・かみなり・台風が起こるのは、地上から約<b>10km</b>まで。この部分を<b>天気の層</b>とよぶ',
+   '高さの目安：富士山 3776m・エベレスト 約8800m・旅客機 約10km（層のてっぺん近く）・オーロラや流れ星 約100km・宇宙ステーション 約400km',
+   'このゲームでは、地球をりんごやボールの大きさに縮めたら、天気の層が<b>どれくらいの厚さになるか</b>を予想する'],
+  q:'エベレストの山頂（約8800m）は、天気の層の中？外？',ch:['中','外'],ok:0,
+  hint:'天気の層は地上から約10km＝10000mまで。8800mはそれより高い？低い？',good:'そのとおり！ 8800mは10kmより低いので層の中。山頂にも雲がかかり、雪がふる。オーロラ（約100km）は層の外。'},
+ {id:'keisan',at:1,cap:'Lectio II — まなぶ',t:'縮めた地球の、天気の層の厚さを出す',fig:FIG_KEISAN,
+  lines:['地球の半径6400kmに対して、天気の層は10km。6400÷10＝640 なので、層は<b>半径の約1/640</b>。地球をどんな大きさに縮めても、この割合は変わらない',
+   'だから　<b>天気の層の厚さ ＝ 標本の半径 × 10 ÷ 6400</b>',
+   '気をつけること①：標本の大きさは<b>直径</b>で書いてある。先に<b>直径÷2＝半径</b>にする（直径のまま計算すると2倍になってまちがい）',
+   '気をつけること②：答えをmmで出すときは、半径を先にmmにする（1cm＝10mm）',
+   'やって見せる：さっきのりんごは直径8cm → 半径4cm＝40mm → 40×10÷6400＝<b>0.0625mm</b>'],
+  q:'地球を<b>直径16cm</b>の玉に縮めた。天気の層は何mm？',ch:['0.25mm','0.125mm','12.5mm','1.25mm'],ok:1,
+  hint:'直径16cm → 半径8cm＝80mm。80×10÷6400＝？',hints:{0:'それは直径16cm（160mm）をそのまま使った値。先に÷2で半径にしよう。'},
+  good:'正解！ 80×10÷6400＝0.125mm。つぎの図版からは、ものさしをこの計算で合わせてみよう。'},
+ {id:'ookii',at:5,cap:'Lectio III — まなぶ',t:'半径が2倍なら？ 大きな標本の単位は？',fig:FIG_OOKII,
+  lines:['層はいつも半径の1/640。だから<b>半径が2倍になると、層の厚さも2倍</b>（半径10cm → 約0.16mm、半径20cm → 約0.31mm）',
+   'メートルで書かれた大きな標本は、単位をそろえる：<b>1m＝100cm</b>。直径128mの球なら 半径64m＝6400cm → 6400×10÷6400＝<b>10cm</b>',
+   '地球の絵を正しい割合でかくと、天気の層は<b>輪郭の線とほとんど重なる</b>（それほど薄い）',
+   '旅客機がとぶ約10kmは、天気の層のてっぺんと同じ高さ。教室の地球儀（直径30cm）の上なら、表面からわずか約0.2mm上'],
+  q:'地球を<b>半径18cm</b>に縮めたときの天気の層は、<b>半径6cm</b>のときの何倍？',ch:['同じ','3倍','3分の1','9倍'],ok:1,
+  hint:'層＝半径×10÷6400。半径が3倍になると、答えはどうなる？',hints:{3:'9倍は3×3。層は半径に比例するので、半径が3倍なら層も3倍。'},good:'正解！ 半径に比例する。だから大きな標本ほど層は厚く（でも割合は1/640のまま）。'}
+];
+function lrec(){if(!G.learn)G.learn={};return G.learn}
+function lmd(t){return String(t)}
+function learnGate(at,fn){if(TEST){fn();return}var list=LEARN.filter(function(c){return c.at<=at&&!lrec()[c.id]});
+  (function nx(){var c=list.shift();if(!c){fn();return}showLearn(c,function(){lrec()[c.id]=1;save();nx()})})()}
+function lshuf(n){var a=[],i,j,t;for(i=0;i<n;i++)a.push(i);for(i=n-1;i>0;i--){j=Math.floor(Math.random()*(i+1));t=a[i];a[i]=a[j];a[j]=t}return a}
+/* 札は2枚に分ける：読む札（図と説明）→ やってみよう札（問いと選択肢）。ボタンは札の下に固定。答えを押しても札は作り直さない */
+function showLearn(c,done){state='learn';showHud(false);tip('');hideBtns();
+  var box=$('learnIn');$('learn').classList.remove('hidden');
+  function top(){box.scrollTop=0;box.parentNode.scrollTop=0}
+  function pageRead(){
+    box.innerHTML='<div class="cap">'+c.cap+'</div><h2>'+c.t+'</h2><div class="lfig">'+c.fig+'</div><ul class="lrn">'+c.lines.map(function(l){return '<li>'+l+'</li>'}).join('')+'</ul>'+
+     '<div class="btns lstk"><button class="tag red" id="lGo">やってみよう ▶</button></div>';
+    top();$('lGo').onclick=function(){AU.init();SFX.pen();pageTry()}}
+  function pageTry(){var solved=false;
+    box.innerHTML='<div class="cap">'+c.cap+'</div><h2 class="lsm">'+c.t+'</h2>'+
+     '<div class="ltry"><div class="lq">やってみよう：'+c.q+'</div><div class="lch" id="lCh"></div><div class="lfb" id="lFb"></div></div>'+
+     '<div class="btns lstk"><button class="tag" id="lBack">◀ 説明を見る</button><button class="tag red" id="lNext" disabled>つぎへ ▶</button></div>';
+    top();
+    lshuf(c.ch.length).forEach(function(i){var t=c.ch[i];var b=document.createElement('button');b.className='tag sm';b.textContent=t;b.onclick=function(){AU.init();if(solved)return;
+      if(i===c.ok){solved=true;b.classList.add('ok');SFX.good();vib(15);$('lFb').className='lfb';$('lFb').innerHTML=c.good;var n=$('lNext');n.disabled=false;n.classList.add('pulse')}
+      else{b.classList.add('ng');b.disabled=true;SFX.wrong();vib(30);$('lFb').className='lfb ng';$('lFb').innerHTML='ちがうよ。'+((c.hints&&c.hints[i])||c.hint)}};$('lCh').appendChild(b)});
+    $('lBack').onclick=function(){SFX.pen();pageRead()};
+    $('lNext').onclick=function(){if(!solved)return;SFX.pen();$('learn').classList.add('hidden');done()}}
+  SFX.pen();pageRead()}
 /* ================= 遊び方案内（Guide・ルール13） ================= */
 var Guide_=window.Guide||null,HELP=null,TUTORING=false;
 var INTRO={title:'第30回　地球りんごの皮むき',learn:'地球の大きさにくらべて、**天気が起こる空気の層はとても薄い**（半径 約6400km に対して 約10km）',
@@ -4639,7 +4718,7 @@ if(Guide_){
   HELP=Guide_.help({title:'地球りんごの皮むき',
     rules:['**ものさしをドラッグ**して、天気の層（空気の皮）の厚さを予想 → **封を長おし**','**つまみをドラッグ**して地球を縮め、標本の **点線の輪郭** に合わせる','**封をタップ**で答え合わせ。本当の値に近いほど大当たり','標本の **輪郭の線をなぞって** 皮むき。ルーペの **青い層** からはみ出すと皮がちぎれる','むけたら **空のもの** をドラッグで仕分け：天気の層の中？ 外？','天気の層 ＝ 地球の半径の **約1/640**（6400km に対して 約10km）'],
     onOpen:function(){PAUSED=true},onClose:function(){PAUSED=false},replay:'tutorial',mount:$('hudR'),size:44,attention:true,show:false});
-  Guide_.tutorialButton('#bHow',function(){AU.init();$('title').classList.add('hidden');runPractice(true)});
+  Guide_.tutorialButton('#bHow',function(){AU.init();$('title').classList.add('hidden');learnGate(0,function(){runPractice(true)})});
 }else{$('bHow').classList.add('hidden')}
 
 /* ================= 起動 ================= */
@@ -4652,7 +4731,6 @@ if(document.fonts&&document.fonts.load){Promise.all([document.fonts.load('20px "
 if(TEST){$('title').classList.add('hidden');startTest()}else toTitle();
 requestAnimationFrame(frame);
 /* 自動テスト用の読み取り口（ゲームの外からは使わない） */
-window.__UZ={get S(){return S},get G(){return G},get L(){return L},get state(){return state},rulerX:rulerX,zoomX:zoomX,earthR:function(){return earthR()},startStage:startStage,STAGES:STAGES,sortZones:sortZones};
 })();
 </script>
 <script>window.ZUKAN_COUNTER={"db": "https://rika-zukan-rank-default-rtdb.asia-southeast1.firebasedatabase.app", "id": "kisho-ususa-zoom"};

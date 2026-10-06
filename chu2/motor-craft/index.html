@@ -122,6 +122,31 @@ canvas#cv{position:fixed;inset:0;display:block;touch-action:none;user-select:non
 .keys{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;max-width:360px}
 .tEx{border-left:3px solid var(--w);padding:10px 14px;line-height:1.6;font-size:16px;background:rgba(6,11,16,.9)}
 #scrEnd{display:flex;align-items:center;justify-content:center;background:rgba(6,11,16,.55)}
+/* まなぶ（設計メモ）：用語と決まりを「その試作機の前」に教える（2026-10-06 初心者向け） */
+#scrLearn{z-index:40;display:flex;align-items:center;justify-content:center;background:rgba(6,11,16,.92);padding:max(64px,env(safe-area-inset-top)) 3vw 72px;overflow:auto}
+.lBox{width:min(720px,96vw);max-height:100%;overflow:auto;border:1.5px solid var(--g);background:rgba(6,11,16,.97);padding:clamp(14px,2.6vmin,26px);display:grid;gap:10px;position:relative}
+.lBox::before,.lBox::after{content:"";position:absolute;width:12px;height:12px;border:2px solid var(--w)}
+.lBox::before{left:-3px;top:-3px;border-right:0;border-bottom:0}.lBox::after{right:-3px;bottom:-3px;border-left:0;border-top:0}
+.lKick{font-family:'IBM Plex Mono',monospace;font-size:13px;letter-spacing:.18em;color:var(--g);opacity:.85}
+.lT{margin:0;font-weight:700;font-size:clamp(20px,3.4vmin,30px);color:var(--w);border-left:3px solid var(--g);padding-left:.45em}
+#lFig svg{display:block;width:100%;height:auto;max-height:32vh;border:1px dashed var(--gd)}
+#lP p{margin:4px 0;font-size:clamp(15px,2.2vmin,18px);line-height:1.75;color:var(--g)}
+#lP b,.lAsk b,.lWhy b{color:var(--w)}
+.lAsk{font-weight:700;color:var(--w);font-size:clamp(15px,2.2vmin,18px);line-height:1.6;border-top:1px dashed var(--g);padding-top:8px}
+.lOpts{display:grid;gap:8px}
+.lWhy{font-size:15px;line-height:1.6;min-height:1em}.lWhy .ng{color:#ff9d9d}
+.lFoot{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.lFoot span{font-family:'IBM Plex Mono';font-size:13px;opacity:.75}
+/* 第2周：札を画面の高さ（733・768）に収める。横長では「図と説明」と「やってみよう」を2列に */
+@media (orientation:landscape) and (min-width:900px){#scrLearn{padding:12px 2vw}
+ .lBox{width:min(1120px,96vw);grid-template-columns:minmax(0,1fr) minmax(0,1fr);column-gap:24px;align-content:start;align-items:start}
+ .lBox>.lKick,.lBox>.lT,.lBox>.lFoot{grid-column:1/-1}
+ .lBox.wf.wq #lFig{grid-column:1;grid-row:3}.lBox.wf.wq #lP{grid-column:1;grid-row:4}.lBox.wf.wq #lQ{grid-column:2;grid-row:3/span 2}
+ .lBox.wf:not(.wq) #lFig{grid-column:1;grid-row:3}.lBox.wf:not(.wq) #lP{grid-column:2;grid-row:3}
+ .lBox.wq:not(.wf) #lP{grid-column:1;grid-row:3}.lBox.wq:not(.wf) #lQ{grid-column:2;grid-row:3}
+ .lBox:not(.wf):not(.wq) #lP{grid-column:1/-1}
+ #lFig svg{max-height:40vh}.lBox.wq .lAsk{border-top:0;padding-top:0}#lQ{display:grid;gap:10px}}
+@media (max-height:820px){#lP p{font-size:15px;line-height:1.62;margin:2px 0}.lT{font-size:clamp(19px,3vmin,26px)}.lBox{gap:8px}}
 @media (prefers-reduced-motion:reduce){.wb.pri,.row.cur,.logo{animation:none}}
 </style>
 </head>
@@ -197,6 +222,15 @@ canvas#cv{position:fixed;inset:0;display:block;touch-action:none;user-select:non
  <div class="qBox"><b>もどりますか？</b><div id="bkSub">進み具合は保存されます。</div>
   <div class="cBtns"><button class="wb" id="bkNo">つづける</button><button class="wb pri" id="bkGo">もどる</button></div></div>
 </div>
+
+<div id="scrLearn" class="scr hidden"><div class="lBox">
+ <div class="lKick" id="lKick">DESIGN MEMO</div>
+ <h2 class="lT" id="lT"></h2>
+ <div id="lFig" class="hidden"></div>
+ <div id="lP"></div>
+ <div id="lQ"></div>
+ <div class="lFoot"><span id="lPg"></span><button class="wb pri" id="lNext">次へ</button></div>
+</div></div>
 
 <div id="ctl" class="hidden"></div>
 <div id="sealUI" class="hidden">
@@ -3935,7 +3969,7 @@ var scene='title',M=null,T=0,SHK=0,FL=0,PT=[],PU=[],TEL=null;
 function beEff(){return M.beta+(M.m<0?PI:0)}
 function torq(){return M.K*M.i*Math.cos(M.th-beEff())}
 function commSign(){var v=Math.sin(M.th+M.al-M.ga);if(Math.abs(v)<.05)return 0;return v>0?1:-1}
-function startStage(si){var S=ST[si];if(window.BGM)BGM.mood(S.mode==='manual'?'calm':'normal');
+function startStage0(si){var S=ST[si];if(window.BGM)BGM.mood(S.mode==='manual'?'calm':'normal');
  M={si:si,S:S,mode:S.mode,beta:S.beta||0,ga:S.gamma||0,al:S.al0||0,K:S.mode==='design'?24:10,L:S.L||1,c:.9,want:S.want||1,m:1,d:1,
   th:(S.beta||0)-.8,w:0,i:0,h:0,rev:0,ph:'ready',t:0,frozen:false,combo:0,maxCombo:0,perfect:0,good:0,late:0,bad:0,pushed:0,taps:0,tries:0,runT:0,okRun:false,
   trail:[],guideOn:!!S.guide,missStreak:0,msg:'',msgT:0,tut:!!S.tut,tutI:0,coaching:false,lastDir:0,hint:'',sealA:new Array(12).fill(0),sealB:new Array(12).fill(0),reason:-1,paint:null,newParts:[],time:0,autoT:0};
@@ -4243,7 +4277,8 @@ function showClear(st,prev,rec){var S=M.S,si=M.si;show('scrClear');$('ctl').clas
  $('cBtns').innerHTML=bt;[].slice.call($('cBtns').querySelectorAll('button')).forEach(function(b){b.onclick=function(){ac();var a=b.dataset.a;if(a==='map'){M=null;setScene('map')}else if(a==='again')startStage(si);else if(a==='next')startStage(Math.min(ST.length-1,si+1));else if(a==='test')toTest()}});
  SFX.fan();FL=.3;if(M.newParts.length)setTimeout(SFX.rare,500);
  if(st)st.forEach(function(v,i){setTimeout(function(){var e=$('st'+i);if(!e)return;e.classList.add(v?'on':'off');if(v){SFX.stamp();SHK=8;vib(30)}},700+i*520)})}
-function toTest(){var z=Zk();M=null;if(z&&z.mainClear&&!TEST){try{z.mainClear({onClose:startTest});return}catch(e){}}startTest()}
+function toTest(){M=null;toTestL(toTest1)}
+function toTest1(){var z=Zk();if(z&&z.mainClear&&!TEST){try{z.mainClear({onClose:startTest});return}catch(e){}}startTest()}
 
 var backFrom=null;
 $('bBack').onclick=function(){ac();if(scene==='title'){try{window.parent.postMessage({type:'rika-close-game'},'*')}catch(e){}return}
@@ -4257,7 +4292,7 @@ function openBook(){var z=Zk();if(z&&z.openBook)z.openBook()}
 $('bBook1').onclick=openBook;$('bBook2').onclick=openBook;$('eBook').onclick=openBook;$('bGacha').onclick=function(){var z=Zk();if(z&&z.openGacha)z.openGacha()};
 if(!Zk())['bBook1','bBook2','bGacha','eBook'].forEach(function(id){$(id).classList.add('hidden')});
 $('bParts').onclick=function(){renderParts();$('scrParts').classList.remove('hidden')};$('bPartsX').onclick=function(){$('scrParts').classList.add('hidden')};
-$('bToTest').onclick=function(){if(SV.done)startTest()};
+$('bToTest').onclick=function(){if(SV.done)toTestL(startTest)};
 function getName(){return(window.PLAYER_NAME||$('nameIn').value||SV.name||'').trim()}
 var LEARN='モーターは、コイルが **半回転するごとに電流の向きを切りかえる** から同じ向きに回り続ける（切りかえるのは、コイルの面が磁界と垂直になる所）';
 var HOW='コイルが縦（磁界と垂直）になった瞬間に **タップ** して電流を切りかえ、おもりを持ち上げる。4号からは **整流子** を設計する';
@@ -4268,7 +4303,7 @@ $('bHow').onclick=function(){ac();intro(function(){startStage(0)})};
 
 /* ================= 確認テスト ================= */
 var TQ=[],TI=0,TA=[],TOK=[],CARD=null;
-function startTest(){setScene('test');M=null;TQ=window.Quiz?Quiz.test():[];TI=0;TA=[];TOK=[];$('scrTest').scrollTop=0;showQ()}
+function startTest(){if(!TEST&&needL(99).length){toTestL(startTest);return}setScene('test');M=null;TQ=window.Quiz?Quiz.test():[];TI=0;TA=[];TOK=[];$('scrTest').scrollTop=0;showQ()}
 function lamps(){$('tLamps').innerHTML=TQ.map(function(q,i){return '<i class="'+(i<TOK.length?(TOK[i]?'ok':'ng'):i===TI?'cur':'')+'"></i>'}).join('')}
 function showQ(){if(TI>=TQ.length)return finishTest();var q=TQ[TI];$('tNo').textContent='性能テスト（確認テスト） 第'+(TI+1)+'問 ／ '+TQ.length;lamps();
  $('tQ').textContent=q.q;var f=$('tFig');if(q.fig){f.innerHTML=q.fig;f.classList.remove('hidden')}else{f.innerHTML='';f.classList.add('hidden')}
@@ -4297,6 +4332,70 @@ function finishTest(){var qs=TQ,answers=TA;var review=window.Quiz?Quiz.review(qs
 $('eCard').onclick=function(){if(CARD&&window.SubmitCard)SubmitCard.reopen(CARD)};
 $('eMap').onclick=function(){if(TEST)setScene('title');else setScene('map')};
 
+/* ================= まなぶ（設計メモ）：用語と決まりを「その試作機の前」に教える（2026-10-06 初心者向け） ================= */
+var LRN=null;
+function shuf(a){for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1)),t=a[i];a[i]=a[j];a[j]=t}return a}
+function fmtL(t){return esc(t).replace(/\*\*(.+?)\*\*/g,'<b>$1</b>')}
+function svgW(inner,vb){return '<svg viewBox="'+(vb||'0 0 400 170')+'" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="#7CFF6B" stroke-width="2" font-family="IBM Plex Sans JP,sans-serif" font-weight="700">'+inner+'</svg>'}
+function arr(x1,y1,x2,y2,col){var a=Math.atan2(y2-y1,x2-x1),h=10;return '<path d="M'+x1+' '+y1+' L'+x2+' '+y2+'" stroke="'+(col||'#fff')+'" stroke-width="3"/><path d="M'+x2+' '+y2+' L'+(x2-h*Math.cos(a-.45)).toFixed(1)+' '+(y2-h*Math.sin(a-.45)).toFixed(1)+' L'+(x2-h*Math.cos(a+.45)).toFixed(1)+' '+(y2-h*Math.sin(a+.45)).toFixed(1)+'Z" fill="'+(col||'#fff')+'" stroke="none"/>'}
+function tx(t,x,y,col,sz,anc){return '<text x="'+x+'" y="'+y+'" fill="'+(col||'#7CFF6B')+'" stroke="none" font-size="'+(sz||15)+'" text-anchor="'+(anc||'middle')+'">'+t+'</text>'}
+function magLR(top){var y=top||45;return '<rect x="20" y="'+y+'" width="60" height="80"/><rect x="320" y="'+y+'" width="60" height="80"/>'+tx('N',50,y+48,'#fff',26)+tx('S',350,y+48,'#7CFF6B',26)+'<path d="M84 '+(y+20)+' H316 M84 '+(y+60)+' H316" stroke-dasharray="6 6" opacity=".55"/>'+arr(290,y+20,312,y+20,'#7CFF6B')+arr(290,y+60,312,y+60,'#7CFF6B')}
+var LC={
+ base:{k:'DESIGN MEMO 01　はじめての人へ',p:[
+  {t:'電流と磁界',fig:svgW(magLR(40)+tx('磁界の向き（N極 → S極）',200,30,'#7CFF6B',14)+'<path d="M150 150 H250" stroke="#fff"/>'+arr(170,150,235,150,'#fff')+tx('電流',275,155,'#fff',14,'start')),
+   p:'**電流**＝回路を流れる電気の流れ。電池の **＋極から出て −極へ** もどる向きに流れる。\n**磁界**＝磁石の力がはたらく空間。向きは **N極からS極へ**（点線の矢印）。\nこのモニターでは、左右（または上下）の箱が磁石、点線が磁界、白い粒が電流。'},
+  {t:'磁界の中の電流は、力を受ける',fig:svgW(magLR(30)+'<path d="M150 70 H250" stroke="#7CFF6B" stroke-width="3" stroke-dasharray="3 4"/><circle cx="150" cy="70" r="11" stroke="#fff" fill="#060B10"/><circle cx="150" cy="70" r="3" fill="#fff" stroke="none"/><circle cx="250" cy="70" r="11" stroke="#fff" fill="#060B10"/><path d="M243 63 L257 77 M257 63 L243 77" stroke="#fff"/>'+tx('辺ア',128,95,'#fff',14)+tx('辺イ',272,95,'#fff',14)+arr(150,56,150,16,'#fff')+arr(250,84,250,124,'#fff')+tx('力↑',178,24,'#fff',13)+tx('力↓',222,124,'#fff',13)+tx('コイルを軸の方向から見た図　⊙電流が手前へ　⊗電流が奥へ',200,160,'#7CFF6B',12)),
+   p:'磁界の中の導線に電流を流すと、導線は **力を受けて動く**（前の回の「ブランコ」と同じ）。\n**コイル**＝導線を何回も巻いた輪。コイルの **辺アと辺イでは電流の向きが逆** なので、受ける力も **逆向き**（片方が上なら、もう片方は下）。\nだから、コイルは軸のまわりを **回り始める**。',
+   q:{ask:'辺アが **下向き** の力を受けた。辺イが受ける力は？',c:['上向き','下向き','力を受けない'],why:'辺アと辺イは電流が逆向きなので、力も逆向き。だからコイルが回る。',hint:'辺アと辺イでは、電流の向きが逆だったね。'}},
+  {t:'なぜ「切りかえ」がいるの？',fig:svgW(magLR(30)+'<path d="M200 25 V135" stroke="#7CFF6B" stroke-width="4"/>'+'<path d="M200 10 V150" stroke="#fff" stroke-dasharray="4 6"/>'+tx('コイルが縦＝面が磁界と垂直',205,165,'#fff',13)+tx('ここを過ぎると',120,20,'#7CFF6B',12)+tx('力が逆向きに',120,36,'#7CFF6B',12)),
+   p:'コイルが半回転して **縦**（コイルの面が **磁界と垂直**）になる所を過ぎると、力が回転を **押し戻す向き** にはたらく。\n電流の向きがずっと同じだと、コイルは **行ったり来たりして止まる**。\nそこで **半回転ごとに電流の向きを切りかえる**。すると力がいつも回る向きにはたらき、**同じ向きに回り続ける**。これがモーター。',
+   q:{ask:'コイルが縦（面が磁界と垂直）を **過ぎた** あと、電流の向きを **そのまま** にしておくと、力はどうはたらく？',c:['回転を押し戻す向き','回転を助ける向き','力がなくなる'],why:'縦を過ぎると力が逆にはたらき、押し戻される。だから、そこで電流を切りかえる。',hint:'説明の1行目。縦を過ぎると、力はどっち向きになった？'},last:'ならし運転へ ▶'}
+ ]},
+ ud:{k:'DESIGN MEMO 02　磁石が上下の機体',p:[
+  {t:'磁石が上下なら、切りかえ点は「横」',fig:svgW('<rect x="150" y="5" width="100" height="34"/><rect x="150" y="131" width="100" height="34"/>'+tx('N',200,30,'#fff',22)+tx('S',200,156,'#7CFF6B',22)+'<path d="M180 42 V128 M220 42 V128" stroke-dasharray="6 6" opacity=".55"/>'+arr(180,110,180,126,'#7CFF6B')+arr(220,110,220,126,'#7CFF6B')+'<path d="M120 85 H280" stroke="#fff" stroke-width="4"/>'+tx('コイルが横',288,72,'#fff',13,'start')+tx('＝面が磁界と垂直',288,90,'#fff',12,'start')),
+   p:'磁石を上下に置くと、**磁界は上下向き**。\nすると、コイルの面が磁界と垂直になるのは、コイルが **横（水平）** になったとき。\n切りかえる所は「縦」と決まっているのではなく、いつも「**コイルの面が磁界と垂直**」になる所。',
+   q:{ask:'磁石が上下にある機体で、コイルが **縦に立っている** とき。コイルの面と磁界の関係は？',c:['平行（ここでは切りかえない）','垂直（ここで切りかえる）','どちらでもない'],why:'磁界は上下向き。縦に立った面は磁界と同じ向き＝平行。切りかえるのは横（水平）のとき。',hint:'磁界の向きは上下。縦に立った面は、その向きと同じ？ちがう？'}}
+ ]},
+ rev:{k:'DESIGN MEMO 03　回る向きの注文',p:[
+  {t:'逆に回すには「どちらか1つ」を逆に',p:'コイルが受ける力の向きは、**電流の向き** と **磁界の向き**（磁石のN極・S極）で決まる。\n・電流の向き（電池の向き）だけを逆 → **逆回り**\n・磁石のN極とS極だけを入れかえる → **逆回り**\n・**両方とも逆** → 逆の逆で **もとと同じ向き**',
+   q:{ask:'電池の向きを逆にしたら、逆向きに回った。そこへさらに **磁石のN極とS極も入れかえる** と？',c:['もとの向きにもどる','逆向きのまま','回らなくなる'],why:'電池で1回逆、磁石でもう1回逆。逆の逆で、もとの向きにもどる。',hint:'「逆」を2回すると、どうなる？'}}
+ ]},
+ comm:{k:'DESIGN MEMO 04　自動で切りかえる部品',p:[
+  {t:'整流子とブラシ',fig:svgW('<path d="M140 85 A60 60 0 0 1 260 85" stroke="#fff" stroke-width="10"/><path d="M262 95 A60 60 0 0 1 138 95" stroke="#7CFF6B" stroke-width="10"/>'+'<circle cx="200" cy="90" r="5" fill="#7CFF6B"/>'+'<rect x="40" y="78" width="80" height="24" stroke="#fff"/><rect x="280" y="78" width="80" height="24" stroke="#fff"/>'+tx('ブラシ',80,120,'#fff',12)+tx('止まっている',80,136,'#fff',11)+tx('ブラシ',320,120,'#fff',12)+tx('止まっている',320,136,'#fff',11)+tx('整流子（軸と回る・切れ目が2つ）',200,20,'#7CFF6B',13)+tx('切れ目',132,70,'#fff',12,'end')+tx('切れ目',268,70,'#fff',12,'start')),
+   p:'手でタップする代わりに、部品が自動で切りかえる。\n**整流子**＝軸といっしょに回る、**切れ目の入った輪**。半回転ごとに、コイルにつながる側が入れかわる。\n**ブラシ**＝**止まったまま**、回る整流子にこすれながら接して、**コイルに電流を送りこむ**。\nこの2つで、**半回転ごとにコイルの電流の向きが切りかわる**。整流子が無いと、コイルは半回転ほどで行ったり来たりして止まる。\n4号では、輪をドラッグして **切れ目の向き** を決め、試運転する。',
+   q:{ask:'モーターが回っている間、ブラシはどうしている？',c:['止まったまま、回る整流子にふれている','コイルといっしょに回っている','半回転ごとにはずれて休んでいる'],why:'ブラシは止まったまま、回る整流子にこすれながら接して、コイルに電流を送り続ける。',hint:'ブラシは「止まったまま」の部品だったね。'},last:'4号の設計へ ▶'}
+ ]},
+ power:{k:'DESIGN MEMO 05　もっと強く・身のまわりのモーター',p:[
+  {t:'速く・力強く回すには',p:'コイルが受ける力を大きくすれば、モーターは速く・力強く回る。\n・**コイルに流れる電流を大きくする**（電池を増やす など）\n・**磁石を強くする**\n・コイルの **巻数を多くする**\n電流の **向き** を変えても回る向きが変わるだけで、速くはならない。',
+   q:{ask:'モーターを **もっと力強く** したい。役に **立たない** のはどれ？',c:['電池の向きを逆にする','コイルの巻数を多くする','磁石を強いものにかえる'],why:'向きを逆にすると、回る向きが変わるだけ。力を大きくするのは、電流・磁石の強さ・巻数。',hint:'3つのうち、「向き」を変えるだけのものは？'}},
+  {t:'モーターのしくみ（順番）と、身のまわりのモーター',p:'① コイルに電流が流れる → ② 磁界の中の辺が力を受けて回り始める → ③ コイルの面が磁界と垂直になる位置まで回る → ④ 整流子とブラシで電流の向きが切りかわる → ⑤ また同じ向きに押されて回り続ける（①〜⑤のくり返し）\n**モーター＝電流で回る装置**。扇風機・洗濯機・電気自動車・ドライヤーの羽根 などで使われている。\n電気ストーブ（熱）・白熱電球（光）は、電気を熱や光に変える道具で、モーターではない。',
+   q:{ask:'モーターが **使われていない** 道具はどれ？',c:['電気ポット','洗濯機','電気自動車'],why:'電気ポットは電気を熱に変えてお湯をわかす道具。回る部分が無いので、モーターは使っていない。',hint:'回る部分があるのはどれ？ 無いのはどれ？'}}
+ ]},
+ enamel:{k:'DESIGN MEMO 06　製作用の設計図の前に',p:[
+  {t:'エナメル線とクリップモーター',fig:svgW('<path d="M20 85 H380" stroke="#2c5a2a" stroke-width="16"/><path d="M270 85 H380" stroke="#fff" stroke-width="16"/>'+tx('エナメル（電気を通さない膜）',140,60,'#7CFF6B',13)+tx('けずった所（銅が出る）',325,60,'#fff',13)+tx('ここがクリップにふれた時だけ、電流が流れる',200,130,'#fff',13)),
+   p:'クリップモーターは、**エナメル線** でコイルを作り、両端をクリップにのせて回す。\n**エナメルは電気を通さない膜**。紙やすりで **けずった所だけ** 電流が流れる（けずった所がクリップにふれている間だけ流れる）。\nクリップモーターには整流子が無い。**どこをけずるか** で、電流が流れるタイミングが決まる。\nこれから、端A・端Bの **どこをけずるか** を予想して封印する。答えは製作の実験で確かめる。',
+   q:{ask:'エナメル線の端を **けずらずに** クリップにのせた。どうなる？',c:['電流が流れず、回らない','よく回る','逆向きに回る'],why:'エナメルは電気を通さない膜。けずらないと、クリップから電流が入らない。',hint:'エナメルは電気を通す？ 通さない？'},last:'設計図へ ▶'}
+ ]}
+};
+var LAT=[[0,'base'],[1,'base'],[2,'ud'],[3,'rev'],[4,'comm'],[5,'power'],[8,'enamel']];
+function needL(upto){if(!SV.lrn)SV.lrn={};var out=[];LAT.forEach(function(a){if(a[0]<=upto&&!SV.lrn[a[1]]&&out.indexOf(a[1])<0)out.push(a[1])});return out}
+function teachKeys(keys,done){if(TEST||!keys.length){done();return}var pages=[];keys.forEach(function(k){LC[k].p.forEach(function(pg){pages.push({pg:pg,k:LC[k].k,key:k})})});
+ LRN={p:pages,i:0,done:function(){keys.forEach(function(k){SV.lrn[k]=1});save();done()}};var G=Gd();if(G){var hp=G.help();if(hp)hp.hide()}showLearn()}
+function showLearn(){var L=LRN,it=L.p[L.i],pg=it.pg;$('scrLearn').classList.remove('hidden');$('lKick').textContent=it.k;$('lT').textContent=pg.t;
+ var bx0=document.querySelector('#scrLearn .lBox');if(bx0){bx0.classList.toggle('wf',!!pg.fig);bx0.classList.toggle('wq',!!pg.q)}
+ var f=$('lFig');if(pg.fig){f.innerHTML=pg.fig;f.classList.remove('hidden')}else{f.innerHTML='';f.classList.add('hidden')}
+ $('lP').innerHTML=pg.p.split('\n').map(function(x){return '<p>'+fmtL(x)+'</p>'}).join('');
+ var q=$('lQ'),nb=$('lNext');q.innerHTML='';nb.textContent=L.i+1>=L.p.length?(pg.last||'わかった ▶'):'次へ ▶';$('lPg').textContent=L.p.length>1?(L.i+1)+' / '+L.p.length:'';
+ if(pg.q){var qq=pg.q;nb.classList.add('hidden');q.innerHTML='<div class="lAsk">やってみよう：'+fmtL(qq.ask)+'</div><div class="lOpts"></div><div class="lWhy"></div>';var box=q.querySelector('.lOpts'),wy=q.querySelector('.lWhy');
+  shuf(qq.c.map(function(t,i){return{t:t,ok:i===0}})).forEach(function(o){var b=document.createElement('button');b.className='chip';b.textContent=o.t;
+   b.onclick=function(){ac();if(o.ok){SFX.flick(6,'P');[].forEach.call(box.children,function(x){x.disabled=true});b.classList.add('on');wy.innerHTML='<b>そのとおり。</b>'+fmtL(qq.why);nb.classList.remove('hidden');setTimeout(function(){try{nb.scrollIntoView({behavior:RM?'auto':'smooth',block:'nearest'})}catch(e){}},60)}
+    else{SFX.bad();b.disabled=true;b.style.opacity='.4';wy.innerHTML='<b class="ng">ちがう。</b>'+fmtL(qq.hint||'もう一度、上の説明を読んでみよう');try{wy.scrollIntoView({block:'nearest'})}catch(e){}}};box.appendChild(b)})}
+ else nb.classList.remove('hidden');
+ var bx=document.querySelector('#scrLearn .lBox');if(bx)bx.scrollTop=0}
+$('lNext').onclick=function(){ac();var L=LRN;if(!L)return;L.i++;if(L.i>=L.p.length){$('scrLearn').classList.add('hidden');LRN=null;SFX.click();if(L.done)L.done();return}SFX.click();showLearn()};
+function startStage(si){var ks=needL(si);if(!ks.length){startStage0(si);return}teachKeys(ks,function(){startStage0(si)})}
+function toTestL(go){var ks=needL(99);teachKeys(ks,go)}
+
 /* ================= はじまり ================= */
 var auto={on:false};
 setInterval(function(){/* 自動操作（画面確認用） */if(!auto.on||!M||scene!=='play')return;
@@ -4305,14 +4404,13 @@ setInterval(function(){/* 自動操作（画面確認用） */if(!auto.on||!M||s
 addEventListener('resize',resize);resize();
 window.Zukan&&Zukan.setup&&Zukan.setup({game:GID,koma:[KOMA]});
 var G0=Gd();if(G0){G0.setup({theme:TH,learn:LEARN,how:HOW,title:'まわれ！手づくりモーター',muted:function(){return muted}});
- G0.help({learn:LEARN,how:HOW,theme:TH,show:false,rules:['磁界の中のコイルの辺は、電流が流れると力を受ける','コイルの面が **磁界と垂直** になる所を過ぎると、力は回転と **逆向き** にはたらく','だから **半回転ごと** に電流の向きを切りかえる（早すぎ・遅すぎは押し戻される）','磁石が上下にあるときは、コイルが **横** のときに磁界と垂直','回る向きを逆にするには、**電流か磁石のどちらか1つ** を逆にする（両方逆は元のまま）','**整流子**（切れ目のある輪）と **ブラシ** が、半回転ごとに自動で切りかえる','最後の設計図は **予想**。答えは製作の実験で確かめる'],
+ G0.help({learn:LEARN,how:HOW,theme:TH,show:false,rules:['磁界の中のコイルの辺は、電流が流れると力を受ける','コイルの面が **磁界と垂直** になる所を過ぎると、力は回転と **逆向き** にはたらく','だから **半回転ごと** に電流の向きを切りかえる（早すぎ・遅すぎは押し戻される）','磁石が上下にあるときは、コイルが **横** のときに磁界と垂直','回る向きを逆にするには、**電流か磁石のどちらか1つ** を逆にする（両方逆は元のまま）','**整流子**（切れ目のある輪）と **ブラシ** が、半回転ごとに自動で切りかえる','速く回すには **電流を大きく**・磁石を強く・巻数を多く','**エナメル** は電気を通さない膜。けずった所だけ電流が流れる','最後の設計図は **予想**。答えは製作の実験で確かめる'],
   onOpen:function(){if(M)M.paused=true},onClose:function(){if(M)M.paused=false}})}
 if(window.PLAYER_NAME){$('nameIn').value=window.PLAYER_NAME;$('nmRow').classList.add('hidden')}else if(SV.name)$('nameIn').value=SV.name;
 if(!SV.tut&&!Object.keys(SV.stars).length)$('bCont').classList.add('hidden');
 document.addEventListener('visibilitychange',function(){if(document.hidden&&M)M.paused=true;else if(M&&$('scrBackQ').classList.contains('hidden'))M.paused=false});
 if(TEST)startTest();else setScene('title');
 requestAnimationFrame(frame);
-window.__MC={scene:function(){return scene},M:function(){return M},start:startStage,auto:auto,SV:function(){return SV},tap:tap};
 })();
 </script>
 <script>window.ZUKAN_COUNTER={"db": "https://rika-zukan-rank-default-rtdb.asia-southeast1.firebasedatabase.app", "id": "motor-craft"};

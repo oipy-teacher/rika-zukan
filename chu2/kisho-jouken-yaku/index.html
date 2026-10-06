@@ -106,6 +106,13 @@ html,body{margin:0;height:100%;background:#8e949b;overflow:hidden;font-family:va
 .numrow input{flex:1;min-width:0;font:600 22px var(--fb);padding:8px;background:transparent;color:var(--blue);border:0;border-bottom:3px solid var(--blue);user-select:text;-webkit-user-select:text}
 .ord{display:flex;flex-direction:column;gap:6px;margin:10px 0}.ord div{padding:6px 10px;border-left:5px solid var(--red);font-weight:600}
 .small{font-size:14px;color:#51607a;margin-top:6px}
+.lfig{margin:8px 0;text-align:center}.lfig svg{width:100%;max-width:560px;height:auto;max-height:27vh}
+.lsteps{margin:6px auto;padding-left:1.8em;text-align:left;max-width:560px}.lsteps li{margin:3px 0}
+.ltab{width:100%;border-collapse:collapse;margin:6px 0;font-size:14px;background:rgba(250,250,248,.92)}.ltab td:first-child{min-width:8.5em}.ltab b{color:var(--red)}.ltab td,.ltab th{border:2px solid var(--blue);padding:4px 6px;text-align:left;vertical-align:top}.ltab th{font-family:var(--fh);font-weight:400;color:var(--red)}
+.lq{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:6px}.lq .mk.ok{border-color:var(--grn);color:var(--grn);background:rgba(31,138,76,.12)}.lq .mk.ng{opacity:.5}
+.lres{min-height:22px;margin-top:6px;text-align:center;scroll-margin-bottom:90px}
+.lbar{position:sticky;bottom:-10px;display:flex;gap:10px;justify-content:center;align-items:center;margin:10px -8px -10px;padding:10px 8px 12px;background:#FAFAF8;border-top:2px dashed rgba(28,61,122,.35);z-index:2}.lbar .mk.f{min-width:min(60vw,300px)}
+
 #backDlg{z-index:2147482640}
 .stars2{font-family:var(--fh);font-size:40px;letter-spacing:8px;color:#D7263D;margin:4px 0}
 .stars2 i{font-style:normal;display:inline-block;opacity:0;transform:scale(2.6) rotate(-24deg)}
@@ -3914,7 +3921,7 @@ function startSess(i,take,tut){const D=SESS[i];ac();if(window.BGM)BGM.mood('norm
  if(!tut)window.Tekitou&&Tekitou.shown();
  MODE='play';show([]);$('#bBack').classList.remove('hidden');layout();backBtn();
  if(tut){S.rules.sawMulti=1;G.phase='mix';msg('赤いランプ＝A・Bで<b>ちがう所</b>。変えるのは <b>ピストン</b> だけ')}
- else if(D.boss)openBossTake();else openIntro()}
+ else lessonGate(()=>{if(!G||G.D!==D)return;if(D.boss)openBossTake();else openIntro()})}
 function isLocked(side,k){return G.lock&&G.lock[side]===k}
 
 /* ===== 幾何（フェーダーの位置） ===== */
@@ -4021,9 +4028,10 @@ function doSeal(){const slots={};BTG.forEach(t=>{if(S.boss[t])slots[t]=S.boss[t]
  S.sealed=true;S.seal=rec;S.cleared=true;S.next=NS;S.stars[BOSS]=3;save();sfx.seal();
  try{window.Zukan&&Zukan.earn(10,'predict',{x:W/2,y:H/2});window.Zukan&&Zukan.earn(100,'boss',{id:GID,x:W/2,y:H/2})}catch(e){}
  G=null;const go=()=>clearScreen();if(!S.mainDone&&window.Zukan&&Zukan.mainClear){S.mainDone=1;save();try{Zukan.mainClear({onClose:go})}catch(e){go()}}else go()}
-function clearScreen(){MODE='map';show(['ov']);backBtn();
- ov('<span class="tag">ALL TAKES</span><h2>収録おつかれさま！</h2><p style="text-align:center">計画書 <b>'+S.sheets.length+'</b> 枚／決めテイク <b>'+S.kime+'</b>／NGテイク <b>'+S.ng+'</b>／プレイ時間 <b>'+fmtT(S.t)+'</b></p><p>雲ができる条件を確かめるには、<b>変える条件を1つだけ</b>にして、ほかはそろえた2つを比べる。予想は封印した。本物の実験で開けよう。</p><div class="col"><button class="mk r f" id="eTest">📝 確認テストへ</button><button class="mk s zk" id="eBook">📖 図鑑</button><button class="mk s" id="eMap">トラックシートへ</button></div>');
- $('#eTest').onclick=()=>startTest();$('#eBook').onclick=openBook;$('#eMap').onclick=()=>toMap();zkButtons()}
+function clearScreen(){if(!(S.ls&&S.ls.ans)){MODE='map';backBtn();return answerShow(clearScreen0)}clearScreen0()}
+function clearScreen0(){MODE='map';show(['ov']);backBtn();
+ ov('<span class="tag">ALL TAKES</span><h2>収録おつかれさま！</h2><p style="text-align:center">計画書 <b>'+S.sheets.length+'</b> 枚／決めテイク <b>'+S.kime+'</b>／NGテイク <b>'+S.ng+'</b>／プレイ時間 <b>'+fmtT(S.t)+'</b></p><p>雲ができる条件を確かめるには、<b>変える条件を1つだけ</b>にして、ほかはそろえた2つを比べる。予想は封印した。本物の実験で開けよう。</p><div class="col"><button class="mk r f" id="eTest">📝 確認テストへ</button><button class="mk s" id="eAns">🔓 答え合わせをもう一度</button><button class="mk s zk" id="eBook">📖 図鑑</button><button class="mk s" id="eMap">トラックシートへ</button></div>');
+ $('#eTest').onclick=()=>startTest();$('#eAns').onclick=()=>answerShow(clearScreen0);$('#eBook').onclick=openBook;$('#eMap').onclick=()=>toMap();zkButtons()}
 
 /* ===== メッセージ ===== */
 function msg(h,o){o=o||{};const m=$('#msg');m.classList.remove('hidden');let b='';
@@ -4175,8 +4183,8 @@ function zkButtons(){const has=!!(window.Zukan&&Zukan.openBook);document.querySe
 function toMap(){tutStop();MODE='map';G=null;show(['map']);backBtn();
  $('#trk').innerHTML=SESS.map((D,i)=>{const lock=i>S.next,st=S.stars[i]||0,cur=i===S.next&&!S.cleared;return '<button '+(lock?'disabled':'')+' class="'+(cur?'now':'')+'" data-i="'+i+'"><b>'+(D.boss?'本番':'SESSION '+(i+1))+'　'+D.n+'</b>'+(D.boss?'4つの計画と予想':esc(QS[D.tgt]).slice(0,18)+'…')+' <span class="st">'+(i<S.next||S.cleared?'★'.repeat(st)+'☆'.repeat(3-st):cur?'▶':'')+'</span></button>'}).join('');
  $('#trk').onclick=e=>{const b=e.target.closest('button[data-i]');if(!b)return;sfx.tap();startSess(+b.dataset.i)};
- $('#mapBtns').innerHTML=(S.cleared?'<button class="mk r f" id="mTest">📝 確認テストへ</button>':'<button class="mk r f" id="mGo">▶ '+(S.next>=BOSS?'本番へ':'SESSION '+(S.next+1)+'へ')+'</button>')+'<button class="mk s zk" id="mBook">📖 図鑑</button><button class="mk s zk" id="mGacha">✦ ガチャ</button>';
- if($('#mGo'))$('#mGo').onclick=()=>{sfx.tap();startSess(Math.min(S.next,BOSS))};if($('#mTest'))$('#mTest').onclick=()=>startTest();$('#mBook').onclick=openBook;$('#mGacha').onclick=openGacha;zkButtons();
+ $('#mapBtns').innerHTML=(S.cleared?(S.ls&&S.ls.ans?'<button class="mk r f" id="mTest">📝 確認テストへ</button>':'<button class="mk r f" id="mTest">🔓 答え合わせへ</button>'):'<button class="mk r f" id="mGo">▶ '+(S.next>=BOSS?'本番へ':'SESSION '+(S.next+1)+'へ')+'</button>')+'<button class="mk s zk" id="mBook">📖 図鑑</button><button class="mk s zk" id="mGacha">✦ ガチャ</button>';
+ if($('#mGo'))$('#mGo').onclick=()=>{sfx.tap();startSess(Math.min(S.next,BOSS))};if($('#mTest'))$('#mTest').onclick=()=>{sfx.tap();startTest()};$('#mBook').onclick=openBook;$('#mGacha').onclick=openGacha;zkButtons();
  $('#sheets').innerHTML=S.sheets.length?S.sheets.map((s,i)=>'<i class="'+(s.kime?'k':'')+'" style="--r:'+((i*37%9)-4)+'deg">'+(s.kime?'★決め':'OK')+'<br>'+F[s.tgt].q+'</i>').join(''):'<span class="small">まだない</span>'}
 function ov(html){show(['ov']);$('#ovBox').innerHTML=html;$('#ovBox').scrollTop=0}
 function openIntro(){const D=G.D;
@@ -4190,7 +4198,7 @@ function fmtT(t){t=Math.round(t);return Math.floor(t/60)+'分'+String(t%60).padS
 
 /* ===== 確認テスト ===== */
 let TS=null;function playerName(){return window.PLAYER_NAME||S.name||''}
-function startTest(){if(!window.Quiz)return;MODE='test';G=null;TS={qs:Quiz.test(),i:0,ans:[]};show(['test']);backBtn();renderQ()}
+function startTest(){if(!window.Quiz)return;if(!TEST_ONLY){const L=['a','b'].filter(id=>!(S.ls&&S.ls[id]));if(L.length)return lessonShowJ(L,startTest);if(S.sealed&&!(S.ls&&S.ls.ans))return answerShow(startTest)}MODE='test';G=null;TS={qs:Quiz.test(),i:0,ans:[]};show(['test']);backBtn();renderQ()}
 function renderQ(){const q=TS.qs[TS.i],box=$('#tbox');
  box.innerHTML='<div class="tno">確認テスト　第'+(TS.i+1)+'問 / '+TS.qs.length+'</div><div class="prog">'+TS.qs.map((_,i)=>'<i class="'+(i<TS.i?'on':'')+'"></i>').join('')+'</div><div class="tq">'+q.q+'</div>'+(q.fig?'<div class="fig2">'+q.fig+'</div>':'')+'<div id="ta"></div>';
  const ta=$('#ta');
@@ -4232,6 +4240,38 @@ function kimeCombo(){KCOMBO++;if(KCOMBO<2||!GD)return;const big=KCOMBO>=3;
 function comboBreak(){const c=KCOMBO;KCOMBO=0;if(c<1)return;const nx=KC_ST.find(k=>k>c);if(!nx||nx-c>1)return;setTimeout(()=>pop(W/2,L.fY+L.fH*.75,'あと1回で 決めテイク×'+nx+' だった！','n'),700)}
 function stampStars(){document.querySelectorAll('#ovBox .stars2 i').forEach((e,k)=>setTimeout(()=>{e.classList.add('in');if(e.classList.contains('on')){sfx.stamp(k);buzz(18);SHK=4+k*2}else sfx.tap()},450+k*430))}
 
+/*@LESSON_JY*/
+/* ===== まなぶ（遊ぶ前に、雲のでき方と実験の道具・手順を教える）／答え合わせ（封印のあと・テストの前） ===== */
+const SV_FL='<svg viewBox="0 0 520 250" xmlns="http://www.w3.org/2000/svg" font-family="sans-serif" font-weight="bold" fill="none" stroke="#1C3D7A" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">'+
+ '<circle cx="180" cy="160" r="70"/><path d="M160 92 V60 M200 92 V60"/><rect x="150" y="40" width="60" height="22" fill="#D7263D" stroke="#D7263D"/>'+
+ '<path d="M172 40 V8" stroke-width="3"/><circle cx="172" cy="8" r="0"/><path d="M190 40 C240 10 280 10 300 30" stroke-width="3"/><rect x="300" y="18" width="120" height="26"/><path d="M420 31 H470 M470 20 V42" stroke-width="5"/>'+
+ '<path d="M140 150 q8 -10 16 0 q8 10 16 0 q8 -10 16 0" stroke="#8b929a" stroke-width="3"/><path d="M130 200 q50 10 100 0" stroke="#4f86c6" stroke-width="3"/>'+
+ '<g stroke="none" fill="#1C3D7A" font-size="16"><text x="258" y="140">丸底フラスコ</text><text x="66" y="200">内側をぬらす</text><text x="200" y="158" fill="#8b929a">けむり</text><text x="216" y="56" fill="#D7263D">ゴム栓</text><text x="120" y="24">温度計</text><text x="310" y="68">注射器（ピストン）</text><text x="380" y="98" fill="#D7263D">すばやく引く →</text></g></svg>';
+const LSJ={
+ a:{t:'まなぶ ①',h:'雲は、空気が冷えてできる',q:{ask:'自転車の空気入れで、中の空気を<b>おしちぢめる</b>。筒の空気の温度は？',ch:['上がる','下がる','変わらない'],ok:0,good:'正解！ おしちぢめる（<b>圧縮</b>）と温度が<b>上がる</b>。ピストンを押したときと同じ。だから押すと雲はできにくい。',bad:'ちがう。表の「ピストンを<b>押す</b>」の行を見よう。おしちぢめる＝圧縮。'},b:()=>'<p><b>雲</b>は、空気の中の<b>水蒸気</b>（目に見えない水）が冷やされて、小さな<b>水滴</b>になったもの。水蒸気が水滴に変わりはじめる温度を<b>露点</b>という。</p><table class="ltab"><tr><th>条件</th><th>雲とのかかわり</th></tr><tr><td>ピストンを<b>引く</b></td><td>中の<b>気圧が下がる</b>→空気がふくらむ（<b>膨張</b>）→<b>温度が下がる</b>→露点に届くと水滴に。すばやく引くほどよく冷える</td></tr><tr><td>ピストンを<b>押す</b></td><td>空気がおしちぢめられ（<b>圧縮</b>）、<b>温度が上がる</b>→くもりにくい</td></tr><tr><td>まわりを<b>冷やす</b></td><td>空気の温度が下がる→露点に届けば水滴に</td></tr><tr><td>中の<b>水</b>（ぬらす）</td><td>水蒸気が多いほど、少し冷えただけで水滴になる</td></tr><tr><td><b>線香のけむり</b></td><td>けむりの粒が<b>芯（しん）</b>になり、水蒸気が水滴になりやすい</td></tr></table>'},
+ b:{t:'まなぶ ②',h:'実験の道具と手順・「対照実験」',q:{ask:'「<b>線香のけむり</b>で雲のでき方が変わるか」を調べたい。A・Bで<b>ちがえる</b>条件は？',ch:['けむりの有無だけ','けむりの有無と、まわりの温度','ピストンの引き方だけ'],ok:0,good:'正解！ 調べたい<b>けむりだけ</b>を変え、ほかは全部そろえる（<b>対照実験</b>）。',bad:'ちがう。調べたい条件<b>だけ</b>を変える。2つ変えると、どちらが効いたか分からない。'},b:()=>'<div class="lfig">'+SV_FL+'</div><ol class="lsteps"><li>フラスコの内側を<b>ぬるま湯でぬらす</b>（水蒸気を多くする）</li><li><b>線香のけむり</b>を少し入れる（水滴の芯）</li><li>注射器と温度計をつけた<b>ゴム栓</b>をする（空気がもれないように）</li><li>ピストンを<b>すばやく引いて</b>、温度と中のようすを見る</li></ol><p>このゲームでは、フラスコを<b>A・Bの2台</b>用意して比べる計画を立てる。<b>調べたい条件だけを変え、ほかの条件はすべて同じにして比べる実験</b>を<b>対照実験</b>という。2つ以上変えると、どれが効いたか分からない。2つの条件を調べたいときは、<b>1つずつ別々の実験</b>にする。</p>'}};
+function lessonGate(then){const ids=['a','b'].filter(id=>!(S.ls&&S.ls[id]));lessonShowJ(ids,then)}
+function lsQuizJ(q,onOk){const bx=$('#lqB');shuffle(q.ch.map((c,j)=>[c,j])).forEach(([c,j])=>{const b=document.createElement('button');b.className='mk s';b.innerHTML=c;
+ b.onclick=()=>{const ok=j===q.ok;b.classList.add(ok?'ok':'ng');$('#lqR').innerHTML=ok?q.good:q.bad;if(ok){sfx.kime();bx.querySelectorAll('button').forEach(x=>{if(x!==b)x.disabled=true});b.style.pointerEvents='none';onOk()}else{sfx.no();b.disabled=true}$('#lqR').scrollIntoView({block:'nearest'})};bx.appendChild(b)})}
+function lessonShowJ(ids,done){if(!ids.length){done&&done();return}const id=ids[0],L0=LSJ[id],fin=ids.length===1?'わかった！':'つぎへ ▶';const pz=G&&!G.paused;if(G)G.paused=true;
+ const next=()=>{sfx.tap();S.ls=S.ls||{};S.ls[id]=1;save();show([]);if(G&&pz)G.paused=false;lessonShowJ(ids.slice(1),done)};
+ const page1=()=>{ov('<span class="tag">'+L0.t+'</span><h2>'+L0.h+'</h2>'+L0.b()+'<div class="lbar"><button class="mk r f" id="lsOk">'+(L0.q?'やってみよう ▶':fin)+'</button></div>');$('#lsOk').onclick=L0.q?()=>{sfx.tap();page2()}:next};
+ const page2=()=>{ov('<span class="tag">'+L0.t+'　やってみよう</span><h2>'+L0.h+'</h2><p><b>やってみよう：</b>'+L0.q.ask+'</p><div class="lq" id="lqB"></div><div class="lres" id="lqR"></div><div class="lbar"><button class="mk s" id="lsBk">◀ もどる</button><button class="mk r f" id="lsOk" disabled>'+fin+'</button></div>');
+  lsQuizJ(L0.q,()=>{$('#lsOk').disabled=false});$('#lsBk').onclick=()=>{sfx.tap();page1()};$('#lsOk').onclick=next};
+ page1()}
+const ANS={P:['ピストンを「すばやく引く」と「動かさない」','<b>すばやく引いた方だけ</b>がくもる','気圧が下がって膨張し、温度が下がって露点に届いたから'],
+ T:['まわりを「氷水」と「室温」','<b>氷水で冷やした方だけ</b>がくもる','冷やされて温度が露点に届いたから'],
+ W:['中の水「少し入れる」と「かわいたまま」','<b>水を入れた方だけ</b>がくもる','水蒸気が多いと露点が高く、少し冷えただけで水滴になるから'],
+ S:['線香のけむり「入れる」と「なし」','<b>けむりを入れた方</b>がはっきりくもる（なしはほとんどくもらない）','けむりの粒が芯になり、水蒸気が水滴になりやすいから']};
+function answerShow(done){const rows=BTG.map(t=>{const b=S.boss&&S.boss[t];return '<tr><td>'+esc(QS[t])+'<br><span class="small">'+ANS[t][0]+'</span></td><td>'+ANS[t][1]+'<br><span class="small">理由：'+ANS[t][2]+'</span>'+(b?'<br><span class="small">あなたの予想：'+esc(b.plan)+' →「'+esc(b.pred)+'」</span>':'')+'</td></tr>'}).join('');
+ const page1=()=>{ov('<span class="tag">🔓 答え合わせ</span><h2>本物の実験では、こうなる</h2><p class="small" style="text-align:center">封印した予想と見くらべよう（A・Bのどちらに何を入れたかは、自分の計画の文で確かめる）。</p><table class="ltab"><tr><th>調べたこと</th><th>結果と理由</th></tr>'+rows+'</table>'+
+  '<div class="lbar"><button class="mk r f" id="ansOk">温度計の読み方・計画のコツへ ▶</button></div>');$('#ansOk').onclick=()=>{sfx.tap();page2()}};
+ const page2=()=>{ov('<span class="tag">🔓 答え合わせ　やってみよう</span><h2>温度計の読み方・計画のコツ</h2><p>ピストンを引くと、デジタル温度計の数字が少しだけ下がる。<b>下がった温度＝前の温度−後の温度</b>。</p><p><b>例</b>：24.8℃→24.1℃なら、24.8−24.1＝<b>0.7℃</b>下がった。</p>'+
+  '<p><b>やってみよう：</b>25.0℃ → 24.6℃。何℃下がった？</p><div class="lq" id="lqB"></div><div class="lres" id="lqR"></div>'+
+  '<p style="border-left:5px solid #1f8a4c;padding-left:10px;text-align:left"><b>計画のコツ：条件は「調べたい場所」で測る</b>。たとえば飛行機雲ができるのは<b>上空</b>。校庭の湿度が2日とも同じでも、上空の湿度はちがうかもしれない。校庭の記録だけでは「湿度は関係ない」とは言えない。</p>'+'<div class="lbar"><button class="mk s" id="lsBk">◀ もどる</button><button class="mk r f" id="ansOk" disabled>わかった！</button></div>');
+  lsQuizJ({ch:['0.4℃','0.6℃','4℃'],ok:0,good:'正解！ 25.0−24.6＝<b>0.4℃</b>',bad:'ちがう。<b>前−後</b>＝25.0−24.6 を計算しよう（小数点の位置に注意）。'},()=>{$('#ansOk').disabled=false});
+  $('#lsBk').onclick=()=>{sfx.tap();page1()};$('#ansOk').onclick=()=>{sfx.tap();S.ls=S.ls||{};S.ls.ans=1;save();done&&done()}};
+ page1()}
 /* ===== 遊び方案内（Guide・制作ルール13） ===== */
 var GD=window.Guide||null,HELP=null,PRACTICE=null,HP=false;
 function tutOn(){return MODE==='play'&&G&&G.tut}
@@ -4257,15 +4297,15 @@ if(GD&&!TEST_ONLY){
    '**変える条件は1つだけ**（赤い字のチャンネル）。ほかは A・B を **そろえる**（緑のランプ）',
    'そろえる条件を **雲ができやすい側**（水を入れる・けむりを入れる・すばやく引く）にすると **決めテイク**',
    'ちがいが1つになったら **REC**。2つ以上ちがうと NGテイク（どれが効いたか分からない）',
-   '本番では、くもると思うフラスコを指で **○** とかこんで予想を封印する'],
+   '本番では、くもると思うフラスコを指で **○** とかこんで予想を封印する。封印のあと **答え合わせ** が見られる'],
   onOpen:()=>{if(G&&!G.paused){G.paused=true;HP=true}},onClose:()=>{if(HP){HP=false;if(G&&$('#backDlg').classList.contains('hidden'))G.paused=false}},
   replay:'tutorial',offset:{x:60},show:false,attention:true});
- GD.tutorialButton('#bHow',()=>{ac();sfx.tap();const nm=$('#nameIn').value.trim();if(nm)S.name=nm;if(!S.started)S.started=true;save();GD.tutorial(PRACTICE)});
+ GD.tutorialButton('#bHow',()=>{ac();sfx.tap();const nm=$('#nameIn').value.trim();if(nm)S.name=nm;if(!S.started)S.started=true;save();lessonGate(()=>GD.tutorial(PRACTICE))});
 }else{$('#bHow').classList.add('hidden')}
 function startWithGuide(){show([]);$('#bBack').classList.add('hidden');
  GD.intro({title:'第17回　雲づくりミキサー卓',
   learn:'雲ができる条件を確かめるには、**変える条件は1つだけ**、ほかは **そろえる**（対照実験）',
-  how:'マグネットを **ドラッグ** して A・B をそろえ、ちがいが1つになったら **REC**',gesture:'drag'}).then(()=>GD.tutorial(PRACTICE))}
+  how:'マグネットを **ドラッグ** して A・B をそろえ、ちがいが1つになったら **REC**',gesture:'drag'}).then(()=>lessonGate(()=>GD.tutorial(PRACTICE)))}
 function predCoach(){if(!GD||TEST_ONLY)return;const b=()=>flaskBoxes();
  const ring=(r,n)=>{const out=[];for(let i=0;i<=n;i++){const a=i/n*Math.PI*2-Math.PI/2;out.push({x:r.x+Math.cos(a)*r.w*.45,y:r.y+Math.sin(a)*r.h*.42})}return out};
  GD.coach([
@@ -4275,12 +4315,6 @@ function predCoach(){if(!GD||TEST_ONLY)return;const b=()=>flaskBoxes();
  ],{key:'kisho-17-pred'})}
 /* もどる・音・確認は、ゲームの入れ物（position:fixed）の外へ出して、れんしゅう中の暗幕より上に出せるようにする */
 ['#bBack','#bSnd','#backDlg'].forEach(q=>document.body.appendChild($(q)));
-window.__game={S:()=>S,G:()=>G,startSess,toMap,startTest,judge,pressRec,mode:()=>MODE,fader:(k,side,v)=>faderAt(k,side,v),recG:()=>recGeom(),flaskB:()=>flaskBoxes(),
- go:()=>{const b=$('#goSt');if(b)b.click()},
- set:(side,k,v)=>{if(G[side][k]!==v){G[side][k]=v;G.moves++;if(G.budget)G.left--}},
- solve:()=>{const t=G.tgt,K=KIME[t];for(const k of G.ch){if(k===t){G.A[k]=K.A[k];G.B[k]=K.B[k]}else{const v=K.same[k];if(!isLocked('A',k))G.A[k]=v;if(!isLocked('B',k))G.B[k]=v;if(isLocked('A',k))G.B[k]=G.A[k];if(isLocked('B',k))G.A[k]=G.B[k]}}},
- predict:(a,b)=>{G.pred={A:a,B:b,none:!a&&!b?1:0}},predDone,
- geom:()=>({strips:G.ch.map((k,i)=>stripGeom(i)),rec:recGeom(),fl:flaskBoxes()})};
 if(TEST_ONLY){startTest()}else toTitle();
 requestAnimationFrame(loop);
 </script>

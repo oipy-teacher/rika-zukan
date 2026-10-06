@@ -54,6 +54,10 @@ button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;paddin
 .dp.sm{min-height:44px;font-size:16px;padding:4px 20px;letter-spacing:.06em}
 .dp:active{transform:scale(.94)}
 .dp[disabled]{opacity:.35;pointer-events:none}
+.tryCh{display:flex;flex-direction:column;gap:8px;margin:8px 0;text-align:left}
+.tryB{font:inherit;font-size:16px;text-align:left;padding:10px 16px;border-radius:14px;border:2px solid #24425E;background:#FFFFFF;color:#1E3A52;cursor:pointer;box-shadow:0 3px 0 #24425E}
+.tryB.ok{background:#FFD9C7;outline:3px solid var(--o,#FF6E40)}.tryB.ng{opacity:.45;text-decoration:line-through}.tryB:disabled{cursor:default}
+.tryFb{min-height:3.2em;font-size:15px;line-height:1.6;text-align:left;margin:4px 0}.tryFb b.o{color:#D9532B}.tryFb b.x{color:#7A2E1A}
 .pulse{animation:pulse 1.4s ease-in-out infinite}
 @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.07)}}
 #bBack{position:fixed;left:calc(8px + env(safe-area-inset-left));top:calc(8px + env(safe-area-inset-top));z-index:40;min-height:46px;padding:4px 18px 4px 12px;border-radius:999px;background:var(--c);color:var(--n);font-size:17px;letter-spacing:.08em;display:flex;align-items:center;gap:6px;box-shadow:0 0 0 3px var(--n),0 0 0 5px var(--c),0 4px 10px rgba(0,0,0,.35)}
@@ -3925,7 +3929,7 @@ const LEGS=[
   F(94,[['毛細血管へもどる',0,'酸素は 組織液を通って細胞にわたされる'],['細胞へ',1]],'cell'),Zn(100,'cell')],
   goal:'酸素を 細胞に届ける',newel:'**赤血球** に乗った酸素。細胞のそばで どうする？'},
  {name:'細胞で出会う',ch:'山場　細胞の中',mol:'glucose',len:9999,cell:true,items:[Zn(0,'cell')],
-  goal:'ブドウ糖から エネルギーを取り出す',newel:'流れてくる気体と ぶつかる。**何と ぶつかると エネルギーが出る？**（ちがう相手に 4回で やり直し）'},
+  goal:'ブドウ糖から エネルギーを取り出す',newel:'流れてくる気体と ぶつかる。**何と ぶつかると エネルギーが出る？**（2回目からは ちがう相手に 4回で やり直し）'},
  {name:'二酸化炭素を体の外へ',ch:'第3章　出すたび',mol:'co2',len:122,items:[Zn(0,'cell'),
   F(12,[['細胞にとどまる',0,'細胞で出た二酸化炭素は 組織液を通って血液へ'],['組織液→毛細血管',1]],'cap'),Zn(18,'blood'),
   F(30,[['静脈',1],['動脈',0,'毛細血管から 心臓へもどる道が静脈']],'vein'),Zn(36,'vein'),Rk(40,.3),Rk(43,-.3),
@@ -3951,9 +3955,33 @@ const LEGS=[
   goal:'尿素にして 腎臓から体の外へ（河口）',newel:'決勝：肉の **タンパク質** が 体の外へ出るまで。消化・吸収・運ぶ・使う・出す の全部'}
 ];
 const NL=LEGS.length;
+/* 2026-10-06 初心者向け: 区間のはじめに「この区間の道すじ」と「まなぶ」を見せる（分かれ道の答えを、まちがえる前に教える） */
+const ROUTE=[null,
+ ['口','だ液で分解','食道','胃','十二指腸','すい液で分解'],
+ ['小腸','小腸の壁の消化酵素でブドウ糖に','柔毛の毛細血管','血液','肝臓','心臓'],
+ ['心臓','肺','心臓','大動脈（全身へ）','毛細血管','組織液','細胞'],
+ ['鼻','気管','気管支','肺胞','毛細血管（赤血球に乗る）','肺静脈','心臓'],
+ ['心臓','大動脈（全身へ）','毛細血管','酸素をはなす','組織液','細胞'],
+ ['ブドウ糖','＋ 酸素','エネルギーが出る','二酸化炭素と水ができる'],
+ ['細胞','組織液','毛細血管','静脈','心臓','肺動脈','肺胞','気管','鼻・口（はく息）'],
+ ['胃液で分解','十二指腸','すい液で分解','小腸の壁の消化酵素でアミノ酸に','柔毛の毛細血管','肝臓','全身の細胞','アンモニアができる','肝臓で尿素に','腎臓でこし出す','輸尿管','ぼうこう','体の外（尿）']];
+const LEARN=[null,
+ '**消化**＝食べ物の大きなつぶを、小腸の壁から吸収できる **小さな物質** に分けること。消化液にふくまれる **消化酵素** がはたらく。\nデンプンにはたらくのは **だ液** と **すい液**（胃液はタンパク質用）。**胆汁** は肝臓でつくられる液で、消化酵素はふくまない（脂肪の消化を助ける）。**十二指腸**＝胃のすぐ先、小腸のはじめの部分',
+ '小腸の内側には **柔毛** という小さな突起がたくさんある。**ブドウ糖**（デンプンが分解されたもの）や アミノ酸は、柔毛の **毛細血管**（細い血管）へ。脂肪は **リンパ管** へ入る。\n小腸から出た血液は まず **肝臓** へ（ブドウ糖の一部をたくわえる）。血液は 心臓から出て 心臓へもどる 一方通行',
+ '**心臓** は血液を送り出すポンプ。全身からもどった血液は まず **肺** へ行き、心臓にもどってから 全身へ。\n心臓から出る血管が **動脈**（全身へは **大動脈**）、心臓へもどる血管が **静脈**。細胞のそばでは **毛細血管** から液がしみ出て **組織液** になり、組織液を通して 細胞に物質をわたす',
+ '空気は 鼻から **気管** → 枝分かれした **気管支** → 先の小さな袋 **肺胞** へ。酸素は 肺胞のまわりの毛細血管の血液にとりこまれ、**赤血球** の **ヘモグロビン**（酸素と結びつく物質）に乗る。\n肺から心臓へもどる血管が **肺静脈**、心臓から肺へ行く血管が **肺動脈**',
+ '**赤血球** は 毛細血管の外へ出ない。酸素の少ない所で 酸素を **はなし**、酸素は **組織液** を通って 細胞へわたされる',
+ '細胞は、運ばれてきた **養分（ブドウ糖）** と **酸素** を使って、生きるための **エネルギー** を取り出す。このとき **二酸化炭素** と **水** ができる（**細胞による呼吸**）。\nだから、ぶつかると エネルギーが出る相手は **酸素**',
+ '細胞で出た二酸化炭素は 組織液 → 毛細血管 → **静脈** で心臓へ。心臓から **肺動脈** で肺へ。**肺胞** で血液から出され、**はく息** として 鼻・口から出る（尿では出ない）',
+ '**タンパク質** は 胃液・すい液・小腸の壁の消化酵素で **アミノ酸** になり、柔毛の毛細血管から吸収 → 肝臓 → 全身の細胞へ。\n細胞でアミノ酸が使われると、有害な **アンモニア** ができる。**肝臓** が害の少ない **尿素** に変え、**腎臓** が血液から尿素をこし出して **尿** にする。尿は **輸尿管** → **ぼうこう** → 体の外へ'];
+/* 札の下の一言（どの札にも同じ形で付ける＝正解だけ目立たない） */
+const GLK=['肺静脈','肺動脈','大動脈','毛細血管','リンパ管','十二指腸','気管支','組織液','ぼうこう','輸尿管','肺胞','食道','気管','大腸','小腸','肝臓','腎臓','心臓','静脈','動脈','胃の壁','鼻・口','はく息','細胞','血液','全身','肺','尿'];
+const GLV={肺静脈:'肺から心臓へもどる血管',肺動脈:'心臓から肺へ行く血管',大動脈:'心臓から全身へ出る血管',毛細血管:'細胞のそばの細い血管',リンパ管:'脂肪が入る管',十二指腸:'胃のすぐ先',気管支:'気管の枝分かれ',組織液:'血管からしみ出た液',ぼうこう:'尿をためる',輸尿管:'腎臓から下へ',肺胞:'肺の小さな袋',食道:'食べ物の通り道',気管:'空気の通り道',大腸:'水分を吸収する所',小腸:'養分を吸収する所',肝臓:'たくわえる・変える',腎臓:'不要な物をこし出す',心臓:'血液を送り出すポンプ',静脈:'心臓へもどる血管',動脈:'心臓から出る血管',胃の壁:'胃液を出す（養分はほとんど吸収しない）',鼻・口:'体の外への出口',はく息:'体の外へ出る息',細胞:'エネルギーを取り出す',血液:'血しょう・赤血球',全身:'体のすみずみ',肺:'酸素をもらう所',尿:'体の外へ出す液'};
+const ENZG={だ液:'デンプンを分解',胃液:'タンパク質を分解',すい液:'いろいろな養分を分解',胆汁:'消化酵素なし',小腸の壁の消化酵素:'分解の仕上げ'};
+function gloss(t){for(const k of GLK)if(t.indexOf(k)>=0)return GLV[k];return ''}
 
 /* ================= セーブ ================= */
-function fresh(){return {v:1,name:'',reach:0,stars:Array(NL).fill(0),fails:Array(NL).fill(-1),stamps:{},rules:{},maxCombo:0,tut:0,mainDone:false,mute:false}}
+function fresh(){return {v:1,name:'',reach:0,stars:Array(NL).fill(0),fails:Array(NL).fill(-1),stamps:{},rules:{},maxCombo:0,tut:0,mainDone:false,tried:{},introRead:false,sumRead:false,mute:false}}
 function load(){try{const s=JSON.parse(localStorage.getItem(SKEY)||'null');if(s&&s.v===1){const f=fresh();const o=Object.assign(f,s);o.stars=f.stars.map((x,i)=>(s.stars||[])[i]||0);o.fails=f.fails.map((x,i)=>(s.fails||[])[i]==null?-1:s.fails[i]);o.stamps=s.stamps||{};o.rules=s.rules||{};return o}}catch(e){}return fresh()}
 let SV=load();
 function save(){try{localStorage.setItem(SKEY,JSON.stringify(SV))}catch(e){}}
@@ -4110,7 +4138,7 @@ function drawFX(dt){
 let G=null,scene='title',SEL=1,TUTSTEP=-1,TUTFROM='start';
 function newLeg(li){const L=LEGS[li];const g={li,L,u:-3,v:0,p:0,pt:0,speed:0,mol:L.mol,combo:0,maxC:0,fails:0,rocks:0,ok:0,t:0,paused:false,done:false,
  gates:[],zones:[],rocks_:[],tfs:[],raps:[],stamps:[],chain:[L.mol],cp:{u:-3,mol:L.mol},dying:0,spin:0,slow:0,msgT:0,cellMode:!!L.cell,cargo:5,energy:0,floaters:[],fu:6,started:false,tutHold:false,mgood:0};
- g.missMax=L.tut?99:L.cell?4:L.boss?4:3;
+ g.easy=!L.tut&&!SV.stars[li];g.missMax=(L.tut||g.easy)?99:L.cell?4:L.boss?4:3;
  L.items.forEach(it=>{if(it.g)g.gates.push(Object.assign({ch:null,ok:null,dead:0,passed:false,miss:0},it,L.tut?{}:{o:shufO(it.o)}));else if(it.z)g.zones.push(it);else if(it.rock!=null)g.rocks_.push({u:it.u,v:it.rock,hit:false});else if(it.tf!==undefined)g.tfs.push(Object.assign({done:false},it));else if(it.rap)g.raps.push(it)});
  g.zones.sort((a,b)=>a.u-b.u);g.zi=-1;return g}
 function flowSpeed(g){let v=1.5*(1+Math.min(g.combo,8)*.04);
@@ -4179,7 +4207,7 @@ function die(g,gt,iopt){const i=iopt!=null?iopt:gt.ch;const opt=gt.o[i];const p=
  banner(gt.g==='enz'?'分解されない！':'行き止まり！',opt[2]||'',CREAM);
  if(was>=2)setTimeout(()=>pop('あと1つで ×'+(was+1)+' だった！',W/2,H*.62,24,CREAM,1.6),900);
  msg('もどってやり直し：'+(opt[2]||''),4.5);g.lastWhy=opt[2]||'';g.deadGate=gt;
- gt.miss=(gt.miss||0)+1;if(g.fails>=g.missMax||gt.miss>=2)g.reset=gt.miss>=2?'same':'many';renderLife(g)}
+ gt.miss=(gt.miss||0)+1;if(!g.easy&&(g.fails>=g.missMax||gt.miss>=2))g.reset=gt.miss>=2?'same':'many';renderLife(g)}
 function respawn(g){if(g.reset){legFail(g);return}const gt=g.deadGate;if(gt){gt.passed=false;gt.ch=null;gt.ok=null;gt._shown=false;if(!g.L.tut)gt.o=shufO(gt.o,true)}
  g.u=Math.min(g.cp.u,gt?gt.u-9:g.cp.u);if(gt&&g.u>gt.u-6)g.u=gt.u-6;g.mol=g.cp.mol;g.p=g.pt=0;g.speed=.4;g.spin=0;
  // 通りすぎた岩と変身を元にもどす
@@ -4190,7 +4218,7 @@ function respawn(g){if(g.reset){legFail(g);return}const gt=g.deadGate;if(gt){gt.
  分かれ道・カーテンの並びは区間ごと・やり直しごとに並べかえる（位置の暗記・「もう片方へ行けば抜ける」を閉じる）。
  同じ所で2回、または区間で3回（決勝・細胞は4回）まちがえると、その区間をはじめから。 */
 function shufO(o,diff){const a=o.slice();for(let n=0;n<6;n++){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}if(!diff||a.some((x,i)=>x!==o[i])||Math.random()<.5)break}return a}
-function renderLife(g){const e=$('hLife');if(!e)return;if(!g||g.L.tut){e.textContent='';return}const n=Math.max(0,g.missMax-g.fails);e.textContent='まちがい あと'+n+'回で やり直し'}
+function renderLife(g){const e=$('hLife');if(!e)return;if(!g||g.L.tut){e.textContent='';return}if(g.easy){e.textContent='はじめての区間：やり直しなし';return}const n=Math.max(0,g.missMax-g.fails);e.textContent='まちがい あと'+n+'回で やり直し'}
 function legFail(g){if(g.failShown)return;g.failShown=true;g.paused=true;bgmStop();const li=g.li;
  const why=g.reset==='same'?'同じ所で 2回 まちがえた':'まちがいが '+g.fails+'回 になった';
  ovOpen('<div class="hd">はじめから</div><p style="margin:6px 0">'+why+'。<br>たどる道すじを たしかめて もう一度。</p>'+(g.lastWhy?'<p class="lfWhy" style="font-size:16px;text-align:left;background:rgba(245,240,225,.12);padding:8px 12px;border-radius:8px">'+esc(g.lastWhy)+'</p>':'')+
@@ -4258,9 +4286,9 @@ function drawCurtain(g,gt){const k=gt.o.length;for(let i=0;i<k;i++){const v0=-W0
   const a=w2s(gt.u-.25,v0+.04),b=w2s(gt.u+.25,v1-.04);cx.save();cx.globalAlpha=.55;cx.fillStyle=col;cx.fillRect(Math.min(a.x,b.x),Math.min(a.y,b.y),Math.abs(b.x-a.x),Math.abs(b.y-a.y));cx.restore();
   // しずく
   for(let j=0;j<6;j++){const vv=v0+(j+.5)*(v1-v0)/6,ph=(TT*1.5+j*.37+i)%1;const p=w2s(gt.u-.25+ph*.5,vv);cx.fillStyle=col;cx.beginPath();cx.arc(p.x,p.y,3,0,TAU);cx.fill()}
-  const lp=w2s(gt.u-1.1,(v0+v1)/2);label(lp.x,lp.y,o[0],'',Math.max(13,Math.min(S*.2,20)),CREAM,NAVY,col)}} /* 2026-10-02 小さい字（できる物・酵素名）は正解だけ種類がちがい答えを漏らしていたので出さない */
+  const lp=w2s(gt.u-1.1,(v0+v1)/2);label(lp.x,lp.y,o[0],ENZG[o[0]]||'',Math.max(13,Math.min(S*.2,20)),CREAM,NAVY,col)}} /* 2026-10-02 小さい字（できる物・酵素名）は正解だけ種類がちがい答えを漏らしていたので出さない */
 function drawForkSigns(g,gt){const bs=forkBands(gt,gt.u+.9);if(!bs)return;const k=gt.o.length;
- bs.forEach(b=>{if(b.i<0)return;const o=gt.o[b.i];const p=w2s(gt.u+.9,b.c);const chosen=gt.ch===b.i;label(p.x,p.y,o[0],'',Math.max(13,Math.min(S*.21,21)),chosen?(gt.ok?ORANGE:'#9CC5D6'):CREAM,chosen&&gt.ok?'#fff':NAVY,chosen?CREAM:ORANGE)});
+ bs.forEach(b=>{if(b.i<0)return;const o=gt.o[b.i];const p=w2s(gt.u+.9,b.c);const chosen=gt.ch===b.i;label(p.x,p.y,o[0],gloss(o[0]),Math.max(13,Math.min(S*.21,21)),chosen?(gt.ok?ORANGE:'#9CC5D6'):CREAM,chosen&&gt.ok?'#fff':NAVY,chosen?CREAM:ORANGE)});
  // 分かれ道の前の「問い」
  if(gt.ch==null&&gt.u-CAMU<9&&gt.u-CAMU>0){const p=w2s(gt.u-2.4,0);label(p.x,p.y,MOL[g.mol].n+' の次は？','',Math.max(12,Math.min(S*.16,16)),'rgba(22,48,74,.85)',CREAM,CREAM)}}
 function whirl(x,y,r){cx.save();cx.translate(x,y);cx.rotate(TT*4);cx.strokeStyle=CREAM;cx.lineWidth=3;cx.beginPath();for(let a=0;a<TAU*3;a+=.2){const rr=r*a/(TAU*3);cx.lineTo(Math.cos(a)*rr,Math.sin(a)*rr)}cx.stroke();cx.restore();label(x,y-r*1.3,'よどみ','',14,NAVY2,CREAM,'#9CC5D6')}
@@ -4300,11 +4328,36 @@ function startLeg(li,opt){opt=opt||{};ovClose();show('scPlay');resize();G=newLeg
  if(!opt.paused){G.started=true;bgmStart()}}
 function openPrep(li){endTut();SEL=li;const L=LEGS[li];startLeg(li,{paused:true});G.paused=true;
  ovOpen('<div class="hd or">'+esc(L.ch)+'</div><p style="font-size:24px;letter-spacing:.12em;margin:4px 0">'+esc(L.name)+'</p>'+
-  '<p>運ぶつぶ：<b>'+esc(MOL[L.mol].n)+'</b>　／　めあて：'+esc(L.goal)+'</p>'+(L.newel?'<p style="font-size:16px">'+md(L.newel)+'</p>':'')+
+  '<p>運ぶつぶ：<b>'+esc(MOL[L.mol].n)+'</b>　／　めあて：'+esc(L.goal)+'</p>'+
+  (LEARN[li]?'<p style="font-size:15px;text-align:left;line-height:1.65;margin:6px 0">'+md(LEARN[li]).replace(/\n/g,'<br>')+'</p>':'')+
+  (ROUTE[li]?'<p style="margin:8px 0 0;font-size:14px">'+(L.cell?'細胞の中で 起きること':'この区間の道すじ（分かれ道は この順に）')+'</p><div class="chain">'+ROUTE[li].map(x=>'<span>'+esc(x)+'</span>').join('<em>→</em>')+'</div>':'')+
+  (L.newel?'<p style="font-size:16px">'+md(L.newel)+'</p>':'')+
+  (!SV.stars[li]?'<p style="font-size:14px">はじめての区間は、まちがえても 少し前から やり直すだけ（はじめにはもどらない）</p>':'')+
   (SV.stars[li]?'<p style="font-size:15px">これまで：'+'★'.repeat(SV.stars[li])+'　行き止まり '+SV.fails[li]+'回</p>':'')+
   '<div class="row"><button class="dp big pulse" id="pGo">こぎ出す</button><button class="dp cr sm" id="pMap">地図へ</button></div>');
- $('pGo').onclick=()=>{ovClose();actx();G.paused=false;G.started=true;bgmStart();SFX.gong()};$('pMap').onclick=()=>{ovClose();G=null;openMap()}}
+ const go=()=>{ovClose();actx();if(!G||G.li!==li)return;G.paused=false;G.started=true;bgmStart();SFX.gong()};
+ $('pGo').onclick=()=>{actx();if(TRY[li]&&!SV.stars[li]&&!(SV.tried||{})[li]){tryCard(TRY[li],()=>{SV.tried=SV.tried||{};SV.tried[li]=1;save();go()},'こぎ出す');return}go()};$('pMap').onclick=()=>{ovClose();G=null;openMap()}}
 function md(s){return esc(s).replace(/\*\*(.+?)\*\*/g,'<b>$1</b>')}
+/* やってみよう（はじめての区間は、まなぶを読んだあと こぎ出す前に1問。テストとは別の問い。選択肢は出すたびにまぜる） */
+const TRY=[null,
+ {q:'<b>胆汁</b>について 正しいのは？',ok:'消化酵素はふくまないが、脂肪の消化を助ける',ng:['デンプンを分解する消化酵素をふくむ','胃でつくられる'],why:'胆汁は肝臓でつくられる液。消化酵素はふくまない。',whyNg:'まなぶの「胆汁」の所を思い出そう。'},
+ {q:'脂肪が分解されたものは、小腸の柔毛の <b>どこ</b>へ入る？',ok:'リンパ管',ng:['毛細血管','肝臓'],why:'ブドウ糖とアミノ酸は毛細血管へ、脂肪はリンパ管へ。',whyNg:'毛細血管へ入るのは ブドウ糖やアミノ酸。脂肪は別の管。'},
+ {q:'心臓から <b>全身へ</b> 血液を送り出す血管は？',ok:'大動脈',ng:['肺静脈','静脈'],why:'心臓から出る血管が動脈。全身へ向かう太いものが大動脈。',whyNg:'静脈は 心臓へ「もどる」血管。出ていく血管は？'},
+ {q:'赤血球の中で、<b>酸素と結びつく</b> 物質は？',ok:'ヘモグロビン',ng:['組織液','消化酵素'],why:'ヘモグロビンが酸素と結びついて運ぶ。',whyNg:'組織液は 血管からしみ出た液。消化酵素は 消化液の中。'},
+ {q:'赤血球が 酸素を <b>はなす</b>のは どんな所？',ok:'酸素の少ない所（細胞のまわり）',ng:['酸素の多い所（肺）','どこでも はなさない'],why:'酸素の少ない所で はなし、酸素は組織液を通って細胞へ。',whyNg:'肺では 酸素を受け取る。はなすのは 反対の所。'},
+ {q:'細胞が エネルギーを取り出すときに <b>使う</b> 2つの物は？',ok:'養分（ブドウ糖）と 酸素',ng:['二酸化炭素と 水','尿素と 酸素'],why:'養分＋酸素 → エネルギー。このとき二酸化炭素と水ができる。',whyNg:'二酸化炭素と水は「できる」方。使う方は？'},
+ {q:'心臓から <b>肺へ行く</b> 血管は？',ok:'肺動脈',ng:['肺静脈','大動脈'],why:'心臓から出るので動脈。肺へ行くので肺動脈。',whyNg:'肺静脈は 肺から心臓へ「もどる」血管。'},
+ {q:'尿を <b>ためておく</b> 所は？',ok:'ぼうこう',ng:['輸尿管','腎臓'],why:'腎臓でつくった尿は、輸尿管を通って ぼうこうにためられる。',whyNg:'腎臓は こし出す所、輸尿管は 通り道。'},
+ {q:'<b>酸素がいちばん多い</b> 血液が流れるのは？',ok:'肺から心臓へもどる血管（肺静脈）',ng:['心臓から肺へ行く血管（肺動脈）','腎臓を出た血管'],why:'肺で酸素を受け取った直後の血液だから。',whyNg:'酸素を受け取るのは肺。その「すぐあと」の血管は？'}];
+function tryCard(o,next,btn,onOk){try{SFX.click()}catch(e){}
+ const op=[{t:o.ok,ok:1}].concat(o.ng.map(t=>({t,ok:0})));for(let i=op.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));const x=op[i];op[i]=op[j];op[j]=x}
+ ovOpen('<div class="hd or">やってみよう</div><p style="font-size:17px;text-align:left;margin:8px 0">'+o.q+'</p><div class="tryCh">'+op.map((c,k)=>'<button class="tryB" data-k="'+k+'">'+esc(c.t)+'</button>').join('')+'</div>'+
+  '<p class="tryFb" aria-live="polite"></p><div class="row"><button class="dp big" id="tyGo" disabled>'+(btn||'つぎへ')+'</button></div>');
+ const box=$('ov'),fb=box.querySelector('.tryFb');
+ box.querySelectorAll('.tryB').forEach(b=>b.onclick=()=>{const c=op[+b.dataset.k];
+  if(c.ok){try{SFX.ok(0)}catch(e){}b.classList.add('ok');box.querySelectorAll('.tryB').forEach(x=>x.disabled=true);fb.innerHTML='<b class="o">○ そのとおり！</b> '+o.why;$('tyGo').disabled=false;$('tyGo').classList.add('pulse');if(onOk)onOk()}
+  else{try{SFX.bad()}catch(e){}b.classList.add('ng');b.disabled=true;fb.innerHTML='<b class="x">× ちがう。</b> '+o.whyNg+' もう一度 えらぼう。'}});
+ $('tyGo').onclick=()=>{if($('tyGo').disabled)return;next()}}
 function finishLeg(g){if(g.fin)return;g.fin=true;g.done=true;bgmStop();const li=g.li,L=g.L;
  if(L.tut){SFX.fan();SV.tut=1;SV.reach=Math.max(SV.reach,1);g.stamps.forEach(k=>SV.stamps[k]=1);save();setTimeout(()=>{try{Guide.tutorialClear()}catch(e){afterPractice({cleared:true})}},400);return}
  const stars=(g.fails===0&&g.rocks<=2)?3:(g.fails<=1)?2:1;const first=!SV.stars[li];
@@ -4327,29 +4380,38 @@ function finishLeg(g){if(g.fin)return;g.fin=true;g.done=true;bgmStop();const li=
  [...document.querySelectorAll('.newst .stp')].forEach((s,i)=>{s.style.animationDelay=(1.8+i*.3)+'s';setTimeout(()=>SFX.stamp(i+3),1800+i*300)});
  $('rNext').onclick=()=>{ovClose();if(last)goClear();else openPrep(li+1)};$('rRe').onclick=()=>openPrep(li);$('rMap').onclick=()=>{ovClose();G=null;openMap()}}
 const STAR='<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" fill="#FF6E40"/><circle cx="50" cy="50" r="38" fill="none" stroke="#F5F0E1" stroke-width="3"/><path d="M50 18 L59 42 L85 42 L64 57 L72 82 L50 67 L28 82 L36 57 L15 42 L41 42Z" fill="#F5F0E1"/></svg>';
-function goClear(){G=null;const first=!SV.mainDone;SV.mainDone=true;save();const z=Z();if(first&&z&&z.mainClear){try{z.mainClear({onClose:startTest})}catch(e){startTest()}}else startTest()}
+function goClear(){G=null;
+ ovOpen('<div class="hd or">たびのまとめ</div>'+
+  '<div class="chain"><span>取り入れる</span><em>→</em><span>運ぶ</span><em>→</em><span>使う</span><em>→</em><span>出す</span></div>'+
+  '<p style="font-size:15px;text-align:left;line-height:1.7">・<b>取り入れる</b>：消化して小腸で吸収（養分）／肺で呼吸（酸素）<br>・<b>運ぶ</b>：<b>心臓と血管</b>（血液の循環）が 全身の細胞へ<br>・<b>使う</b>：<b>細胞</b>が 養分と酸素から エネルギーを取り出す（二酸化炭素と水ができる）<br>・<b>出す</b>：二酸化炭素は <b>肺</b>（はく息）、アンモニアは <b>肝臓</b>で尿素にして <b>腎臓</b>でこし出す（尿）</p>'+
+  '<p style="font-size:15px;text-align:left;line-height:1.7">血液の流れで よく聞かれること<br>・食事のあと 養分がいちばん多い血液：<b>小腸から肝臓へ向かう血管</b><br>・尿素などの不要な物がいちばん少ない血液：<b>腎臓を出た血管</b><br>・酸素がいちばん多い血液：<b>肺から心臓へもどる血管（肺静脈）</b></p>'+
+  '<div class="row"><button class="dp big pulse" id="gcGo">確認テストへ</button></div>');
+ $('gcGo').onclick=()=>tryCard(TRY[9],toTestFromSum,'確認テストへ',()=>{SV.sumRead=true;save()})}
+function toTestFromSum(){{ovClose();const first=!SV.mainDone;SV.mainDone=true;save();const z=Z();if(first&&z&&z.mainClear){try{z.mainClear({onClose:startTest})}catch(e){startTest()}}else startTest()}}
 
 /* ================= たびの地図 ================= */
-function openMap(){endTut();show('scMap');ovClose();G=null;SEL=clamp(Math.min(SEL,SV.reach),1,NL-1);renderMap()}
+function openMap(){endTut();show('scMap');ovClose();G=null;SEL=clamp(Math.min(SEL,SV.reach),1,NL-1);renderMap();
+ if(!SV.introRead&&window.Guide&&window.GAME_MODE!=='test'){SV.introRead=true;save();Guide.intro(INTRO_M)}}
 function renderMap(){const done=SV.stars.slice(1).filter(s=>s>0).length;$('gbF').style.width=(8+done/(NL-1)*92)+'%';$('gbT').textContent=done+' / '+(NL-1);
  $('legs').innerHTML=LEGS.map((L,i)=>{if(i===0)return '';const lock=i>Math.max(1,SV.reach);return '<button class="leg'+(i===SEL?' sel':'')+(lock?' lock':'')+(L.boss?' boss':'')+'" data-i="'+i+'"'+(lock?' disabled':'')+'><span class="no">'+(L.boss?'決勝':i)+'</span><span class="nm">'+esc(L.name)+'<small>'+esc(L.ch)+'　／　'+esc(MOL[L.mol].n)+'</small></span><span class="st">'+[0,1,2].map(k=>'<span class="'+(k<SV.stars[i]?'':'off')+'">★</span>').join('')+'</span></button>'}).join('');
  [...document.querySelectorAll('.leg')].forEach(b=>b.onclick=()=>{SEL=+b.dataset.i;SFX.click();renderMap()});
  const L=LEGS[SEL];$('legInfo').innerHTML='<b style="font-weight:400;color:#C4452B">'+esc(L.name)+'</b>：'+esc(L.goal)+'<br>'+md(L.newel||'');
  $('stampBook').innerHTML=BOOK.map(([a,b,ks])=>'<div class="col"><h3>'+a+'<small>'+b+'</small></h3>'+ks.map(k=>'<div class="stp'+(SV.stamps[k]?' on':'')+'">'+(SV.stamps[k]?esc(SNAME[k]):'？')+'</div>').join('')+'</div>').join('');
  $('mTest').hidden=!SV.stars[NL-1];$('mBook').hidden=!Z();$('mGacha').hidden=!(Z()&&Z().openGacha)}
-$('mGo').onclick=()=>{actx();SFX.click();openPrep(SEL)};$('mBook').onclick=()=>{try{Z().openBook()}catch(e){}};$('mGacha').onclick=()=>{try{Z().openGacha()}catch(e){}};$('mTest').onclick=()=>{actx();startTest()};
+$('mGo').onclick=()=>{actx();SFX.click();openPrep(SEL)};$('mBook').onclick=()=>{try{Z().openBook()}catch(e){}};$('mGacha').onclick=()=>{try{Z().openGacha()}catch(e){}};$('mTest').onclick=()=>{actx();if(!SV.sumRead){goClear();return}startTest()};
 function mapBg(dt){TT+=dt;CAMU=TT*.5;CV=meander(CAMU);renderWater(TITLEG,TT);cx.fillStyle='rgba(22,48,74,.35)';cx.fillRect(0,0,W,H)}
 
 /* ================= 表紙 ================= */
 function showTitle(){G=null;show('scTitle');resize();initTitle();const lg=$('logo');lg.classList.remove('drop');void lg.offsetWidth;lg.classList.add('drop');setTimeout(()=>{if(AC)SFX.gong()},600)}
 function initTitle(){if(window.PLAYER_NAME){$('nameIn').value=window.PLAYER_NAME;$('nameRow').hidden=true}else if(SV.name)$('nameIn').value=SV.name;
  const has=hasSave();$('btnCont').hidden=!has;$('btnBookT').hidden=!Z();$('btnStart').textContent=has?'はじめから':'はじめる';$('btnStart').classList.toggle('pulse',!has);$('btnCont').classList.toggle('pulse',has);$('btnStart').classList.toggle('cr',has)}
+const INTRO_M={title:'第29回　分子のたび',learn:'食べ物や空気のつぶは **取り入れる→運ぶ→使う→出す** の順に、器官から器官へ受け渡される',how:'指を **ドラッグ** していかだを動かし、つぶに合う **消化液** と **次の器官** の流れへ',gesture:'drag'};
 let armed=false;
 $('btnStart').onclick=async()=>{actx();SV.name=$('nameIn').value.trim();
  if(hasSave()&&!armed){armed=true;$('btnStart').textContent='本当に？（記録が消える）';setTimeout(()=>{armed=false;initTitle()},3500);return}
  if(armed){const nm=SV.name,mu=SV.mute;SV=fresh();SV.name=nm;SV.mute=mu;armed=false}
  save();SFX.gong();TUTFROM='start';
- await Guide.intro({title:'第29回　分子のたび',learn:'食べ物や空気のつぶは **取り入れる→運ぶ→使う→出す** の順に、器官から器官へ受け渡される',how:'指を **ドラッグ** していかだを動かし、つぶに合う **消化液** と **次の器官** の流れへ',gesture:'drag',button:'タップして 源流へ'});
+ await Guide.intro(Object.assign({},INTRO_M,{button:'タップして 源流へ'}));SV.introRead=true;save();
  Guide.tutorial(PRACTICE)};
 $('btnCont').onclick=()=>{actx();SV.name=$('nameIn').value.trim()||SV.name;save();SFX.click();openMap()};
 $('btnBookT').onclick=()=>{try{Z().openBook()}catch(e){}};
@@ -4417,11 +4479,10 @@ try{
  Guide.setup({theme:{bg:'#F5F0E1',fg:'#1E3D59',accent:'#FF6E40',accentText:'#fff',font:"'Kosugi',sans-serif",bodyFont:"'Kosugi',sans-serif",radius:22,texture:'paper',line:'#1E3D59',dim:'rgba(10,24,38,.5)',shadow:'0 0 0 4px #FF6E40, 0 12px 28px rgba(0,0,0,.4)',outline:'#1E3D59',hand:'#F5F0E1',handLine:'#1E3D59'},
   sfx:k=>{if(k==='step')SFX.ok(2);else if(k==='done')SFX.morph();else if(k==='clear')SFX.fan();else if(k==='cheer')SFX.coin(3);else if(k==='nudge')SFX.drop(0);else SFX.click()},muted:()=>SV.mute});
  HELP=Guide.help({title:'分子のたび',learn:'食べ物や空気のつぶは **取り入れる→運ぶ→使う→出す** の順に、器官から器官へ受け渡される',how:'指を **ドラッグ**（または矢印キー）していかだを左右に動かす',
-  rules:['**消化液のカーテン** は、つぶにはたらく消化液をくぐる（だ液・胃液・すい液・胆汁・小腸の壁）','**分かれ道** は、つぶが次に向かう器官の流れへ','まちがえると **行き止まり**。理由を読んで、少し前からやり直し（道の並びは 毎回かわる）','**同じ所で2回**、または **区間で3回**（決勝・細胞は4回）まちがえると 区間のはじめから','岩に当たると おそくなる','正しく続けると **流れに乗って** 速くなる','★3＝行き止まり0回・岩2回まで'],
+  rules:['**消化液のカーテン** は、つぶにはたらく消化液をくぐる（だ液・胃液・すい液・胆汁・小腸の壁）','**分かれ道** は、つぶが次に向かう器官の流れへ','まちがえると **行き止まり**。理由を読んで、少し前からやり直し（道の並びは 毎回かわる）','2回目からは **同じ所で2回**、または **区間で3回**（決勝・細胞は4回）まちがえると 区間のはじめから（はじめての区間は やり直しなし）','岩に当たると おそくなる','正しく続けると **流れに乗って** 速くなる','★3＝行き止まり0回・岩2回まで'],
   onOpen:()=>{if(G)G.paused=true},onClose:()=>{if(G&&$('ov').hidden)G.paused=false},replay:'tutorial',offset:{x:62},attention:true,show:false});
  Guide.tutorialButton('#btnHow',()=>{actx();TUTFROM='how';Guide.tutorial(PRACTICE)});
 }catch(e){console.error(e);$('btnHow').hidden=true}
-window.__mt={get G(){return G},get SV(){return SV},startLeg,openPrep,openMap,startTest,step:dt=>{update(dt)},w2s,forkBands,idxAt};
 marbleTile();muteIcon();resize();
 if(window.GAME_MODE==='test'){startTest()}else{showTitle()}
 requestAnimationFrame(frame);

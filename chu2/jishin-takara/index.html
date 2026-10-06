@@ -171,6 +171,24 @@ body:not(.port) #hud{padding:0 128px}
 .tool.hot{animation:tlhot .45s ease-out}
 @keyframes tlhot{0%{box-shadow:0 0 0 0 rgba(224,169,59,.9)}100%{box-shadow:0 0 0 14px rgba(224,169,59,0)}}
 @media (prefers-reduced-motion:reduce){.peb.pulse,#tDig.ready,#logo.drop h1,#logo.drop p{animation:none}#combo.go{animation-duration:.01s}}
+/* 船長の書きこみ（第2周 2026-10-06）: 区画の入口と確認テストの入口で、未読なら出す */
+#scrLc{position:fixed;inset:0;z-index:65;display:flex;align-items:center;justify-content:center;padding:10px;background:rgba(44,44,52,.55)}
+#scrLc.hidden{display:none}
+#lc{position:relative;width:min(94vw,700px);max-height:calc(100vh - 20px);display:flex;flex-direction:column;background-color:var(--bg);background-image:radial-gradient(rgba(44,44,52,.10) 1.1px,transparent 1.5px);background-size:6px 6px;border:4px dotted var(--ink);box-shadow:8px 10px 0 rgba(20,40,60,.35)}
+#lcBody{overflow-y:auto;padding:14px 18px 4px;touch-action:pan-y}
+#lcH{display:flex;align-items:baseline;gap:10px;font-size:clamp(18px,2.4vw,23px);font-weight:900;border-bottom:3px dotted var(--red);padding-bottom:4px;margin-bottom:6px}
+#lcH small{font-size:13px;color:var(--red);white-space:nowrap}
+#lcT{font-size:clamp(15px,1.9vw,17px);line-height:1.55;margin:0 0 4px}
+#lcT b{color:var(--red)}
+#lcFig{display:block;width:100%;max-width:440px;height:auto;max-height:24vh;margin:2px auto}
+#lcQ{font-size:clamp(15px,1.9vw,17px);line-height:1.5;margin:6px 0 6px;padding:6px 10px;background:#fff;border-left:6px dotted var(--red)}
+#lcCh{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+#lcCh .ch{min-height:46px;padding:6px 12px;font-size:15px}
+#lcMsg{min-height:1.5em;font-size:15px;line-height:1.5;margin:6px 0 0}
+#lcMsg.ok{color:#2f6b2a}#lcMsg.ng{color:var(--red)}
+#lcFoot{display:flex;justify-content:center;padding:8px 0 12px;border-top:3px dotted rgba(44,44,52,.3)}
+@media (max-height:800px){#lcBody{padding-top:10px}#lcFig{max-height:21vh}#lcT{line-height:1.45}}
+body.port #lcCh{grid-template-columns:1fr}
 </style>
 </head>
 <body>
@@ -246,6 +264,8 @@ body:not(.port) #hud{padding:0 128px}
 </div>
 
 <div id="scrAsk" class="scr hidden" role="dialog" aria-modal="true" data-gd-pass><div id="ask"><p id="askP">もどりますか？<br>進み具合は保存されます。</p><div class="row"><button class="peb" id="askNo">つづける</button><button class="peb red" id="askGo">もどる</button></div></div></div>
+
+<div id="scrLc" class="hidden" role="dialog" aria-modal="true" data-gd-pass><div id="lc"><div id="lcBody"><div id="lcH"><span id="lcHt"></span><small id="lcNo"></small></div><p id="lcT"></p><svg id="lcFig" viewBox="0 0 440 150" aria-hidden="true"></svg><div id="lcQ"></div><div id="lcCh"></div><p id="lcMsg"></p></div><div id="lcFoot"><button class="peb red" id="lcGo">つぎへ</button></div></div></div>
 
 <script>/*@GAME_FX*/
 /* このゲーム専用の罰の演出とBGM（印の外。sync_one.py では上書きされない）。書き方は _shared/fx-README.md */
@@ -4043,13 +4063,14 @@ var toastT=null;function toast(h,ms){var t=$('toast');t.innerHTML=h;t.classList.
 
 /* ================= あそぶ ================= */
 var G=null;
-function startLevel(i,prac){ac();var L=LV[i],r=rng(1000+i*77);
+function startLevel(i,prac){if(!prac&&!TEST&&!SV.lc){lcOpen(function(){startLevel(i,prac)});return}startLevel0(i,prac)}
+function startLevel0(i,prac){ac();var L=LV[i],r=rng(1000+i*77);
   var mags=L.mags.map(buildMag);POLES=[];mags.forEach(function(m){POLES=POLES.concat(m.poles)});
   G={li:i,L:L,mags:mags,flags:[],lines:[],comps:[],fil:[],falling:[],bag:1,bagN:L.bag,tool:'sand',errs:0,lineFails:0,digMiss:0,hits:0,preds:0,combo:0,best:0,score:0,time:0,
      state:'play',draw:null,fails:[],holes:[],stripes:null,stripeHash:null,done:false,left:L.boss||0,tut:L.tip==='tut'?0:-1,predMsg:L.tip==='pred',visited:[],clearT:0};
   G.prac=!!prac;buildStripes();makeFlags(r);if(prac)G.flags=G.flags.slice(0,1);FL.width=FL.width;fl.clearRect(0,0,FL.width,FL.height);
   selectTool('sand');setScene('play');if(window.BGM)BGM.mood('normal');$('hud').classList.toggle('prac',!!prac);updHud();
-  var intro={tut:'紙の上を指でなぞって<b>砂鉄をまこう</b>（🫙を長押しでも）',pred:'<b>方位磁針を置くとき、ドラッグで針の向きを予想</b>→当たると大ボーナス',u:'U字形磁石の<b>体は、極の後ろ</b>にあるかも',ns:'磁石が2本。<b>N極から出た線は、どのS極に入る？</b>',nn:'<b>同じ極どうし</b>が向き合っている…線は<b>交わらない</b>',disc:'<b>砂鉄袋が小さい</b>。まく場所を考えよう',str:'<b>強い磁石</b>のまわりは線が<b>ぎっしり</b>'}[L.tip]||'砂鉄→方位磁針→<b>N極からS極へ</b>磁力線';
+  var intro={tut:'紙の上を指でなぞって<b>砂鉄をまこう</b>（🫙を長押しでも）',pred:'<b>方位磁針を置くとき、ドラッグで針の向きを予想</b>→当たると大ボーナス',u:'U字形磁石の<b>体は、極の後ろ</b>にあるかも',ns:'磁石が2本。<b>N極から出た線は、どのS極に入る？</b>',nn:'<b>同じ極どうし</b>が向き合っている…線は<b>交わらない</b>',disc:'<b>砂鉄袋が小さい</b>。まく場所を考えよう',str:'<b>強い磁石</b>のまわりは線が<b>ぎっしり</b>'}[L.tip]||'砂鉄で<b>形</b>→方位磁針で<b>向き</b>→<b>N極からS極へ</b>磁力線';
   if(L.boss)intro='<b>大地図・タイムアタック</b>　4分以内に5本の線と3つの磁石！';
   note(intro);SFX.whoosh();
   if(L.tip==='nn'){setTimeout(function(){if(G&&G.li===i)toast('★ レアな区画！ ここを<b>ミスなし</b>でぬけると<b>金の宝箱</b>',2800)},1200)}}
@@ -4206,7 +4227,7 @@ function levelClear(){if(!G||G.state!=='play')return;G.state='clear';G.clearT=0;
   if(G.prac){var gp=G;setTimeout(function(){if(G===gp&&window.Guide)Guide.tutorialClear()},900);return}
   setTimeout(function(){showClear(st)},1300)}
 var SPECS=['棒磁石（横）','棒磁石（縦）','ななめの棒磁石','U字形磁石','N極とS極の向かい合わせ','N極どうしの向かい合わせ','円形磁石','強い磁石と弱い磁石','U字形と棒','宝島の大地図'];
-var SPECTXT=['両端の極に線が集まり、N極から出た線がぐるりと回ってS極に入る。','向きを変えても、線の形は磁石といっしょに回るだけ。','磁界の向きは磁石の向きで決まる。紙の向きは関係ない。','向かい合う両極の間では、線がほぼまっすぐN→S。体は極の後ろ側。','向かい合ったN極とS極の間を、線がつながる。','N極どうしの間では線がつながらず、押し合うように曲がる。','丸くても極は2つ。N極の側から出てS極の側に入る。','強い磁石ほど線がぎっしり＝磁界が強い。','いくつ磁石があっても、線は交わらない。','島じゅうの磁界を、磁力線で表しきった！'];
+var SPECTXT=['両端の極に線が集まり（線がぎっしり＝磁界が強い）、N極から出た線がぐるりと回ってS極に入る。','向きを変えても、線の形は磁石といっしょに回るだけ。','磁界の向きは磁石の向きで決まる。紙の向きは関係ない。','向かい合う両極の間では、線がほぼまっすぐN→S。体は極の後ろ側。','向かい合ったN極とS極の間を、線がつながる。','N極どうしの間では線がつながらず、押し合うように曲がる。','丸くても極は2つ。N極の側から出てS極の側に入る。','強い磁石ほど線がぎっしり＝磁界が強い。','いくつ磁石があっても、線は交わらない。','島じゅうの磁界を、磁力線で表しきった！'];
 function specSVG(li){var m=LV[li].mags,sc=6,out='<svg viewBox="0 0 110 70" xmlns="http://www.w3.org/2000/svg">';
   m.forEach(function(mg){var x=(mg.x/PW)*110,y=70-(mg.y/PH)*70,a=-mg.a*180/Math.PI;
     if(mg.k==='bar'){var l=mg.L*sc*.9;out+='<g transform="translate('+x+' '+y+') rotate('+a+')"><rect x="'+(-l/2)+'" y="-5" width="'+(l/2)+'" height="10" fill="'+BLUE+'"/><rect x="0" y="-5" width="'+(l/2)+'" height="10" fill="'+RED+'"/><text x="'+(l/4)+'" y="3.5" font-size="8" fill="#fff" text-anchor="middle" font-weight="900">N</text><text x="'+(-l/4)+'" y="3.5" font-size="8" fill="#fff" text-anchor="middle" font-weight="900">S</text></g>'}
@@ -4377,8 +4398,8 @@ $('bBook1').onclick=openBook;$('bBook2').onclick=openBook;$('eBook').onclick=ope
 $('bGacha').onclick=function(){var z=Zk();if(z&&z.openGacha)z.openGacha()};
 if(!Zk()){['bBook1','bBook2','bGacha','eBook'].forEach(function(id){$(id).classList.add('hidden')})}
 function getName(){return(window.PLAYER_NAME||$('nameIn').value||SV.name||'').trim()}
-var INTRO={title:'第24回 砂鉄の宝さがし',learn:'磁石のまわりには **磁界** がある。磁力線は **N極から出てS極に入り**、交わらない',
-  how:'砂鉄を **まいて** 模様を見て、旗を通る磁力線を **なぞる** → 磁石を掘る',gesture:'draw'};
+var INTRO={title:'第24回 砂鉄の宝さがし',learn:'磁石の力（**磁力**）がはたらく空間＝**磁界**。\n**磁界の向き**＝方位磁針の **N極（赤）** がさす向き。\n**磁力線** は **N極から出てS極へ**。交わらない。\n**線がぎっしりの所ほど磁界が強い**',
+  how:'砂鉄の模様で **形**、方位磁針で **向き** → 磁力線を **なぞる** → 磁石を掘る',gesture:'draw'};
 function wpt(x,y,r){var p=W2S(x,y);return{x:p[0],y:p[1],r:r||Math.max(26,U*.7)}}
 function m0(){return G&&G.mags&&G.mags[0]&&G.mags[0].m}
 function flag0(){return G&&G.flags&&G.flags[0]}
@@ -4388,7 +4409,7 @@ function linePath(){var f=flag0();if(!f)return[];var rs=resampleN(f.line,12);ret
 function paperArea(){var pr=paperRect();return{x:pr.x+pr.w/2,y:pr.y+pr.h/2,w:pr.w+8,h:pr.h+8}}
 var PSTEPS=[
   {gesture:'draw',target:function(){var m=m0()||{x:8,y:5};return wpt(m.x,m.y+2.6)},path:sandPath,area:paperArea,until:function(){return !!(G&&G.tut>=1)},praise:'模様が出た！',
-    text:'🫙 砂鉄で、紙の上を **ぐるっとなぞって** まこう。見えない磁石のまわりに **模様** が浮かぶ'},
+    text:'🫙 砂鉄（鉄の粉＝**鉄粉**）で、紙の上を **ぐるっとなぞって** まこう。模様で磁界の **形** が分かる（**向きは分からない**）'},
   {gesture:'tap',target:compPt,until:function(){return !!(G&&G.comps.length>=1)},praise:'置いた！',
     text:'🧭 方位磁針を、**旗の近く** をタップして置こう。針の **赤（N極）** がさす向き＝磁界の向き'},
   {gesture:'tap',target:'#tPen',until:function(){return !!(G&&G.tool==='pen')},praise:'えんぴつ！',
@@ -4397,7 +4418,7 @@ var PSTEPS=[
     until:function(){var f=flag0();return !!(f&&f.done)},praise:'磁力線！',
     text:'**旗** を通って、**N極から出て S極に入る** ように なぞろう（砂鉄の模様にそって）'},
   {gesture:'tap',target:function(){var m=m0()||{x:8,y:5};return wpt(m.x,m.y,Math.max(30,U*.9))},until:function(){return !!(G&&G.mags&&G.mags.every(function(m){return m.found}))},praise:false,
-    text:'線がそろった！ **⛏️ 磁石の体**（N極とS極の間）をタップして掘ろう'}];
+    text:'線がそろった！ 極の近くは線が **ぎっしり**＝そこが **磁界の強い所**。**⛏️ 磁石の体**（N極とS極の間）をタップして掘ろう'}];
 var PRACTICE={start:function(){startLevel(0,true)},label:'れんしゅう中',clearOn:'manual',clearText:'れんしゅうクリア！',steps:PSTEPS,
   onExit:function(res){if(res&&(res.stopped||res.replaced))return;if(res&&res.cleared){G=null;if(SV.unl<=2)startLevel(1);else setScene('map');return}
     if(G&&G.prac){G.prac=false;$('hud').classList.remove('prac')}}};
@@ -4409,7 +4430,34 @@ if(window.Guide)Guide.tutorialButton('#bHow',function(){ac();SFX.tap();PRACTICE.
 document.addEventListener('pointerdown',function(e){var b=e.target&&e.target.closest&&e.target.closest('.peb,.tool');if(b&&!b.disabled){vib(8);if(b.classList.contains('tool')){b.classList.remove('hot');void b.offsetWidth;b.classList.add('hot')}}},true);
 $('bCont').onclick=function(){ac();SFX.tap();SV.name=$('nameIn').value.trim()||SV.name;save();setScene('map')};
 $('bToTest').onclick=function(){if(SV.done)toTest()};
-function toTest(){var z=Zk();if(z&&z.mainClear&&!TEST){try{z.mainClear({onClose:startTest});return}catch(e){}}startTest()}
+function toTest(){if(!TEST&&!SV.lc){G=null;lcOpen(toTest);return}var z=Zk();if(z&&z.mainClear&&!TEST){try{z.mainClear({onClose:startTest});return}catch(e){}}startTest()}
+
+/* ---------------- 船長の書きこみ（第2周 2026-10-06）: 磁界・砂鉄と方位磁針・磁力線のきまり。区画の入口と確認テストの入口で、未読なら1回。確認テストだけのモードでは出さない ---------------- */
+function lcMag(x,y,w){return '<rect x="'+x+'" y="'+y+'" width="'+(w/2)+'" height="34" fill="#D1495B" stroke="#2C2C34" stroke-width="3"/><rect x="'+(x+w/2)+'" y="'+y+'" width="'+(w/2)+'" height="34" fill="#3A6EA5" stroke="#2C2C34" stroke-width="3"/><text x="'+(x+w/4)+'" y="'+(y+25)+'" text-anchor="middle" font-size="22" font-weight="900" fill="#fff">N</text><text x="'+(x+w*3/4)+'" y="'+(y+25)+'" text-anchor="middle" font-size="22" font-weight="900" fill="#fff">S</text>'}
+function lcNeedle(x,y,ang){var a=ang*Math.PI/180,dx=Math.cos(a)*17,dy=Math.sin(a)*17;return '<circle cx="'+x+'" cy="'+y+'" r="22" fill="#FBF7EF" stroke="#2C2C34" stroke-width="3"/><path d="M'+(x+dx)+' '+(y+dy)+' L'+(x-dy*.3)+' '+(y+dx*.3)+' L'+x+' '+y+'z" fill="#D1495B"/><path d="M'+(x-dx)+' '+(y-dy)+' L'+(x-dy*.3)+' '+(y+dx*.3)+' L'+x+' '+y+'z" fill="#9aa0a8"/><path d="M'+(x-dx)+' '+(y-dy)+' L'+(x+dy*.3)+' '+(y-dx*.3)+' L'+x+' '+y+'z" fill="#9aa0a8"/><path d="M'+(x+dx)+' '+(y+dy)+' L'+(x+dy*.3)+' '+(y-dx*.3)+' L'+x+' '+y+'z" fill="#D1495B"/>'}
+var LC=[
+ {h:'磁界と、その向き',t:'磁石の力（<b>磁力</b>）がはたらく空間を <b>磁界</b> という。<br>磁界の <b>向き</b> ＝ そこに置いた方位磁針の <b>N極（赤い方）</b> がさす向き。',
+  fig:function(){return lcMag(150,70,140)+lcNeedle(80,87,200)+'<text x="80" y="135" text-anchor="middle" font-size="14" font-weight="700" fill="#2C2C34">ここの磁界は</text><text x="80" y="150" text-anchor="middle" font-size="14" font-weight="900" fill="#D1495B">赤がさす向き</text>'+lcNeedle(370,87,160)+'<text x="220" y="40" text-anchor="middle" font-size="15" font-weight="700" fill="#2C2C34">針の赤（N極）が、その場所の磁界の向き</text>'},
+  q:'ある場所に方位磁針を置くと、赤いN極が <b>左</b> をさした。この場所の磁界の向きは？',ch:['左','右','上','この観察では分からない'],ok:'正解！ 赤（N極）がさす向き＝磁界の向き。だから左。',hint:'磁界の向きは、針の <b>赤（N極）</b> がさす向き。赤はどっちをさしている？'},
+ {h:'砂鉄と方位磁針のやくわり',t:'<b>砂鉄（鉄の粉＝鉄粉）</b> をまくと、模様で磁界の <b>形</b> が分かる。でも砂鉄に赤い印は無いので <b>向きは分からない</b>。<br>向きは <b>方位磁針</b> を置いて調べる。いくつもの場所に置き、N極の向きをなめらかにつなぐと <b>磁力線</b> になる。',
+  fig:function(){var o='';for(var k=0;k<40;k++){var a=k/40*6.283;o+='<circle cx="'+(110+Math.cos(a)*(55+(k%3)*6))+'" cy="'+(80+Math.sin(a)*(36+(k%2)*5))+'" r="2.4" fill="#2C2C34"/>'}
+    return o+'<text x="110" y="85" text-anchor="middle" font-size="15" font-weight="900" fill="#2C2C34">砂鉄</text><text x="110" y="140" text-anchor="middle" font-size="14" font-weight="700" fill="#2C2C34">形は分かる・向きは×</text>'+lcNeedle(300,62,0)+lcNeedle(352,62,20)+'<text x="326" y="115" text-anchor="middle" font-size="15" font-weight="900" fill="#D1495B">方位磁針</text><text x="326" y="138" text-anchor="middle" font-size="14" font-weight="700" fill="#2C2C34">置いた場所の向きが分かる</text>'},
+  q:'方位磁針を <b>1つだけ</b> 置いた。これで分かるのは？',ch:['置いた場所の磁界の向き','磁界全体の形（模様）','磁界の強さの数値','磁石の重さ'],ok:'正解！ 1つの方位磁針で分かるのは、置いたその場所の向き。形は砂鉄の模様で見る。',hint:'方位磁針は、置いたその1か所で、赤（N極）が向きを教えてくれる道具だったね'},
+ {h:'磁力線のきまり',t:'① <b>N極から出て S極に入る</b>（線に矢印をつける）<br>② 線どうしは <b>交わらない・枝分かれしない</b><br>③ 線の <b>間かくがせまい所ほど、磁界が強い</b>（棒磁石なら、両はしの極の近く）',
+  fig:function(){var o='';[1,2,3].forEach(function(k){[-1,1].forEach(function(sg){var cy=75+sg*30*k;o+='<path d="M160 75 C'+(160-22*k)+' '+cy+' '+(280+22*k)+' '+cy+' 280 75" fill="none" stroke="#2C2C34" stroke-width="2.5"/>';var ty=75+sg*22.5*k;o+='<path d="M226 '+ty+' l-10 -6 v12z" fill="#2C2C34"/>'})});
+    return o+lcMag(160,58,120)+'<text x="92" y="80" text-anchor="middle" font-size="14" font-weight="900" fill="#D1495B">ぎっしり</text><text x="92" y="97" text-anchor="middle" font-size="13" font-weight="700" fill="#2C2C34">＝強い</text><text x="350" y="80" text-anchor="middle" font-size="14" font-weight="900" fill="#D1495B">ぎっしり</text><text x="350" y="97" text-anchor="middle" font-size="13" font-weight="700" fill="#2C2C34">＝強い</text><text x="400" y="18" text-anchor="middle" font-size="13" font-weight="700" fill="#2C2C34">はなれると</text><text x="400" y="34" text-anchor="middle" font-size="13" font-weight="700" fill="#2C2C34">まばら＝弱い</text>'},
+  q:'2本の磁力線の <b>間かくが広くなっている所</b> がある。そこの磁界は？',ch:['弱い','強い','向きが逆になる','磁界がまったく無い'],ok:'正解！ 間かくが広い＝弱い、せまい＝強い。',hint:'きまり③。間かくが <b>せまい</b> ほど強いなら、<b>広い</b> 所は？'}
+];
+var lcI=0,lcThen=null,lcOK=false;
+function lcOpen(then){lcI=0;lcThen=then||null;if(G)G.paused=true;$('scrLc').classList.remove('hidden');lcShow()}
+function lcShow(){var p=LC[lcI];lcOK=!p.q;$('lcHt').textContent='船長の書きこみ　'+p.h;$('lcNo').textContent=(lcI+1)+' / '+LC.length;$('lcT').innerHTML=p.t;$('lcFig').innerHTML=p.fig?p.fig():'';
+  $('lcQ').innerHTML=p.q?'✏️ やってみよう　'+p.q:'';$('lcQ').style.display=p.q?'':'none';$('lcMsg').textContent='';$('lcMsg').className='';var box=$('lcCh');box.innerHTML='';
+  if(p.q){var order=p.ch.map(function(c,i){return i});for(var i=order.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1)),t=order[i];order[i]=order[j];order[j]=t}
+    order.forEach(function(i,k){var b=document.createElement('button');b.className='ch';b.innerHTML='<i>'+'アイウエ'.charAt(k)+'</i>'+esc(p.ch[i]);b.onclick=function(){if(lcOK)return;ac();
+      if(i===0){lcOK=true;b.classList.add('ok');$('lcMsg').className='ok';$('lcMsg').innerHTML=p.ok;SFX.tap&&SFX.tap();$('lcGo').classList.remove('hidden')}
+      else{b.classList.add('ng');b.disabled=true;$('lcMsg').className='ng';$('lcMsg').innerHTML='ちがう… ヒント：'+p.hint;SFX.bad&&SFX.bad()}};box.appendChild(b)})}
+  $('lcGo').textContent=lcI>=LC.length-1?'わかった！':'つぎへ';$('lcGo').classList.toggle('hidden',!lcOK);$('lcBody').scrollTop=0}
+$('lcGo').onclick=function(){if(!lcOK)return;ac();SFX.tap&&SFX.tap();if(lcI<LC.length-1){lcI++;lcShow();return}SV.lc=1;save();$('scrLc').classList.add('hidden');if(G)G.paused=false;var t=lcThen;lcThen=null;if(t)t()};
 
 /* ---------------- 確認テスト ---------------- */
 var TQ=[],TI=0,TA=[],TOK=[],CARD=null;
@@ -4470,7 +4518,8 @@ if(window.Guide){
     sfx:function(k){if(k==='step')SFX.tap();else if(k==='done')SFX.hit(2);else if(k==='clear')SFX.fan();else if(k==='open'||k==='close')SFX.tap();else if(k==='cheer')SFX.line(2);else if(k==='nudge')SFX.tap()},
     muted:function(){return muted}});
   HELP=Guide.help({title:INTRO.title,learn:INTRO.learn,how:INTRO.how,offset:{x:60,y:0},size:48,show:false,attention:true,replay:'tutorial',
-    rules:['🫙 砂鉄：紙を **なぞる** とまける。模様が、見えない磁石の形を教えてくれる','🧭 方位磁針：紙を **タップ** で置く。針の **N極（赤）** がさす向き＝その場所の **磁界の向き**（置くときドラッグで向きを予想→的中でボーナス）',
+    rules:['**磁界**＝磁石の力（磁力）がはたらいている空間。**磁力線**の間かくが **せまい所ほど磁界が強い**（両はしの極の近くがいちばん強い）',
+      '🫙 砂鉄（鉄の粉＝**鉄粉**）：紙を **なぞる** とまける。模様で磁界の **形** は分かるが、**向きは分からない**（向きは方位磁針で）','🧭 方位磁針：紙を **タップ** で置く。針の **N極（赤）** がさす向き＝その場所の **磁界の向き**（置くときドラッグで向きを予想→的中でボーナス）',
       '✏️ 磁力線：**旗** を通る線を **N極から S極へ** なぞる。線どうしは **交わらない**','⛏️ 掘る：線がぜんぶそろったら、**磁石の体**（N極とS極の間）をタップ'],
     onOpen:function(){if(G&&!G.paused){G.paused=true;G.hp=1}},onClose:function(){if(G&&G.hp){G.hp=0;if($('scrAsk').classList.contains('hidden'))G.paused=false}}});
 }
@@ -4480,7 +4529,6 @@ if(window.PLAYER_NAME){$('nameIn').value=window.PLAYER_NAME;$('nmRow').classList
 if(TEST)startTest();else setScene('title');
 requestAnimationFrame(frame);
 /* 自動操作での確かめ用（遊びには影響しない） */
-window.__JT={mapN:function(){mapNodes();return MAPN},pr:function(){return paperRect()},G:function(){return G},start:startLevel,scene:function(){return scene},SV:function(){return SV},W2S:W2S,judge:judgeLine,dig:function(m){var b=m.body[0];digAt((b[0]+b[2])/2,(b[1]+b[3])/2,W/2,H/2)},sprinkle:sprinkle,place:placeComp,clear:levelClear,sel:selectTool};
 })();
 </script>
 <script>window.ZUKAN_COUNTER={"db": "https://rika-zukan-rank-default-rtdb.asia-southeast1.firebasedatabase.app", "id": "jishin-takara"};

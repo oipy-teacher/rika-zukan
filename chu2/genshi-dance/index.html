@@ -74,6 +74,25 @@ html,body{margin:0;height:100%;background:#101010;overflow:hidden;overscroll-beh
 #gBack{position:fixed;left:10px;top:10px;z-index:30;height:48px;padding:0 8px;border:2px solid #C8A951;outline:1px solid rgba(200,169,81,.6);outline-offset:-6px;background:#0e0d0b;color:#e9d38f;
   font:19px "Aoboshi One",serif;cursor:pointer;clip-path:polygon(10px 0,calc(100% - 10px) 0,100% 10px,100% calc(100% - 10px),calc(100% - 10px) 100%,10px 100%,0 calc(100% - 10px),0 10px)}
 #gBack:active{transform:scale(.95)}
+/* まなぶカード（曲の前の案内状） */
+#dlg .lc-k{font:13px "Aoboshi One",serif;color:#C8773C;letter-spacing:.12em}
+#dlg .lc-h{font:22px "Aoboshi One",serif;color:#e9d38f;margin:2px 0 8px;border-bottom:1px solid #8a7432;padding-bottom:6px}
+#dlg .lc p{margin:6px 0;font-size:16px;line-height:1.7}
+#dlg .lc b{color:#e9d38f}
+#dlg .lc .fx{margin:8px 0;padding:8px 12px;border:1px solid #C8A951;background:#0b0b0b;font-size:16px;line-height:1.75}
+#dlg .lc .fx .f{font:18px "Aoboshi One",serif;color:#e9d38f}
+#dlg .lc svg{display:block;margin:6px auto;max-width:100%;height:auto}
+#dlg .lc .pg{text-align:right;font-size:13px;color:#8a7432}
+#dlg .box{display:flex;flex-direction:column}#dlgT{overflow-y:auto;min-height:0;flex:0 1 auto}#dlgR{flex:none}
+#dlg .lc .tr{margin:8px 0 2px;padding:8px 12px;border:1px dashed #C8773C}
+#dlg .lc .tr .tq{font-size:16px;line-height:1.6;margin-bottom:6px}
+#dlg .lc .tr .tk{display:flex;flex-wrap:wrap;gap:8px}
+#dlg .box.wide{width:min(720px,100%);max-height:95vh;padding:18px 22px 14px}
+#dlg .lc .tr .tk button{flex:1 1 22%;min-height:44px;padding:4px 6px;border:1px solid #C8A951;background:#0b0b0b;color:#f3ead2;font:16px "Aoboshi One",serif;cursor:pointer}
+#dlg .lc .tr .tk button.ok{background:#3b2f10;border-color:#e9d38f;color:#e9d38f}
+#dlg .lc .tr .tk button.ng{opacity:.45}
+#dlg .lc .tr .tf{min-height:1.6em;margin-top:6px;font-size:15px;line-height:1.55;color:#d9c68a}
+#dlg .pbtn[disabled]{opacity:.35;cursor:default}
 /* 手ほどきの吹き出しがロビーや扉をふさがないように（スキップだけ押せる） */
 .gd-bub{pointer-events:none!important}.gd-bub .gd-skip{pointer-events:auto}
 @media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
@@ -3925,7 +3944,67 @@ var E=[],COUP=[],MEET=[],PUSH=null,GATE={open:false,k:0},ORDER=null,PRED=null,DO
 function SONG(){return S.cur.pr?PS:SONGS[S.cur.song]}
 function ORD(){return SONG().orders[S.cur.oi]}
 function newCur(si,SS){SS=SS||SONGS[si];return {song:si,pr:SS===PS?1:0,oi:0,tries:0,miss:0,first:0,time:SS.time||0}}
-function startSong(si){S.cur=newCur(si);scene='play';BGKEY='';COUP=[];E=[];MEET=[];DONE=null;var sg=SONGS[si];ev(sg.nm+'　'+sg.dance,sg.sub,2.2,sg.boss?C.cu:C.gold,1);SFX.fanfare();
+
+/* ================= まなぶカード（曲の前の案内状・2026-10-06 初心者向け） ================= */
+function svA(k,x,y,r,tag){var A=AT[k];return '<circle cx="'+x+'" cy="'+y+'" r="'+r+'" fill="'+A.col+'" stroke="#000" stroke-width="1.5"/><text x="'+x+'" y="'+(y+r*.36)+'" font-size="'+(r*(A.sym.length>1?.8:1))+'" text-anchor="middle" fill="'+A.tx+'" font-family="sans-serif">'+A.sym+'</text>'+(tag===false?'':'<rect x="'+(x+r*.5)+'" y="'+(y-r*1.25)+'" width="'+(r*.95)+'" height="'+(r*.8)+'" fill="#101010" stroke="#C8A951"/><text x="'+(x+r*.97)+'" y="'+(y-r*.62)+'" font-size="'+(r*.62)+'" text-anchor="middle" fill="#e9d38f" font-family="sans-serif">'+A.w+'</text>')}
+function svO2(x,y,r,tag){return '<line x1="'+(x-r)+'" y1="'+y+'" x2="'+(x+r)+'" y2="'+y+'" stroke="#f3ead2" stroke-width="3"/>'+svA('O',x-r,y,r,tag)+svA('O',x+r,y,r,tag)}
+function svT(x,y,t,sz,col){return '<text x="'+x+'" y="'+y+'" font-size="'+(sz||15)+'" text-anchor="middle" fill="'+(col||'#e9d38f')+'" font-family="sans-serif">'+t+'</text>'}
+function svg(w,h,inner){return '<svg viewBox="0 0 '+w+' '+h+'" width="'+w+'">'+inner+'</svg>'}
+var LEARN={
+ 0:{k:'舞踏会の案内状　その1',pages:[
+  {h:'原子と分子',t:{q:'O₂ の右下の小さな「2」は、何を表している？',c:['分子の中に、酸素原子が2個','酸素分子が2個ある','酸素の質量が2'],w:'右下の小さな数は「1つの分子の中の原子の数」。分子の数は前に大きく書く。'},b:'<p>物質は、目に見えないほど小さな粒<b>「原子」</b>でできている。原子には種類があり、記号で書く。<b>銅＝Cu</b>、<b>酸素＝O</b>。</p>'+
+   svg(300,86,svA('Cu',60,50,20,false)+svT(60,82,'銅原子 Cu',13)+svO2(200,50,17,false)+svT(200,82,'酸素分子 O₂',13))+
+   '<p>酸素は、酸素原子2個がくっついた<b>「酸素分子」</b>の形でいる。<b>O₂</b> の右下の小さな2は「中に原子が2個」という意味。</p>'},
+  {h:'銅を加熱すると',t:{q:'銅原子6個を、全部 酸化銅（CuO）にしたい。酸素分子（O₂）は何個いる？',c:['3個','6個','2個','12個'],w:'酸化銅は銅1個と酸素原子1個。酸素原子が6個いる → 酸素分子1個に原子2個なので 6÷2。'},b:'<p>銅を加熱すると、空気中の酸素と結び付いて<b>酸化銅（CuO）</b>になる。酸化銅は<b>銅原子1個＋酸素原子1個</b>。つまり<b>1対1</b>で組む。</p>'+
+   svg(320,84,svA('Cu',26,40,15,false)+svA('Cu',64,40,15,false)+svT(96,46,'＋',20)+svO2(140,40,14,false)+svT(184,46,'→',20)+svA('Cu',214,40,15,false)+svA('O',240,40,12,false)+svA('Cu',272,40,15,false)+svA('O',298,40,12,false)+svT(160,78,'銅原子2個 ＋ 酸素分子1個 → 酸化銅2個',13))+
+   '<div class="fx">化学反応式（変化を記号で書いたもの）<br><span class="f">2Cu ＋ O₂ → 2CuO</span><br>前の大きな<b>2</b>＝「2個」。右下の小さな<b>₂</b>＝「分子の中の原子が2個」。<br>酸素分子1個は原子2個なので、<b>銅原子2個と組む</b>。</div>'},
+  {h:'原子の札＝質量のくらべ',t:{q:'銅8・酸素2の札で、酸化銅 4組 の質量の合計は？',c:['40','10','32','8'],w:'1組は 8＋2＝10。それが4組。'},b:'<p>原子1個の質量（重さ）は、種類で決まっている。この舞踏会では、原子の<b>札の数</b>でくらべる。</p>'+
+   svg(300,70,svA('Cu',90,44,20)+svT(90,24-14,'',1)+svA('O',210,44,16))+
+   '<p><b>銅原子1個＝8</b>、<b>酸素原子1個＝2</b>。酸化銅1組の質量は <b>8＋2＝10</b>。</p>'+
+   '<p>遊び方：ダンスカードの<b>注文の数だけ</b>、原子を会場へ入れる。多すぎると<b>相手のいない原子が余って</b>やり直し。</p>'}]},
+ 1:{k:'第2曲の前に',pages:[
+  {h:'「比」の読み方',t:{q:'10：4 を、いちばん簡単な整数の比にすると？',c:['5：2','10：4','2：5','4：1'],w:'両方を同じ数（2）で割る。'},b:'<p><b>比</b>は、2つの量を「：」でならべてくらべたもの。両方を<b>同じ数で割って</b>、いちばん簡単な整数にする。</p>'+
+   '<div class="fx">例：<span class="f">6：2</span> → 両方を2で割る → <span class="f">3：1</span></div>'+
+   '<p>会場の壁の<b>比のメーター</b>は、踊っている組の「金属の質量の合計：酸素の質量の合計」を指す。</p>'+
+   '<p>この曲の前に、組が10組にふえたら比がどうなるかを<b>針で予想</b>する。答えは踊って確かめよう。</p>'},
+  {h:'相手が足りないと、余る',t:{q:'銅原子7個と酸素分子2個。できる酸化銅と、余る原子は？',c:['酸化銅4個・銅原子3個余る','酸化銅7個・何も余らない','酸化銅2個・銅原子5個余る','酸化銅4個・何も余らない'],w:'酸素分子2個＝酸素原子4個。組めるのは銅原子4個まで。7−4が余る。'},b:'<p>酸素分子1個（酸素原子2個）は、銅原子<b>2個</b>としか組めない。</p>'+
+   '<div class="fx">例：銅原子<b>5個</b>と酸素分子<b>1個</b><br>→ 酸素原子は2個なので、酸化銅は<b>2個</b>できる<br>→ 相手のいない銅原子が <b>5−2＝3個</b> 余る</div>'+
+   '<p>酸素がどれだけたくさんあっても、組める酸素原子は<b>金属原子の数まで</b>。結び付く酸素の限度は、<b>金属の量</b>で決まる。</p>'}]},
+ 2:{k:'第3曲の前に',pages:[
+  {h:'質量から原子の数を出す',t:{q:'結び付いた酸素の質量の合計が 8 だった（酸素原子1個＝2）。反応した銅原子は何個？',c:['4個','2個','8個','1個'],w:'酸素原子の数＝8÷2。銅とは1対1で組むので、銅原子も同じ数。'},b:'<div class="fx">式：<span class="f">原子の数 ＝ 質量の合計 ÷ 原子1個の札</span><br>例：銅の質量 16 → 16÷8＝<b>2個</b>。酸素原子も2個＝酸素分子1個</div>'+
+   '<div class="fx">例：酸素の質量 4 → 4÷2＝<b>酸素原子2個</b>＝酸素分子1個。銅原子も2個（1対1）</div>'+
+   '<div class="fx">例：酸化銅の質量 30 → 1組は8＋2＝10 → 30÷10＝<b>3組</b></div>'},
+  {h:'実験のg（グラム）でも同じ',t:{q:'酸化銅 1.0g の中の銅は何g？（銅：酸素＝4：1）',c:['0.8g','0.2g','0.25g','4.0g'],w:'酸化銅は5つ分。1.0÷5＝0.2g が1つ分。銅はその4つ分。'},b:'<p>8：2を簡単にすると <b>銅：酸素＝4：1</b>。g でも同じ比で結び付く。</p>'+
+   '<div class="fx">式：<span class="f">酸素 ＝ 銅 ÷ 4</span><br>例：銅 2.0g → 酸素は 2.0÷4＝<b>0.5g</b></div>'+
+   '<div class="fx">酸化銅は 銅4＋酸素1＝<b>5つ分</b><br>例：酸化銅 2.5g → 5つ分に分けると1つ分 0.5g → 銅は4つ分＝<b>2.0g</b>、酸素は1つ分＝<b>0.5g</b></div>'}]},
+ 3:{k:'第4曲の前に',pages:[
+  {h:'新しいお客さま：マグネシウム',t:{q:'マグネシウムを加熱してできる「酸化マグネシウム」を、記号で書くと？',c:['MgO','MgO₂','Mg₂O'],w:'マグネシウム原子1個と酸素原子1個が組む（1対1）。'},b:'<p><b>マグネシウム原子（Mg）</b>。札は<b>3</b>。</p>'+svg(300,64,svA('Mg',110,40,19)+svA('O',200,40,16))+
+   '<p>マグネシウムを加熱すると、酸素と<b>1対1</b>で結び付いて<b>酸化マグネシウム（MgO）</b>になる。</p>'+
+   '<div class="fx">化学反応式：<span class="f">2Mg ＋ O₂ → 2MgO</span>（銅と同じ形）</div>'+
+   '<p>この曲の前に、「マグネシウム：酸素」の質量の比を針で予想しよう。</p>'}]},
+ 5:{k:'第6曲の前に',pages:[
+  {h:'マグネシウムの質量の計算',t:{q:'マグネシウム 4.5g が全部反応した。結び付く酸素は何g？',c:['3.0g','1.5g','2.0g','6.0g'],w:'酸素＝マグネシウム÷3×2。4.5÷3＝1.5、それを2倍。'},b:'<p>札はマグネシウム3・酸素2、数は1対1。だから <b>マグネシウム：酸素＝3：2</b>。</p>'+
+   '<div class="fx">式：<span class="f">原子の数 ＝ 質量 ÷ 3</span><br>例：マグネシウムの質量 9 → 9÷3＝<b>3個</b> → 酸素原子も3個＝酸素の質量 6</div>'+
+   '<div class="fx">g の計算：<span class="f">酸素 ＝ マグネシウム ÷ 3 × 2</span><br>例：マグネシウム 6.0g → 6.0÷3×2＝<b>4.0g</b></div>'+
+   '<p>銅（4：1）と比がちがうのは、数はどちらも1対1でも、<b>原子1個の質量がちがう</b>（銅8・マグネシウム3）から。</p>'}]},
+ 7:{k:'グランドフィナーレの前に',pages:[
+  {h:'グラフの点を踊る',t:{q:'銅原子3個の組を踊った。グラフの点はどこ？（銅8・酸素2）',c:['（24, 6）','（3, 3）','（8, 2）','（24, 24）'],w:'横＝銅の質量 3×8、縦＝酸素の質量 3×2。'},b:'<p>グラフの<b>横</b>＝金属の質量の合計、<b>縦</b>＝結び付いた酸素の質量の合計。注文1つが<b>点1つ</b>。</p>'+
+   '<div class="fx">例：銅原子2個の組 → 横は 2×8＝16、縦は 2×2＝4 → 点（16, 4）</div>'+
+   '<p>組が0なら、どちらも0。点を全部打ったら、線でつないだ形を見よう。</p>'}]}
+};
+function shufL(a){a=a.slice();for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1)),x=a[i];a[i]=a[j];a[j]=x}return a}
+function showLearn(si,cb,pi){var L0=LEARN[si];pi=pi||0;var pg=L0.pages[pi],last=pi===L0.pages.length-1,bt=[];
+ if(pi>0)bt.push(['◀ 前へ',function(){showLearn(si,cb,pi-1)}]);
+ bt.push([last?'わかった ▶':'次へ ▶',function(){if(last){if(S){S.learned=S.learned||{};S.learned[si]=1;save()}cb&&cb()}else showLearn(si,cb,pi+1)},1]);
+ var tr='';if(pg.t)tr='<div class="tr"><div class="tq"><b>やってみよう</b>　'+pg.t.q+'</div><div class="tk"></div><div class="tf"></div></div>';
+ dialog('<div class="lc"><div class="lc-k">'+L0.k+'</div><div class="lc-h">'+pg.h+'</div>'+pg.b+tr+(L0.pages.length>1?'<div class="pg">'+(pi+1)+' / '+L0.pages.length+'</div>':'')+'</div>',bt);
+ $('dlg').querySelector('.box').classList.add('wide');try{$('dlgT').scrollTop=0}catch(e){}
+ if(pg.t){var R=$('dlgR'),go=R.lastChild;go.disabled=true;var K=$('dlgT').querySelector('.tk'),F=$('dlgT').querySelector('.tf');
+  shufL(pg.t.c.map(function(c,i){return {c:c,ok:i===0}})).forEach(function(o){var b=document.createElement('button');b.textContent=o.c;
+   b.onclick=function(){if(go.disabled===false)return;if(o.ok){b.className='ok';F.innerHTML='<b>そのとおり！</b>　'+pg.t.w;go.disabled=false;try{SFX.ok&&SFX.ok()}catch(e){}}else{b.className='ng';F.innerHTML='ちがう。'+pg.t.w+'　もう一度。'}try{F.scrollIntoView({block:'nearest'})}catch(e){}};K.appendChild(b)})}}
+function toTestG(){if(!TEST&&S){for(var k in LEARN){if(!(S.learned&&S.learned[k])){showLearn(+k,toTestG);return}}}startTest()}
+function needLearn(si){return !PRACT&&!TEST&&LEARN[si]&&!(S&&S.learned&&S.learned[si])}
+function startSong(si){if(needLearn(si)){showLearn(si,function(){startSong(si)});return}S.cur=newCur(si);scene='play';BGKEY='';COUP=[];E=[];MEET=[];DONE=null;var sg=SONGS[si];ev(sg.nm+'　'+sg.dance,sg.sub,2.2,sg.boss?C.cu:C.gold,1);SFX.fanfare();
  if(sg.pred&&S.preds[si]==null){PRED={song:si,kind:sg.pred,ang:null,val:null,t:0};window.Tekitou&&Tekitou.shown()}else PRED=null;
  startOrder();save()}
 function startOrder(retry){var c=S.cur,o=ORD(),n=needOf(o),sg=SONG();E=[];COUP=[];MEET=[];GATE.open=false;ORDER={need:n,adm:{Cu:0,Mg:0,O2:0},st:'go',t:0,time:sg.time||0,fail:null,retry:!!retry};
@@ -4104,7 +4183,7 @@ function drawDone(dt){DONE.t+=dt;var t=DONE.t,sg=SONG();ctx.save();ctx.fillStyle
  var sz=Math.min(72,bw*.14);for(var i=0;i<3;i++){var ti=t-.5-i*.38;if(ti<0)continue;if(!DONE['s'+i]){DONE['s'+i]=1;if(i<DONE.st){SFX.stamp(i);shake(.35);vib(30);burst(W/2+(i-1)*sz*1.3,by+170,16)}}
   var k=ti<.18?1.8-ti/.18*.8:1,x=W/2+(i-1)*sz*1.3,y=by+170;ctx.save();ctx.translate(x,y);ctx.scale(k,k);ctx.rotate(Math.PI/4);ctx.fillStyle=i<DONE.st?C.gold:'transparent';ctx.strokeStyle=C.gold;ctx.lineWidth=2;ctx.fillRect(-sz*.36,-sz*.36,sz*.72,sz*.72);ctx.strokeRect(-sz*.36,-sz*.36,sz*.72,sz*.72);ctx.rotate(-Math.PI/4);if(i<DONE.st)txt('★',0,2,sz*.42,{al:'center',col:C.bk});ctx.restore()}
  var yy=by+230,fs=clamp(bw*.032,13,17);yy+=para('一発で決めた注文 '+S.cur.first+' / '+sg.orders.length+'　やり直し '+S.cur.miss+' 回',bx+28,yy,bw-56,fs,{col:C.cream,f:FB})+6;
- var lesson=sg.pred==='Cu'||S.cur.song===0?'何組ふえても 銅：酸素＝4：1。銅原子1個（8）と酸素原子1個（2）が1対1で組むから':sg.pred==='Mg'?'マグネシウム：酸素＝3：2。原子の数は1対1のまま、原子1個の質量（3と2）がちがうから':sg.boss?'原子の組で打った点は原点を通る直線にならんだ。コマ31の比例のグラフと同じ':'組の数＝金属原子の数。酸素分子1個は金属原子2個と組む（2Cu＋O₂→2CuO、2Mg＋O₂→2MgO）';
+ var lesson=sg.pred==='Cu'||S.cur.song===0?'何組ふえても 銅：酸素＝4：1。銅原子1個（8）と酸素原子1個（2）が1対1で組むから':sg.pred==='Mg'?'マグネシウム：酸素＝3：2。原子の数は1対1のまま、原子1個の質量（3と2）がちがうから':sg.boss?'原子の組で打った点は、原点（0の所）を通る直線にならんだ＝比例。マグネシウムの線のほうが急（同じ金属の質量でも、結び付く酸素が多い）':'組の数＝金属原子の数。酸素分子1個は金属原子2個と組む（2Cu＋O₂→2CuO、2Mg＋O₂→2MgO）';
  yy+=para(lesson,bx+28,yy,bw-56,fs,{col:C.goldL,f:FB});
  if(DONE.gold&&t>1.6){txt('金のダンスカード',W/2,by+128,20,{al:'center',col:'#fff1b0',stroke:C.bk,sw:5});if(!DONE.gs){DONE.gs=1;SFX.gold();confetti(60);flash(.4,'#fff3cf')}}
  if(t>1.6)btn({x:W/2-150,y:by+bh-78,w:300,h:60},S.cur.song>=SONGS.length-1?'舞踏会を終える ▶':'プログラムへ ▶','gold',afterSong,'dnx',{pulse:1});ctx.restore()}
@@ -4148,7 +4227,7 @@ function drawProgram(dt){if(BGKEY!==bgKey())buildGroundBG();ctx.drawImage(BG,0,0
   if(cur){ctx.globalAlpha=.5+.5*Math.sin(TT*4);ctx.strokeStyle=C.cu;ctx.lineWidth=3;ctx.strokeRect(r.x-4,r.y-4,r.w+8,r.h+8)}ctx.restore();
   if(!lock)HIT.push({id:'sg'+i,x:r.x,y:r.y,w:r.w,h:r.h,down:function(){SFX.tap()},up:function(p){if(inR(p,r))startSong(i)}})});
  var bw=Math.min(340,W-40),by=H-(LAND?80:134),done=S.res.filter(Boolean).length;
- if(S.cleared||done>=SONGS.length)btn({x:(W-bw)/2,y:by,w:bw,h:60},'確認テストへ ▶','cu',startTest,'pT',{pulse:1});
+ if(S.cleared||done>=SONGS.length)btn({x:(W-bw)/2,y:by,w:bw,h:60},'確認テストへ ▶','cu',toTestG,'pT',{pulse:1});
  else btn({x:(W-bw)/2,y:by,w:bw,h:60},SONGS[S.song].nm+'　'+SONGS[S.song].dance+' ▶','gold',function(){startSong(S.song)},'pGo',{pulse:1});
  if(!LAND)btn({x:(W-bw)/2,y:by+68,w:bw,h:52},'図鑑',window.Zukan&&Zukan.openBook?'line':'off',function(){window.Zukan&&Zukan.openBook()},'pZ');
  else btn({x:W-160,y:H-74,w:140,h:52},'図鑑',window.Zukan&&Zukan.openBook?'line':'off',function(){window.Zukan&&Zukan.openBook()},'pZ');
@@ -4162,7 +4241,7 @@ function drawClear(dt){if(BGKEY!==bgKey())buildGroundBG();ctx.drawImage(BG,0,0,W
  var rec=[['クリアタイム',fmtT(S.t)],['一発で決めた注文',S.firsts+' / '+S.orders+' 注文'],['金のダンスカード',gold+' / '+SONGS.length+' 枚'],['踊った組',S.pairs+' 組'],['最高の連',kanC(S.maxCombo||0)+'連']];
  rec.forEach(function(q){txt(q[0],x+40,yy,fs,{col:C.goldD,f:FB});txt(q[1],x+w-40,yy,fit(q[1],w*.45,fs),{al:'right',col:C.cream});yy+=fs*1.8});yy+=6;
  yy+=para('わかったこと：銅原子1個と酸素原子1個が1対1で結び付く。原子1個の質量のくらべは銅8：酸素2なので、何組できても 銅：酸素＝4：1。マグネシウムは3：2で1対1。原子が決まった数ずつ結び付くから、質量の比は一定になる。',x+40,yy,w-80,fs*.9,{col:C.cream,f:FB});
- var bw=(w-80-24)/3,by=Math.max(yy+14,y+h-86);btn({x:x+40,y:by,w:bw,h:58},'確認テスト','cu',startTest,'ct',{pulse:1});btn({x:x+52+bw,y:by,w:bw,h:58},'図鑑',window.Zukan&&Zukan.openBook?'line':'off',function(){window.Zukan&&Zukan.openBook()},'cz');btn({x:x+64+bw*2,y:by,w:bw,h:58},'プログラム','line',toProgram,'cp');
+ var bw=(w-80-24)/3,by=Math.max(yy+14,y+h-86);btn({x:x+40,y:by,w:bw,h:58},'確認テスト','cu',toTestG,'ct',{pulse:1});btn({x:x+52+bw,y:by,w:bw,h:58},'図鑑',window.Zukan&&Zukan.openBook?'line':'off',function(){window.Zukan&&Zukan.openBook()},'cz');btn({x:x+64+bw*2,y:by,w:bw,h:58},'プログラム','line',toProgram,'cp');
  hud('')}
 
 /* ================= 入力 ================= */
@@ -4180,7 +4259,7 @@ function hideAll(){$('test').classList.add('hidden');$('dlg').classList.add('hid
 function toTitle(){if(PRACT){var P=PRACT;PRACT=null;$('gBack').classList.add('hidden');if(window.Guide)Guide.tutorialEnd();S=P.S;ORDER=P.ORDER;E=P.E;COUP=P.COUP;MEET=P.MEET;DONE=P.DONE;PRED=P.PRED;PUSH=null}scene='title';POST.t0=-1;POST.landed=0;POST.armed=0;BGKEY='';hideAll()}
 function toProgram(){scene='program';BGKEY='';hideAll();save()}
 function titleStart(){if(load()&&!POST.armed){POST.armed=1;return}if(!NAME&&!TEST&&!POST.asked){POST.asked=1;askName(titleStart);return}S=fresh();S.name=NAME;save();
- if(window.Guide&&!STARTING){STARTING=1;Guide.intro(INTRO).then(function(){STARTING=0;NEWG=1;Guide.tutorial(PRACTICE)});return}
+ if(window.Guide&&!STARTING){STARTING=1;showLearn(0,function(){Guide.intro(INTRO).then(function(){STARTING=0;NEWG=1;Guide.tutorial(PRACTICE)})});return}
  startSong(0)}
 /* ================= れんしゅう（Guide.tutorial）・遊び方 ================= */
 var STARTING=0,NEWG=0,PRACT=null,PAUSED=false,HELPC=null,HELPON=null;
@@ -4223,11 +4302,12 @@ function setupGuide(){if(!window.Guide)return;
   muted:function(){return AU.mute}});
  HELPC=Guide.help({title:INTRO.title,learn:INTRO.learn,how:INTRO.how,
   rules:['金の扉は **タップで開け閉め**（スペースキーでも）','ロビーを **押さえたままなぞる** と、原子がスポットライトから逃げる',
-   'ダンスカードの注文どおりの数だけ入れる。**多すぎると余り** が出てやり直し','酸素分子（O₂）1個は **金属原子2個** と組む','原子の札の数＝原子1個の質量のくらべ（銅8・マグネシウム3・酸素2）'],
+   'ダンスカードの注文どおりの数だけ入れる。**多すぎると余り** が出てやり直し','酸素分子（O₂）1個は **金属原子2個** と組む','原子の札の数＝原子1個の質量のくらべ（銅8・マグネシウム3・酸素2）','質量の注文：**原子の数＝質量÷札の数**（例：銅16÷8＝2個）','g の計算：**酸素＝銅÷4**／**酸素＝マグネシウム÷3×2**。酸化銅は銅4＋酸素1＝5つ分'],
   onOpen:function(){PAUSED=true},onClose:function(){PAUSED=false},replay:'tutorial',offset:{x:70},size:48,show:false,attention:true})}
 function syncHelp(){if(!HELPC)return;var want=scene!=='title'&&scene!=='test'&&!STARTING;if(want!==HELPON){HELPON=want;if(want)HELPC.show();else HELPC.hide()}}
 function titleCont(){S=load();if(!S){titleStart();return}if(!NAME)NAME=S.name||'';hideAll();if(S.cleared){scene='clear';BGKEY='';return}
  if(S.cur&&S.cur.oi>=SONGS[S.cur.song].orders.length){S.cur=null;save()}
+ if(S.cur&&needLearn(S.cur.song)){var c0=S.cur;hideAll();showLearn(c0.song,function(){titleCont()});return}
  if(S.cur){var c=S.cur;scene='play';BGKEY='';COUP=[];E=[];MEET=[];DONE=null;PRED=null;var sg=SONGS[c.song];if(sg.pred&&S.preds[c.song]==null)PRED={song:c.song,kind:sg.pred,ang:null,val:null,t:0};startOrder(c.tries>0);msg('つづきから：'+sg.nm+'　'+sg.dance,3);return}
  toProgram()}
 function askName(cb){dialog('なまえ<small>提出カードにのる名前（空でもOK）</small><input id="dlgName" maxlength="16" autocomplete="off" placeholder="なまえ">',[['OK',function(){var el=$('dlgName');if(el&&el.value.trim())NAME=el.value.trim();cb()},1]]);setTimeout(function(){try{$('dlgName').focus()}catch(e){}},60)}
@@ -4237,7 +4317,7 @@ function onBack(){AU.init();
  if(scene==='title'){try{window.parent.postMessage({type:'rika-close-game'},'*')}catch(e){}return}
  var t=scene==='test'?'確認テストをやめて、タイトルにもどる？<small>テストは次はさいしょから。舞踏会の記録は保存されています。</small>':'タイトルにもどる？<small>進み具合は保存されます。「つづきから」で、この曲のいまの注文から遊べます。</small>';
  dialog(t,[['つづける',null],['もどる',function(){PUSH=null;save();toTitle()},1]])}
-function dialog(html,btns){$('dlgT').innerHTML=html;var R=$('dlgR');R.innerHTML='';btns.forEach(function(b){var el=document.createElement('button');el.className='pbtn'+(b[2]?' go':'');el.textContent=b[0];
+function dialog(html,btns){$('dlg').querySelector('.box').classList.remove('wide');$('dlgT').innerHTML=html;var R=$('dlgR');R.innerHTML='';btns.forEach(function(b){var el=document.createElement('button');el.className='pbtn'+(b[2]?' go':'');el.textContent=b[0];
  el.onclick=function(){$('dlg').classList.add('hidden');if(b[1])b[1]()};R.appendChild(el)});$('dlg').classList.remove('hidden')}
 
 /* ================= 確認テスト ================= */
@@ -4290,11 +4370,6 @@ layout();setupGuide();
 $('gBack').onclick=function(e){e.stopPropagation();onBack()};
 if(TEST)startTest();else toTitle();
 requestAnimationFrame(frame);
-window.__GD={get PRACTICE(){return PRACTICE},get HIT(){return HIT},get PRACT(){return PRACT},get S(){return S},get scene(){return scene},get L(){return L},get E(){return E},get COUP(){return COUP},get ORDER(){return ORDER},get PRED(){return PRED},set PRED(v){PRED=v},get DONE(){return DONE},
- SONGS:SONGS,needOf:needOf,titleStart:titleStart,startSong:startSong,toProgram:toProgram,afterSong:afterSong,GATE:GATE,
- admitN:function(k,n){var c=0;E.forEach(function(e){if(c<n&&e.z==='L'&&e.k===k){admit(e);c++}});return c},
- solve:function(){var n=ORDER.need;['Cu','Mg','O2'].forEach(function(k){__GD.admitN(k,n[k]-ORDER.adm[k])})},
- push:function(x,y){PUSH=x==null?null:{x:x,y:y}},predict:function(r){S.preds[PRED.song]={r:r};PRED=null},combo:function(n){COMBO=n}};
 })();
 </script>
 <script>window.ZUKAN_COUNTER={"db": "https://rika-zukan-rank-default-rtdb.asia-southeast1.firebasedatabase.app", "id": "genshi-dance"};

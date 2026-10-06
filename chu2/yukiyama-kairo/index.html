@@ -143,6 +143,31 @@ button{font-family:inherit;font-weight:900;cursor:pointer;touch-action:manipulat
 .cf{position:fixed;top:-14px;z-index:60;pointer-events:none;width:var(--w);height:var(--h);background:var(--c);clip-path:polygon(50% 0,100% 100%,0 80%);animation:cfall var(--t) cubic-bezier(.3,.2,.6,1) forwards}
 @keyframes cfall{to{transform:translate(var(--dx),108vh) rotate(var(--r))}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}#scrClear .stars span{opacity:1}}
+/* まなぶページ（山小屋の手帳）2026-10-06 初心者向け */
+#scrLearn{z-index:44;background:rgba(27,42,78,.5)}
+#lBox{width:min(720px,100%);max-height:100%;overflow:auto}
+#lKick{font-size:13px;letter-spacing:.22em;color:#F25C05}
+#lT{margin:4px 0 8px}
+#lFig{margin:6px 0;background:#fff;border:2px solid #c9d6e3;padding:6px}
+#lFig svg{display:block;width:100%;height:auto;max-height:32vh}
+#lP p{margin:6px 0;font-size:16px;line-height:1.75}
+#lP b{color:#F25C05}
+#lQ .ask{margin-top:10px;font-size:16px;line-height:1.55;padding:8px 12px;border:2px solid #F25C05;color:#1B2A4E}
+#lQ .opts{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+#lQ .lopt{min-height:46px;padding:8px 14px;font:inherit;font-size:15px;text-align:left;line-height:1.35;cursor:pointer;border:2px solid #26408B;background:#F4F8FB;color:#1B2A4E}
+#lQ .lopt.ok{background:#26408B;border-color:#26408B;color:#fff}
+#lQ .lopt[disabled]:not(.ok){opacity:.4}
+#lQ .why{margin-top:8px;font-size:15px;line-height:1.65}
+#lQ .why b{color:#26408B}#lQ .why b.ng{color:#d0431a}
+#lPg{margin-right:auto;align-self:center;font-size:14px;letter-spacing:.1em}
+
+/* 2026-10-06 仕上げ：横長の画面（1180×733・1024×768）では図を左・文と問いを右に並べ、札を画面の高さに収める */
+@media (min-width:900px) and (orientation:landscape){
+ #lBox.hasFig{width:min(1080px,96vw)!important;max-width:none;display:grid;grid-template-columns:minmax(0,43%) minmax(0,1fr);grid-template-areas:"k k" "t t" "f p" "f q" "f ft";grid-template-rows:auto auto auto auto 1fr;column-gap:22px;align-content:start}
+ #lBox.hasFig #lKick{grid-area:k}#lBox.hasFig #lT{grid-area:t}#lBox.hasFig #lFig{grid-area:f;align-self:start;margin-top:4px}#lBox.hasFig #lP{grid-area:p}#lBox.hasFig #lQ{grid-area:q}#lBox.hasFig .btns{grid-area:ft;align-self:end}
+ #lBox.hasFig #lFig svg{max-height:62vh}
+}
+@media (max-height:820px){#lP p{font-size:15px;line-height:1.6;margin:4px 0}#lQ .ask{margin-top:8px}#lQ .opts{margin-top:8px}#lQ .why{margin-top:6px}#lBox .btns{margin-top:10px}}
 </style>
 </head>
 <body>
@@ -167,7 +192,7 @@ button{font-family:inherit;font-weight:900;cursor:pointer;touch-action:manipulat
 <div id="scrMap" class="scr hidden">
   <div class="poly" id="mHead"></div>
   <div id="mNodes"></div>
-  <div id="mFoot"><button class="pbtn ice sm" id="bMat">🧤 材料図鑑</button><button class="pbtn ice sm" id="bBook2">📖 図鑑</button><button class="pbtn navy sm" id="bGacha">🎁 ガチャ</button><button class="pbtn sm" id="bToTest">📋 確かめのテストへ</button></div>
+  <div id="mFoot"><button class="pbtn ice sm" id="bMat">🧤 材料図鑑</button><button class="pbtn ice sm" id="bBook2">📖 図鑑</button><button class="pbtn navy sm" id="bGacha">🎁 ガチャ</button><button class="pbtn ice sm" id="bLearn">📘 手帳</button><button class="pbtn sm" id="bToTest">📋 確かめのテストへ</button></div>
 </div>
 <div id="scrCard" class="scr hidden"><div class="poly panel" id="cardBox"></div></div>
 <div id="scrLodge" class="scr hidden"><div class="poly panel" id="lodgeBox" style="width:min(900px,100%)"></div></div>
@@ -189,6 +214,7 @@ button{font-family:inherit;font-weight:900;cursor:pointer;touch-action:manipulat
     </div>
   </div>
 </div>
+<div id="scrLearn" class="scr hidden"><div class="poly panel" id="lBox"><div id="lKick"></div><p class="h2" id="lT"></p><div id="lFig" class="hidden"></div><div id="lP"></div><div id="lQ"></div><div class="btns"><span id="lPg"></span><button class="pbtn" id="lNext">次へ</button></div></div></div>
 <div id="scrEnd" class="scr hidden"><div class="poly panel" id="endBox"></div></div>
 <div id="scrBack" class="scr hidden" data-gd-pass style="z-index:45;background:rgba(38,64,139,.35)">
   <div class="poly panel" style="width:min(460px,100%)"><p class="h2" id="bkT">もどりますか？<small id="bkSub">進み具合は保存されます。</small></p>
@@ -3844,7 +3870,7 @@ function mixc(a,b,k){var x=hx(a),y=hx(b);return'rgb('+x.map(function(v,i){return
 
 /* ================= セーブ ================= */
 function freshK(){return{fe:10,salt:1,carbon:1,fine:1,open:0,ox:0}}
-function fresh(){return{v:1,name:'',step:0,unl:0,stars:{},best:{},K:freshK(),mat:{},t:0,clearT:0,done:0,band:0,dist:0,falls:0,rules:{},lodge:{},bestNear:null}}
+function fresh(){return{v:1,name:'',step:0,unl:0,stars:{},best:{},K:freshK(),mat:{},t:0,clearT:0,done:0,band:0,dist:0,falls:0,rules:{},lodge:{},bestNear:null,lrn:{}}}
 var SV=fresh();try{var o0=JSON.parse(localStorage.getItem(SKEY));if(o0&&o0.v===1)SV=Object.assign(fresh(),o0)}catch(e){}
 function save(){try{localStorage.setItem(SKEY,JSON.stringify(SV))}catch(e){}}
 var MUTE=false;try{MUTE=JSON.parse(localStorage.getItem('rika-zukan:profile:v1')||'{}').mute===true}catch(e){}
@@ -3885,7 +3911,7 @@ var RUNS=[
   tip:'日なたは暖かい。熱くなりすぎたら<b>口を閉じる</b>。空気が入らなくなって、反応が止まる。'},
  {lodge:'A',n:'第一の山小屋',alt:[1950,1950],tip:'カイロを手作りする。材料を選んで、温度をはかって確かめよう。'},
  {n:'風の尾根',alt:[1950,1650],len:1500,cold:5.4,env:20,spd:18,sky:'day',wind:1,items:{fe:3,salt:1,carbon:1,sugar:2,sand:1},obs:{rock:8,tree:2},learn:'shake',
-  tip:'風が強い。カイロを<b>振って</b>空気を送りこむと、反応が速くなって温まる。<b>砂糖・砂</b>は拾わない。'},
+  tip:'風が強い。カイロを<b>振って</b>空気を送りこむと、反応が速くなって温まる（そのかわり鉄粉を速く使いきる）。<b>砂糖・砂</b>は拾わない。'},
  {n:'夕暮れの谷',alt:[1650,1400],len:1600,cold:4.8,env:20,spd:19,sky:'dusk',items:{fe:3,sand:2,sugar:2,used:1},obs:{tree:7,rock:5},
   tip:'<b>使い終わった粉</b>（もう酸化鉄）を拾っても温まらない。黒い鉄粉だけを集めよう。'},
  {lodge:'B',n:'第二の山小屋',alt:[1400,1400],tip:'置いてあるカイロの袋を磁石で調べて、鉄が残っている袋だけを持っていく。'},
@@ -4203,14 +4229,14 @@ function toTitle(){endTut();wind(false);scene='title';G=null;showScr('scrTitle')
 function getName(){return(window.PLAYER_NAME||$('nameIn').value||SV.name||'').trim()}
 
 /* ================= コースの地図 ================= */
-function toMap(){endTut();scene='map';G=null;wind(false);showScr('scrMap');var zs=window.Zukan&&Zukan.state?Zukan.state():null,nm=MAT.filter(function(m){return SV.mat[m.id]}).length;
+function toMap(){if(!TEST&&!(SV.lrn&&SV.lrn.pre)){teachOnce('pre',LRN_PRE,toMap);return}endTut();scene='map';G=null;wind(false);showScr('scrMap');var zs=window.Zukan&&Zukan.state?Zukan.state():null,nm=MAT.filter(function(m){return SV.mat[m.id]}).length;
  $('mHead').innerHTML='<b>山頂 2400 m → 麓の小屋 400 m</b><span>材料図鑑 '+nm+'/'+MAT.length+'　転んだ回数 '+SV.falls+(zs?'　かけら '+zs.kakera:'')+'</span>';
  var box=$('mNodes');box.innerHTML='';RUNS.forEach(function(r,i){var b=document.createElement('button');b.className='node'+(r.lodge?' lodge':'')+(i===SV.unl&&!SV.done?' cur':'');var s=SV.stars[i]||[];
   b.innerHTML='<b>'+(r.boss?'BOSS ':'')+esc(r.n)+'</b><span class="st">'+(r.lodge?(SV.lodge[r.lodge]?'✔':i<=SV.unl?'山小屋':''):s.length?'★'.repeat(s.filter(Boolean).length)+'☆'.repeat(3-s.filter(Boolean).length):i<=SV.unl?'NEW':'')+'</span>';
   b.disabled=i>SV.unl;b.onclick=function(){ac();SFX.tap();if(r.lodge)toLodge(i);else toCard(i)};box.appendChild(b)});placeNodes();
  $('bToTest').classList.toggle('hidden',!SV.done);$('bGacha').classList.toggle('hidden',!(window.Zukan&&Zukan.openGacha));$('bBook2').classList.toggle('hidden',!(window.Zukan&&Zukan.openBook))}
 function kstr(K){return '鉄粉 '+K.fe.toFixed(1)+' g／'+(K.salt?'食塩水あり':'食塩水なし')+'／'+(K.carbon?'活性炭あり':'活性炭なし')+'／'+(K.fine?'細かい粒':'粗い粒')}
-function toCard(i){endTut();scene='card';var r=RUNS[i];showScr('scrCard');
+function toCard(i){if(!TEST&&!(SV.lrn&&SV.lrn.pre)){teachOnce('pre',LRN_PRE,function(){toCard(i)});return}endTut();scene='card';var r=RUNS[i];showScr('scrCard');
  $('cardBox').innerHTML='<p class="h2">'+(r.boss?'BOSS　':'')+esc(r.n)+'<small>標高 '+r.alt[0]+' m → '+r.alt[1]+' m　／　'+r.len+' m　／　寒さ '+'❄'.repeat(Math.round(r.cold/2))+'</small></p>'+
   '<p class="lead">'+r.tip+'</p><p class="lead" style="font-size:14px">いまのカイロ：'+esc(kstr(SV.K))+'</p>'+
   '<p class="lead" style="font-size:14px">目安の温度は <b>40〜55℃</b>（遊び方は右上の「？」）</p>'+
@@ -4252,7 +4278,7 @@ function drawGraph(cvs,curves){var c=cvs.getContext('2d'),w=cvs.width,h=cvs.heig
  [0,20,40,60,80].forEach(function(t){var y=12+gh-t/T1*gh;c.beginPath();c.moveTo(m,y);c.lineTo(m+gw,y);c.stroke();c.fillText(t+'℃',2,y+4)});
  c.fillText('時間 →',m+gw-50,h-6);
  curves.forEach(function(cu,idx){var pts=cu.pts,max=pts[pts.length-1][0];c.strokeStyle=cu.col;c.lineWidth=4;c.beginPath();pts.forEach(function(p,i){var x=m+p[0]/max*gw,y=12+gh-clamp(p[1],0,T1)/T1*gh;i?c.lineTo(x,y):c.moveTo(x,y)});c.stroke();if(cu.label){c.fillStyle=cu.col;c.fillText(cu.label,m+8,24+idx*16)}})}
-function toLodge(i){scene='lodge';if(window.BGM)BGM.mood('calm');var r=RUNS[i];showScr('scrLodge');if(r.lodge==='A')lodgeA(i);else if(r.lodge==='B')lodgeB(i);else lodgeC(i)}
+function toLodge(i){var lk=RUNS[i].lodge;if(!TEST&&LRN_LODGE[lk]&&!(SV.lrn&&SV.lrn[lk])){teachOnce(lk,LRN_LODGE[lk],function(){toLodge(i)});return}scene='lodge';if(window.BGM)BGM.mood('calm');var r=RUNS[i];showScr('scrLodge');if(r.lodge==='A')lodgeA(i);else if(r.lodge==='B')lodgeB(i);else lodgeC(i)}
 function lodgeDone(i,key){SV.lodge[key]=1;SV.unl=Math.max(SV.unl,i+1);save();toCard(i+1)}
 function lodgeA(i){var sel={},tries=0,okOnce=false,box=$('lodgeBox');window.Tekitou&&Tekitou.shown();
  function recipe(){return{fe:sel.fe?10:0,salt:sel.salt?1:0,carbon:sel.carbon?1:0,fine:1,open:1,ox:0}}
@@ -4314,7 +4340,7 @@ function toMat(){scene='mat';showScr('scrMat');$('matBox').innerHTML='<p class="
 
 /* ================= 確認テスト ================= */
 var TQ=[],TI=0,TA=[],TOK=[],CARD=null;
-function toTest(){var z=window.Zukan;if(z&&z.mainClear&&!TEST&&SV.done&&!toTest.shown){toTest.shown=1;try{z.mainClear({onClose:startTest});return}catch(e){}}startTest()}
+function toTest(){if(!TEST){var miss=[];if(!SV.lrn)SV.lrn={};if(!SV.lrn.pre)miss=miss.concat(LRN_PRE);['A','B','C'].forEach(function(k){if(!SV.lrn[k])miss=miss.concat(LRN_LODGE[k])});if(miss.length){teach('山小屋の手帳（テストの前に）',miss,function(){SV.lrn.pre=1;SV.lrn.A=1;SV.lrn.B=1;SV.lrn.C=1;save();toTest()});return}}var z=window.Zukan;if(z&&z.mainClear&&!TEST&&SV.done&&!toTest.shown){toTest.shown=1;try{z.mainClear({onClose:startTest});return}catch(e){}}startTest()}
 function startTest(){scene='test';G=null;wind(false);showScr('scrTest');TQ=window.Quiz?Quiz.test():[];TI=0;TA=[];TOK=[];showQ()}
 function lamps(){$('tLamps').innerHTML=TQ.map(function(q,i){return '<i class="'+(i<TOK.length?(TOK[i]?'ok':'ng'):i===TI?'cur':'')+'"></i>'}).join('')}
 function showQ(){if(TI>=TQ.length)return finishTest();var q=TQ[TI];$('tNo').textContent=(TI+1)+' / '+TQ.length;lamps();$('scrTest').scrollTop=0;
@@ -4352,11 +4378,63 @@ $('bMat').onclick=function(){SFX.tap();toMat()};$('bToTest').onclick=function(){
 if(!(window.Zukan&&Zukan.openBook))$('bBook1').classList.add('hidden');
 $('bStart').onclick=function(){ac();SFX.gl();SV.name=$('nameIn').value.trim()||SV.name;
  if(SV.unl>0&&!confirm('山頂からはじめますか？（図鑑・★はそのまま）'))return;
- var keep={name:SV.name,stars:SV.stars,best:SV.best,mat:SV.mat,rules:SV.rules,done:SV.done,clearT:SV.clearT,dist:SV.dist,band:SV.band,falls:SV.falls,t:SV.t};SV=Object.assign(fresh(),keep);save();if(GD){GD.intro(INTRO).then(function(){REPLAY=false;GD.tutorial(PRACTICE)})}else toCard(0)};
+ var keep={name:SV.name,stars:SV.stars,best:SV.best,mat:SV.mat,rules:SV.rules,done:SV.done,clearT:SV.clearT,dist:SV.dist,band:SV.band,falls:SV.falls,t:SV.t,lrn:SV.lrn};SV=Object.assign(fresh(),keep);save();if(GD){GD.intro(INTRO).then(function(){teachOnce('pre',LRN_PRE,function(){REPLAY=false;GD.tutorial(PRACTICE)})})}else toCard(0)};
 $('bCont').onclick=function(){ac();SFX.tap();SV.name=$('nameIn').value.trim()||SV.name;save();toMap()};
 /* もどる・音・もどる確認は #stage（fixed）の外へ出す：れんしゅう中の暗幕より上に出せるように */
 ['scrBack','bBack','bMute'].forEach(function(id){document.body.appendChild($(id))});
 window.Zukan&&Zukan.setup&&Zukan.setup({game:GID,koma:[KOMA]});
+
+/* ================= まなぶページ（山小屋の手帳）：言葉・計算を「その前」に教える（2026-10-06 初心者向け） ================= */
+var LRN=null;
+function fmtL(t){return esc(t).replace(/\*\*(.+?)\*\*/g,'<b>$1</b>')}
+function teachOnce(key,pages,done){if(!SV.lrn)SV.lrn={};if(SV.lrn[key]||!pages){done&&done();return}teach('山小屋の手帳',pages,function(){SV.lrn[key]=1;save();done&&done()})}
+function mnShuf(a){for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1)),t=a[i];a[i]=a[j];a[j]=t}return a}
+function teach(kick,pages,done){LRN={k:kick,p:pages,i:0,done:done};if(HELP&&HELP.hide)HELP.hide();showLearn()}
+function showLearn(){var L0=LRN,pg=L0.p[L0.i];$('scrLearn').classList.remove('hidden');$('lKick').textContent=L0.k;$('lT').textContent=pg.t;
+ var f=$('lFig');var fg=typeof pg.fig==='function'?pg.fig():pg.fig;$('lBox').classList.toggle('hasFig',!!fg);if(fg){f.innerHTML=fg;f.classList.remove('hidden')}else{f.innerHTML='';f.classList.add('hidden')}
+ $('lP').innerHTML=pg.p.split('\n').map(function(x){return '<p>'+fmtL(x)+'</p>'}).join('');
+ var q=$('lQ'),nb=$('lNext');q.innerHTML='';nb.textContent=L0.i+1>=L0.p.length?'わかった！':'次へ';$('lPg').textContent=L0.p.length>1?(L0.i+1)+' / '+L0.p.length:'';
+ if(pg.q){var qq=pg.q;nb.classList.add('hidden');q.innerHTML='<div class="ask">やってみよう：'+fmtL(qq.ask)+'</div><div class="opts"></div><div class="why"></div>';var box=q.querySelector('.opts'),wy=q.querySelector('.why');
+  mnShuf(qq.c.map(function(t,i){return{t:t,ok:i===0}})).forEach(function(o){var b=document.createElement('button');b.className='lopt';b.textContent=o.t;
+   b.onclick=function(){try{ac()}catch(e){}if(o.ok){SFX.gl();[].forEach.call(box.children,function(x){x.disabled=true});b.disabled=false;b.classList.add('ok');wy.innerHTML='<b>そのとおり！</b>　'+fmtL(qq.why);nb.classList.remove('hidden');setTimeout(function(){try{nb.scrollIntoView({behavior:'smooth',block:'nearest'})}catch(e){}},60)}
+    else{SFX.bad();b.disabled=true;wy.innerHTML='<b class="ng">ちがう。</b>　'+fmtL(qq.hint||'もう一度、上の説明を読んでみよう');setTimeout(function(){try{wy.scrollIntoView({behavior:'smooth',block:'nearest'})}catch(e){}},60)}};box.appendChild(b)})}
+ else nb.classList.remove('hidden');
+ $('lBox').scrollTop=0}
+$('lNext').onclick=function(){SFX.tap();var L0=LRN;if(!L0)return;L0.i++;if(L0.i>=L0.p.length){$('scrLearn').classList.add('hidden');LRN=null;if(L0.done)L0.done();return}showLearn()};
+function fT(x,y,t,sz,col,a){return '<text x="'+x+'" y="'+y+'" font-size="'+(sz||14)+'" fill="'+(col||'#222')+'" text-anchor="'+(a||'middle')+'" font-weight="700">'+t+'</text>'}
+function fW(w,h,b){return '<svg viewBox="0 0 '+w+' '+h+'" xmlns="http://www.w3.org/2000/svg" font-family="Hiragino Sans,Yu Gothic,sans-serif">'+b+'</svg>'}
+function fA(x,y,len,col){col=col||'#222';return '<path d="M'+x+' '+y+'h'+len+'" stroke="'+col+'" stroke-width="3"/><path d="M'+(x+len)+' '+(y-7)+'l12 7-12 7z" fill="'+col+'"/>'}
+
+function fBall(x,y,t,col,tc,r){r=r||18;return '<circle cx="'+x+'" cy="'+y+'" r="'+r+'" fill="'+col+'" stroke="rgba(0,0,0,.3)" stroke-width="1.5"/>'+fT(x,y+5,t,14,tc||'#fff')}
+function curveSVG(){var cs=[{k:{fe:10,salt:1,carbon:1,fine:1},c:'#F25C05',n:'細かい 10g'},{k:{fe:5,salt:1,carbon:1,fine:1},c:'#26408B',n:'細かい 5g'},{k:{fe:10,salt:1,carbon:1,fine:0},c:'#6F86A6',n:'粗い 10g'}];
+ var w=460,h=200,m=40,gw=w-m-110,gh=h-40,sec=600,b='<rect width="'+w+'" height="'+h+'" fill="#fff"/>';
+ [20,40,60].forEach(function(t){var y=10+gh-t/80*gh;b+='<path d="M'+m+' '+y+'h'+gw+'" stroke="#dfe7ef"/>'+fT(m-6,y+4,t+'℃',11,'#1B2A4E','end')});
+ b+='<path d="M'+m+' 10V'+(10+gh)+'H'+(m+gw)+'" stroke="#1B2A4E" stroke-width="2" fill="none"/>'+fT(m+gw,h-8,'時間 →',12,'#1B2A4E','end');
+ cs.forEach(function(c,i){var pts=simCurve(c.k,sec,0),d='';pts.forEach(function(p,j){if(j%4)return;var x=m+p[0]/sec*gw,y=10+gh-clamp(p[1],0,80)/80*gh;d+=(d?'L':'M')+x.toFixed(1)+' '+y.toFixed(1)});b+='<path d="'+d+'" stroke="'+c.c+'" stroke-width="3.5" fill="none"/>'+'<rect x="'+(m+gw+14)+'" y="'+(30+i*26)+'" width="18" height="6" fill="'+c.c+'"/>'+fT(m+gw+38,37+i*26,c.n,13,'#1B2A4E','start')});
+ return fW(w,h,b)}
+var LRN_PRE=[
+ {t:'カイロが温まるしくみ',fig:fW(460,110,fBall(40,50,'Fe','#5d6270')+fT(74,56,'＋',22,'#1B2A4E')+fBall(108,50,'O','#E4572E')+fA(140,50,40,'#1B2A4E')+fBall(212,50,'Fe','#8a4a2a')+fBall(246,50,'O','#E4572E')+fT(280,56,'＋',22,'#1B2A4E')+fT(330,58,'熱 🔥',22,'#F25C05')+fT(40,94,'鉄',13,'#1B2A4E')+fT(108,94,'酸素',13,'#1B2A4E')+fT(229,94,'酸化鉄',13,'#1B2A4E')+fT(410,46,'温度が',13,'#F25C05')+fT(410,64,'上がる',13,'#F25C05')+fT(410,84,'＝発熱反応',13,'#F25C05')),
+  p:'カイロの中には **鉄粉** が入っている。鉄が空気中の **酸素と結び付く**（これを **酸化** という）と、**酸化鉄** という別の物質になり、そのとき **熱が出る**。\n**鉄 ＋ 酸素 → 酸化鉄 ＋ 熱**\nこのように、熱を周りに出して **温度が上がる化学変化** を **発熱反応** という。\n反対に、周りから熱をうばって **温度が下がる化学変化** は **吸熱反応**（例：炭酸水素ナトリウムとクエン酸を水の中で混ぜる）。\n※水が蒸発する・物が水にとける、は別の物質ができないので化学変化ではない。',
+  q:{ask:'炭酸水素ナトリウムとクエン酸を水の中で混ぜたら、温度が **下がった**。この化学変化は？',c:['吸熱反応','発熱反応','蒸発'],why:'周りから熱をうばって温度が下がる化学変化が **吸熱反応**。カイロはその反対の **発熱反応**。',hint:'温度が「下がる」化学変化の名前を、上の説明でさがそう'}},
+ {t:'カイロの袋と、口の開け閉め',fig:fW(460,120,'<rect x="16" y="20" width="120" height="80" fill="#dfe7ef" stroke="#26408B" stroke-width="3"/>'+fT(76,56,'外袋',15,'#26408B')+fT(76,78,'空気を通さない',12,'#1B2A4E')+fA(146,60,34,'#1B2A4E')+fT(163,44,'開ける',12,'#F25C05')+'<rect x="196" y="20" width="110" height="80" fill="#F4F8FB" stroke="#6F86A6" stroke-width="2" stroke-dasharray="3 5"/>'+fT(251,52,'内袋',15,'#26408B')+fT(251,74,'小さな穴から',12,'#1B2A4E')+fT(251,90,'空気が入る',12,'#1B2A4E')+'<path d="M330 96 C350 30 370 30 392 32 S420 40 450 92" stroke="#F25C05" stroke-width="3.5" fill="none"/>'+fT(390,112,'温度：上がって、続いて、下がる',11,'#1B2A4E')),
+  p:'売っているカイロは、**空気を通さない外袋** に入っている。開けるまでは鉄が酸素にふれないので、**温まらない**。\n外袋を開けると、内袋の小さな穴から **空気（酸素）** が入り、反応が始まる。\n**口を閉じる** → 酸素が入らず反応が止まる → 熱が出なくなり **温度が下がる**。\n**大きく開けて振る** → 酸素がたくさん入って反応が速くなり **温度は高く** なる。そのかわり鉄粉を **速く使いきり、早く冷える**。\n鉄粉が全部酸化鉄に変わると、もう熱は出ない。だから温度は **しばらく高いまま続き、やがて下がる**。',
+  q:{ask:'温まったカイロを、空気を通さない **チャック袋** に入れて閉じた。温度はどうなる？',c:['反応が止まり、下がっていく','もっと上がる','ずっと変わらない'],why:'酸素が入らないと **反応が止まり**、熱が出なくなるので下がる。外袋に入っている間と同じ。',hint:'熱を出しているのは「鉄と酸素」の反応。酸素が来なくなると？'}}
+];
+var LRN_LODGE={
+ A:[{t:'カイロを手作りする実験の手順',fig:fW(460,96,['鉄粉と活性炭を<br>入れる','はじめの温度<br>をはかる','食塩水を<br>数滴加える','混ぜながら<br>1分ごとに記録'].map(function(t,i){var x=12+i*114,ln=t.split('<br>');return '<rect x="'+x+'" y="14" width="100" height="66" fill="'+(i===1?'#F25C05':'#26408B')+'"/>'+fT(x+14,34,(i+1)+'',14,'#fff')+fT(x+50,52,ln[0],12,'#fff')+fT(x+50,70,ln[1],12,'#fff')}).join('')),
+  p:'①ビーカーに **鉄粉と活性炭** を入れる\n②温度計で **はじめの温度** をはかる（反応が始まる前の温度を知っておかないと、何℃上がったか分からない）\n③**食塩水** を数滴加える\n④ガラス棒でかき混ぜながら、1分ごとに温度を記録する\n材料の役目：**食塩水** は鉄と酸素の反応を **速める**（食塩水そのものは鉄と結び付かない）。**活性炭** は細かい穴がたくさんあり、**空気を取りこんで鉄のまわりに酸素を集める**（活性炭が燃えるわけではない）。',
+  q:{ask:'食塩水を加える前に、温度計でしておくことは？',c:['はじめの温度をはかる','1分ごとに記録する','火で温める'],why:'反応が始まる前に **はじめの温度** をはかっておく。',hint:'手順の②を見よう'}},
+  {t:'温度は何℃上がった？',fig:fW(460,100,'<rect x="60" y="16" width="16" height="70" rx="8" fill="#dfe7ef" stroke="#1B2A4E"/><rect x="62" y="62" width="12" height="22" fill="#F25C05"/>'+fT(68,98,'はじめ 20℃',12,'#1B2A4E')+fA(110,50,60,'#1B2A4E')+fT(140,40,'3分後',12,'#1B2A4E')+'<rect x="210" y="16" width="16" height="70" rx="8" fill="#dfe7ef" stroke="#1B2A4E"/><rect x="212" y="30" width="12" height="54" fill="#F25C05"/>'+fT(218,98,'あと 50℃',12,'#1B2A4E')+fT(360,46,'50 − 20',18,'#F25C05')+fT(360,74,'＝ 30℃ 上がった',16,'#F25C05')),
+  p:'**上がった温度 ＝ あとの温度 − はじめの温度**\n例：はじめ 20℃ → 3分後 50℃ なら、50 − 20 ＝ **30℃** 上がった。\n温度が上がった → 熱が出た → **発熱反応**。',
+  q:{ask:'はじめ 15℃、かき混ぜて3分後 52℃。何℃上がった？',c:['37℃','67℃','52℃'],why:'52 − 15 ＝ **37℃**。',hint:'あとの温度 − はじめの温度'}}],
+ B:[{t:'使い終わった粉と、とじこめた空気',fig:fW(460,120,'<path d="M32 76V44a28 28 0 0 1 56 0v32h-18V44a10 10 0 0 0-20 0v32z" fill="#F25C05"/><rect x="32" y="64" width="18" height="12" fill="#dfe7ef"/><rect x="70" y="64" width="18" height="12" fill="#dfe7ef"/>'+fT(60,96,'磁石',12,'#1B2A4E')+fT(140,40,'使う前：つく（鉄）',13,'#1B2A4E','start')+fT(140,64,'使った後：ほとんどつかない',13,'#1B2A4E','start')+fT(140,82,'（酸化鉄に変わった）',12,'#F25C05','start')+'<rect x="370" y="10" width="34" height="96" fill="#F4F8FB" stroke="#26408B" stroke-width="2"/><rect x="371" y="70" width="32" height="35" fill="#7fb7df"/><rect x="376" y="20" width="22" height="20" fill="#5d6270"/>'+fT(410,62,'水面が',11,'#1B2A4E','start')+fT(410,77,'上がる',11,'#1B2A4E','start')+'<rect x="340" y="88" width="94" height="22" fill="none" stroke="#6F86A6"/>'),
+  p:'使う前の粉は **磁石に引きつけられる**（鉄だから）。使い終わった粉は **ほとんど引きつけられない**。鉄が **酸化鉄** という別の物質に変わり、性質が変わったから。\n温まったカイロを **メスシリンダーの内側** にはって、水そうに逆さに立てる。翌日、中の **水面が上がり**、カイロは冷えていた。\n→ 中の空気の **酸素が鉄と結び付いて使われ、減った**。減った分だけ水が入ってきた。酸素がなくなると反応も止まり、冷える。',
+  q:{ask:'温まったカイロを、空の **ペットボトル** に入れてふたをした。翌日、ボトルが少しへこんでいた。なぜ？',c:['中の酸素が鉄と結び付いて使われ、減ったから','カイロの熱で空気がふくらんだから','カイロから二酸化炭素が出たから'],why:'**酸素が使われて減った** 分だけ、中の空気が少なくなった。メスシリンダーの水面が上がるのと同じ理由。',hint:'カイロの反応で、何が使われる？'}}],
+ C:[{t:'粒の細かさ・鉄粉の量と、温度のグラフ',fig:curveSVG,
+  p:'**細かい粒** は、空気（酸素）とふれる面が大きいので **速く温まり、温度も高い**。粗い粒はゆっくり。\n**鉄粉が少ない** と、早く **反応しきって**、温度が先に下がり始める。\nグラフでは：細かい10g＝速く上がって長く続く／細かい5g＝速く上がるが **先に下がる**／粗い10g＝ゆっくり上がる。',
+  q:{ask:'**粗い粒** の鉄粉 10g は、細かい粒 10g とくらべて、温度の上がり方はどうなる？',c:['ゆっくり上がる','速く上がる','まったく上がらない'],why:'粗い粒は空気（酸素）とふれる面が小さいので、反応が **ゆっくり**。',hint:'細かさは「速さ」に関係する。粗いと、酸素とふれる面は？'}}]
+};
+$('bLearn').onclick=function(){SFX.tap();teach('山小屋の手帳（読み返し）',LRN_PRE.concat(LRN_LODGE.A,LRN_LODGE.B,LRN_LODGE.C),null)};
 /* ===== 遊び方案内（Guide）：ローポリの札 ===== */
 var INTRO={title:'第22回　雪山のカイロ',learn:'カイロは **鉄が酸素と結び付く（酸化）** ときに出る **熱** で温まる',how:'カイロを **こすって 振り**、左右の **タップ** で 材料を拾いながら すべり降りる',gesture:'tap'};
 function laneT(){if(L.land){var p=SP(G.s,1);return{x:p[0]+W*.12,y:p[1]+L.laneDy*.4,r:52}}return{x:W*.78,y:H*.5,r:56}}
@@ -4388,7 +4466,6 @@ if(window.PLAYER_NAME){$('nameIn').value=window.PLAYER_NAME;$('nmRow').classList
 if(TEST)startTest();else toTitle();
 requestAnimationFrame(frame);
 document.addEventListener('visibilitychange',function(){if(document.hidden&&G&&scene==='play'){G.paused=true;backFrom='play';wind(false);$('bkSub').textContent='一時停止中。進み具合は保存されます。';$('bkGo').textContent='コースの地図へ';$('scrBack').classList.remove('hidden')}});
-window.__YK={G:function(){return G},SV:function(){return SV},L:function(){return L},start:startRun,lane:laneTo,shake:shake,scene:function(){return scene},toMap:toMap,lodge:toLodge,card:toCard};
 })();
 </script>
 <script>window.ZUKAN_COUNTER={"db": "https://rika-zukan-rank-default-rtdb.asia-southeast1.firebasedatabase.app", "id": "yukiyama-kairo"};

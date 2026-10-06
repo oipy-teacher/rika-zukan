@@ -78,6 +78,42 @@ input{font:inherit;font-size:18px;padding:4px 8px;background:#000;color:#fff;bor
 .qbox{border:4px double #fff;padding:12px 14px;text-align:left;margin-top:10px}
 .spell{font-size:24px;letter-spacing:.12em;color:var(--y);border:2px dashed var(--y);display:inline-block;padding:4px 12px;margin-top:4px}
 .titles span{display:inline-block;border:2px solid var(--y);color:var(--y);padding:2px 10px;margin:3px;font-size:16px}
+
+/* 小屋（まなぶ）と 立て方の手順バー */
+.lsn{text-align:left}
+.lsn h2{text-align:center;font-size:22px}
+.lsnNo{font-size:13px;color:var(--gray);text-align:center}
+.lsnFig{background:#0b1b3a;border:2px solid #fff;margin:6px 0}
+.lsnFig svg{width:100%;height:auto;display:block;max-height:32vh}
+.lsnB{font-size:17px;line-height:1.75}
+.lsnB .ex{border:2px dashed var(--g);padding:6px 10px;margin-top:6px}
+.lsn .dbtn{font-size:16px;padding:6px 12px;margin:3px}
+.lsn .dbtn.on{background:var(--y);color:#000;border-color:var(--y)}
+.lsn .rv{display:none;border-left:4px solid var(--c);padding:2px 8px;margin:4px 0}
+.lsn .rv.show{display:block}
+.sbar{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:4px}
+.sbar span{font-size:13px;border:2px solid #444;color:#777;padding:1px 6px}
+.sbar span.on{border-color:var(--c);color:#000;background:var(--c)}
+#bMemo{font-size:14px;padding:2px 8px;margin:0}
+/* やってみようのある小屋：横長の画面では 左＝説明・右＝問いと選択肢（開いたとき全部見える） */
+@media (orientation:landscape) and (min-width:900px){
+ #ovBox.wq{max-width:1100px}
+ .lsnG.q{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:16px;align-items:start}
+ .lsnG.q .lsnR{position:sticky;top:0}
+ .lsnG.q .lsnQ{margin-top:6px}
+ .lsnG.q .lsnB{font-size:16px;line-height:1.6}
+ .lsnG.q .lsnFig svg{max-height:28vh}
+}
+.lsnNav{position:sticky;bottom:-18px;background:#000;margin:12px -18px -18px;padding:8px 6px 10px;border-top:2px solid #fff;z-index:2;text-align:center}
+.lsnNav .btn:disabled{opacity:.35;cursor:default}
+.lsnQ{border:2px solid var(--y);padding:8px 10px;margin-top:10px}
+.lsnQ .qt{font-weight:bold}
+.lsnQ .qt b.tag{background:var(--y);color:#000;padding:0 6px;margin-right:6px;font-size:14px}
+.lsnQ .ch .btn{display:block;width:100%;margin:6px 0;font-size:17px;text-align:left;padding:8px 12px}
+.lsnQ .ch .btn.ok{background:var(--g);color:#000;border-color:var(--g)}
+.lsnQ .ch .btn.ng{opacity:.4}
+#lsQx{min-height:1em;scroll-margin-bottom:90px}
+#title .startRow{position:sticky;bottom:0;background:#000;padding:6px 0;z-index:3}
 </style>
 <script>/*@GUARD_BEGIN*/
 /* ==========================================================
@@ -1686,15 +1722,23 @@ input{font:inherit;font-size:18px;padding:4px 8px;background:#000;color:#fff;bor
   <div class="story">標高 ma＝F メートル。
 運動方程式を 正しく立てた者だけが 登れる山がある。
 
-⛰ ルール
+⛰ どんなゲーム？
+・力をかけた物が どう動くかを表す式（運動方程式）を
+　タイルで組み立てて、6つの区間を登る。
+・<span class="g">はじめてでも大丈夫。</span>登る前に「ふもとの小屋」で
+　力・質量・加速度・ma＝F・式の立て方を 図で教える。
+　区間ごとの小屋でも、新しい言葉を 先に教える。
 ・<span class="y">計算は ぜんぶゲームがやる。</span>
 　キミの仕事は「式を組み立てる」と「理由を選ぶ」だけ。
-・ミスすると <span class="r">♥体力が減り、タイムに＋10秒</span>。
+
+⛰ ルール
+・<span class="g">区間1は 練習</span>（ミスしても 罰なし・タイムも計らない）。
+・区間2から 本番。ミスすると <span class="r">♥体力が減り、タイムに＋10秒</span>。
 　体力0で 遭難 → その区間の入口へ（数値が変わる）。
 ・「なぜ？」に正しく答えると <span class="c">装備</span>がもらえる。
 　装備がないと 次の区間へ進めない。
 ・6区間を登りきれば 登頂。タイムを競え！</div>
-  <div style="margin-top:18px">
+  <div class="startRow" style="margin-top:18px">
     <button class="btn big y" onclick="startRun(false)">▶ 登山を はじめる</button>
     <button class="btn big c hidden" id="bHardT" onclick="startRun(true)">🔥 ハードルート</button>
   </div>
@@ -1708,6 +1752,7 @@ input{font:inherit;font-size:18px;padding:4px 8px;background:#000;color:#fff;bor
     <span id="hArea"></span>
     <span id="hHp"></span>
     <span id="hGear"></span>
+    <button class="btn c" id="bMemo" onclick="reLesson()">📖 小屋のメモ</button>
     <span id="hTime">⏱ 00:00</span>
   </div>
   <div id="mt"><div id="mtIn"></div><div id="climber">🧗</div><div id="penFx">＋10秒</div></div>
@@ -1717,6 +1762,7 @@ input{font:inherit;font-size:18px;padding:4px 8px;background:#000;color:#fff;bor
     <div id="eqs"></div>
   </div>
   <div id="stepbox">
+    <div id="sbar" class="sbar"></div>
     <div id="stepNo"></div>
     <div id="q"></div>
     <div id="work"></div>
@@ -1965,7 +2011,12 @@ const ST=[
    box(150,122,60,50,'ザック',v.m+'kg')+A(210,147,295,147,Y,v.F1+' N',255,137)+A(150,147,65,147,Y,v.F2+' N',105,137)+T(318,153,'🧍','#fff','middle',22)+T(42,153,'🧍','#fff','middle',22)+
    A(250,40,320,40,C,'正の向き',285,30,{w:2})),
  steps:v=>[
-  {t:'tiles',q:'ザックの運動方程式を 組み立てよ。',lhsFixed:`${v.m}<i>a</i>`,
+  {t:'choice',k:0,q:'Step0：どの物体について 式を立てる？',opts:[['ザック',1],['右で引く人',0],['左で引く人',0],['氷の床',0]],
+   hint:'問題が聞いているのは ザックの加速度。動きを知りたい物体を選ぶ。'},
+  {t:'force',k:1,q:'Step1：ザックが受ける <b>横向きの力</b>を すべて選べ。',opts:[[`右向きに 引く力 ${v.F1} N`,1],[`左向きに 引く力 ${v.F2} N`,1],[`ザックの重力（${v.m}×9.8 N・下向き）`,0,'重力は たて向き。横に動く式には 入れない（床が押し返す力と つりあっている）。'],['すべっていく 勢いの力',0,'「勢い」は力ではない。力は 押す・引く 相手がいるものだけ。']]},
+  {t:'choice',k:2,q:'Step2：正の向き（＋とする向き）は どちら？（問題文に書いてある）',opts:[['右向き',1],['左向き',0],['大きいほうの力の向き',0],['決めなくてよい',0]],
+   hint:'問題文に「右向きを正として」とある。正の向きは 自分で決めてよいが、決めたら 最後まで変えない。'},
+  {t:'tiles',q:'Step3：ザックの運動方程式を 組み立てよ。<br><span class="gray" style="font-size:16px">右辺に ［＋］か［−］→ 力 の順でタップ。正（右）と同じ向きの力は＋、逆向きは−。</span>',lhsFixed:`${v.m}<i>a</i>`,
    tiles:[{id:'F1',l:v.F1},{id:'F2',l:v.F2},{id:'mg',l:`${v.m}×9.8`}],ans:[['+','F1'],['-','F2']],
    hint:'水平方向の力だけを使う。正の向きと逆向きの力には −。'},
   {t:'why',q:`なぜ ${v.F2} の前は「−」？`,opts:[['左向きの力で、正の向き（右）と逆だから',1],['右の力より 大きいから',0],['引っぱる力は いつもマイナスだから',0],['ザックが 左へ動くから',0]],
@@ -1984,7 +2035,7 @@ const ST=[
    A(50,175,50,105,C,'<tspan>a＝'+v.a+'</tspan>',50,95,{w:2})+T(50,196,'m/s²',C,'middle',12)+
    (r.has('o')?A(193,180,193,70,Y,'N',205,82,{anc:'start'})+A(167,157,167,234,Y,v.m+'×9.8',158,230,{anc:'end',fs:13}):'')),
  steps:v=>[
-  {t:'force',q:'荷物が受ける力を すべて選べ。',reveal:'o',opts:[[`重力（${v.m}×9.8 N）`,1],['台からの 垂直抗力 N',1],['リフトのワイヤーが 引く力',0,'ワイヤーが引いているのは「台」。荷物には ふれていない。'],['上向きに 加速させる力',0,'「加速させる力」という特別な力は ない。加速は、力の合計の結果。']]},
+  {t:'force',q:'荷物が受ける力を すべて選べ。<br><span class="gray" style="font-size:16px">ヒント：受ける力は 重力 と、荷物に ふれている物からの力 だけ（ふもと⑦）。ワイヤーは 何に ふれている？</span>',reveal:'o',opts:[[`重力（${v.m}×9.8 N）`,1],['台からの 垂直抗力 N',1],['リフトのワイヤーが 引く力',0,'ワイヤーが引いているのは「台」。荷物には ふれていない。'],['上向きに 加速させる力',0,'「加速させる力」という特別な力は ない。加速は、力の合計の結果。']]},
   {t:'tiles',q:'荷物の運動方程式を 組み立てよ（<span class="c">上向きが正</span>）。',lhsFixed:`${v.m}×${v.a}`,
    tiles:[{id:'N',l:'N'},{id:'mg',l:`${v.m}×9.8`},{id:'a',l:v.a}],ans:[['+','N'],['-','mg']],
    hint:'重力を 見落としていないか？ 下向きの力は −。'},
@@ -2015,7 +2066,7 @@ const ST=[
    hint:'斜面方向の力は、重力の「斜面方向の成分」だけ。垂直抗力は 斜面に垂直なので入らない。'},
   {t:'why',q:'すべり<b>上がっている</b>途中なのに、加速度が「下向き」なのは なぜ？',opts:[['斜面方向の力は 重力の成分（下向き）だけだから',1],['上る勢いの力が だんだん弱くなるから',0],['摩擦力が 下向きにはたらくから',0],['垂直抗力が そりを下へ押すから',0]],
    exp:'速度が上向きでも、力が下向きなら 加速度は下向き。上りながら減速 → 一瞬止まる → 下り始める。'},
-  {t:'calc',html:()=>`${v.m}<i>a</i> ＝ ${v.m}×9.8×sin${v.th}°<br><i>a</i> ＝ 9.8×sin${v.th}° ＝ <b class="y">${f2(v.a)} m/s²</b>（斜面下向き）<br><span class="c" style="font-size:17px">質量が消えた！ 重くても軽くても 同じ加速度。</span>`}
+  {t:'calc',html:()=>`${v.m}<i>a</i> ＝ ${v.m}×9.8×sin${v.th}°<br><i>a</i> ＝ 9.8×sin${v.th}° ＝ <b class="y">${f2(v.a)} m/s²</b>（斜面下向き）<br><span class="c" style="font-size:17px">質量が消えた！ 重くても軽くても 同じ加速度。<br>文字で書くと　a ＝ g sinθ（斜面下向き）</span>`}
  ],
  key:'斜面は「斜面方向＝運動方程式」「垂直方向＝力のつりあい」に分ける。速度の向き ≠ 加速度の向き。'},
 
@@ -2026,7 +2077,7 @@ const ST=[
    box(100,105,80,80,'A',v.M+'kg')+box(180,135,56,50,'B',v.m+'kg')+A(30,150,100,150,Y,'手 '+v.F+'N',62,140)+A(250,40,320,40,C,'正の向き',285,30,{w:2})+
    (r.has('B')?A(181,142,226,142,Y,'f',210,136,{fs:13}):'')+(r.has('A')?A(179,120,136,120,Y,'f',157,113):'')),
  steps:v=>[
-  {t:'force',q:'まず <b>B</b>。Bが受ける「水平方向」の力を すべて選べ。',reveal:'B',opts:[['AがBを押す力 f',1],[`手が押す力 ${v.F} N`,0,'手がふれているのは Aだけ。Bには 直接はたらかない。'],['BがAを押す力',0,'これは「Aが受ける力」。Bの式には入れない。'],['動いている向きの 勢い',0,'勢いは力ではない。']]},
+  {t:'force',q:'まず <b>B</b>。Bが受ける「水平方向」の力を すべて選べ。<br><span class="gray" style="font-size:16px">ヒント：Bに ふれている物は どれ？（手が ふれているのは どっち？）</span>',reveal:'B',opts:[['AがBを押す力 f',1],[`手が押す力 ${v.F} N`,0,'手がふれているのは Aだけ。Bには 直接はたらかない。'],['BがAを押す力',0,'これは「Aが受ける力」。Bの式には入れない。'],['動いている向きの 勢い',0,'勢いは力ではない。']]},
   {t:'tiles',no:'②',q:'Bの運動方程式（②）を 組み立てよ。',lhs:[{id:'m',l:`${v.m}<i>a</i>`},{id:'M',l:`${v.M}<i>a</i>`},{id:'Mm',l:`(${v.M}+${v.m})<i>a</i>`}],lhsAns:'m',
    tiles:[{id:'f',l:'f'},{id:'F',l:v.F}],ans:[['+','f']],hint:'Bの式には「Bの質量」と「Bが受ける力」だけ。'},
   {t:'force',q:'次に <b>A</b>。Aが受ける「水平方向」の力を すべて選べ。',reveal:'A',opts:[[`手が押す力 ${v.F} N`,1],['BがAを押し返す力 f',1],['AがBを押す力',0,'これは「Bが受ける力」。Aの式には入れない。'],['Bの重さ',0,'Bの重力はBにはたらく。しかも鉛直方向。']]},
@@ -2037,7 +2088,7 @@ const ST=[
   {t:'choice',q:'<i>a</i> を求めたい。①と②を どう組み合わせる？',opts:[['①＋②（f が消える）',1],['①−②',0],['①×②',0],['②だけで求まる',0]],hint:'わからない f を消したい。'},
   {t:'calc',html:()=>`①＋②：(${v.M}+${v.m})<i>a</i> ＝ ${v.F}　→　<i>a</i> ＝ <b class="y">${f2(v.a)} m/s²</b><br>②に代入：<i>f</i> ＝ ${v.m}×${f2(v.a)} ＝ <b class="y">${f2(v.f)} N</b><br><span class="c" style="font-size:17px">文字で書くと　a＝F₀／(M＋m)、f＝mF₀／(M＋m)</span>`}
  ],
- key:'物体ごとに分けて、その物体が「受ける力」だけを書く。2式を足すと 内力 f が消える。'},
+ key:'物体ごとに Step0（どの物体？）からやり直し、その物体が「受ける力」だけを書く。2式を足すと 内力 f が消える。'},
 
 {area:'8合目',name:'区間5　8合目 ―ザイルで引き上げ―',gear:{e:'🪢',n:'ザイル'},
  gen(){const mA=pick(['0.20','0.40']),mB=pick(['0.30','0.60']),a0=pick([1.0,2.0,3.0,4.2]);const F=(Math.round((+mA+ +mB)*(G+a0)*10)/10).toFixed(1);const a=+F/(+mA+ +mB)-G;return{mA,mB,F,a,T:+mB*(a+G)}},
@@ -2073,9 +2124,9 @@ const ST=[
    (r.has('A')?A(212,150,212,108,Y,'T',224,118,{anc:'start'})+A(192,174,192,234,Y,v.mA+'×9.8',204,232,{anc:'start',fs:12}):'')+
    (r.has('B')?A(170,112,170,76,Y,'T',176,100,{anc:'start'})+A(152,128,152,182,Y,v.mB+'×9.8',144,180,{anc:'end',fs:12}):'')),
  steps:v=>[
-  {t:'choice',q:'Aは下降し、Bは上昇する。2つの加速度を 同じ <i>a</i> で表すには、正の向きを どうとる？',opts:[['Aは下向き、Bは上向きを正',1],['A・Bとも 上向きを正',0],['A・Bとも 下向きを正',0],['Aは上向き、Bは下向きを正',0]],
+  {t:'choice',k:2,q:'Aは下降し、Bは上昇する。2つの加速度を 同じ <i>a</i> で表すには、正の向きを どうとる？',opts:[['Aは下向き、Bは上向きを正',1],['A・Bとも 上向きを正',0],['A・Bとも 下向きを正',0],['Aは上向き、Bは下向きを正',0]],
    hint:'それぞれの「動く向き」を正にすると、どちらも a（＞0）で書ける。'},
-  {t:'force',q:'<b>A</b>が受ける力を すべて選べ。',reveal:'A',opts:[[`重力（${v.mA}×9.8 N）`,1],['ロープが Aを引く力 T',1],['Bの重力',0,'Bの重力は Bにはたらく。Aには ロープの力 T として伝わる。'],['滑車が Aを支える力',0,'滑車がふれているのは ロープ。Aに直接ふれていない。']]},
+  {t:'force',q:'<b>A</b>が受ける力を すべて選べ。<br><span class="gray" style="font-size:16px">ヒント：Aに じかに ふれているのは ロープ。滑車は ロープに ふれている。</span>',reveal:'A',opts:[[`重力（${v.mA}×9.8 N）`,1],['ロープが Aを引く力 T',1],['Bの重力',0,'Bの重力は Bにはたらく。Aには ロープの力 T として伝わる。'],['滑車が Aを支える力',0,'滑車がふれているのは ロープ。Aに直接ふれていない。']]},
   {t:'tiles',no:'①',q:'Aの運動方程式（①）を 組み立てよ（<span class="c">Aは下向きが正</span>）。',lhs:[{id:'mA',l:`${v.mA}<i>a</i>`},{id:'mB',l:`${v.mB}<i>a</i>`},{id:'mAB',l:`(${v.mA}+${v.mB})<i>a</i>`}],lhsAns:'mA',
    tiles:[{id:'gA',l:`${v.mA}×9.8`},{id:'T',l:'T'},{id:'gB',l:`${v.mB}×9.8`}],ans:[['+','gA'],['-','T']],hint:'Aは下向きが正。重力は下向き、張力は上向き。'},
   {t:'why',q:'Aの式で 重力が「＋」なのは なぜ？',opts:[['Aは下向きを正にしたので、下向きの重力は＋',1],['Aのほうが 重いから',0],['重力は いつも＋だから',0],['落ちている物体は 重力が大きくなるから',0]],
@@ -2088,6 +2139,123 @@ const ST=[
  ],
  key:'2物体が逆向きに動くときは、それぞれの運動の向きを正にとる。'}
 ];
+
+/* ===== 小屋（まなぶ）=====
+   2026-10-06 初心者向け改修: 用語・記号・式を「使う前に」教える。
+   LESSONS[i] は 区間i に入る前に1回だけ出る（遭難・やり直しでは出ない。HUDの📖でいつでも見返せる） */
+const GR='#7dff8a';
+function slopeFig(){const th=Math.PI/6,c=Math.cos(th),s=Math.sin(th),O=[30,215],t=[c,-s],n=[-s,-c];
+  const pt=(p,k,d)=>[p[0]+k*d[0],p[1]+k*d[1]];const E=pt(O,280,t),P=pt(O,150,t),Cc=pt(P,16,n),L=88;
+  const G1=[Cc[0],Cc[1]+L],al=pt(Cc,-L*s,t),pp=pt(Cc,-L*c,n);
+  return svg(`<polygon points="${O} ${E} ${E[0]},215" fill="#23405a" stroke="#fff" stroke-width="2"/><line x1="10" y1="215" x2="350" y2="215" stroke="#fff"/>`+
+   `<g transform="translate(${P[0]},${P[1]}) rotate(-30)"><rect x="-20" y="-32" width="40" height="32" fill="#333" stroke="#fff" stroke-width="2"/></g>`+T(O[0]+52,O[1]-7,'θ')+
+   `<line x1="${G1[0]}" y1="${G1[1]}" x2="${al[0]}" y2="${al[1]}" stroke="#888" stroke-dasharray="4 4"/><line x1="${G1[0]}" y1="${G1[1]}" x2="${pp[0]}" y2="${pp[1]}" stroke="#888" stroke-dasharray="4 4"/>`+
+   A(Cc[0],Cc[1],G1[0],G1[1],Y,'mg（重力）',Cc[0]-6,G1[1]+16,{anc:'end'})+A(Cc[0],Cc[1],al[0],al[1],GR,'斜面方向 mg sinθ',al[0]-4,al[1]-10,{anc:'end',fs:13})+
+   A(Cc[0],Cc[1],pp[0],pp[1],C,'垂直方向 mg cosθ',pp[0]+8,pp[1]+4,{anc:'start',fs:13}))}
+const BASICS=[
+ {h:'ふもとの小屋 ①　力 と N（ニュートン）',
+  fig:()=>svg(`<line x1="20" y1="180" x2="340" y2="180" stroke="#fff" stroke-width="2"/>`+box(110,130,70,50,'ザック')+A(180,155,285,155,Y,'5 N',232,145)+T(308,165,'🧍','#fff','middle',26)+T(180,215,'力は 矢印でかく（向き と 大きさ）',C,'middle',15)),
+  b:`この山は「運動方程式」という式を 組み立てて登る。まず、式に出てくる言葉と 式の立て方を この小屋の 8枚で教える。<br><br><b class="y">力</b> ＝ 物を 押したり 引いたりする はたらき。<br>力には <b>向き</b> と <b>大きさ</b> があるので、<b>矢印</b>でかく。<br>大きさの単位は <b class="y">N（ニュートン）</b>。<br><span class="gray">1 N は、小さなりんご1個（約100 g）を 手のひらにのせたときに 感じる重さくらい。</span>`},
+ {h:'ふもとの小屋 ②　質量 m と 重力 mg',
+  fig:()=>svg(T(180,28,'地球は どんな物も 真下へ引く（重力）',C,'middle',15)+box(70,70,50,40,'1.0kg')+A(95,110,95,170,Y,'1.0×9.8 N',95,192)+box(220,55,70,55,'2.0kg')+A(255,110,255,205,Y,'2.0×9.8 N',255,226)),
+  b:`<b class="y">質量 m</b> ＝ 物の 量。単位は kg（〔kg〕のように〔 〕の中は 単位のしるし）。<br>質量が大きい（重い）ほど、<b>動かしにくく、止めにくい</b>。<br><br>重力の大きさ ＝ <b>質量 × 9.8</b>〔N〕。<br>この 9.8 を <b class="c">g</b> と書くので、<b class="c">重力 ＝ m×9.8 ＝ mg</b>。<br><span class="gray">例：2.0 kg の荷物の重力は 2.0×9.8 N（＝19.6 N）。</span>`},
+ {h:'ふもとの小屋 ③　速さ と 加速度 a',
+  fig:()=>accFig(0),
+  demo(el,alive){el.innerHTML='<button class="btn y dbtn" id="dGo">▶ 押しつづけて すべらせる</button>';
+   $('dGo').onclick=()=>{let t=0;$('lsFig').innerHTML=accFig(0);const iv=setInterval(()=>{if(!alive()){clearInterval(iv);return}t++;$('lsFig').innerHTML=accFig(t);if(t>=3)clearInterval(iv)},900)}},
+  b:`<b>速さ</b> ＝ 1秒間に 進む距離。単位は m/s（メートル毎秒）。<br><b class="y">加速度 a</b> ＝ <b>1秒ごとに 速さが どれだけ増えるか</b>。<br>上のザックは 1秒ごとに 2 m/s ずつ速くなる → <b class="y">a ＝ 2 m/s²</b>（「メートル毎秒毎秒」と読む）。<br><span class="gray">・速さが変わらない（一定）なら a ＝ 0。<br>・決めた向き（正）と 逆向きの加速度は マイナスで書く（例 a ＝ −2 m/s²）。</span>`},
+ {h:'ふもとの小屋 ④　合力 ＝ 向きをそろえて 足し引き',
+  fig:()=>svg(`<line x1="20" y1="150" x2="340" y2="150" stroke="#fff" stroke-width="2"/>`+box(140,100,70,50,'ザック')+A(210,125,300,125,Y,'5 N',255,115)+A(140,125,80,125,Y,'3 N',110,115)+A(250,30,320,30,C,'正の向き',285,22,{w:2})+
+   T(180,182,'(＋5) ＋ (−3) ＝ ＋2',GR,'middle',16)+A(130,212,200,212,GR,'合力 右向きに 2 N',210,217,{anc:'start'})),
+  b:`1つの物に 力が いくつもはたらくときは、まとめて1つの力にする。これが <b class="y">合力</b>（力の合計）。<br>① <b class="c">正の向き</b>（＋とする向き）を 1つ決める。<br>② 正と同じ向きの力は ＋、逆向きの力は − をつけて 足す。<br>例：(＋5)＋(−3)＝＋2 → <b>右向きに 2 N</b>。<br><span class="gray">横に動くときは 横向きの力だけを数える（たて向きの重力と 床が押し返す力は つりあっていて、横の式には入らない）。</span>`},
+ {h:'ふもとの小屋 ⑤　運動方程式　m a ＝ F',
+  fig:()=>maFig(2,8),
+  demo(el){let m=2,F=8;const d=()=>{el.innerHTML='質量：'+[1,2,4].map(x=>`<button class="btn dbtn ${x===m?'on':''}" data-m="${x}">${x.toFixed(1)} kg</button>`).join('')+'<br>力　：'+[4,8].map(x=>`<button class="btn dbtn ${x===F?'on':''}" data-f="${x}">${x.toFixed(1)} N</button>`).join('');
+    el.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{m=+b.dataset.m;$('lsFig').innerHTML=maFig(m,F);d()});el.querySelectorAll('[data-f]').forEach(b=>b.onclick=()=>{F=+b.dataset.f;$('lsFig').innerHTML=maFig(m,F);d()})};d()},
+  b:`<b class="y">質量 × 加速度 ＝ 合力</b>　→　<b class="y" style="font-size:24px">m a ＝ F</b><br>これが <b>運動方程式</b>。この山の名前の正体。（F は 合力）<br>・合力 F が <b>大きい</b>ほど、よく加速する。<br>・質量 m が <b>大きい（重い）</b>ほど、加速しにくい。<br>・<b>加速度の向き ＝ 合力の向き</b>（動いている向きとは かぎらない）。<br>上のボタンで 質量と力を変えて、a がどう変わるか ためそう。`},
+ {h:'ふもとの小屋 ⑥　運動方程式の 立て方（Step0〜3）',
+  fig:()=>svg(`<rect x="20" y="172" width="320" height="12" fill="#9fdcff" opacity=".35"/><line x1="20" y1="172" x2="340" y2="172" stroke="#bfefff" stroke-width="2"/>`+box(150,122,60,50,'ザック','2.0kg')+A(210,147,295,147,Y,'6.0 N',255,137)+A(150,147,65,147,Y,'2.0 N',105,137)+T(318,153,'🧍','#fff','middle',22)+T(42,153,'🧍','#fff','middle',22)+A(250,40,320,40,C,'正の向き',285,30,{w:2})+T(110,40,'やって見せる','#fff','middle',15)),
+  must:1,
+  demo(el,alive,seen){el.innerHTML='<button class="btn y dbtn" id="dRv">▶ 次の手順を見る</button>';const rv=[...document.querySelectorAll('#ovBox .rv')];let i=0;
+   if(LSN_SKIP||this.seen){rv.forEach(x=>x.classList.add('show'));$('dRv').classList.add('hidden');return}
+   $('dRv').onclick=()=>{if(i<rv.length)rv[i++].classList.add('show');if(i>=rv.length){$('dRv').classList.add('hidden');seen&&seen()}}},
+  b:`例：なめらかな氷の上の 2.0 kg のザックを、右へ 6.0 N、左へ 2.0 N で引く。加速度は？<br>
+   <div class="rv"><b class="c">Step0</b> どの物体の式？ → <b>ザック</b>。（その物体が「受ける力」だけを数える）</div>
+   <div class="rv"><b class="c">Step1</b> 力を全部見つける → 右へ 6.0 N、左へ 2.0 N。（たての重力と 床が押し返す力は 横の式に入らない）</div>
+   <div class="rv"><b class="c">Step2</b> 正の向きを決める → <b>右向きを正</b>。</div>
+   <div class="rv"><b class="c">Step3</b> 式を立てる（m a ＝ F）→ <b>2.0 a ＝ ＋6.0 − 2.0</b><br>　2.0 a ＝ 4.0　→　a ＝ 4.0 ÷ 2.0 ＝ <b class="y">2.0 m/s²（右向き）</b></div>`},
+ {h:'ふもとの小屋 ⑦　「受ける力」の 見つけ方',
+  fig:()=>svg(`<line x1="10" y1="186" x2="350" y2="186" stroke="#fff" stroke-width="2"/><path d="M70 172 h150 q14 0 18 -12" fill="none" stroke="#c9a06a" stroke-width="5"/><line x1="70" y1="172" x2="70" y2="182" stroke="#c9a06a" stroke-width="3"/><line x1="200" y1="172" x2="200" y2="182" stroke="#c9a06a" stroke-width="3"/>`+T(150,200,'そり','#c9a06a','middle',13)+
+   `<line x1="238" y1="160" x2="318" y2="128" stroke="#ddd" stroke-width="2" stroke-dasharray="5 4"/>`+T(326,128,'🧍','#fff','middle',24)+T(296,160,'ロープ（そりに ふれている）','#ccc','middle',12)+
+   box(105,122,60,50,'ザック')+A(135,122,135,62,GR,'そりが 押し返す力',145,58,{anc:'start',fs:13})+A(118,150,118,222,Y,'重力 mg',110,226,{anc:'end',fs:13})+
+   T(180,22,'ザックが受ける力 ＝ 重力 ＋ ふれている物からの力',C,'middle',14)),
+  b:`物体が受ける力は、次の <b class="y">2種類だけ</b>。<br>① <b class="y">重力</b>（地球が 真下へ引く。ふれていなくても はたらく）<br>② その物体に <b class="g">ふれている物</b> からの力（押す手・引くロープ・のっている床や台が 押し返す力 など）<br><span class="gray">・ふれていない物の力は 入れない。上の図のロープが引いているのは「そり」。ザックには ふれていない。<br>・「勢いの力」「加速させる力」という力は 無い。速さが変わるのは、力の合計（合力）の結果。</span>`,
+  q:{q:'雪の上で止まっている そり。人がロープを軽く引いているが、そりは動かない。そりの上の <b>ザック</b> が受ける力は？',a:['重力 と、そりが 押し返す力','重力 と、そりが押し返す力 と、ロープが引く力','ロープが引く力 だけ','重力 と、止まっていようとする 勢いの力'],ex:'ザックに ふれているのは そりだけ。だから 重力 と そりが押し返す力 の2つ。ロープは そりを引いている。',hint:'ロープは 何に ふれている？ ザックに ふれている物は どれ？ 「勢いの力」は 力ではない。'}},
+ {h:'ふもとの小屋 ⑧　区間1は 練習',
+  fig:()=>svg(T(40,110,'2.0a','#fff','middle',22)+T(80,110,'＝','#fff','middle',22)+[['＋',Y],['6.0',C],['−',Y],['2.0',C]].map(([s,c],i)=>`<rect x="${100+i*58}" y="84" width="50" height="40" fill="#15233d" stroke="${c}" stroke-width="2"/>`+T(125+i*58,111,s,c,'middle',20)).join('')+T(180,160,'右辺に［＋］か［−］→ 力 の順でタップ',C,'middle',15)+T(180,186,'まちがえたタイルは タップで消える','#ccc','middle',14)),
+  b:`この山では <b>計算はゲームがやる</b>。キミの仕事は Step0〜3 で <b>式を組み立てる</b>ことと、<b>理由を選ぶ</b>こと。<br>式の左辺（質量 × a）は 置いてある（2物体の区間では 選ぶ）。右辺は 上の図のように並べる。<br><br><b class="g">区間1は 練習</b>：まちがえても ♥もタイムも 減らない。<br><b class="r">区間2から 本番</b>：タイム計測スタート。まちがえると ♥−1・＋10秒。<br><span class="gray">わすれたら 右上の「📖 小屋のメモ」でいつでも見返せる。</span>`,
+  last:'▶ 区間1（練習）へ'}
+];
+function accFig(t){let dots='';for(let k=0;k<=t;k++)dots+=`<circle cx="${45+30*k*k}" cy="190" r="4" fill="${Y}"/>`+T(45+30*k*k,212,k+'秒','#ccc','middle',12);
+  const x=20+30*t*t;return svg(`<rect x="10" y="172" width="340" height="10" fill="#9fdcff" opacity=".35"/><line x1="10" y1="172" x2="350" y2="172" stroke="#bfefff" stroke-width="2"/>`+
+   box(x,132,50,40,'ザック')+T(x+25,122,'速さ '+(2*t)+' m/s',Y,'middle',15)+dots+A(220,30,300,30,C,'加速度 a＝2 m/s²',260,22,{w:2})+T(20,60,t+' 秒後',GR,'start',18))}
+function maFig(m,F){const w={1:36,2:50,4:72}[m],a=F/m;
+  return svg(`<line x1="10" y1="120" x2="350" y2="120" stroke="#bfefff" stroke-width="2"/>`+box(60,120-w,w,w,m.toFixed(1)+'kg')+A(60+w,120-w/2,60+w+F*9,120-w/2,Y,F.toFixed(1)+' N',60+w+F*4.5,120-w/2-8)+
+   `<rect x="40" y="172" width="${a*36}" height="16" fill="${GR}"/>`+T(40,162,'加速度（1秒ごとに 増える速さ）',GR,'start',13)+
+   T(180,216,`a ＝ F ÷ m ＝ ${F.toFixed(1)} ÷ ${m.toFixed(1)} ＝ ${a.toFixed(1)} m/s²`,'#fff','middle',16))}
+const LESSONS={
+ 0:BASICS,
+ 1:[{h:'2合目の小屋　垂直抗力 N',
+  fig:()=>svg(`<rect x="100" y="182" width="160" height="10" fill="#8a6a3a" stroke="#fff"/>`+T(275,192,'台','#ccc','start',13)+box(150,132,60,50,'荷物')+A(193,180,193,70,Y,'N（垂直抗力）',205,82,{anc:'start'})+A(167,157,167,234,Y,'mg（重力）',158,230,{anc:'end'})),
+  b:`床や台は、のっている物を <b>面に垂直に 押し返す</b>。この力が <b class="y">垂直抗力</b>。記号は <b>N</b>。<br><span class="gray">ややこしいが、単位の N（ニュートン）とは 別もの。「垂直抗力 N〔N〕」は「垂直抗力。記号は N。単位はニュートン」という意味。</span>`},
+  {h:'2合目の小屋　上下に動くときの 式',
+  fig:()=>svg(`<line x1="180" y1="10" x2="180" y2="100" stroke="#c9a06a" stroke-width="3"/>`+box(150,100,60,50,'m')+A(193,100,193,40,Y,'T（糸が引く力）',205,50,{anc:'start'})+A(167,150,167,212,Y,'mg',158,205,{anc:'end'})+A(60,150,60,95,C,'正（上向き）',60,86,{w:2})+T(250,190,'m a ＝ T − mg',GR,'middle',18)),
+  b:`<b class="y">鉛直</b>（えんちょく）＝ 真上・真下の向き。「鉛直上向き」は 真上へ。<br>上下に動く物では、<b>重力 mg も 式に入れる</b>（いちばん忘れやすい！）。<br><span class="gray">思い出そう（ふもと⑦）：受ける力は 重力 と、その物に ふれている物からの力 だけ。糸で引くのは、糸が その物に ふれているとき。</span><br>上向きを正にすると、上向きの力は ＋、下向きの重力は −mg。<br>例：糸で 上へ T の力で引くと　<b class="g">m a ＝ T − mg</b><br>・止まっている／一定の速さ → a＝0 → 合力も 0。<br>・<b>上向きに加速</b>している → 合力は 上向き（加速度の向き ＝ 合力の向き）。`,
+  last:'▶ 区間2へ（ここからタイム計測）'}],
+ 2:[{h:'4合目の小屋　斜面では 重力を2つに分ける',
+  fig:slopeFig,
+  b:`斜面の上では、重力 mg を <b class="g">斜面にそった向き</b> と <b class="c">斜面に垂直な向き</b> の2つに分けて考える。<br>・斜面方向：<b class="g">mg sinθ</b>（＝m×9.8×sinθ）　・垂直方向：<b class="c">mg cosθ</b><br>θ（シータ）は 斜面の傾きの角。sin・cos は 角で決まる「割合」の数（ゲームが計算する）。<br><span class="gray">sin30°＝0.50　sin45°≒0.71　sin60°≒0.87<br>cos30°≒0.87　cos45°≒0.71　cos60°＝0.50<br>例：30°なら 重力の半分（0.50倍）が 斜面にそって下向きにはたらく。</span>`},
+  {h:'4合目の小屋　動く方向と 動かない方向',
+  fig:()=>slopeFig(),
+  b:`・<b class="g">斜面方向</b>：そりは この向きに動く（加速する）→ <b>運動方程式 m a ＝ F</b> を立てる。<br>・<b class="c">斜面に垂直な方向</b>：そりは めりこみも浮きもしない（加速度 0）→ 左辺が 0 なので「力の合計 ＝ 0」の式。これを <b class="y">力のつりあいの式</b> という。<br><span class="gray">垂直抗力 N は 斜面に垂直なので、斜面方向の式には入らない。</span>`}],
+ 3:[{h:'6合目の小屋　作用・反作用 と 内力',
+  fig:()=>svg(T(180,28,'AがBを 右へ f で押すと','#fff','middle',14)+T(180,48,'BもAを 左へ 同じ f で押し返す',C,'middle',14)+`<line x1="20" y1="185" x2="340" y2="185" stroke="#fff" stroke-width="2"/>`+box(100,105,80,80,'A')+box(180,135,56,50,'B')+A(184,124,236,124,Y,'f（Bが受ける）',242,129,{anc:'start',fs:12})+A(176,174,118,174,Y,'f（Aが受ける）',140,166,{fs:12})),
+  b:`AがBを押すと、BもAを <b>同じ大きさで 逆向きに</b> 押し返す。これを <b class="y">作用・反作用</b> という。<br>2つの物があるときは、<b>物体ごとに Step0〜3</b>（Aの式・Bの式を別々に）。それぞれ「その物体が受ける力」だけを入れる。<br>AとBが 押し合う力 f のように、2つの物体の間ではたらく力を <b class="y">内力</b> という。Aの式（−f）とBの式（＋f）を <b>足すと f が消えて</b>、a が求まる。`}],
+ 4:[{h:'8合目の小屋　ロープの力 ＝ 張力 T',
+  fig:()=>svg(A(180,54,180,12,'#888','',0,0)+`<line x1="180" y1="86" x2="180" y2="174" stroke="#c9a06a" stroke-width="3"/><circle cx="180" cy="70" r="16" fill="#333" stroke="#fff" stroke-width="2"/><circle cx="180" cy="190" r="16" fill="#333" stroke="#fff" stroke-width="2"/>`+T(180,75,'A')+T(180,195,'B')+
+   A(196,86,196,122,Y,'T',204,112,{anc:'start'})+A(196,174,196,138,Y,'T',204,160,{anc:'start'})+T(160,100,'Aは ロープの方（下）へ',C,'end',12)+T(160,160,'Bは ロープの方（上）へ',C,'end',12)+T(204,137,'ロープ','#c9a06a','start',12)),
+  b:`ロープや糸が 物を引く力を <b class="y">張力</b> といい、記号は <b>T</b>。<br>ロープは つながった物を <b>「ロープのある方へ」</b>引く。<br><b>軽い（質量を考えなくてよい）ロープ</b>なら、両端で引く力は <b>同じ大きさ T</b>。<span class="gray">（ロープ自身の m が 0 なので、ロープの m a ＝ F の左辺が 0 → 両端の力が等しい）</span>`}],
+ 5:[{h:'岩壁の小屋　滑車 と 正の向き',
+  fig:()=>svg(`<rect x="110" y="0" width="140" height="8" fill="#777"/><line x1="180" y1="8" x2="180" y2="20" stroke="#aaa" stroke-width="3"/><circle cx="180" cy="40" r="20" fill="#222" stroke="#fff" stroke-width="2"/><line x1="160" y1="40" x2="160" y2="112" stroke="#c9a06a" stroke-width="3"/><line x1="200" y1="40" x2="200" y2="150" stroke="#c9a06a" stroke-width="3"/>`+
+   box(145,112,30,30,'B')+box(182,150,36,46,'A')+A(110,150,110,108,C,'Bは上向きが正',100,170,{w:2,anc:'end'})+A(250,150,250,192,C,'Aは下向きが正',260,216,{w:2})),
+  b:`<b class="y">滑車</b> は ロープの向きを変える車輪。片方が下がると、もう片方は 同じ速さで上がる。<br>2つの物が <b>逆向きに</b>動くので、それぞれの <b>動く向きを 正</b>にする（A は下向き、B は上向き）。こうすると 2つの加速度を 同じ <i>a</i> で書ける。<br><span class="gray">符号は「その物体の正の向き」と比べて決める。だから 同じ重力でも、Aの式では＋、Bの式では−。</span>`}]
+};
+let LSN_SKIP=false;
+function lesson(pages,done,canSkip){
+  const p0=Date.now();let i=0,tok=0;
+  const fin=()=>{tok++;$('ov').classList.add('hidden');if(S.t0)S.t0+=Date.now()-p0;done&&done()};
+  const show=()=>{tok++;const my=tok,pg=pages[i];let qo=null;LSN_SKIP=!!canSkip;
+    const two=!pg.q&&!!pg.fig;$('ovBox').classList.toggle('wq',!!pg.q||two);
+    $('ovBox').innerHTML=`<div class="lsn"><div class="lsnNo">🛖 ${i+1} / ${pages.length}</div><h2>${pg.h}</h2><div class="lsnG${pg.q||two?' q':''}"><div class="lsnL">${pg.fig?`<div class="lsnFig" id="lsFig">${pg.fig()}</div>`:''}${two?'</div><div class="lsnR">':''}${pg.demo?'<div id="lsDemo" style="text-align:center"></div>':''}<div class="lsnB">${pg.b}</div></div>`+
+     (pg.q?`<div class="lsnR"><div class="lsnQ"><div class="qt"><b class="tag">やってみよう</b>${pg.q.q}</div><div class="ch">${(qo=shuffle(pg.q.a.slice())).map((o,k)=>`<button class="btn" data-k="${k}">${o}</button>`).join('')}</div><div id="lsQx"></div></div></div>`:'')+`</div></div>`+
+     `<div class="lsnNav">${i>0?'<button class="btn" id="lsPrev">◀ もどる</button>':''}<button class="btn big y" id="lsNext" ${(pg.q&&!pg.q.done)||(pg.must&&!canSkip&&!pg.seen)?'disabled':''}>${i<pages.length-1?'次へ ▶':(pg.last||'▶ 登る！')}</button>${canSkip&&i<pages.length-1?'<button class="btn" id="lsSkip" style="border-color:#666;color:#999">とばす</button>':''}</div>`;
+    $('ov').classList.remove('hidden');$('ovBox').scrollTop=0;
+    if(pg.demo)pg.demo($('lsDemo'),()=>my===tok,()=>{pg.seen=1;const n=$('lsNext');if(n&&my===tok)n.disabled=false});
+    if(pg.q)document.querySelectorAll('#ovBox .lsnQ .ch .btn').forEach(b=>b.onclick=()=>{const o=qo[+b.dataset.k],ok=o===pg.q.a[0];
+      if(ok){b.classList.add('ok');pg.q.done=1;document.querySelectorAll('#ovBox .lsnQ .ch .btn').forEach(x=>{x.disabled=true});$('lsQx').innerHTML=`<span class="g">⭕ そのとおり！</span> ${pg.q.ex}`;$('lsNext').disabled=false}
+      else{b.classList.add('ng');b.disabled=true;$('lsQx').innerHTML=`<span class="r">🤔 ちがうよ。</span>${pg.q.hint}　もう一度 えらんでみよう`}
+      setTimeout(()=>{const x=$('lsQx');x&&x.scrollIntoView&&x.scrollIntoView({block:'nearest',behavior:'smooth'})},60)});
+    if($('lsPrev'))$('lsPrev').onclick=()=>{i--;show()};
+    $('lsNext').onclick=null;
+    if($('lsSkip'))$('lsSkip').onclick=fin;
+    $('lsNext').onclick=()=>{if(i<pages.length-1){i++;show()}else fin()};
+  };
+  show();
+}
+function reLesson(){
+  const i=S.st,pages=(i>0&&LESSONS[i]?LESSONS[i]:[]).concat(i>0?[BASICS[4],BASICS[5],BASICS[6]]:BASICS);
+  lesson(pages.map((p,k)=>k===pages.length-1?Object.assign({},p,{last:'▶ 登山にもどる'}):p),null,true);
+}
 
 /* ===== 確認テスト ===== */
 const TEST=[
@@ -2106,7 +2274,7 @@ const TEST=[
 function tkRiddleQ(){const q=TEST[Math.floor(Math.random()*TEST.length)];return {q:q.q,choices:q.a,ex:''}}
 
 /* ===== 状態 ===== */
-const S={hard:false,st:0,v:null,steps:[],si:0,hp:5,gear:[],miss:0,sonan:0,lost:0,pen:0,t0:0,timer:null,log:[],whyOK:true,rev:new Set(),eqs:[],runs:0,best:null,hardClear:false,busy:false};
+const S={practice:false,seenL:new Set(),hard:false,st:0,v:null,steps:[],si:0,hp:5,gear:[],miss:0,sonan:0,lost:0,pen:0,t0:0,timer:null,log:[],whyOK:true,rev:new Set(),eqs:[],runs:0,best:null,hardClear:false,busy:false};
 const MAXHP=()=>S.hard?3:5, PEN=()=>S.hard?20:10;
 
 /* ===== 山の絵 ===== */
@@ -2137,12 +2305,12 @@ function hud(){
   $('hGear').innerHTML=ST.map((s,i)=>`<span class="${S.gear[i]?'':'no'}">${s.gear.e}</span>`).join('');
 }
 const fmtT=s=>String(Math.floor(s/60)).padStart(2,'0')+':'+String(Math.floor(s%60)).padStart(2,'0');
-const total=()=>(Date.now()-S.t0)/1000+S.pen;
-function tick(){$('hTime').textContent='⏱ '+fmtT(total())}
+const total=()=>(S.t0?(Date.now()-S.t0)/1000:0)+S.pen;
+function tick(){$('hTime').textContent=S.t0?'⏱ '+fmtT(total()):'⏱ 練習中'}
 
 /* ===== 進行 ===== */
 function startRun(hard){
-  Object.assign(S,{hard,st:0,hp:hard?3:5,gear:[],miss:0,sonan:0,lost:0,pen:0,log:[],t0:Date.now()});
+  Object.assign(S,{hard,st:0,hp:hard?3:5,gear:[],miss:0,sonan:0,lost:0,pen:0,log:[],t0:hard?Date.now():0,seenL:new Set()});
   ['title','summit','result','test'].forEach(id=>$(id).classList.add('hidden'));$('game').classList.remove('hidden');
   clearInterval(S.timer);S.timer=setInterval(tick,250);
   drawMt();placeClimber(0,false);enterStage(0);window.scrollTo(0,0);
@@ -2150,14 +2318,22 @@ function startRun(hard){
 function enterStage(i){
   if(window.BGM)BGM.mood(i===ST.length-1?'tense':'normal');
   S.st=i;S.saveSt=i;saveLocal(i);const st=ST[i];S.v=st.gen();S.steps=st.steps(S.v);S.si=0;S.whyOK=true;S.rev=new Set();S.eqs=[];
-  $('stTitle').textContent=st.name;$('story').innerHTML=st.story(S.v);drawDiag();$('eqs').innerHTML='';hud();renderStep();
+  S.practice=(i===0&&!S.hard);
+  $('stTitle').innerHTML=st.name+(S.practice?'　<span class="g">（練習）</span>':'');$('story').innerHTML=st.story(S.v);drawDiag();$('eqs').innerHTML='';hud();tick();renderStep();
+  const startClock=()=>{if(i>=1&&!S.t0){S.t0=Date.now();tick()}};
+  if(LESSONS[i]&&!S.seenL.has(i)){S.seenL.add(i);
+    const pg=LESSONS[i].map((p,k)=>(S.hard&&p.last&&i===1)?Object.assign({},p,{last:'▶ 区間2へ'}):p);
+    lesson(pg,startClock,S.hard||S.runs>0);
+  }else startClock();
 }
 function drawDiag(){$('diag').innerHTML=ST[S.st].diag(S.v,S.rev)}
 function next(){S.si++;if(S.si>=S.steps.length)stageClear();else renderStep()}
 
 function renderStep(){
   const s=S.steps[S.si];S.busy=false;
-  $('stepNo').textContent=`STEP ${S.si+1} / ${S.steps.length}　`+{force:'💪 力を見つける',tiles:'🧱 式を組み立てる',choice:'🧭 手順を選ぶ',why:'❓ なぜ？（装備がかかっている・1回勝負）',calc:'🧮 ゲームが計算'}[s.t];
+  const k=s.k!==undefined?s.k:({force:1,tiles:3})[s.t];
+  $('sbar').innerHTML='<span style="border:none;color:#aaa">立て方：</span>'+['Step0 物体を決める','Step1 力を全部見つける','Step2 正の向きを決める','Step3 式を立てる'].map((x,j)=>`<span class="${j===k?'on':''}">${x}</span>`).join('');
+  $('stepNo').innerHTML=`（${S.si+1} / ${S.steps.length}）　`+{force:'💪 力を見つける',tiles:'🧱 式を組み立てる',choice:'🧭 手順を選ぶ',why:S.practice?'❓ なぜ？（練習：外しても 装備はもらえる）':'❓ なぜ？（装備がかかっている・1回勝負）',calc:'🧮 ゲームが計算'}[s.t]+(S.practice?'　<span class="g">練習中：ミスしても 罰なし</span>':'');
   $('q').innerHTML=s.q||'';$('fb').innerHTML='';
   window.Tekitou&&Tekitou.shown();
   ({force:rForce,tiles:rTiles,choice:rChoice,why:rWhy,calc:rCalc})[s.t](s);
@@ -2166,6 +2342,11 @@ function fb(h,cls){$('fb').innerHTML=`<span class="${cls||''}">${h}</span>`}
 function nextBtn(label){return `<div class="ctrl"><button class="btn y" onclick="next()">${label||'次へ ▶'}</button></div>`}
 
 function miss(s,detail){
+  if(S.practice){
+    const key=ST[S.st].area+'｜'+(s.q||'').replace(/<[^>]+>/g,'');if(!S.log.some(l=>l.k===key))S.log.push({k:key,a:detail});
+    $('fb').insertAdjacentHTML('beforeend','<br><span class="g">（練習なので ♥もタイムも 減らない。説明を読んで もう一度）</span>');
+    return false;
+  }
   S.miss++;S.pen+=PEN();S.hp--;hud();tick();
   const p=$('penFx');p.textContent='＋'+PEN()+'秒';p.style.opacity=1;setTimeout(()=>p.style.opacity=0,700);
   const key=ST[S.st].area+'｜'+(s.q||'').replace(/<[^>]+>/g,'');if(!S.log.some(l=>l.k===key))S.log.push({k:key,a:detail});
@@ -2270,6 +2451,8 @@ function rWhy(s){
     window.Tekitou&&Tekitou.answer(!!o[1]);
     document.querySelectorAll('#work .opt').forEach((x,i)=>{x.disabled=true;if(opts[i][1])x.classList.add('okk')});
     if(o[1])fb('⭕ その通り！ <span class="gray">'+s.exp+'</span>','g');
+    else if(S.practice){b.classList.add('ngg');fb(`✕ ちがう…… <span class="g">練習なので 装備はもらえる。理由を読んでおこう：</span><br><span class="c">${s.exp}</span>`,'r');
+      const key=ST[S.st].area+'｜'+s.q.replace(/<[^>]+>/g,'');if(!S.log.some(l=>l.k===key))S.log.push({k:key,a:'正解：'+s.opts.find(o=>o[1])[0]})}
     else{b.classList.add('ngg');S.whyOK=false;fb(`✕ ざんねん…… <span class="y">この区間の装備（${ST[S.st].gear.e}${ST[S.st].gear.n}）は 取り逃した。</span><br><span class="c">${s.exp}</span>`,'r');
       const key=ST[S.st].area+'｜'+s.q.replace(/<[^>]+>/g,'');if(!S.log.some(l=>l.k===key))S.log.push({k:key,a:'正解：'+s.opts.find(o=>o[1])[0]})}
     $('whyNext').innerHTML=nextBtn();
@@ -2288,7 +2471,7 @@ function stageClear(){
   const st=ST[S.st];
   if(S.whyOK){
     S.gear[S.st]=true;S.hp=Math.min(MAXHP(),S.hp+2);hud();drawMt();if(S.st<5){S.saveSt=S.st+1;saveLocal(S.saveSt)}
-    ov(`<div class="emo">${st.gear.e}</div><h2>${st.area} クリア！</h2><span class="c">${st.gear.n}</span> を 手に入れた！<br><span class="gray">山小屋で休んだ（♥＋2）</span><br><br><span class="y">📌 ${st.key}</span>${S.st<5?spellBox(S.st+1):''}`,
+    ov(`<div class="emo">${st.gear.e}</div><h2>${st.area} クリア！</h2><span class="c">${st.gear.n}</span> を 手に入れた！<br><span class="gray">山小屋で休んだ（♥＋2）</span><br><br><span class="y">📌 ${st.key}</span>${S.practice?'<br><br><span class="r">練習はここまで。次の区間2から 本番（タイム計測・ミスで♥−1と＋10秒）。</span>':''}${S.st<5?spellBox(S.st+1):''}`,
       S.st===5?'🚩 山頂へ！':'▶ 次の区間へ',()=>climb());
   }else{
     S.lost++;
@@ -2354,7 +2537,7 @@ function testResult(){
 
 /* --- オーバーレイ --- */
 function ov(html,label,fn){
-  $('ovBox').innerHTML=html+`<div style="margin-top:14px"><button class="btn big y" id="ovGo">${label}</button></div>`;$('ov').classList.remove('hidden');
+  $('ovBox').classList.remove('wq');$('ovBox').innerHTML=html+`<div style="margin-top:14px"><button class="btn big y" id="ovGo">${label}</button></div>`;$('ov').classList.remove('hidden');
   $('ovGo').onclick=()=>{$('ov').classList.add('hidden');fn()};
 }
 
@@ -2367,7 +2550,7 @@ const FIELDS=[['st',3],['gear',6],['hp',3],['hard',1],['miss',6],['sonan',4],['l
 function snap(st){
   const running=S.t0&&!$('game').classList.contains('hidden');
   return {st,gear:ST.reduce((b,_,i)=>b|(S.gear[i]?1<<i:0),0),hp:Math.max(1,S.hp),hard:S.hard?1:0,miss:S.miss,sonan:S.sonan,lost:S.lost,
-    el:st>5?0:Math.floor(running?(Date.now()-S.t0)/1000:(S.el||0)),pen:st>5?0:S.pen,best:S.best===null?4095:Math.floor(S.best),runs:S.runs,hc:S.hardClear?1:0};
+    el:st>5?0:Math.floor(running&&S.t0?(Date.now()-S.t0)/1000:(S.el||0)),pen:st>5?0:S.pen,best:S.best===null?4095:Math.floor(S.best),runs:S.runs,hc:S.hardClear?1:0};
 }
 function saveLocal(st){try{localStorage.setItem(SKEY,JSON.stringify(snap(st)))}catch(e){}}
 function loadLocal(){try{return JSON.parse(localStorage.getItem(SKEY)||'null')}catch(e){return null}}
@@ -2394,7 +2577,7 @@ function applySave(o){
 }
 function resume(o){
   applySave(o);
-  Object.assign(S,{hard:!!o.hard,hp:o.hp,gear:ST.map((_,i)=>!!(o.gear>>i&1)),miss:o.miss,sonan:o.sonan,lost:o.lost,pen:o.pen,log:[],t0:Date.now()-o.el*1000});
+  Object.assign(S,{hard:!!o.hard,hp:o.hp,gear:ST.map((_,i)=>!!(o.gear>>i&1)),miss:o.miss,sonan:o.sonan,lost:o.lost,pen:o.pen,log:[],t0:(o.st===0&&!o.hard)?0:Date.now()-o.el*1000,seenL:new Set()});
   ['title','summit','result','test'].forEach(id=>$(id).classList.add('hidden'));$('game').classList.remove('hidden');
   clearInterval(S.timer);S.timer=setInterval(tick,250);
   drawMt();placeClimber(o.st,false);enterStage(o.st);window.scrollTo(0,0);
@@ -2408,7 +2591,7 @@ function titleInfo(){
   $('cont').innerHTML=h;if($('bCont'))$('bCont').onclick=()=>resume(o);
 }
 function askSpell(){
-  $('ovBox').innerHTML=`<div class="emo">📜</div><h2>ふっかつのじゅもん</h2><input id="spIn" style="width:100%;font-size:24px;text-align:center;letter-spacing:.1em" placeholder="ひらがな 12もじ" autocomplete="off"><div id="spMsg" class="r" style="min-height:1.6em;margin-top:6px"></div>
+  $('ovBox').classList.remove('wq');$('ovBox').innerHTML=`<div class="emo">📜</div><h2>ふっかつのじゅもん</h2><input id="spIn" style="width:100%;font-size:24px;text-align:center;letter-spacing:.1em" placeholder="ひらがな 12もじ" autocomplete="off"><div id="spMsg" class="r" style="min-height:1.6em;margin-top:6px"></div>
    <div><button class="btn" id="spNo">やめる</button><button class="btn big y" id="spGo">じゅもんを となえる</button></div>`;
   $('ov').classList.remove('hidden');$('spIn').focus();
   $('spNo').onclick=()=>$('ov').classList.add('hidden');
